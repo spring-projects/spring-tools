@@ -50,7 +50,7 @@ import org.springframework.ide.vscode.parser.jpql.JpqlParser.State_fieldContext;
 public class JpqlSemanticTokens implements SemanticTokensDataProvider {
 
 	private static List<String> TOKEN_TYPES = List.of("keyword", "type", "class", "string", "number", "operator",
-			"variable", "method", "regexp", "parameter");
+			"variable", "method", "parameter");
 	
 	private final Optional<SpelSemanticTokens> optSpelTokens;
 

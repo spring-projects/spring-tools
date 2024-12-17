@@ -14,6 +14,9 @@ import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.FileFieldEditor;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.lsp4e.jdt.LanguageServerJdtPlugin;
+import org.eclipse.lsp4e.jdt.LspJdtConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbench;
@@ -41,6 +44,16 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		addField(new BooleanFieldEditor(Constants.PREF_START_LS_EARLY, "Start Language Server at startup if Spring Boot is a dependency", fieldEditorParent));
 		addField(new BooleanFieldEditor(Constants.PREF_SCAN_JAVA_TEST_SOURCES, "Scan Java test sources", fieldEditorParent));
 		
+		addField(new BooleanFieldEditor(LspJdtConstants.PREF_SEMANTIC_TOKENS_SWITCH, "Embedded languages syntax highlighting in Java Editor", fieldEditorParent) {
+
+			@Override
+			public void setPreferenceStore(IPreferenceStore store) {
+				super.setPreferenceStore(store == null ? null : LanguageServerJdtPlugin.getDefault().getPreferenceStore());
+			}
+
+			
+		});
+
 		// JPQL Support switch
 		addField(new BooleanFieldEditor(Constants.PREF_JPQL, "JPA Query language support", fieldEditorParent));
 		

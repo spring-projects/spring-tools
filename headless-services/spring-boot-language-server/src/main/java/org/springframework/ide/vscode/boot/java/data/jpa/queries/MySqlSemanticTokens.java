@@ -46,7 +46,7 @@ import org.springframework.ide.vscode.parser.mysql.MySqlParserBaseListener;
 public class MySqlSemanticTokens implements SemanticTokensDataProvider {
 
 	private static List<String> TOKEN_TYPES = List.of("keyword", "type", "string", "number", "operator",
-			"variable", "regexp", "comment", "parameter", "method");
+			"variable", "comment", "parameter", "method");
 
 	private final Optional<SpelSemanticTokens> optSpelTokens;
 	private final Optional<Consumer<RecognitionException>> parseErrorHandler;

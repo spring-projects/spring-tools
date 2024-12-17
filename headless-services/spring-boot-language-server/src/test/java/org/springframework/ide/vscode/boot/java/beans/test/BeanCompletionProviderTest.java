@@ -1070,6 +1070,47 @@ public class TestBeanCompletionClass {
 	}
 	
 	@Test
+	public void methodReturnStatementAfterThisStatementWithoutPrefix() throws Exception {
+		String content = """
+				package org.sample.test;
+				
+				import org.springframework.web.bind.annotation.RestController;
+				
+				@RestController
+				public class TestBeanCompletionClass {
+					String TestBeanCompletionClass() {
+						this.<*>
+						return new String("oo");
+					}
+				}
+				""";
+		
+		
+		assertCompletions(content, new String[] {"ownerRepository", "ownerService", "petService", "testIntBean", "visitRepository", "visitService"}, 0, 
+				"""
+				package org.sample.test;
+				
+				import org.springframework.samples.petclinic.owner.OwnerRepository;
+				import org.springframework.web.bind.annotation.RestController;
+				
+				@RestController
+				public class TestBeanCompletionClass {
+				
+				    private final OwnerRepository ownerRepository;
+					
+				    TestBeanCompletionClass(OwnerRepository ownerRepository) {
+				        this.ownerRepository = ownerRepository;
+				    }
+					String TestBeanCompletionClass() {
+						this.ownerRepository<*>
+						return new String("oo");
+					}
+				}
+				""");
+	}
+
+	
+	@Test
 	public void constructorNoThisNoPrefix() throws Exception {
 		String content = """
 				package org.sample.test;

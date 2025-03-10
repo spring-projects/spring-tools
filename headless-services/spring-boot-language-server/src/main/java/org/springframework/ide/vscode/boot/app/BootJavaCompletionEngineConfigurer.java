@@ -172,7 +172,7 @@ public class BootJavaCompletionEngineConfigurer {
 		providers.put(Annotations.SCHEDULED, new AnnotationAttributeCompletionProcessor(javaProjectFinder, Map.of(
 				"cron", new CronExpressionCompletionProvider())));
 
-		providers.put(Annotations.BEAN, new BeanCompletionProvider(javaProjectFinder, springIndex, rewriteRefactorings, config));
+		providers.put(Annotations.BEAN, new BeanCompletionProvider(javaProjectFinder, springIndex, rewriteRefactorings, config, cuCache));
 
 		return new BootJavaCompletionEngine(cuCache, providers, snippetManager);
 	}

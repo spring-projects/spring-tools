@@ -10,33 +10,44 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.eclipse.core.runtime.Assert;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Assignment;
-import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldAccess;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.ThisExpression;
-import org.eclipse.lsp4j.Command;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.internal.corext.dom.ASTNodes;
+import org.eclipse.jdt.internal.corext.dom.IASTSharedValues;
+import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
+import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
+import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionItemLabelDetails;
+import org.eclipse.text.edits.TextEdit;
+import org.eclipse.text.edits.TextEditGroup;
 import org.openrewrite.java.tree.JavaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCompletionEngine;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposalWithScore;
-import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
-import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
-import org.springframework.ide.vscode.commons.rewrite.java.InjectBeanCompletionRecipe;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.Renderable;
 import org.springframework.ide.vscode.commons.util.Renderables;
@@ -65,8 +76,13 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	private String prefix;
 	private DocumentEdits edits;
 
-	public BeanCompletionProposal(ASTNode node, int offset, IDocument doc, String beanId, String beanType,
-			String fieldName, String className, RewriteRefactorings rewriteRefactorings) {
+	private IJavaProject project;
+
+	private CompilationUnitCache cuCache;
+
+	public BeanCompletionProposal(IJavaProject project, ASTNode node, int offset, IDocument doc, String beanId, String beanType,
+			String fieldName, String className, RewriteRefactorings rewriteRefactorings, CompilationUnitCache cuCache) {
+		this.project = project;
 		this.node = node;
 		this.offset = offset;
 		this.doc = doc;
@@ -75,6 +91,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		this.fieldName = fieldName;
 		this.className = className;
 		this.rewriteRefactorings = rewriteRefactorings;
+		this.cuCache = cuCache;
 		this.prefix = computePrefix();
 		this.edits = computeEdit();
 		this.score = /*FuzzyMatcher.matchScore*/computeJaroWinklerScore(prefix, beanId);
@@ -133,26 +150,96 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		return null;
 	}
 	
-	private DocumentEdits computeEdit() {
+	private DocumentEdits createFieldDeclaration(CompilationUnit cuRefactorNode) throws JavaModelException, IllegalArgumentException {
+		CompilationUnit cu = ASTNodes.getParent(node, org.eclipse.jdt.core.dom.CompilationUnit.class);
+		CompilationUnitRewrite fCuRewrite = new CompilationUnitRewrite(null, (ICompilationUnit) cu.getTypeRoot(), cuRefactorNode, Map.of());
+//		Type type= getConstantType();
+
+		AST ast= fCuRewrite.getAST();
+		VariableDeclarationFragment variableDeclarationFragment= ast.newVariableDeclarationFragment();
+		variableDeclarationFragment.setName(ast.newSimpleName(fieldName));
+
+		FieldDeclaration fieldDeclaration= ast.newFieldDeclaration(variableDeclarationFragment);
+//		fieldDeclaration.setType(type);
+		fieldDeclaration.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.PRIVATE_KEYWORD));
+		fieldDeclaration.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.FINAL_KEYWORD));
+
+		AbstractTypeDeclaration parent = ASTNodes.getParent(node, AbstractTypeDeclaration.class);
+		Assert.isNotNull(parent);
+		ListRewrite listRewrite= fCuRewrite.getASTRewrite().getListRewrite(parent, parent.getBodyDeclarationsProperty());
+		TextEditGroup msg= fCuRewrite.createGroupDescription(RefactoringCoreMessages.ExtractConstantRefactoring_declare_constant);
+		listRewrite.insertFirst(fieldDeclaration, msg);
+		
+		TextEdit edit = fCuRewrite.getASTRewrite().rewriteAST();
 		DocumentEdits edits = new DocumentEdits(doc, false);
-		if (isInsideConstructor(node)) {
-			if (node instanceof Block) {
-				edits.insert(offset, "this.%s = %s;".formatted(fieldName, fieldName));
-			} else {
-				if (node.getParent() instanceof Assignment || node.getParent() instanceof FieldAccess) {
-					edits.replace(offset - prefix.length(), offset, "%s = %s;".formatted(fieldName, fieldName));
-				} else {
-					edits.replace(offset - prefix.length(), offset, "this.%s = %s;".formatted(fieldName, fieldName));
-				}
-			}
-		} else {
-			if (node instanceof Block) {
-				edits.insert(offset, fieldName);
-			} else {
-				edits.replace(offset - prefix.length(), offset, fieldName);
-			}
-		}
 		return edits;
+	}
+	
+	private DocumentEdits computeEdit() {
+//		try {
+			CompilationUnit cu = ASTNodes.getParent(node, org.eclipse.jdt.core.dom.CompilationUnit.class);
+			RefactoringASTParser parser= new RefactoringASTParser(IASTSharedValues.SHARED_AST_LEVEL);
+			
+			try {
+//				CompilationUnit cuRefactorNode = cuCache.parseCuWithReusableEnv(project, URI.create(doc.getUri()));
+				return createFieldDeclaration(cu);
+			} catch (JavaModelException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+//			} catch (ExecutionException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return new DocumentEdits(doc, false);
+			
+	
+//			ASTRewrite astRewrite= ASTRewrite.create(cuRefactorNode.getAST());
+//			ImportRewrite importRewrite= StubUtility.createImportRewrite(cu, true);
+//			
+//			TypeDeclaration declaringType = ASTUtils.findDeclaringType(node);
+//			
+//			ITypeBinding currTypeBinding= declaringType.resolveBinding();
+//			ListRewrite memberRewriter= null;
+//	
+//			ASTNode node= cuRefactorNode.findDeclaringNode(currTypeBinding);
+//			if (node instanceof AnonymousClassDeclaration) {
+//				memberRewriter= astRewrite.getListRewrite(node, AnonymousClassDeclaration.BODY_DECLARATIONS_PROPERTY);
+//			} else if (node instanceof AbstractTypeDeclaration) {
+//				ChildListPropertyDescriptor property= ((AbstractTypeDeclaration) node).getBodyDeclarationsProperty();
+//				memberRewriter= astRewrite.getListRewrite(node, property);
+//			} else {
+//				throw new IllegalArgumentException();
+//				// not possible, we checked this in the constructor
+//			}
+			
+//		} catch (JavaModelException e) {
+//			throw new IllegalStateException(e);
+//		}
+
+//		if (isInsideConstructor(node)) {
+//			if (node instanceof Block) {
+//				edits.insert(offset, "this.%s = %s;".formatted(fieldName, fieldName));
+//			} else {
+//				if (node.getParent() instanceof Assignment || node.getParent() instanceof FieldAccess) {
+//					edits.replace(offset - prefix.length(), offset, "%s = %s;".formatted(fieldName, fieldName));
+//				} else {
+//					edits.replace(offset - prefix.length(), offset, "this.%s = %s;".formatted(fieldName, fieldName));
+//				}
+//			}
+//		} else {
+//			if (node instanceof Block) {
+//				edits.insert(offset, fieldName);
+//			} else {
+//				edits.replace(offset - prefix.length(), offset, fieldName);
+//			}
+//		}
+//		return edits;
 	}
 
 	@Override
@@ -179,14 +266,14 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 				.formatted(beanId, beanType));
 	}
 
-	@Override
-	public Optional<Command> getCommand() {
-		FixDescriptor f = new FixDescriptor(InjectBeanCompletionRecipe.class.getName(), List.of(this.doc.getUri()),
-				"Inject bean completions")
-				.withParameters(Map.of("fullyQualifiedName", beanType, "fieldName", fieldName, "classFqName", className))
-				.withRecipeScope(RecipeScope.NODE);
-		return Optional.of(rewriteRefactorings.createFixCommand("Inject bean '%s'".formatted(beanId), f));
-	}
+//	@Override
+//	public Optional<Command> getCommand() {
+//		FixDescriptor f = new FixDescriptor(InjectBeanCompletionRecipe.class.getName(), List.of(this.doc.getUri()),
+//				"Inject bean completions")
+//				.withParameters(Map.of("fullyQualifiedName", beanType, "fieldName", fieldName, "classFqName", className))
+//				.withRecipeScope(RecipeScope.NODE);
+//		return Optional.of(rewriteRefactorings.createFixCommand("Inject bean '%s'".formatted(beanId), f));
+//	}
 
 	@Override
 	public double getScore() {

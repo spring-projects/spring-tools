@@ -305,6 +305,20 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 		}
 		return cuFuture;
 	}
+	
+	public CompilationUnit parseCuWithReusableEnv(IJavaProject project, URI uri) throws ExecutionException, Exception {
+		logger.info("Started parsing CU for " + uri);
+		Tuple2<List<Classpath>, INameEnvironmentWithProgress> lookupEnvTuple = loadLookupEnvTuple(project);
+		String uriStr = uri.toASCIIString();
+		String unitName = uriStr.substring(uriStr.lastIndexOf("/") + 1); // skip over '/'
+		CompilationUnit cUnit = parse2(fetchContent(uri).toCharArray(), uriStr, unitName, lookupEnvTuple.getT1(), lookupEnvTuple.getT2(),
+				annotationHierarchies.get(project.getLocationUri(), AnnotationHierarchies::new));
+
+		logger.debug("CU Cache: created new AST for {}", uri.toASCIIString());
+
+		logger.info("Parsed successfully CU for " + uri);
+		return cUnit;
+	}
 
 	public static CompilationUnit parse2(char[] source, String docURI, String unitName, IJavaProject project) throws Exception {
 		List<Classpath> classpaths = createClasspath(getClasspathEntries(project));

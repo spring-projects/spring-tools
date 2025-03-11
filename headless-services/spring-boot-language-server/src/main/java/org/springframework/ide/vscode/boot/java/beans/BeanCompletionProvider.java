@@ -40,6 +40,7 @@ import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposal;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -58,13 +59,16 @@ public class BeanCompletionProvider implements CompletionProvider {
 
 	private CompilationUnitCache cuCache;
 
+	private SimpleLanguageServer server;
+
 	public BeanCompletionProvider(JavaProjectFinder javaProjectFinder, SpringMetamodelIndex springIndex,
-			RewriteRefactorings rewriteRefactorings, BootJavaConfig config, CompilationUnitCache cuCache) {
+			RewriteRefactorings rewriteRefactorings, BootJavaConfig config, CompilationUnitCache cuCache, SimpleLanguageServer server) {
 		this.javaProjectFinder = javaProjectFinder;
 		this.springIndex = springIndex;
 		this.rewriteRefactorings = rewriteRefactorings;
 		this.config = config;
 		this.cuCache = cuCache;
+		this.server = server;
 	}
 
 	@Override
@@ -138,7 +142,7 @@ public class BeanCompletionProvider implements CompletionProvider {
 						for (int i = 0; i < Integer.MAX_VALUE && fieldNames.contains(fieldName); i++, fieldName = "%s_%d".formatted(bean.getName(), i)) {
 							// nothing
 						}
-						BeanCompletionProposal proposal = new BeanCompletionProposal(project, node, offset, doc, bean.getName(),
+						BeanCompletionProposal proposal = new BeanCompletionProposal(server, project, node, offset, doc, bean.getName(),
 								bean.getType(), fieldName, className, rewriteRefactorings, cuCache);
 
 						if (proposal.getScore() > 0) {

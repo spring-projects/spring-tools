@@ -23,7 +23,10 @@ Require-Bundle: org.eclipse.jdt.launching;bundle-version="3.8.0",
  org.eclipse.ui.editors,
  org.springsource.ide.eclipse.commons.core,
  org.eclipse.e4.ui.css.swt.theme,
- org.eclipse.swt
+ org.eclipse.swt,
+ org.eclipse.ui.workbench,
+ org.eclipse.jdt.core.manipulation,
+ org.eclipse.ltk.core.refactoring
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-ActivationPolicy: lazy
 Export-Package: org.springframework.tooling.ls.eclipse.commons,

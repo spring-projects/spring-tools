@@ -10,8 +10,13 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans;
 
+import java.util.List;
+import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.eclipse.core.runtime.Assert;
@@ -21,7 +26,10 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Assignment;
+import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -37,6 +45,9 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewr
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionItemLabelDetails;
+import org.eclipse.lsp4j.ResourceOperation;
+import org.eclipse.lsp4j.TextDocumentEdit;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.text.edits.TextEdit;
 import org.eclipse.text.edits.TextEditGroup;
 import org.openrewrite.java.tree.JavaType;
@@ -44,14 +55,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCompletionEngine;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposalWithScore;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.InjectBeanParams;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.Renderable;
 import org.springframework.ide.vscode.commons.util.Renderables;
 import org.springframework.ide.vscode.commons.util.text.IDocument;
+
+import com.google.common.base.Suppliers;
 
 /**
  * @author Udayani V
@@ -80,8 +96,11 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 
 	private CompilationUnitCache cuCache;
 
-	public BeanCompletionProposal(IJavaProject project, ASTNode node, int offset, IDocument doc, String beanId, String beanType,
+	private SimpleLanguageServer server;
+
+	public BeanCompletionProposal(SimpleLanguageServer server, IJavaProject project, ASTNode node, int offset, IDocument doc, String beanId, String beanType,
 			String fieldName, String className, RewriteRefactorings rewriteRefactorings, CompilationUnitCache cuCache) {
+		this.server = server;
 		this.project = project;
 		this.node = node;
 		this.offset = offset;
@@ -177,26 +196,26 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	
 	private DocumentEdits computeEdit() {
 //		try {
-			CompilationUnit cu = ASTNodes.getParent(node, org.eclipse.jdt.core.dom.CompilationUnit.class);
-			RefactoringASTParser parser= new RefactoringASTParser(IASTSharedValues.SHARED_AST_LEVEL);
-			
-			try {
-//				CompilationUnit cuRefactorNode = cuCache.parseCuWithReusableEnv(project, URI.create(doc.getUri()));
-				return createFieldDeclaration(cu);
-			} catch (JavaModelException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-//			} catch (ExecutionException e) {
+//			CompilationUnit cu = ASTNodes.getParent(node, org.eclipse.jdt.core.dom.CompilationUnit.class);
+//			RefactoringASTParser parser= new RefactoringASTParser(IASTSharedValues.SHARED_AST_LEVEL);
+//			
+//			try {
+////				CompilationUnit cuRefactorNode = cuCache.parseCuWithReusableEnv(project, URI.create(doc.getUri()));
+//				return createFieldDeclaration(cu);
+//			} catch (JavaModelException e) {
 //				// TODO Auto-generated catch block
 //				e.printStackTrace();
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			return new DocumentEdits(doc, false);
+//			} catch (IllegalArgumentException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+////			} catch (ExecutionException e) {
+////				// TODO Auto-generated catch block
+////				e.printStackTrace();
+//			} catch (Exception e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			return new DocumentEdits(doc, false);
 			
 	
 //			ASTRewrite astRewrite= ASTRewrite.create(cuRefactorNode.getAST());
@@ -222,24 +241,25 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 //			throw new IllegalStateException(e);
 //		}
 
-//		if (isInsideConstructor(node)) {
-//			if (node instanceof Block) {
-//				edits.insert(offset, "this.%s = %s;".formatted(fieldName, fieldName));
-//			} else {
-//				if (node.getParent() instanceof Assignment || node.getParent() instanceof FieldAccess) {
-//					edits.replace(offset - prefix.length(), offset, "%s = %s;".formatted(fieldName, fieldName));
-//				} else {
-//					edits.replace(offset - prefix.length(), offset, "this.%s = %s;".formatted(fieldName, fieldName));
-//				}
-//			}
-//		} else {
-//			if (node instanceof Block) {
-//				edits.insert(offset, fieldName);
-//			} else {
-//				edits.replace(offset - prefix.length(), offset, fieldName);
-//			}
-//		}
-//		return edits;
+		DocumentEdits edits = new DocumentEdits(doc, false);
+		if (isInsideConstructor(node)) {
+			if (node instanceof Block) {
+				edits.insert(offset, "this.%s = %s;".formatted(fieldName, fieldName));
+			} else {
+				if (node.getParent() instanceof Assignment || node.getParent() instanceof FieldAccess) {
+					edits.replace(offset - prefix.length(), offset, "%s = %s;".formatted(fieldName, fieldName));
+				} else {
+					edits.replace(offset - prefix.length(), offset, "this.%s = %s;".formatted(fieldName, fieldName));
+				}
+			}
+		} else {
+			if (node instanceof Block) {
+				edits.insert(offset, fieldName);
+			} else {
+				edits.replace(offset - prefix.length(), offset, fieldName);
+			}
+		}
+		return edits;
 	}
 
 	@Override
@@ -287,6 +307,38 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public Optional<Supplier<DocumentEdits>> getAdditionalEdit() {
+		return Optional.of(Suppliers.memoize(() -> {
+			long start = System.currentTimeMillis();
+			DocumentEdits additionalEdit = new DocumentEdits(doc, false);
+			try {
+				TextDocumentEdit beanInjectEdits = server.getClient().injectBean(new InjectBeanParams(doc.getUri(), beanType, fieldName)).get();
+				if (beanInjectEdits != null) {
+							for (org.eclipse.lsp4j.TextEdit e : beanInjectEdits.getEdits()) {
+								try {
+									int startLineOffset = doc.getLineOffset(e.getRange().getStart().getLine() - 1);
+									if (!e.getRange().getEnd().equals(e.getRange().getStart())) {
+										int endLineOffset = doc.getLineOffset(e.getRange().getEnd().getLine() - 1);
+										additionalEdit.delete(startLineOffset + e.getRange().getStart().getCharacter() + 1, endLineOffset + e.getRange().getEnd().getCharacter() + 1);
+									}
+									if (!e.getNewText().isEmpty()) {
+										additionalEdit.insert(startLineOffset + e.getRange().getStart().getCharacter() + 1
+												, e.getNewText());
+									}
+								} catch (BadLocationException ex) {
+									log.error("Failed to compute edit", ex);
+								}
+							}
+				}
+			} catch (Exception e) {
+				log.error("Failed to fetch edits for Java LS", e);
+			}
+			log.info("ADDITIONAL EDIT %d".formatted(System.currentTimeMillis() - start));
+			return additionalEdit;
+		}));
 	}
 
 	@Override

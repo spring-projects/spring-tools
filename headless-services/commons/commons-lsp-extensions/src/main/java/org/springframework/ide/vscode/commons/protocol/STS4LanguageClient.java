@@ -15,6 +15,8 @@ import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.MarkupContent;
+import org.eclipse.lsp4j.ResourceOperation;
+import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
@@ -22,6 +24,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.springframework.ide.vscode.commons.protocol.java.ClasspathListenerParams;
 import org.springframework.ide.vscode.commons.protocol.java.Gav;
+import org.springframework.ide.vscode.commons.protocol.java.InjectBeanParams;
 import org.springframework.ide.vscode.commons.protocol.java.JavaCodeCompleteData;
 import org.springframework.ide.vscode.commons.protocol.java.JavaCodeCompleteParams;
 import org.springframework.ide.vscode.commons.protocol.java.JavaDataParams;
@@ -100,5 +103,8 @@ public interface STS4LanguageClient extends LanguageClient, SpringIndexLanguageC
 	
 	@JsonRequest("sts/project/gav")
 	CompletableFuture<List<Gav>> projectGAV(ProjectGavParams params);
+	
+	@JsonRequest("sts/java/injectBean")
+	CompletableFuture<TextDocumentEdit> injectBean(InjectBeanParams params);
 	
 }

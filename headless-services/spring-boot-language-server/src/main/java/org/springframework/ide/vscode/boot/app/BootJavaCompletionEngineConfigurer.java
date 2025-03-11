@@ -117,7 +117,8 @@ public class BootJavaCompletionEngineConfigurer {
 			CompilationUnitCache cuCache,
 			SpringMetamodelIndex springIndex,
 			RewriteRefactorings rewriteRefactorings,
-			BootJavaConfig config) {
+			BootJavaConfig config,
+			SimpleLanguageServer server) {
 		
 		SpringPropertyIndexProvider indexProvider = params.indexProvider;
 		JavaProjectFinder javaProjectFinder = params.projectFinder;
@@ -172,7 +173,7 @@ public class BootJavaCompletionEngineConfigurer {
 		providers.put(Annotations.SCHEDULED, new AnnotationAttributeCompletionProcessor(javaProjectFinder, Map.of(
 				"cron", new CronExpressionCompletionProvider())));
 
-		providers.put(Annotations.BEAN, new BeanCompletionProvider(javaProjectFinder, springIndex, rewriteRefactorings, config, cuCache));
+		providers.put(Annotations.BEAN, new BeanCompletionProvider(javaProjectFinder, springIndex, rewriteRefactorings, config, cuCache, server));
 
 		return new BootJavaCompletionEngine(cuCache, providers, snippetManager);
 	}

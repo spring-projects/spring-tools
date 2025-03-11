@@ -59,6 +59,7 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Display;
@@ -77,6 +78,7 @@ import org.springframework.ide.vscode.commons.protocol.LiveProcessSummary;
 import org.springframework.ide.vscode.commons.protocol.STS4LanguageClient;
 import org.springframework.ide.vscode.commons.protocol.java.ClasspathListenerParams;
 import org.springframework.ide.vscode.commons.protocol.java.Gav;
+import org.springframework.ide.vscode.commons.protocol.java.InjectBeanParams;
 import org.springframework.ide.vscode.commons.protocol.java.JavaCodeCompleteData;
 import org.springframework.ide.vscode.commons.protocol.java.JavaCodeCompleteParams;
 import org.springframework.ide.vscode.commons.protocol.java.JavaDataParams;
@@ -644,6 +646,13 @@ public class STS4LanguageClientImpl extends LanguageClientImpl implements STS4La
 	@Override
 	public CompletableFuture<List<Gav>> projectGAV(ProjectGavParams params) {
 		return BuildInfo.projectGAV(params, executor, Logger.forEclipsePlugin(LanguageServerCommonsActivator::getInstance));
+	}
+
+	@Override
+	public CompletableFuture<TextDocumentEdit> injectBean(InjectBeanParams params) {
+		return CompletableFuture
+				.supplyAsync(() -> new InjectBean(Logger.forEclipsePlugin(LanguageServerCommonsActivator::getInstance))
+						.computeEdits(params.docUri(), params.type(), params.name()));
 	}
 
 }

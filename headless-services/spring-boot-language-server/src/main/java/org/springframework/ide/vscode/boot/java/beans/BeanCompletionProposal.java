@@ -315,7 +315,8 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 			long start = System.currentTimeMillis();
 			DocumentEdits additionalEdit = new DocumentEdits(doc, false);
 			try {
-				TextDocumentEdit beanInjectEdits = server.getClient().injectBean(new InjectBeanParams(doc.getUri(), beanType, fieldName)).get();
+				TextDocumentEdit beanInjectEdits = server.getClient().injectBean(new InjectBeanParams(doc.getUri(),
+						JavaType.ShallowClass.build(className).getClassName(), beanType, fieldName)).get();
 				if (beanInjectEdits != null) {
 							for (org.eclipse.lsp4j.TextEdit e : beanInjectEdits.getEdits()) {
 								try {

@@ -652,7 +652,7 @@ public class STS4LanguageClientImpl extends LanguageClientImpl implements STS4La
 	public CompletableFuture<TextDocumentEdit> injectBean(InjectBeanParams params) {
 		return CompletableFuture
 				.supplyAsync(() -> new InjectBean(Logger.forEclipsePlugin(LanguageServerCommonsActivator::getInstance))
-						.computeEdits(params.docUri(), params.type(), params.name()));
+						.computeEdits(params.docUri(), params.typeDeclarationName(), params.type(), params.name()));
 	}
 
 }

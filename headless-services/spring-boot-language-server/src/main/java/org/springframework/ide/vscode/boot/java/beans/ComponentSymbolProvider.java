@@ -44,6 +44,8 @@ import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexer;
 import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ReconcileUtils;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
@@ -51,6 +53,7 @@ import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.DefaultSymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
+import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContainerElement;
 import org.springframework.ide.vscode.commons.protocol.spring.BeanRegistrarElement;
@@ -352,10 +355,24 @@ public class ComponentSymbolProvider implements SymbolProvider {
 			indexEventListenerInterfaceImplementation(null, typeDeclaration, context, doc);
 			indexBeanRegistrarImplementation(null, typeDeclaration, context, doc);
 			indexBeanMethods(null, typeDeclaration, null, null, context, doc);
+			indexAotProcessors(typeDeclaration, context);
 		}
 		
 	}
 	
+	private void indexAotProcessors(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
+		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
+		if (typeBinding == null) return;
+		
+		if (ReconcileUtils.implementsAnyType(NotRegisteredBeansReconciler.AOT_BEANS, typeBinding)) {
+			String type = typeBinding.getQualifiedName();
+			String docUri = context.getDocURI();
+			
+			AotProcessorElement aotProcessorElement = new AotProcessorElement(type, docUri);
+			context.getBeans().add(new CachedBean(context.getDocURI(), aotProcessorElement));
+		}
+	}
+
 	private void indexEventListenerInterfaceImplementation(Bean bean, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
 		try {
 			ITypeBinding typeBinding = typeDeclaration.resolveBinding();

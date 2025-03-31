@@ -120,6 +120,18 @@ public class SpringMetamodelIndex {
 			return new Bean[0];
 		}
 	}
+	
+	public Bean getParentBean(Bean bean) {
+		Bean[] beansOfDocument = getBeansOfDocument(bean.getLocation().getUri());
+		
+		for (Bean candidateBean : beansOfDocument) {
+			if (candidateBean.getChildren().contains(bean)) {
+				return candidateBean;
+			}
+		}
+		
+		return null;
+	}
 
 	public Bean[] getMatchingBeans(String projectName, String matchType) {
 		ProjectElement project = this.projectRootElements.get(projectName);

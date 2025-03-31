@@ -36,10 +36,13 @@ import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRe
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
+import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
 import org.springframework.ide.vscode.commons.rewrite.java.DefineMethod;
 import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
+import org.springframework.ide.vscode.commons.util.UriUtil;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -47,7 +50,7 @@ import com.google.common.collect.ImmutableSet;
 
 public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 
-	private static final List<String> AOT_BEANS = List.of(
+	public static final List<String> AOT_BEANS = List.of(
 			"org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor",
 			"org.springframework.beans.factory.aot.BeanRegistrationAotProcessor"
 	);
@@ -82,6 +85,8 @@ public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 					ITypeBinding type = node.resolveBinding();
 					if (type != null && ReconcileUtils.implementsAnyType(AOT_BEANS, type)) {
 						
+						// // reconcile AOT Proceesor itself
+						
 						if (!context.isIndexComplete()) {
 							throw new RequiredCompleteIndexException();
 						}
@@ -91,6 +96,41 @@ public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 						
 						if (registeredBeans == null || registeredBeans.length == 0) {
 							createProblemAndQuickFixes(project, context.getProblemCollector(), node, type);
+						}
+						else {
+							// record dependency, if bean is not coming from the current doc (defined somewhere else)
+							String uri = docUri.toASCIIString();
+							for (Bean bean : registeredBeans) {
+								String beanDocUri = bean.getLocation().getUri();
+								if (!beanDocUri.equals(uri)) {
+									Bean parentBean = springIndex.getParentBean(bean);
+									if (parentBean != null) {
+										context.addDependency(parentBean.getType());
+									}
+								}
+							}
+						}
+					}
+					else {
+						
+						//
+						// check if new beans have been defined that refer to any AOP processor element
+						//
+						
+						List<AotProcessorElement> aotProcessors = springIndex.getNodesOfType(AotProcessorElement.class);
+						if (aotProcessors != null && aotProcessors.size() > 0) {
+
+							List<SpringIndexElement> createdIndexElements = context.getCreatedIndexElements();
+							List<Bean> createdBeanElements = SpringMetamodelIndex.getNodesOfType(Bean.class, createdIndexElements);
+							Set<String> beanTypes = createdBeanElements.stream()
+									.filter(bean -> context.getDocURI().equals(bean.getLocation().getUri()))
+									.map(bean -> bean.getType())
+									.collect(Collectors.toSet());
+
+							aotProcessors.stream()
+									.filter(aotProcessor -> beanTypes.contains(aotProcessor.getType()))
+									.map(aotProcessor -> UriUtil.toFileString(aotProcessor.getDocUri()))
+									.forEach(file -> context.markForAffetcedFilesIndexing(file));
 						}
 					}
 				}

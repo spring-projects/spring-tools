@@ -148,34 +148,6 @@ public class ReconcileUtils {
 		return typeUsed.get();
 	}
 	
-	public static boolean implementsType(String fqName, ITypeBinding type) {
-		if (fqName.equals(type.getQualifiedName())) {
-			return true;
-		} else {
-			for (ITypeBinding t : type.getInterfaces()) {
-				if (implementsType(fqName, t)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	public static boolean implementsAnyType(Collection<String> fqNames, ITypeBinding type) {
-		if (fqNames.contains(type.getQualifiedName())) {
-			return true;
-		} else {
-			for (ITypeBinding t : type.getInterfaces()) {
-				if (implementsAnyType(fqNames, t)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-
-	
 	public static String getSimpleName(String fqName) {
 		int idx = fqName.lastIndexOf('.');
 		if (idx >= 0 && idx < fqName.length() - 1) {

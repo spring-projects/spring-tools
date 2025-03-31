@@ -45,7 +45,6 @@ import org.springframework.ide.vscode.boot.java.events.EventListenerIndexer;
 import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.ReconcileUtils;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
@@ -364,7 +363,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
 		if (typeBinding == null) return;
 		
-		if (ReconcileUtils.implementsAnyType(NotRegisteredBeansReconciler.AOT_BEANS, typeBinding)) {
+		if (ASTUtils.isAnyTypeInHierarchy(typeBinding, NotRegisteredBeansReconciler.AOT_BEANS)) {
 			String type = typeBinding.getQualifiedName();
 			String docUri = context.getDocURI();
 			

@@ -10,13 +10,18 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.utils;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -394,36 +399,14 @@ public class ASTUtils {
 	}
 	
 	public static ITypeBinding findInTypeHierarchy(ITypeBinding resolvedType, Set<String> typesToCheck) {
-		ITypeBinding[] interfaces = resolvedType.getInterfaces();
-
-		for (ITypeBinding resolvedInterface : interfaces) {
-			String simplifiedType = null;
-
-			if (resolvedInterface.isParameterizedType()) {
-				simplifiedType = resolvedInterface.getBinaryName();
-			}
-			else {
-				simplifiedType = resolvedInterface.getQualifiedName();
-			}
-
-			if (typesToCheck.contains(simplifiedType)) {
-				return resolvedInterface;
-			}
-			else {
-				ITypeBinding result = findInTypeHierarchy(resolvedInterface, typesToCheck);
-				if (result != null) {
-					return result;
-				}
+		for (Iterator<ITypeBinding> itr = getSuperTypesIterator(resolvedType); itr.hasNext();) {
+			ITypeBinding b = itr.next();
+			String fqn = b.isParameterizedType() ? b.getBinaryName() : b.getQualifiedName();
+			if (typesToCheck.contains(fqn)) {
+				return b;
 			}
 		}
-
-		ITypeBinding superclass = resolvedType.getSuperclass();
-		if (superclass != null) {
-			return findInTypeHierarchy(superclass, typesToCheck);
-		}
-		else {
-			return null;
-		}
+		return null;
 	}
 	
 	public static Optional<DocumentEdits> getImportsEdit(CompilationUnit cu, Collection<String> imprts, IDocument doc) {
@@ -463,40 +446,75 @@ public class ASTUtils {
 //	}
 //
 	public static void findSupertypes(ITypeBinding binding, Set<String> supertypesCollector) {
-		
-		// interfaces
-		ITypeBinding[] interfaces = binding.getInterfaces();
-		for (ITypeBinding resolvedInterface : interfaces) {
-			String simplifiedType = null;
-			if (resolvedInterface.isParameterizedType()) {
-				simplifiedType = resolvedInterface.getBinaryName();
-			}
-			else {
-				simplifiedType = resolvedInterface.getQualifiedName();
-			}
-			
-			if (simplifiedType != null) {
-				supertypesCollector.add(simplifiedType);
-				findSupertypes(resolvedInterface, supertypesCollector);
+		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext();) {
+			supertypesCollector.add(itr.next());
+		}
+	}
+	
+	public static boolean isAnyTypeInHierarchy(ITypeBinding binding, Collection<String> typeFqns) {
+		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext();) {
+			String fqn = itr.next();
+			if (typeFqns.contains(fqn)) {
+				return true;
 			}
 		}
-		
-		// superclasses
-		ITypeBinding superclass = binding.getSuperclass();
-		if (superclass != null) {
-			String simplifiedType = null;
-			if (superclass.isParameterizedType()) {
-				simplifiedType = superclass.getBinaryName();
+		return false;
+	}
+	
+	public static boolean areAllTypesInHierarchy(ITypeBinding binding, Collection<String> typeFqns) {
+		HashSet<String> notFound = new HashSet<>(typeFqns);
+		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext() && !notFound.isEmpty();) {
+			notFound.remove(itr.next());
+		}
+		return notFound.isEmpty();
+	}
+	
+	public static Iterator<ITypeBinding> getSuperTypesIterator(ITypeBinding binding) {
+		final Queue<ITypeBinding> q = new ArrayDeque<>(10);
+		q.add(binding);
+		return new Iterator<ITypeBinding>() {
+			
+			@Override
+			public boolean hasNext() {
+				return !q.isEmpty();
 			}
-			else {
-				simplifiedType = superclass.getQualifiedName();
+
+			@Override
+			public ITypeBinding next() {
+				ITypeBinding t = q.poll();
+				if (t == null) {
+					throw new NoSuchElementException();
+				}
+				for (ITypeBinding b : t.getInterfaces()) {
+					if (b != null) {
+						q.add(b);
+					}
+				}
+				if (t.getSuperclass() != null) {
+					q.add(t.getSuperclass());
+				}
+				return t;
 			}
 			
-			if (simplifiedType != null) {
-				supertypesCollector.add(simplifiedType);
-				findSupertypes(superclass, supertypesCollector);
+		};
+	}
+	
+	public static Iterator<String> getSuperTypesFqNamesIterator(ITypeBinding binding) {
+		Iterator<ITypeBinding> itr = getSuperTypesIterator(binding);
+		return new Iterator<String>() {
+
+			@Override
+			public boolean hasNext() {
+				return itr.hasNext();
 			}
-		}
+
+			@Override
+			public String next() {
+				ITypeBinding b = itr.next();
+				return b.isParameterizedType() ? b.getBinaryName() : b.getQualifiedName();
+			}
+			
+		};
 	}
 	
 	public static InjectionPoint[] findInjectionPoints(MethodDeclaration method, TextDocument doc) throws BadLocationException {

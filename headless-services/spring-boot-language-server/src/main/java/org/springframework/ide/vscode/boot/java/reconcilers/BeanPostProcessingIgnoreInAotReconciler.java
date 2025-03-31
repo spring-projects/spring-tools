@@ -14,6 +14,7 @@ import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.spri
 
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -23,6 +24,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.SpringAotJavaProblemType;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
@@ -108,7 +110,7 @@ public class BeanPostProcessingIgnoreInAotReconciler implements JdtAstReconciler
 	}
 	
 	private static boolean isApplicable(ITypeBinding type) {
-		return ReconcileUtils.implementsType(RUNTIME_BEAN_POST_PROCESSOR, type) && ReconcileUtils.implementsType(COMPILE_BEAN_POST_PROCESSOR, type);
+		return ASTUtils.areAllTypesInHierarchy(type, Set.of(RUNTIME_BEAN_POST_PROCESSOR, COMPILE_BEAN_POST_PROCESSOR));
 	}
 
 }

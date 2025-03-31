@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.SpringAotJavaProblemType;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
@@ -83,7 +84,7 @@ public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 				if (!node.isInterface() && !Modifier.isAbstract(node.getModifiers())) {
 
 					ITypeBinding type = node.resolveBinding();
-					if (type != null && ReconcileUtils.implementsAnyType(AOT_BEANS, type)) {
+					if (type != null && ASTUtils.isAnyTypeInHierarchy(type, AOT_BEANS)) {
 						
 						// // reconcile AOT Proceesor itself
 						

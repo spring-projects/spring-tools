@@ -396,7 +396,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			IProblemCollector problemCollector = problemCollectorCreator.apply(docRef, diagnosticsAggregator);
 
 			SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-					lastModified, docRef, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, true, result);
+					lastModified, docRef, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
 
 			scanAST(context, true);
 

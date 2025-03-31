@@ -251,7 +251,10 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		springIndexerJava = new SpringIndexerJava(handler, specificProviders, this.cache, projectFinder(), server.getProgressService(), jdtReconciler, problemCollectorFactory, config.getJavaValidationSettingsJson(), cuCache);
 		factoriesIndexer = new SpringFactoriesIndexer(handler, cache);
 
-		this.indexers = new SpringIndexer[] {springIndexerJava, factoriesIndexer};
+		this.indexers = new SpringIndexer[] {
+				factoriesIndexer, // factories indexder should be the first, so that java indexers and reconcilers can rely on those indexed elements
+				springIndexerJava
+		};
 
 		getWorkspaceService().onDidChangeWorkspaceFolders(evt -> {
 			log.debug("workspace roots have changed event arrived - added: " + evt.getEvent().getAdded() + " - removed: " + evt.getEvent().getRemoved());

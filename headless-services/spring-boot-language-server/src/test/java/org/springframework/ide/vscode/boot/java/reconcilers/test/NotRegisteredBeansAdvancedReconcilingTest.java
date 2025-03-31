@@ -118,7 +118,6 @@ public class NotRegisteredBeansAdvancedReconcilingTest {
 	}
     
 	@Test
-	@Disabled // this case needs work - (1) factories not taken into account at all, (2) requires complete index doesn't take other indexers into account yet
 	void testBasicValidationOfAotProcessorRegisteredViaFactoriesFile() throws Exception {
 		String docUri = directory.toPath().resolve("src/main/java/org/test/aot/RegisteredViaFactoriesBeanRegistrationAotProcessor.java").toUri().toString();
 

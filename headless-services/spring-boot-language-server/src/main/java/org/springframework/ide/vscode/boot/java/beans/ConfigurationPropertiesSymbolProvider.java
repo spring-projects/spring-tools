@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,6 +42,7 @@ import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
+import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
@@ -84,7 +86,7 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 		if (!isComponentAnnotated) {
 			String beanName = BeanUtils.getBeanNameFromType(type.getName().getFullyQualifiedName());
 
-			Location location = new Location(doc.getUri(), doc.toRange(type.getStartPosition(), type.getLength()));
+			Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
 			WorkspaceSymbol symbol = new WorkspaceSymbol(
 					ComponentSymbolProvider.beanLabel("+", annotationTypeName, metaAnnotationNames, beanName, typeBinding.getName()), SymbolKind.Interface,
@@ -107,7 +109,7 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 					.toArray(AnnotationMetadata[]::new);
 		
 			Bean beanDefinition = new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotations, isConfiguration, symbol.getName());
-		
+			
 			indexConfigurationProperties(beanDefinition, type, context, doc);
 
 			context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
@@ -116,15 +118,38 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 	}
 
 	public static void indexConfigurationProperties(Bean beanDefinition, AbstractTypeDeclaration abstractType, SpringIndexerJavaContext context, TextDocument doc) {
+		Optional<String> prefixValue = Arrays.stream(beanDefinition.getAnnotations())
+			.filter(annotation -> Annotations.CONFIGURATION_PROPERTIES.equals(annotation.getAnnotationType()))
+			.flatMap(annotation -> Arrays.stream(getPrefix(annotation)))
+			.map(attribute -> attribute.getName())
+			.findFirst();
+		
+		String prefix = "";
+		if (prefixValue.isPresent()) {
+			prefix = prefixValue.get() + ".";
+		}
+		
 		if (abstractType instanceof TypeDeclaration type) {
-			indexConfigurationPropertiesForType(beanDefinition, type, context, doc);
+			indexConfigurationPropertiesForType(beanDefinition, type, context, doc, prefix);
 		}
 		else if (abstractType instanceof RecordDeclaration record) {
-			indexConfigurationPropertiesForRecord(beanDefinition, record, context, doc);
+			indexConfigurationPropertiesForRecord(beanDefinition, record, context, doc, prefix);
+		}
+	}
+
+	private static AnnotationAttributeValue[] getPrefix(AnnotationMetadata annotation) {
+		if (annotation.getAttributes().containsKey("prefix")) {
+			return annotation.getAttributes().get("prefix");
+		}
+		else if (annotation.getAttributes().containsKey("value")) {
+			return annotation.getAttributes().get("value");
+		}
+		else {
+			return new AnnotationAttributeValue[0];
 		}
 	}
 	
-	public static void indexConfigurationPropertiesForType(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
+	public static void indexConfigurationPropertiesForType(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc, String prefix) {
 		
 		FieldDeclaration[] fields = type.getFields();
 		if (fields != null) {
@@ -143,7 +168,7 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 
 								DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, field);
 								Range range = doc.toRange(nodeRegion);
-								ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range);
+								ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range);
 								
 								beanDefinition.addChild(configPropElement);
 							}
@@ -157,7 +182,7 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 		
 	}
 	
-	public static void indexConfigurationPropertiesForRecord(Bean beanDefinition, RecordDeclaration record, SpringIndexerJavaContext context, TextDocument doc) {
+	public static void indexConfigurationPropertiesForRecord(Bean beanDefinition, RecordDeclaration record, SpringIndexerJavaContext context, TextDocument doc, String prefix) {
 		
 		@SuppressWarnings("unchecked")
 		List<SingleVariableDeclaration> fields = record.recordComponents();
@@ -173,7 +198,7 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 
 							DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, field);
 							Range range = doc.toRange(nodeRegion);
-							ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range);
+							ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range);
 								
 							beanDefinition.addChild(configPropElement);
 						}

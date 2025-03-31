@@ -80,7 +80,7 @@ public class SpringIndexerConfigurationPropertiesTest {
         assertEquals(1, children.size());
         
         ConfigPropertyIndexElement configPropElement = (ConfigPropertyIndexElement) children.get(0);
-        assertEquals("simpleConfigProp", configPropElement.getName());
+        assertEquals("com.example.config.prefix.simple.simpleConfigProp", configPropElement.getName());
         assertEquals("java.lang.String", configPropElement.getType());
     }
     
@@ -98,7 +98,7 @@ public class SpringIndexerConfigurationPropertiesTest {
         assertEquals(1, children.size());
         
         ConfigPropertyIndexElement configPropElement = (ConfigPropertyIndexElement) children.get(0);
-        assertEquals("simpleConfigProp", configPropElement.getName());
+        assertEquals("com.example.config.prefix.simple2.simpleConfigProp", configPropElement.getName());
         assertEquals("java.lang.String", configPropElement.getType());
     }
 
@@ -116,11 +116,11 @@ public class SpringIndexerConfigurationPropertiesTest {
         assertEquals(2, children.size());
         
         ConfigPropertyIndexElement configPropElement1 = (ConfigPropertyIndexElement) children.get(0);
-        assertEquals("name", configPropElement1.getName());
+        assertEquals("com.example.config.record.prefix.name", configPropElement1.getName());
         assertEquals("java.lang.String", configPropElement1.getType());
 
         ConfigPropertyIndexElement configPropElement2 = (ConfigPropertyIndexElement) children.get(1);
-        assertEquals("duration", configPropElement2.getName());
+        assertEquals("com.example.config.record.prefix.duration", configPropElement2.getName());
         assertEquals("int", configPropElement2.getType());
     }
     
@@ -138,11 +138,11 @@ public class SpringIndexerConfigurationPropertiesTest {
         assertEquals(2, children.size());
         
         ConfigPropertyIndexElement configPropElement1 = (ConfigPropertyIndexElement) children.get(0);
-        assertEquals("name", configPropElement1.getName());
+        assertEquals("com.example.config.record.prefix2.name", configPropElement1.getName());
         assertEquals("java.lang.String", configPropElement1.getType());
 
         ConfigPropertyIndexElement configPropElement2 = (ConfigPropertyIndexElement) children.get(1);
-        assertEquals("duration", configPropElement2.getName());
+        assertEquals("com.example.config.record.prefix2.duration", configPropElement2.getName());
         assertEquals("int", configPropElement2.getType());
 
     }

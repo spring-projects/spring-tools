@@ -2,7 +2,7 @@ package com.example.configproperties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "com.example.config.prefix.simple")
+@ConfigurationProperties("com.example.config.prefix.simple")
 public class ConfigurationPropertiesExample {
 	
 	private String simpleConfigProp = "default config value";

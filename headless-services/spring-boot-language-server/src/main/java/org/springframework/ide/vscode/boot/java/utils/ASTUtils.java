@@ -452,6 +452,9 @@ public class ASTUtils {
 	}
 	
 	public static boolean isAnyTypeInHierarchy(ITypeBinding binding, Collection<String> typeFqns) {
+		if (typeFqns.contains(binding.isParameterizedType() ? binding.getBinaryName() : binding.getQualifiedName())) {
+			return true;
+		}
 		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext();) {
 			String fqn = itr.next();
 			if (typeFqns.contains(fqn)) {
@@ -463,15 +466,27 @@ public class ASTUtils {
 	
 	public static boolean areAllTypesInHierarchy(ITypeBinding binding, Collection<String> typeFqns) {
 		HashSet<String> notFound = new HashSet<>(typeFqns);
+		notFound.remove(binding.isParameterizedType() ? binding.getBinaryName() : binding.getQualifiedName());
 		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext() && !notFound.isEmpty();) {
 			notFound.remove(itr.next());
 		}
 		return notFound.isEmpty();
 	}
 	
+	private static void enqueueSuperTypes(Queue<ITypeBinding> q, ITypeBinding t) {
+		for (ITypeBinding b : t.getInterfaces()) {
+			if (b != null) {
+				q.add(b);
+			}
+		}
+		if (t.getSuperclass() != null) {
+			q.add(t.getSuperclass());
+		}
+	}
+	
 	public static Iterator<ITypeBinding> getSuperTypesIterator(ITypeBinding binding) {
 		final Queue<ITypeBinding> q = new ArrayDeque<>(10);
-		q.add(binding);
+		enqueueSuperTypes(q, binding);
 		return new Iterator<ITypeBinding>() {
 			
 			@Override
@@ -485,14 +500,7 @@ public class ASTUtils {
 				if (t == null) {
 					throw new NoSuchElementException();
 				}
-				for (ITypeBinding b : t.getInterfaces()) {
-					if (b != null) {
-						q.add(b);
-					}
-				}
-				if (t.getSuperclass() != null) {
-					q.add(t.getSuperclass());
-				}
+				enqueueSuperTypes(q, t);
 				return t;
 			}
 			

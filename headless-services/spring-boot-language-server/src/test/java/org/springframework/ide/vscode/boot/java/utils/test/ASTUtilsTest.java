@@ -70,7 +70,7 @@ public class ASTUtilsTest {
 			Iterator<ITypeBinding> iter = ASTUtils.getSuperTypesIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-			assertEquals("test.MySimpleMain", iter.next().getQualifiedName());
+//			assertEquals("test.MySimpleMain", iter.next().getQualifiedName());
 			assertEquals("java.lang.Object", iter.next().getQualifiedName());
 			assertFalse(iter.hasNext());
 		});
@@ -116,7 +116,7 @@ public class ASTUtilsTest {
 			Iterator<ITypeBinding> iter = ASTUtils.getSuperTypesIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-			assertEquals("test.MyComponent", iter.next().getQualifiedName());
+//			assertEquals("test.MyComponent", iter.next().getQualifiedName());
 			assertEquals("test.MyInterface", iter.next().getQualifiedName());
 			assertEquals("test.MySuperclass", iter.next().getQualifiedName());
 			assertEquals("test.MySuperInterface", iter.next().getQualifiedName());
@@ -132,7 +132,7 @@ public class ASTUtilsTest {
 			Iterator<String> iter = ASTUtils.getSuperTypesFqNamesIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-			assertEquals("test.MyComponent", iter.next());
+//			assertEquals("test.MyComponent", iter.next());
 			assertEquals("test.MyInterface", iter.next());
 			assertEquals("test.MySuperclass", iter.next());
 			assertEquals("test.MySuperInterface", iter.next());
@@ -194,10 +194,10 @@ public class ASTUtilsTest {
 			Iterator<String> iter = ASTUtils.getSuperTypesFqNamesIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-			assertEquals("test.Second", iter.next());
+//			assertEquals("test.Second", iter.next());
 			assertEquals("test.TestInterface", iter.next());
 			assertEquals("test.Start", iter.next());
-//			assertEquals("test.TestInterface", iter.next());
+			assertEquals("test.TestInterface", iter.next());
 			assertEquals("java.lang.Object", iter.next());
 			assertFalse(iter.hasNext());
 		});

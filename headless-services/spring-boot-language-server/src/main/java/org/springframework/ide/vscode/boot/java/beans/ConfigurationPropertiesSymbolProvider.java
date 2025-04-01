@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.java.beans;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -96,8 +95,7 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 
 			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
 
-			Set<String> supertypes = new HashSet<>();
-			ASTUtils.findSupertypes(typeBinding, supertypes);
+			Set<String> supertypes = ASTUtils.findSupertypes(typeBinding);
 
 			Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
 

@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.java.beans;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -113,8 +112,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 
 		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
 		
-		Set<String> supertypes = new HashSet<>();
-		ASTUtils.findSupertypes(beanType, supertypes);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
 		
 		Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
 		
@@ -176,8 +174,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 
 		InjectionPoint[] injectionPoints = DefaultValues.EMPTY_INJECTION_POINTS;
 		
-		Set<String> supertypes = new HashSet<>();
-		ASTUtils.findSupertypes(beanType, supertypes);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
 		
 		Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(record);
 		
@@ -321,8 +318,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 									Location location;
 									location = new Location(doc.getUri(), nodeRegion.asRange());
 
-									Set<String> typesFromhierarchy = new HashSet<>();
-									ASTUtils.findSupertypes(eventTypeBinding, typesFromhierarchy);
+									Set<String> typesFromhierarchy = ASTUtils.findSupertypes(eventTypeBinding);
 
 									EventPublisherIndexElement eventPublisherIndexElement = new EventPublisherIndexElement(eventTypeBinding.getQualifiedName(), location, typesFromhierarchy);
 									component.addChild(eventPublisherIndexElement);
@@ -593,8 +589,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 		
 		InjectionPoint[] injectionPoints = DefaultValues.EMPTY_INJECTION_POINTS;
-		Set<String> supertypes = new HashSet<>();
-		ASTUtils.findSupertypes(beanTypeBinding, supertypes);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanTypeBinding);
 		
 		AnnotationMetadata[] annotations = DefaultValues.EMPTY_ANNOTATIONS;
 		

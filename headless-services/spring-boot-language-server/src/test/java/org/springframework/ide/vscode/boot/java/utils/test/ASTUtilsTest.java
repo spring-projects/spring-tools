@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -67,10 +66,10 @@ public class ASTUtilsTest {
 	@Test
 	void testTypeHierarchyIteratorSimpleClass() throws Exception {
 		runTestsAgainstTypeDeclaration(mySimpleMain, (type) -> {
-			Iterator<ITypeBinding> iter = ASTUtils.getSuperTypesIterator(type.resolveBinding());
+			Iterator<ITypeBinding> iter = ASTUtils.getHierarchyTypesBreadthFirstIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-//			assertEquals("test.MySimpleMain", iter.next().getQualifiedName());
+			assertEquals("test.MySimpleMain", iter.next().getQualifiedName());
 			assertEquals("java.lang.Object", iter.next().getQualifiedName());
 			assertFalse(iter.hasNext());
 		});
@@ -79,8 +78,7 @@ public class ASTUtilsTest {
 	@Test
 	void testSupertypesForSimpleClass() throws Exception {
 		runTestsAgainstTypeDeclaration(mySimpleMain, (type) -> {
-			Set<String> supertypes = new HashSet<>();
-			ASTUtils.findSupertypes(type.resolveBinding(), supertypes);
+			Set<String> supertypes = ASTUtils.findSupertypes(type.resolveBinding());
 
 			assertEquals(1, supertypes.size());
 			assertTrue(supertypes.contains("java.lang.Object"));
@@ -113,10 +111,10 @@ public class ASTUtilsTest {
 	@Test
 	void testTypeHierarchyIteratorWithSuperclassesAndInterfaces() throws Exception {
 		runTestsAgainstTypeDeclaration(myComponent, (type) -> {
-			Iterator<ITypeBinding> iter = ASTUtils.getSuperTypesIterator(type.resolveBinding());
+			Iterator<ITypeBinding> iter = ASTUtils.getHierarchyTypesBreadthFirstIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-//			assertEquals("test.MyComponent", iter.next().getQualifiedName());
+			assertEquals("test.MyComponent", iter.next().getQualifiedName());
 			assertEquals("test.MyInterface", iter.next().getQualifiedName());
 			assertEquals("test.MySuperclass", iter.next().getQualifiedName());
 			assertEquals("test.MySuperInterface", iter.next().getQualifiedName());
@@ -129,10 +127,10 @@ public class ASTUtilsTest {
 	@Test
 	void testTypeHierarchyIteratorWithFullyQualifiedTypeNames() throws Exception {
 		runTestsAgainstTypeDeclaration(myComponent, (type) -> {
-			Iterator<String> iter = ASTUtils.getSuperTypesFqNamesIterator(type.resolveBinding());
+			Iterator<String> iter = ASTUtils.getHierarchyTypesFqNamesBreadthFirstIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-//			assertEquals("test.MyComponent", iter.next());
+			assertEquals("test.MyComponent", iter.next());
 			assertEquals("test.MyInterface", iter.next());
 			assertEquals("test.MySuperclass", iter.next());
 			assertEquals("test.MySuperInterface", iter.next());
@@ -191,10 +189,10 @@ public class ASTUtilsTest {
 		""");
 		
 		runTestsAgainstTypeDeclaration(second, (type) -> {
-			Iterator<String> iter = ASTUtils.getSuperTypesFqNamesIterator(type.resolveBinding());
+			Iterator<String> iter = ASTUtils.getHierarchyTypesFqNamesBreadthFirstIterator(type.resolveBinding());
 			assertNotNull(iter);
 
-//			assertEquals("test.Second", iter.next());
+			assertEquals("test.Second", iter.next());
 			assertEquals("test.TestInterface", iter.next());
 			assertEquals("test.Start", iter.next());
 			assertEquals("test.TestInterface", iter.next());

@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.beans;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -78,8 +77,7 @@ public class BeansIndexer {
 
 				InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(method, doc);
 				
-				Set<String> supertypes = new HashSet<>();
-				ASTUtils.findSupertypes(beanType, supertypes);
+				Set<String> supertypes = ASTUtils.findSupertypes(beanType);
 				
 				Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(method);
 				AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, doc);

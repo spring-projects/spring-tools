@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.beans;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -101,8 +100,7 @@ public class BeansSymbolProvider implements SymbolProvider {
 				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 				
 				ITypeBinding concreteBeanType = typeDeclaration.resolveBinding();
-				Set<String> supertypes = new HashSet<>();
-				ASTUtils.findSupertypes(concreteBeanType, supertypes);
+				Set<String> supertypes = ASTUtils.findSupertypes(concreteBeanType);
 				
 				Collection<Annotation> annotationsOnTypeDeclaration = ASTUtils.getAnnotations(typeDeclaration);
 				AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnTypeDeclaration, doc);

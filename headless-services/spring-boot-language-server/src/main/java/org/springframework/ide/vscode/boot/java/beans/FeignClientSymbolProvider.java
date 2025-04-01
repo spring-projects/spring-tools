@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.java.beans;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -82,8 +81,7 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 		
 		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
 		
-		Set<String> supertypes = new HashSet<>();
-		ASTUtils.findSupertypes(beanType, supertypes);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
 		
 		Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
 		

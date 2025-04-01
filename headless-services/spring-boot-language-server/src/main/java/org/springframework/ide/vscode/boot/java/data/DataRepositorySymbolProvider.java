@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.java.data;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -81,8 +80,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				
 				ITypeBinding concreteBeanTypeBindung = typeDeclaration.resolveBinding();
 
-				Set<String> supertypes = new HashSet<>();
-				ASTUtils.findSupertypes(concreteBeanTypeBindung, supertypes);
+				Set<String> supertypes = ASTUtils.findSupertypes(concreteBeanTypeBindung);
 
 				String concreteRepoType = concreteBeanTypeBindung.getQualifiedName();
 				

@@ -399,7 +399,7 @@ public class ASTUtils {
 	}
 	
 	public static ITypeBinding findInTypeHierarchy(ITypeBinding resolvedType, Set<String> typesToCheck) {
-		for (Iterator<ITypeBinding> itr = getSuperTypesIterator(resolvedType); itr.hasNext();) {
+		for (Iterator<ITypeBinding> itr = getHierarchyTypesBreadthFirstIterator(resolvedType); itr.hasNext();) {
 			ITypeBinding b = itr.next();
 			String fqn = b.isParameterizedType() ? b.getBinaryName() : b.getQualifiedName();
 			if (typesToCheck.contains(fqn)) {
@@ -445,17 +445,22 @@ public class ASTUtils {
 //		return result;
 //	}
 //
-	public static void findSupertypes(ITypeBinding binding, Set<String> supertypesCollector) {
-		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext();) {
+	/**
+	 * Returns only the super types without the type itself.
+	 * @param binding
+	 * @return
+	 */
+	public static Set<String> findSupertypes(ITypeBinding binding) {
+		Set<String> supertypesCollector = new HashSet<>();
+		for (Iterator<String> itr = getHierarchyTypesFqNamesBreadthFirstIterator(binding); itr.hasNext();) {
 			supertypesCollector.add(itr.next());
 		}
+		supertypesCollector.remove(binding.isParameterizedType() ? binding.getBinaryName() : binding.getQualifiedName());
+		return supertypesCollector;
 	}
 	
 	public static boolean isAnyTypeInHierarchy(ITypeBinding binding, Collection<String> typeFqns) {
-		if (typeFqns.contains(binding.isParameterizedType() ? binding.getBinaryName() : binding.getQualifiedName())) {
-			return true;
-		}
-		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext();) {
+		for (Iterator<String> itr = getHierarchyTypesFqNamesBreadthFirstIterator(binding); itr.hasNext();) {
 			String fqn = itr.next();
 			if (typeFqns.contains(fqn)) {
 				return true;
@@ -466,8 +471,7 @@ public class ASTUtils {
 	
 	public static boolean areAllTypesInHierarchy(ITypeBinding binding, Collection<String> typeFqns) {
 		HashSet<String> notFound = new HashSet<>(typeFqns);
-		notFound.remove(binding.isParameterizedType() ? binding.getBinaryName() : binding.getQualifiedName());
-		for (Iterator<String> itr = getSuperTypesFqNamesIterator(binding); itr.hasNext() && !notFound.isEmpty();) {
+		for (Iterator<String> itr = getHierarchyTypesFqNamesBreadthFirstIterator(binding); itr.hasNext() && !notFound.isEmpty();) {
 			notFound.remove(itr.next());
 		}
 		return notFound.isEmpty();
@@ -484,9 +488,9 @@ public class ASTUtils {
 		}
 	}
 	
-	public static Iterator<ITypeBinding> getSuperTypesIterator(ITypeBinding binding) {
+	public static Iterator<ITypeBinding> getHierarchyTypesBreadthFirstIterator(ITypeBinding binding) {
 		final Queue<ITypeBinding> q = new ArrayDeque<>(10);
-		enqueueSuperTypes(q, binding);
+		q.add(binding);
 		return new Iterator<ITypeBinding>() {
 			
 			@Override
@@ -507,8 +511,8 @@ public class ASTUtils {
 		};
 	}
 	
-	public static Iterator<String> getSuperTypesFqNamesIterator(ITypeBinding binding) {
-		Iterator<ITypeBinding> itr = getSuperTypesIterator(binding);
+	public static Iterator<String> getHierarchyTypesFqNamesBreadthFirstIterator(ITypeBinding binding) {
+		Iterator<ITypeBinding> itr = getHierarchyTypesBreadthFirstIterator(binding);
 		return new Iterator<String>() {
 
 			@Override

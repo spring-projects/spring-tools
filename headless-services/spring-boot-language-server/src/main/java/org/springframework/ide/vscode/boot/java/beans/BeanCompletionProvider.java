@@ -66,7 +66,7 @@ public class BeanCompletionProvider implements CompletionProvider {
 	@Override
 	public void provideCompletions(ASTNode node, int offset, TextDocument doc, Collection<ICompletionProposal> completions) {
 		if (config.isBeanInjectionCompletionEnabled() 
-				&& (node instanceof SimpleName || node instanceof Block || node instanceof FieldAccess)) {
+				&& (node instanceof SimpleName || node instanceof Block || node instanceof FieldAccess || node instanceof ThisExpression)) {
 			try {
 				
 				if (node instanceof SimpleName) {

@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.ThisExpression;
 import org.springframework.ide.vscode.boot.java.snippets.JavaSnippetManager;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionEngine;
@@ -90,7 +91,8 @@ public class BootJavaCompletionEngine implements ICompletionEngine, LanguageSpec
 
 			if (numberOfSpaces > 0) {
 				ASTNode leftNode = NodeFinder.perform(cu, offset - numberOfSpaces, 0);
-				if (leftNode instanceof SimpleName && $MISSING$.equals(((SimpleName)leftNode).getIdentifier())) {
+				if ((leftNode instanceof SimpleName && $MISSING$.equals(((SimpleName)leftNode).getIdentifier()))
+						|| leftNode instanceof ThisExpression) {
 					node = leftNode;
 				}
 			}

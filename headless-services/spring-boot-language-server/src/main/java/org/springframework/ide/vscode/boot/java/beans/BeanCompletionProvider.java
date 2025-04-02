@@ -109,6 +109,8 @@ public class BeanCompletionProvider implements CompletionProvider {
 						fieldNames.add(vd.getName());
 						fieldTypes.add(vd.getType().getQualifiedName());
 					}
+					// Collect bean completions in a set to exclude possible bean symbol duplications
+					Set<BeanCompletionProposal> beanCompletions = new HashSet<>();
 					for (Bean bean : beans) {
 						// If current class is a bean - ignore it
 						if (className.equals(bean.getType())) {
@@ -127,9 +129,10 @@ public class BeanCompletionProvider implements CompletionProvider {
 								bean.getType(), fieldName, className, rewriteRefactorings);
 
 						if (proposal.getScore() > 0) {
-							completions.add(proposal);
+							beanCompletions.add(proposal);
 						}
 					}
+					completions.addAll(beanCompletions);
 				}
 			} catch (Exception e) {
 				log.error("problem while looking for bean completions", e);

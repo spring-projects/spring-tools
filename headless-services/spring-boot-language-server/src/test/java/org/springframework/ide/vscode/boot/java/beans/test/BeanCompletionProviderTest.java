@@ -71,6 +71,7 @@ public class BeanCompletionProviderTest {
 	private Bean bean5;
 	private Bean bean6;
 	private Bean bean7;
+	private Bean bean8;
 	
 	@BeforeEach
 	public void setup() throws Exception {
@@ -97,8 +98,9 @@ public class BeanCompletionProviderTest {
 		bean5 = new Bean("petService", "org.springframework.samples.petclinic.pet.Inner.PetService", new Location(tempJavaDocUri, new Range(new Position(1,1), new Position(1, 20))), null, null, null, false, "symbolLabel");
 		bean6 = new Bean("testBeanCompletionClass", "org.sample.test.TestBeanCompletionClass", new Location(tempJavaDocUri, new Range(new Position(1,1), new Position(1, 20))), null, null, null, false, "symbolLabel");
 		bean7 = new Bean("testIntBean", "java.lang.Integer", new Location(tempJavaDocUri, new Range(new Position(1,1), new Position(1, 20))), null, null, null, false, "symbolLabel");
+		bean8 = new Bean("testIntBean", "java.lang.Integer", new Location(tempJavaDocUri, new Range(new Position(1,1), new Position(1, 20))), null, null, null, false, "symbolLabelDuplicate");
 		
-		springIndex.updateBeans(project.getElementName(), new Bean[] {bean1, bean2, bean3, bean4, bean5, bean6, bean7});
+		springIndex.updateBeans(project.getElementName(), new Bean[] {bean1, bean2, bean3, bean4, bean5, bean6, bean7, bean8});
 	}
 	
 	@AfterEach

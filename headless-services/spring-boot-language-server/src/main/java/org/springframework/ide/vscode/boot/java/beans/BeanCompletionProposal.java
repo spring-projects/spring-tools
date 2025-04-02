@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.beans;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
@@ -200,5 +201,24 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		}
 		return false;
 	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(beanId, beanType);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		BeanCompletionProposal other = (BeanCompletionProposal) obj;
+		return Objects.equals(beanId, other.beanId) && Objects.equals(beanType, other.beanType);
+	}
+	
+	
 
 }

@@ -69,6 +69,15 @@ public class BeanCompletionProvider implements CompletionProvider {
 				&& (node instanceof SimpleName || node instanceof Block || node instanceof FieldAccess || node instanceof ThisExpression)) {
 			try {
 				
+				// Should be inside the block but not inside type declaration block.
+				ASTNode block = node;
+				for (; block != null && !(block instanceof Block); block = block.getParent()) {
+				}
+				// Not inside the block? Or inside the Type Declaration block? Bail out!
+				if (block == null || block instanceof Block && block.getParent() instanceof TypeDeclaration) {
+					return;
+				}
+				
 				if (node instanceof SimpleName) {
 					if (node.getParent() instanceof FieldAccess fa && !(fa.getExpression() instanceof ThisExpression)) {
 						return;

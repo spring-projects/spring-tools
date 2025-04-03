@@ -1220,6 +1220,48 @@ public class TestBeanCompletionClass {
 		assertCompletions(content, new String[0], 0, null);
 	}
 	
+	@Test
+	public void constructorNoCompletions_3() throws Exception {
+		String content = """
+				package org.sample.test;
+				
+				import org.springframework.stereotype.Component;
+				
+				@Component
+				public class Comp1 {
+				
+					ow<*>
+					
+					public Comp1() {
+						
+					}
+				}
+				""";
+		
+		assertCompletions(content, new String[0], 0, null);
+	}
+	
+	@Test
+	public void constructorNoCompletions_4() throws Exception {
+		String content = """
+				package org.sample.test;
+				
+				import org.springframework.stereotype.Component;
+				
+				@Component
+				public class Comp1 {
+				
+					ow<*>
+					
+					Comp1() {
+						
+					}
+				}
+				""";
+		
+		assertCompletions(content, new String[0], 0, null);
+	}
+
 	private void assertCompletions(String completionLine, String[] expectedCompletions, int chosenCompletion, String expectedResult) throws Exception {
 		Editor editor = harness.newEditor(LanguageId.JAVA, completionLine, tempJavaDocUri);
 
@@ -1230,7 +1272,7 @@ public class TestBeanCompletionClass {
         if (expectedCompletions != null) {
 	        String[] completionItems = completions.stream()
 	        	.map(item -> item.getLabel())
-	        	.limit(expectedCompletions.length)
+	        	.limit(expectedCompletions.length == 0 ? Integer.MAX_VALUE : expectedCompletions.length)
 	        	.toArray(size -> new String[size]);
 	        
 	        assertArrayEquals(expectedCompletions, completionItems);

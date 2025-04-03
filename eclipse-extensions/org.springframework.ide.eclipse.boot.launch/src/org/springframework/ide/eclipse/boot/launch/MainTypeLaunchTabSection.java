@@ -164,7 +164,7 @@ public class MainTypeLaunchTabSection extends DelegatingLaunchConfigurationTabSe
 				if (elements == null) {
 					elements = new IJavaElement[]{};
 				}
-				int constraints = IJavaSearchScope.SOURCES;
+				int constraints = IJavaSearchScope.SOURCES | IJavaSearchScope.APPLICATION_LIBRARIES;
 				IJavaSearchScope searchScope = SearchEngine.createJavaSearchScope(elements, constraints);
 				MainMethodSearchEngine engine = new MainMethodSearchEngine();
 				IType[] types = null;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2013 Pivotal Software, Inc.
+ * Copyright (c) 2012, 2025 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -96,18 +96,20 @@ public class MainTypeFinder {
 		// confidence that they are the types requested. Each confidence itself also has a priority
 		// order, with more authoritative finders listed first.
 		this.algos.put(Confidence.CERTAIN, new IMainTypeFinder[] {
-				// add in order of which is more authoritative
-		});
-
-		this.algos.put(Confidence.HIGH, new IMainTypeFinder[] {
 				// add more here if they should be considered more authorative
 				new FindInPom()
 				// add more here if they should be considered less authorative
 		});
 
+		this.algos.put(Confidence.HIGH, new IMainTypeFinder[] {
+				// add more here if they should be considered more authorative
+				new FindInSource(),
+				// add more here if they should be considered less authorative
+		});
+
 		this.algos.put(Confidence.LOW, new IMainTypeFinder[] {
 				// add more here if they should be considered more authorative
-				new FindInSource()
+				new FindInLibs()
 				// add more here if they should be considered less authorative
 		});
 
@@ -240,6 +242,33 @@ public class MainTypeFinder {
 				"org.jetbrains.kotlin.core.KOTLIN_CONTAINER".equals(cpe.getPath().segment(0))
 			);
 		}
+	}
+	
+	public static class FindInLibs implements IMainTypeFinder {
+		
+		public IType[] findMain(IJavaProject javaProject,
+				IProgressMonitor monitor) throws Exception {
+			monitor.beginTask("Search main types in project source", 1);
+			try {
+
+				MainMethodSearchEngine engine = new MainMethodSearchEngine();
+				IJavaSearchScope scope = SearchEngine.createJavaSearchScope(true, new IJavaElement[] { javaProject }, IJavaSearchScope.APPLICATION_LIBRARIES);
+
+				boolean includeSubtypes = true;
+				IType[] types =  engine
+						.searchMainMethods(monitor, scope, includeSubtypes);
+				if (types == null) {
+					types = EMPTY;
+				}
+				return types;
+			} catch (Exception e) {
+				FrameworkCoreActivator.log(e);
+			} finally {
+				monitor.done();
+			}
+			return EMPTY;
+		}
+
 	}
 
 	/**

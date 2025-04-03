@@ -86,7 +86,7 @@ public class BootProjectDashElement extends AbstractLaunchConfigurationsDashElem
 					if (p != null && p.exists()) {
 						IJavaProject jp = JavaCore.create(p);
 						if (jp != null) {
-							IJavaSearchScope searchScope = SearchEngine.createJavaSearchScope(new IJavaElement[]{jp}, IJavaSearchScope.SOURCES);
+							IJavaSearchScope searchScope = SearchEngine.createJavaSearchScope(new IJavaElement[]{jp}, IJavaSearchScope.SOURCES | IJavaSearchScope.APPLICATION_LIBRARIES);
 							MainMethodSearchEngine engine = new MainMethodSearchEngine();
 							IType[] types = null;
 							try {

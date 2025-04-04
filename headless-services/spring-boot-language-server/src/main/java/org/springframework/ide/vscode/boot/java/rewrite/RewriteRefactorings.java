@@ -143,6 +143,9 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 					cus.addAll(ORAstUtils.parseInputs(jp, inputs, null));
 				}
 				return recipeRepo.computeWorkspaceEditAwareOfPreview(r, cus, progress, projectWide).whenComplete((o, t) -> progress.done());
+			}).exceptionally(t -> {
+				progress.done();
+				return Optional.empty();
 			});
 		}
 		return CompletableFuture.completedFuture(Optional.empty());

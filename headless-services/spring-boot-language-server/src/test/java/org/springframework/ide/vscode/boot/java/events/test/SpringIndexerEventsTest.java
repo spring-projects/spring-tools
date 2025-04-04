@@ -23,9 +23,11 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -125,6 +127,10 @@ public class SpringIndexerEventsTest {
         assertNotNull(location);
         assertEquals(docUri, location.getUri());
         assertEquals(new Range(new Position(10, 13), new Position(10, 24)), location.getRange());
+        
+        DocumentSymbol symbol = listenerElement.getDocumentSymbol();
+        assertEquals("listens on: ApplicationEvent", symbol.getName());
+        assertEquals(SymbolKind.Event, symbol.getKind());
     }
     
     @Test

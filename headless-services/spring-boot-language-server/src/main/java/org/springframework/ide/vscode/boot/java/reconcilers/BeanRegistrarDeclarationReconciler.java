@@ -22,12 +22,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.openrewrite.java.RemoveAnnotation;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
@@ -89,54 +92,79 @@ public class BeanRegistrarDeclarationReconciler implements JdtAstReconciler {
 				if (!context.isIndexComplete()) {
 					throw new RequiredCompleteIndexException();
 				}
+				
+				checkComponentAnnotations(context, project, docURI, cu, node, type);
+				checkRegistrationViaImport(context, project, docURI, node, type);
 					
-				List<Bean> configBeans = new ArrayList<>();
-				Path p = Path.of(docURI);
-				List<Path> sourceFolders = IClasspathUtil.getSourceFolders(project.getClasspath()).map(f -> f.toPath()).filter(f -> p.startsWith(f)).collect(Collectors.toList());
-
-				for (Bean b : springIndex.getBeansOfProject(project.getElementName())) {
-					//						if (b.getType().equals(type.getQualifiedName())) {
-					//							return true;
-					//						}
-					if (b.isConfiguration() && b.getLocation() != null) {
-						Path configBeanPath = Path.of(URI.create(b.getLocation().getUri()));
-						if (sourceFolders.stream().anyMatch(configBeanPath::startsWith)) {
-							configBeans.add(b);
-						}
-					}
-				}
-
-				List<String> importingBeanRegistrarConfigs = getImportedBeanRegistrarConfigs(configBeans, type);
-				if (configBeans.isEmpty() || importingBeanRegistrarConfigs.size() == 0) {
-
-					ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), "No @Import found for bean registrar", node.getName().getStartPosition(), node.getName().getLength());
-					List<FixDescriptor> fixes = configBeans.stream()
-							.filter(b -> b.getLocation() != null && b.getLocation().getUri() != null)
-							.map(b -> new FixDescriptor(ImportBeanRegistrarInConfigRecipe.class.getName(), List.of(b.getLocation().getUri()), "Add %s to `@Import` in %s".formatted(type.getName(), b.getName()))
-									.withParameters(Map.of(
-											"configBeanFqn", b.getType(),
-											"beanRegFqn", type.getQualifiedName()
-											))
-									.withRecipeScope(RecipeScope.FILE)
-									).toList();
-					ReconcileUtils.setRewriteFixes(registry, problem, fixes);
-					context.getProblemCollector().accept(problem);
-					
-					// record dependencies on types where we found import annotations for this bean registrar
-					// mark this file
-					
-				}
-				else {
-					// record dependencies on types where we found import annotations for this bean registrar
-					for (String typeOfConfigClassWithImport : importingBeanRegistrarConfigs) {
-						context.addDependency(typeOfConfigClassWithImport);
-					}
-
-				}
 				return true;
 			}
 			
 		};
+	}
+	
+	private void checkRegistrationViaImport(ReconcilingContext context, IJavaProject project, URI docURI, TypeDeclaration node, ITypeBinding type) {
+		List<Bean> configBeans = new ArrayList<>();
+		Path p = Path.of(docURI);
+		List<Path> sourceFolders = IClasspathUtil.getSourceFolders(project.getClasspath()).map(f -> f.toPath()).filter(f -> p.startsWith(f)).collect(Collectors.toList());
+
+		for (Bean b : springIndex.getBeansOfProject(project.getElementName())) {
+			if (b.isConfiguration() && b.getLocation() != null) {
+				Path configBeanPath = Path.of(URI.create(b.getLocation().getUri()));
+				if (sourceFolders.stream().anyMatch(configBeanPath::startsWith)) {
+					configBeans.add(b);
+				}
+			}
+		}
+
+		List<String> importingBeanRegistrarConfigs = getImportedBeanRegistrarConfigs(configBeans, type);
+		if (configBeans.isEmpty() || importingBeanRegistrarConfigs.size() == 0) {
+
+			ReconcileProblemImpl problem = new ReconcileProblemImpl(Boot4JavaProblemType.REGISTRAR_BEAN_DECLARATION, "No @Import found for bean registrar", node.getName().getStartPosition(), node.getName().getLength());
+			List<FixDescriptor> fixes = configBeans.stream()
+					.filter(b -> b.getLocation() != null && b.getLocation().getUri() != null)
+					.map(b -> new FixDescriptor(ImportBeanRegistrarInConfigRecipe.class.getName(), List.of(b.getLocation().getUri()), "Add %s to `@Import` in %s".formatted(type.getName(), b.getName()))
+							.withParameters(Map.of(
+									"configBeanFqn", b.getType(),
+									"beanRegFqn", type.getQualifiedName()
+									))
+							.withRecipeScope(RecipeScope.FILE)
+							).toList();
+			ReconcileUtils.setRewriteFixes(registry, problem, fixes);
+			context.getProblemCollector().accept(problem);
+			
+			// record dependencies on types where we found import annotations for this bean registrar
+			// mark this file
+			
+		}
+		else {
+			// record dependencies on types where we found import annotations for this bean registrar
+			for (String typeOfConfigClassWithImport : importingBeanRegistrarConfigs) {
+				context.addDependency(typeOfConfigClassWithImport);
+			}
+
+		}
+	}
+	
+	private void checkComponentAnnotations(ReconcilingContext context, IJavaProject project, URI docURI, CompilationUnit cu, TypeDeclaration node, ITypeBinding type) {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(node);
+		for (Object o : node.modifiers()) {
+			if (o instanceof Annotation a) {
+				ITypeBinding ab = a.resolveTypeBinding();
+				if (ab != null && annotationHierarchies.isAnnotatedWith(ab, Annotations.COMPONENT)) {
+					ReconcileProblemImpl problem = new ReconcileProblemImpl(
+							Boot4JavaProblemType.REGISTRAR_BEAN_INVALID_ANNOTATION,
+							Boot4JavaProblemType.REGISTRAR_BEAN_INVALID_ANNOTATION.getLabel(),
+							a.getTypeName().getStartPosition(), a.getTypeName().getLength());
+					ReconcileUtils.setRewriteFixes(registry, problem, List.of(
+							new FixDescriptor(RemoveAnnotation.class.getName(), List.of(docURI.toASCIIString()), "Remove `@%s`".formatted(ab.getName()))
+							.withParameters(Map.of("annotationPattern", "@" + ab.getQualifiedName()))
+							.withRecipeScope(RecipeScope.NODE)
+							.withRangeScope(ReconcileUtils.createOpenRewriteRange(cu, node, null))
+					));
+					context.getProblemCollector().accept(problem);
+				}				
+			}
+		}
 	}
 	
 	private List<String> getImportedBeanRegistrarConfigs(List<Bean> configBeans, ITypeBinding beanRegType) {

@@ -20,16 +20,20 @@ import org.eclipse.lsp4j.Location;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openrewrite.java.RemoveAnnotation;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.reconcilers.BeanRegistrarDeclarationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 
 public class BeanRegistrarDeclarationReconcilerTest extends BaseReconcilerTest {
 	
@@ -268,4 +272,121 @@ public class BeanRegistrarDeclarationReconcilerTest extends BaseReconcilerTest {
 		
 		assertEquals(1, problems.size());
 	}
+	
+	@Test
+	void componentAnnotationOver() throws Throwable {
+		String source = """
+		package com.example.demo;
+		
+		import org.springframework.beans.factory.BeanRegistrar;
+		import org.springframework.beans.factory.BeanRegistry;
+		import org.springframework.core.env.Environment;
+		import org.springframework.stereotype.Component;
+		
+		@Component
+		public class MyBeanRegistrar implements BeanRegistrar {
+		
+			public void register(BeanRegistry registry, Environment env) {
+			}
+		
+		}
+		""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			Location l = new Location();
+			Path sourceFolder = IClasspathUtil.getSourceFolders(project.getClasspath()).map(f -> f.toPath()).filter(p -> p.endsWith(Path.of("src",  "main", "java"))).findFirst().orElseThrow();
+			l.setUri(sourceFolder.resolve("com/example/demo/B.java").toUri().toASCIIString());
+
+			AnnotationMetadata annotationMetadata = new AnnotationMetadata(Annotations.CONFIGURATION, false, null, Map.of());
+			AnnotationMetadata importMetadata = new AnnotationMetadata(Annotations.IMPORT, false, null,
+					Map.of("value", new AnnotationAttributeValue[] {
+							new AnnotationAttributeValue("com.example.demo.MyBeanRegistrar", null) }));
+			AnnotationMetadata[] annotations = new AnnotationMetadata[] {annotationMetadata, importMetadata};
+			Bean configBean = new Bean("conf", "com.example.demo.Conf", l, null, null, annotations, true, "symbolLabel");
+			Bean[] beans = new Bean[] {configBean};
+			springIndex.updateBeans(getProjectName(), beans);
+		
+			BeanRegistrarDeclarationReconciler r = new BeanRegistrarDeclarationReconciler(new QuickfixRegistry(), springIndex);
+			
+			return r;
+		}, "A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem p = problems.get(0);
+		
+		assertEquals(Boot4JavaProblemType.REGISTRAR_BEAN_INVALID_ANNOTATION.getLabel(), p.getType().getLabel());
+		
+		assertEquals(1, p.getQuickfixes().size());
+		
+		QuickfixData<?> qf = p.getQuickfixes().get(0);
+		
+		assertEquals("Remove `@Component`", qf.title);
+		
+		FixDescriptor fd = (FixDescriptor) qf.params;
+		
+		assertEquals(RemoveAnnotation.class.getName(), fd.getRecipeId());
+		assertEquals("@org.springframework.stereotype.Component", fd.getParameters().get("annotationPattern"));
+		
+	}
+
+	@Test
+	void serviceAnnotationOver() throws Throwable {
+		String source = """
+		package com.example.demo;
+		
+		import org.springframework.beans.factory.BeanRegistrar;
+		import org.springframework.beans.factory.BeanRegistry;
+		import org.springframework.core.env.Environment;
+		import org.springframework.stereotype.Service;
+		
+		@Service("myService")
+		public class MyBeanRegistrar implements BeanRegistrar {
+		
+			public void register(BeanRegistry registry, Environment env) {
+			}
+		
+		}
+		""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			Location l = new Location();
+			Path sourceFolder = IClasspathUtil.getSourceFolders(project.getClasspath()).map(f -> f.toPath()).filter(p -> p.endsWith(Path.of("src",  "main", "java"))).findFirst().orElseThrow();
+			l.setUri(sourceFolder.resolve("com/example/demo/B.java").toUri().toASCIIString());
+
+			AnnotationMetadata annotationMetadata = new AnnotationMetadata(Annotations.CONFIGURATION, false, null, Map.of());
+			AnnotationMetadata importMetadata = new AnnotationMetadata(Annotations.IMPORT, false, null,
+					Map.of("value", new AnnotationAttributeValue[] {
+							new AnnotationAttributeValue("com.example.demo.MyBeanRegistrar", null) }));
+			AnnotationMetadata[] annotations = new AnnotationMetadata[] {annotationMetadata, importMetadata};
+			Bean configBean = new Bean("conf", "com.example.demo.Conf", l, null, null, annotations, true, "symbolLabel");
+			Bean[] beans = new Bean[] {configBean};
+			springIndex.updateBeans(getProjectName(), beans);
+		
+			BeanRegistrarDeclarationReconciler r = new BeanRegistrarDeclarationReconciler(new QuickfixRegistry(), springIndex);
+			
+			return r;
+		}, "A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem p = problems.get(0);
+		
+		assertEquals(Boot4JavaProblemType.REGISTRAR_BEAN_INVALID_ANNOTATION.getLabel(), p.getType().getLabel());
+		
+		assertEquals(1, p.getQuickfixes().size());
+		
+		QuickfixData<?> qf = p.getQuickfixes().get(0);
+		
+		assertEquals("Remove `@Service`", qf.title);
+		
+		FixDescriptor fd = (FixDescriptor) qf.params;
+		
+		assertEquals(RemoveAnnotation.class.getName(), fd.getRecipeId());
+		assertEquals("@org.springframework.stereotype.Service", fd.getParameters().get("annotationPattern"));
+		
+	}
+
 }

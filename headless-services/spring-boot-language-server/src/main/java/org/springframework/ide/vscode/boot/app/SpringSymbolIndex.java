@@ -1121,9 +1121,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		List<WorkspaceSymbol> oldSymbols = symbolsByProject.remove(project.getElementName());
 		if (oldSymbols != null) {
 
-			List<WorkspaceSymbol> copy = null;
+			Set<WorkspaceSymbol> copy = null;
 			synchronized(oldSymbols) {
-				copy = new ArrayList<>(oldSymbols);
+				copy = new HashSet<>(oldSymbols); // use HashSet here in order to speed up removal of symbols from global list
 			}
 
 			synchronized(this.symbols) {

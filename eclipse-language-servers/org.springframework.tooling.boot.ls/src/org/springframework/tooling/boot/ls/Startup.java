@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -37,13 +37,11 @@ public class Startup implements IStartup {
 	
 	private synchronized void handleProjectsFound(Set<IJavaProject> springProjects) {
 		if (!started && !springProjects.isEmpty()) {
-			BootLanguageServerPlugin.getDefault().getLog().info("Starting Boot LS...");
 			LanguageServerDefinition serverDefinition = LanguageServersRegistry.getInstance()
 					.getDefinition(BootLanguageServerPlugin.BOOT_LS_DEFINITION_ID);
 
 			try {
 				LanguageServiceAccessor.startLanguageServer(serverDefinition);
-				BootLanguageServerPlugin.getDefault().getLog().info("Started Boot LS process");
 				started = true;
 			} catch (Throwable e1) {
 				BootLanguageServerPlugin.getDefault().getLog().error("Failed to launch Boot Language Server", e1);

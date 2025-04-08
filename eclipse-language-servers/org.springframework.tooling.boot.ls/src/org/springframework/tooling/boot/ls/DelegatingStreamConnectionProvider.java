@@ -99,7 +99,6 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 
 	@Override
 	public void start() throws IOException {
-		BootLanguageServerPlugin.getDefault().getLog().info("DelegatingStreamConnectionProvider - Starting Boot LS");
 		this.provider.start();
 		IProxyService proxyService = PlatformUI.getWorkbench().getService(IProxyService.class);
 		if (proxyService != null) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 Pivotal, Inc.
+ * Copyright (c) 2017, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -56,9 +56,10 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 	@Override
 	public void start() throws IOException {
 		super.start();
+
 		Process process = LanguageServerProcessReaper.getProcess(this);
-		LanguageServerCommonsActivator.getInstance().getLog().info("Started " + connectorId + " LS process " + process.pid());
 		processReaper.addProcess(connectorId, process);
+
 		if (consoles!=null) {
 			Console console = consoles.get();
 			if (console!=null) {
@@ -117,8 +118,6 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 			command.add(languageServerRoot.resolve(jarFile).toFile().toString());
 
 			setCommands(command);
-
-			LanguageServerCommonsActivator.getInstance().getLog().info("Command list starting LS: " + connectorId + "\nSTART:\n" + String.join("\n", command) + "\nEND");
 		} catch (Throwable t) {
 			LanguageServerCommonsActivator.logError(t, "Failed to assemble executable LS JAR launch command");
 		}
@@ -191,8 +190,6 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 			command.add(mainClass);
 
 			setCommands(command);
-
-			LanguageServerCommonsActivator.getInstance().getLog().info("Command list starting LS: " + connectorId + "\nSTART:\n" + String.join("\n", command) + "\nEND");
 		}
 		catch (Throwable t) {
 			LanguageServerCommonsActivator.logError(t, "Failed to assemble exploded LS JAR launch command");
@@ -265,7 +262,6 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 	public void stop() {
 		super.stop();
 		Process process = LanguageServerProcessReaper.getProcess(this);
-		LanguageServerCommonsActivator.getInstance().getLog().info("Stopped " + connectorId + " LS process " + process.pid());
 		processReaper.removeProcess(process);
 	}
 

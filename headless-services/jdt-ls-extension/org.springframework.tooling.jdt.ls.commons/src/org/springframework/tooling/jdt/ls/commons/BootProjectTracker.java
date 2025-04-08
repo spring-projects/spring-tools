@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -30,6 +30,7 @@ import org.springframework.tooling.jdt.ls.commons.classpath.ClasspathListenerMan
 public class BootProjectTracker {
 	
 	private Logger logger;
+	
 	private Set<IJavaProject> springProjects = new HashSet<>();
 	private List<Consumer<Set<IJavaProject>>> listeners = Collections.synchronizedList(new ArrayList<>());
 
@@ -40,7 +41,6 @@ public class BootProjectTracker {
 			
 			@Override
 			public void classpathChanged(IJavaProject jp) {
-				logger.log("Classpath changed for project: " + jp.getElementName());
 				processProject(jp);
 			}
 		});
@@ -57,12 +57,10 @@ public class BootProjectTracker {
 	private void processProject(IJavaProject jp) {
 		if (isSpringProject(jp)) {
 			if (springProjects.add(jp)) {
-				logger.log("Boot project ADDED: " + jp.getElementName());
 				fireEvent();
 			}
 		} else {
 			if (springProjects.remove(jp)) {
-				logger.log("Boot project REMOVED: " + jp.getElementName());
 				fireEvent();
 			}
 		}

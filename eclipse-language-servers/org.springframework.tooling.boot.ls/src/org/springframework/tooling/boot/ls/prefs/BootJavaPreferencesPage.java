@@ -57,7 +57,10 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		addField(new BooleanFieldEditor(Constants.PREF_COMPLETION_JAVA_INJECT_BEAN, "Inject Bean completion proposals in Java editor", fieldEditorParent));
 		
 		// Experimental Beans tree 
-		addField(new BooleanFieldEditor(Constants.PREF_BEANS_STRUCTURE_TREE, "Beans structure tree in the outline view", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_BEANS_STRUCTURE_TREE, "Beans structure tree in the outline view (experimental)", fieldEditorParent));
+		
+		// Experimental symbols from new index
+		addField(new BooleanFieldEditor(Constants.PREF_SYMBOLS_FROM_NEW_INDEX, "Generate workspace symbols from index (experimental)", fieldEditorParent));
 		
 		Composite c = new Composite(fieldEditorParent, SWT.NONE);
 		GridDataFactory.fillDefaults().grab(true, false).applyTo(c);

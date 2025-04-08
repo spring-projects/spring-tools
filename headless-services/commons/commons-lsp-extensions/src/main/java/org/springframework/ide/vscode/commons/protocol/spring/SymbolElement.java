@@ -12,7 +12,7 @@ package org.springframework.ide.vscode.commons.protocol.spring;
 
 import org.eclipse.lsp4j.DocumentSymbol;
 
-public interface SymbolElement {
+public interface SymbolElement extends SpringIndexElement {
 	
 	public DocumentSymbol getDocumentSymbol();
 

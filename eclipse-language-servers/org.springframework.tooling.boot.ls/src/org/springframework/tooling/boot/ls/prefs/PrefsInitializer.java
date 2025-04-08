@@ -59,18 +59,13 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		}));
 		
 		preferenceStore.setDefault(Constants.PREF_MODULITH, true);
-		
 		preferenceStore.setDefault(Constants.PREF_LIVE_INFORMATION_ALL_JVM_PROCESSES, false);
-		
 		preferenceStore.setDefault(Constants.PREF_JPQL, true);
-		
 		preferenceStore.setDefault(Constants.PREF_PROPS_COMPLETIONS_ELIDE_PREFIX, false);
-		
 		preferenceStore.setDefault(Constants.PREF_CRON_INLAY_HINTS, true);
-		
 		preferenceStore.setDefault(Constants.PREF_COMPLETION_JAVA_INJECT_BEAN, true);
-
 		preferenceStore.setDefault(Constants.PREF_BEANS_STRUCTURE_TREE, false);
+		preferenceStore.setDefault(Constants.PREF_SYMBOLS_FROM_NEW_INDEX, false);
 	}
 
 }

@@ -54,4 +54,6 @@ public class Constants {
 
 	public static final String PREF_BEANS_STRUCTURE_TREE = "boot-java.java.beans-structure-tree";
 	
+	public static final String PREF_SYMBOLS_FROM_NEW_INDEX = "boot-java.java.symbols-from-new-index";
+	
 }

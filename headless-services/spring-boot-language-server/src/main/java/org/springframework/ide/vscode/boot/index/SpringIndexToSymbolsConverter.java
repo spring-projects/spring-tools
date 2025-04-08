@@ -11,9 +11,16 @@
 package org.springframework.ide.vscode.boot.index;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.WorkspaceSymbol;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
+import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
@@ -28,7 +35,19 @@ public class SpringIndexToSymbolsConverter {
 		
 		return result;
 	}
+	
+	public static List<WorkspaceSymbol> createWorkspaceSymbols(Collection<ProjectElement> projects,
+			Predicate<DocumentElement> documentPredicate, Predicate<DocumentSymbol> symbolPredicate) {
 
+		return projects.stream()
+			.flatMap(project -> project.getChildren().stream())
+			.filter(node -> node instanceof DocumentElement)
+			.map(node -> (DocumentElement) node)
+			.filter(documentPredicate)
+			.flatMap(document -> createWorkspaceSymbols(document, symbolPredicate).stream())
+			.toList();
+	}
+	
 	private static List<DocumentSymbol> createSymbol(SpringIndexElement indexElement) {
 		
 		List<DocumentSymbol> subTreeSymbols = new ArrayList<>();
@@ -57,6 +76,27 @@ public class SpringIndexToSymbolsConverter {
 //					new Range(new Position(), new Position()));
 			return subTreeSymbols;
 		}
+	}
+	
+	private static List<WorkspaceSymbol> createWorkspaceSymbols(DocumentElement document, Predicate<DocumentSymbol> symbolPredicate) {
+		return SpringMetamodelIndex.getNodesOfType(SymbolElement.class, List.of(document)).stream()
+			.map(symbolElement -> symbolElement.getDocumentSymbol())
+			.filter(symbolPredicate)
+			.map(documentSymbol -> createWorkspaceSymbol(documentSymbol, document.getDocURI()))
+			.toList();
+	}
+
+	private static WorkspaceSymbol createWorkspaceSymbol(DocumentSymbol documentSymbol, String docURI) {
+		WorkspaceSymbol workspaceSymbol = new WorkspaceSymbol();
+		
+		workspaceSymbol.setName(documentSymbol.getName());
+		workspaceSymbol.setKind(documentSymbol.getKind());
+		workspaceSymbol.setTags(documentSymbol.getTags());
+		
+		Location location = new Location(docURI, documentSymbol.getRange());
+		workspaceSymbol.setLocation(Either.forLeft(location));
+
+		return workspaceSymbol;
 	}
 
 }

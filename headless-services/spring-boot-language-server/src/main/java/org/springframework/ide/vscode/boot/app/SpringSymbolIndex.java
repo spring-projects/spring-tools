@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -86,6 +87,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.BeansParams;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.MatchingBeansParams;
+import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndex;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.Futures;
@@ -103,7 +105,6 @@ import com.google.common.collect.ImmutableList;
 public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 	private static final String QUERY_PARAM_LOCATION_PREFIX = "locationPrefix:";
-	private static final String OUTLINE_SYMBOLS_FROM_INDEX_PROPERTY = "outlineSymbolsFromIndex";
 	
 	@Autowired SimpleLanguageServer server;
 	@Autowired BootJavaConfig config;
@@ -681,6 +682,23 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	}
 
 	public List<WorkspaceSymbol> getAllSymbols(String query) {
+		long start = System.currentTimeMillis();
+
+		try {
+			if (config.isSymbolsFromNewIndexEnabled()) {
+				return getAllSymbolsFromMetamodelIndex(query);
+			}
+			else {
+				return getAllSymbolsFromSymbolsIndex(query);
+			}
+		}
+		finally {
+			long end = System.currentTimeMillis();
+			log.info("workspace symbols computation took " + (end - start) + "ms");
+		}
+	}
+	
+	private List<WorkspaceSymbol> getAllSymbolsFromSymbolsIndex(String query) {
 		if (query != null && query.length() > 0) {
 			synchronized(this.symbols) {
 				return searchMatchingSymbols(this.symbols, query);
@@ -690,6 +708,37 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 				return this.symbols.stream().collect(Collectors.toList());
 			}
 		}
+	}
+	
+	private List<WorkspaceSymbol> getAllSymbolsFromMetamodelIndex(String query) {
+		Collection<ProjectElement> projects = springIndex.getProjects();
+		
+		String locationPrefix = "";
+		if (query.startsWith(QUERY_PARAM_LOCATION_PREFIX)) {
+
+			int separatorIndex = query.indexOf("?");
+			if (separatorIndex > 0) {
+				locationPrefix = query.substring(QUERY_PARAM_LOCATION_PREFIX.length(), separatorIndex);
+				query = query.substring(separatorIndex + 1);
+			}
+			else {
+				locationPrefix = query.substring(QUERY_PARAM_LOCATION_PREFIX.length());
+				query = query.substring(QUERY_PARAM_LOCATION_PREFIX.length() + locationPrefix.length());
+			}
+		}
+
+		if (query.startsWith("*")) {
+			query = query.substring(1);
+		}
+
+		final String finalQuery = query;
+		final String finalLocationPrefix = locationPrefix;
+		
+		Predicate<DocumentElement> locationPredicate = (document) -> document.getDocURI().startsWith(finalLocationPrefix);
+		Predicate<DocumentSymbol> symbolPredicate = query != null && query.length() > 0 ? (symbol) -> StringUtil.containsCharactersCaseInsensitive(symbol.getName(), finalQuery) : (symbol) -> true;
+		
+		List<WorkspaceSymbol> workspaceSymbols = SpringIndexToSymbolsConverter.createWorkspaceSymbols(projects, locationPredicate, symbolPredicate);
+		return workspaceSymbols;
 	}
 	
 	synchronized private CompletableFuture<IJavaProject> projectInitializedFuture(IJavaProject project) {
@@ -702,7 +751,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	}
 	
 	public List<? extends WorkspaceSymbol> getSymbols(String docURI) {
-		if (System.getProperty(OUTLINE_SYMBOLS_FROM_INDEX_PROPERTY) != null) {
+		if (config.isBeanStructureTreeEnabled()) {
 			return getWorkspaceSymbolsFromMetamodelIndex(docURI);
 		}
 		else {
@@ -711,8 +760,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	}
 	
 	public List<? extends DocumentSymbol> getDocumentSymbols(String docURI) {
-		if (System.getProperty(OUTLINE_SYMBOLS_FROM_INDEX_PROPERTY) != null
-				|| config.isBeanStructureTreeEnabled()) {
+		if (config.isBeanStructureTreeEnabled()) {
 			return getDocumentSymbolsFromMetamodelIndex(docURI);
 		}
 		else {
@@ -1095,9 +1143,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		List<WorkspaceSymbol> oldSymbols = symbolsByDoc.remove(docURI);
 		if (oldSymbols != null) {
 
-			List<WorkspaceSymbol> copy = null;
+			Set<WorkspaceSymbol> copy = null;
 			synchronized(oldSymbols) {
-				copy = new ArrayList<>(oldSymbols);
+				copy = new HashSet<>(oldSymbols); // use HashSet here in order to speed up removal of symbols from global list
 			}
 
 			synchronized(this.symbols) {

@@ -219,6 +219,11 @@ public class BootJavaConfig implements InitializingBean {
 		return Boolean.TRUE.equals(b);
 	}
 	
+	public boolean isSymbolsFromNewIndexEnabled() {
+		Boolean b = settings.getBoolean("boot-java", "java", "symbols-from-new-index");
+		return Boolean.TRUE.equals(b);
+	}
+	
 	public Settings getRawSettings() {
 		return settings;
 	}

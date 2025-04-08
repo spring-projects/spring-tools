@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.index;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,10 @@ public class SpringMetamodelIndex {
 	
 	public void removeProject(String projectName) {
 		projectRootElements.remove(projectName);
+	}
+	
+	public Collection<ProjectElement> getProjects() {
+		return Collections.unmodifiableCollection(this.projectRootElements.values());
 	}
 
 	public DocumentElement getDocument(String docURI) {

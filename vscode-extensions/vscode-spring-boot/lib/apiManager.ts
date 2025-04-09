@@ -55,6 +55,9 @@ export class ApiManager {
             return await commands.executeCommand(COMMAND_LIVEDATA_REFRESH_METRICS, query);
         }
 
+        const COMMAND_BEANS = "sts/spring-boot/beans";
+        const getBeans: (Uri) => Promise<Bean[]> = async (projectUri: Uri) => await commands.executeCommand(COMMAND_BEANS, projectUri.toString());
+
         client.onNotification(LiveProcessConnectedNotification.type, (process: LiveProcess) => this.onDidLiveProcessConnectEmitter.fire(process));
         client.onNotification(LiveProcessDisconnectedNotification.type, (process: LiveProcess) => this.onDidLiveProcessDisconnectEmitter.fire(process));
         client.onNotification(LiveProcessUpdatedNotification.type, (process: LiveProcess) => this.onDidLiveProcessUpdateEmitter.fire(process));
@@ -70,7 +73,8 @@ export class ApiManager {
 
         const getSpringIndex = () => ({
             onSpringIndexUpdated,
-            beans
+            beans,
+            getBeans
         })
 
         this.api = {

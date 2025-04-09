@@ -52,8 +52,8 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
         ],
         checkjvm: (context: ExtensionContext, jvm: commons.JVM) => {
             let version = jvm.getMajorVersion();
-            if (version < 17) {
-                throw Error(`Spring Tools Language Server requires Java 17 or higher to be launched. Current Java version is ${version}`);
+            if (version < 21) {
+                throw Error(`Spring Tools Language Server requires Java 21 or higher to be launched. Current Java version is ${version}`);
             }
 
             if (!jvm.isJdk()) {

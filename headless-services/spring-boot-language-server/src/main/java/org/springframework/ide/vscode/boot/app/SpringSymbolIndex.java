@@ -605,23 +605,25 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	
 	private Collection<? extends String> getDocsFromPath(IJavaProject project, String path) {
 		List<WorkspaceSymbol> allProjectSymbols = this.symbolsByProject.get(project.getElementName());
-		
 		Set<String> result = new HashSet<>();
 
 		if (allProjectSymbols != null) {
-			for (WorkspaceSymbol symbol : allProjectSymbols) {
-				Either<Location, WorkspaceSymbolLocation> location = symbol.getLocation();
-	
-				String docURI = null;
-				if (location.isLeft()) {
-					docURI = location.getLeft().getUri();
-				}
-				else if (location.isRight()) {
-					docURI = location.getRight().getUri();
-				}
-				
-				if (docURI != null && docURI.startsWith(path)) {
-					result.add(docURI);
+			
+			synchronized(allProjectSymbols) {
+				for (WorkspaceSymbol symbol : allProjectSymbols) {
+					Either<Location, WorkspaceSymbolLocation> location = symbol.getLocation();
+
+					String docURI = null;
+					if (location.isLeft()) {
+						docURI = location.getLeft().getUri();
+					}
+					else if (location.isRight()) {
+						docURI = location.getRight().getUri();
+					}
+
+					if (docURI != null && docURI.startsWith(path)) {
+						result.add(docURI);
+					}
 				}
 			}
 		}

@@ -84,7 +84,7 @@ public class DataRepositoryIndexElementsTest {
         assertEquals("org.test.CustomerRepository", repoBean[0].getType());
         
         Bean[] matchingBeans = springIndex.getMatchingBeans("test-spring-data-symbols", "org.springframework.data.repository.CrudRepository");
-        assertEquals(4, matchingBeans.length);
+        assertEquals(5, matchingBeans.length);
         ArrayUtils.contains(matchingBeans, repoBean[0]);
     }
 
@@ -100,7 +100,22 @@ public class DataRepositoryIndexElementsTest {
         assertEquals(1, queryMethods.size());
         
         QueryMethodIndexElement queryMethod = (QueryMethodIndexElement) queryMethods.get(0);
-        assertEquals("findByLastName", queryMethod.getMethodName());
+        assertEquals("findByLastName(String) : List<Customer>", queryMethod.getMethodName());
+    }
+
+    @Test
+    void testSimpleQueryMethodElementsWithTwoParams() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithTwoParamsMethod.java").toUri().toString();
+        
+        DocumentElement document = springIndex.getDocument(docUri);
+        List<SpringIndexElement> children = document.getChildren();
+        Bean repositoryElement = (Bean) children.get(0);
+        
+        List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
+        assertEquals(1, queryMethods.size());
+        
+        QueryMethodIndexElement queryMethod = (QueryMethodIndexElement) queryMethods.get(0);
+        assertEquals("findByLastNameAndStatus(String, Status) : List<Customer>", queryMethod.getMethodName());
     }
 
     @Test
@@ -115,7 +130,7 @@ public class DataRepositoryIndexElementsTest {
         assertEquals(1, queryMethods.size());
         
         QueryMethodIndexElement queryMethod = (QueryMethodIndexElement) queryMethods.get(0);
-        assertEquals("findPetTypes", queryMethod.getMethodName());
+        assertEquals("findPetTypes() : List<Object>", queryMethod.getMethodName());
         assertEquals("SELECT ptype FROM PetType ptype ORDER BY ptype.name", queryMethod.getQueryString());
     }
 
@@ -140,11 +155,11 @@ public class DataRepositoryIndexElementsTest {
         assertEquals(2, queryMethods.size());
         
         QueryMethodIndexElement queryMethod = (QueryMethodIndexElement) queryMethods.get(0);
-        assertEquals("findConcretePetTypes", queryMethod.getMethodName());
+        assertEquals("findConcretePetTypes() : List<Object>", queryMethod.getMethodName());
         assertEquals("CONCRETE REPO SELECT STATEMENT", queryMethod.getQueryString());
-        
+
         QueryMethodIndexElement parentQueryMethod = (QueryMethodIndexElement) queryMethods.get(1);
-        assertEquals("findParentPetTypes", parentQueryMethod.getMethodName());
+        assertEquals("findParentPetTypes() : List<Object>", parentQueryMethod.getMethodName());
         assertEquals("PARENT REPO INTERFACE QUERY STATEMENT", parentQueryMethod.getQueryString());
     }
 

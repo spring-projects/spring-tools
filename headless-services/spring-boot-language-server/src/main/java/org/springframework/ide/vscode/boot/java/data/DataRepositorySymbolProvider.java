@@ -22,6 +22,7 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
@@ -108,14 +109,15 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 			
 			if (nameNode != null) {
 				String methodName = nameNode.getFullyQualifiedName();
-				DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, method);
+				DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, nameNode);
 
 				try {
 					Range range = doc.toRange(nodeRegion);
 				
 					if (methodName != null) {
 						String queryString = identifyQueryString(method, annotationHierarchies);
-						beanDefinition.addChild(new QueryMethodIndexElement(methodName, queryString, range));
+						String methodSignature = identifyMethodSignature(method);
+						beanDefinition.addChild(new QueryMethodIndexElement(methodSignature, queryString, range));
 					}
 	
 				} catch (BadLocationException e) {
@@ -123,6 +125,36 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				}
 			}
 		}
+	}
+
+	private String identifyMethodSignature(MethodDeclaration method) {
+		StringBuilder result = new StringBuilder();
+
+		// method name
+		String name = method.getName().getFullyQualifiedName();
+		result.append(name);
+
+		// params
+		result.append("(");
+		
+		@SuppressWarnings("unchecked")
+		List<SingleVariableDeclaration> parameters = method.parameters();
+		String[] paramNames = new String[parameters.size()];
+
+		for (int i = 0; i < parameters.size(); i++) {
+			ITypeBinding type = parameters.get(i).getType().resolveBinding();
+			paramNames[i] = type.getName();
+		}
+		result.append(String.join(", ", paramNames));
+
+		result.append(") : ");
+		
+		// return type
+		ITypeBinding returnType = method.getReturnType2().resolveBinding();
+		String returnTypeName = returnType.getName();
+		result.append(returnTypeName);
+		
+		return result.toString();
 	}
 
 	private List<MethodDeclaration> identifyQueryMethods(TypeDeclaration type, AnnotationHierarchies annotationHierarchies) {

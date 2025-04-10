@@ -92,7 +92,7 @@ public class DataRepositorySymbolProviderTest {
         DocumentSymbol documentSymbol = symbols.get(0);
         List<DocumentSymbol> children = documentSymbol.getChildren();
         DocumentSymbol childSymbol = children.get(0);
-        assertEquals("findByLastName", childSymbol.getName());
+        assertEquals("findByLastName(String) : List<Customer>", childSymbol.getName());
         
         assertEquals(1, children.size());
     }
@@ -107,7 +107,7 @@ public class DataRepositorySymbolProviderTest {
         DocumentSymbol documentSymbol = symbols.get(0);
         List<DocumentSymbol> children = documentSymbol.getChildren();
         DocumentSymbol queryMethodSymbol = children.get(0);
-        assertEquals("findPetTypes", queryMethodSymbol.getName());
+        assertEquals("findPetTypes() : List<Object>", queryMethodSymbol.getName());
         assertEquals(1, children.size());
         
         List<DocumentSymbol> queryChildren = queryMethodSymbol.getChildren();

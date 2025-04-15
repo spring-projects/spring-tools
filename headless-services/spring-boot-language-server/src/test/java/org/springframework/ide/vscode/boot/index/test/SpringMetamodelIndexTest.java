@@ -29,12 +29,14 @@ import org.eclipse.lsp4j.Range;
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
-import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
+import org.springframework.ide.vscode.boot.java.beans.ConfigPropertyIndexElement;
+import org.springframework.ide.vscode.boot.java.data.QueryMethodIndexElement;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
+import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
 import com.google.gson.Gson;
@@ -269,7 +271,7 @@ public class SpringMetamodelIndexTest {
 		assertEquals("point2", points[1].getName());
 		assertEquals("point2-type", points[1].getType());
 		assertEquals(locationForDoc1, points[1].getLocation());
-		assertSame(DefaultValues.EMPTY_ANNOTATIONS, points[1].getAnnotations());
+		assertEquals(0, points[1].getAnnotations().length);
 		
 		assertTrue(deserializedBean.isTypeCompatibleWith("supertype1"));
 		assertTrue(deserializedBean.isTypeCompatibleWith("supertype2"));
@@ -309,7 +311,7 @@ public class SpringMetamodelIndexTest {
 		assertEquals("beanType", deserializedBean.getType());
 		assertEquals(locationForDoc1, deserializedBean.getLocation());
 		
-		assertSame(DefaultValues.EMPTY_INJECTION_POINTS, deserializedBean.getInjectionPoints());
+		assertEquals(0, deserializedBean.getInjectionPoints().length);
 	}
 		
 	@Test
@@ -401,7 +403,7 @@ public class SpringMetamodelIndexTest {
 	void testBasicSpringIndexStructure() {
 		Bean bean1 = new Bean("beanName1", "beanType1", locationForDoc1, emptyInjectionPoints, Set.of("supertype1", "supertype2"), emptyAnnotations, false, "symbolLabel");
 
-		SubType1 child1 = new SubType1();
+		ConfigPropertyIndexElement child1 = new ConfigPropertyIndexElement("prop1", "java.lang.String", null);
 		bean1.addChild(child1);
 		
 		List<SpringIndexElement> children2 = bean1.getChildren();
@@ -413,32 +415,32 @@ public class SpringMetamodelIndexTest {
 	void testSpringIndexStructurePolymorphicSerialization() {
 		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
 		
-		SubType2 subNode = new SubType2();
+		QueryMethodIndexElement subNode = new QueryMethodIndexElement("find1", "SELECT * FROM All", null);
 		
-		SubType1 node1 = new SubType1();
+		ConfigPropertyIndexElement node1 = new ConfigPropertyIndexElement("prop1", "java.lang.String", null);
 		node1.addChild(subNode);
 		
-		SubType2 node2 = new SubType2();
+		QueryMethodIndexElement node2 = new QueryMethodIndexElement("find", "SELECT * FROM S", null);
 		
-		Root root = new Root();
+		ProjectElement root = new ProjectElement("my-project");
 		root.addChild(node1);
 		root.addChild(node2);
 
 		String json = gson.toJson(root);
-		Root deserializedRoot = gson.fromJson(json, Root.class);
+		ProjectElement deserializedRoot = gson.fromJson(json, ProjectElement.class);
 		
 		List<SpringIndexElement> children = deserializedRoot.getChildren();
 		assertEquals(2, children.size());
 		
-		SubType1 deserializedNode1 = (SubType1) children.stream().filter(node -> node instanceof SubType1).findAny().get();
-		SubType2 deserializedNode2 = (SubType2) children.stream().filter(node -> node instanceof SubType2).findAny().get();
+		ConfigPropertyIndexElement deserializedNode1 = (ConfigPropertyIndexElement) children.stream().filter(node -> node instanceof ConfigPropertyIndexElement).findAny().get();
+		QueryMethodIndexElement deserializedNode2 = (QueryMethodIndexElement) children.stream().filter(node -> node instanceof QueryMethodIndexElement).findAny().get();
 		
 		assertNotNull(deserializedNode1);
 		assertNotNull(deserializedNode2);
 		
 		List<SpringIndexElement> deserializedChild2 = deserializedNode1.getChildren();
 		assertEquals(1, deserializedChild2.size());
-		assertTrue(deserializedChild2.get(0) instanceof SubType2);
+		assertTrue(deserializedChild2.get(0) instanceof QueryMethodIndexElement);
 	}
 	
 	@Test
@@ -470,11 +472,11 @@ public class SpringMetamodelIndexTest {
 
 		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
 
-		SubType2 childOfChild = new SubType2();
-		SubType1 child1 = new SubType1();
+		QueryMethodIndexElement childOfChild = new QueryMethodIndexElement("find1", "SELECT * FROM All", null);
+		ConfigPropertyIndexElement child1 = new ConfigPropertyIndexElement("prop1", "java.lang.String", null);
 		child1.addChild(childOfChild);
 
-		SubType2 child2 = new SubType2();
+		QueryMethodIndexElement child2 = new QueryMethodIndexElement("find2", "SELECT s2 FROM S", null);
 		Bean bean1 = new Bean("beanName1", "beanType", locationForDoc1, emptyInjectionPoints, emptySupertypes, emptyAnnotations, true, "symbolLabel");
 		bean1.addChild(child1);
 		bean1.addChild(child2);
@@ -485,14 +487,14 @@ public class SpringMetamodelIndexTest {
 		List<SpringIndexElement> children = deserializedBean.getChildren();
 		assertEquals(2, children.size());
 		
-		SpringIndexElement deserializedChild1 = children.stream().filter(element -> element instanceof SubType1).findAny().get();
+		SpringIndexElement deserializedChild1 = children.stream().filter(element -> element instanceof ConfigPropertyIndexElement).findAny().get();
 		assertNotNull(deserializedChild1);
 		
 		List<SpringIndexElement> childrenOfChild = deserializedChild1.getChildren();
 		assertEquals(1, childrenOfChild.size());
-		assertTrue(childrenOfChild.get(0) instanceof SubType2);
+		assertTrue(childrenOfChild.get(0) instanceof QueryMethodIndexElement);
 		
-		SpringIndexElement deserializedChild2 = children.stream().filter(element -> element instanceof SubType2).findAny().get();
+		SpringIndexElement deserializedChild2 = children.stream().filter(element -> element instanceof QueryMethodIndexElement).findAny().get();
 		assertNotNull(deserializedChild2);
 		assertEquals(0, deserializedChild2.getChildren().size());
 	}
@@ -502,27 +504,18 @@ public class SpringMetamodelIndexTest {
 
 		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
 
-		SubType1 child1 = new SubType1();
+		ConfigPropertyIndexElement child1 = new ConfigPropertyIndexElement("prop1", "java.lang.String", null);;
 		Bean bean1 = new Bean("beanName1", "beanType", locationForDoc1, emptyInjectionPoints, emptySupertypes, emptyAnnotations, true, "symbolLabel");
 		bean1.addChild(child1);
 
 		String serialized = gson.toJson(bean1);
 		Bean deserializedBean = gson.fromJson(serialized, Bean.class);
 		
-		SubType2 newChild = new SubType2();
+		QueryMethodIndexElement newChild = new QueryMethodIndexElement("find1", "SELECT * FROM All", null);
 		deserializedBean.addChild(newChild);
 		
 		List<SpringIndexElement> childrenAfterNewChildAdded = deserializedBean.getChildren();
 		assertEquals(2, childrenAfterNewChildAdded.size());
 	}
 
-	static class SubType1 extends AbstractSpringIndexElement {
-	}
-
-	static class SubType2 extends AbstractSpringIndexElement {
-	}
-
-	static class Root extends AbstractSpringIndexElement {
-	}
-		
 }

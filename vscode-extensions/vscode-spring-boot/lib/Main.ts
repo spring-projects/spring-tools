@@ -27,6 +27,8 @@ import * as springBootAgent from './copilot/springBootAgent';
 import { applyLspEdit } from "./copilot/guideApply";
 import { isLlmApiReady } from "./copilot/util";
 import CopilotRequest, { logger } from "./copilot/copilotRequest";
+import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
+import { StructureManager } from "./explorer/structure-tree-manager";
 
 const PROPERTIES_LANGUAGE_ID = "spring-boot-properties";
 const YAML_LANGUAGE_ID = "spring-boot-properties-yaml";
@@ -149,7 +151,39 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
     context.subscriptions.push(startDebugSupport());
 
     return commons.activate(options, context).then(client => {
-        commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
+
+        // Spring structure tree in the Explorer view
+        /*
+          Requires the following code to be added in the `package.json` to
+            1. Declare view:
+                "views": {
+                    "explorer": [
+                        {
+                            "id": "explorer.spring",
+                            "name": "Spring",
+                            "when": "java:serverMode || workbenchState==empty",
+                            "contextualTitle": "Spring",
+                            "icon": "resources/logo.png"
+                        }
+                    ]
+                },
+            
+            2. Menu item (toolbar action) on the explorer view delegating to the command
+                "view/title": [
+                    {
+                        "command": "vscode-spring-boot.structure.refresh",
+                        "when": "view == explorer.spring",
+                        "group": "navigation@5"
+                    }
+                ],
+
+         */
+        // const structureManager = new StructureManager();
+        // const explorerTreeProvider = new ExplorerTreeProvider(structureManager);
+        // context.subscriptions.push(window.createTreeView('explorer.spring', { treeDataProvider: explorerTreeProvider, showCollapseAll: true }));
+        // context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => structureManager.refresh())); 
+
+        context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
             // Boot LS is fully started
             registerClasspathService(client);
             registerJavaDataService(client);
@@ -162,8 +196,8 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
             // Register TestJars launch support
             context.subscriptions.push(startTestJarSupport());
 
-        }));
-        commands.registerCommand('vscode-spring-boot.ls.stop', () => client.stop());
+        })));
+        context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.stop', () => client.stop()));
         liveHoverUi.activate(client, options, context);
         rewrite.activate(client, options, context);
         setLogLevelUi.activate(client, options, context);
@@ -175,9 +209,13 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
         registerMiscCommands(context);
 
-        commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit);
+        context.subscriptions.push(commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit));
 
-        return new ApiManager(client).api;
+        const api = new ApiManager(client).api
+
+        // context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(e => structureManager.refresh()));
+        
+        return api;
     });
 }
 

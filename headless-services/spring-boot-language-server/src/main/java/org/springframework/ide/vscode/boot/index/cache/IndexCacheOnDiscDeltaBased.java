@@ -38,13 +38,21 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.lsp4j.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
+import org.springframework.ide.vscode.boot.java.beans.ConfigPropertyIndexElement;
+import org.springframework.ide.vscode.boot.java.data.QueryMethodIndexElement;
+import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement;
+import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
+import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouteElementRangesIndexElement;
+import org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory;
+import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
-import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
-import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
+import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContainerElement;
+import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
+import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 
@@ -569,10 +577,23 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	public static Gson createGson() {
 		return new GsonBuilder()
 				.registerTypeAdapter(DeltaStorage.class, new DeltaStorageAdapter())
-				.registerTypeAdapter(Bean.class, new BeanJsonAdapter())
-				.registerTypeAdapter(InjectionPoint.class, new InjectionPointJsonAdapter())
 				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter())
-				.registerTypeAdapter(SpringIndexElement.class, new SpringIndexElementAdapter())
+				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(SpringIndexElement.class, "_internal_node_type")
+						.recognizeSubtypes()
+						.registerSubtype(Bean.class)
+						.registerSubtype(AotProcessorElement.class)
+						.registerSubtype(BeanMethodContainerElement.class)
+						.registerSubtype(ConfigPropertyIndexElement.class)
+						.registerSubtype(DocumentElement.class)
+						.registerSubtype(EventListenerIndexElement.class)
+						.registerSubtype(EventPublisherIndexElement.class)
+						.registerSubtype(ProjectElement.class)
+						.registerSubtype(QueryMethodIndexElement.class)
+						.registerSubtype(RequestMappingIndexElement.class)
+						.registerSubtype(WebfluxRouteElementRangesIndexElement.class)
+						.registerSubtype(AbstractSpringIndexElement.class))
+
+				
 				.create();
 	}
 	
@@ -631,112 +652,6 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	            return new DeltaStorage<>(context.deserialize(element, Class.forName(className)));
 	        } catch (ClassNotFoundException cnfe) {
 	            throw new JsonParseException("cannot parse data from unknown SymbolAddOnInformation subtype: " + type, cnfe);
-	        }
-	    }
-	}
-
-	private static class BeanJsonAdapter implements JsonSerializer<Bean>, JsonDeserializer<Bean> {
-
-	    @Override
-	    public Bean deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-	        JsonObject parsedObject = json.getAsJsonObject();
-	        
-	        String beanName = parsedObject.get("name").getAsString();
-	        String beanType = parsedObject.get("type").getAsString();
-
-	        JsonElement locationObject = parsedObject.get("location");
-	        Location location = context.deserialize(locationObject, Location.class);
-
-	        JsonElement injectionPointObject = parsedObject.get("injectionPoints");
-	        InjectionPoint[] injectionPoints = context.deserialize(injectionPointObject, InjectionPoint[].class);
-	        	        
-	        JsonElement supertypesObject = parsedObject.get("supertypes");
-	        Set<String> supertypes = context.deserialize(supertypesObject, Set.class);
-	        
-	        JsonElement annotationsObject = parsedObject.get("annotations");
-	        AnnotationMetadata[] annotations = annotationsObject == null ? DefaultValues.EMPTY_ANNOTATIONS : context.deserialize(annotationsObject, AnnotationMetadata[].class);
-
-	        JsonElement isConfigurationObject = parsedObject.get("isConfiguration");
-	        boolean isConfiguration = context.deserialize(isConfigurationObject, boolean.class);
-	        
-	        String symbolLabel = parsedObject.get("symbolLabel").getAsString();
-
-	        JsonElement childrenObject = parsedObject.get("children");
-			Type childrenListType = TypeToken.getParameterized(List.class, SpringIndexElement.class).getType();
-	        List<SpringIndexElement> children = context.deserialize(childrenObject, childrenListType);
-
-	        Bean bean = new Bean(beanName, beanType, location, injectionPoints, supertypes, annotations, isConfiguration, symbolLabel);
-
-	        for (SpringIndexElement springIndexElement : children) {
-				bean.addChild(springIndexElement);
-			}
-	        
-	        return bean;
-	    }
-
-		@Override
-		public JsonElement serialize(Bean src, Type typeOfSrc, JsonSerializationContext context) {
-			JsonObject bean = new JsonObject();
-
-			bean.addProperty("name", src.getName());
-			bean.addProperty("type", src.getType());
-			
-			bean.add("location", context.serialize(src.getLocation()));
-			bean.add("injectionPoints", context.serialize(src.getInjectionPoints()));
-			
-			bean.add("supertypes", context.serialize(src.getSupertypes()));
-			bean.add("annotations", context.serialize(src.getAnnotations()));
-			
-			bean.addProperty("isConfiguration", src.isConfiguration());
-			bean.addProperty("symbolLabel", src.getSymbolLabel());
-			
-			Type childrenListType = TypeToken.getParameterized(List.class, SpringIndexElement.class).getType();
-			bean.add("children", context.serialize(src.getChildren(), childrenListType));
-			
-			bean.addProperty("_internal_node_type", src.getClass().getName());
-			
-			return bean;
-		}
-
-	}
-	
-	private static class InjectionPointJsonAdapter implements JsonDeserializer<InjectionPoint> {
-		
-	    @Override
-	    public InjectionPoint deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-	        JsonObject parsedObject = json.getAsJsonObject();
-	        
-	        String injectionPointName = parsedObject.get("name").getAsString();
-	        String injectionPointType = parsedObject.get("type").getAsString();
-
-	        JsonElement locationObject = parsedObject.get("location");
-	        Location location = context.deserialize(locationObject, Location.class);
-
-	        JsonElement annotationsObject = parsedObject.get("annotations");
-	        AnnotationMetadata[] annotations = annotationsObject == null ? DefaultValues.EMPTY_ANNOTATIONS : context.deserialize(annotationsObject, AnnotationMetadata[].class);
-
-	        return new InjectionPoint(injectionPointName, injectionPointType, location, annotations);
-	    }
-	}
-	
-	private static class SpringIndexElementAdapter implements JsonSerializer<SpringIndexElement>, JsonDeserializer<SpringIndexElement> {
-
-	    @Override
-	    public JsonElement serialize(SpringIndexElement element, Type typeOfSrc, JsonSerializationContext context) {
-	        JsonElement elem = context.serialize(element);
-	        elem.getAsJsonObject().addProperty("_internal_node_type", element.getClass().getName());
-	        return elem;
-	    }
-
-	    @Override
-	    public SpringIndexElement deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
-	        JsonObject jsonObject = json.getAsJsonObject();
-	        String typeName = jsonObject.get("_internal_node_type").getAsString();
-
-	        try {
-	            return context.deserialize(jsonObject, (Class<?>) Class.forName(typeName));
-	        } catch (ClassNotFoundException e) {
-	            throw new JsonParseException(e);
 	        }
 	    }
 	}

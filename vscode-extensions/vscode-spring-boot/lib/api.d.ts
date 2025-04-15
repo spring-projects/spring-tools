@@ -109,7 +109,6 @@ interface InjectionPoint {
 
 interface SpringIndex {
    readonly beans: (params: BeansParams) =>  Promise<Bean[]>;
-   readonly getBeans: (uri: Uri) => Promise<Bean[]>;
    readonly onSpringIndexUpdated: Event<void>;
 }
 

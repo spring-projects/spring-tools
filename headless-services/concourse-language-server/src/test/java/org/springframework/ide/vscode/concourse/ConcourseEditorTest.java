@@ -6978,7 +6978,7 @@ public class ConcourseEditorTest {
                         "- name: sts4\n" +
                         "  type: vault\n" +
                         "  config:\n" +
-                        "    uri: some_uri\n" +
+                        "    url: some_url\n" +
                         "    auth_backend: backend\n" +
                         "    auth_max_ttl: 10s\n" +
                         "    auth_params: \n" +
@@ -7002,7 +7002,7 @@ public class ConcourseEditorTest {
         
         editor.assertProblems();
 
-        editor.assertHoverContains("uri", "The URL of the Vault API.");
+        editor.assertHoverContains("url", "The URL of the Vault API.");
         editor.assertHoverContains("auth_backend", "Authenticate using an auth backend, e.g. cert or approle.");
         editor.assertHoverContains("auth_max_ttl", "Maximum duration to elapse before forcing the client to log in again.");
         editor.assertHoverContains("auth_params", "A key-value map of parameters to pass during authentication.");
@@ -7032,7 +7032,7 @@ public class ConcourseEditorTest {
         );
         
         editor.assertProblems(
-                "config|'uri' is required"
+                "config|'url' is required"
         );
     }
     

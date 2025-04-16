@@ -521,7 +521,7 @@ public class PipelineYmlSchema implements YamlSchema {
 					switch (value) {
 					case "vault":
 						YBeanType vaultConfig = f.ybean("VaultConfig");
-						addProp(vaultConfig, "uri", t_ne_string).isPrimary(true);
+						addProp(vaultConfig, "url", t_ne_string).isPrimary(true);
 						addProp(vaultConfig, "ca_cert", t_string);
 						addProp(vaultConfig, "path_prefix", t_string);
 						addProp(vaultConfig, "lookup_templates", f.yseq(t_string));

@@ -46,24 +46,21 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 		this.symbolLabel = symbolLabel;
 		
 		if (injectionPoints != null && injectionPoints.length == 0) {
-			this.injectionPoints = DefaultValues.EMPTY_INJECTION_POINTS;
+			this.injectionPoints = null;
 		}
 		else {
 			this.injectionPoints = injectionPoints;
 		}
 		
 		if (supertypes != null && supertypes.size() == 0) {
-			this.supertypes = DefaultValues.EMPTY_SUPERTYPES;
-		}
-		else if (supertypes != null && supertypes.size() == 1 && supertypes.contains("java.lang.Object")) {
-			this.supertypes = DefaultValues.OBJECT_SUPERTYPE;
+			this.supertypes = null;
 		}
 		else {
 			this.supertypes = supertypes;
 		}
 
 		if (annotations != null && annotations.length == 0) {
-			this.annotations = DefaultValues.EMPTY_ANNOTATIONS;
+			this.annotations = null;
 		}
 		else {
 			this.annotations = annotations;
@@ -83,15 +80,15 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	}
 	
 	public InjectionPoint[] getInjectionPoints() {
-		return injectionPoints;
+		return injectionPoints == null ? DefaultValues.EMPTY_INJECTION_POINTS : injectionPoints;
 	}
 
 	public boolean isTypeCompatibleWith(String type) {
-		return type != null && ((this.type != null && this.type.equals(type)) || (supertypes.contains(type)));
+		return type != null && ((this.type != null && this.type.equals(type)) || (getSupertypes().contains(type)));
 	}
 	
 	public AnnotationMetadata[] getAnnotations() {
-		return annotations;
+		return annotations == null ? DefaultValues.EMPTY_ANNOTATIONS : annotations;
 	}
 	
 	public boolean isConfiguration() {
@@ -99,7 +96,7 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	}
 	
 	public Set<String> getSupertypes() {
-		return supertypes;
+		return supertypes == null ? DefaultValues.EMPTY_SUPERTYPES : supertypes;
 	}
 
 	public String getSymbolLabel() {

@@ -46,7 +46,6 @@ import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheVoid;
 import org.springframework.ide.vscode.boot.java.JavaDefinitionHandler;
-import org.springframework.ide.vscode.boot.java.beans.ConfigPropertyIndexElement;
 import org.springframework.ide.vscode.boot.java.beans.DependsOnDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.beans.NamedDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.beans.QualifierDefinitionProvider;
@@ -54,11 +53,8 @@ import org.springframework.ide.vscode.boot.java.beans.ResourceDefinitionProvider
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnBeanDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnResourceDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.copilot.util.ResponseModifier;
-import org.springframework.ide.vscode.boot.java.data.QueryMethodIndexElement;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.DataQueryParameterDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtDataQuerySemanticTokensProvider;
-import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement;
-import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaReconcileEngine;
 import org.springframework.ide.vscode.boot.java.handlers.JavaCodeActionHandler;
@@ -78,8 +74,6 @@ import org.springframework.ide.vscode.boot.java.livehover.v2.SpringProcessLiveDa
 import org.springframework.ide.vscode.boot.java.reconcilers.JavaReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
-import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouteElementRangesIndexElement;
 import org.springframework.ide.vscode.boot.java.spel.SpelDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.boot.java.value.ValueDefinitionProvider;
@@ -106,11 +100,6 @@ import org.springframework.ide.vscode.commons.languageserver.util.LanguageComput
 import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
 import org.springframework.ide.vscode.commons.languageserver.util.ServerCapabilityInitializer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
-import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
-import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement;
-import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContainerElement;
-import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
-import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.FileObserver;
 import org.springframework.ide.vscode.commons.util.LogRedirect;
@@ -447,18 +436,6 @@ public class BootLanguageServerBootApp {
 	Consumer<GsonBuilder> configureGson() {
 		return builder -> builder
 				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(SpringIndexElement.class, "_internal_node_type")
-						.recognizeSubtypes()
-						.registerSubtype(org.springframework.ide.vscode.commons.protocol.spring.Bean.class)
-						.registerSubtype(AotProcessorElement.class)
-						.registerSubtype(BeanMethodContainerElement.class)
-						.registerSubtype(ConfigPropertyIndexElement.class)
-						.registerSubtype(DocumentElement.class)
-						.registerSubtype(EventListenerIndexElement.class)
-						.registerSubtype(EventPublisherIndexElement.class)
-						.registerSubtype(ProjectElement.class)
-						.registerSubtype(QueryMethodIndexElement.class)
-						.registerSubtype(RequestMappingIndexElement.class)
-						.registerSubtype(WebfluxRouteElementRangesIndexElement.class)
-						.registerSubtype(AbstractSpringIndexElement.class));
+						.recognizeSubtypes());
 	}
 }

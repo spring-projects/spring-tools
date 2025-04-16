@@ -23,11 +23,11 @@ export class StructureManager {
     private parseNode(json: any): SpringNode | undefined {
         if (typeof (json._internal_node_type) === 'string') {
             switch (json._internal_node_type) {
-                case "ProjectElement":
+                case "org.springframework.ide.vscode.commons.protocol.spring.ProjectElement":
                     return new ProjectNode(json.projectName as string, this.parseArray(json.children));
-                case "DocumentElement":
+                case "org.springframework.ide.vscode.commons.protocol.spring.DocumentElement":
                     return new DocumentNode(Uri.parse(json.docURI as string), this.parseArray(json.children));
-                case "Bean":
+                case "org.springframework.ide.vscode.commons.protocol.spring.Bean":
                     return new BeanNode(
                         this.parseArray(json.children),
                         json.name,
@@ -39,19 +39,19 @@ export class StructureManager {
                         json.isConfiguration,
                         json.symbolLabel
                     );
-                case "AotProcessorElement":
+                case "org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement":
                     return new AotProcessorNode(
                         this.parseArray(json.children),
                         json.name,
                         Uri.parse(json.docUri)
                     );
-                case "BeanMethodContainerElement":
+                case "org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContainerElement":
                     return new BeanMethodContainerNode(
                         this.parseArray(json.children),
                         json.type,
                         json.location
                     );
-                case "BeanRegistrarElement":
+                case "org.springframework.ide.vscode.commons.protocol.spring.BeanRegistrarElement":
                     return new BeanRegistrarNode(
                         this.parseArray(json.children),
                         json.name,
@@ -59,14 +59,14 @@ export class StructureManager {
                         json.location
 
                     );
-                case "ConfigPropertyIndexElement":
+                case "org.springframework.ide.vscode.boot.java.beans.ConfigPropertyIndexElement":
                     return new ConfigPropertyNode(
                         this.parseArray(json.children),
                         json.name,
                         json.type,
                         json.range
                     );
-                case "EventListenerIndexElement":
+                case "org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement":
                     return new EventListenerNode(
                         this.parseArray(json.children),
                         json.eventType,
@@ -74,21 +74,21 @@ export class StructureManager {
                         json.containerBeanType,
                         json.annotations
                     );
-                case "EventPublisherIndexElement":
+                case "org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement":
                     return new EventPublisherNode(
                         this.parseArray(json.children),
                         json.eventType,
                         json.location,
                         json.eventTypesFromHierarchy,
                     );
-                case "QueryMethodIndexElement":
+                case "org.springframework.ide.vscode.boot.java.data.QueryMethodIndexElement":
                     return new QueryMethodNode(
                         this.parseArray(json.children),
                         json.methodName,
                         json.queryString,
                         json.range
                     );
-                case "RequestMappingIndexElement":
+                case "org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement":
                     return new RequestMappingNode(
                         this.parseArray(json.children),
                         json.path,
@@ -98,7 +98,7 @@ export class StructureManager {
                         json.symbolLabel,
                         json.range
                     );
-                case "WebfluxRouteElementRangesIndexElement":
+                case "org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouteElementRangesIndexElement":
                     return new WebfluxRoutesNode(
                         this.parseArray(json.children),
                         json.path,

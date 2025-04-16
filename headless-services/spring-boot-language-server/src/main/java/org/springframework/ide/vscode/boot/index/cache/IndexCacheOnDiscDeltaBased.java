@@ -40,19 +40,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.beans.ConfigPropertyIndexElement;
-import org.springframework.ide.vscode.boot.java.data.QueryMethodIndexElement;
-import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement;
-import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
-import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouteElementRangesIndexElement;
 import org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory;
-import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
-import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement;
-import org.springframework.ide.vscode.commons.protocol.spring.Bean;
-import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContainerElement;
-import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
-import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 
@@ -579,21 +567,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 				.registerTypeAdapter(DeltaStorage.class, new DeltaStorageAdapter())
 				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter())
 				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(SpringIndexElement.class, "_internal_node_type")
-						.recognizeSubtypes()
-						.registerSubtype(Bean.class)
-						.registerSubtype(AotProcessorElement.class)
-						.registerSubtype(BeanMethodContainerElement.class)
-						.registerSubtype(ConfigPropertyIndexElement.class)
-						.registerSubtype(DocumentElement.class)
-						.registerSubtype(EventListenerIndexElement.class)
-						.registerSubtype(EventPublisherIndexElement.class)
-						.registerSubtype(ProjectElement.class)
-						.registerSubtype(QueryMethodIndexElement.class)
-						.registerSubtype(RequestMappingIndexElement.class)
-						.registerSubtype(WebfluxRouteElementRangesIndexElement.class)
-						.registerSubtype(AbstractSpringIndexElement.class))
-
-				
+						.recognizeSubtypes())
 				.create();
 	}
 	

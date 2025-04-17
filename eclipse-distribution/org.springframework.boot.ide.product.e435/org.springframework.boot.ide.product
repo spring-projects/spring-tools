@@ -36,7 +36,7 @@
       startupMessageRect="7,220,441,20"
       startupForegroundColor="c1d72e" />
 
-   <launcher name="SpringToolsForEclipse">
+   <launcher name="SpringToolSuite4">
       <macosx icon="../org.springframework.boot.ide.branding/sts4.icns"/>
       <solaris/>
       <win useIco="true">

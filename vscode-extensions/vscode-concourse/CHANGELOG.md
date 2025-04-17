@@ -1,3 +1,7 @@
+## 2025-04-23 (4.30.0 RELEASE, incl. language servers version 1.56.0)
+
+* _(Concourse)_ Unknown property 'url' for type 'VaultConfig' vscode-concourse(YamlSchemaProblem) [#1534](https://github.com/spring-projects/spring-tools/issues/1534)
+
 ## 2024-06-12 (4.23.0 RELEASE, incl. language servers version 1.55.0)
 
 * no major changes

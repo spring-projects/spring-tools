@@ -1,3 +1,30 @@
+## 2025-04-23 (4.30.0 RELEASE, incl. language servers version 1.62.0)
+
+#### important highlights
+
+* _(Spring Boot)_ BeanRegistrar from Spring Framework 7 support: reconciling and quick fixes
+* _(Spring Boot)_ Improvements to Bean Injection completion proposals
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ adjust and enhance `NotRegisteredBeansReconciler` [#1530](https://github.com/spring-projects/spring-tools/issues/1530)
+* _(Spring Boot)_ [spring framework 7] add validation to check for `@Component` like annotations on bean registrars [#1523](https://github.com/spring-projects/spring-tools/issues/1523)
+* _(Spring Boot)_ [spring framework 7] add preference for new bean registrar validation [#1522](https://github.com/spring-projects/spring-tools/issues/1522)
+* _(Spring Boot)_ No Syntax highlighting for queries in a `@NativeQuery` [#1502](https://github.com/spring-projects/spring-tools/issues/1502)
+* _(Spring Boot)_ [spring framework 7] add validation + quickfixes to identify new BeanRegistrars that are not imported [#1499](https://github.com/spring-projects/spring-tools/issues/1499)
+* _(Spring Boot)_ [spring framework 7] add support for indexing functional bean registrations via BeanRegistrar [#1498](https://github.com/spring-projects/spring-tools/issues/1498)
+* _(Spring Boot)_ `NotRegisteredBeansReconciler` doesn't take factory files into account anymore [#1529](https://github.com/spring-projects/spring-tools/issues/1529)
+* _(Spring Boot)_ [bean completion proposals] avoid duplicate proposals [#1519](https://github.com/spring-projects/spring-tools/issues/1519)
+* _(Spring Boot)_ [bean completion proposals] completions show up at class level [#1528](https://github.com/spring-projects/spring-tools/issues/1528)
+* _(Spring Boot)_ [bean completion proposals] bean completion does not show up [#1501](https://github.com/spring-projects/spring-tools/issues/1501)
+* _(Spring Boot)_ Polish visualization of repository nodes in Spring outline [#1536](https://github.com/spring-projects/spring-tools/issues/1536)
+* _(Spring Boot)_ [structure view] add properties as children to configuration property nodes [#1494](https://github.com/spring-projects/spring-tools/issues/1494)
+* _(Spring Boot)_ replace remaining occurrences of `Spring Tools 4` with `Spring Tools` [#1459](https://github.com/spring-projects/spring-tools/issues/1459)
+* _(Spring Boot)_ update `jdt.core` to `3.41.0` [#1539](https://github.com/spring-projects/spring-tools/issues/1539)
+* _(Spring Boot)_ `ConcurrentModificationException` thrown while removing project [#1535](https://github.com/spring-projects/spring-tools/issues/1535)
+* _(Spring Boot)_ stop showing progress when exception happens deep inside the language server [#1510](https://github.com/spring-projects/spring-tools/issues/1510)
+* _(Spring Boot)_ cleanup messages to `Error Log View` [#1515](https://github.com/spring-projects/spring-tools/issues/1515)
+
 ## 2025-03-19 (4.29.1 RELEASE, incl. language server version 1.61.1)
 
 #### important highlights

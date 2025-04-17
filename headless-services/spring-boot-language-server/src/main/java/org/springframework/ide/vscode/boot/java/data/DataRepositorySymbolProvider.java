@@ -207,10 +207,9 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 		symbolLabel.append(beanName);
 		symbolLabel.append('\'');
 
-		markerString = markerString != null && markerString.length() > 0 ? " (" + markerString + ") " : " ";
+		markerString = markerString != null && markerString.length() > 0 ? " Repository(" + markerString + ")" : "";
 		symbolLabel.append(markerString);
 
-		symbolLabel.append(beanType);
 		return symbolLabel.toString();
 	}
 

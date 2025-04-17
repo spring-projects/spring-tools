@@ -69,7 +69,7 @@ public class DataRepositorySymbolProviderTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepository.java").toUri().toString();
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
         assertEquals(1, symbols.size());
-        assertTrue(containsSymbol(symbols, "@+ 'customerRepository' (Customer) Repository<Customer,Long>", docUri, 6, 17, 6, 35));
+        assertTrue(containsSymbol(symbols, "@+ 'customerRepository' Repository(Customer)", docUri, 6, 17, 6, 35));
     }
 
     @Test
@@ -87,7 +87,7 @@ public class DataRepositorySymbolProviderTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepository.java").toUri().toString();
         List<? extends DocumentSymbol> symbols = indexer.getDocumentSymbolsFromMetamodelIndex(docUri);
         assertEquals(1, symbols.size());
-        assertTrue(containsDocumentSymbol(symbols, "@+ 'customerRepository' (Customer) Repository<Customer,Long>", docUri, 6, 17, 6, 35));
+        assertTrue(containsDocumentSymbol(symbols, "@+ 'customerRepository' Repository(Customer)", docUri, 6, 17, 6, 35));
         
         DocumentSymbol documentSymbol = symbols.get(0);
         List<DocumentSymbol> children = documentSymbol.getChildren();
@@ -102,7 +102,7 @@ public class DataRepositorySymbolProviderTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithQuery.java").toUri().toString();
         List<? extends DocumentSymbol> symbols = indexer.getDocumentSymbolsFromMetamodelIndex(docUri);
         assertEquals(1, symbols.size());
-        assertTrue(containsDocumentSymbol(symbols, "@+ 'customerRepositoryWithQuery' (Customer) Repository<Customer,Long>", docUri, 7, 17, 7, 44));
+        assertTrue(containsDocumentSymbol(symbols, "@+ 'customerRepositoryWithQuery' Repository(Customer)", docUri, 7, 17, 7, 44));
         
         DocumentSymbol documentSymbol = symbols.get(0);
         List<DocumentSymbol> children = documentSymbol.getChildren();

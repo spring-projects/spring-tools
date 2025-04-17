@@ -56,7 +56,7 @@ public class SpringIndexerXML implements SpringIndexer {
 	
 	// whenever the implementation of the indexer changes in a way that the stored data in the cache is no longer valid,
 	// we need to change the generation - this will result in a re-indexing due to no up-to-date cache data being found
-	private static final String GENERATION = "GEN-11";
+	private static final String GENERATION = "GEN-12";
 
 	private static final String SYMBOL_KEY = "symbols";
 	private static final String BEANS_KEY = "beans";

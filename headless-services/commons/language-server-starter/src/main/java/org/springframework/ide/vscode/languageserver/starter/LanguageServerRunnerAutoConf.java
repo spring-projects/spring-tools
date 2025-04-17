@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.languageserver.starter;
 
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer;
@@ -20,6 +22,8 @@ import org.springframework.ide.vscode.commons.languageserver.LanguageServerRunne
 import org.springframework.ide.vscode.commons.languageserver.config.LanguageServerProperties;
 import org.springframework.ide.vscode.commons.languageserver.util.ParentProcessWatcher;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+
+import com.google.gson.GsonBuilder;
 
 @AutoConfiguration
 public class LanguageServerRunnerAutoConf {
@@ -35,12 +39,13 @@ public class LanguageServerRunnerAutoConf {
 	
 	@ConditionalOnMissingClass("org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness")
 	@Bean
-	public LanguageServerRunner serverApp(
+	LanguageServerRunner serverApp(
 			LanguageServerProperties properties, 
 			SimpleLanguageServer languageServerFactory,
-			Function<MessageConsumer, MessageConsumer> messageConsumer
+			Function<MessageConsumer, MessageConsumer> messageConsumer,
+			Optional<Consumer<GsonBuilder>> configureGson
 	) {
-		return new LanguageServerRunner(properties, languageServerFactory, messageConsumer);
+		return new LanguageServerRunner(properties, languageServerFactory, messageConsumer, configureGson.orElse(b -> {}));
 	}
 
 }

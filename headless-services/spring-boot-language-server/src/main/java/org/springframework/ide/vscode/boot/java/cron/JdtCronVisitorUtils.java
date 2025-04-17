@@ -53,10 +53,12 @@ public class JdtCronVisitorUtils {
 		} else if (e instanceof TextBlock tb) {
 			value = tb.getLiteralValue();
 		}
-		value = value.trim();
-		if (value.startsWith("#{") || value.startsWith("${")) {
-			// Either SPEL or Property Holder
-			return false;
+		if (value != null) {
+			value = value.trim();
+			if (value.startsWith("#{") || value.startsWith("${")) {
+				// Either SPEL or Property Holder
+				return false;
+			}
 		}
 		return value != null;
 	}

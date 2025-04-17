@@ -1,6 +1,6 @@
-import { commands, Uri } from "vscode";
+import { commands } from "vscode";
 import { Emitter, LanguageClient } from "vscode-languageclient/node";
-import {Bean, BeansParams, ExtensionAPI, SpringIndex} from "./api";
+import {Bean, BeansParams, ExtensionAPI} from "./api";
 import {
     LiveProcess,
     LiveProcessConnectedNotification,

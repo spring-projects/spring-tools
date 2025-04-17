@@ -145,6 +145,10 @@
       ],
       "commandPalette": [
         {
+          "command": "vscode-spring-boot.structure.refresh",
+          "when": "false"
+        },
+        {
           "command": "vscode-spring-boot.props-to-yaml",
           "when": "false"
         },
@@ -184,6 +188,12 @@
       ]
     },
     "commands": [
+      {
+        "command": "vscode-spring-boot.structure.refresh",
+        "title": "Refresh",
+        "category": "Spring Boot",
+        "icon": "$(refresh)"
+      },
       {
         "command": "vscode-spring-boot.live-hover.connect",
         "title": "Show/Refresh/Hide Live Data from Spring Boot Processes",

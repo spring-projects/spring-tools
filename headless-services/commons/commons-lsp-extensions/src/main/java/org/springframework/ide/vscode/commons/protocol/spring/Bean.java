@@ -11,11 +11,13 @@
 package org.springframework.ide.vscode.commons.protocol.spring;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.SymbolKind;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 
 public class Bean extends AbstractSpringIndexElement implements SymbolElement {
@@ -28,6 +30,7 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	private final AnnotationMetadata[] annotations;
 	private final boolean isConfiguration;
 	private final String symbolLabel;
+	private final boolean isInterface;
 
 	public Bean(
 			String name,
@@ -44,26 +47,25 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 		this.location = location;
 		this.isConfiguration = isConfiguration;
 		this.symbolLabel = symbolLabel;
+		this.isInterface = supertypes == null || !supertypes.contains(Object.class.getName());
 		
 		if (injectionPoints != null && injectionPoints.length == 0) {
-			this.injectionPoints = DefaultValues.EMPTY_INJECTION_POINTS;
+			this.injectionPoints = null;
 		}
 		else {
 			this.injectionPoints = injectionPoints;
 		}
 		
-		if (supertypes != null && supertypes.size() == 0) {
-			this.supertypes = DefaultValues.EMPTY_SUPERTYPES;
-		}
-		else if (supertypes != null && supertypes.size() == 1 && supertypes.contains("java.lang.Object")) {
-			this.supertypes = DefaultValues.OBJECT_SUPERTYPE;
+		Set<String> sanitizedSuperTypes = supertypes == null ? null : supertypes.stream().filter(t -> !t.equals(Object.class.getName())).collect(Collectors.toUnmodifiableSet());
+		if (sanitizedSuperTypes != null && sanitizedSuperTypes.size() == 0) {
+			this.supertypes = null;
 		}
 		else {
-			this.supertypes = supertypes;
+			this.supertypes = sanitizedSuperTypes;
 		}
 
 		if (annotations != null && annotations.length == 0) {
-			this.annotations = DefaultValues.EMPTY_ANNOTATIONS;
+			this.annotations = null;
 		}
 		else {
 			this.annotations = annotations;
@@ -83,15 +85,15 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	}
 	
 	public InjectionPoint[] getInjectionPoints() {
-		return injectionPoints;
+		return injectionPoints == null ? DefaultValues.EMPTY_INJECTION_POINTS : injectionPoints;
 	}
 
 	public boolean isTypeCompatibleWith(String type) {
-		return type != null && ((this.type != null && this.type.equals(type)) || (supertypes.contains(type)));
+		return type != null && ((this.type != null && this.type.equals(type)) || (supertypes != null && supertypes.contains(type)) || (Object.class.getName().equals(type) && !isInterface));
 	}
 	
 	public AnnotationMetadata[] getAnnotations() {
-		return annotations;
+		return annotations == null ? DefaultValues.EMPTY_ANNOTATIONS : annotations;
 	}
 	
 	public boolean isConfiguration() {
@@ -99,7 +101,11 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	}
 	
 	public Set<String> getSupertypes() {
-		return supertypes;
+		if (supertypes == null) {
+			return isInterface ? DefaultValues.EMPTY_SUPERTYPES : DefaultValues.OBJECT_SUPERTYPE;
+		} else {
+			return isInterface ? supertypes : ImmutableSet.<String>builder().addAll(supertypes).add(Object.class.getName()).build();
+		}
 	}
 
 	public String getSymbolLabel() {

@@ -1,4 +1,4 @@
-import { Event } from "vscode";
+import { Event, Uri } from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
 import { LiveProcess } from "./notification";
 import {Location} from "vscode-languageclient";

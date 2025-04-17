@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2024 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -53,6 +53,7 @@ import org.springframework.ide.vscode.boot.java.beans.ResourceDefinitionProvider
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnBeanDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnResourceDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.copilot.util.ResponseModifier;
+import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.DataQueryParameterDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtDataQuerySemanticTokensProvider;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCodeActionProvider;
@@ -426,6 +427,11 @@ public class BootLanguageServerBootApp {
 			BootJavaReconcileEngine reconciler,
 			BootJavaConfig config) {
 		return new ModulithService(server, projectFinder, projectObserver, springIndex, reconciler, config);
+	}
+	
+	@Bean
+	DataRepositoryAotMetadataService dataAotMetadataService() {
+		return new DataRepositoryAotMetadataService();
 	}
 	
 	@Bean ResponseModifier responseModifier() {

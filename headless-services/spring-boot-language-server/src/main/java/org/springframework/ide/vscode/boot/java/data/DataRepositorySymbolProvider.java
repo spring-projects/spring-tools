@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -57,7 +58,13 @@ import reactor.util.function.Tuples;
 public class DataRepositorySymbolProvider implements SymbolProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(DataRepositorySymbolProvider.class);
+
+	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	
+	public DataRepositorySymbolProvider(DataRepositoryAotMetadataService repositoryMetadataService) {
+		this.repositoryMetadataService = repositoryMetadataService;
+	}
+
 	@Override
 	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
 		// this checks spring data repository beans that are defined as extensions of the repository interface
@@ -115,7 +122,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 					Range range = doc.toRange(nodeRegion);
 				
 					if (methodName != null) {
-						String queryString = identifyQueryString(method, annotationHierarchies);
+						String queryString = identifyQueryString(method, annotationHierarchies, context);
 						String methodSignature = identifyMethodSignature(method);
 						beanDefinition.addChild(new QueryMethodIndexElement(methodSignature, queryString, range));
 					}
@@ -174,8 +181,9 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 		return result;
 	}
 
-	private String identifyQueryString(MethodDeclaration method, AnnotationHierarchies annotationHierarchies) {
+	private String identifyQueryString(MethodDeclaration method, AnnotationHierarchies annotationHierarchies, SpringIndexerJavaContext context) {
 		
+		// lookup query annotation on the method first
 		EmbeddedQueryExpression queryExpression = null;
 
 		Collection<Annotation> annotations = ASTUtils.getAnnotations(method);
@@ -191,12 +199,22 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				}
 			}
 		}
-		
+
 		if (queryExpression != null) {
 			return queryExpression.query().getText();
 		}
+		
+		// second option: lookup repository metadata service to see if there is a matching enty
+		IMethodBinding methodBinding = method.resolveBinding();
+		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
 
-		return null;
+		DataRepositoryAotMetadata repositoryMetadata = this.repositoryMetadataService.getRepositoryMetadata(context.getProject(), repositoryClass);
+		if (repositoryMetadata == null) {
+			return null;
+		}
+		
+		String queryStatement = repositoryMetadataService.getQueryStatement(repositoryMetadata, methodBinding);
+		return queryStatement;
 	}
 	
 	protected String beanLabel(boolean isFunctionBean, String beanName, String beanType, String markerString) {

@@ -19,6 +19,7 @@ import org.springframework.ide.vscode.boot.java.beans.BeansSymbolProvider;
 import org.springframework.ide.vscode.boot.java.beans.ComponentSymbolProvider;
 import org.springframework.ide.vscode.boot.java.beans.ConfigurationPropertiesSymbolProvider;
 import org.springframework.ide.vscode.boot.java.beans.FeignClientSymbolProvider;
+import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
 import org.springframework.ide.vscode.boot.java.data.DataRepositorySymbolProvider;
 import org.springframework.ide.vscode.boot.java.events.EventListenerSymbolProvider;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
@@ -29,14 +30,14 @@ import org.springframework.ide.vscode.boot.java.utils.RestrictedDefaultSymbolPro
 public class SpringSymbolIndexerConfig {
 
 	@Bean
-	AnnotationHierarchyAwareLookup<SymbolProvider> symbolProviders(IndexCache cache) {
+	AnnotationHierarchyAwareLookup<SymbolProvider> symbolProviders(IndexCache cache, DataRepositoryAotMetadataService repositoryMetadataService) {
 		AnnotationHierarchyAwareLookup<SymbolProvider> providers = new AnnotationHierarchyAwareLookup<>();
 
 		RequestMappingSymbolProvider requestMappingSymbolProvider = new RequestMappingSymbolProvider();
 		BeansSymbolProvider beansSymbolProvider = new BeansSymbolProvider();
 		ComponentSymbolProvider componentSymbolProvider = new ComponentSymbolProvider();
 		ConfigurationPropertiesSymbolProvider configPropsSymbolProvider = new ConfigurationPropertiesSymbolProvider();
-		DataRepositorySymbolProvider dataRepositorySymbolProvider = new DataRepositorySymbolProvider();
+		DataRepositorySymbolProvider dataRepositorySymbolProvider = new DataRepositorySymbolProvider(repositoryMetadataService);
 		EventListenerSymbolProvider eventListenerSymbolProvider = new EventListenerSymbolProvider();
 
 		RestrictedDefaultSymbolProvider restrictedDefaultSymbolProvider = new RestrictedDefaultSymbolProvider();

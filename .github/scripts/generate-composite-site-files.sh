@@ -1,8 +1,6 @@
 val=$1
 url=$2
-justj21=$3
-
-echo "Include JustJ bit: ${justj21}"
+eversion=$3
 
 rm -f ./compositeArtifacts.xml
 rm -f ./compositeContent.xml
@@ -15,10 +13,10 @@ echo "    type='org.eclipse.equinox.internal.p2.artifact.repository.CompositeArt
 echo "  <properties size='1'>" >> compositeArtifacts.xml
 echo "    <property name='p2.timestamp' value='${val}'/>" >> compositeArtifacts.xml
 echo "  </properties>" >> compositeArtifacts.xml
-if [ "${justj21}" = true ] ; then
+if [[ ${eversion} == "e4.36" ]]; then
   echo "  <children size='2'>" >> compositeArtifacts.xml
   echo "    <child location='${url}'/>" >> compositeArtifacts.xml
-  echo "    <child location='https://download.eclipse.org/justj/jres/21/updates/release/latest/'/>" >> compositeArtifacts.xml
+  echo "    <child location='https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-06/'/>" >> compositeArtifacts.xml
   echo "  </children>" >> compositeArtifacts.xml
 else
   echo "  <children size='1'>" >> compositeArtifacts.xml
@@ -34,10 +32,10 @@ echo "    type='org.eclipse.equinox.internal.p2.metadata.repository.CompositeMet
 echo "  <properties size='1'>" >> compositeContent.xml
 echo "    <property name='p2.timestamp' value='${val}'/>" >> compositeContent.xml
 echo "  </properties>" >> compositeContent.xml
-if [ "${justj21}" = true ] ; then
+if [[ ${eversion} == "e4.36" ]]; then
   echo "  <children size='2'>" >> compositeContent.xml
   echo "    <child location='${url}'/>" >> compositeContent.xml
-  echo "    <child location='https://download.eclipse.org/justj/jres/21/updates/release/latest/'/>" >> compositeContent.xml
+  echo "    <child location='https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-06/'/>" >> compositeContent.xml
   echo "  </children>" >> compositeContent.xml
 else
   echo "  <children size='1'>" >> compositeContent.xml

@@ -67,10 +67,4 @@ jobs:
             fi
           done
           echo "invalid_urls=$invalid_urls" >> $GITHUB_OUTPUT
-#      - uses: ./.github/actions/cloudflare-purge
-#        name: Invalidate URLs
-#        with:
-#          urls: ${{ steps.gen-aggregate-sites.outputs.invalid_urls }}
-#          cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-#          cloudflare_cache_token: ${{ secrets.CLOUDFLARE_CACHE_TOKEN }}
 

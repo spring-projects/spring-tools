@@ -61,11 +61,7 @@ jobs:
               echo "Found ${dir}"
               dir_name=${dir:0:-1}
               site_url="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/${{ inputs.version }}/${dir_name}"
-              if [[ ${dir_name} == "e4.30" ]]; then 
-                  ${{ github.workspace }}/.github/scripts/generate-composite-site-files.sh ${{ steps.timestamp.outputs.date }} $site_url 
-              else
-                  ${{ github.workspace }}/.github/scripts/generate-composite-site-files.sh ${{ steps.timestamp.outputs.date }} $site_url true
-              fi
+              ${{ github.workspace }}/.github/scripts/generate-composite-site-files.sh ${{ steps.timestamp.outputs.date }} $site_url $dir_name
               cat ./compositeArtifacts.xml
               cat ./compositeContent.xml
               if [[ ${dir_name} == ${{ inputs.latest }} ]]; then

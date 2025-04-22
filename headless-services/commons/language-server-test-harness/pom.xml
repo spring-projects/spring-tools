@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>org.springframework.ide.vscode</groupId>
 		<artifactId>commons-parent</artifactId>
-		<version>1.62.0-SNAPSHOT</version>
+		<version>1.63.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	

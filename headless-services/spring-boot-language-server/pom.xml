@@ -50,6 +50,18 @@
 				<enabled>false</enabled>
 			</releases>
 		</repository>
+		
+		<repository>
+			<id>jmolecules-snapshots</id>
+			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
+
 	</repositories>
 
 	<dependencies>
@@ -122,6 +134,7 @@
 			<artifactId>commons-rewrite</artifactId>
 			<version>${dependencies.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.core</artifactId>
@@ -145,6 +158,12 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.jmolecules.integrations</groupId>
+			<artifactId>jmolecules-stereotype</artifactId>
+			<version>0.27.0-STEREOTYPE-SNAPSHOT</version>
 		</dependency>
 
 

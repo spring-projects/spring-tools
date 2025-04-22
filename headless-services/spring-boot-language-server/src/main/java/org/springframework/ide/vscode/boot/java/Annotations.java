@@ -130,6 +130,7 @@ public class Annotations {
 			Annotations.RESOURCE_JAKARTA, Annotations.INJECT_JAKARTA, Annotations.NAMED_JAKARTA,
 			Annotations.RESOURCE_JAVAX, Annotations.INJECT_JAVAX, Annotations.NAMED_JAVAX
 	);
-
+	
+	public static final String JMOLECULES_STEREOTYPE = "org.jmolecules.stereotype.Stereotype";
 
 }

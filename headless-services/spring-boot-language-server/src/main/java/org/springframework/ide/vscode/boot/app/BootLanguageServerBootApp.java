@@ -78,6 +78,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.JavaReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.spel.SpelDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.boot.java.value.ValueDefinitionProvider;
 import org.springframework.ide.vscode.boot.jdt.ls.JavaProjectsService;
@@ -438,6 +439,11 @@ public class BootLanguageServerBootApp {
 	@Bean
 	DataRepositoryAotMetadataService dataAotMetadataService() {
 		return new DataRepositoryAotMetadataService();
+	}
+	
+	@Bean
+	StereotypeCatalogRegistry stereotypeCatalogRegistry() {
+		return new StereotypeCatalogRegistry();
 	}
 	
 	@Bean ResponseModifier responseModifier() {

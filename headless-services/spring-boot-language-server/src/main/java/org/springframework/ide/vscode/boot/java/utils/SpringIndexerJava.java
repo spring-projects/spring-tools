@@ -46,6 +46,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
@@ -144,7 +145,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	@Override
 	public boolean isInterestedIn(String resource) {
-		return resource.endsWith(".java") && !resource.endsWith("package-info.java");
+		return resource.endsWith(".java");
 	}
 
 	@Override
@@ -719,6 +720,20 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void scanAST(final SpringIndexerJavaContext context, boolean includeReconcile) {
 		try {
 			context.getCu().accept(new ASTVisitor() {
+				
+				@Override
+				public boolean visit(PackageDeclaration node) {
+					try {
+						extractSymbolInformation(node, context);
+					}
+					catch (RequiredCompleteAstException e) {
+						throw e;
+					}
+					catch (Exception e) {
+						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
+					}
+					return super.visit(node);
+				}
 	
 				@Override
 				public boolean visit(TypeDeclaration node) {
@@ -889,6 +904,16 @@ public class SpringIndexerJava implements SpringIndexer {
 			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
 			for (SymbolProvider provider : providers) {
 				provider.addSymbols(methodDeclaration, context, doc);
+			}
+		}
+	}
+
+	private void extractSymbolInformation(PackageDeclaration packageDeclaration, final SpringIndexerJavaContext context) throws Exception {
+		Collection<SymbolProvider> providers = symbolProviders.getAll();
+		if (!providers.isEmpty()) {
+			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
+			for (SymbolProvider provider : providers) {
+				provider.addSymbols(packageDeclaration, context, doc);
 			}
 		}
 	}

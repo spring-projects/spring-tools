@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-Localization: plugin
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.refactoring;singleton:=true
-Bundle-Version: 4.30.0.qualifier
+Bundle-Version: 4.31.0.qualifier
 Bundle-Activator: org.springframework.ide.eclipse.boot.refactoring.SpringBootRefactoringPlugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,

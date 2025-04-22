@@ -24,6 +24,7 @@ import java.nio.channels.Channels;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.eclipse.lsp4j.jsonrpc.Launcher;
@@ -37,6 +38,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.ide.vscode.commons.languageserver.config.LanguageServerProperties;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.STS4LanguageClient;
+
+import com.google.gson.GsonBuilder;
 
 /**
  * A CommandLineRunner that launches a language server. This meant to be used as a Spring bean
@@ -98,11 +101,14 @@ public class LanguageServerRunner implements CommandLineRunner {
 
 	private Function<MessageConsumer, MessageConsumer> messageConsumer;
 
-	public LanguageServerRunner(LanguageServerProperties properties, SimpleLanguageServer languageServer, Function<MessageConsumer, MessageConsumer> messageConsumer) {
+	private Consumer<GsonBuilder> configureGson;
+
+	public LanguageServerRunner(LanguageServerProperties properties, SimpleLanguageServer languageServer, Function<MessageConsumer, MessageConsumer> messageConsumer, Consumer<GsonBuilder> configureGson) {
 		super();
 		this.properties = properties;
 		this.languageServer = languageServer;
 		this.messageConsumer = messageConsumer;
+		this.configureGson = configureGson;
 	}
 
 	public void start() throws Exception {
@@ -207,7 +213,7 @@ public class LanguageServerRunner implements CommandLineRunner {
 		AsynchronousSocketChannel socketChannel = serverSocket.accept().get();
 		log.info("Client connected via socket");
 		return Launcher.createIoLauncher(localService, remoteInterface, Channels.newInputStream(socketChannel),
-				Channels.newOutputStream(socketChannel), executorService, wrapper);
+				Channels.newOutputStream(socketChannel), executorService, wrapper, configureGson);
 	}
 
 	private static Connection connectToNode() throws IOException {
@@ -235,12 +241,13 @@ public class LanguageServerRunner implements CommandLineRunner {
 	private Future<Void> runAsync(Connection connection) throws Exception {
 		LanguageServer server = this.languageServer;
 		ExecutorService executor = createServerThreads();
-		Launcher<STS4LanguageClient> launcher = Launcher.createLauncher(server,
+		Launcher<STS4LanguageClient> launcher = Launcher.createIoLauncher(server,
 				STS4LanguageClient.class,
 				connection.in,
 				connection.out,
 				executor,
-				messageConsumer
+				messageConsumer,
+				configureGson
 		);
 
 		if (server instanceof LanguageClientAware) {

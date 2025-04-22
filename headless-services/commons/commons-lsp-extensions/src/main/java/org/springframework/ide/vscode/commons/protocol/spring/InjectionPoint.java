@@ -29,8 +29,8 @@ public class InjectionPoint {
 		this.type = type;
 		this.location = location;
 		
-		if (annotations == null || (annotations != null && annotations.length == 0)) {
-			this.annotations = DefaultValues.EMPTY_ANNOTATIONS;
+		if (annotations != null && annotations.length == 0) {
+			this.annotations = null;
 		}
 		else {
 			this.annotations = annotations;
@@ -50,7 +50,7 @@ public class InjectionPoint {
 	}
 	
 	public AnnotationMetadata[] getAnnotations() {
-		return annotations;
+		return annotations == null ? DefaultValues.EMPTY_ANNOTATIONS : annotations;
 	}
 
 }

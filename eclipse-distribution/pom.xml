@@ -360,11 +360,11 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/staging/2025-06/</url>
 				</repository>
-				<repository>
+<!--				<repository>
 					<id>2025-06-i-builds</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/eclipse/updates/4.36-I-builds/</url>
-				</repository>
+				</repository> -->
 				<repository>
 					<id>orbit</id>
 					<layout>p2</layout>

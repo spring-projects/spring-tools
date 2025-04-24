@@ -36,8 +36,6 @@ public class DataRepositoryAotMetadataService {
 		try {
 			String metadataFilePath = repositoryType.replace('.', File.separatorChar);
 			
-			IClasspathUtil.getOutputFolders(project.getClasspath()).forEach(System.out::println);
-			
 			Optional<File> metadataFile = IClasspathUtil.getOutputFolders(project.getClasspath())
 				.map(outputFolder -> new File(outputFolder.getParentFile(), "spring-aot/main/resources/" + metadataFilePath + ".json"))
 				.filter(file -> file.exists())

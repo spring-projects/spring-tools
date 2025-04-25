@@ -14,13 +14,16 @@ import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -58,6 +61,15 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 		IMethodBinding methodBinding = node.resolveBinding();
 
+		// Don't show CodeLens if annotated with `@Query` or `@NativeQuery`
+		for (IAnnotationBinding a : methodBinding.getAnnotations()) {
+			ITypeBinding t = a.getAnnotationType();
+			if (t != null 
+					&& (Annotations.DATA_JPA_QUERY.equals(t.getQualifiedName()) || Annotations.DATA_JPA_NATIVE_QUERY.equals(t.getQualifiedName()))) {
+				return;
+			}
+		}
+		
 		if (methodBinding == null || methodBinding.getDeclaringClass() == null
 				|| methodBinding.getMethodDeclaration() == null
 				|| methodBinding.getDeclaringClass().getBinaryName() == null

@@ -612,6 +612,25 @@ public class Editor {
 		Hover hover = harness.getHover(doc, doc.toPosition(hoverPosition));
 		assertContains(snippet, hoverString(hover));
 	}
+	
+	public void assertCodeLens(String over, int occurrence, String codeLensText) throws Exception {
+		int offset = getHoverPosition(over, occurrence);
+		List<? extends CodeLens> matchingCodeLenses = harness.getCodeLenses(doc).stream()
+				.filter(cl -> doc.toOffset(cl.getRange().getStart()) <= offset
+						&& doc.toOffset(cl.getRange().getEnd()) >= offset)
+				.collect(Collectors.toList());
+		if (matchingCodeLenses.isEmpty()) {
+			if (codeLensText == null) {
+				// Success! No code lenses expected at this spot
+				return;
+			} 
+			fail("No CodeLenses over the string `%s`".formatted(over));
+		}
+		if (!matchingCodeLenses.stream().anyMatch(cl -> cl.getCommand().getTitle().contains(codeLensText))) {
+			fail("None of the found CodeLenses: [ %s ] contained '%s'".formatted(matchingCodeLenses.stream()
+					.map(cl -> "'%s'".formatted(cl.getCommand().getTitle())).collect(Collectors.joining(", ")), codeLensText));
+		}
+	}
 
 	public void assertLiveCodeLensContains(String codeLensOver, int occurrence, String snippet) throws Exception {
 		int cmPosition = getHoverPosition(codeLensOver, occurrence);

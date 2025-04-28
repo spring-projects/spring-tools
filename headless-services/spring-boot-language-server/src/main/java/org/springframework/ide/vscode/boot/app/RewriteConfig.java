@@ -13,12 +13,13 @@ package org.springframework.ide.vscode.boot.app;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
+import org.springframework.ide.vscode.boot.java.data.QueryMethodCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteCodeActionHandler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ReconcileProblemCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRecipeRepository;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
-import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
@@ -35,13 +36,18 @@ public class RewriteConfig {
 	}
 	
 	@ConditionalOnBean(RewriteRecipeRepository.class)
-	@Bean RewriteCodeActionHandler rewriteCodeActionHandler(CompilationUnitCache cuCache, BootJavaConfig config, JdtReconciler jdtReconciler, SimpleLanguageServer server) {
-		return new RewriteCodeActionHandler(cuCache, config, jdtReconciler, server.getQuickfixRegistry(), server.getDiagnosticSeverityProvider());
+	@Bean ReconcileProblemCodeActionProvider reconcileProblemCodeActionProvider(JdtReconciler reconciler, SimpleLanguageServer server) {
+		return new ReconcileProblemCodeActionProvider(reconciler, server.getDiagnosticSeverityProvider());
 	}
 	
 	@ConditionalOnBean(RewriteRecipeRepository.class)
 	@Bean SpringBootUpgrade springBootUpgrade(SimpleLanguageServer server, RewriteRecipeRepository recipeRepo, JavaProjectFinder projectFinder) {
 		return new SpringBootUpgrade(server, recipeRepo, projectFinder);
+	}
+	
+	@ConditionalOnBean(RewriteRefactorings.class)
+	@Bean QueryMethodCodeActionProvider queryMethodCodeActionProvider(DataRepositoryAotMetadataService dataRepoAotService, RewriteRefactorings refactorings) {
+		return new QueryMethodCodeActionProvider(dataRepoAotService, refactorings);
 	}
 
 }

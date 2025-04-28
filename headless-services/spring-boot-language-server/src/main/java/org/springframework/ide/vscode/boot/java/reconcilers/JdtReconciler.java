@@ -50,8 +50,8 @@ public class JdtReconciler implements JavaReconciler {
 	public static final String SPRING_CONDITIONAL_ON_EXPRESSION = "org.springframework.boot.autoconfigure.condition.ConditionalOnExpression";
 	
 	private final CompilationUnitCache compilationUnitCache;
-	private final JdtAstReconciler[] reconcilers;
-	private BootJavaConfig config;
+	final JdtAstReconciler[] reconcilers;
+	final BootJavaConfig config;
 	
 	private final ConcurrentHashMap<String, List<JdtAstReconciler>> applicableReconcilersCache;
 	

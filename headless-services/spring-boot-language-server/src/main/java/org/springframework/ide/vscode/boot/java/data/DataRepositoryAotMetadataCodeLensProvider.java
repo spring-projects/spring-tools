@@ -1,17 +1,22 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     Broadcom - initial API and implementation
+ *     Broadcom, Inc. - initial API and implementation
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
@@ -25,8 +30,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
+import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
+import org.springframework.ide.vscode.commons.rewrite.java.AddAnnotationOverMethod;
+import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -39,10 +48,12 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	private final JavaProjectFinder projectFinder;
+	private final RewriteRefactorings refactorings;
 
-	public DataRepositoryAotMetadataCodeLensProvider(JavaProjectFinder projectFinder, DataRepositoryAotMetadataService repositoryMetadataService) {
+	public DataRepositoryAotMetadataCodeLensProvider(JavaProjectFinder projectFinder, DataRepositoryAotMetadataService repositoryMetadataService, RewriteRefactorings refactorings) {
 		this.projectFinder = projectFinder;
 		this.repositoryMetadataService = repositoryMetadataService;
+		this.refactorings = refactorings;
 	}
 
 	@Override
@@ -55,59 +66,65 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			}
 		});
 	}
-
-	protected void provideCodeLens(CancelChecker cancelToken, MethodDeclaration node, TextDocument document, List<CodeLens> resultAccumulator) {
-		cancelToken.checkCanceled();
-
-		IMethodBinding methodBinding = node.resolveBinding();
+	
+	static boolean isDataQuaryNonAnnotatedMethodCandidate(IMethodBinding methodBinding) {
+		if (methodBinding == null || methodBinding.getDeclaringClass() == null
+				|| methodBinding.getMethodDeclaration() == null
+				|| methodBinding.getDeclaringClass().getBinaryName() == null
+				|| methodBinding.getMethodDeclaration().toString() == null) {
+			return false;
+		}
 
 		// Don't show CodeLens if annotated with `@Query` or `@NativeQuery`
 		for (IAnnotationBinding a : methodBinding.getAnnotations()) {
 			ITypeBinding t = a.getAnnotationType();
 			if (t != null 
 					&& (Annotations.DATA_JPA_QUERY.equals(t.getQualifiedName()) || Annotations.DATA_JPA_NATIVE_QUERY.equals(t.getQualifiedName()))) {
-				return;
+				return false;
 			}
 		}
 		
-		if (methodBinding == null || methodBinding.getDeclaringClass() == null
-				|| methodBinding.getMethodDeclaration() == null
-				|| methodBinding.getDeclaringClass().getBinaryName() == null
-				|| methodBinding.getMethodDeclaration().toString() == null) {
-			return;
-		}
-
-		cancelToken.checkCanceled();
-
+		return true;
+	}
+	
+	static Optional<String> getDataQuery(DataRepositoryAotMetadataService repositoryMetadataService, IJavaProject project, IMethodBinding methodBinding) {
 		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
 		final IMethodBinding method = methodBinding.getMethodDeclaration();
 
+		DataRepositoryAotMetadata metadata = repositoryMetadataService.getRepositoryMetadata(project, repositoryClass);
+
+		if (metadata != null) {
+			return Optional.ofNullable(repositoryMetadataService.getQueryStatement(metadata, method));
+		}
+		
+		return Optional.empty();
+
+	}
+
+	protected void provideCodeLens(CancelChecker cancelToken, MethodDeclaration node, TextDocument document, List<CodeLens> resultAccumulator) {
+		cancelToken.checkCanceled();
+		
 		IJavaProject project = projectFinder.find(document.getId()).get();
 		if (project == null) {
 			return;
 		}
 
-		DataRepositoryAotMetadata metadata = repositoryMetadataService.getRepositoryMetadata(project, repositoryClass);
-
-		if (metadata == null) {
-			return;
+		IMethodBinding methodBinding = node.resolveBinding();
+		
+		if (isDataQuaryNonAnnotatedMethodCandidate(methodBinding)) {
+			cancelToken.checkCanceled();
+			getDataQuery(repositoryMetadataService, project, methodBinding).map(queryStatement -> createCodeLens(node, document, queryStatement)).ifPresent(resultAccumulator::add);
 		}
-
-		cancelToken.checkCanceled();
-
-		String queryStatement = repositoryMetadataService.getQueryStatement(metadata, method);
-		if (queryStatement == null) {
-			return;
-		}
-
-		CodeLens codeLens = createCodeLens(node, document, queryStatement);
-		resultAccumulator.add(codeLens);
 	}
 
 	private CodeLens createCodeLens(MethodDeclaration node, TextDocument document, String queryStatement) {
 		try {
+			IMethodBinding mb = node.resolveBinding();
 			Command cmd = new Command();
 			cmd.setTitle(queryStatement);
+			if (mb != null) {
+				cmd = refactorings.createFixCommand(queryStatement, createFixDescriptor(mb, document.getUri(), queryStatement));
+			}
 
 			CodeLens codeLens = new CodeLens();
 			codeLens.setRange(document.toRange(node.getName().getStartPosition(), node.getName().getLength()));
@@ -119,6 +136,17 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			log.error("bad location while calculating code lens for data repository query method", e);
 			return null;
 		}
+	}
+	
+	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, String queryStatement) {
+		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Convert into `@Query`")
+				.withRecipeScope(RecipeScope.FILE)
+				.withParameters(Map.of("annotationType", Annotations.DATA_JPA_QUERY, "method",
+						"%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
+								Arrays.stream(mb.getParameterTypes()).map(pt -> pt.getQualifiedName())
+										.collect(Collectors.joining(", "))),
+						"attributes", List.of(new AddAnnotationOverMethod.Attribute("value",
+								"\"%s\"".formatted(StringEscapeUtils.escapeJava(queryStatement))))));
 	}
 
 }

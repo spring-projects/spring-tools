@@ -62,6 +62,7 @@ import org.springframework.ide.vscode.boot.java.requestmapping.LiveAppURLSymbolP
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingHoverProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxHandlerCodeLensProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouteHighlightProdivder;
+import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.spel.SpelSemanticTokens;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.boot.java.value.ValueHoverProvider;
@@ -181,7 +182,7 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 
 		spelSemanticTokens = appContext.getBean(SpelSemanticTokens.class);
 		dataRepositoryAotMetadataService = appContext.getBean(DataRepositoryAotMetadataService.class);
-		codeLensHandler = createCodeLensEngine(springIndex, projectFinder, server, spelSemanticTokens, dataRepositoryAotMetadataService);
+		codeLensHandler = createCodeLensEngine(springIndex, projectFinder, server, spelSemanticTokens, dataRepositoryAotMetadataService, appContext.getBean(RewriteRefactorings.class));
 
 		highlightsEngine = createDocumentHighlightEngine(appContext);
 		documents.onDocumentHighlight(highlightsEngine);
@@ -316,12 +317,12 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 	}
 
 	protected BootJavaCodeLensEngine createCodeLensEngine(SpringMetamodelIndex springIndex, JavaProjectFinder projectFinder, SimpleLanguageServer server,
-			SpelSemanticTokens spelSemanticTokens, DataRepositoryAotMetadataService repositoryAotMetadataService) {
+			SpelSemanticTokens spelSemanticTokens, DataRepositoryAotMetadataService repositoryAotMetadataService, RewriteRefactorings refactorings) {
 
 		Collection<CodeLensProvider> codeLensProvider = new ArrayList<>();
 		codeLensProvider.add(new WebfluxHandlerCodeLensProvider(springIndex));
 		codeLensProvider.add(new CopilotCodeLensProvider(projectFinder, server, spelSemanticTokens));
-		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(projectFinder, repositoryAotMetadataService));
+		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(projectFinder, repositoryAotMetadataService, refactorings));
 
 		return new BootJavaCodeLensEngine(this, codeLensProvider);
 	}

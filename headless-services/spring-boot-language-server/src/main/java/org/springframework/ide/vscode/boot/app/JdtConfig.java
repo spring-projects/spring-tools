@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.app;
 
+import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,6 +18,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
+import org.springframework.ide.vscode.boot.java.codeaction.JdtCodeActionHandler;
 import org.springframework.ide.vscode.boot.java.cron.CronExpressionsInlayHintsProvider;
 import org.springframework.ide.vscode.boot.java.cron.CronReconciler;
 import org.springframework.ide.vscode.boot.java.cron.CronSemanticTokens;
@@ -56,6 +59,7 @@ import org.springframework.ide.vscode.boot.java.spel.JdtSpelReconciler;
 import org.springframework.ide.vscode.boot.java.spel.JdtSpelSemanticTokensProvider;
 import org.springframework.ide.vscode.boot.java.spel.SpelReconciler;
 import org.springframework.ide.vscode.boot.java.spel.SpelSemanticTokens;
+import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
@@ -191,4 +195,7 @@ public class JdtConfig {
 		return new JdtCronReconciler(cronReconciler);
 	}
 	
+	@Bean JdtCodeActionHandler jdtCodeActionHandler(CompilationUnitCache cuCache, Collection<JdtAstCodeActionProvider> providers) {
+		return new JdtCodeActionHandler(cuCache, providers);
+	}
 }

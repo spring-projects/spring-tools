@@ -15,7 +15,7 @@
 
 	<properties>
 		<dependencies.version>${project.version}</dependencies.version>
-		<lsp4xml.version>0.29.0</lsp4xml.version>
+		<lsp4xml.version>0.24.0</lsp4xml.version>
 	</properties>
 
 	<repositories>

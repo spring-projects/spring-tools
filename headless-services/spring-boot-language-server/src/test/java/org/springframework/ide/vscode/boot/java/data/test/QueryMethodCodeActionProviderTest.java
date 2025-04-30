@@ -82,7 +82,7 @@ public class QueryMethodCodeActionProviderTest {
 		assertEquals("Convert into `@Query`", ca.getLabel());
 		Command cmd = ca.getCommand();
 		assertEquals(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX, cmd.getArguments().get(0));
-		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(1, TimeUnit.SECONDS);
+		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
 		assertEquals(
 				"@Query(\"SELECT u FROM example.springdata.aot.User u WHERE u.lastname LIKE :lastname ESCAPE '\\\\' ORDER BY u.firstname asc\")",

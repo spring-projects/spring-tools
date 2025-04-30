@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +45,8 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
  * @author Martin Lippert
  */
 public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvider {
+
+	private static final String COVERT_TO_QUERY_LABEL = "Add @Query";
 
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataCodeLensProvider.class);
 
@@ -113,31 +117,29 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		
 		if (isDataQuaryNonAnnotatedMethodCandidate(methodBinding)) {
 			cancelToken.checkCanceled();
-			getDataQuery(repositoryMetadataService, project, methodBinding).map(queryStatement -> createCodeLens(node, document, queryStatement)).ifPresent(resultAccumulator::add);
-		}
-	}
-
-	private CodeLens createCodeLens(MethodDeclaration node, TextDocument document, String queryStatement) {
-		try {
-			IMethodBinding mb = node.resolveBinding();
-			Command cmd = new Command();
-			cmd.setTitle(queryStatement);
-			if (mb != null) {
-				cmd = refactorings.createFixCommand(queryStatement, createFixDescriptor(mb, document.getUri(), queryStatement));
-			}
-
-			CodeLens codeLens = new CodeLens();
-			codeLens.setRange(document.toRange(node.getName().getStartPosition(), node.getName().getLength()));
-			codeLens.setCommand(cmd);
-			
-			return codeLens;
-			
-		} catch (BadLocationException e) {
-			log.error("bad location while calculating code lens for data repository query method", e);
-			return null;
+			getDataQuery(repositoryMetadataService, project, methodBinding)
+				.map(queryStatement -> createCodeLenses(node, document, queryStatement))
+				.ifPresent(cls -> cls.forEach(resultAccumulator::add));
 		}
 	}
 	
+	private List<CodeLens> createCodeLenses(MethodDeclaration node, TextDocument document, String queryStatement) {
+		List<CodeLens> codeLenses = new ArrayList<>(2);
+		try {
+			IMethodBinding mb = node.resolveBinding();
+			Range range = document.toRange(node.getName().getStartPosition(), node.getName().getLength());
+			Command queryTitle = new Command();
+			queryTitle.setTitle(queryStatement);
+			codeLenses.add(new CodeLens(range, queryTitle, null));
+			if (mb != null) {
+				codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), queryStatement)), null));
+			}
+		} catch (BadLocationException e) {
+			log.error("bad location while calculating code lens for data repository query method", e);
+		}
+		return codeLenses;
+	}
+
 	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, String queryStatement) {
 		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Convert into `@Query`")
 				.withRecipeScope(RecipeScope.FILE)

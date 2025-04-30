@@ -65,6 +65,7 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		editor.assertCodeLens("findUserByUsername", 1, "SELECT u FROM example.springdata.aot.User u WHERE u.username = :username");
+		editor.assertCodeLens("findUserByUsername", 1, "Add @Query");
 	}
 
 	@Test

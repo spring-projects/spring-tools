@@ -38,7 +38,6 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JavaProject;
 import org.eclipse.m2e.core.MavenPlugin;
-import org.eclipse.m2e.core.project.IMavenProjectFacade;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
@@ -249,12 +248,14 @@ public class ClasspathUtil {
 			boolean likelyMaven = false;
 			final Path home = System.getProperty("user.home") == null ? null : new File(System.getProperty("user.home")).toPath();
 			if (MavenPlugin.isMavenProject(jp.getProject())) {
-				IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getProject(jp.getProject());
-				if (facade != null) {
-					return ProjectBuild.createMavenBuild(facade.getPom().getLocationURI().toASCIIString());
-				} else {
+				// Causes deadlock between Maven Repo Registry Initialization and the `getProject(...)` call below
+				// Repo registry hangs on to Maven settings and wait for a map that the code below locks while waiting for the MavenSettings lock.
+//				IMavenProjectFacade facade = MavenPlugin.getMavenProjectRegistry().getProject(jp.getProject());
+//				if (facade != null) {
+//					return ProjectBuild.createMavenBuild(facade.getPom().getLocationURI().toASCIIString());
+//				} else {
 					return ProjectBuild.createMavenBuild(jp.getProject().getFile("pom.xml").getLocationURI().toASCIIString());
-				}
+//				}
 			} else if (GradleProjectNature.isPresentOn(jp.getProject())) {
 				IFile g = jp.getProject().getFile("build.gradle");
 				if (!g.exists()) {

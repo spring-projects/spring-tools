@@ -33,7 +33,6 @@ public class OpenToggleFiltersDialogAction extends AbstractBootDashAction {
 		this.viewModel = model;
 		setText("Filters...");
 		setImageDescriptor(JavaPluginImages.DESC_ELCL_FILTER);
-		setDisabledImageDescriptor(JavaPluginImages.DESC_DLCL_FILTER);
 	}
 
 	@Override

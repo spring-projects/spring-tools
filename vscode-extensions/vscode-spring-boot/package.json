@@ -375,12 +375,12 @@
           },
           "boot-java.java.beans-structure-tree": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "Beans structure tree in the outline view (experimental)"
           },
           "boot-java.java.symbols-from-new-index": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "Generate workspace symbols from index (experimental)"
           },
           "boot-java.remote-apps": {

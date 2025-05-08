@@ -79,7 +79,7 @@ public class QueryMethodCodeActionProviderTest {
 		List<CodeAction> codeActions = editor.getCodeActions("findUserByLastnameStartingWith", 1);
 		assertEquals(1, codeActions.size());
 		CodeAction ca = codeActions.get(0);
-		assertEquals("Convert into `@Query`", ca.getLabel());
+		assertEquals("Add `@Query`", ca.getLabel());
 		Command cmd = ca.getCommand();
 		assertEquals(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX, cmd.getArguments().get(0));
 		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);

@@ -64,6 +64,8 @@ import com.google.gson.JsonElement;
 @Component
 public class BootLanguageServerInitializer implements InitializingBean {
 	
+	public static final String CMD_SHOW_DOC = "sts/show/document";
+	
 	@Autowired SimpleLanguageServer server;
 	@Autowired BootLanguageServerParams params;
 	@Autowired SourceLinks sourceLinks;
@@ -165,7 +167,7 @@ public class BootLanguageServerInitializer implements InitializingBean {
 
 		startListening();
 
-		server.onCommand("sts/show/document", p -> {
+		server.onCommand(CMD_SHOW_DOC, p -> {
 			ShowDocumentParams showDocParams = new Gson().fromJson((JsonElement)p.getArguments().get(0), ShowDocumentParams.class);
 			return server.getClient().showDocument(showDocParams).thenApply(r -> {
 				if (!r.isSuccess()) {

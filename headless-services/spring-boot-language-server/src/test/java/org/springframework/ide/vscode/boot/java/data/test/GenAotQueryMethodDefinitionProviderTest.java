@@ -73,8 +73,8 @@ public class GenAotQueryMethodDefinitionProviderTest {
 				.resolve("target/spring-aot/main/sources/example/springdata/aot/UserRepositoryImpl__Aot.java").toUri()
 				.toASCIIString());
 		ll.setOriginSelectionRange(new Range(new Position(43, 15), new Position(43, 61)));
-		ll.setTargetRange(new Range(new Position(145, 20), new Position(145, 66)));
-		ll.setTargetSelectionRange(new Range(new Position(145, 20), new Position(145, 66)));
+		ll.setTargetRange(new Range(new Position(144, 20), new Position(144, 66)));
+		ll.setTargetSelectionRange(new Range(new Position(144, 20), new Position(144, 66)));
 		editor.assertLinkTargets("findUserByLastnameStartingWith", List.of(ll));
 	}
 
@@ -89,8 +89,8 @@ public class GenAotQueryMethodDefinitionProviderTest {
 				.resolve("target/spring-aot/main/sources/example/springdata/aot/UserRepositoryImpl__Aot.java").toUri()
 				.toASCIIString());
 		ll.setOriginSelectionRange(new Range(new Position(54, 15), new Position(54, 45)));
-		ll.setTargetRange(new Range(new Position(191, 20), new Position(191, 50)));
-		ll.setTargetSelectionRange(new Range(new Position(191, 20), new Position(191, 50)));
+		ll.setTargetRange(new Range(new Position(190, 20), new Position(190, 50)));
+		ll.setTargetSelectionRange(new Range(new Position(190, 20), new Position(190, 50)));
 		editor.assertLinkTargets("usersWithUsernamesStartingWith", List.of(ll));
 	}
 	

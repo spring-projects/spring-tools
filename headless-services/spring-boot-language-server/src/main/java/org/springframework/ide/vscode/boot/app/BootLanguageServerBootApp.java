@@ -420,7 +420,7 @@ public class BootLanguageServerBootApp {
 				new NamedDefinitionProvider(springIndex),
 				new DataQueryParameterDefinitionProvider(server.getTextDocumentService(), qurySemanticTokens),
 				new SpelDefinitionProvider(springIndex, cuCache),
-				new GenAotQueryMethodDefinitionProvider(cuCache, server.getTextDocumentService())));
+				new GenAotQueryMethodDefinitionProvider(server, cuCache, projectFinder)));
 	}
 	
 	@Bean

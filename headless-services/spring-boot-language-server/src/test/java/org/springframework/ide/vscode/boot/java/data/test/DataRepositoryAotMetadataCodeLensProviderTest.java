@@ -10,13 +10,17 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data.test;
 
+import static org.junit.Assert.assertEquals;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,8 +68,10 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 				.resolve("src/main/java/example/springdata/aot/UserRepository.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
-		editor.assertCodeLens("findUserByUsername", 1, "SELECT u FROM example.springdata.aot.User u WHERE u.username = :username");
-		editor.assertCodeLens("findUserByUsername", 1, "Add @Query");
+		List<CodeLens> cls = editor.getCodeLenses("findUserByUsername", 1);
+		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
+		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
+		assertEquals("SELECT u FROM example.springdata.aot.User u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
 	}
 
 	@Test
@@ -74,6 +80,9 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 				.resolve("src/main/java/example/springdata/aot/UserRepository.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
-		editor.assertCodeLens("usersWithUsernamesStartingWith", 1, null);
+		List<CodeLens> cls = editor.getCodeLenses("usersWithUsernamesStartingWith", 1);
+		assertEquals(1, cls.size());
+		assertEquals("Implementation", cls.get(0).getCommand().getTitle());
+		assertEquals(1, cls.get(0).getCommand().getArguments().size());
 	}
 }

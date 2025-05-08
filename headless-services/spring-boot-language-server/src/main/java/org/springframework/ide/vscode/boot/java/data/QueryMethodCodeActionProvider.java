@@ -19,6 +19,8 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.commons.Version;
@@ -30,7 +32,7 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 	
-	private static final String TITLE = "Convert into `@Query`";
+	private static final String TITLE = "Add `@Query`";
 	
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	private final RewriteRefactorings refactorings;
@@ -55,11 +57,12 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 			public boolean visit(MethodDeclaration node) {
 				cancelToken.checkCanceled();
 				if (node.getStartPosition() <= region.getStart() && node.getStartPosition() + node.getLength() >= region.getEnd()) {
-					int offset = node.getName().getStartPosition();
-					int length = node.getName().getLength();
-					if (offset <= region.getStart() && offset + length >= region.getEnd()) {
+					int start = node.getStartPosition();
+					int end = node.getName().getStartPosition() + node.getName().getLength();
+					if (start <= region.getStart() && end >= region.getEnd()) {
 						IMethodBinding binding = node.resolveBinding();
-						if (DataRepositoryAotMetadataCodeLensProvider.isDataQuaryNonAnnotatedMethodCandidate(binding)) {
+						AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
+						if (hierarchyAnnot != null && !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_JPA_QUERY)) {
 							DataRepositoryAotMetadataCodeLensProvider.getDataQuery(repositoryMetadataService, project, binding)
 									.map(query -> createCodeAction(binding, docURI, query)).ifPresent(collector::accept);
 						}

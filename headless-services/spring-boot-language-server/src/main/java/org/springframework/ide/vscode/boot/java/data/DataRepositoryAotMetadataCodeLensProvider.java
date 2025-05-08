@@ -20,17 +20,17 @@ import java.util.stream.Collectors;
 import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -46,7 +46,7 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
  */
 public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvider {
 
-	private static final String COVERT_TO_QUERY_LABEL = "Add @Query";
+	private static final String COVERT_TO_QUERY_LABEL = "Turn into @Query";
 
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataCodeLensProvider.class);
 
@@ -71,23 +71,12 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		});
 	}
 	
-	static boolean isDataQuaryNonAnnotatedMethodCandidate(IMethodBinding methodBinding) {
+	static boolean isValidMethodBinding(IMethodBinding methodBinding) {
 		if (methodBinding == null || methodBinding.getDeclaringClass() == null
 				|| methodBinding.getMethodDeclaration() == null
-				|| methodBinding.getDeclaringClass().getBinaryName() == null
-				|| methodBinding.getMethodDeclaration().toString() == null) {
+				|| methodBinding.getDeclaringClass().getBinaryName() == null) {
 			return false;
 		}
-
-		// Don't show CodeLens if annotated with `@Query` or `@NativeQuery`
-		for (IAnnotationBinding a : methodBinding.getAnnotations()) {
-			ITypeBinding t = a.getAnnotationType();
-			if (t != null 
-					&& (Annotations.DATA_JPA_QUERY.equals(t.getQualifiedName()) || Annotations.DATA_JPA_NATIVE_QUERY.equals(t.getQualifiedName()))) {
-				return false;
-			}
-		}
-		
 		return true;
 	}
 	
@@ -115,7 +104,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 		IMethodBinding methodBinding = node.resolveBinding();
 		
-		if (isDataQuaryNonAnnotatedMethodCandidate(methodBinding)) {
+		if (isValidMethodBinding(methodBinding)) {
 			cancelToken.checkCanceled();
 			getDataQuery(repositoryMetadataService, project, methodBinding)
 				.map(queryStatement -> createCodeLenses(node, document, queryStatement))
@@ -127,12 +116,30 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		List<CodeLens> codeLenses = new ArrayList<>(2);
 		try {
 			IMethodBinding mb = node.resolveBinding();
-			Range range = document.toRange(node.getName().getStartPosition(), node.getName().getLength());
-			Command queryTitle = new Command();
-			queryTitle.setTitle(queryStatement);
-			codeLenses.add(new CodeLens(range, queryTitle, null));
-			if (mb != null) {
-				codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), queryStatement)), null));
+			Position startPos = document.toPosition(node.getStartPosition());
+			Position endPos = document.toPosition(node.getName().getStartPosition() + node.getName().getLength());
+			Range range = new Range(startPos, endPos);
+			AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
+			if (mb != null && hierarchyAnnot != null) {
+				boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY);
+				if (!isQueryAnnotated) {
+					codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), queryStatement)), null));
+				}
+				
+				Command impl = new Command("Implementation", GenAotQueryMethodDefinitionProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodDefinitionProvider.GoToImplParams(
+						document.getId(),
+						mb.getDeclaringClass().getQualifiedName(),
+						mb.getName(),
+						Arrays.stream(mb.getParameterTypes()).map(p -> p.getQualifiedName()).toArray(String[]::new),
+						null
+				)));
+				codeLenses.add(new CodeLens(range, impl, null));
+				
+				if (!isQueryAnnotated) {
+					Command queryTitle = new Command();
+					queryTitle.setTitle(queryStatement);
+					codeLenses.add(new CodeLens(range, queryTitle, null));
+				}
 			}
 		} catch (BadLocationException e) {
 			log.error("bad location while calculating code lens for data repository query method", e);

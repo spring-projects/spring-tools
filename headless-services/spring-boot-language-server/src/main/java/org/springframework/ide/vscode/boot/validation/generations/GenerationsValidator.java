@@ -19,6 +19,7 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ShowDocumentParams;
+import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.validation.generations.json.Generation;
 import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
 import org.springframework.ide.vscode.boot.validation.generations.preferences.VersionValidationProblemType;
@@ -148,7 +149,7 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 		showDocumentParams.setExternal(true);
 		showDocumentParams.setTakeFocus(true);
 		showDocumentParams.setSelection(new Range());
-		commercialSupportLink.setCommand(new Command("Get commercial Spring Boot support via Tanzu Spring Runtime", "sts/show/document",
+		commercialSupportLink.setCommand(new Command("Get commercial Spring Boot support via Tanzu Spring Runtime", BootLanguageServerInitializer.CMD_SHOW_DOC,
 				ImmutableList.of(showDocumentParams)));
 		return commercialSupportLink;
 	}

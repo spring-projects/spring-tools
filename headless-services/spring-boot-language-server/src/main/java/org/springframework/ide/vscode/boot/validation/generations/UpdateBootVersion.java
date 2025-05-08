@@ -21,6 +21,7 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ShowDocumentParams;
+import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
 import org.springframework.ide.vscode.boot.validation.generations.preferences.VersionValidationProblemType;
 import org.springframework.ide.vscode.commons.Version;
@@ -157,7 +158,7 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 		showDocumentParams.setExternal(true);
 		showDocumentParams.setTakeFocus(true);
 		showDocumentParams.setSelection(new Range());
-		releaseNoteLink.setCommand(new Command("Release Notes for Spring Boot " + version.toString(), "sts/show/document",
+		releaseNoteLink.setCommand(new Command("Release Notes for Spring Boot " + version.toString(), BootLanguageServerInitializer.CMD_SHOW_DOC,
 				ImmutableList.of(showDocumentParams)));
 		return releaseNoteLink;
 	}

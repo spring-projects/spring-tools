@@ -631,6 +631,14 @@ public class Editor {
 					.map(cl -> "'%s'".formatted(cl.getCommand().getTitle())).collect(Collectors.joining(", ")), codeLensText));
 		}
 	}
+	
+	public List<CodeLens> getCodeLenses(String over, int occurrence) throws Exception {
+		int offset = getHoverPosition(over, occurrence);
+		return harness.getCodeLenses(doc).stream()
+				.filter(cl -> doc.toOffset(cl.getRange().getStart()) <= offset
+						&& doc.toOffset(cl.getRange().getEnd()) >= offset)
+				.collect(Collectors.toList());
+	}
 
 	public void assertLiveCodeLensContains(String codeLensOver, int occurrence, String snippet) throws Exception {
 		int cmPosition = getHoverPosition(codeLensOver, occurrence);

@@ -22,7 +22,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -35,6 +37,7 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.ShowDocumentParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
@@ -46,19 +49,29 @@ import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleTextDocumentService;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvider {
 	
 	private static Logger log = LoggerFactory.getLogger(GenAotQueryMethodDefinitionProvider.class);
 	
+	public static final String CMD_NAVIGATE_TO_IMPL = "sts/boot/open-data-query-method-aot-definition";
+	
 	private final CompilationUnitCache cuCache;
 	private final SimpleTextDocumentService docService;
+	private final JavaProjectFinder projectFinder;
 	
-	public GenAotQueryMethodDefinitionProvider(CompilationUnitCache cuCache, SimpleTextDocumentService docService) {
+	public GenAotQueryMethodDefinitionProvider(SimpleLanguageServer server, CompilationUnitCache cuCache, JavaProjectFinder projectFinder) {
 		this.cuCache = cuCache;
-		this.docService = docService;
+		this.docService = server.getTextDocumentService();
+		this.projectFinder = projectFinder;
+		registerCommands(server);
 	}
 
 	@Override
@@ -73,17 +86,29 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 						&& methodBinding.getDeclaringClass() != null
 						&& ASTUtils.isAnyTypeInHierarchy(methodBinding.getDeclaringClass(),
 								List.of(Constants.REPOSITORY_TYPE))) {
-					String genRepoFqn = methodBinding.getDeclaringClass().getQualifiedName() + "Impl__Aot";
-					Path relativeGenSourcePath = Paths.get("%s.java".formatted(genRepoFqn.replace('.', '/')));
-					List<LocationLink> defs = findInSourceFolder(project, relativeGenSourcePath, docId, md, methodBinding, genRepoFqn);
-					return defs.isEmpty() ? findInBuildFolder(project, relativeGenSourcePath, docId, md, methodBinding, genRepoFqn) : defs;
+					
+					try {
+						Range originRange = docService.getLatestSnapshot(docId.getUri()).toRange(md.getName().getStartPosition(), md.getName().getLength());
+						GoToImplParams params = new GoToImplParams(docId, methodBinding.getDeclaringClass().getQualifiedName(), methodBinding.getName(), Arrays.stream(methodBinding.getParameterTypes()).map(b -> b.getQualifiedName()).toArray(String[]::new), originRange);
+						return findDefinitions(project, params);
+					} catch (BadLocationException e) {
+						log.error("", e);
+					}
+					
 				}
 			}
 		}
 		return List.of();
 	}
 	
-	private List<LocationLink> getLocationInGenFile(IJavaProject project, TextDocumentIdentifier docId, MethodDeclaration md, IMethodBinding methodBinding, Path genRepoSourcePath, String genRepoFqn) {
+	private List<LocationLink> findDefinitions(IJavaProject project, GoToImplParams implParams) {
+		String genRepoFqn = implParams.repoFqName() + "Impl__Aot";
+		Path relativeGenSourcePath = Paths.get("%s.java".formatted(genRepoFqn.replace('.', '/')));
+		List<LocationLink> defs = findInSourceFolder(project, relativeGenSourcePath, genRepoFqn, implParams);
+		return defs.isEmpty() ? findInBuildFolder(project, relativeGenSourcePath, genRepoFqn, implParams) : defs;
+	}
+	
+	private List<LocationLink> getLocationInGenFile(IJavaProject project, Path genRepoSourcePath, String genRepoFqn, GoToImplParams params) {
 		if (Files.exists(genRepoSourcePath)) {
 			URI genUri = genRepoSourcePath.toUri();
 			return cuCache.withCompilationUnit(project, genUri, genCu -> {
@@ -94,21 +119,18 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 					public boolean visit(MethodDeclaration node) {
 						IMethodBinding genBinding = node.resolveBinding();
 						if (genBinding != null 
-								&& genBinding.getName().equals(methodBinding.getName()) 
-								&& Arrays.equals(Arrays.stream(genBinding.getParameterTypes()).map(b -> b.getQualifiedName()).toArray(), Arrays.stream(methodBinding.getParameterTypes()).map(b -> b.getQualifiedName()).toArray() )
+								&& genBinding.getName().equals(params.queryMethodName()) 
+								&& Arrays.equals(Arrays.stream(genBinding.getParameterTypes()).map(b -> b.getQualifiedName()).toArray(), params.paramTypes)
 								&& genRepoFqn.equals(genBinding.getDeclaringClass().getQualifiedName())) {
 							LocationLink ll = new LocationLink();
 							ll.setTargetUri(genUri.toASCIIString());
-							try {
-								ll.setOriginSelectionRange(docService.getLatestSnapshot(docId.getUri()).toRange(md.getName().getStartPosition(), md.getName().getLength()));
-							} catch (BadLocationException e) {
-								log.error("", e);
-							}
+							ll.setOriginSelectionRange(params.originSelection());
 							SimpleName genName = node.getName();
 							int startLine = genCu.getLineNumber(genName.getStartPosition());
-							Position targetStartPosition = new Position(startLine, genName.getStartPosition() - genCu.getPosition(startLine, 0));
+							// LSP line are 0-based hence -1 from line number when building LSP Range/Position
+							Position targetStartPosition = new Position(startLine - 1, genName.getStartPosition() - genCu.getPosition(startLine, 0));
 							int endLine = genCu.getLineNumber(genName.getStartPosition() + genName.getLength());
-							Position targetEndPosition = new Position(endLine, genName.getStartPosition() + genName.getLength() - genCu.getPosition(endLine, 0));
+							Position targetEndPosition = new Position(endLine - 1, genName.getStartPosition() + genName.getLength() - genCu.getPosition(endLine, 0));
 							Range targetRange = new Range(targetStartPosition, targetEndPosition);
 							ll.setTargetRange(targetRange);
 							ll.setTargetSelectionRange(targetRange);
@@ -124,15 +146,15 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 		return List.of();
 	}
 	
-	private List<LocationLink> findInSourceFolder(IJavaProject project, Path relativeGenSourcePath, TextDocumentIdentifier docId, MethodDeclaration md, IMethodBinding methodBinding, String genRepoFqn) {
+	private List<LocationLink> findInSourceFolder(IJavaProject project, Path relativeGenSourcePath, String genRepoFqn, GoToImplParams params) {
 		for (File f : IClasspathUtil.getSourceFolders(project.getClasspath()).collect(Collectors.toSet())) {
 			Path genRepoSourcePath = f.toPath().resolve(relativeGenSourcePath);
-			return getLocationInGenFile(project, docId, md, methodBinding, genRepoSourcePath, genRepoFqn);
+			return getLocationInGenFile(project, genRepoSourcePath, genRepoFqn, params);
 		}
 		return List.of();
 	}
 	
-	private List<LocationLink> findInBuildFolder(IJavaProject project, Path relativeGenSourcePath, TextDocumentIdentifier docId, MethodDeclaration md, IMethodBinding methodBinding, String genRepoFqn) {
+	private List<LocationLink> findInBuildFolder(IJavaProject project, Path relativeGenSourcePath, String genRepoFqn, GoToImplParams params) {
 		Path buildDirRelativePath = null;
 		Path projectPath = Paths.get(project.getLocationUri());
 		Set<Path> outputFolders = IClasspathUtil.getOutputFolders(project.getClasspath()).map(f -> f.toPath()).collect(Collectors.toSet());
@@ -182,7 +204,30 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 		} catch (IOException e) {
 			log.error("", e);
 		}
-		return genSourceFilePathRef.get() == null ? List.of() : getLocationInGenFile(project, docId, md, methodBinding, genSourceFilePathRef.get(), genRepoFqn);
+		return genSourceFilePathRef.get() == null ? List.of() : getLocationInGenFile(project, genSourceFilePathRef.get(), genRepoFqn, params);
 	}
+	
+	private void registerCommands(SimpleLanguageServer server) {
+		server.onCommand(CMD_NAVIGATE_TO_IMPL, params -> {
+			return CompletableFuture.supplyAsync(() -> {
+				GoToImplParams implParams = new Gson().fromJson((JsonElement) params.getArguments().get(0), GoToImplParams.class);
+				Optional<IJavaProject> project = projectFinder.find(implParams.docId());
+				if (project.isEmpty()) {
+					return List.<LocationLink>of();
+				}
+				return findDefinitions(project.get(), implParams);
+			}).thenCompose(links -> {
+				if (links.isEmpty()) {
+					return CompletableFuture.completedFuture(null);
+				} else {
+					ShowDocumentParams showDocParams = new ShowDocumentParams(links.get(0).getTargetUri());
+					showDocParams.setSelection(links.get(0).getTargetRange());
+					return server.getClient().showDocument(showDocParams);
+				}
+			});
+		});
+	}
+	
+	public record GoToImplParams(TextDocumentIdentifier docId, String repoFqName, String queryMethodName, String[] paramTypes, Range originSelection) {} 
 	
 }

@@ -90,7 +90,7 @@ public class QualifierDefinitionProviderTest {
 				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
 				null);
 
-		editor.assertLinkTargets("bean1", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation));
 	}
 
 	@Test
@@ -108,7 +108,7 @@ public class QualifierDefinitionProviderTest {
 				public class TestDependsOnClass {
 				}""", tempJavaDocUri);
 		
-		editor.assertNoLinkTargets("qualifier");
+		editor.assertNoDefinitionLinkTargets("qualifier");
 	}
 
 }

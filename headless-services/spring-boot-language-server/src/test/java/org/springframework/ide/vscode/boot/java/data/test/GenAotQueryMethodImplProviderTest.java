@@ -41,7 +41,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(SymbolProviderTestConf.class)
-public class GenAotQueryMethodDefinitionProviderTest {
+public class GenAotQueryMethodImplProviderTest {
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -73,9 +73,9 @@ public class GenAotQueryMethodDefinitionProviderTest {
 				.resolve("target/spring-aot/main/sources/example/springdata/aot/UserRepositoryImpl__Aot.java").toUri()
 				.toASCIIString());
 		ll.setOriginSelectionRange(new Range(new Position(43, 15), new Position(43, 61)));
-		ll.setTargetRange(new Range(new Position(144, 20), new Position(144, 66)));
-		ll.setTargetSelectionRange(new Range(new Position(144, 20), new Position(144, 66)));
-		editor.assertLinkTargets("findUserByLastnameStartingWith", List.of(ll));
+		ll.setTargetRange(new Range(new Position(137, 20), new Position(137, 66)));
+		ll.setTargetSelectionRange(new Range(new Position(137, 20), new Position(137, 66)));
+		editor.assertImplementationLinkTargets("findUserByLastnameStartingWith", List.of(ll));
 	}
 
 	@Test
@@ -89,9 +89,9 @@ public class GenAotQueryMethodDefinitionProviderTest {
 				.resolve("target/spring-aot/main/sources/example/springdata/aot/UserRepositoryImpl__Aot.java").toUri()
 				.toASCIIString());
 		ll.setOriginSelectionRange(new Range(new Position(54, 15), new Position(54, 45)));
-		ll.setTargetRange(new Range(new Position(190, 20), new Position(190, 50)));
-		ll.setTargetSelectionRange(new Range(new Position(190, 20), new Position(190, 50)));
-		editor.assertLinkTargets("usersWithUsernamesStartingWith", List.of(ll));
+		ll.setTargetRange(new Range(new Position(180, 20), new Position(180, 50)));
+		ll.setTargetSelectionRange(new Range(new Position(180, 20), new Position(180, 50)));
+		editor.assertImplementationLinkTargets("usersWithUsernamesStartingWith", List.of(ll));
 	}
 	
 	@Test
@@ -99,7 +99,7 @@ public class GenAotQueryMethodDefinitionProviderTest {
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/example/springdata/aot/UserRepository.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
-		editor.assertLinkTargets("user", List.of());
+		editor.assertImplementationLinkTargets("user", List.of());
 	}
 
 	@Test
@@ -107,6 +107,6 @@ public class GenAotQueryMethodDefinitionProviderTest {
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/example/springdata/aot/User.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
-		editor.assertLinkTargets("getRegistrationDate", List.of());
+		editor.assertImplementationLinkTargets("getRegistrationDate", List.of());
 	}
 }

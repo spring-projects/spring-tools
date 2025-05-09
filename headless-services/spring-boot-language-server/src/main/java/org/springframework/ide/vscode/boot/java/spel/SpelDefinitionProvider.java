@@ -50,7 +50,7 @@ import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
-import org.springframework.ide.vscode.boot.java.IJavaDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.IJavaLocationLinksProvider;
 import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLanguageSnippet;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
@@ -74,7 +74,7 @@ import reactor.util.function.Tuples;
 /**
  * @author Udayani V
  */
-public class SpelDefinitionProvider implements IJavaDefinitionProvider {
+public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 
 	protected static Logger logger = LoggerFactory.getLogger(SpelDefinitionProvider.class);
 
@@ -92,7 +92,7 @@ public class SpelDefinitionProvider implements IJavaDefinitionProvider {
 	}
 
 	@Override
-	public List<LocationLink> getDefinitions(CancelChecker cancelToken, IJavaProject project,
+	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
 			TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 		if (n instanceof StringLiteral) {
 			StringLiteral valueNode = (StringLiteral) n;

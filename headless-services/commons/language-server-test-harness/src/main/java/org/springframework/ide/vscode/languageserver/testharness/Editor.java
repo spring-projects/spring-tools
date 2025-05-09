@@ -44,6 +44,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentHighlight;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.ImplementationParams;
 import org.eclipse.lsp4j.InsertReplaceEdit;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
@@ -864,24 +865,39 @@ public class Editor {
 		return "Editor(\n" + getText() + "\n)";
 	}
 
-	public void assertLinkTargets(String hoverOver, Collection<LocationLink> expectedLocations) throws Exception {
+	public void assertDefinitionLinkTargets(String hoverOver, Collection<LocationLink> expectedLocations) throws Exception {
 		int pos = getRawText().indexOf(hoverOver);
 		if (pos >= 0) {
 			pos += hoverOver.length() / 2;
 		}
 		assertTrue(pos>=0, "Not found in editor: '"+hoverOver+"'");
 		
-		assertLinkTargets(doc.toPosition(pos), expectedLocations);
+		assertDefinitionLinkTargets(doc.toPosition(pos), expectedLocations);
 	}
 	
-	public void assertLinkTargets(Position pos, Collection<LocationLink> expectedLocations) throws Exception {
+	public void assertDefinitionLinkTargets(Position pos, Collection<LocationLink> expectedLocations) throws Exception {
 		DefinitionParams params = new DefinitionParams(new TextDocumentIdentifier(getUri()), pos);
 		List<? extends LocationLink> definitions = harness.getDefinitions(params);
 		assertEquals(ImmutableSet.copyOf(expectedLocations), ImmutableSet.copyOf(definitions));
 	}
-
 	
-	public void assertNoLinkTargets(String hoverOver) throws Exception {
+	public void assertImplementationLinkTargets(String hoverOver, Collection<LocationLink> expectedLocations) throws Exception {
+		int pos = getRawText().indexOf(hoverOver);
+		if (pos >= 0) {
+			pos += hoverOver.length() / 2;
+		}
+		assertTrue(pos>=0, "Not found in editor: '"+hoverOver+"'");
+		
+		assertImplementationLinkTargets(doc.toPosition(pos), expectedLocations);
+	}
+
+	public void assertImplementationLinkTargets(Position pos, Collection<LocationLink> expectedLocations) throws Exception {
+		ImplementationParams params = new ImplementationParams(new TextDocumentIdentifier(getUri()), pos);
+		List<? extends LocationLink> definitions = harness.getImplemetations(params);
+		assertEquals(ImmutableSet.copyOf(expectedLocations), ImmutableSet.copyOf(definitions));
+	}
+	
+	public void assertNoDefinitionLinkTargets(String hoverOver) throws Exception {
 		int pos = getRawText().indexOf(hoverOver);
 		if (pos >= 0) {
 			pos += hoverOver.length() / 2;

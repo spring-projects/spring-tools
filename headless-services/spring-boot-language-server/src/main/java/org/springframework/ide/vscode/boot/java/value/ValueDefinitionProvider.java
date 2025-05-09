@@ -29,7 +29,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.IJavaDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.IJavaLocationLinksProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.properties.BootPropertiesLanguageServerComponents;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
@@ -39,7 +39,7 @@ import org.yaml.snakeyaml.nodes.Node;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
-public class ValueDefinitionProvider implements IJavaDefinitionProvider {
+public class ValueDefinitionProvider implements IJavaLocationLinksProvider {
 	
 	private static final Logger log = LoggerFactory.getLogger(ValueDefinitionProvider.class);
 	private final PropertyExtractor propertyExtractor;
@@ -49,7 +49,7 @@ public class ValueDefinitionProvider implements IJavaDefinitionProvider {
 	}
 	
 	@Override
-	public List<LocationLink> getDefinitions(CancelChecker cancelToken, IJavaProject project,
+	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
 			TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 
 		if (n instanceof StringLiteral) {

@@ -25,7 +25,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
-import org.springframework.ide.vscode.boot.java.IJavaDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.IJavaLocationLinksProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -33,7 +33,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 /**
  * @author Martin Lippert
  */
-public class QualifierDefinitionProvider implements IJavaDefinitionProvider {
+public class QualifierDefinitionProvider implements IJavaLocationLinksProvider {
 	
 	private final SpringMetamodelIndex springIndex;
 	
@@ -42,7 +42,7 @@ public class QualifierDefinitionProvider implements IJavaDefinitionProvider {
 	}
 
 	@Override
-	public List<LocationLink> getDefinitions(CancelChecker cancelToken, IJavaProject project, TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
+	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project, TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 		if (n instanceof StringLiteral) {
 			StringLiteral valueNode = (StringLiteral) n;
 			

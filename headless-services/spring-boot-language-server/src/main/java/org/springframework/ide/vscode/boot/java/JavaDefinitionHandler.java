@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,8 +18,10 @@ import java.util.List;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.lsp4j.DefinitionParams;
+import org.eclipse.lsp4j.ImplementationParams;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.TextDocumentPositionAndWorkDoneProgressAndPartialResultParams;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,25 +29,29 @@ import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.DefinitionHandler;
+import org.springframework.ide.vscode.commons.languageserver.util.ImplementationHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.LanguageSpecific;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 
-public class JavaDefinitionHandler implements DefinitionHandler, LanguageSpecific {
+public class JavaDefinitionHandler implements DefinitionHandler, ImplementationHandler, LanguageSpecific {
 	
 	private static final Logger log = LoggerFactory.getLogger(JavaDefinitionHandler.class);
 
-	private CompilationUnitCache cuCache;
-	private JavaProjectFinder projectFinder;
-	private Collection<IJavaDefinitionProvider> providers;
+	private final CompilationUnitCache cuCache;
+	private final JavaProjectFinder projectFinder;
+	private final Collection<IJavaLocationLinksProvider> defProviders;
+	private final Collection<IJavaLocationLinksProvider> implProviders;
 	
 	public JavaDefinitionHandler(CompilationUnitCache cuCache, JavaProjectFinder projectFinder,
-			Collection<IJavaDefinitionProvider> providers) {
+			Collection<IJavaLocationLinksProvider> defProviders,
+			Collection<IJavaLocationLinksProvider> implProviders) {
 		this.cuCache = cuCache;
 		this.projectFinder = projectFinder;
-		this.providers = providers;
+		this.defProviders = defProviders;
+		this.implProviders = implProviders;
 	}
 
 	@Override
@@ -55,21 +61,30 @@ public class JavaDefinitionHandler implements DefinitionHandler, LanguageSpecifi
 
 	@Override
 	public List<LocationLink> handle(CancelChecker cancelToken, DefinitionParams definitionParams) {
-		TextDocumentIdentifier doc = definitionParams.getTextDocument();
+		return findLinks(cancelToken, defProviders, definitionParams);
+	}
+
+	@Override
+	public List<LocationLink> handle(CancelChecker cancelToken, ImplementationParams implParams) {
+		return findLinks(cancelToken, implProviders, implParams);
+	}
+	
+	private List<LocationLink> findLinks(CancelChecker cancelToken, Collection<IJavaLocationLinksProvider> providers, TextDocumentPositionAndWorkDoneProgressAndPartialResultParams params) {
+		TextDocumentIdentifier doc = params.getTextDocument();
 		IJavaProject project = projectFinder.find(doc).orElse(null);
 		if (project != null) {
 			URI docUri = URI.create(doc.getUri());
 			return cuCache.withCompilationUnit(project, docUri, cu -> {
 				Builder<LocationLink> builder = ImmutableList.builder();
 				if (cu != null) {
-					int start = cu.getPosition(definitionParams.getPosition().getLine() + 1, definitionParams.getPosition().getCharacter());
+					int start = cu.getPosition(params.getPosition().getLine() + 1, params.getPosition().getCharacter());
 					ASTNode node = NodeFinder.perform(cu, start, 0);
-					for (IJavaDefinitionProvider provider : providers) {
+					for (IJavaLocationLinksProvider provider : providers) {
 						if (cancelToken.isCanceled()) {
 							break;
 						}
 						try {
-							builder.addAll(provider.getDefinitions(cancelToken, project, doc, cu, node, start));
+							builder.addAll(provider.getLocationLinks(cancelToken, project, doc, cu, node, start));
 						} catch (Exception e) {
 							log.error("", e);
 						}

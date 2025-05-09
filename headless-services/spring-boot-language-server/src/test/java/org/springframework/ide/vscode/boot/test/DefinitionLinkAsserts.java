@@ -337,7 +337,7 @@ public class DefinitionLinkAsserts {
 			expectedLocations.add(new LocationLink(l.getUri(), l.getRange(), l.getRange(), highlightRange));
 		}
 
-		editor.assertLinkTargets(hoverOver, expectedLocations);
+		editor.assertDefinitionLinkTargets(hoverOver, expectedLocations);
 	}
 	
 	public void assertLinkTargets(Editor editor, Position pos, IJavaProject project, Range highlightRange, JavaLocationProvider... javaElements) throws Exception {
@@ -347,7 +347,7 @@ public class DefinitionLinkAsserts {
 			expectedLocations.add(new LocationLink(l.getUri(), l.getRange(), l.getRange(), highlightRange));
 		}
 
-		editor.assertLinkTargets(pos, expectedLocations);
+		editor.assertDefinitionLinkTargets(pos, expectedLocations);
 	}
 
 
@@ -357,7 +357,7 @@ public class DefinitionLinkAsserts {
 		
 		LocationLink link = new LocationLink(l.getUri(), l.getRange(), l.getRange(), highlightRange);
 
-		editor.assertLinkTargets(hoverOver, ImmutableList.of(link));
+		editor.assertDefinitionLinkTargets(hoverOver, ImmutableList.of(link));
 	}
 	
 	private static boolean isType(ASTNode node, String[] typeTokens, int length) {

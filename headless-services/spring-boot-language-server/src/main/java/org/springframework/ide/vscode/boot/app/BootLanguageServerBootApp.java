@@ -54,7 +54,7 @@ import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnBeanDe
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnResourceDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.copilot.util.ResponseModifier;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
-import org.springframework.ide.vscode.boot.java.data.GenAotQueryMethodDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.data.GenAotQueryMethodImplProvider;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.DataQueryParameterDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtDataQuerySemanticTokensProvider;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCodeActionProvider;
@@ -419,8 +419,11 @@ public class BootLanguageServerBootApp {
 				new QualifierDefinitionProvider(springIndex),
 				new NamedDefinitionProvider(springIndex),
 				new DataQueryParameterDefinitionProvider(server.getTextDocumentService(), qurySemanticTokens),
-				new SpelDefinitionProvider(springIndex, cuCache),
-				new GenAotQueryMethodDefinitionProvider(server, cuCache, projectFinder)));
+				new SpelDefinitionProvider(springIndex, cuCache)
+			),
+			List.of(
+					new GenAotQueryMethodImplProvider(server, cuCache, projectFinder)
+			));
 	}
 	
 	@Bean

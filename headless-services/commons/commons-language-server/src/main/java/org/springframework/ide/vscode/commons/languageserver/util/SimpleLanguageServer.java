@@ -513,6 +513,9 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 		if (hasDefinitionHandler()) {
 			c.setDefinitionProvider(true);
 		}
+		if (hasImplementationHandler()) {
+			c.setImplementationProvider(true);
+		}
 		if (hasReferencesHandler()) {
 			c.setReferencesProvider(true);
 		}
@@ -597,6 +600,10 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 
 	private boolean hasDefinitionHandler() {
 		return getTextDocumentService().hasDefinitionHandler();
+	}
+	
+	private boolean hasImplementationHandler() {
+		return getTextDocumentService().hasImplementationHandler();
 	}
 
 	private boolean hasQuickFixes() {

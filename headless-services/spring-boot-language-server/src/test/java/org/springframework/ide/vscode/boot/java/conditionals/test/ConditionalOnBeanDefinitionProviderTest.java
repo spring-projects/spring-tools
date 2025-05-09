@@ -92,7 +92,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
                 null);
 
-        editor.assertLinkTargets("bean1", List.of(expectedLocation));
+        editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
                 null);
 
-        editor.assertLinkTargets("bean1", List.of(expectedLocation));
+        editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation));
     }
 
     @Test
@@ -150,7 +150,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
                 null);
 
-        editor.assertLinkTargets("bean2", List.of(expectedLocation));
+        editor.assertDefinitionLinkTargets("bean2", List.of(expectedLocation));
     }
 
     @Test
@@ -179,7 +179,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
                 null);
 
-        editor.assertLinkTargets("bean2", List.of(expectedLocation));
+        editor.assertDefinitionLinkTargets("bean2", List.of(expectedLocation));
     }
 
     @Test
@@ -201,7 +201,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 }
 				}""", tempJavaDocUri);
 
-        editor.assertNoLinkTargets("bean5");
+        editor.assertNoDefinitionLinkTargets("bean5");
     }
 
     @Test
@@ -223,7 +223,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 }
 				}""", tempJavaDocUri);
 
-        editor.assertNoLinkTargets("bean5");
+        editor.assertNoDefinitionLinkTargets("bean5");
     }
 
     @Test
@@ -245,7 +245,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 }
 				}""", tempJavaDocUri);
 
-        editor.assertNoLinkTargets("bean1");
+        editor.assertNoDefinitionLinkTargets("bean1");
     }
 
     @Test
@@ -267,7 +267,7 @@ public class ConditionalOnBeanDefinitionProviderTest {
                 }
 				}""", tempJavaDocUri);
 
-        editor.assertNoLinkTargets("bean1");
+        editor.assertNoDefinitionLinkTargets("bean1");
     }
 
 }

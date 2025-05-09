@@ -194,7 +194,7 @@ public class XMLBeansHyperlinkTest {
                 targetRange,
                 editor.rangeOf("name=\"simple\" ref=\"simpleObj\"", "simpleObj")
         );
-        editor.assertLinkTargets("simpleObj", Collections.singletonList(expectedLocation));
+        editor.assertDefinitionLinkTargets("simpleObj", Collections.singletonList(expectedLocation));
     }
 
     @Test
@@ -229,7 +229,7 @@ public class XMLBeansHyperlinkTest {
         Location expectedLocation = new Location();
         expectedLocation.setUri(UriUtil.toUri(rootContextFilePath.toFile()).toString());
         expectedLocation.setRange(new Range(new Position(6, 7), new Position(6, 21)));
-        editor.assertNoLinkTargets("simpleObj");
+        editor.assertNoDefinitionLinkTargets("simpleObj");
     }
 
     @Test
@@ -269,7 +269,7 @@ public class XMLBeansHyperlinkTest {
                 targetRange,
                 editor.rangeOf("name=\"simple\" ref=\"simpleObj\"", "simpleObj")
         );
-        editor.assertLinkTargets("simpleObj", Collections.singletonList(expectedLocation));
+        editor.assertDefinitionLinkTargets("simpleObj", Collections.singletonList(expectedLocation));
     }
 
     @Test
@@ -298,7 +298,7 @@ public class XMLBeansHyperlinkTest {
                         "</beans>\n",
                 UriUtil.toUri(xmlFilePath.toFile()).toString()
         );
-        editor.assertNoLinkTargets("u.t.r.SimpleObj");
+        editor.assertNoDefinitionLinkTargets("u.t.r.SimpleObj");
     }
 
     @Test
@@ -327,6 +327,6 @@ public class XMLBeansHyperlinkTest {
                         "</beans>\n",
                 UriUtil.toUri(xmlFilePath.toFile()).toString()
         );
-        editor.assertNoLinkTargets("u.t.r.SimpleObj");
+        editor.assertNoDefinitionLinkTargets("u.t.r.SimpleObj");
     }
 }

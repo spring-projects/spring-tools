@@ -115,7 +115,7 @@ public class SpelDefinitionProviderTest {
 		LocationLink expectedLocation = new LocationLink(expectedDefinitionUriVisitService,
 				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(), null);
 
-		editor.assertLinkTargets("visitService", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("visitService", List.of(expectedLocation));
 	}
 
 	@Test
@@ -155,8 +155,8 @@ public class SpelDefinitionProviderTest {
 		LocationLink expectedLocation2 = new LocationLink(expectedDefinitionUriSpelClass,
 				spelExpBean[0].getLocation().getRange(), spelExpBean[0].getLocation().getRange(), null);
 
-		editor.assertLinkTargets("visitService", List.of(expectedLocation1));
-		editor.assertLinkTargets("spelExpressionsClass", List.of(expectedLocation2));
+		editor.assertDefinitionLinkTargets("visitService", List.of(expectedLocation1));
+		editor.assertDefinitionLinkTargets("spelExpressionsClass", List.of(expectedLocation2));
 
 	}
 	
@@ -188,7 +188,7 @@ public class SpelDefinitionProviderTest {
 		LocationLink expectedLocation2 = new LocationLink(expectedDefinitionUriSpelClass,
 				spelExpBean[0].getLocation().getRange(), spelExpBean[0].getLocation().getRange(), null);
 
-		editor.assertLinkTargets("spelExpressionsClass", List.of(expectedLocation2));
+		editor.assertDefinitionLinkTargets("spelExpressionsClass", List.of(expectedLocation2));
 
 	}
 	
@@ -241,8 +241,8 @@ public class SpelDefinitionProviderTest {
 		LocationLink expectedLocation2 = new LocationLink(expectedDefinitionUriSpelClass,
 				new Range(new Position(37, 22), new Position(37, 28)), new Range(new Position(37, 22), new Position(37, 28)), null);
 
-		editor.assertLinkTargets("isValidVersion", List.of(expectedLocation1));
-		editor.assertLinkTargets("concat", List.of(expectedLocation2));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(expectedLocation1));
+		editor.assertDefinitionLinkTargets("concat", List.of(expectedLocation2));
 	}
 
 }

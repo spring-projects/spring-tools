@@ -108,7 +108,7 @@ public class NamedDefinitionProviderTest {
 				locationNamedAnnotation1.getRange(), locationNamedAnnotation1.getRange(),
 				null);
 
-		editor.assertLinkTargets("named1", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("named1", List.of(expectedLocation));
 	}
 
 	@Test
@@ -131,7 +131,7 @@ public class NamedDefinitionProviderTest {
 				locationNamedAnnotation1.getRange(), locationNamedAnnotation1.getRange(),
 				null);
 
-		editor.assertLinkTargets("named1", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("named1", List.of(expectedLocation));
 	}
 
 	@Test
@@ -150,7 +150,7 @@ public class NamedDefinitionProviderTest {
 				
 				}""", tempJavaDocUri1);
 		
-		editor.assertNoLinkTargets("bean1");
+		editor.assertNoDefinitionLinkTargets("bean1");
 	}
 
 }

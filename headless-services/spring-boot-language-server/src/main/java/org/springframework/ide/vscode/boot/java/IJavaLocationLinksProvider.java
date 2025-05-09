@@ -19,8 +19,8 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
-public interface IJavaDefinitionProvider {
+public interface IJavaLocationLinksProvider {
 	
-	List<LocationLink> getDefinitions(CancelChecker cancelToken, IJavaProject project, TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset);
+	List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project, TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset);
 
 }

@@ -89,7 +89,7 @@ public class ValueDefinitionProviderTest {
 				new Range(new Position(0, 0), new Position(0, 11)), new Range(new Position(0, 10), new Position(0, 11)),
 				new Range(new Position(6, 8), new Position(6, 22)));
 
-		editor.assertLinkTargets("some.prop", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("some.prop", List.of(expectedLocation));
 	}
 
 	@Test
@@ -113,7 +113,7 @@ public class ValueDefinitionProviderTest {
 				new Range(new Position(1, 2), new Position(1, 9)), new Range(new Position(1, 8), new Position(1, 9)),
 				new Range(new Position(6, 8), new Position(6, 22)));
 
-		editor.assertLinkTargets("some.prop", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("some.prop", List.of(expectedLocation));
 	}
 	
 	@Test 
@@ -141,7 +141,7 @@ public class ValueDefinitionProviderTest {
 				new Range(new Position(1, 2), new Position(1, 9)), new Range(new Position(1, 8), new Position(1, 9)),
 				new Range(new Position(6, 8), new Position(6, 22)));
 		
-		editor.assertLinkTargets("some.prop", List.of(expectedYamlLocation, expectedPropsLocation));
+		editor.assertDefinitionLinkTargets("some.prop", List.of(expectedYamlLocation, expectedPropsLocation));
 
 	}
 	
@@ -163,7 +163,7 @@ public class ValueDefinitionProviderTest {
 				new Range(new Position(0, 0), new Position(0, 11)), new Range(new Position(0, 10), new Position(0, 11)),
 				new Range(new Position(4, 23), new Position(4, 34)));
 
-		editor.assertLinkTargets("some.prop", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("some.prop", List.of(expectedLocation));
 	}
 
 	@Test
@@ -184,7 +184,7 @@ public class ValueDefinitionProviderTest {
 				new Range(new Position(0, 0), new Position(0, 11)), new Range(new Position(0, 10), new Position(0, 11)),
 				new Range(new Position(4, 31), new Position(4, 42)));
 
-		editor.assertLinkTargets("some.prop", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("some.prop", List.of(expectedLocation));
 	}
 
 	@Test
@@ -205,7 +205,7 @@ public class ValueDefinitionProviderTest {
 				new Range(new Position(0, 0), new Position(0, 11)), new Range(new Position(0, 10), new Position(0, 11)),
 				new Range(new Position(4, 47), new Position(4, 53)));
 
-		editor.assertLinkTargets("prop", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("prop", List.of(expectedLocation));
 	}
 
 	@Test
@@ -227,7 +227,7 @@ public class ValueDefinitionProviderTest {
 				new Range(new Position(0, 0), new Position(0, 0)),
 				new Range(new Position(6, 8), new Position(6, 38)));
 
-		editor.assertLinkTargets("classpath:random-resource.md", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("classpath:random-resource.md", List.of(expectedLocation));
 	}
 
 

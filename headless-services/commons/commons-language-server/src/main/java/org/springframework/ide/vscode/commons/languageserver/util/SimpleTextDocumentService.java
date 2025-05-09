@@ -52,6 +52,7 @@ import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
+import org.eclipse.lsp4j.ImplementationParams;
 import org.eclipse.lsp4j.InlayHint;
 import org.eclipse.lsp4j.InlayHintParams;
 import org.eclipse.lsp4j.Location;
@@ -120,6 +121,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 	private CompletionResolveHandler completionResolveHandler;
 	private HoverHandler hoverHandler;
 	private DefinitionHandler definitionHandler;
+	private ImplementationHandler implementationHandler;
 	private ReferencesHandler referencesHandler;
 	private DocumentSymbolHandler documentSymbolHandler;
 	private DocumentHighlightHandler documentHighlightHandler;
@@ -380,6 +382,38 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 				cancelToken.checkCanceled();
 				
 				List<LocationLink> locations = h.handle(cancelToken, definitionParams);
+				if (locations == null) {
+					// vscode client does not like to receive null result. See: https://github.com/spring-projects/sts4/issues/309
+					locations = ImmutableList.of();
+				}
+				// Workaround for https://github.com/eclipse-theia/theia/issues/6414
+				// Theia does not support LocationLink yet
+				switch (LspClient.currentClient()) {
+					case THEIA:
+					case ATOM:
+					case INTELLIJ:	
+						return Either.forLeft(locations.stream().map(link -> new Location(link.getTargetUri(), link.getTargetRange())).collect(Collectors.toList()));
+					default:
+						return Either.forRight(locations);
+				}
+			});
+		}
+		else {
+			return CompletableFuture.completedFuture(Either.forLeft(ImmutableList.of()));
+		}
+	}
+
+	
+	@Override
+	public CompletableFuture<Either<List<? extends Location>, List<? extends LocationLink>>> implementation(
+			ImplementationParams implemetationParams) {
+		ImplementationHandler h = this.implementationHandler;
+		if (h != null) {
+			return CompletableFutures.computeAsync(messageWorkerThreadPool, cancelToken -> {
+				
+				cancelToken.checkCanceled();
+				
+				List<LocationLink> locations = h.handle(cancelToken, implemetationParams);
 				if (locations == null) {
 					// vscode client does not like to receive null result. See: https://github.com/spring-projects/sts4/issues/309
 					locations = ImmutableList.of();
@@ -783,9 +817,18 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 		Assert.isNull("A defintion handler is already set, multiple handlers not supported yet", definitionHandler);
 		this.definitionHandler = h;
 	}
+	
+	public synchronized void onImplementation(ImplementationHandler h) {
+		Assert.isNull("An implementation handler is already set, multiple handlers not supported yet", implementationHandler);
+		this.implementationHandler = h;
+	}
 
 	public boolean hasDefinitionHandler() {
 		return definitionHandler != null;
+	}
+	
+	public boolean hasImplementationHandler() {
+		return implementationHandler != null;
 	}
 
 	public synchronized void onReferences(ReferencesHandler h) {

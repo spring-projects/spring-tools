@@ -42,7 +42,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.IJavaDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.IJavaLocationLinksProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.Version;
@@ -57,9 +57,9 @@ import org.springframework.ide.vscode.commons.util.BadLocationException;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
-public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvider {
+public class GenAotQueryMethodImplProvider implements IJavaLocationLinksProvider {
 	
-	private static Logger log = LoggerFactory.getLogger(GenAotQueryMethodDefinitionProvider.class);
+	private static Logger log = LoggerFactory.getLogger(GenAotQueryMethodImplProvider.class);
 	
 	public static final String CMD_NAVIGATE_TO_IMPL = "sts/boot/open-data-query-method-aot-definition";
 	
@@ -67,7 +67,7 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 	private final SimpleTextDocumentService docService;
 	private final JavaProjectFinder projectFinder;
 	
-	public GenAotQueryMethodDefinitionProvider(SimpleLanguageServer server, CompilationUnitCache cuCache, JavaProjectFinder projectFinder) {
+	public GenAotQueryMethodImplProvider(SimpleLanguageServer server, CompilationUnitCache cuCache, JavaProjectFinder projectFinder) {
 		this.cuCache = cuCache;
 		this.docService = server.getTextDocumentService();
 		this.projectFinder = projectFinder;
@@ -75,7 +75,7 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 	}
 
 	@Override
-	public List<LocationLink> getDefinitions(CancelChecker cancelToken, IJavaProject project,
+	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
 			TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 		if (n instanceof SimpleName && n.getParent() instanceof MethodDeclaration md) {
 			Version version = SpringProjectUtil.getDependencyVersion(project, "spring-data-jpa");
@@ -90,7 +90,7 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 					try {
 						Range originRange = docService.getLatestSnapshot(docId.getUri()).toRange(md.getName().getStartPosition(), md.getName().getLength());
 						GoToImplParams params = new GoToImplParams(docId, methodBinding.getDeclaringClass().getQualifiedName(), methodBinding.getName(), Arrays.stream(methodBinding.getParameterTypes()).map(b -> b.getQualifiedName()).toArray(String[]::new), originRange);
-						return findDefinitions(project, params);
+						return findImplLocations(project, params);
 					} catch (BadLocationException e) {
 						log.error("", e);
 					}
@@ -101,7 +101,7 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 		return List.of();
 	}
 	
-	private List<LocationLink> findDefinitions(IJavaProject project, GoToImplParams implParams) {
+	private List<LocationLink> findImplLocations(IJavaProject project, GoToImplParams implParams) {
 		String genRepoFqn = implParams.repoFqName() + "Impl__Aot";
 		Path relativeGenSourcePath = Paths.get("%s.java".formatted(genRepoFqn.replace('.', '/')));
 		List<LocationLink> defs = findInSourceFolder(project, relativeGenSourcePath, genRepoFqn, implParams);
@@ -215,7 +215,7 @@ public class GenAotQueryMethodDefinitionProvider implements IJavaDefinitionProvi
 				if (project.isEmpty()) {
 					return List.<LocationLink>of();
 				}
-				return findDefinitions(project.get(), implParams);
+				return findImplLocations(project.get(), implParams);
 			}).thenCompose(links -> {
 				if (links.isEmpty()) {
 					return CompletableFuture.completedFuture(null);

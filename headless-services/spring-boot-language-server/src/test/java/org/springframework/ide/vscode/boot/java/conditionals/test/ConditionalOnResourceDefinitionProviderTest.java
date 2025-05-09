@@ -80,7 +80,7 @@ public class ConditionalOnResourceDefinitionProviderTest {
                 new Range(new Position(0, 0), new Position(0, 0)),
                 new Range(new Position(5, 23), new Position(5, 60)));
 
-        editor.assertLinkTargets("classpath:a-random-resource-root.md", List.of(expectedLocation));
+        editor.assertDefinitionLinkTargets("classpath:a-random-resource-root.md", List.of(expectedLocation));
     }
 
 }

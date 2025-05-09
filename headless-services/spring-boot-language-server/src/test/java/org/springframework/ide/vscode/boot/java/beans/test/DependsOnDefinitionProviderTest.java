@@ -95,7 +95,7 @@ public class DependsOnDefinitionProviderTest {
 				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
 				null);
 
-		editor.assertLinkTargets("bean1", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation));
 	}
 
 	@Test
@@ -122,7 +122,7 @@ public class DependsOnDefinitionProviderTest {
 				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
 				null);
 
-		editor.assertLinkTargets("bean1", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation));
 	}
 
 	@Test
@@ -156,7 +156,7 @@ public class DependsOnDefinitionProviderTest {
 				beans[1].getLocation().getRange(), beans[1].getLocation().getRange(),
 				null);
 
-		editor.assertLinkTargets("bean1", List.of(expectedLocation1, expectedLocation2));
+		editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation1, expectedLocation2));
 	}
 
 }

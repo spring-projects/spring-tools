@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.java.beans.test;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -95,7 +94,7 @@ public class ResourceDefinitionProviderTest {
 				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
 				null);
 
-		editor.assertLinkTargets("bean1", List.of(expectedLocation));
+		editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation));
 	}
 
 	@Test
@@ -129,7 +128,7 @@ public class ResourceDefinitionProviderTest {
 				beans[1].getLocation().getRange(), beans[1].getLocation().getRange(),
 				null);
 
-		editor.assertLinkTargets("bean1", List.of(expectedLocation1, expectedLocation2));
+		editor.assertDefinitionLinkTargets("bean1", List.of(expectedLocation1, expectedLocation2));
 	}
 
 }

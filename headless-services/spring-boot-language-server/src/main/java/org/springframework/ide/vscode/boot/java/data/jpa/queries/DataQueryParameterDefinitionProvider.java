@@ -24,7 +24,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.IJavaDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.IJavaLocationLinksProvider;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.SemanticTokenData;
@@ -33,7 +33,7 @@ import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.Collector;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
-public class DataQueryParameterDefinitionProvider implements IJavaDefinitionProvider {
+public class DataQueryParameterDefinitionProvider implements IJavaLocationLinksProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(DataQueryParameterDefinitionProvider.class);
 
@@ -46,7 +46,7 @@ public class DataQueryParameterDefinitionProvider implements IJavaDefinitionProv
 	}
 
 	@Override
-	public List<LocationLink> getDefinitions(CancelChecker cancelToken, IJavaProject project,
+	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
 			TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 		if (n instanceof StringLiteral || n instanceof TextBlock) {
 			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);

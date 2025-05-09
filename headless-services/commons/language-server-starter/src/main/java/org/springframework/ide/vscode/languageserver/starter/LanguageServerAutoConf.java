@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2021 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,6 +28,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Diagnosti
 import org.springframework.ide.vscode.commons.languageserver.util.CompletionServerCapabilityRegistration;
 import org.springframework.ide.vscode.commons.languageserver.util.DefinitionHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.DocumentSymbolHandler;
+import org.springframework.ide.vscode.commons.languageserver.util.ImplementationHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.LanguageSpecific;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleTextDocumentService;
@@ -84,6 +85,38 @@ public class LanguageServerAutoConf {
 				if (doc != null) {
 					LanguageId language = doc.getLanguageId();
 					DefinitionHandler handler = immutableMap.get(language);
+					if (handler != null) {
+						return handler.handle(cancelToken, position);
+					}
+				}
+				return null;
+ 			});
+		}
+	}
+	
+	@ConditionalOnBean(ImplementationHandler.class)
+	@Bean
+	InitializingBean registerImplementationHandler(SimpleTextDocumentService documents,
+			List<ImplementationHandler> implHandlers) {
+		if (implHandlers.size() == 1) {
+			return () -> documents.onImplementation(implHandlers.get(0));
+		} else {
+			Map<LanguageId, ImplementationHandler> handlers = new HashMap<>(implHandlers.size());
+			for (ImplementationHandler h : implHandlers) {
+				Assert.isInstanceOf(LanguageSpecific.class, h, "Only language specific defintion handlers supported!");
+				for (LanguageId l : ((LanguageSpecific)h).supportedLanguages()) {
+					Assert.isTrue(!handlers.containsKey(l), "Multiple definition handlers for the same language not supported!");
+					handlers.put(l, h);
+				}
+			}
+
+			ImmutableMap<LanguageId, ImplementationHandler> immutableMap = ImmutableMap.copyOf(handlers);
+			return () -> documents.onImplementation((cancelToken, position) -> {
+				TextDocument doc = documents.getLatestSnapshot(position);
+
+				if (doc != null) {
+					LanguageId language = doc.getLanguageId();
+					ImplementationHandler handler = immutableMap.get(language);
 					if (handler != null) {
 						return handler.handle(cancelToken, position);
 					}

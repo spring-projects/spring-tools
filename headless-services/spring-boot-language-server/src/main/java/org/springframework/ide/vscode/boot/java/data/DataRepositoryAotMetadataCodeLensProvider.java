@@ -126,7 +126,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 					codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), queryStatement)), null));
 				}
 				
-				Command impl = new Command("Implementation", GenAotQueryMethodDefinitionProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodDefinitionProvider.GoToImplParams(
+				Command impl = new Command("Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
 						document.getId(),
 						mb.getDeclaringClass().getQualifiedName(),
 						mb.getName(),

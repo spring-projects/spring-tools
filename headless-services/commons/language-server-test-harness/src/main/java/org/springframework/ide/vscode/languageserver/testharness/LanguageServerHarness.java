@@ -77,6 +77,7 @@ import org.eclipse.lsp4j.FileChangeType;
 import org.eclipse.lsp4j.FileEvent;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
+import org.eclipse.lsp4j.ImplementationParams;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.InlayHint;
@@ -825,6 +826,11 @@ public class LanguageServerHarness {
 		return getServer().getTextDocumentService().definition(params).get().getRight();
 	}
 
+	public List<? extends LocationLink> getImplemetations(ImplementationParams params) throws Exception {
+		waitForReconcile(); //goto definitions relies on reconciler infos! Must wait or race condition breaking tests occasionally.
+		return getServer().getTextDocumentService().implementation(params).get().getRight();
+	}
+	
 	public static void assertDocumentation(String expected, CompletionItem completion) {
 		assertEquals(expected, getDocString(completion));
 	}

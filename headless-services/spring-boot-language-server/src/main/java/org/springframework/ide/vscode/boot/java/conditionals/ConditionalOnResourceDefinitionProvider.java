@@ -23,15 +23,15 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
-import org.springframework.ide.vscode.boot.java.IJavaDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.IJavaLocationLinksProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
-public class ConditionalOnResourceDefinitionProvider implements IJavaDefinitionProvider {
+public class ConditionalOnResourceDefinitionProvider implements IJavaLocationLinksProvider {
 
     @Override
-    public List<LocationLink> getDefinitions(CancelChecker cancelToken, IJavaProject project,
+    public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
                                              TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 
         if (n instanceof StringLiteral) {

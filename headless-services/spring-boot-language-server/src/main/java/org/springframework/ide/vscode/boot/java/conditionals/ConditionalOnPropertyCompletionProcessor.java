@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.conditionals;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -66,10 +67,11 @@ public class ConditionalOnPropertyCompletionProcessor implements AnnotationAttri
 
 	private List<AnnotationAttributeProposal> findProperties(IJavaProject project, String prefix) {
 		List<AnnotationAttributeProposal> result = new ArrayList<>();
+		Set<String> propertyKeys = new HashSet<>();
 		
 		// First the 'real' properties, Then also add 'ad-hoc' properties
-		addPropertyProposals(indexProvider.getIndex(project).getProperties(), prefix, result);
-		addPropertyProposals(adHocIndexProvider.getIndex(project), prefix, result);
+		addPropertyProposals(indexProvider.getIndex(project).getProperties(), prefix, result, propertyKeys);
+		addPropertyProposals(adHocIndexProvider.getIndex(project), prefix, result, propertyKeys);
 
 		result.sort((p1, p2) -> p1.getLabel().compareTo(p2.getLabel()));
 
@@ -86,9 +88,14 @@ public class ConditionalOnPropertyCompletionProcessor implements AnnotationAttri
 		return new ArrayList<>(prefixes);
 	}
 	
-	private void addPropertyProposals(FuzzyMap<PropertyInfo> properties, String prefix, List<AnnotationAttributeProposal> result) {
+	private void addPropertyProposals(FuzzyMap<PropertyInfo> properties, String prefix, List<AnnotationAttributeProposal> result, Set<String> propertyKeys) {
 		properties.forEach(propertyInfo -> {
 			String propID = propertyInfo.getId();
+
+			// avoid duplicate property keys
+			if (!propertyKeys.add(propID)) {
+				return;
+			}
 			
 			if (prefix != null) {				
 				if (prefix.length() > 0

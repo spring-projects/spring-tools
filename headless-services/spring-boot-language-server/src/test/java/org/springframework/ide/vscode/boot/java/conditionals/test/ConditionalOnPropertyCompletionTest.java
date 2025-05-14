@@ -148,6 +148,31 @@ public class ConditionalOnPropertyCompletionTest {
     }
 
     @Test
+    public void testConditionalOnPropertyCompletionWithAdhocProperties() throws Exception {
+    	adHocProperties.add("adhoc.prop");
+    	
+        List<CompletionItem> completions = getCompletions("@ConditionalOnProperty(<*>)");
+        assertEquals(4, completions.size());
+        
+        assertEquals("adhoc.prop", completions.get(0).getLabel());
+        assertEquals("data.prop2", completions.get(1).getLabel());
+        assertEquals("else.prop3", completions.get(2).getLabel());
+        assertEquals("spring.boot.prop1", completions.get(3).getLabel());
+    }
+
+    @Test
+    public void testConditionalOnPropertyCompletionWithAdhocPropertiesDuplicatedKey() throws Exception {
+    	adHocProperties.add("data.prop2");
+    	
+        List<CompletionItem> completions = getCompletions("@ConditionalOnProperty(<*>)");
+        assertEquals(3, completions.size());
+        
+        assertEquals("data.prop2", completions.get(0).getLabel());
+        assertEquals("else.prop3", completions.get(1).getLabel());
+        assertEquals("spring.boot.prop1", completions.get(2).getLabel());
+    }
+
+    @Test
     public void testConditionalOnPropertyCompletionWithoutPrefixAttributeWithNameAttribute() throws Exception {
         List<CompletionItem> completions = getCompletions("@ConditionalOnProperty(name=<*>)");
         assertEquals(3, completions.size());

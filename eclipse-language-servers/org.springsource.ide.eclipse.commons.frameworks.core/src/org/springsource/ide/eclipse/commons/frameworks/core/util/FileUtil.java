@@ -12,7 +12,8 @@ package org.springsource.ide.eclipse.commons.frameworks.core.util;
 
 import java.io.File;
 import java.io.IOException;
-
+import java.nio.file.Files;
+import java.nio.file.Path;
 /**
  * @author Steffen Pingel
  * @author Leo Dos Santos
@@ -56,13 +57,8 @@ public class FileUtil {
 	 * @throws IOException
 	 */
 	public static File createTempDirectory(String name, String suffix) throws IOException {
-		File tempFolder = File.createTempFile(name, suffix);
-		if (!tempFolder.delete()) {
-			throw new IOException("Could not delete temp file: " + tempFolder.getAbsolutePath());
-		}
-		if (!tempFolder.mkdirs()) {
-			throw new IOException("Could not create temp directory: " + tempFolder.getAbsolutePath());
-		}
+		String tempDirPrefix = (name != null ? name : "") + (suffix != null ? suffix : "");
+    	File tempFolder = Files.createTempDirectory(tempDirPrefix).toFile();
 		deleteOnShutdown(tempFolder);
 		return tempFolder;
 	}

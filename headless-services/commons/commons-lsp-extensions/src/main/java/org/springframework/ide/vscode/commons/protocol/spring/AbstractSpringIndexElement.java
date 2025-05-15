@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.commons.protocol.spring;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class AbstractSpringIndexElement implements SpringIndexElement {
@@ -24,7 +25,7 @@ public abstract class AbstractSpringIndexElement implements SpringIndexElement {
 
 	@Override
 	public List<SpringIndexElement> getChildren() {
-		return children;
+		return Collections.unmodifiableList(this.children);
 	}
 	
 	public void addChild(SpringIndexElement child) {

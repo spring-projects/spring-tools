@@ -10,15 +10,22 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.protocol.spring;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class ProjectElement extends AbstractSpringIndexElement {
+public class ProjectElement implements SpringIndexElement {
 
 	private String projectName;
+	
+	private Map<String, DocumentElement> documents;
+	private List<SpringIndexElement> otherElements;
 
 	public ProjectElement(String projectName) {
 		this.projectName = projectName;
+		this.documents = new ConcurrentHashMap<>();
+		this.otherElements = new ArrayList<>();
 	}
 	
 	public String getProjectName() {
@@ -26,13 +33,36 @@ public class ProjectElement extends AbstractSpringIndexElement {
 	}
 
 	public void removeDocument(String docURI) {
-		List<SpringIndexElement> children = this.getChildren();
+		this.documents.remove(docURI);
+	}
+
+	@Override
+	public List<SpringIndexElement> getChildren() {
+		List<SpringIndexElement> result = new ArrayList<>();
+
+		result.addAll(documents.values());
+		result.addAll(otherElements);
 		
-		for (Iterator<SpringIndexElement> iterator = children.iterator(); iterator.hasNext();) {
-			SpringIndexElement springIndexElement = (SpringIndexElement) iterator.next();
-			if (springIndexElement instanceof DocumentElement doc && doc.getDocURI().equals(docURI)) {
-				iterator.remove();
-			}
+		return result;
+	}
+
+	@Override
+	public void addChild(SpringIndexElement child) {
+		if (child instanceof DocumentElement document) {
+			documents.put(document.getDocURI(), document);
+		}
+		else {
+			otherElements.add(child);
+		}
+	}
+
+	@Override
+	public void removeChild(SpringIndexElement doc) {
+		if (doc instanceof DocumentElement document) {
+			documents.remove(document.getDocURI());
+		}
+		else {
+			otherElements.remove(doc);
 		}
 	}
 

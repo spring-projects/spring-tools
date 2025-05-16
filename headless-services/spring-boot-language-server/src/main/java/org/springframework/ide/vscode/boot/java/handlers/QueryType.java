@@ -4,6 +4,7 @@ public enum QueryType {
     SPEL("Explain SpEL Expression with Copilot", "Explain the following SpEL Expression with a clear summary first, followed by a breakdown of the expression with details: \n\n"),
     JPQL("Explain Query with Copilot", "Explain the following JPQL query with a clear summary first, followed by a detailed explanation. If the query contains any SpEL expressions, explain those parts as well: \n\n"),
     HQL("Explain Query with Copilot", "Explain the following HQL query with a clear summary first, followed by a detailed explanation. If the query contains any SpEL expressions, explain those parts as well: \n\n"),
+    MONGODB("Explain Query with Copilot", "Explain the following MongoDB query with a clear summary first, followed by a detailed explanation. If the query contains any SpEL expressions, explain those parts as well: \n\n"),
     AOP("Explain AOP annotation with Copilot", "Explain the following AOP annotation with a clear summary first, followed by a detailed contextual explanation of annotation and its purpose: \n\n"),
     DEFAULT("Explain Query with Copilot", "Explain the following query with a clear summary first, followed by a detailed explanation: \n\n");
 

@@ -221,11 +221,22 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 	
 	private QueryType determineQueryType(TextDocument document) {
 		Optional<IJavaProject> optProject = projectFinder.find(document.getId());
+
 		if (optProject.isPresent()) {
 			IJavaProject jp = optProject.get();
-			return SpringProjectUtil.hasDependencyStartingWith(jp, "hibernate-core", null) ? QueryType.HQL
-					: QueryType.JPQL;
+			
+			if (SpringProjectUtil.hasDependencyStartingWith(jp, "hibernate-core", null)) {
+				return QueryType.HQL;
+			}
+			else if (SpringProjectUtil.hasDependencyStartingWith(jp, "spring-data-mongodb", null)) {
+				return QueryType.MONGODB;
+			}
+			else {
+				return QueryType.JPQL;
+
+			}
 		}
+
 		return QueryType.DEFAULT;
 	}
 

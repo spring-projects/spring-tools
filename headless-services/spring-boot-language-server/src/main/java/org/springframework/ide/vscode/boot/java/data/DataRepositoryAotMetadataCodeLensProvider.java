@@ -114,14 +114,19 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 	
 	private List<CodeLens> createCodeLenses(MethodDeclaration node, TextDocument document, String queryStatement) {
 		List<CodeLens> codeLenses = new ArrayList<>(2);
+		
 		try {
 			IMethodBinding mb = node.resolveBinding();
 			Position startPos = document.toPosition(node.getStartPosition());
 			Position endPos = document.toPosition(node.getName().getStartPosition() + node.getName().getLength());
 			Range range = new Range(startPos, endPos);
 			AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
+
 			if (mb != null && hierarchyAnnot != null) {
-				boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY);
+
+				boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY)
+						|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY);
+
 				if (!isQueryAnnotated) {
 					codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), queryStatement)), null));
 				}
@@ -148,7 +153,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 	}
 
 	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, String queryStatement) {
-		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Convert into `@Query`")
+		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
 				.withRecipeScope(RecipeScope.FILE)
 				.withParameters(Map.of("annotationType", Annotations.DATA_JPA_QUERY, "method",
 						"%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),

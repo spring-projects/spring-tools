@@ -49,6 +49,8 @@ public class Annotations {
 	public static final String DATA_QUERY_META_ANNOTATION = "org.springframework.data.annotation.QueryAnnotation";
 	public static final String DATA_JPA_QUERY = "org.springframework.data.jpa.repository.Query";
 	public static final String DATA_JPA_NATIVE_QUERY = "org.springframework.data.jpa.repository.NativeQuery";
+	public static final String DATA_MONGODB_QUERY = "org.springframework.data.mongodb.repository.Query";
+	
 
 	public static final String AUTOWIRED = "org.springframework.beans.factory.annotation.Autowired";
 	public static final String QUALIFIER = "org.springframework.beans.factory.annotation.Qualifier";

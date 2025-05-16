@@ -10,5 +10,5 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
-public record DataRepositoryAotMetadata (String name, String type, DataRepositoryAotMetadataMethod[] methods) {
+public record DataRepositoryAotMetadata (String name, String type, String module, DataRepositoryAotMetadataMethod[] methods) {
 }

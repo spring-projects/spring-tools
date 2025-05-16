@@ -10,6 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
-public record DataRepositoryAotMetadataQuery(String query) {
-
+/**
+ * Details about the AOT generated query.
+ * 
+ * query: For JPA-based repositories, this field contains the generated SQL query statememt for the query method
+ * filter, sort, projection, pipeline: Query details for MongoDB-based repository query methods
+ */
+public record DataRepositoryAotMetadataQuery(String query, String filter, String sort, String projection, String pipeline, String fields) {
 }

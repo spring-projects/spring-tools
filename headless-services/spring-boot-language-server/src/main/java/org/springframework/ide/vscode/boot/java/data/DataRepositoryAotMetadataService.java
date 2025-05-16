@@ -13,6 +13,8 @@ package org.springframework.ide.vscode.boot.java.data;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -22,6 +24,7 @@ import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser;
 import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser.JLRMethod;
+import org.springframework.util.StringUtils;
 
 import com.google.gson.Gson;
 
@@ -67,7 +70,56 @@ public class DataRepositoryAotMetadataService {
 
 	public String getQueryStatement(DataRepositoryAotMetadata metadata, IMethodBinding method) {
 		DataRepositoryAotMetadataMethod methodMetadata = findMethod(metadata, method);
-		return methodMetadata != null ? methodMetadata.query().query() : null;
+		
+		if (methodMetadata != null) {
+			if (metadata.module() != null && metadata.module().toUpperCase().equals("JPA")) {
+				return getJpaQueryStatement(methodMetadata);
+			}
+			else if (metadata.module() != null && metadata.module().toUpperCase().equals("MONGODB")) {
+				return getMongoDbQueryStatement(methodMetadata);
+			}
+		}
+
+		return null;
+	}
+
+	private String getMongoDbQueryStatement(DataRepositoryAotMetadataMethod methodMetadata) {
+		List<String> parts = new ArrayList<>();
+		
+		if (methodMetadata.query().filter() != null) {
+			if (!StringUtils.hasText(methodMetadata.query().sort())
+				&& !StringUtils.hasText(methodMetadata.query().fields())
+				&& !StringUtils.hasText(methodMetadata.query().projection())
+				&& !StringUtils.hasText(methodMetadata.query().pipeline())) {
+
+				parts.add(methodMetadata.query().filter());
+			}
+			else {
+				parts.add("filter = \"" + methodMetadata.query().filter() + "\"");
+			}
+		}
+		
+		if (methodMetadata.query().fields() != null) {
+			parts.add("fields = \"" + methodMetadata.query().fields() + "\"");
+		}
+		
+		if (methodMetadata.query().sort() != null) {
+			parts.add("sort = \"" + methodMetadata.query().sort() + "\"");
+		}
+
+		if (methodMetadata.query().projection() != null) {
+			parts.add("projection = \"" + methodMetadata.query().projection() + "\"");
+		}
+
+		if (methodMetadata.query().pipeline() != null) {
+			parts.add("pipeline = \"" + methodMetadata.query().pipeline() + "\"");
+		}
+
+		return String.join(", ", parts);
+	}
+
+	private String getJpaQueryStatement(DataRepositoryAotMetadataMethod methodMetadata) {
+		return methodMetadata.query().query();
 	}
 
 	private DataRepositoryAotMetadataMethod findMethod(DataRepositoryAotMetadata metadata, IMethodBinding method) {

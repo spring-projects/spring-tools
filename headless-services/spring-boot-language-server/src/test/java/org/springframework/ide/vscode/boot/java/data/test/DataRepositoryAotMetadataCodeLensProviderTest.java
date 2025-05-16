@@ -51,7 +51,7 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 
 	@BeforeEach
 	public void setup() throws Exception {
-		testProject = ProjectsHarness.INSTANCE.mavenProject("aot-generation");
+		testProject = ProjectsHarness.INSTANCE.mavenProject("aot-data-repositories-jpa");
 		harness.useProject(testProject);
 		harness.intialize(null);
 

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
@@ -122,28 +123,44 @@ public class DataRepositoryAotMetadataService {
 		return methodMetadata.query().query();
 	}
 
-	private DataRepositoryAotMetadataMethod findMethod(DataRepositoryAotMetadata metadata, IMethodBinding method) {
+	public DataRepositoryAotMetadataMethod findMethod(DataRepositoryAotMetadata metadata, IMethodBinding method) {
 		String name = method.getName();
 		
 		for (DataRepositoryAotMetadataMethod methodMetadata : metadata.methods()) {
 			
-			// TODO: This check needs more exact method signature matching - which is a little more complicated
-			// due to runtime Method.toGenericString() output needs to be compared to IMethodBinding source level method information
-
 			if (methodMetadata.name() != null && methodMetadata.name().equals(name)) {
+
 				String signature = methodMetadata.signature();
 				JLRMethod parsedMethodSignature = JLRMethodParser.parse(signature);
 				
-				String methodName = parsedMethodSignature.getMethodName();
-				String[] parameters = parsedMethodSignature.getParameters();
-				String returnType = parsedMethodSignature.getReturnType();
-				parsedMethodSignature.getFQClassName();
-				
-				return methodMetadata;
+				if (parsedMethodSignature.getFQClassName().equals(metadata.name())
+						&& parsedMethodSignature.getMethodName().equals(method.getName())
+						&& parsedMethodSignature.getReturnType().equals(method.getReturnType().getQualifiedName())
+						&& parameterMatches(parsedMethodSignature, method)) {
+					return methodMetadata;
+				}
 			}
 		}
 		
 		return null;
+	}
+
+	private boolean parameterMatches(JLRMethod parsedMethodSignature, IMethodBinding method) {
+		String[] parsedParameeterTypes = parsedMethodSignature.getParameters();
+		ITypeBinding[] methodParameters = method.getParameterTypes();
+		
+		if (parsedParameeterTypes == null || methodParameters == null || parsedParameeterTypes.length != methodParameters.length) {
+			return false;
+		}
+		
+		for (int i = 0; i < parsedParameeterTypes.length; i++) {
+			String qualifiedName = methodParameters[i].getQualifiedName();
+			if (qualifiedName != null && !qualifiedName.equals(parsedParameeterTypes[i])) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 
 

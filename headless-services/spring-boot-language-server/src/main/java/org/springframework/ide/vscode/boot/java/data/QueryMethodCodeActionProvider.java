@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.data;
 
 import java.net.URI;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -56,15 +57,26 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 			@Override
 			public boolean visit(MethodDeclaration node) {
 				cancelToken.checkCanceled();
+				
 				if (node.getStartPosition() <= region.getStart() && node.getStartPosition() + node.getLength() >= region.getEnd()) {
 					int start = node.getStartPosition();
 					int end = node.getName().getStartPosition() + node.getName().getLength();
+
 					if (start <= region.getStart() && end >= region.getEnd()) {
+
 						IMethodBinding binding = node.resolveBinding();
 						AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
-						if (hierarchyAnnot != null && !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_JPA_QUERY)) {
-							DataRepositoryAotMetadataCodeLensProvider.getDataQuery(repositoryMetadataService, project, binding)
-									.map(query -> createCodeAction(binding, docURI, query)).ifPresent(collector::accept);
+						if (hierarchyAnnot != null
+								&& !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_JPA_QUERY)
+								&& !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_MONGODB_QUERY)) {
+
+							Optional<DataRepositoryAotMetadata> metadata = DataRepositoryAotMetadataCodeLensProvider.getMetadata(repositoryMetadataService, project, binding);
+							if (metadata.isPresent()) {
+								Optional<DataRepositoryAotMetadataMethod> methodMetadata = DataRepositoryAotMetadataCodeLensProvider.getMethodMetadata(repositoryMetadataService, metadata.get(), binding);
+								methodMetadata
+									.map(method -> createCodeAction(binding, docURI, metadata.get(), method))
+									.ifPresent(collector::accept);
+							}
 						}
 					}
 					return super.visit(node);
@@ -75,9 +87,9 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 		};
 	}
 	
-	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, String query) {
+	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, DataRepositoryAotMetadataMethod method) {
 		CodeAction ca = new CodeAction();
-		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), query)));
+		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata, method)));
 		ca.setTitle(TITLE);
 		ca.setKind(CodeActionKind.Refactor);
 		return ca;

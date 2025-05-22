@@ -30,6 +30,7 @@ import org.eclipse.jface.resource.JFaceColors;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.viewers.AbstractTreeViewer;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -304,8 +305,12 @@ public class GotoSymbolSection extends WizardPageSection {
 		viewer.setContentProvider(new SymbolsContentProvider());
 		viewer.setLabelProvider(new GotoSymbolsLabelProvider(viewer.getTree().getFont()));
 		viewer.setUseHashlookup(true);
+		viewer.setAutoExpandLevel(AbstractTreeViewer.ALL_LEVELS);
 		disposables.add(model.getSymbols().onChange(UIValueListener.from((e, v) -> {
-			if (!viewer.getControl().isDisposed()) viewer.refresh();
+			if (!viewer.getControl().isDisposed()) {
+				viewer.refresh();
+				viewer.expandToLevel(AbstractTreeViewer.ALL_LEVELS);
+			}
 		})));
 		
 		installWidgetListeners(pattern, viewer);

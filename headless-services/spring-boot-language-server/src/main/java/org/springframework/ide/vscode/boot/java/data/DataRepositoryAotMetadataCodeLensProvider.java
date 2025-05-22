@@ -30,6 +30,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
@@ -54,15 +55,21 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	private final JavaProjectFinder projectFinder;
 	private final RewriteRefactorings refactorings;
+	private final BootJavaConfig config;
 
-	public DataRepositoryAotMetadataCodeLensProvider(JavaProjectFinder projectFinder, DataRepositoryAotMetadataService repositoryMetadataService, RewriteRefactorings refactorings) {
+	public DataRepositoryAotMetadataCodeLensProvider(JavaProjectFinder projectFinder, DataRepositoryAotMetadataService repositoryMetadataService,
+			RewriteRefactorings refactorings, BootJavaConfig config) {
 		this.projectFinder = projectFinder;
 		this.repositoryMetadataService = repositoryMetadataService;
 		this.refactorings = refactorings;
+		this.config = config;
 	}
 
 	@Override
 	public void provideCodeLenses(CancelChecker cancelToken, TextDocument document, CompilationUnit cu, List<CodeLens> resultAccumulator) {
+		if (!config.isEnabledCodeLensOverDataQueryMethods()) {
+			return;
+		}
 		cu.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(MethodDeclaration node) {
@@ -158,9 +165,12 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				codeLenses.add(new CodeLens(range, impl, null));
 				
 				if (!isQueryAnnotated) {
-					Command queryTitle = new Command();
-					queryTitle.setTitle(methodMetadata.get().getQueryStatement(metadata));
-					codeLenses.add(new CodeLens(range, queryTitle, null));
+					String queryStatement = methodMetadata.get().getQueryStatement(metadata);
+					if (queryStatement != null) {
+						Command queryTitle = new Command();
+						queryTitle.setTitle(queryStatement);
+						codeLenses.add(new CodeLens(range, queryTitle, null));
+					}
 				}
 			}
 		} catch (BadLocationException e) {

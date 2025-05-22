@@ -203,6 +203,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		javaSettings.put("symbols-from-new-index", preferenceStore.getBoolean(Constants.PREF_SYMBOLS_FROM_NEW_INDEX));
 		javaSettings.put("completions", javaCompletionSettings);
 		javaSettings.put("reconcilers", preferenceStore.getBoolean(Constants.PREF_JAVA_RECONCILE));
+		javaSettings.put("codelens-over-query-methods", preferenceStore.getBoolean(Constants.PREF_CODELENS_QUERY_METHODS));
 
 		bootJavaObj.put("jpql", preferenceStore.getBoolean(Constants.PREF_JPQL));
 		bootJavaObj.put("live-information", liveInformation);

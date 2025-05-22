@@ -56,6 +56,9 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		// Experimental Bean Injections completion in Java editor
 		addField(new BooleanFieldEditor(Constants.PREF_COMPLETION_JAVA_INJECT_BEAN, "Inject Bean completion proposals in Java editor", fieldEditorParent));
 		
+		// Show AOT generated query over Data Query methods
+		addField(new BooleanFieldEditor(Constants.PREF_CODELENS_QUERY_METHODS, "Show CodeLens with AOT generated query over Data Query methods", fieldEditorParent));
+		
 		// Experimental Beans tree 
 		addField(new BooleanFieldEditor(Constants.PREF_BEANS_STRUCTURE_TREE, "Beans structure tree in the outline view (experimental)", fieldEditorParent));
 		

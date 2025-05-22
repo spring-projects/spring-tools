@@ -224,6 +224,11 @@ public class BootJavaConfig implements InitializingBean {
 		return Boolean.TRUE.equals(b);
 	}
 	
+	public boolean isEnabledCodeLensOverDataQueryMethods() {
+		Boolean b = settings.getBoolean("boot-java", "java", "codelens-over-query-methods");
+		return Boolean.TRUE.equals(b);
+	}
+	
 	public Settings getRawSettings() {
 		return settings;
 	}

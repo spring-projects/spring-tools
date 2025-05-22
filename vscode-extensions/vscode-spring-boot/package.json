@@ -383,6 +383,11 @@
             "default": true,
             "description": "Generate workspace symbols from index (experimental)"
           },
+          "boot-java.java.codelens-over-query-methods": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show CodeLens with AOT generated query over Data Query methods"
+          },
           "boot-java.remote-apps": {
             "type": "array",
             "items": {

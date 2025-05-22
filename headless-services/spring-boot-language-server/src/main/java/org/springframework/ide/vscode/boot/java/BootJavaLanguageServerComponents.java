@@ -182,7 +182,8 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 
 		spelSemanticTokens = appContext.getBean(SpelSemanticTokens.class);
 		dataRepositoryAotMetadataService = appContext.getBean(DataRepositoryAotMetadataService.class);
-		codeLensHandler = createCodeLensEngine(springIndex, projectFinder, server, spelSemanticTokens, dataRepositoryAotMetadataService, appContext.getBean(RewriteRefactorings.class));
+		codeLensHandler = createCodeLensEngine(springIndex, projectFinder, server, spelSemanticTokens, dataRepositoryAotMetadataService,
+				appContext.getBean(RewriteRefactorings.class), config);
 
 		highlightsEngine = createDocumentHighlightEngine(appContext);
 		documents.onDocumentHighlight(highlightsEngine);
@@ -317,12 +318,13 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 	}
 
 	protected BootJavaCodeLensEngine createCodeLensEngine(SpringMetamodelIndex springIndex, JavaProjectFinder projectFinder, SimpleLanguageServer server,
-			SpelSemanticTokens spelSemanticTokens, DataRepositoryAotMetadataService repositoryAotMetadataService, RewriteRefactorings refactorings) {
+			SpelSemanticTokens spelSemanticTokens, DataRepositoryAotMetadataService repositoryAotMetadataService, RewriteRefactorings refactorings,
+			BootJavaConfig config) {
 
 		Collection<CodeLensProvider> codeLensProvider = new ArrayList<>();
 		codeLensProvider.add(new WebfluxHandlerCodeLensProvider(springIndex));
 		codeLensProvider.add(new CopilotCodeLensProvider(projectFinder, server, spelSemanticTokens));
-		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(projectFinder, repositoryAotMetadataService, refactorings));
+		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(projectFinder, repositoryAotMetadataService, refactorings, config));
 
 		return new BootJavaCodeLensEngine(this, codeLensProvider);
 	}

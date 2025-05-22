@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.text.StringEscapeUtils;
@@ -80,18 +81,30 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		return true;
 	}
 	
-	static Optional<String> getDataQuery(DataRepositoryAotMetadataService repositoryMetadataService, IJavaProject project, IMethodBinding methodBinding) {
+//	static Optional<String> getDataQuery(DataRepositoryAotMetadataService repositoryMetadataService, IJavaProject project, IMethodBinding methodBinding) {
+//		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
+//		final IMethodBinding method = methodBinding.getMethodDeclaration();
+//
+//		DataRepositoryAotMetadata metadata = repositoryMetadataService.getRepositoryMetadata(project, repositoryClass);
+//
+//		if (metadata != null) {
+//			return Optional.ofNullable(repositoryMetadataService.getQueryStatement(metadata, method));
+//		}
+//		
+//		return Optional.empty();
+//
+//	}
+	
+	static Optional<DataRepositoryAotMetadata> getMetadata(DataRepositoryAotMetadataService dataRepositoryAotMetadataService, IJavaProject project, IMethodBinding methodBinding) {
 		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
+
+		return Optional.ofNullable(dataRepositoryAotMetadataService.getRepositoryMetadata(project, repositoryClass));
+	}
+
+	static Optional<DataRepositoryAotMetadataMethod> getMethodMetadata(DataRepositoryAotMetadataService dataRepositoryAotMetadataService, DataRepositoryAotMetadata metadata, IMethodBinding methodBinding) {
 		final IMethodBinding method = methodBinding.getMethodDeclaration();
 
-		DataRepositoryAotMetadata metadata = repositoryMetadataService.getRepositoryMetadata(project, repositoryClass);
-
-		if (metadata != null) {
-			return Optional.ofNullable(repositoryMetadataService.getQueryStatement(metadata, method));
-		}
-		
-		return Optional.empty();
-
+		return Optional.ofNullable(dataRepositoryAotMetadataService.findMethod(metadata, method));
 	}
 
 	protected void provideCodeLens(CancelChecker cancelToken, MethodDeclaration node, TextDocument document, List<CodeLens> resultAccumulator) {
@@ -106,13 +119,14 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		
 		if (isValidMethodBinding(methodBinding)) {
 			cancelToken.checkCanceled();
-			getDataQuery(repositoryMetadataService, project, methodBinding)
-				.map(queryStatement -> createCodeLenses(node, document, queryStatement))
+
+			getMetadata(repositoryMetadataService, project, methodBinding)
+				.map(metadata -> createCodeLenses(node, document, metadata))
 				.ifPresent(cls -> cls.forEach(resultAccumulator::add));
 		}
 	}
 	
-	private List<CodeLens> createCodeLenses(MethodDeclaration node, TextDocument document, String queryStatement) {
+	private List<CodeLens> createCodeLenses(MethodDeclaration node, TextDocument document, DataRepositoryAotMetadata metadata) {
 		List<CodeLens> codeLenses = new ArrayList<>(2);
 		
 		try {
@@ -122,13 +136,16 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			Range range = new Range(startPos, endPos);
 			AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
 
-			if (mb != null && hierarchyAnnot != null) {
+			Optional<DataRepositoryAotMetadataMethod> methodMetadata = getMethodMetadata(repositoryMetadataService, metadata, mb);
+
+			if (mb != null && hierarchyAnnot != null && methodMetadata.isPresent()) {
 
 				boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY)
 						|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY);
+				
 
 				if (!isQueryAnnotated) {
-					codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), queryStatement)), null));
+					codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata, methodMetadata.get())), null));
 				}
 				
 				Command impl = new Command("Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
@@ -142,7 +159,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				
 				if (!isQueryAnnotated) {
 					Command queryTitle = new Command();
-					queryTitle.setTitle(queryStatement);
+					queryTitle.setTitle(methodMetadata.get().getQueryStatement(metadata));
 					codeLenses.add(new CodeLens(range, queryTitle, null));
 				}
 			}
@@ -152,15 +169,31 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		return codeLenses;
 	}
 
-	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, String queryStatement) {
+	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryAotMetadata metadata, DataRepositoryAotMetadataMethod methodMetadata) {
 		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
+				
 				.withRecipeScope(RecipeScope.FILE)
-				.withParameters(Map.of("annotationType", Annotations.DATA_JPA_QUERY, "method",
-						"%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
-								Arrays.stream(mb.getParameterTypes()).map(pt -> pt.getQualifiedName())
-										.collect(Collectors.joining(", "))),
-						"attributes", List.of(new AddAnnotationOverMethod.Attribute("value",
-								"\"%s\"".formatted(StringEscapeUtils.escapeJava(queryStatement))))));
+				
+				.withParameters(Map.of(
+						"annotationType", metadata.isJPA() ? Annotations.DATA_JPA_QUERY : Annotations.DATA_MONGODB_QUERY,
+						"method", "%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
+								Arrays.stream(mb.getParameterTypes())
+									.map(pt -> pt.getQualifiedName())
+									.collect(Collectors.joining(", "))),
+						"attributes", createAttributeList(methodMetadata.getAttributesMap(metadata))));
 	}
+	
+	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes) {
+		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
+		
+		Set<String> keys = attributes.keySet();
+		for (String key : keys) {
+			result.add(new AddAnnotationOverMethod.Attribute(key, "\"%s\"".formatted(StringEscapeUtils.escapeJava(attributes.get(key)))));
+		}
+
+		return result;
+	}
+	
+	
 
 }

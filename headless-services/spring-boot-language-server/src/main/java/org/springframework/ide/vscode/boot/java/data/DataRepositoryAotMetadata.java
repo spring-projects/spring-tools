@@ -11,4 +11,12 @@
 package org.springframework.ide.vscode.boot.java.data;
 
 public record DataRepositoryAotMetadata (String name, String type, String module, DataRepositoryAotMetadataMethod[] methods) {
+	
+	public boolean isJPA() {
+		return module != null && module.toLowerCase().equals("jpa");
+	}
+	
+	public boolean isMongoDb() {
+		return module != null && module.toLowerCase().equals("mongodb");
+	}
 }

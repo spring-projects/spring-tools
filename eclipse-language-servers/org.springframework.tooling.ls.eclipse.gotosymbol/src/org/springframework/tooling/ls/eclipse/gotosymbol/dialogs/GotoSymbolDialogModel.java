@@ -17,12 +17,18 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.lsp4e.LSPEclipseUtils;
+import org.eclipse.lsp4e.LanguageServerPlugin;
+import org.eclipse.lsp4e.ui.UI;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.WorkspaceSymbolLocation;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.texteditor.ITextEditor;
 import org.springframework.tooling.ls.eclipse.gotosymbol.GotoSymbolPlugin;
 import org.springframework.tooling.ls.eclipse.gotosymbol.favourites.FavouritesPreference;
 import org.springsource.ide.eclipse.commons.core.util.FuzzyMatcher;
@@ -59,11 +65,13 @@ public class GotoSymbolDialogModel {
 		final double score;
 		final String query;
 		final T value;
-		public Match(double score, String query, T value) {
+		final List<Match<T>> children;
+		public Match(double score, String query, T value, List<Match<T>> children) {
 			super();
 			this.score = score;
 			this.query = query;
 			this.value = value;
+			this.children = children;
 		}
 		
 	}
@@ -114,6 +122,21 @@ public class GotoSymbolDialogModel {
 
 			IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 			LSPEclipseUtils.openInEditor(location, page);
+		} else if (symbolInformation.isDocumentSymbol()) {
+			ITextEditor editor = UI.getActiveTextEditor();
+			if (editor != null) {
+				IDocument doc = LSPEclipseUtils.getDocument(editor);
+				if (doc != null) {
+					try {
+						Range range = symbolInformation.getDocumentSymbol().getSelectionRange();
+						int offset = LSPEclipseUtils.toOffset(range.getStart(), doc);
+						int endOffset = LSPEclipseUtils.toOffset(range.getEnd(), doc);
+						editor.selectAndReveal(offset, endOffset - offset);
+					} catch (BadLocationException e) {
+						LanguageServerPlugin.logError(e);
+					}
+				}
+			}
 		}
 		return true;
 	};
@@ -185,8 +208,13 @@ public class GotoSymbolDialogModel {
 				query = "";
 			}
 			query = query.toLowerCase();
+			
+			return computeMatches(unfilteredSymbols.getValues(), query);
+		}
+		private List<Match<SymbolContainer>> computeMatches(Collection<SymbolContainer> c, String query) {
 			List<Match<SymbolContainer>> matches = new ArrayList<>();
-			for (SymbolContainer symbol : unfilteredSymbols.getValues()) {
+			for (SymbolContainer symbol : c) {
+				
 				String name = symbol.getName();
 				
 				if (name != null) {
@@ -194,8 +222,9 @@ public class GotoSymbolDialogModel {
 				}
 				
 				double score = FuzzyMatcher.matchScore(query, name);
-				if (score != 0.0) {
-					matches.add(new Match<SymbolContainer>(score, query, symbol));
+				List<Match<SymbolContainer>> childrenMatches = computeMatches(symbol.getChildren(), query);
+				if (score != 0.0 || !childrenMatches.isEmpty()) {
+					matches.add(new Match<SymbolContainer>(score, query, symbol, childrenMatches));
 				}
 			}
 			Collections.sort(matches, MATCH_COMPARATOR);

@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.tooling.ls.eclipse.gotosymbol.dialogs;
 
+import java.util.List;
+
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.WorkspaceSymbol;
@@ -19,6 +21,8 @@ public class SymbolContainer {
 	private SymbolInformation symbolInformation;
 	private DocumentSymbol documentSymbol;
 	private WorkspaceSymbol workspaceSymbol;
+	
+	private List<SymbolContainer> children = List.of();
 	
 	public static SymbolContainer fromSymbolInformation(SymbolInformation symbolInformation) {
 		return new SymbolContainer(symbolInformation);
@@ -38,6 +42,11 @@ public class SymbolContainer {
 	
 	private SymbolContainer(DocumentSymbol documentSymbol) {
 		this.documentSymbol = documentSymbol;
+		if (documentSymbol.getChildren() == null) {
+			this.children = List.of();
+		} else {
+			this.children = documentSymbol.getChildren().stream().map(SymbolContainer::new).toList();
+		}
 	}
 	
 	private SymbolContainer(WorkspaceSymbol workspaceSymbol) {
@@ -100,5 +109,9 @@ public class SymbolContainer {
 			return workspaceSymbol;
 		}
 	}
-
+	
+	public List<SymbolContainer> getChildren() {
+		return children;
+	}
+	
 }

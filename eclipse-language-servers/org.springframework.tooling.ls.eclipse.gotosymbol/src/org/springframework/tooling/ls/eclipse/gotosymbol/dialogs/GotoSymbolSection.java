@@ -88,6 +88,9 @@ public class GotoSymbolSection extends WizardPageSection {
 		
 		@Override
 		public Object[] getChildren(Object parentElement) {
+			if (parentElement instanceof Match<?> m) {
+				return m.children.toArray(new Object[m.children.size()]);
+			}
 			return null;
 		}
 
@@ -98,6 +101,9 @@ public class GotoSymbolSection extends WizardPageSection {
 
 		@Override
 		public boolean hasChildren(Object element) {
+			if (element instanceof Match<?> m ) {
+				return !m.children.isEmpty();
+			}
 			return false;
 		}
 
@@ -302,31 +308,6 @@ public class GotoSymbolSection extends WizardPageSection {
 			if (!viewer.getControl().isDisposed()) viewer.refresh();
 		})));
 		
-//TODO: somehow show selection in local file, (but not in other file ?)
-//		viewer.addSelectionChangedListener(event -> {
-//			IStructuredSelection selection = (IStructuredSelection) event.getSelection();
-//			if (selection.isEmpty()) {
-//				return;
-//			}
-//			SymbolInformation symbolInformation = (SymbolInformation) selection.getFirstElement();
-//			Location location = symbolInformation.getLocation();
-//
-//			IResource targetResource = LSPEclipseUtils.findResourceFor(location.getUri());
-//			if (targetResource == null) {
-//				return;
-//			}
-//			IDocument targetDocument = FileBuffers.getTextFileBufferManager()
-//			        .getTextFileBuffer(targetResource.getFullPath(), LocationKind.IFILE).getDocument();
-//			if (targetDocument != null) {
-//				try {
-//					int offset = LSPEclipseUtils.toOffset(location.getRange().getStart(), targetDocument);
-//					int endOffset = LSPEclipseUtils.toOffset(location.getRange().getEnd(), targetDocument);
-//					fTextEditor.selectAndReveal(offset, endOffset - offset);
-//				} catch (BadLocationException e) {
-//					LanguageServerPlugin.logError(e);
-//				}
-//			}
-//		});
 		installWidgetListeners(pattern, viewer);
 
 		//Status label

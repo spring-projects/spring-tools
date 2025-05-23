@@ -121,7 +121,7 @@
 		<rewrite-recipe-bom.version>2.23.1</rewrite-recipe-bom.version>
 		<gradle.version>8.11</gradle.version>
 		<rewrite-gradle-tooling-model.version>2.7.0</rewrite-gradle-tooling-model.version>
-		<jgit-version>6.9.0.202403050737-r</jgit-version>
+		<jgit-version>7.2.1.202505142326-r</jgit-version>
 		
 		<antlr.version>4.13.1</antlr.version>
 

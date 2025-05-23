@@ -49,5 +49,4 @@ Import-Package: org.eclipse.core.runtime,
  com.google.gson.annotations,
  com.google.gson.reflect,
  com.google.gson.stream,
- org.apache.commons.lang3,
- javax.inject
+ org.apache.commons.lang3

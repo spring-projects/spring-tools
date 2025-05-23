@@ -12,8 +12,7 @@ package org.springframework.ide.eclipse.boot.wizard.guides;
 
 import java.util.HashMap;
 import java.util.function.Predicate;
-
-import javax.inject.Provider;
+import java.util.function.Supplier;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.GridDataFactory;
@@ -223,7 +222,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 			return false;
 		}
 
-		private boolean match(Provider<String> provider) {
+		private boolean match(Supplier<String> provider) {
 			if (matcher == null) {
 				return true; // Search term not set... anything is acceptable.
 			} else {

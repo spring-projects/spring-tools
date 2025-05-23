@@ -19,8 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.inject.Provider;
+import java.util.function.Supplier;
 
 import org.eclipse.core.runtime.Assert;
 import org.springframework.ide.eclipse.editor.support.hover.DescriptionProviders;
@@ -148,7 +147,7 @@ public class YTypeFactory {
 		private List<YTypedProperty> propertyList = new ArrayList<>();
 		private final List<YValueHint> hints = new ArrayList<>();
 		private Map<String, YTypedProperty> cachedPropertyMap;
-		private Provider<Collection<YValueHint>> hintProvider;
+		private Supplier<Collection<YValueHint>> hintProvider;
 		private List<Constraint> constraints = new ArrayList<>(2);
 
 		public boolean isSequenceable() {
@@ -171,7 +170,7 @@ public class YTypeFactory {
 			return null;
 		}
 
-		public void addHintProvider(Provider<Collection<YValueHint>> hintProvider) {
+		public void addHintProvider(Supplier<Collection<YValueHint>> hintProvider) {
 			this.hintProvider = hintProvider;
 		}
 
@@ -181,7 +180,7 @@ public class YTypeFactory {
 			if (providerHints == null || providerHints.isEmpty()) {
 				return hints.toArray(new YValueHint[hints.size()]);
 			} else {
-				// Only merge if there are provider hints to merge
+				// Only merge if there are Supplier hints to merge
 				Set<YValueHint> mergedHints = new LinkedHashSet<>();
 
 				// Add type hints first
@@ -189,7 +188,7 @@ public class YTypeFactory {
 					mergedHints.add(val);
 				}
 
-				// merge the provider hints
+				// merge the Supplier hints
 				for (YValueHint val : providerHints) {
 					mergedHints.add(val);
 				}
@@ -226,7 +225,7 @@ public class YTypeFactory {
 			propertyList.add(p);
 		}
 
-		public void addProperty(String name, YType type, Provider<HtmlSnippet> description) {
+		public void addProperty(String name, YType type, Supplier<HtmlSnippet> description) {
 			YTypedPropertyImpl prop;
 			addProperty(prop = new YTypedPropertyImpl(name, type));
 			prop.setDescriptionProvider(description);
@@ -413,7 +412,7 @@ public class YTypeFactory {
 
 		final private String name;
 		final private YType type;
-		private Provider<HtmlSnippet> descriptionProvider = DescriptionProviders.NO_DESCRIPTION;
+		private Supplier<HtmlSnippet> descriptionProvider = DescriptionProviders.NO_DESCRIPTION;
 		private boolean isDeprecated;
 		private String deprecationMessage;
 
@@ -442,7 +441,7 @@ public class YTypeFactory {
 			return descriptionProvider.get();
 		}
 
-		public void setDescriptionProvider(Provider<HtmlSnippet> descriptionProvider) {
+		public void setDescriptionProvider(Supplier<HtmlSnippet> descriptionProvider) {
 			this.descriptionProvider = descriptionProvider;
 		}
 

@@ -48,6 +48,5 @@ Import-Package: org.eclipse.core.runtime,
  org.apache.commons.lang3,
  org.eclipse.osgi.util,
  org.osgi.framework,
- javax.inject,
  org.json
 Automatic-Module-Name: org.springframework.ide.eclipse.boot.wizard

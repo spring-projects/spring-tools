@@ -52,6 +52,7 @@ public class SpringBootUpgrade {
 		versionsToRecipeId.put("3.2", "org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_2");
 		versionsToRecipeId.put("3.3", "org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_3");
 		versionsToRecipeId.put("3.4", "org.springframework.ide.vscode.rewrite.boot3.UpgradeSpringBoot_3_4");
+		versionsToRecipeId.put("3.5", "org.springframework.ide.vscode.rewrite.boot3.UpgradeSpringBoot_3_5");
 	}
 	
 	public SpringBootUpgrade(SimpleLanguageServer server, RewriteRecipeRepository recipeRepo, JavaProjectFinder projectFinder) {

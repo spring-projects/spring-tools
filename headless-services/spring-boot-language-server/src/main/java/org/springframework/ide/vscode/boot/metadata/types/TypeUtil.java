@@ -30,10 +30,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.inject.Provider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -810,21 +809,21 @@ public class TypeUtil {
 	/**
 	 * Registers a strategy for providing value hints with a given typeName.
 	 */
-	public static void valueHints(String typeName, ValueProviderStrategy provider) {
+	public static void valueHints(String typeName, ValueProviderStrategy Supplier) {
 		Assert.isLegal(!VALUE_HINTERS.containsKey(typeName)); //Only one value hinter per type is supported at the moment
 		ATOMIC_TYPES.add(typeName); //valueHints typically implies that the type should be treated as atomic as well.
 		ASSIGNABLE_TYPES.add(typeName); //valueHints typically implies that the type should be treated as atomic as well.
-		VALUE_HINTERS.put(typeName, provider);
+		VALUE_HINTERS.put(typeName, Supplier);
 	}
 
 	/**
 	 * Registers a strategy for providing value hints with a given typeName.
 	 */
-	public static void valueHints(String typeName, Provider<String[]> provider) {
+	public static void valueHints(String typeName, Supplier<String[]> Supplier) {
 		valueHints(typeName, new ValueProviderStrategy() {
 			@Override
 			public Flux<StsValueHint> getValues(IJavaProject javaProject, String query) {
-				String[] values = provider.get();
+				String[] values = Supplier.get();
 				if (ArrayUtils.hasElements(values)) {
 					return Flux.fromArray(values)
 					.map(StsValueHint::create);

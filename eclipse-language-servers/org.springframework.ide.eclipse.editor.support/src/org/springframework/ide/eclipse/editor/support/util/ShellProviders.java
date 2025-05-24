@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.eclipse.editor.support.util;
 
-import javax.inject.Provider;
+import java.util.function.Supplier;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
@@ -18,13 +18,13 @@ import org.eclipse.ui.texteditor.ITextEditor;
 
 /**
  * Convenience methods to addapt various types of objects representing  a 'ui context'
- * to a Shell{@link Provider}
+ * to a Shell{@link Supplier}
  *
  * @author Kris De Volder
  */
 public class ShellProviders {
-	public static Provider<Shell> from(final ITextEditor editor) {
-		return new Provider<Shell>() {
+	public static Supplier<Shell> from(final ITextEditor editor) {
+		return new Supplier<Shell>() {
 			@Override
 			public Shell get() {
 				return editor.getSite().getShell();
@@ -32,8 +32,8 @@ public class ShellProviders {
 		};
 	}
 
-	public static Provider<Shell> from(final Composite composite) {
-		return new Provider<Shell>() {
+	public static Supplier<Shell> from(final Composite composite) {
+		return new Supplier<Shell>() {
 			@Override
 			public Shell get() {
 				return composite.getShell();

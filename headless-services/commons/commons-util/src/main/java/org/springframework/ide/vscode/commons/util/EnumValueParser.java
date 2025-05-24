@@ -13,8 +13,7 @@ package org.springframework.ide.vscode.commons.util;
 import java.util.Collection;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
-
-import javax.inject.Provider;
+import java.util.function.Supplier;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -27,7 +26,7 @@ public class EnumValueParser implements ValueParser {
 
 	private String typeName;
 
-	private Provider<PartialCollection<String>> values;
+	private Supplier<PartialCollection<String>> values;
     private final boolean longRunning;
 
 
@@ -39,19 +38,19 @@ public class EnumValueParser implements ValueParser {
 		this(typeName, false /* not long running by default */, provider(values));
 	}
 
-	private static <T> Provider<PartialCollection<T>> provider(Collection<T> values) {
+	private static <T> Supplier<PartialCollection<T>> provider(Collection<T> values) {
 		return () -> PartialCollection.compute(() -> values);
 	}
 	
-	private static <T> Provider<PartialCollection<T>> provider(Callable<Collection<T>> values) {
+	private static <T> Supplier<PartialCollection<T>> supplier(Callable<Collection<T>> values) {
 		return () -> PartialCollection.compute(() -> values.call());
 	}
 
 	public EnumValueParser(String typeName, boolean longRunning, Callable<Collection<String>> values) {
-		this(typeName, longRunning, provider(values));
+		this(typeName, longRunning, supplier(values));
 	}
 
-	public EnumValueParser(String typeName, boolean longRunning, Provider<PartialCollection<String>> values) {
+	public EnumValueParser(String typeName, boolean longRunning, Supplier<PartialCollection<String>> values) {
 		this.typeName = typeName;
 		this.values = values;
 		this.longRunning = longRunning;

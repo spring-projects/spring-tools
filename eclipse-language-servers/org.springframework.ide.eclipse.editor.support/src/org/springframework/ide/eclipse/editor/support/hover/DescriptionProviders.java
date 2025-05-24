@@ -15,24 +15,23 @@ import static org.springframework.ide.eclipse.editor.support.util.HtmlSnippet.ra
 import static org.springframework.ide.eclipse.editor.support.util.HtmlSnippet.text;
 
 import java.io.InputStream;
-
-import javax.inject.Provider;
+import java.util.function.Supplier;
 
 import org.springframework.ide.eclipse.editor.support.EditorSupportActivator;
 import org.springframework.ide.eclipse.editor.support.util.HtmlSnippet;
 import org.springsource.ide.eclipse.commons.frameworks.core.util.IOUtil;
 
 /**
- * Static methods and convenience constants for creating some 'description providers'.
+ * Static methods and convenience constants for creating some 'description Suppliers'.
  *
  * @author Kris De Volder
  */
 public class DescriptionProviders {
 
-	public static final Provider<HtmlSnippet> NO_DESCRIPTION = snippet(italic(text("no description")));
+	public static final Supplier<HtmlSnippet> NO_DESCRIPTION = snippet(italic(text("no description")));
 
-	public static Provider<HtmlSnippet> snippet(final HtmlSnippet snippet) {
-		return new Provider<HtmlSnippet>() {
+	public static Supplier<HtmlSnippet> snippet(final HtmlSnippet snippet) {
+		return new Supplier<HtmlSnippet>() {
 			@Override
 			public String toString() {
 				return snippet.toString();
@@ -44,8 +43,8 @@ public class DescriptionProviders {
 		};
 	}
 
-	public static Provider<HtmlSnippet> fromClasspath(final Class<?> klass, final String resourcePath) {
-		return new Provider<HtmlSnippet>() {
+	public static Supplier<HtmlSnippet> fromClasspath(final Class<?> klass, final String resourcePath) {
+		return new Supplier<HtmlSnippet>() {
 			@Override
 			public String toString() {
 				return "HtmlSnippetFromClassPth(class="+klass.getSimpleName()+", "+resourcePath+")";

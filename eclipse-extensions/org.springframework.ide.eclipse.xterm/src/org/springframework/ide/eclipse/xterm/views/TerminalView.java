@@ -13,8 +13,6 @@ package org.springframework.ide.eclipse.xterm.views;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import javax.inject.Inject;
-
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
@@ -33,7 +31,6 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewSite;
-import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
@@ -54,8 +51,6 @@ public class TerminalView extends ViewPart {
 	 */
 	public static final String ID = "org.springframework.ide.eclipse.xterm.views.TerminalView";
 
-	@Inject IWorkbench workbench;
-	
 	private Action refreshAction;
 
 	private Browser browser;

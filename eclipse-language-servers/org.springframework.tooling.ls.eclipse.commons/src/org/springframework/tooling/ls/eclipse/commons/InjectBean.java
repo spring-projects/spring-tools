@@ -11,13 +11,11 @@ import java.util.stream.Stream;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
-import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
@@ -35,7 +33,6 @@ import org.eclipse.jdt.internal.corext.refactoring.RefactoringCoreMessages;
 import org.eclipse.jdt.internal.corext.refactoring.structure.CompilationUnitRewrite;
 import org.eclipse.jdt.internal.corext.refactoring.util.RefactoringASTParser;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.text.java.MethodDeclarationCompletionProposal;
 import org.eclipse.lsp4e.LSPEclipseUtils;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -62,7 +59,7 @@ public final class InjectBean {
 		this.logger = logger;
 	}
 
-	private void createFieldDeclaration(IJavaProject project, CompilationUnitRewrite cuRewrite, CompilationUnit domCu,
+	private void createFieldDeclaration(CompilationUnitRewrite cuRewrite, CompilationUnit domCu,
 			String typeName, String fieldType, String fieldName) throws JavaModelException {
 		AST ast= cuRewrite.getAST();
 		VariableDeclarationFragment variableDeclarationFragment= ast.newVariableDeclarationFragment();
@@ -73,10 +70,8 @@ public final class InjectBean {
 		fieldDeclaration.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.PRIVATE_KEYWORD));
 		fieldDeclaration.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.FINAL_KEYWORD));
 
-		IType itype = project.findType(fieldType);
-		String fqn = itype.getFullyQualifiedName();
 		ImportRewrite importRewrite= cuRewrite.getImportRewrite();
-		fieldTypeDeclarationName = importRewrite.addImport(fqn);
+		fieldTypeDeclarationName = importRewrite.addImport(fieldType);
 		fieldDeclaration.setType(ast.newSimpleType(ast.newName(fieldTypeDeclarationName)));
 
 		AbstractTypeDeclaration parent = ((Stream<AbstractTypeDeclaration>) domCu.types().stream()
@@ -91,7 +86,7 @@ public final class InjectBean {
 		listRewrite.insertFirst(fieldDeclaration, msg);
 	}
 
-	private void maybeAddConstructor(IJavaProject project, CompilationUnitRewrite cuRewrite, CompilationUnit domCu,
+	private void maybeAddConstructor(CompilationUnitRewrite cuRewrite, CompilationUnit domCu,
 			String typeName, String fieldType, String fieldName) {
 		TypeDeclaration typeDom = (TypeDeclaration) ((Stream<AbstractTypeDeclaration>) domCu.types().stream()
 				.filter(TypeDeclaration.class::isInstance)
@@ -194,9 +189,9 @@ public final class InjectBean {
 
 				CompilationUnitRewrite cuRewrite = new CompilationUnitRewrite(null, cu, domCu, Map.of());
 
-				createFieldDeclaration(project, cuRewrite, domCu, typeName, fieldType, fieldName);
+				createFieldDeclaration(cuRewrite, domCu, typeName, fieldType, fieldName);
 
-				maybeAddConstructor(project, cuRewrite, domCu, typeName, fieldType, fieldName);
+				maybeAddConstructor(cuRewrite, domCu, typeName, fieldType, fieldName);
 
 //				TextEdit edit = cuRewrite.getASTRewrite().rewriteAST();
 

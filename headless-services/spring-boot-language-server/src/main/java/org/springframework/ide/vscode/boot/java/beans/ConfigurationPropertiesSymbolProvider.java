@@ -88,7 +88,7 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 			Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
 			WorkspaceSymbol symbol = new WorkspaceSymbol(
-					ComponentSymbolProvider.beanLabel("+", annotationTypeName, metaAnnotationNames, beanName, typeBinding.getName()), SymbolKind.Interface,
+					ComponentSymbolProvider.beanLabel(annotationTypeName, metaAnnotationNames, beanName, typeBinding.getName()), SymbolKind.Interface,
 					Either.forLeft(location));
 		
 			boolean isConfiguration = false; // otherwise, the ComponentSymbolProvider takes care of the bean definiton for this type

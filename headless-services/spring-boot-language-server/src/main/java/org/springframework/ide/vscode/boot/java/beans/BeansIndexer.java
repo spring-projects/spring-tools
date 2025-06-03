@@ -20,8 +20,6 @@ import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
-import org.eclipse.jdt.core.dom.ParameterizedType;
-import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.lsp4j.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +27,6 @@ import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouterSymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.FunctionUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -65,7 +62,6 @@ public class BeansIndexer {
 			}
 		}
 			
-		boolean isFunction = isFunctionBean(method);
 		ITypeBinding beanType = getBeanType(method);
 		String markerString = getAnnotations(method);
 		
@@ -73,7 +69,7 @@ public class BeansIndexer {
 			try {
 				Location location = new Location(doc.getUri(), doc.toRange(nameAndRegion.getT2()));
 
-				String beanLabel = beanLabel(isFunction, nameAndRegion.getT1(), beanType.getName(), "@Bean" + markerString);
+				String beanLabel = beanLabel(nameAndRegion.getT1(), beanType.getName(), "@Bean" + markerString);
 
 				InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(method, doc);
 				
@@ -96,10 +92,10 @@ public class BeansIndexer {
 		}
 	}
 
-	public static String beanLabel(boolean isFunctionBean, String beanName, String beanType, String markerString) {
+	public static String beanLabel(String beanName, String beanType, String markerString) {
 		StringBuilder symbolLabel = new StringBuilder();
 		symbolLabel.append('@');
-		symbolLabel.append(isFunctionBean ? '>' : '+');
+		symbolLabel.append('+');
 		symbolLabel.append(' ');
 		symbolLabel.append('\'');
 		symbolLabel.append(beanName);
@@ -114,23 +110,6 @@ public class BeansIndexer {
 
 	public static ITypeBinding getBeanType(MethodDeclaration method) {
 		return method.getReturnType2().resolveBinding();
-	}
-
-	public static boolean isFunctionBean(MethodDeclaration method) {
-		String returnType = null;
-
-		if (method.getReturnType2().isParameterizedType()) {
-			ParameterizedType paramType = (ParameterizedType) method.getReturnType2();
-			Type type = paramType.getType();
-			ITypeBinding typeBinding = type.resolveBinding();
-			returnType = typeBinding.getBinaryName();
-		}
-		else {
-			returnType = method.getReturnType2().resolveBinding().getQualifiedName();
-		}
-
-		return FunctionUtils.FUNCTION_FUNCTION_TYPE.equals(returnType) || FunctionUtils.FUNCTION_CONSUMER_TYPE.equals(returnType)
-				|| FunctionUtils.FUNCTION_SUPPLIER_TYPE.equals(returnType);
 	}
 
 	public static String getAnnotations(MethodDeclaration method) {

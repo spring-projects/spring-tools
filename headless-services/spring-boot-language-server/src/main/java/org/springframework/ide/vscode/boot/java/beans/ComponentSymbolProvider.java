@@ -104,7 +104,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
 		WorkspaceSymbol symbol = new WorkspaceSymbol(
-				beanLabel("+", annotationTypeName, metaAnnotationNames, beanName, beanType.getName()), SymbolKind.Interface,
+				beanLabel(annotationTypeName, metaAnnotationNames, beanName, beanType.getName()), SymbolKind.Interface,
 				Either.forLeft(location));
 		
 		boolean isConfiguration = Annotations.CONFIGURATION.equals(annotationType.getQualifiedName())
@@ -166,7 +166,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
 		WorkspaceSymbol symbol = new WorkspaceSymbol(
-				beanLabel("+", annotationTypeName, metaAnnotationNames, beanName, beanType.getName()), SymbolKind.Interface,
+				beanLabel(annotationTypeName, metaAnnotationNames, beanName, beanType.getName()), SymbolKind.Interface,
 				Either.forLeft(location));
 		
 		boolean isConfiguration = Annotations.CONFIGURATION.equals(annotationType.getQualifiedName())
@@ -583,7 +583,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
 		WorkspaceSymbol symbol = new WorkspaceSymbol(
-				beanLabel("+", null, null, beanName, beanType),
+				beanLabel(null, null, beanName, beanType),
 				SymbolKind.Class,
 				Either.forLeft(location));
 		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
@@ -597,10 +597,10 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		parentNode.addChild(bean);
 	}
 	
-	public static String beanLabel(String searchPrefix, String annotationTypeName, Collection<String> metaAnnotationNames, String beanName, String beanType) {
+	public static String beanLabel(String annotationTypeName, Collection<String> metaAnnotationNames, String beanName, String beanType) {
 		StringBuilder symbolLabel = new StringBuilder();
-		symbolLabel.append("@");
-		symbolLabel.append(searchPrefix);
+		symbolLabel.append('@');
+		symbolLabel.append('+');
 		symbolLabel.append(' ');
 		symbolLabel.append('\'');
 		symbolLabel.append(beanName);

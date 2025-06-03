@@ -154,7 +154,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 							Location location = new Location(docURI, range);
 							
 							WorkspaceSymbol symbol = new WorkspaceSymbol(
-									BeansIndexer.beanLabel(false, beanId, fqName, Paths.get(URI.create(docURI)).getFileName().toString()),
+									BeansIndexer.beanLabel(beanId, fqName, Paths.get(URI.create(docURI)).getFileName().toString()),
 									SymbolKind.Interface,
 									Either.forLeft(location));
 

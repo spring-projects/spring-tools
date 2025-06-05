@@ -1,3 +1,27 @@
+# 2025-06-11 (4.31.0 RELEASE, incl. language servers version 1.63.0)
+
+#### important highlights
+
+* _(Spring Boot)_ Spring Data repositories generated queries CodeLenses with AOT enabled
+* _(Spring Boot)_ Spring Boot 3.5 upgrade (build files and properties only)
+* _(Spring Boot)_ Hierarchical document symbols supported in both VSCode and Eclipse
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ show document symbols tree expanded by default [#1564](https://github.com/spring-projects/spring-tools/issues/1564)
+* _(Spring Boot)_ enable hierarchical document symbols and workspace symbols from index by default [#1557](https://github.com/spring-projects/spring-tools/issues/1557)
+* _(Spring Boot)_ [aot repositories] provide go to definition support [#1552](https://github.com/spring-projects/spring-tools/issues/1552)
+* _(Spring Boot)_ [aot repositories] add tests for code lenses and index elements + symbols when aot repository metadata is around [#1548](https://github.com/spring-projects/spring-tools/issues/1548)
+* _(Spring Boot)_ [aot repositories] add quick fix to turn generated query into manual query annotation [#1547](https://github.com/spring-projects/spring-tools/issues/1547)
+* _(Spring Boot)_ [aot repositories] do not show generated query statement when query annotation exists on query method [#1546](https://github.com/spring-projects/spring-tools/issues/1546)
+* _(Spring Boot)_ [aot repositories] enable query statement extraction for MongoDB queries [#1545](https://github.com/spring-projects/spring-tools/issues/1545)
+* _(Spring Boot)_ [aot repositories] add preference to show/hide code lenses for query methods [#1544](https://github.com/spring-projects/spring-tools/issues/1544)
+* _(Spring Boot)_ [aot repositories] implement more precise method signature matching [#1543](https://github.com/spring-projects/spring-tools/issues/1543)
+* _(Spring Boot)_ Symbols view should nest elements by their surrounding scope [#1431](https://github.com/spring-projects/spring-tools/issues/1431)
+* _(Spring Boot)_ remove wrong support for function beans in indexer [#1572](https://github.com/spring-projects/spring-tools/issues/1572)
+* _(Spring Boot)_ Spring Boot 3.5.x upgrade recipe and UI support [#1561](https://github.com/spring-projects/spring-tools/issues/1561)
+* _(Spring Boot)_ property key completions include duplicates [#1560](https://github.com/spring-projects/spring-tools/issues/1560)
+
 ## 2025-04-23 (4.30.0 RELEASE, incl. language servers version 1.62.0)
 
 #### important highlights

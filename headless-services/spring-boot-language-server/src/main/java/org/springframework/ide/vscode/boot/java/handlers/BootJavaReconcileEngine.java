@@ -79,8 +79,6 @@ public class BootJavaReconcileEngine implements IReconcileEngine {
 					}
 				}
 				
-				problemCollector.endCollecting();
-				
 //				CompletableFuture<?>[] futures = Arrays.stream(javaReconcilers)
 //						.map(jr -> CompletableFuture.runAsync(() -> jr.reconcile(project, doc, recolerProblemCollector)).exceptionally(t -> null))
 //						.toArray(CompletableFuture[]::new);

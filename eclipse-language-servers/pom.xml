@@ -168,7 +168,7 @@
 				<repository>
 					<id>lsp4e</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/lsp4e/releases/0.26.7/</url>
+					<url>https://download.eclipse.org/lsp4e/releases/0.27.1/</url>
 <!--					<url>https://download.eclipse.org/lsp4e/snapshots</url> -->
 				</repository>
 				<repository>
@@ -201,7 +201,7 @@
 				<repository>
 					<id>2025-03</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/staging/2025-03/</url>
+					<url>https://download.eclipse.org/releases/2025-03/</url>
 				</repository>
 				<repository>
 					<id>orbit</id>
@@ -216,7 +216,7 @@
 				<repository>
 					<id>lsp4e</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/lsp4e/releases/0.26.7/</url>
+					<url>https://download.eclipse.org/lsp4e/releases/0.27.5/</url>
 <!--					<url>https://download.eclipse.org/lsp4e/snapshots</url> -->
 				</repository>
 				<repository>
@@ -264,8 +264,8 @@
 				<repository>
 					<id>lsp4e</id>
 					<layout>p2</layout>
-					<!--<url>https://download.eclipse.org/lsp4e/releases/0.26.0/</url>-->
-					<url>https://download.eclipse.org/lsp4e/snapshots</url>
+					<url>https://download.eclipse.org/lsp4e/releases/0.27.5/</url>
+<!--					<url>https://download.eclipse.org/lsp4e/snapshots</url> -->
 				</repository>
 				<repository>
 					<id>tm4e</id>

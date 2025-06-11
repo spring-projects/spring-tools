@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
-<product name="Spring Tools for Eclipse" id="org.springframework.boot.ide.branding.sts4" uid="org.springframework.boot.ide.branding.sts4" application="org.eclipse.ui.ide.workbench" version="4.31.0.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Spring Tools for Eclipse" id="org.springframework.boot.ide.branding.sts4" uid="org.springframework.boot.ide.branding.sts4" application="org.eclipse.ui.ide.workbench" version="4.32.0.qualifier" useFeatures="true" includeLaunchers="true">
 
    <configIni use="default">
    </configIni>

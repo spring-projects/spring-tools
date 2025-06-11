@@ -2,7 +2,7 @@
 <feature
 	id="org.springframework.tooling.boot.ls.feature"
 	label="Spring Boot Language Server Feature"
-	version="4.31.0.qualifier"
+	version="4.32.0.qualifier"
 	provider-name="Broadcom">
 
     <description>

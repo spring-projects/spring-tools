@@ -31,7 +31,7 @@ Import-Package: org.eclipse.core.commands.common,
  org.springsource.ide.eclipse.commons.ui,
  org.apache.commons.io
 Bundle-Activator: org.springframework.ide.eclipse.xml.namespaces.SpringXmlNamespacesPlugin
-Bundle-Version: 4.31.0.qualifier
+Bundle-Version: 4.32.0.qualifier
 Export-Package: org.springframework.ide.eclipse.xml.namespaces,
  org.springframework.ide.eclipse.xml.namespaces.classpath,
  org.springframework.ide.eclipse.xml.namespaces.internal,

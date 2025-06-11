@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot.ide</groupId>
 		<artifactId>org.springframework.boot.ide</artifactId>
-		<version>4.31.0-SNAPSHOT</version>
+		<version>4.32.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 

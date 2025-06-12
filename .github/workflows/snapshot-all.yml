@@ -23,18 +23,9 @@ jobs:
     needs: [ language-servers-multiplatform-build ]
     uses: ./.github/workflows/eclipse-ls-extensions-build.yml
     with:
-      eclipse_profile: 'e434'
+      eclipse_profile: 'e435'
       build_type: 'snapshot'
       skip_tests: true
-    secrets: inherit
-
-  e434-distro:
-    needs: [ eclipse-ls-extensions ]
-    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
-    with:
-      eclipse_profile: 'e434'
-      build_type: 'snapshot'
-      java_version: '21'
     secrets: inherit
 
   e435-distro:
@@ -51,6 +42,15 @@ jobs:
     uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
     with:
       eclipse_profile: 'e436'
+      build_type: 'snapshot'
+      java_version: '21'
+    secrets: inherit
+
+  e437-distro:
+    needs: [ eclipse-ls-extensions ]
+    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+    with:
+      eclipse_profile: 'e437'
       build_type: 'snapshot'
       java_version: '21'
     secrets: inherit

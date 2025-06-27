@@ -29,7 +29,7 @@ env:
   AWS_ENDPOINT_URL_S3:  ${{ secrets.CDN_S3_ENDPOINT }}
   AWS_S3_BUCKET: ${{ secrets.CDN_BUCKET }}
   DOWNLOAD_URL_ROOT: https://cdn.spring.io/spring-tools
-  GCP_BUCKET: gs://cdn-spring-io
+  GCP_BUCKET: gs://cdn-spring-io-backup
 
 jobs:
   backup-eclipse-releases-to-gcp:

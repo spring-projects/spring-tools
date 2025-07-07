@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Commons
 Bundle-SymbolicName: org.springframework.tooling.jdt.ls.commons.test
-Bundle-Version: 4.32.0.qualifier
+Bundle-Version: 5.0.0.qualifier
 Automatic-Module-Name: org.springframework.tooling.jdt.ls.commons.test
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.springframework.tooling.jdt.ls.commons,

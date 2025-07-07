@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Boot UI Support
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.wizard;singleton:=true
-Bundle-Version: 4.32.0.qualifier
+Bundle-Version: 5.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.eclipse.ui,
  org.springsource.ide.eclipse.commons.livexp;bundle-version="3.8.4",

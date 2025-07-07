@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Eclipse Integration Commands - Livexp
 Bundle-SymbolicName: org.springsource.ide.eclipse.commons.livexp
-Bundle-Version: 4.32.0.qualifier
+Bundle-Version: 5.0.0.qualifier
 Bundle-Activator: org.springsource.ide.eclipse.commons.livexp.Activator
 Require-Bundle: org.eclipse.jface,
  org.eclipse.ui.workbench,

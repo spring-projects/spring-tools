@@ -7,6 +7,7 @@ on:
       - 'main'
     paths:
       - 'eclipse-distribution/common/html/nightly-distributions.html'
+      - 'eclipse-distribution/common/html/nightly-distributions-4.html'
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.CDN_S3_ACCESS_KEY }}
@@ -30,6 +31,8 @@ jobs:
       - name: Upload nightly-distributions.html
         run: |
           echo "Removing old nightly-distributions.html from s3..."
+          aws s3 rm s3://$AWS_S3_BUCKET/snapshot/STS5/nightly-distributions.html --debug --cli-connect-timeout 60
           aws s3 rm s3://$AWS_S3_BUCKET/snapshot/STS4/nightly-distributions.html --debug --cli-connect-timeout 60
           echo "Uploading new nightly-distributions.html to s3..."
-          aws s3 cp ./eclipse-distribution/common/html/nightly-distributions.html s3://$AWS_S3_BUCKET/snapshot/STS4/nightly-distributions.html --no-progress --checksum-algorithm CRC32
+          aws s3 cp ./eclipse-distribution/common/html/nightly-distributions.html s3://$AWS_S3_BUCKET/snapshot/STS5/nightly-distributions.html --no-progress --checksum-algorithm CRC32
+          aws s3 cp ./eclipse-distribution/common/html/nightly-distributions-4.html s3://$AWS_S3_BUCKET/snapshot/STS4/nightly-distributions.html --no-progress --checksum-algorithm CRC32

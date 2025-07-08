@@ -21,8 +21,8 @@ on:
         required: false
         default: false
         type: boolean
-      sts4-language-servers-version:
-        description: version of sts4 ls extensions
+      sts-language-servers-version:
+        description: version of sts ls extensions
         required: false
         type: string
 env:
@@ -76,16 +76,16 @@ jobs:
           gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
           gpg_keyname: ${{ secrets.GPG_KEYID }}
         run: |
-          sts4_ls_version=${{ inputs.sts4-language-servers-version }}
-          sts4_ls_version_param=""
-          if ! [[ -z ${sts4_ls_version} ]]; then
-            sts4_ls_version_param="-Ddist.version=${sts4_ls_version}"
+          sts_ls_version=${{ inputs.sts-language-servers-version }}
+          sts_ls_version_param=""
+          if ! [[ -z ${sts_ls_version} ]]; then
+            sts_ls_version_param="-Ddist.version=${sts_ls_version}"
           fi  
           cd eclipse-language-servers
           if command -v xvfb-run ; then
-            xvfb-run ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts4_ls_version_param -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
+            xvfb-run ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts_ls_version_param -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
           else
-            ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts4_ls_version_param -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
+            ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts_ls_version_param -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
           fi
       - name: Upload P2 Repo to S3
         id: upload-p2
@@ -134,7 +134,7 @@ jobs:
                   {
                     \"header\": {
                       \"title\": \"${build_type} Eclipse LS Extensions ${version}\",
-                      \"subtitle\": \"${{ inputs.sts4-language-servers-version }}\",
+                      \"subtitle\": \"${{ inputs.sts-language-servers-version }}\",
                       \"imageUrl\": \"https://avatars.githubusercontent.com/u/317776?s=48&amp;v=4\",
                     },
                     \"sections\": [

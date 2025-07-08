@@ -60,25 +60,25 @@ jobs:
             if [[ "$dir" =~ $pattern ]]; then
               echo "Found ${dir}"
               dir_name=${dir:0:-1}
-              site_url="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/${{ inputs.version }}/${dir_name}"
+              site_url="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5/update/${{ inputs.version }}/${dir_name}"
               ${{ github.workspace }}/.github/scripts/generate-composite-site-files.sh ${{ steps.timestamp.outputs.date }} $site_url $dir_name
               cat ./compositeArtifacts.xml
               cat ./compositeContent.xml
               if [[ ${dir_name} == ${{ inputs.latest }} ]]; then
-                aws s3 cp ./compositeArtifacts.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts4/update/latest/ --checksum-algorithm CRC32
-                invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/latest/compositeArtifacts.xml "
-                aws s3 cp ./compositeContent.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts4/update/latest/ --checksum-algorithm CRC32
-                invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/latest/compositeContent.xml "
-                aws s3 cp ./p2.index s3://${AWS_S3_BUCKET}/release/TOOLS/sts4/update/latest/ --checksum-algorithm CRC32
-                invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/latest/p2.index "
+                aws s3 cp ./compositeArtifacts.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts5/update/latest/ --checksum-algorithm CRC32
+                invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5/update/latest/compositeArtifacts.xml "
+                aws s3 cp ./compositeContent.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts5/update/latest/ --checksum-algorithm CRC32
+                invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5/update/latest/compositeContent.xml "
+                aws s3 cp ./p2.index s3://${AWS_S3_BUCKET}/release/TOOLS/sts5/update/latest/ --checksum-algorithm CRC32
+                invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5/update/latest/p2.index "
                 echo "TODO: Purge Cache"
               fi
-              aws s3 mv ./compositeArtifacts.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts4/update/${dir} --checksum-algorithm CRC32
-              invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/${dir_name}/compositeArtifacts.xml "
-              aws s3 mv ./compositeContent.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts4/update/${dir} --checksum-algorithm CRC32
-              invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/${dir_name}/compositeContent.xml "
-              aws s3 mv ./p2.index s3://${AWS_S3_BUCKET}/release/TOOLS/sts4/update/${dir} --checksum-algorithm CRC32
-              invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts4/update/${dir_name}/p2.index "
+              aws s3 mv ./compositeArtifacts.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts5/update/${dir} --checksum-algorithm CRC32
+              invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5/update/${dir_name}/compositeArtifacts.xml "
+              aws s3 mv ./compositeContent.xml s3://${AWS_S3_BUCKET}/release/TOOLS/sts5/update/${dir} --checksum-algorithm CRC32
+              invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5/update/${dir_name}/compositeContent.xml "
+              aws s3 mv ./p2.index s3://${AWS_S3_BUCKET}/release/TOOLS/sts5/update/${dir} --checksum-algorithm CRC32
+              invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5/update/${dir_name}/p2.index "
             fi
           done
           echo "invalid_urls=$invalid_urls" >> $GITHUB_OUTPUT

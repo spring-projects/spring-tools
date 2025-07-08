@@ -12,7 +12,7 @@
 	<packaging>eclipse-repository</packaging>
   
 	<properties>
-		<dist.project>sts4-language-server-integrations</dist.project>
+		<dist.project>sts5-language-server-integrations</dist.project>
 	</properties>  
 
 	<build>

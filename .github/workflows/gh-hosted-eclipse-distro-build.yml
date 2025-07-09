@@ -13,7 +13,7 @@ on:
         required: true
         default: 'snapshot'
         type: string
-      sts4-language-servers-version:
+      sts-language-servers-version:
         description: version of sts4 ls extensions
         required: false
         type: string
@@ -78,10 +78,10 @@ jobs:
           gpg_keyname: ${{ secrets.GPG_KEYID }}
         run: |
           java -version
-          sts4_ls_version=${{ inputs.sts4-language-servers-version }}
-          sts4_ls_version_param=""
-          if ! [[ -z ${sts4_ls_version} ]]; then
-            sts4_ls_version_param="-Dsts4-language-servers-version=${sts4_ls_version}"
+          sts_ls_version=${{ inputs.sts-language-servers-version }}
+          sts_ls_version_param=""
+          if ! [[ -z ${sts_ls_version} ]]; then
+            sts_ls_version_param="-Dsts-language-servers-version=${sts_ls_version}"
           fi
           p2_qualifier=${{ inputs.p2-qualifier }}
           p2_qualifier_param=""
@@ -89,7 +89,7 @@ jobs:
             p2_qualifier_param="-Dp2.qualifier=${p2_qualifier}"
           fi
           cd eclipse-distribution
-          ./mvnw --batch-mode -U clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts4_ls_version_param $p2_qualifier_param -Pgitactions -Pgpg.sign \
+          ./mvnw --batch-mode -U clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts_ls_version_param $p2_qualifier_param -Pgitactions -Pgpg.sign \
           -Dmaven.repo.local=~/.m2/repository-signed -Dmaven.test.skip=true -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore -Dp2.replaceQualifier=true \
           -Dskip.eclipserun.proxies=false -Dtycho.equinox.resolver.uses=true \
           -Dmaven.wagon.httpconnectionManager.ttlSeconds=120 \
@@ -149,7 +149,7 @@ jobs:
         run: |
           echo "Uploading Win Zips and OSX tar.gz to S3 for signing..."
           id=${{ inputs.eclipse_profile }}-${{ inputs.build_type }}-${{ github.run_id }}
-          aws s3 cp ${{ github.workspace }}/eclipse-distribution/org.springframework.boot.ide.product.${{ inputs.eclipse_profile }}/target/products s3://$AWS_S3_BUCKET/sts4-distro-ci-temp/$id --recursive --exclude "*" --include "spring-tools-for-eclipse*win*.zip" --include "spring-tools-for-eclipse*macosx*.tar.gz" --exclude "*/*" --no-progress
+          aws s3 cp ${{ github.workspace }}/eclipse-distribution/org.springframework.boot.ide.product.${{ inputs.eclipse_profile }}/target/products s3://$AWS_S3_BUCKET/sts-distro-ci-temp/$id --recursive --exclude "*" --include "spring-tools-for-eclipse*win*.zip" --include "spring-tools-for-eclipse*macosx*.tar.gz" --exclude "*/*" --no-progress
     outputs:
       id: ${{ inputs.eclipse_profile }}-${{ inputs.build_type }}-${{ github.run_id }}
       dist_path: ${{ steps.s3-paths.outputs.dist_path }}
@@ -175,7 +175,7 @@ jobs:
           rm -f spring-tools-for-eclipse*win*.zip*
           rm -f spring-tools-for-eclipse*win*.self-extracting.jar*
           ls
-          aws s3 mv s3://$AWS_S3_BUCKET/sts4-distro-ci-temp/${{ needs.eclipse-distro-build.outputs.id }} . --recursive --exclude "*" --include "spring-tools-for-eclipse*win*.zip*" --exclude "*/*" --no-progress
+          aws s3 mv s3://$AWS_S3_BUCKET/sts-distro-ci-temp/${{ needs.eclipse-distro-build.outputs.id }} . --recursive --exclude "*" --include "spring-tools-for-eclipse*win*.zip*" --exclude "*/*" --no-progress
       - name: Sign EXE within zip files
         id: sign
         run: |
@@ -254,7 +254,7 @@ jobs:
         run: |
           rm -rf *macosx*
           ls
-          aws s3 mv s3://$AWS_S3_BUCKET/sts4-distro-ci-temp/${{ needs.eclipse-distro-build.outputs.id }} . --recursive --exclude "*" --include "spring-tools-for-eclipse*macosx*.tar.gz" --exclude "*/*" --no-progress
+          aws s3 mv s3://$AWS_S3_BUCKET/sts-distro-ci-temp/${{ needs.eclipse-distro-build.outputs.id }} . --recursive --exclude "*" --include "spring-tools-for-eclipse*macosx*.tar.gz" --exclude "*/*" --no-progress
       - name: Sign .app, Create and Sign DMG
         env:
           MACOS_CERTIFICATE_ID: ${{ secrets.MACOS_CERTIFICATE_ID }}
@@ -345,7 +345,7 @@ jobs:
       - name: Google Chat Notification
         run: |
           echo "P2 Update Site: ${DOWNLOAD_URL_ROOT}/${{ needs.eclipse-distro-build.outputs.p2_path }}"
-          downloads_html="sts4-distro-downloads-${{ inputs.eclipse_profile }}.txt"
+          downloads_html="sts-distro-downloads-${{ inputs.eclipse_profile }}.txt"
           rm -f ./downloads_html
           s3_url=s3://${AWS_S3_BUCKET}/${{ needs.eclipse-distro-build.outputs.dist_path }}
           files=`aws s3 cp ${s3_url} . --recursive --exclude "*" --include "spring-tools-for-eclipse*.zip" --include "spring-tools-for-eclipse*.dmg" --include "spring-tools-for-eclipse*.self-extracting.jar" --include "spring-tools-for-eclipse*.tar.gz" --exclude "*/*" --dryrun`
@@ -413,7 +413,7 @@ jobs:
       - name: Remove Temp Build Artifacts from S3
         id: cleanup-s3-temp-storage
         run: |
-          aws s3 rm s3://$AWS_S3_BUCKET/sts4-distro-ci-temp --recursive --exclude "*" --include "${{ needs.eclipse-distro-build.outputs.id }}/*"
+          aws s3 rm s3://$AWS_S3_BUCKET/sts-distro-ci-temp --recursive --exclude "*" --include "${{ needs.eclipse-distro-build.outputs.id }}/*"
 
   notify-failure:
     needs: [ eclipse-distro-build, sign-win-distros, sign-osx-distros, cleanup, purge_cache ]

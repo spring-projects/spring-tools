@@ -5,14 +5,14 @@
 	<parent>
 		<groupId>org.springframework.boot.ide</groupId>
 		<artifactId>org.springframework.boot.ide.servers</artifactId>
-		<version>4.32.0-SNAPSHOT</version>
+		<version>5.0.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	
 	<packaging>eclipse-repository</packaging>
   
 	<properties>
-		<dist.project>sts4-language-server-integrations</dist.project>
+		<dist.project>sts5-language-server-integrations</dist.project>
 	</properties>  
 
 	<build>

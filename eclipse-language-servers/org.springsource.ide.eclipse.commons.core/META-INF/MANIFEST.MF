@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SpringSource Tool Suite (Core)
 Bundle-SymbolicName: org.springsource.ide.eclipse.commons.core;singleton:=true
-Bundle-Version: 4.32.0.qualifier
+Bundle-Version: 5.0.0.qualifier
 Bundle-Activator: org.springsource.ide.eclipse.commons.internal.core.CorePlugin
 Bundle-Vendor: Broadcom
 Require-Bundle: org.eclipse.core.resources,

@@ -1,7 +1,7 @@
 name: Snapshot - Eclipse LS Extensions
 
 concurrency:
-  group: snapshot-all
+  group: sts5-snapshot-all
   cancel-in-progress: true
 
 on:

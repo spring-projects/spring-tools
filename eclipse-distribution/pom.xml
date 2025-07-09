@@ -4,7 +4,7 @@
 
 	<groupId>org.springframework.boot.ide</groupId>
 	<artifactId>org.springframework.boot.ide</artifactId>
-	<version>4.32.0-SNAPSHOT</version>
+	<version>5.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<organization>
@@ -76,7 +76,7 @@
 		<dist.pathpostfix>nightly</dist.pathpostfix>
 		<dist.path>${dist.type}/${dist.key}/${dist.project}/${dist.pathpostfix}</dist.path>
 
-		<sts4-language-servers-p2-repo>https://cdn.spring.io/spring-tools/${dist.type}/TOOLS/sts4-language-server-integrations/${sts4-language-servers-version}</sts4-language-servers-p2-repo>
+		<sts4-language-servers-p2-repo>https://cdn.spring.io/spring-tools/${dist.type}/TOOLS/sts4-language-server-integrations/${sts-language-servers-version}</sts4-language-servers-p2-repo>
 		
 		<tycho-version>4.0.12</tycho-version>
 		<encoding>UTF-8</encoding>
@@ -91,11 +91,11 @@
 			<id>snapshot</id>
 			<properties>
 				<dist.type>snapshot</dist.type>
-				<dist.path.repo>${dist.type}/TOOLS/sts4/nightly/${dist.target.major}</dist.path.repo>
-				<dist.path.product>${dist.type}/STS4/nightly/dist/${dist.target.major}</dist.path.product>
+				<dist.path.repo>${dist.type}/TOOLS/sts5/nightly/${dist.target.major}</dist.path.repo>
+				<dist.path.product>${dist.type}/STS5/nightly/dist/${dist.target.major}</dist.path.product>
 				<skip.update-nightly-download-page>false</skip.update-nightly-download-page>
 
-				<sts4-language-servers-version>nightly</sts4-language-servers-version>
+				<sts-language-servers-version>nightly</sts-language-servers-version>
 			</properties>
 		</profile>
 
@@ -107,7 +107,7 @@
 				<dist.path.product>${dist.type}/STS4/${unqualifiedVersion}.${p2.qualifier}/dist/${dist.target.major}</dist.path.product>
 				<skip.update-nightly-download-page>true</skip.update-nightly-download-page>
 
-				<sts4-language-servers-version>today</sts4-language-servers-version> <!-- this should be overridden in the build with the concrete ls version to include-->
+				<sts-language-servers-version>today</sts-language-servers-version> <!-- this should be overridden in the build with the concrete ls version to include-->
 			</properties>
 		</profile>
 
@@ -117,7 +117,7 @@
 				<dist.type>release</dist.type>
 				<dist.path.repo>${dist.type}/TOOLS/sts4/update/${unqualifiedVersion}.${p2.qualifier}/${dist.target.major}</dist.path.repo>
 				<dist.path.product>${dist.type}/STS4/${unqualifiedVersion}.${p2.qualifier}/dist/${dist.target.major}</dist.path.product>
-				<sts4-language-servers-version>today</sts4-language-servers-version> <!-- this should be overridden in the build with the concrete ls version to include-->
+				<sts-language-servers-version>today</sts-language-servers-version> <!-- this should be overridden in the build with the concrete ls version to include-->
 			</properties>
 		</profile>
 

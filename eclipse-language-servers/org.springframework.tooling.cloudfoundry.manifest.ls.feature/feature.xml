@@ -2,7 +2,7 @@
 <feature
       id="org.springframework.tooling.cloudfoundry.manifest.ls.feature"
       label="%featureName"
-      version="4.24.0.qualifier"
+      version="5.0.0.qualifier"
       provider-name="%providerName">
 
    <description>

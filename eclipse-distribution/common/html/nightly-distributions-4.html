@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "https://www.w3.org/TR/html4/strict.dtd">
+<html>
+
+<head>
+	<title>Spring Tools - Internal CI builds</title>
+	<link rel="shortcut icon" type="image/x-icon" href="https://www.springsource.org/sites/all/themes/s2org11/favicon.ico"/>
+	<link rel="stylesheet" href="stylesheet.css" type="text/css">
+	<meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+	<script src="jquery-2.0.3.min.js"></script>
+</head>
+
+<body>
+
+	<div style="margin:40px;">
+	
+	<h1>Spring Tools - Internal CI builds</h1>
+
+	<h2>Eclipse p2 repositories</h2>
+
+	<p>Note: please do NOT use your browser to access these p2 repositories directly, there is no web index content being served.
+		Instead add them to the available update sites in your Eclipse/STS preferences or paste them into the "Install New Software" dialog.
+	</p>
+
+	<p><b>STS4 Distribution:</b>
+		<ul>
+			<li>for Eclipse 2025-09 (4.37): <a href="https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4/nightly/e4.37">https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4/nightly/e4.37</a></li>
+			<li>for Eclipse 2025-06 (4.36): <a href="https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4/nightly/e4.36">https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4/nightly/e4.36</a></li>
+			<li>for Eclipse 2025-03 (4.35): <a href="https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4/nightly/e4.35">https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4/nightly/e4.35</a></li>
+		</ul>
+	</p>
+		
+	<p><b>STS4 language server extensions</b>  (this repository is meant to be used to ship updates of the language server extensions to existing STS4 installations. In production, the release version of this repository is used.)
+	</p>
+
+	<p>
+		<ul>
+			<li><a href="https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4-language-server-integrations/nightly">https://cdn.spring.io/spring-tools/snapshot/TOOLS/sts4-language-server-integrations/nightly</a></li>
+		</ul>
+	</p>
+		
+	<h2>Eclipse-based Distribution Builds</h2>
+
+	<h3>Spring Tools for Eclipse - based on Eclipse 2025-09 Milestone Builds (4.37.0)</h3>
+	<div id="e437"></div>
+	<script type="text/javascript">
+		$('#e437').load('sts4-nightly-e4.37.html');
+	</script>
+	
+	<h3>Spring Tools for Eclipse - based on Eclipse 2025-06 Release (4.36.0)</h3>
+	<div id="e436"></div>
+	<script type="text/javascript">
+		$('#e436').load('sts4-nightly-e4.36.html');
+	</script>
+	
+	<h3>Spring Tools for Eclipse - based on Eclipse 2025-03 Release (4.35.0)</h3>
+	<div id="e435"></div>
+	<script type="text/javascript">
+		$('#e435').load('sts4-nightly-e4.35.html');
+	</script>
+	
+	<h2>Spring Tools - Visual Studio Code Extensions</h2>
+
+	<div id="vsix"></div>
+	<script type="text/javascript">
+		$('#vsix').load('vscode-extensions/vscode-extensions-snippet.html');
+	</script>
+	
+</div>
+</body>
+</html>

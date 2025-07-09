@@ -3,7 +3,7 @@
   "displayName": "Concourse CI Pipeline Editor",
   "description": "Provides validation and content assist for Concourse CI pipeline and task configuration yml files",
   "icon": "icon.png",
-  "version": "1.57.0",
+  "version": "2.0.0",
   "publisher": "vmware",
   "repository": {
     "type": "git",

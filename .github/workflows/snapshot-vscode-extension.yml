@@ -64,5 +64,5 @@ jobs:
           echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-spring-cli "Spring CLI" $DOWNLOAD_URL_ROOT` >> $downloads_html
           echo '</ul>' >> $downloads_html
           cat ./$downloads_html
-          aws s3 mv ./$downloads_html s3://$AWS_S3_BUCKET/snapshot/STS4/vscode-extensions/ --no-progress --checksum-algorithm CRC32
+          aws s3 mv ./$downloads_html s3://$AWS_S3_BUCKET/snapshot/STS5/vscode-extensions/ --no-progress --checksum-algorithm CRC32
 

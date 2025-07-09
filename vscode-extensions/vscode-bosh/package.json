@@ -3,7 +3,7 @@
   "displayName": "Bosh Editor",
   "description": "Provides validation and content assist for various Bosh configuration files",
   "icon": "icon.png",
-  "version": "1.56.0",
+  "version": "2.0.0",
   "publisher": "vmware",
   "repository": {
     "type": "git",

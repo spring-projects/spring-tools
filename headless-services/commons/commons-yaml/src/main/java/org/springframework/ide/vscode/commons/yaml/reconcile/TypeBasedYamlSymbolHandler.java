@@ -28,6 +28,7 @@ import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.commons.yaml.ast.NodeUtil;
+import org.springframework.ide.vscode.commons.yaml.reconcile.ASTTypeCache.NodeTypes;
 import org.springframework.ide.vscode.commons.yaml.schema.YType;
 import org.yaml.snakeyaml.nodes.Node;
 
@@ -66,8 +67,9 @@ public class TypeBasedYamlSymbolHandler implements DocumentSymbolHandler {
 		Builder<DocumentSymbol> builder = ImmutableList.builder();
 
 		TextDocument doc = documents.getLatestSnapshot(params.getTextDocument().getUri());
-		if (doc != null) {
-			for (Entry<Node, YType> entry : astTypeCache.getNodeTypes(params.getTextDocument().getUri()).getTypes().entrySet()) {
+		NodeTypes nodeTypes = astTypeCache.getNodeTypes(params.getTextDocument().getUri());
+		if (doc != null && nodeTypes != null) {
+			for (Entry<Node, YType> entry : nodeTypes.getTypes().entrySet()) {
 				if (definitionTypes.contains(entry.getValue())) {
 					try {
 						builder.add(createSymbol(doc, entry.getKey(), entry.getValue()));

@@ -17,6 +17,7 @@
 		<dependencies.version>${project.version}</dependencies.version>
 		<jdt.core.version>3.41.0</jdt.core.version>
 		<lsp4xml.version>0.24.0</lsp4xml.version>
+		<spring-ai.version>1.0.0</spring-ai.version>
 	</properties>
 
 	<repositories>
@@ -52,6 +53,13 @@
 	</repositories>
 
 	<dependencies>
+
+		<!-- MCP -->
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context-indexer</artifactId>
@@ -394,4 +402,16 @@
 
 		</plugins>
 	</build>
+	
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.ai</groupId>
+				<artifactId>spring-ai-bom</artifactId>
+				<version>${spring-ai.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>

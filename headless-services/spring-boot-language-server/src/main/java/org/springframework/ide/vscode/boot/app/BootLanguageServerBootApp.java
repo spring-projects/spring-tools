@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -137,9 +138,9 @@ import reactor.core.publisher.Hooks;
 	ConfigurationPropertiesAutoConfiguration.class, 
 	PropertyPlaceholderAutoConfiguration.class
 })
-@ComponentScan
+@ComponentScan(basePackages = {"org.springframework.ide.vscode.boot.app", "org.springframework.ide.vscode.boot.mcp"})
 @EnableConfigurationProperties(BootLsConfigProperties.class)
-//@SpringBootApplication
+@SpringBootApplication
 public class BootLanguageServerBootApp {
 	
 	private static final String SERVER_NAME = "boot-language-server";

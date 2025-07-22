@@ -437,7 +437,7 @@ public class SpringIndexerTest {
         assertTrue(docs.contains(directory.toPath().resolve("src/main/java/org/test/subdir/subdir2/subdir3/subdir4/subfile2-level4.txt").toUri().toString()));
     }
 
-	static boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri) {
+	public static boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri) {
 		for (Iterator<? extends WorkspaceSymbol> iterator = symbols.iterator(); iterator.hasNext();) {
 			WorkspaceSymbol symbol = iterator.next();
 
@@ -452,7 +452,7 @@ public class SpringIndexerTest {
 		return false;
 	}
 
-	static boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri, int startLine, int startCHaracter, int endLine, int endCharacter) {
+	public static boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri, int startLine, int startCHaracter, int endLine, int endCharacter) {
 		for (Iterator<? extends WorkspaceSymbol> iterator = symbols.iterator(); iterator.hasNext();) {
 			WorkspaceSymbol symbol = iterator.next();
 

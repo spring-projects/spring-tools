@@ -10,11 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans.test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -31,10 +31,13 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
+import org.springframework.ide.vscode.boot.java.utils.test.SpringIndexerTest;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -69,12 +72,18 @@ public class FeignSymbolProviderTest {
 	}
 
     @Test
-    void testSimpleFeignClientSource() throws Exception {
+    void testSimpleFeignClientSymbol() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java").toUri().toString();
+        
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
         assertEquals(2, symbols.size());
-        assertTrue(containsSymbol(symbols, "@+ 'stores' (@FeignClient) FeignClientExample", docUri, 8, 0, 8, 71));
-        assertTrue(containsSymbol(symbols, "@/stores -- GET", docUri, 11, 1, 11, 63));
+        assertTrue(SpringIndexerTest.containsSymbol(symbols, "@+ 'stores' (@FeignClient) FeignClientExample", docUri, 8, 0, 8, 71));
+        assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/stores -- GET", docUri, 11, 1, 11, 63));
+    }
+
+    @Test
+    void testSimpleFeignClientIndexElements() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java").toUri().toString();
         
         Bean[] beans = springIndex.getBeansOfDocument(docUri);
         assertEquals(1, beans.length);
@@ -97,21 +106,23 @@ public class FeignSymbolProviderTest {
         assertEquals("com.example.feign.demo.FeignConfigExample", configurationAttributeValue[0].getName());
     }
 
-	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri, int startLine, int startCHaracter, int endLine, int endCharacter) {
-		for (Iterator<? extends WorkspaceSymbol> iterator = symbols.iterator(); iterator.hasNext();) {
-			WorkspaceSymbol symbol = iterator.next();
+    @Test
+    void testSimpleFeignClientMappingElements() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java").toUri().toString();
+        
+        Bean[] beans = springIndex.getBeansOfDocument(docUri);
 
-			if (symbol.getName().equals(name)
-					&& symbol.getLocation().getLeft().getUri().equals(uri)
-					&& symbol.getLocation().getLeft().getRange().getStart().getLine() == startLine
-					&& symbol.getLocation().getLeft().getRange().getStart().getCharacter() == startCHaracter
-					&& symbol.getLocation().getLeft().getRange().getEnd().getLine() == endLine
-					&& symbol.getLocation().getLeft().getRange().getEnd().getCharacter() == endCharacter) {
-				return true;
-			}
- 		}
-
-		return false;
-	}
-
+        List<SpringIndexElement> children = beans[0].getChildren();
+        List<SpringIndexElement> mappingChildren = children.stream()
+        	.filter(child -> child instanceof RequestMappingIndexElement)
+        	.toList();
+        
+        assertEquals(1, mappingChildren.size());
+        
+        RequestMappingIndexElement mappingElement = (RequestMappingIndexElement) mappingChildren.get(0);
+        assertEquals("/stores", mappingElement.getPath());
+        assertArrayEquals(new String[] {"GET"}, mappingElement.getHttpMethods());
+        
+        assertEquals("@/stores -- GET", mappingElement.getDocumentSymbol().getName());
+    }
 }

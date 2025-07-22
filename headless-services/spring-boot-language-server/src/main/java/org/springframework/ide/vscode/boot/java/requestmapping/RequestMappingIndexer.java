@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.requestmapping;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +34,7 @@ import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -49,6 +51,35 @@ public class RequestMappingIndexer {
 	private static final Set<String> ATTRIBUTE_NAME_PRODUCES = Set.of("produces");
 	
 	private static final Logger log = LoggerFactory.getLogger(RequestMappingIndexer.class);
+	
+
+	public static void indexRequestMappings(Bean controller, TypeDeclaration type, ITypeBinding annotationType, SpringIndexerJavaContext context, TextDocument doc) {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);		
+
+		boolean isController = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.CONTROLLER);
+		boolean isFeignClient = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.FEIGN_CLIENT);
+		
+		if (isController || isFeignClient) {
+			MethodDeclaration[] methods = type.getMethods();
+			if (methods == null) {
+				return;
+			}
+			
+			for (int i = 0; i < methods.length; i++) {
+				MethodDeclaration methodDecl = methods[i];
+				Collection<Annotation> annotations = ASTUtils.getAnnotations(methodDecl);
+				
+				for (Annotation annotation : annotations) {
+					ITypeBinding typeBinding = annotation.resolveTypeBinding();
+					
+					boolean isRequestMappingAnnotation = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.SPRING_REQUEST_MAPPING);
+					if (isRequestMappingAnnotation) {
+						RequestMappingIndexer.indexRequestMapping(controller, annotation, context, doc);
+					}
+				}
+			}
+		}
+	}
 
 	public static void indexRequestMapping(Bean controller, Annotation node, SpringIndexerJavaContext context, TextDocument doc) {
 

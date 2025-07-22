@@ -31,6 +31,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Tuple.Two;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
@@ -48,7 +49,7 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
 		try {
 			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration) {
-				Two<WorkspaceSymbol, Bean> result = createSymbol(node, annotationType, metaAnnotations, doc);
+				Two<WorkspaceSymbol, Bean> result = createSymbol(node, annotationType, metaAnnotations, context, doc);
 
 				WorkspaceSymbol symbol = result.getFirst();
 				Bean beanDefinition = result.getSecond();
@@ -62,7 +63,7 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 		}
 	}
 
-	private Two<WorkspaceSymbol, Bean> createSymbol(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, TextDocument doc) throws BadLocationException {
+	private Two<WorkspaceSymbol, Bean> createSymbol(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		String annotationTypeName = annotationType.getName();
 		Collection<String> metaAnnotationNames = metaAnnotations.stream()
 				.map(ITypeBinding::getName)
@@ -93,6 +94,8 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 				.toArray(AnnotationMetadata[]::new);
 		
 		Bean beanDefinition = new Bean(beanName, beanType == null ? "" : beanType.getQualifiedName(), location, injectionPoints, supertypes, annotations, false, symbol.getName());
+		
+		RequestMappingIndexer.indexRequestMappings(beanDefinition, type, annotationType, context, doc);
 		
 		return Tuple.two(symbol, beanDefinition);
 	}

@@ -145,7 +145,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		indexBeanMethods(beanDefinition, type, annotationType, metaAnnotations, context, doc);
 		indexEventListeners(beanDefinition, type, annotationType, metaAnnotations, context, doc);
 		indexEventListenerInterfaceImplementation(beanDefinition, type, context, doc);
-		indexRequestMappings(beanDefinition, type, annotationType, metaAnnotations, context, doc);
+		indexRequestMappings(beanDefinition, type, annotationType, context, doc);
 		indexConfigurationProperties(beanDefinition, type, context, doc);
 		indexBeanRegistrarImplementation(beanDefinition, type, context, doc);
 
@@ -269,30 +269,8 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		}
 	}
 
-	private void indexRequestMappings(Bean controller, TypeDeclaration type, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);		
-		boolean isController = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.CONTROLLER);
-		
-		if (isController) {
-			MethodDeclaration[] methods = type.getMethods();
-			if (methods == null) {
-				return;
-			}
-			
-			for (int i = 0; i < methods.length; i++) {
-				MethodDeclaration methodDecl = methods[i];
-				Collection<Annotation> annotations = ASTUtils.getAnnotations(methodDecl);
-				
-				for (Annotation annotation : annotations) {
-					ITypeBinding typeBinding = annotation.resolveTypeBinding();
-					
-					boolean isRequestMappingAnnotation = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.SPRING_REQUEST_MAPPING);
-					if (isRequestMappingAnnotation) {
-						RequestMappingIndexer.indexRequestMapping(controller, annotation, context, doc);
-					}
-				}
-			}
-		}
+	private void indexRequestMappings(Bean controller, TypeDeclaration type, ITypeBinding annotationType, SpringIndexerJavaContext context, TextDocument doc) {
+		RequestMappingIndexer.indexRequestMappings(controller, type, annotationType, context, doc);
 	}
 
 	private void scanEventPublisherInvocations(Bean component, Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {

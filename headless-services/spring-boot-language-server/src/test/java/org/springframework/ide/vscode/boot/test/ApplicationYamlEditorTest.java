@@ -5014,6 +5014,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
 				"my:\n" +
 				"  colors:\n" +
 				"  - red\n" +
+				"  - r-e-d\n" + // Canonical name is "red" from "r-e-d" hence it is okay in Boot as well 
 				"  - green\n" +
 				"  - BLUE\n" +
 				"  - not-a-color\n"

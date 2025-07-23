@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014-2017 Pivotal, Inc.
+ * Copyright (c) 2014, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,9 +11,11 @@
 package org.springframework.ide.vscode.commons.util;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -29,6 +31,7 @@ public class EnumValueParser implements ValueParser {
 	private Supplier<PartialCollection<String>> values;
     private final boolean longRunning;
 
+    private transient Set<String> _canonicalValues;
 
 	public EnumValueParser(String typeName, String... values) {
 		this(typeName, ImmutableSet.copyOf(values));
@@ -69,18 +72,13 @@ public class EnumValueParser implements ValueParser {
 			throw errorOnBlank(createBlankTextErrorMessage());
 		}
 
-		PartialCollection<String> values = this.values.get();
-
-		// If values is not fully known then just assume the str is acceptable.
-		if (values == null || !values.isComplete() || hasMatchingValue(str, values.getElements())) {
+		Set<String> canonicalValues = getCanonicalValues();
+		
+		if (canonicalValues == null || canonicalValues.contains(getCanonicalName(str))) {
 			return str;
 		} else {
-			throw errorOnParse(createErrorMessage(str, values.getElements()));
+			throw errorOnParse(createErrorMessage(str, this.values.get().getElements()));
 		}
-	}
-
-	protected boolean hasMatchingValue(String str, Collection<String> values) {
-		return values.contains(str);
 	}
 
 	protected String createBlankTextErrorMessage() {
@@ -101,5 +99,22 @@ public class EnumValueParser implements ValueParser {
 	
 	public boolean longRunning() {
 		return this.longRunning ;
+	}
+	
+	private Set<String> getCanonicalValues() {
+		PartialCollection<String> partialCollection = this.values.get();
+		if (partialCollection != null) {
+			_canonicalValues = partialCollection.getElements().stream().map(EnumValueParser::getCanonicalName).collect(Collectors.toSet());
+		}
+		return _canonicalValues;
+	}
+	
+	static String getCanonicalName(String name) {
+		StringBuilder canonicalName = new StringBuilder(name.length());
+		name.chars()
+			.filter(Character::isLetterOrDigit)
+			.map(Character::toLowerCase)
+			.forEach((c) -> canonicalName.append((char) c));
+		return canonicalName.toString();
 	}
 }

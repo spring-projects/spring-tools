@@ -23,6 +23,7 @@ import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataSe
 import org.springframework.ide.vscode.boot.java.data.DataRepositorySymbolProvider;
 import org.springframework.ide.vscode.boot.java.events.EventListenerSymbolProvider;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.requestmapping.HttpExchangeSymbolProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingSymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.RestrictedDefaultSymbolProvider;
 
@@ -80,6 +81,7 @@ public class SpringSymbolIndexerConfig {
 		providers.put(Annotations.EVENT_LISTENER, eventListenerSymbolProvider);
 		
 		providers.put(Annotations.FEIGN_CLIENT, new FeignClientSymbolProvider());
+		providers.put(Annotations.HTTP_EXCHANGE, new HttpExchangeSymbolProvider());
 
 		return providers;
 	}

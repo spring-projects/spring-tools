@@ -12,9 +12,9 @@ package org.springframework.ide.vscode.boot.java.requestmapping;
 
 import org.eclipse.lsp4j.Range;
 
-public class RequestMappingIndexElement extends WebEndpointIndexElement {
+public class HttpExchangeIndexElement extends WebEndpointIndexElement {
 
-	public RequestMappingIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, Range range, String symbolLabel) {
+	public HttpExchangeIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, Range range, String symbolLabel) {
 		super(path, httpMethods, contentTypes, acceptTypes, range, symbolLabel);
 	}
 }

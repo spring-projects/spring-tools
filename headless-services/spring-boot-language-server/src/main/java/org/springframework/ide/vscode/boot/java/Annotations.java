@@ -61,6 +61,14 @@ public class Annotations {
 	public static final String SPRING_PUT_MAPPING = "org.springframework.web.bind.annotation.PutMapping";
 	public static final String SPRING_DELETE_MAPPING = "org.springframework.web.bind.annotation.DeleteMapping";
 	public static final String SPRING_PATCH_MAPPING = "org.springframework.web.bind.annotation.PatchMapping";
+	
+	public static final String HTTP_EXCHANGE = "org.springframework.web.service.annotation.HttpExchange";
+	public static final String GET_EXCHANGE = "org.springframework.web.service.annotation.GetExchange";
+	public static final String POST_EXCHANGE = "org.springframework.web.service.annotation.PostExchange";
+	public static final String PUT_EXCHANGE = "org.springframework.web.service.annotation.PutExchange";
+	public static final String DELETE_EXCHANGE = "org.springframework.web.service.annotation.DeleteExchange";
+	public static final String PATCH_EXCHANGE = "org.springframework.web.service.annotation.PatchExchange";
+	
 	public static final String SPRING_BOOT_TEST = "org.springframework.boot.test.context.SpringBootTest";
 
 	public static final String CONDITIONAL_ON_BEAN = "org.springframework.boot.autoconfigure.condition.ConditionalOnBean";

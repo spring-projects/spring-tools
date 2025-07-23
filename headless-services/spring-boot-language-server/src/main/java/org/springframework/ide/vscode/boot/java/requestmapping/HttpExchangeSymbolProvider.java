@@ -1,12 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2025 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-v10.html
  *
  * Contributors:
- *     Pivotal, Inc. - initial API and implementation
+ *     Broadcom - initial API and implementation
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.requestmapping;
 
@@ -22,30 +22,28 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.beans.CachedBean;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
-/**
- * @author Martin Lippert
- */
-public class RequestMappingSymbolProvider implements SymbolProvider {
+public class HttpExchangeSymbolProvider implements SymbolProvider {
 	
-	private static final Logger log = LoggerFactory.getLogger(RequestMappingSymbolProvider.class);
+	private static final Logger log = LoggerFactory.getLogger(HttpExchangeSymbolProvider.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
-
+	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
 		if (node.getParent() instanceof MethodDeclaration) {
 			try {
 				Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
-				String[] path = RequestMappingIndexer.getPath(node, context);
-				String[] parentPath = RequestMappingIndexer.getParentPath(node, context);
-				String[] methods = RequestMappingIndexer.getMethod(node, context);
-				String[] contentTypes = RequestMappingIndexer.getContentTypes(node, context);
-				String[] acceptTypes = RequestMappingIndexer.getAcceptTypes(node, context);
+				
+				String[] path = HttpExchangeIndexer.getPath(node, context);
+				String[] parentPath = HttpExchangeIndexer.getParentPath(node, context);
+				String[] methods = HttpExchangeIndexer.getMethod(node, context);
+				String[] contentTypes = HttpExchangeIndexer.getContentTypes(node, context);
+				String[] acceptTypes = HttpExchangeIndexer.getAcceptTypes(node, context);
 
 				Stream<String> stream = parentPath == null ? Stream.of("") : Arrays.stream(parentPath);
 				stream.filter(Objects::nonNull)
@@ -57,6 +55,10 @@ public class RequestMappingSymbolProvider implements SymbolProvider {
 							// symbol
 							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes);
 							context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
+							
+							// index element
+							HttpExchangeIndexElement requestMappingIndexElement = new HttpExchangeIndexElement(p, methods, contentTypes, acceptTypes, location.getRange(), symbol.getName());
+							context.getBeans().add(new CachedBean(doc.getUri(), requestMappingIndexElement));
 						});
 
 			} catch (BadLocationException e) {
@@ -64,5 +66,6 @@ public class RequestMappingSymbolProvider implements SymbolProvider {
 			}
 		}
 	}
+	
 
 }

@@ -44,6 +44,7 @@ import org.springframework.ide.vscode.boot.metadata.ValueProviderRegistry.ValueP
 import org.springframework.ide.vscode.boot.metadata.hints.StsValueHint;
 import org.springframework.ide.vscode.boot.metadata.util.DeprecationUtil;
 import org.springframework.ide.vscode.boot.metadata.util.PropertyDocUtils;
+import org.springframework.ide.vscode.boot.properties.reconcile.BootEnumValueParser;
 import org.springframework.ide.vscode.commons.java.Flags;
 import org.springframework.ide.vscode.commons.java.IField;
 import org.springframework.ide.vscode.commons.java.IJavaElement;
@@ -55,7 +56,6 @@ import org.springframework.ide.vscode.commons.util.AlwaysFailingParser;
 import org.springframework.ide.vscode.commons.util.ArrayUtils;
 import org.springframework.ide.vscode.commons.util.Assert;
 import org.springframework.ide.vscode.commons.util.CollectionUtil;
-import org.springframework.ide.vscode.commons.util.EnumValueParser;
 import org.springframework.ide.vscode.commons.util.LazyProvider;
 import org.springframework.ide.vscode.commons.util.MimeTypes;
 import org.springframework.ide.vscode.commons.util.Renderables;
@@ -272,7 +272,7 @@ public class TypeUtil {
 				//Note, technically if 'enumValues is empty array' this means something different
 				// from when it is null. An empty array means a type that has no values, so
 				// assigning anything to it is an error.
-				return new EnumValueParser(niceTypeName(type), getBareValues(enumValues));
+				return new BootEnumValueParser(niceTypeName(type), getBareValues(enumValues));
 			}
 			if (isMap(type)) {
 				//Trying to parse map types from scalars is not possible. Thus we

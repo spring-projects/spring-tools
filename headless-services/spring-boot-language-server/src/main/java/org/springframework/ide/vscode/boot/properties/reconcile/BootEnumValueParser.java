@@ -17,6 +17,11 @@ import java.util.stream.Collectors;
 import org.springframework.ide.vscode.commons.util.EnumValueParser;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 
+/**
+ * Boot property values allow relaxed parsing via canonical names. 
+ * 
+ * @author Alex Boyko
+ */
 public class BootEnumValueParser extends EnumValueParser {
 	
 	private Set<String> canonicalValues;
@@ -44,7 +49,6 @@ public class BootEnumValueParser extends EnumValueParser {
 			throw errorOnBlank(createBlankTextErrorMessage());
 		}
 
-		// If values is not fully known then just assume the str is acceptable.
 		if (canonicalValues.contains(getCanonicalName(str))) {
 			return str;
 		} else {

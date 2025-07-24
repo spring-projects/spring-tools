@@ -76,21 +76,20 @@ jobs:
           gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
           gpg_keyname: ${{ secrets.GPG_KEYID }}
         run: |
-          sts_ls_version=${{ inputs.sts-language-servers-version }}
-          sts_ls_version_param=""
-          if ! [[ -z ${sts_ls_version} ]]; then
-            sts_ls_version_param="-Ddist.version=${sts_ls_version}"
-          fi  
           cd eclipse-language-servers
           if command -v xvfb-run ; then
-            xvfb-run ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts_ls_version_param -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
+            xvfb-run ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
           else
-            ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts_ls_version_param -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
+            ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
           fi
       - name: Upload P2 Repo to S3
         id: upload-p2
         run: |
-          p2_path=`cat ${{ github.workspace }}/eclipse-language-servers/org.springframework.tooling.ls.integration.repository/target/s3-p2-repo-dist-path.txt`
+          sts_ls_version=${{ inputs.sts-language-servers-version }}
+          if [[ -z ${sts_ls_version} ]]; then
+            sts_ls_version=nightly
+          fi  
+          p2_path=${{ inputs.build_type }}/language-server-integrations/
           echo "p2_path=$p2_path" >> $GITHUB_OUTPUT
           echo "P2 path: ${p2_path}"
           aws s3 rm s3://$AWS_S3_BUCKET/${p2_path}/ --recursive

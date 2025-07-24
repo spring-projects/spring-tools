@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.commons.util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
@@ -77,6 +78,11 @@ public class EnumValueParser implements ValueParser {
 		} else {
 			throw errorOnParse(createErrorMessage(str, values.getElements()));
 		}
+	}
+	
+	protected final Collection<String> getAllKnownValues() {
+		PartialCollection<String> partialCollection = this.values.get();
+		return partialCollection == null ? Collections.emptyList() : this.values.get().getElements();
 	}
 
 	protected boolean hasMatchingValue(String str, Collection<String> values) {

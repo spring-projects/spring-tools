@@ -103,9 +103,10 @@ jobs:
       - name: Store S3 Paths
         id: s3-paths
         run: |
+          eclipse_profile=${{ inputs.eclipse_profile }}
           eclipse_version=${eclipse_profile:0:2}.${eclipse_profile:2}
           build_type=${{ inputs.build_type }}
-          if [[ "$build_type" == "snapshot" ]]; then
+          if [[ "${build_type}" == "snapshot" ]]; then
             dist_path=${{ inputs.build_type }}/dist/$eclipse_version
             p2_path=${{ inputs.build_type }}/update/$eclipse_version          
           else

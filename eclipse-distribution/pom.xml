@@ -94,8 +94,6 @@
 				<dist.path.repo>${dist.type}/TOOLS/sts5/nightly/${dist.target.major}</dist.path.repo>
 				<dist.path.product>${dist.type}/STS5/nightly/dist/${dist.target.major}</dist.path.product>
 				<skip.update-nightly-download-page>false</skip.update-nightly-download-page>
-
-				<sts-language-servers-version>nightly</sts-language-servers-version>
 			</properties>
 		</profile>
 
@@ -106,8 +104,6 @@
 				<dist.path.repo>${dist.type}/TOOLS/sts4/update/${unqualifiedVersion}.${p2.qualifier}/${dist.target.major}</dist.path.repo>
 				<dist.path.product>${dist.type}/STS4/${unqualifiedVersion}.${p2.qualifier}/dist/${dist.target.major}</dist.path.product>
 				<skip.update-nightly-download-page>true</skip.update-nightly-download-page>
-
-				<sts-language-servers-version>today</sts-language-servers-version> <!-- this should be overridden in the build with the concrete ls version to include-->
 			</properties>
 		</profile>
 
@@ -117,7 +113,6 @@
 				<dist.type>release</dist.type>
 				<dist.path.repo>${dist.type}/TOOLS/sts4/update/${unqualifiedVersion}.${p2.qualifier}/${dist.target.major}</dist.path.repo>
 				<dist.path.product>${dist.type}/STS4/${unqualifiedVersion}.${p2.qualifier}/dist/${dist.target.major}</dist.path.product>
-				<sts-language-servers-version>today</sts-language-servers-version> <!-- this should be overridden in the build with the concrete ls version to include-->
 			</properties>
 		</profile>
 

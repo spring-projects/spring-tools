@@ -32,9 +32,9 @@ jobs:
         run: |
           echo "Removing old nightly-distributions.html from s3..."
           
-          aws s3 rm s3://$AWS_S3_BUCKET/snapshot/STS5/nightly-distributions.html --debug --cli-connect-timeout 60
-          aws s3 rm s3://$AWS_S3_BUCKET/snapshot/STS5/stylesheet.css --debug --cli-connect-timeout 60
-          aws s3 rm s3://$AWS_S3_BUCKET/snapshot/STS5/jquery-2.0.3.min.js --debug --cli-connect-timeout 60
+          aws s3 rm s3://$AWS_S3_BUCKET/snapshot/nightly-distributions.html --debug --cli-connect-timeout 60
+          aws s3 rm s3://$AWS_S3_BUCKET/snapshot/stylesheet.css --debug --cli-connect-timeout 60
+          aws s3 rm s3://$AWS_S3_BUCKET/snapshot/jquery-2.0.3.min.js --debug --cli-connect-timeout 60
           
           aws s3 rm s3://$AWS_S3_BUCKET/snapshot/STS4/nightly-distributions.html --debug --cli-connect-timeout 60
           aws s3 rm s3://$AWS_S3_BUCKET/snapshot/STS4/stylesheet.css --debug --cli-connect-timeout 60
@@ -42,9 +42,9 @@ jobs:
           
           echo "Uploading new nightly-distributions.html to s3..."
           
-          aws s3 cp ./eclipse-distribution/common/html/nightly-distributions.html s3://$AWS_S3_BUCKET/snapshot/STS5/nightly-distributions.html --no-progress --checksum-algorithm CRC32
-          aws s3 cp ./eclipse-distribution/common/html/stylesheet.css s3://$AWS_S3_BUCKET/snapshot/STS5/stylesheet.css --no-progress --checksum-algorithm CRC32
-          aws s3 cp ./eclipse-distribution/common/html/jquery-2.0.3.min.js s3://$AWS_S3_BUCKET/snapshot/STS5/jquery-2.0.3.min.js --no-progress --checksum-algorithm CRC32
+          aws s3 cp ./eclipse-distribution/common/html/nightly-distributions.html s3://$AWS_S3_BUCKET/snapshot/nightly-distributions.html --no-progress --checksum-algorithm CRC32
+          aws s3 cp ./eclipse-distribution/common/html/stylesheet.css s3://$AWS_S3_BUCKET/snapshot/stylesheet.css --no-progress --checksum-algorithm CRC32
+          aws s3 cp ./eclipse-distribution/common/html/jquery-2.0.3.min.js s3://$AWS_S3_BUCKET/snapshot/jquery-2.0.3.min.js --no-progress --checksum-algorithm CRC32
           
           aws s3 cp ./eclipse-distribution/common/html/nightly-distributions-4.html s3://$AWS_S3_BUCKET/snapshot/STS4/nightly-distributions.html --no-progress --checksum-algorithm CRC32
           aws s3 cp ./eclipse-distribution/common/html/stylesheet.css s3://$AWS_S3_BUCKET/snapshot/STS4/stylesheet.css --no-progress --checksum-algorithm CRC32

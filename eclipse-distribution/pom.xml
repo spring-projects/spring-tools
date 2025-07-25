@@ -76,6 +76,7 @@
 		<dist.pathpostfix>nightly</dist.pathpostfix>
 		<dist.path>${dist.type}/${dist.key}/${dist.project}/${dist.pathpostfix}</dist.path>
 
+		<sts-language-servers-version></sts-language-servers-version>
 		<sts4-language-servers-p2-repo>https://cdn.spring.io/spring-tools/${dist.type}/language-server-integrations/${sts-language-servers-version}</sts4-language-servers-p2-repo>
 		
 		<tycho-version>4.0.12</tycho-version>

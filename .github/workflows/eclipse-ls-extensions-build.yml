@@ -89,7 +89,7 @@ jobs:
           if [[ -z ${sts_ls_version} ]]; then
             sts_ls_version=nightly
           fi  
-          p2_path=${{ inputs.build_type }}/language-server-integrations/
+          p2_path=${{ inputs.build_type }}/language-server-integrations
           echo "p2_path=$p2_path" >> $GITHUB_OUTPUT
           echo "P2 path: ${p2_path}"
           aws s3 rm s3://$AWS_S3_BUCKET/${p2_path}/ --recursive

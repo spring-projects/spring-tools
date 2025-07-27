@@ -35,16 +35,16 @@ jobs:
         run: |
           echo "S3 Aggregate Update Sites Creation..."
           invalid_urls=""
-          site_url="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5-language-server-integrations/${{ inputs.version }}"
+          site_url="${DOWNLOAD_URL_ROOT}/release/language-server-integrations/${{ inputs.version }}"
           ${{ github.workspace }}/.github/scripts/generate-composite-site-files.sh ${{ steps.timestamp.outputs.date }} $site_url
           cat ./compositeArtifacts.xml
           cat ./compositeContent.xml
-          aws s3 cp ./compositeArtifacts.xml s3://$AWS_S3_BUCKET/release/TOOLS/sts5-language-server-integrations/ --checksum-algorithm CRC32
-          invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5-language-server-integrations/compositeArtifacts.xml "
-          aws s3 cp ./compositeContent.xml s3://$AWS_S3_BUCKET/release/TOOLS/sts5-language-server-integrations/ --checksum-algorithm CRC32
-          invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5-language-server-integrations/compositeContent.xml "
-          aws s3 cp ./p2.index s3://$AWS_S3_BUCKET/release/TOOLS/sts5-language-server-integrations/ --checksum-algorithm CRC32
-          invalid_urls+="${DOWNLOAD_URL_ROOT}/release/TOOLS/sts5-language-server-integrations/p2.index"
+          aws s3 cp ./compositeArtifacts.xml s3://$AWS_S3_BUCKET/release/language-server-integrations/ --checksum-algorithm CRC32
+          invalid_urls+="${DOWNLOAD_URL_ROOT}/release/language-server-integrations/compositeArtifacts.xml "
+          aws s3 cp ./compositeContent.xml s3://$AWS_S3_BUCKET/release/language-server-integrations/ --checksum-algorithm CRC32
+          invalid_urls+="${DOWNLOAD_URL_ROOT}/release/language-server-integrations/compositeContent.xml "
+          aws s3 cp ./p2.index s3://$AWS_S3_BUCKET/release/language-server-integrations/ --checksum-algorithm CRC32
+          invalid_urls+="${DOWNLOAD_URL_ROOT}/release/language-server-integrations/p2.index"
           echo "invalid_urls=$invalid_urls" >> $GITHUB_OUTPUT
       - uses: ./.github/actions/cloudflare-purge
         name: Invalidate URLs

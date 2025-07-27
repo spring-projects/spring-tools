@@ -14,7 +14,7 @@ on:
         default: 'snapshot'
         type: string
       sts-language-servers-version:
-        description: version of sts4 ls extensions
+        description: version of sts ls extensions
         required: false
         type: string
       p2-qualifier:

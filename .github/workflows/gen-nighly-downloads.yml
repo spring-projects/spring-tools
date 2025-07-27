@@ -17,9 +17,9 @@ jobs:
     steps:
       - name: Update Nightly Distro Downloads page
         run: |
-          dist_path="snapshot/STS4/nightly/dist/e4.32"
+          dist_path="snapshot/dist/e4.32"
           s3_url=s3://$AWS_S3_BUCKET/${dist_path}/
-          downloads_html="sts4-nightly-e4.32.html"
+          downloads_html="sts-nightly-e4.32.html"
           files=`aws s3 cp ${s3_url} . --recursive --exclude "*" --include "spring-tools-for-eclipse*.zip" --include "spring-tools-for-eclipse*.dmg" --include "spring-tools-for-eclipse*.self-extracting.jar" --include "spring-tools-for-eclipse*.tar.gz" --exclude "*/*" --dryrun`
           echo '<ul>' >> $downloads_html
           s3_url_prefix="s3://${AWS_S3_BUCKET}"
@@ -34,7 +34,7 @@ jobs:
           done
           echo '</ul>' >> $downloads_html
           cat ./$downloads_html
-          aws s3 mv ./$downloads_html s3://$AWS_S3_BUCKET/snapshot/STS4/ --dryrun
+          aws s3 mv ./$downloads_html s3://$AWS_S3_BUCKET/snapshot/ --dryrun
           files=`aws s3 ls ${s3_url}`
           for file in $files
           do

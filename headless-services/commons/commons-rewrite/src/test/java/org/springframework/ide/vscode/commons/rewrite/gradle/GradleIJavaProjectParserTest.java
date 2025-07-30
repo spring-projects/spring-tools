@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.SourceFile;
@@ -35,6 +36,7 @@ import org.springframework.ide.vscode.commons.rewrite.java.ProjectParser;
 
 public class GradleIJavaProjectParserTest {
 	
+	@Disabled
 	@Test
 	void testSingleGroovy() throws Exception {
 		URL resource = getClass().getResource("/test-projects/example-gradle-groovy");

@@ -23,4 +23,4 @@ do
 done
 echo '</ul>' >> $downloads_html
 cat ./$downloads_html
-aws s3 mv ./$downloads_html s3://${s3_bucket}/${build_type}/STS5/ --no-progress
+aws s3 mv ./$downloads_html s3://${s3_bucket}/${build_type}/ --no-progress

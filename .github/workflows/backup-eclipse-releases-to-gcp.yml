@@ -44,13 +44,13 @@ jobs:
       - name: Copy from S3 to GCP
         run: |
           echo "Copying Eclipse LS extensions ${{ inputs.ls_version }} to GCP..."
-          url_path=spring-tools/release/TOOLS/sts4-language-server-integrations/${{ inputs.ls_version }}
+          url_path=spring-tools/release/language-server-integrations/${{ inputs.ls_version }}
           gcloud storage cp s3://$AWS_S3_BUCKET/$url_path $GCP_BUCKET/$url_path --recursive
 
           echo "Copying Eclipse Distro P2 repos ${{ inputs.release_version }} to GCP..."
-          url_path=spring-tools/release/TOOLS/sts4/update/${{ inputs.release_version }}
+          url_path=spring-tools/release/update/${{ inputs.release_version }}
           gcloud storage cp s3://$AWS_S3_BUCKET/$url_path $GCP_BUCKET/$url_path --recursive
 
           echo "Copying Eclipse Distros ${{ inputs.release_version }} to GCP..."
-          url_path=spring-tools/release/STS4/${{ inputs.release_version }}/dist
+          url_path=spring-tools/release/dist/${{ inputs.release_version }}
           gcloud storage cp s3://$AWS_S3_BUCKET/$url_path $GCP_BUCKET/$url_path --recursive

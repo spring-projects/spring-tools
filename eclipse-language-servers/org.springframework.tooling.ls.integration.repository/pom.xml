@@ -15,33 +15,6 @@
 		<dist.project>sts5-language-server-integrations</dist.project>
 	</properties>  
 
-	<build>
-		<plugins>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.7</version>
-				<executions>
-					<execution>
-						<id>generate-s3-upload-info</id>
-						<phase>verify</phase>
-						<configuration>
-							<target>
-								<echo file="${project.build.directory}/s3-p2-repo-dist-path.txt">
-									${dist.path}
-								</echo>
-							</target>
-						</configuration>
-						<goals>
-							<goal>run</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
-
 	<profiles>
 		<profile>
 			<id>gpg.sign</id>

@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
@@ -63,6 +64,12 @@ public class StereotypesIndexer implements SymbolProvider {
 			StereotypeDefinitionElement stereotypeDefinitionElement = new StereotypeDefinitionElement(annotationBinding.getQualifiedName(), Type.IS_ANNOTATED);
 			context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
 		}
+	}
+	
+	@Override
+	public void addSymbols(MethodDeclaration methodDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+		// TODO Auto-generated method stub
+		SymbolProvider.super.addSymbols(methodDeclaration, context, doc);
 	}
 	
 	@Override

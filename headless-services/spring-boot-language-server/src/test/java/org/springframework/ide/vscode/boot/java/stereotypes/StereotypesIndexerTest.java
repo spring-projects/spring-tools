@@ -19,11 +19,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.tooling.AsciiArtNodeHandler;
+import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvider;
@@ -36,6 +38,7 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.stereotypes.ToolsJsonNodeHandler.Node;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -187,45 +190,61 @@ public class StereotypesIndexerTest {
 		var labels = SimpleLabelProvider.forPackage(StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
 				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString);
 
-		var handler = new AsciiArtNodeHandler<>(labels);
+		SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> structureProvider =
+				new SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement>() {
 
-		var tree = new ProjectTree<>(factory, catalog, handler)
-				.withStructureProvider(new SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement>() {
+			@Override
+			public Collection<StereotypePackageElement> extractPackages(StereotypePackageElement pkg) {
+				return getAllPackageElements().stream()
+					.filter(packageElement -> packageElement.getPackageName().startsWith(pkg.getPackageName()))
+					.toList();
 
-					@Override
-					public Collection<StereotypePackageElement> extractPackages(StereotypePackageElement pkg) {
-						return getAllPackageElements().stream()
-							.filter(packageElement -> packageElement.getPackageName().startsWith(pkg.getPackageName()))
-							.toList();
+				// return extractTypes(pkg).stream()
+				// .map(Class::getPackage)
+				// .distinct()
+				// .toList();
+			}
 
-						// return extractTypes(pkg).stream()
-						// .map(Class::getPackage)
-						// .distinct()
-						// .toList();
-					}
+			@Override
+			public Collection<StereotypeMethodElement> extractMethods(StereotypeClassElement type) {
+				return List.of();
+			}
 
-					@Override
-					public Collection<StereotypeMethodElement> extractMethods(StereotypeClassElement type) {
-						return List.of();
-					}
+			@Override
+			public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
+				return getAllClassElements().stream()
+					.filter(element -> element.getType().startsWith(pkg.getPackageName()))
+					.toList();
+			}
+		};
+		
+		// ascii art output
+		var asciiHandler = new AsciiArtNodeHandler<>(labels);
+		var tree = new ProjectTree<>(factory, catalog, asciiHandler)
+				.withStructureProvider(structureProvider)
+				.withGrouper("org.jmolecules.architecture")
+				.withGrouper("org.jmolecules.ddd", "org.jmolecules.event", "spring", "jpa", "java");
 
-					@Override
-					public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
-						return getAllClassElements().stream()
-							.filter(element -> element.getType().startsWith(pkg.getPackageName()))
-							.toList();
-					}
-				})
-				// .withGrouper("spring", "org.jmolecules.ddd")
-				.withGrouper("spring", "org.jmolecules.architecture")
-		// .withGrouper("org.jmolecules.architecture")
-		// .withGrouper("spring")
-		// .withGrouper("org.jmolecules.ddd")
-		;
+		tree.process(new StereotypePackageElement("example.application", null));
+		System.out.println(asciiHandler.getWriter().toString());
 
-		tree.process(new StereotypePackageElement("example", null));
+		// json output
+		BiConsumer<Node, Object> consumer = (node, c) -> {
+			node.withAttribute(HierarchicalNodeHandler.TEXT, labels.getCustomLabel(c))
+			 .withAttribute("icon", "fa-named-interface");
+		};
+		
+		var jsonHandler = new ToolsJsonNodeHandler(labels, consumer);
 
-		System.out.println(handler.getWriter().toString());
+		var jsonTree = new ProjectTree<>(factory, catalog, jsonHandler)
+				.withStructureProvider(structureProvider)
+				.withGrouper("org.jmolecules.architecture")
+				.withGrouper("org.jmolecules.ddd", "org.jmolecules.event", "spring", "jpa", "java");
+		
+		jsonTree.process(new StereotypePackageElement("example.application", null));
+
+		tree.process(new StereotypePackageElement("example.application", null));
+		System.out.println(jsonHandler.toString());
 	}
 
 	private List<StereotypeClassElement> getAllClassElements() {

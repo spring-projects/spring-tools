@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.4</version>
+		<version>3.5.4</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
@@ -19,6 +19,10 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>17</java.version>
+
+		<jmolecules.version>2.0.0-STEREOTYPE-SNAPSHOT</jmolecules.version>
+		<jmolecules.integrations.version>0.29.0-STEREOTYPE-SNAPSHOT</jmolecules.integrations.version>
+
 	</properties>
 
 	<dependencies>
@@ -37,15 +41,41 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.jmolecules.integrations</groupId>
+			<artifactId>jmolecules-starter-ddd</artifactId>
+			<version>${jmolecules.integrations.version}</version>
+		</dependency>
+
+
+		<dependency>
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-ddd</artifactId>
-			<version>2.0.0-STEREOTYPE-SNAPSHOT</version>
+			<version>${jmolecules.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-hexagonal-architecture</artifactId>
-			<version>2.0.0-STEREOTYPE-SNAPSHOT</version>
+			<version>${jmolecules.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jmolecules.integrations</groupId>
+			<artifactId>jmolecules-stereotype</artifactId>
+			<version>${jmolecules.integrations.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.tngtech.archunit</groupId>
+			<artifactId>archunit</artifactId>
+			<version>1.4.0</version>
+			<scope>compile</scope>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
 		</dependency>
 
 

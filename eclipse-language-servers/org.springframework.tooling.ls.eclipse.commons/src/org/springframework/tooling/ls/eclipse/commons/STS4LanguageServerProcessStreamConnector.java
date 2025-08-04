@@ -105,7 +105,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 				throw new IllegalStateException("No LS JAR files found!");
 			}
 
-			Path jarFile = jarFiles.get(0);
+			Path jarFile = jarFiles.get(0).normalize();
 
 			List<String> command = new ArrayList<>();
 

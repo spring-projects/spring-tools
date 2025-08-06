@@ -1,4 +1,4 @@
-import { commands, ExtensionContext, extensions, lm, LanguageModelChatSelector, window, workspace, LogOutputChannel, version } from "vscode";
+import { commands, ExtensionContext, extensions, lm, LanguageModelChatSelector, window, workspace, LogOutputChannel, version, env } from "vscode";
 import { SemVer } from "semver";
 
 export const REQUIRED_EXTENSION = 'github.copilot-chat';
@@ -6,10 +6,6 @@ const DEFAULT_MODEL_SELECTOR: LanguageModelChatSelector = { vendor: 'copilot', f
 export const logger: LogOutputChannel = window.createOutputChannel("Spring tools copilot", { log: true });
 
 export async function activateCopilotFeatures(context: ExtensionContext): Promise<void> {
-    if(!isLlmApiAvailable("1.90.0-insider")) { // lm API is available since 1.90.0-insider
-        return;
-    }
-
     workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('boot-java.highlight-copilot-codelens.on')) {
             promptReloadWindow();
@@ -17,21 +13,26 @@ export async function activateCopilotFeatures(context: ExtensionContext): Promis
     });
 
     logger.info("vscode.lm is ready.");
-    await ensureExtensionInstalledAndActivated();
-    await updateConfigurationBasedOnCopilotAccess();
+    await configureGenAi();
 
     // Add listener to handle installation/uninstallation of the required extension
-    extensions.onDidChange(async () => {
-        await ensureExtensionInstalledAndActivated();
-        await updateConfigurationBasedOnCopilotAccess();
-    });
+    extensions.onDidChange(async () => await configureGenAi());
 
-    explainQueryWithCopilot();
+    explainQueryWithGenAI();
 
 }
 
-function isLlmApiAvailable(v: string): boolean {
-    return new SemVer(version).compare(new SemVer(v)) >= 0;
+async function configureGenAi() {
+    if (isCursor) {
+        updateConfigurationForCursor();
+    } else {
+        await ensureExtensionInstalledAndActivated();
+        await updateConfigurationBasedOnCopilotAccess();
+    }
+}
+
+function isCursor() {
+    return env.appName === 'Cursor';
 }
 
 async function ensureExtensionInstalledAndActivated() {
@@ -83,6 +84,10 @@ async function updateConfigurationBasedOnCopilotAccess() {
     }
 }
 
+async function updateConfigurationForCursor() {
+    await updateConfiguration(true)
+}
+
 async function updateConfiguration(value: boolean) {
     const configValue = workspace.getConfiguration().get('boot-java.highlight-copilot-codelens.on');
     if(value && configValue === true) {
@@ -90,9 +95,20 @@ async function updateConfiguration(value: boolean) {
     }
 }
 
-async function explainQueryWithCopilot() {
+async function explainQueryWithGenAI() {
     commands.registerCommand('vscode-spring-boot.query.explain', async (userPrompt) => {
-        await commands.executeCommand('workbench.action.chat.open', { query: userPrompt });
+        if (isCursor()) {
+            await commands.executeCommand('composer.createNew', {
+                partialState: {
+                    text: userPrompt
+                },
+                autoSubmit: true, // Optional: automatically submits the query
+                focusMainInputBox: true, // Optional: focuses the input box
+                dontRefreshReactiveContext: true // Optional: prevents context refresh
+            });
+        } else {
+            await commands.executeCommand('workbench.action.chat.open', { query: userPrompt });
+        }
     })
 }
 

@@ -167,7 +167,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 				)));
 				
 				//Add remote boot apps listener
-				RemoteBootAppsDataHolder.getDefault().getRemoteApps().addListener(remoteAppsListener);				
+				RemoteBootAppsDataHolder.getDefault().getRemoteApps().addListener(remoteAppsListener);
 			}
 		}
 	}

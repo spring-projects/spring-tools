@@ -99,6 +99,10 @@
             class="org.springframework.tooling.ls.eclipse.commons.commands.InvokeContentAssistCommandHandler"
             commandId="editor.action.triggerSuggest">
       </handler>
+      <handler
+            class="org.springframework.tooling.ls.eclipse.commons.commands.ExplainwithAi"
+            commandId="vscode-spring-boot.query.explain">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
@@ -144,6 +148,22 @@
       <command
             id="java.execute.workspaceCommand"
             name="Execute Java Command in Workspace">
+         <commandParameter
+               id="org.eclipse.lsp4e.path.param"
+               name="Resource Path (unnecessary, only to make lsp4e happy)"
+               optional="true"
+               typeId="org.eclipse.lsp4e.pathParameterType">
+         </commandParameter>
+         <commandParameter
+               id="org.eclipse.lsp4e.command.param"
+               name="Command id (unnecessary, only to make lsp4e happy)"
+               optional="true"
+               typeId="org.eclipse.lsp4e.commandParameterType">
+         </commandParameter>
+      </command>
+      <command
+            id="vscode-spring-boot.query.explain"
+            name="Explain with AI">
          <commandParameter
                id="org.eclipse.lsp4e.path.param"
                name="Resource Path (unnecessary, only to make lsp4e happy)"

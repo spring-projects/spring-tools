@@ -27,16 +27,19 @@ import org.eclipse.core.net.proxy.IProxyData;
 import org.eclipse.core.net.proxy.IProxyService;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.lsp4e.server.StreamConnectionProvider;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.jsonrpc.messages.Message;
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.PlatformUI;
+import org.osgi.framework.Bundle;
 import org.springframework.tooling.boot.ls.prefs.CategoryProblemsSeverityPrefsPage;
 import org.springframework.tooling.boot.ls.prefs.FileListEditor;
 import org.springframework.tooling.boot.ls.prefs.ProblemCategoryData;
@@ -168,8 +171,27 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 				
 				//Add remote boot apps listener
 				RemoteBootAppsDataHolder.getDefault().getRemoteApps().addListener(remoteAppsListener);
+
+				if (isCopilotInstalled()) {
+					// Enable Copilot features if the Copilot plugin is installed
+					languageServer.getWorkspaceService().executeCommand(new ExecuteCommandParams(
+							"sts/enable/copilot/features", 
+							List.of(true)
+					));
+				}
 			}
 		}
+	}
+	
+	private boolean isCopilotInstalled() {
+		Bundle bundle = Platform.getBundle("com.microsoft.copilot.eclipse.ui");
+		if (bundle != null) {
+			int state = bundle.getState();
+			return (state & Bundle.RESOLVED) != 0
+					|| (state & Bundle.STARTING) != 0
+					|| (state & Bundle.ACTIVE) != 0;
+		}
+		return false;
 	}
 	
 	

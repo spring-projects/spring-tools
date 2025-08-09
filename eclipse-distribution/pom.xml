@@ -143,6 +143,11 @@
 					<url>https://download.eclipse.org/staging/2025-09/</url>
 				</repository>
 				<repository>
+					<id>2025-09-i-builds</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/eclipse/updates/4.37-I-builds/</url>
+				</repository>
+				<repository>
 					<id>orbit</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-09</url>

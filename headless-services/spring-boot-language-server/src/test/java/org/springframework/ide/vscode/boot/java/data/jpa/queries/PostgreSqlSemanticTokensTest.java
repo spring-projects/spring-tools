@@ -362,4 +362,21 @@ public class PostgreSqlSemanticTokensTest {
 		assertThat(tokens.get(7)).isEqualTo(new SemanticTokenData(27, 30, "parameter", new String[0])); // ids
 	}
 	
+	@Test
+	void jsob_exists() {
+		List<SemanticTokenData> tokens = provider.computeTokens("""
+				SELECT * FROM some_table WHERE jsonb_field ? 'some_key'
+				""");
+		assertThat(tokens.size()).isEqualTo(8);
+		assertThat(tokens.get(0)).isEqualTo(new SemanticTokenData(0, 6, "keyword", new String[0])); // SELECT
+		assertThat(tokens.get(1)).isEqualTo(new SemanticTokenData(7, 8, "operator", new String[0])); // *
+		assertThat(tokens.get(2)).isEqualTo(new SemanticTokenData(9, 13, "keyword", new String[0])); // FROM
+		assertThat(tokens.get(3)).isEqualTo(new SemanticTokenData(14, 24, "variable", new String[0])); // some_table
+		assertThat(tokens.get(4)).isEqualTo(new SemanticTokenData(25, 30, "keyword", new String[0])); // WHERE
+		assertThat(tokens.get(5)).isEqualTo(new SemanticTokenData(31, 42, "variable", new String[0])); // jsonb_field
+		assertThat(tokens.get(6)).isEqualTo(new SemanticTokenData(43, 44, "operator", new String[0])); // ?
+		assertThat(tokens.get(7)).isEqualTo(new SemanticTokenData(45, 55, "string", new String[0])); // 'some_key'
+	}
+
+	
 }

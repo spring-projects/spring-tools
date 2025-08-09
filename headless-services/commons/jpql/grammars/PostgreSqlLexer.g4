@@ -127,6 +127,18 @@ TYPECAST: '::';
 PERCENT: '%';
 
 PARAM: '$' ([0-9])+;
+
+// JSON/JSONB operators
+JSON_EXTRACT: '->';
+JSON_EXTRACT_TEXT: '->>';
+JSON_PATH_EXTRACT: '#>';
+JSON_PATH_EXTRACT_TEXT: '#>>';
+JSONB_CONTAINS: '@>';
+JSONB_CONTAINED: '<@';
+JSONB_DELETE_PATH: '#-';
+JSONB_EXISTS_ANY: '?|';
+JSONB_EXISTS_ALL: '?&';
+
 //
 
 // OPERATORS (4.1.3)
@@ -144,7 +156,7 @@ Operator:
         )+
         | // special handling for the single-character operators + and -
         [+-]
-        | ('?#' | '?-' | '?-|' | '?|' | '?||' | '<?>')
+        | ('?#' | '?-' | '?-|' | '?||' | '<?>')
     )
     //TODO somehow rewrite this part without using Actions
     {

@@ -2115,6 +2115,16 @@ oper_argtypes
 
 any_operator
     : (colid DOT)* all_op
+    | JSON_EXTRACT
+    | JSON_EXTRACT_TEXT
+    | JSON_PATH_EXTRACT
+    | JSON_PATH_EXTRACT_TEXT
+    | JSONB_CONTAINS
+    | JSONB_CONTAINED
+    | JSONB_DELETE_PATH
+    | JSONB_EXISTS_ANY
+    | JSONB_EXISTS_ALL
+    | QUESTION
     ;
 
 operator_with_argtypes_list
@@ -3953,6 +3963,16 @@ mathop
 qual_op
     : Operator
     | OPERATOR OPEN_PAREN any_operator CLOSE_PAREN
+    | JSON_EXTRACT
+    | JSON_EXTRACT_TEXT
+    | JSON_PATH_EXTRACT
+    | JSON_PATH_EXTRACT_TEXT
+    | JSONB_CONTAINS
+    | JSONB_CONTAINED
+    | JSONB_DELETE_PATH
+    | JSONB_EXISTS_ANY
+    | JSONB_EXISTS_ALL
+    | QUESTION
     ;
 
 qual_all_op

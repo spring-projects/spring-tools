@@ -23,8 +23,8 @@ export async function activateCopilotFeatures(context: ExtensionContext): Promis
 }
 
 async function configureGenAi() {
-    if (isCursor) {
-        updateConfigurationForCursor();
+    if (isCursor() || isWindSurf()) {
+        await updateConfiguration(true)
     } else {
         await ensureExtensionInstalledAndActivated();
         await updateConfigurationBasedOnCopilotAccess();
@@ -33,6 +33,10 @@ async function configureGenAi() {
 
 function isCursor() {
     return env.appName === 'Cursor';
+}
+
+function isWindSurf() {
+    return env.appName === 'Windsurf';
 }
 
 async function ensureExtensionInstalledAndActivated() {
@@ -82,10 +86,6 @@ async function updateConfigurationBasedOnCopilotAccess() {
     } else {
         await updateConfiguration(true);
     }
-}
-
-async function updateConfigurationForCursor() {
-    await updateConfiguration(true)
 }
 
 async function updateConfiguration(value: boolean) {

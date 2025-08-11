@@ -90,7 +90,7 @@ public class DataRepositoryAotMetadataCodeLensProviderMongoDbTest {
 		List<CodeLens> cls = editor.getCodeLenses("findUserByLastnameLikeOrderByFirstname", 1);
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
 		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
-		assertEquals("filter = \"{\"lastname\": /\\Q?0\\E/}\", sort = \"{\"firstname\": 1}\"", cls.get(2).getCommand().getTitle());
+		assertEquals("filter = \"{\"lastname\": ?0}\", sort = \"{\"firstname\": 1}\"", cls.get(2).getCommand().getTitle());
 	}
 
 	@Test

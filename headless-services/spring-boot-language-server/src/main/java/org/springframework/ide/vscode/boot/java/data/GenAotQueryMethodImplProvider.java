@@ -102,7 +102,7 @@ public class GenAotQueryMethodImplProvider implements IJavaLocationLinksProvider
 	}
 	
 	private List<LocationLink> findImplLocations(IJavaProject project, GoToImplParams implParams) {
-		String genRepoFqn = implParams.repoFqName() + "Impl__Aot";
+		String genRepoFqn = implParams.repoFqName() + "Impl__AotRepository";
 		Path relativeGenSourcePath = Paths.get("%s.java".formatted(genRepoFqn.replace('.', '/')));
 		List<LocationLink> defs = findInSourceFolder(project, relativeGenSourcePath, genRepoFqn, implParams);
 		return defs.isEmpty() ? findInBuildFolder(project, relativeGenSourcePath, genRepoFqn, implParams) : defs;
@@ -149,7 +149,9 @@ public class GenAotQueryMethodImplProvider implements IJavaLocationLinksProvider
 	private List<LocationLink> findInSourceFolder(IJavaProject project, Path relativeGenSourcePath, String genRepoFqn, GoToImplParams params) {
 		for (File f : IClasspathUtil.getSourceFolders(project.getClasspath()).collect(Collectors.toSet())) {
 			Path genRepoSourcePath = f.toPath().resolve(relativeGenSourcePath);
-			return getLocationInGenFile(project, genRepoSourcePath, genRepoFqn, params);
+			if (Files.exists(relativeGenSourcePath)) {
+				return getLocationInGenFile(project, genRepoSourcePath, genRepoFqn, params);
+			}
 		}
 		return List.of();
 	}

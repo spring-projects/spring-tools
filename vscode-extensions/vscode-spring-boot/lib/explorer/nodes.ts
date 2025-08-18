@@ -1,5 +1,6 @@
-import { ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
-import { Location, Range } from "vscode-languageclient";
+import { TextDocumentShowOptions, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
+import { Location, Position, Range } from "vscode-languageclient";
+import { LsStereoTypedNode } from "./structure-tree-manager";
 
 export class SpringNode {
     constructor(readonly children: SpringNode[]) {}
@@ -219,4 +220,47 @@ export interface AnnotationMetadata {
 export interface AnnotationAttributeValue {
     readonly name: string;
     readonly location: Location;
+}
+
+export class StereotypedNode extends SpringNode {
+    constructor(private n: LsStereoTypedNode, children: SpringNode[]) {
+        super(children);
+    }
+    getTreeItem(): TreeItem {
+        const item = super.getTreeItem();
+        item.label = this.n.attributes.text;
+        item.iconPath = this.computeIcon();
+        if (this.n.attributes.location) {
+            const location = this.n.attributes.location as Location;
+            // Hard-coded range. Not present... likely not serialized correctly.
+            const range = {
+                start: {line: 0, character: 0},
+                end: {line: 0, character: 0}
+            }
+            // item.command = {
+            //     command: "vscode.open",
+            //     title: "Navigate",
+            //     arguments: [location.uri, {
+            //         selection: /*location.range*/range
+            //     } as TextDocumentShowOptions]
+            // };
+        }
+        return item;
+    }
+
+    computeIcon() {
+        switch (this.n.attributes.icon) {
+            case "fa-named-interface": // specify the case
+                return new ThemeIcon("symbol-interface");
+            case "fa-package":
+                return new ThemeIcon("package");
+            case "fa-stereotype":
+                return new ThemeIcon("symbol-class");
+            case "fa-application":
+                return new ThemeIcon("folder");    
+            default:
+                return new ThemeIcon("symbol-object");
+        }
+    }
+
 }

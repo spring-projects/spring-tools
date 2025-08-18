@@ -1,7 +1,7 @@
 import { commands, EventEmitter, Event, Uri } from "vscode";
-import { AotProcessorNode, BeanMethodContainerNode, BeanNode, BeanRegistrarNode, ConfigPropertyNode, DocumentNode, EventListenerNode, EventPublisherNode, ProjectNode, QueryMethodNode, RequestMappingNode, SpringNode, WebfluxRoutesNode } from "./nodes";
+import { AotProcessorNode, BeanMethodContainerNode, BeanNode, BeanRegistrarNode, ConfigPropertyNode, DocumentNode, EventListenerNode, EventPublisherNode, ProjectNode, QueryMethodNode, RequestMappingNode, SpringNode, StereotypedNode, WebfluxRoutesNode } from "./nodes";
 
-const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
+const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure2";
 
 export class StructureManager {
 
@@ -19,6 +19,8 @@ export class StructureManager {
             return nodes;
         });
     }
+
+
 
     private parseNode(json: any): SpringNode | undefined {
         if (typeof (json._internal_node_type) === 'string') {
@@ -110,6 +112,9 @@ export class StructureManager {
                         json.ranges
                     );
             }
+        } else {
+            // parse stereotype nodes
+            return new StereotypedNode(json as LsStereoTypedNode, this.parseArray(json.children));
         }
     }
 
@@ -121,4 +126,9 @@ export class StructureManager {
         return this._onDidChange.event;
     }
 
+}
+
+export interface LsStereoTypedNode {
+    readonly attributes: Record<string, any>;
+    readonly children: LsStereoTypedNode[];
 }

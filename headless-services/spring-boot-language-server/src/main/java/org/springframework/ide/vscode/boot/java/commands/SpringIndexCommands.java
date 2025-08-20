@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -21,12 +22,14 @@ import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvider;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
+import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
@@ -85,9 +88,40 @@ public class SpringIndexCommands {
 				.withGrouper("org.jmolecules.architecture")
 				.withGrouper("org.jmolecules.ddd", "org.jmolecules.event", "spring", "jpa", "java");
 		
-		jsonTree.process(new StereotypePackageElement(project.getElementName(), null));
+		jsonTree.process(identifyMainApplicationPackage(project, springIndex));
 
 		return jsonHandler.getRoot();
+	}
+	
+	public StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, SpringMetamodelIndex springIndex) {
+		List<StereotypeClassElement> classNodes = springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class);
+		
+		StereotypePackageElement packageElement = classNodes.stream()
+			.filter(node -> node.getAnnotationTypes().contains(Annotations.BOOT_APP))
+			.map(node -> getPackage(node.getType()))
+			.map(packageName -> findPackageNode(packageName, project, springIndex))
+			.findFirst().get();
+		
+		return packageElement;
+	}
+	
+	private String getPackage(String fullyQualifiedClassName) {
+		return ModulithService.getPackageNameFromTypeFQName(fullyQualifiedClassName);
+	}
+	
+	private StereotypePackageElement findPackageNode(String packageName, IJavaProject project, SpringMetamodelIndex springIndex) {
+		List<StereotypePackageElement> packageNodes = springIndex.getNodesOfType(project.getElementName(), StereotypePackageElement.class);
+
+		Optional<StereotypePackageElement> found = packageNodes.stream()
+			.filter(packageNode -> packageNode.getPackageName().equals(packageName))
+			.findAny();
+		
+		if (found.isPresent()) {
+			return found.get();
+		}
+		else {
+			return new StereotypePackageElement(packageName, null);
+		}
 	}
 	
 }

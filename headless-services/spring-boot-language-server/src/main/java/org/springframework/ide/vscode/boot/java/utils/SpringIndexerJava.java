@@ -93,7 +93,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	// whenever the implementation of the indexer changes in a way that the stored data in the cache is no longer valid,
 	// we need to change the generation - this will result in a re-indexing due to no up-to-date cache data being found
-	private static final String GENERATION = "GEN-22";
+	private static final String GENERATION = "GEN-23";
 	private static final String INDEX_FILES_TASK_ID = "index-java-source-files-task-";
 
 	private static final String SYMBOL_KEY = "symbols";

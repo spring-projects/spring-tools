@@ -26,7 +26,9 @@ import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,7 @@ import org.springframework.ide.vscode.boot.java.beans.CachedBean;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
+import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 import com.google.common.collect.Streams;
@@ -68,8 +71,7 @@ public class StereotypesIndexer implements SymbolProvider {
 	
 	@Override
 	public void addSymbols(MethodDeclaration methodDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		// TODO Auto-generated method stub
-		SymbolProvider.super.addSymbols(methodDeclaration, context, doc);
+		// TODO
 	}
 	
 	@Override
@@ -98,6 +100,15 @@ public class StereotypesIndexer implements SymbolProvider {
 
 	@Override
 	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+		try {
+			createStereotypeElementForType(typeDeclaration, context, doc);
+		}
+		catch (BadLocationException e) {
+			log.error("error identifying location of type declaration", e);
+		}
+	}
+	
+	private void createStereotypeElementForType(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
 		if (typeBinding == null) {
 			return;
@@ -141,10 +152,11 @@ public class StereotypesIndexer implements SymbolProvider {
 				.map(binding -> binding.getAnnotationType().getQualifiedName())
 				.toList();
 
-		context.getBeans().add(new CachedBean(context.getDocURI(), new StereotypeClassElement(qualifiedName, supertypes, annotationTypes)));
+		SimpleName astNodeForLocation = typeDeclaration.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
 		
-		
-//		}
+		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes);
+		context.getBeans().add(new CachedBean(context.getDocURI(), indexElement));
 	}
 	
 	private boolean isStereotype(TypeDeclaration typeDeclaration, ITypeBinding binding) {

@@ -13,22 +13,30 @@ package org.springframework.ide.vscode.boot.java.stereotypes;
 import java.util.List;
 import java.util.Set;
 
+import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
 
 public class StereotypeClassElement extends AbstractSpringIndexElement implements StereotypeAnnotatedElement {
 	
 	private final String type;
+	private final Location location;
+	
 	private final Set<String> supertypes;
 	private List<String> annotationTypes;
 	
-	public StereotypeClassElement(String type, Set<String> supertypes, List<String> annotationTypes) {
+	public StereotypeClassElement(String type, Location location, Set<String> supertypes, List<String> annotationTypes) {
 		this.type = type;
+		this.location = location;
 		this.supertypes = supertypes;
 		this.annotationTypes = annotationTypes;
 	}
 	
 	public String getType() {
 		return type;
+	}
+	
+	public Location getLocation() {
+		return location;
 	}
 
 	public boolean doesImplement(String fqn) {

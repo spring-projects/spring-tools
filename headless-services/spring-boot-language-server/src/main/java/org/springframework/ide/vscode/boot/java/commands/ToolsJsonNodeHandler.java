@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.Range;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
@@ -41,7 +39,7 @@ import com.google.gson.GsonBuilder;
  * @author Oliver Drotbohm
  * @author Martin Lippert
  */
-class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, Object> {
+public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, Object> {
 
 	public static final String ICON = "icon";
 	public static final String TEXT = "text";
@@ -58,10 +56,6 @@ class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, Ster
 		this.current = root;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.stereotype.tooling.NodeHandler#handleApplication(java.lang.Object)
-	 */
 	@Override
 	public void handleApplication(StereotypePackageElement application) {
 		this.root
@@ -69,10 +63,6 @@ class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, Ster
 			.withAttribute(ICON, "fa-application");
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.stereotype.tooling.NodeHandler#handlePackage(java.lang.Object, org.jmolecules.stereotype.tooling.NodeContext)
-	 */
 	@Override
 	public void handlePackage(StereotypePackageElement pkg, NodeContext context) {
 
@@ -81,10 +71,6 @@ class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, Ster
 				.withAttribute(TEXT, labels.getPackageLabel(pkg)));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.stereotype.tooling.NodeHandler#handleStereotype(org.jmolecules.stereotype.api.Stereotype, org.jmolecules.stereotype.tooling.NestingLevel)
-	 */
 	@Override
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
 
@@ -92,15 +78,11 @@ class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, Ster
 				.withAttribute(TEXT, labels.getSterotypeLabel(stereotype)));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.stereotype.tooling.NodeHandler#handleType(java.lang.Object, org.jmolecules.stereotype.tooling.NestingLevel)
-	 */
 	@Override
 	public void handleType(StereotypeClassElement type, NodeContext context) {
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getTypeLabel(type))
-			.withAttribute("location", new Location("sampleUri", new Range()))
+			.withAttribute("location", type.getLocation())
 		);
 	}
 
@@ -108,28 +90,16 @@ class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, Ster
 		return new Node(this.current);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.stereotype.tooling.NodeHandler#handleMethod(java.lang.Object, org.jmolecules.stereotype.tooling.NestingLevel, boolean)
-	 */
 	@Override
 	public void handleMethod(StereotypeMethodElement method, MethodNodeContext<StereotypeClassElement> context) {
 		addChildFoo(node -> node.withAttribute("title", labels.getMethodLabel(method, context.getContextualType())));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.stereotype.tooling.NodeHandler#handleCustom(java.lang.Object, org.jmolecules.stereotype.tooling.NodeContext)
-	 */
 	@Override
 	public void handleCustom(Object custom, NodeContext context) {
 		addChild(node -> customHandler.accept(node, custom));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.jmolecules.stereotype.tooling.NodeHandler#postGroup()
-	 */
 	@Override
 	public void postGroup() {
 		this.current = this.current.parent;

@@ -16,8 +16,6 @@
 
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
-import net.minidev.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,13 +23,13 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.Range;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
 import org.jmolecules.stereotype.tooling.NodeContext;
 import org.jmolecules.stereotype.tooling.NodeHandler;
+
+import net.minidev.json.JSONObject;
 
 /**
  * @author Oliver Drotbohm
@@ -94,7 +92,7 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 	public void handleType(StereotypeClassElement type, NodeContext context) {
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getTypeLabel(type))
-			.withAttribute("location", new Location("sampleUri", new Range()))
+			.withAttribute("location", type.getLocation())
 		);
 	}
 

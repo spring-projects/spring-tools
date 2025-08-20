@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
 import java.util.Collection;
@@ -21,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
+import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition;
@@ -80,6 +82,31 @@ public class StereotypesIndexerTest {
     	List<StereotypeClassElement> stereotypeNodes = springIndex.getNodesOfType(StereotypeClassElement.class);
     	
 //    	assertEquals(1, stereotypeNodes.size());
+    }
+    
+    @Test
+    void testPackageElement() throws Exception {
+    	List<StereotypePackageElement> packages = springIndex.getNodesOfType(StereotypePackageElement.class);
+    	assertEquals(2, packages.size()); // package nodes are created for package declarations in package-info.java files only
+    }
+    
+    @Test
+    void testLocationInformationForTypeElement() throws Exception {
+		String docUri = directory.toPath().resolve("src/main/java/example/application/SampleController.java").toUri().toString();
+    	
+    	StereotypeClassElement element = springIndex.getNodesOfType(StereotypeClassElement.class).stream()
+    			.filter(node -> node.getType().equals("example.application.SampleController"))
+    			.findFirst()
+    			.get();
+    	
+    	assertNotNull(element);
+    	assertEquals("example.application.SampleController", element.getType());
+    	
+    	Location location = element.getLocation();
+    	assertNotNull(location);
+    	assertEquals(docUri, location.getUri());
+    	assertEquals(7, location.getRange().getStart().getLine());
+    	assertEquals(7, location.getRange().getEnd().getLine());
     }
     
 	@Test

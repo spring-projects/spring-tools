@@ -233,17 +233,13 @@ export class StereotypedNode extends SpringNode {
         if (this.n.attributes.location) {
             const location = this.n.attributes.location as Location;
             // Hard-coded range. Not present... likely not serialized correctly.
-            const range = {
-                start: {line: 0, character: 0},
-                end: {line: 0, character: 0}
-            }
-            // item.command = {
-            //     command: "vscode.open",
-            //     title: "Navigate",
-            //     arguments: [location.uri, {
-            //         selection: /*location.range*/range
-            //     } as TextDocumentShowOptions]
-            // };
+            item.command = {
+                command: "vscode.open",
+                title: "Navigate",
+                arguments: [location.uri, {
+                    selection: location.range
+                } as TextDocumentShowOptions]
+            };
         }
         return item;
     }

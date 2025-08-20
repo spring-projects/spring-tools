@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -40,7 +41,8 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
-import org.springframework.ide.vscode.boot.java.stereotypes.ToolsJsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler;
+import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler.Node;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -80,8 +82,7 @@ public class StereotypesIndexerTest {
     @Test
     void testStuff() throws Exception {
     	List<StereotypeClassElement> stereotypeNodes = springIndex.getNodesOfType(StereotypeClassElement.class);
-    	
-//    	assertEquals(1, stereotypeNodes.size());
+    	assertFalse(stereotypeNodes.isEmpty());
     }
     
     @Test

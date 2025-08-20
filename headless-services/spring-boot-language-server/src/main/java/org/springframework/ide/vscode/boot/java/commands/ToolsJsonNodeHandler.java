@@ -129,7 +129,7 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 		return root;
 	}
 
-	static class Node {
+	public static class Node {
 
 		transient final Node parent;
 		final Map<String, Object> attributes;

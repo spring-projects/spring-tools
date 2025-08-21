@@ -96,13 +96,18 @@ public class SpringIndexCommands {
 	public StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, SpringMetamodelIndex springIndex) {
 		List<StereotypeClassElement> classNodes = springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class);
 		
-		StereotypePackageElement packageElement = classNodes.stream()
+		Optional<StereotypePackageElement> packageElement = classNodes.stream()
 			.filter(node -> node.getAnnotationTypes().contains(Annotations.BOOT_APP))
 			.map(node -> getPackage(node.getType()))
 			.map(packageName -> findPackageNode(packageName, project, springIndex))
-			.findFirst().get();
+			.findFirst();
 		
-		return packageElement;
+		if (packageElement.isPresent()) {
+			return packageElement.get();
+		}
+		else {
+			return new StereotypePackageElement("", null);
+		}
 	}
 	
 	private String getPackage(String fullyQualifiedClassName) {

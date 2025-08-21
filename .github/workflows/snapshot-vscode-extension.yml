@@ -37,6 +37,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: version
+        run: |
+          cd ${{ github.workspace }}/vscode-extensions/${{ inputs.extension-name }}
+          version=$(npm pkg get version)
+          cd ${{ github.workspace }}
+          echo $version
+          echo "version=$version" >> $GITHUB_OUTPUT
       - name: Build .VSIX file
         id: build-vsix
         env:
@@ -51,17 +58,17 @@ jobs:
           echo "VSIX file to upload ${vsix_file}"
           s3_path=snapshot/vscode-extensions/${{ inputs.extension-name }}
           echo "S3 path: ${s3_path}"
-          aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive
+          aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive --exclude "*" --include "${{ inputs.extension-name }}-${{ steps.version.outputs.version }}*.vsix"
           aws s3 cp ./vsix/$vsix_file s3://$AWS_S3_BUCKET/$s3_path/$vsix_file --no-progress --checksum-algorithm CRC32
       - name: Update Nightly Builds download page
         run: |
           downloads_html="vscode-extensions-snippet.html"
           echo '<ul>' >> $downloads_html
-          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-spring-boot "Spring Boot Tools" $DOWNLOAD_URL_ROOT` >> $downloads_html
-          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-concourse "Concourse Editor" $DOWNLOAD_URL_ROOT` >> $downloads_html
-          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-bosh "Bosh Editor" $DOWNLOAD_URL_ROOT` >> $downloads_html
-          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-manifest-yaml "CF Manifest Editor" $DOWNLOAD_URL_ROOT` >> $downloads_html
-          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-spring-cli "Spring CLI" $DOWNLOAD_URL_ROOT` >> $downloads_html
+          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-spring-boot "Spring Boot Tools" $DOWNLOAD_URL_ROOT ${{ steps.version.outputs.version }}` >> $downloads_html
+          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-concourse "Concourse Editor" $DOWNLOAD_URL_ROOT ${{ steps.version.outputs.version }}` >> $downloads_html
+          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-bosh "Bosh Editor" $DOWNLOAD_URL_ROOT ${{ steps.version.outputs.version }}` >> $downloads_html
+          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-manifest-yaml "CF Manifest Editor" $DOWNLOAD_URL_ROOT ${{ steps.version.outputs.version }}` >> $downloads_html
+          echo `${{ github.workspace }}/.github/scripts/gen-vscode-link-bullet.sh vscode-spring-cli "Spring CLI" $DOWNLOAD_URL_ROOT ${{ steps.version.outputs.version }}` >> $downloads_html
           echo '</ul>' >> $downloads_html
           cat ./$downloads_html
           aws s3 mv ./$downloads_html s3://$AWS_S3_BUCKET/snapshot/STS4/vscode-extensions/ --no-progress --checksum-algorithm CRC32

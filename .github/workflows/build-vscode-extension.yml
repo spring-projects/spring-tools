@@ -55,7 +55,7 @@ jobs:
           echo "VSIX file to upload ${vsix_file}"
           s3_path=${{ inputs.dist }}/vscode-extensions/${{ inputs.extension-name }}/$base_version
           echo "S3 path: ${s3_path}"
-          aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive
+          aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive --exclude "*" --include "${{ inputs.extension-name }}-${base_version}*.vsix"
           aws s3 cp ./vsix/$vsix_file s3://$AWS_S3_BUCKET/$s3_path/$vsix_file --no-progress
           echo "version=$base_version" >> $GITHUB_OUTPUT
           echo "s3_url=${DOWNLOAD_URL_ROOT}/$s3_path/$vsix_file" >> $GITHUB_OUTPUT

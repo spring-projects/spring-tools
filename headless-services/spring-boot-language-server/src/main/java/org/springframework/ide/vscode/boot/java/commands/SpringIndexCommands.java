@@ -59,7 +59,7 @@ public class SpringIndexCommands {
 
 			@Override
 			public Collection<StereotypePackageElement> extractPackages(StereotypePackageElement pkg) {
-				return springIndex.getNodesOfType(project.getElementName(), StereotypePackageElement.class);
+				return List.of(pkg);
 			}
 
 			@Override

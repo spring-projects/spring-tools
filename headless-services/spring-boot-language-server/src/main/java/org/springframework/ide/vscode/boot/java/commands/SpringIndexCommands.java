@@ -18,6 +18,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
+import org.jmolecules.stereotype.tooling.LabelUtils;
 import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvider;
@@ -51,8 +52,11 @@ public class SpringIndexCommands {
 		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
 		factory.registerStereotypeDefinitions();
 
-		var labels = SimpleLabelProvider.forPackage(StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
-				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString);
+		StereotypePackageElement mainApplicationPackage = identifyMainApplicationPackage(project, springIndex);
+		
+		var labels = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
+				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString)
+				.withTypeLabel(it -> abbreviate(mainApplicationPackage, it));
 
 		SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> structureProvider =
 				new SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement>() {
@@ -88,9 +92,18 @@ public class SpringIndexCommands {
 				.withGrouper("org.jmolecules.architecture")
 				.withGrouper("org.jmolecules.ddd", "org.jmolecules.event", "spring", "jpa", "java");
 		
-		jsonTree.process(identifyMainApplicationPackage(project, springIndex));
+		jsonTree.process(mainApplicationPackage);
 
 		return jsonHandler.getRoot();
+	}
+
+	private String abbreviate(StereotypePackageElement mainApplicationPackage, StereotypeClassElement it) {
+		if (mainApplicationPackage == null || mainApplicationPackage.getPackageName() == null || mainApplicationPackage.getPackageName().isBlank()) {
+			return it.getType();
+		}
+		else {
+			return LabelUtils.abbreviate(it.getType(), mainApplicationPackage.getPackageName());
+		}
 	}
 	
 	public StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, SpringMetamodelIndex springIndex) {

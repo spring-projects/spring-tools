@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
@@ -26,6 +27,7 @@ import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
@@ -75,6 +77,16 @@ public class StereotypesIndexer implements SymbolProvider {
 	}
 	
 	@Override
+	public void addSymbols(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+		try {
+			createStereotypeElementForType(recordDeclaration, context, doc);
+		}
+		catch (BadLocationException e) {
+			log.error("error identifying location of type declaration", e);
+		}
+	}
+	
+	@Override
 	public void addSymbols(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
 		if (!context.getDocURI().endsWith("package-info.java")) {
 			return;
@@ -108,14 +120,14 @@ public class StereotypesIndexer implements SymbolProvider {
 		}
 	}
 	
-	private void createStereotypeElementForType(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
+	private void createStereotypeElementForType(AbstractTypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
 		if (typeBinding == null) {
 			return;
 		}
 		
 		// identify stereotype definitions themselves
-		if (typeDeclaration.isInterface()) {
+		if (typeDeclaration instanceof TypeDeclaration && ((TypeDeclaration) typeDeclaration).isInterface()) {
 			Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
 			boolean isStereotypeAnnotated = annotations.stream()
 				.anyMatch(annotation -> annotation.resolveTypeBinding().getQualifiedName().equals(Annotations.JMOLECULES_STEREOTYPE));

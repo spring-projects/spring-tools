@@ -109,6 +109,27 @@ public class StereotypesIndexerTest {
     }
     
     @Test
+    void testInnerRecordElements() throws Exception {
+    	List<StereotypeClassElement> stereotypeNodes = springIndex.getNodesOfType(StereotypeClassElement.class);
+    	
+    	List<String> list = stereotypeNodes.stream()
+    		.filter(node -> node.getType().startsWith("example.application.ClassWithInnerRecordImplementingInterface"))
+    		.map(node -> node.getType())
+    		.toList();
+    	
+    	assertEquals(2, list.size());
+    	assertTrue(list.contains("example.application.ClassWithInnerRecordImplementingInterface"));
+    	assertTrue(list.contains("example.application.ClassWithInnerRecordImplementingInterface$InnerRecord"));
+    	
+    	StereotypeClassElement recordElement = stereotypeNodes.stream()
+        		.filter(node -> node.getType().startsWith("example.application.ClassWithInnerRecordImplementingInterface$InnerRecord"))
+        		.findAny().get();
+    	
+    	assertNotNull(recordElement);
+    	assertTrue(recordElement.doesImplement("example.application.RandomInterface"));
+    }
+    
+    @Test
     void testLocationInformationForTypeElement() throws Exception {
 		String docUri = directory.toPath().resolve("src/main/java/example/application/SampleController.java").toUri().toString();
     	

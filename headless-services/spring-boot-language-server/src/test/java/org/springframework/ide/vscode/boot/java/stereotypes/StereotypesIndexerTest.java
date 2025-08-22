@@ -94,6 +94,21 @@ public class StereotypesIndexerTest {
     }
     
     @Test
+    void testInnerClassElements() throws Exception {
+    	List<StereotypeClassElement> stereotypeNodes = springIndex.getNodesOfType(StereotypeClassElement.class);
+    	
+    	List<String> list = stereotypeNodes.stream()
+    		.filter(node -> node.getType().startsWith("example.application.TypeWithInnerClass"))
+    		.map(node -> node.getType())
+    		.toList();
+    	
+    	assertEquals(3, list.size());
+    	assertTrue(list.contains("example.application.TypeWithInnerClass"));
+    	assertTrue(list.contains("example.application.TypeWithInnerClass$InnerClass"));
+    	assertTrue(list.contains("example.application.TypeWithInnerClass$InnerClass$InnerClassInInnerClass"));
+    }
+    
+    @Test
     void testLocationInformationForTypeElement() throws Exception {
 		String docUri = directory.toPath().resolve("src/main/java/example/application/SampleController.java").toUri().toString();
     	

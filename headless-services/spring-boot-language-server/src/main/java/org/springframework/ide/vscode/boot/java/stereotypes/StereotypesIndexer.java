@@ -129,7 +129,7 @@ public class StereotypesIndexer implements SymbolProvider {
 		// capture type information element for later tree generation
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
 		
-		String qualifiedName = typeBinding.getQualifiedName();
+		String qualifiedName = typeBinding.getBinaryName();
 		Set<String> supertypes = ASTUtils.findSupertypes(typeBinding);
 		
 		List<IAnnotationBinding> superTypeAnnotations = new ArrayList<>();

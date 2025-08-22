@@ -38,6 +38,7 @@ jobs:
         with:
           node-version: 22
       - name: version
+        id: version
         run: |
           cd ${{ github.workspace }}/vscode-extensions/${{ inputs.extension-name }}
           version=$(npm pkg get version)

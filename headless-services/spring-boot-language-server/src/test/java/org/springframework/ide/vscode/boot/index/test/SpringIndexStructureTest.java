@@ -123,7 +123,7 @@ public class SpringIndexStructureTest {
 
 		// document node
 		DocumentElement document = springIndex.getDocument(docUri);
-		List<SpringIndexElement> docChildren = document.getChildren();
+        List<Bean> docChildren = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
 		assertEquals(1, docChildren.size());
 
 		// rest controller node

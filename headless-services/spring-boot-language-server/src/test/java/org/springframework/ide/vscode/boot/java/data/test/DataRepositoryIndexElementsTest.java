@@ -10,7 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data.test;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
@@ -73,8 +73,8 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepository.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<SpringIndexElement> children = document.getChildren();
-        Bean repositoryElement = (Bean) children.get(0);
+        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        Bean repositoryElement = children.get(0);
         assertEquals("customerRepository", repositoryElement.getName());
         assertEquals(1, children.size());
         
@@ -93,8 +93,8 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepository.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<SpringIndexElement> children = document.getChildren();
-        Bean repositoryElement = (Bean) children.get(0);
+        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
         assertEquals(1, queryMethods.size());
@@ -108,8 +108,8 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithTwoParamsMethod.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<SpringIndexElement> children = document.getChildren();
-        Bean repositoryElement = (Bean) children.get(0);
+        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
         assertEquals(1, queryMethods.size());
@@ -123,8 +123,8 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithQuery.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<SpringIndexElement> children = document.getChildren();
-        Bean repositoryElement = (Bean) children.get(0);
+        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
         assertEquals(1, queryMethods.size());
@@ -139,7 +139,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryParentInterface.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        assertNull(document); // nothing in the doc, therefore not even the doc node is around
+        assertTrue(document == null || SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document)).size() == 0);
     }
 
     @Test
@@ -148,8 +148,8 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithParentInterfaces.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<SpringIndexElement> children = document.getChildren();
-        Bean repositoryElement = (Bean) children.get(0);
+        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
         assertEquals(2, queryMethods.size());

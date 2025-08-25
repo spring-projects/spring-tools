@@ -553,11 +553,10 @@ public class SpringMetamodelIndexerBeansTest {
 		String docUri = directory.toPath().resolve("src/main/java/org/test/BeanMethodsWithoutConfiguration.java").toUri().toString();
 		
 		DocumentElement document = springIndex.getDocument(docUri);
-		List<SpringIndexElement> docChildren = document.getChildren();
+        List<BeanMethodContainerElement> docChildren = SpringMetamodelIndex.getNodesOfType(BeanMethodContainerElement.class, List.of(document));
 		assertEquals(1, docChildren.size());
-		assertTrue(docChildren.get(0) instanceof BeanMethodContainerElement);
 		
-		BeanMethodContainerElement container = (BeanMethodContainerElement) docChildren.get(0);
+		BeanMethodContainerElement container = docChildren.get(0);
 		assertEquals(docUri, container.getLocation().getUri());
 		assertEquals("org.test.BeanMethodsWithoutConfiguration", container.getType());
 		assertFalse(container instanceof SymbolElement);

@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.TreeSet;
 
@@ -67,7 +66,7 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 
 	@Override
 	public Stereotypes fromMethod(StereotypeMethodElement method) {
-		return new Stereotypes(List.of());
+		return new Stereotypes(fromAnnotatedElement(method));
 	}
 	
 	private <T extends StereotypeAnnotatedElement> Collection<Stereotype> fromAnnotatedElement(StereotypeAnnotatedElement element) {

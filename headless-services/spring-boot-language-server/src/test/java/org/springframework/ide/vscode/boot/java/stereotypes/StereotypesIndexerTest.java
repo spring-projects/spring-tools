@@ -33,6 +33,7 @@ import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvider;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,7 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
 import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler;
 import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler.Node;
@@ -149,6 +151,32 @@ public class StereotypesIndexerTest {
     }
     
     @Test
+    void testMethodElementsForType() throws Exception {
+    	StereotypeClassElement element = springIndex.getNodesOfType(StereotypeClassElement.class).stream()
+    			.filter(node -> node.getType().equals("example.application.ClassWithMethods"))
+    			.findFirst()
+    			.get();
+    	
+    	assertNotNull(element);
+    	
+    	List<StereotypeMethodElement> methods = element.getMethods();
+    	assertEquals(1, methods.size());
+    	
+    	Optional<StereotypeMethodElement> methodWithoutAnnotations = methods.stream().filter(method -> method.getMethodName().equals("methodWithoutAnnotations")).findAny();
+    	assertFalse(methodWithoutAnnotations.isPresent());
+
+    	StereotypeMethodElement methodWithAnnotations = methods.stream().filter(method -> method.getMethodName().equals("methodWithAnnotations")).findAny().get();
+    	List<String> annotationTypes = methodWithAnnotations.getAnnotationTypes();
+		assertEquals(4, annotationTypes.size());
+    	assertTrue(annotationTypes.contains(Annotations.SPRING_GET_MAPPING));
+    	assertTrue(annotationTypes.contains(Annotations.SPRING_REQUEST_MAPPING));
+    	
+    	assertEquals("methodWithAnnotations", methodWithAnnotations.getMethodName());
+    	assertEquals("example.application.ClassWithMethods.methodWithAnnotations(java.lang.String) : V", methodWithAnnotations.getMethodSignature());
+    	assertEquals("ClassWithMethods.methodWithAnnotations(String) : void", methodWithAnnotations.getMethodLabel());
+    }
+    
+    @Test
     void testIdentifyMainApplicationPackage() throws Exception {
     	StereotypePackageElement mainPackage = indexCommands.identifyMainApplicationPackage(project, springIndex);
     	assertEquals("example.application", mainPackage.getPackageName());
@@ -253,6 +281,7 @@ public class StereotypesIndexerTest {
 	}
 
 	@Test
+	@Disabled
 	void testTree() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);

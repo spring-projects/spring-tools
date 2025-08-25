@@ -87,18 +87,21 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 		);
 	}
 
-	public Node createNested() {
-		return new Node(this.current);
-	}
-
 	@Override
 	public void handleMethod(StereotypeMethodElement method, MethodNodeContext<StereotypeClassElement> context) {
-		addChildFoo(node -> node.withAttribute("title", labels.getMethodLabel(method, context.getContextualType())));
+		addChildFoo(node -> node
+			.withAttribute(TEXT, labels.getMethodLabel(method, context.getContextualType()))
+			.withAttribute(LOCATION, method.getLocation())
+		);
 	}
 
 	@Override
 	public void handleCustom(Object custom, NodeContext context) {
 		addChild(node -> customHandler.accept(node, custom));
+	}
+
+	public Node createNested() {
+		return new Node(this.current);
 	}
 
 	@Override

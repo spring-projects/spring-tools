@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Location;
+import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
 
 public class StereotypeClassElement extends AbstractSpringIndexElement implements StereotypeAnnotatedElement {
@@ -51,6 +52,10 @@ public class StereotypeClassElement extends AbstractSpringIndexElement implement
 	@Override
 	public List<String> getAnnotationTypes() {
 		return annotationTypes;
+	}
+	
+	public List<StereotypeMethodElement> getMethods() {
+		return SpringMetamodelIndex.getNodesOfType(StereotypeMethodElement.class, List.of(this));
 	}
 
 }

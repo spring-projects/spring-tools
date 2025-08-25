@@ -10,18 +10,46 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
+import java.util.List;
+
+import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
 
-public class StereotypeMethodElement extends AbstractSpringIndexElement {
+public class StereotypeMethodElement extends AbstractSpringIndexElement implements StereotypeAnnotatedElement {
 	
 	private final String methodName;
+	private final String methodLabel;
+	private final String methodSignature;
 	
-	public StereotypeMethodElement(String methodName) {
+	private final Location location;
+	private List<String> annotationTypes;
+	
+	public StereotypeMethodElement(String methodName, String methodLabel, String methodSignature, Location location, List<String> annotationTypes) {
 		this.methodName = methodName;
+		this.methodLabel = methodLabel;
+		this.methodSignature = methodSignature;
+		this.location = location;
+		this.annotationTypes = annotationTypes;
 	}
 	
 	public String getMethodName() {
 		return methodName;
+	}
+	
+	public String getMethodLabel() {
+		return methodLabel;
+	}
+	
+	public String getMethodSignature() {
+		return methodSignature;
+	}
+
+	public Location getLocation() {
+		return location;
+	}
+	
+	public List<String> getAnnotationTypes() {
+		return annotationTypes;
 	}
 
 }

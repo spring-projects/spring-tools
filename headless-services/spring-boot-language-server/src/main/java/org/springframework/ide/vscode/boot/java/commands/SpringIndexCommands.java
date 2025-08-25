@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -21,7 +20,6 @@ import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.LabelUtils;
 import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
-import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvider;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler.Node;
@@ -54,38 +52,20 @@ public class SpringIndexCommands {
 
 		StereotypePackageElement mainApplicationPackage = identifyMainApplicationPackage(project, springIndex);
 		
-		var labels = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
+		var labelProvider = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
 				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString)
-				.withTypeLabel(it -> abbreviate(mainApplicationPackage, it));
+				.withTypeLabel(it -> abbreviate(mainApplicationPackage, it))
+				.withMethodLabel((m, c) -> getMethodLabel(m, c));
 
-		SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> structureProvider =
-				new SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement>() {
-
-			@Override
-			public Collection<StereotypePackageElement> extractPackages(StereotypePackageElement pkg) {
-				return List.of(pkg);
-			}
-
-			@Override
-			public Collection<StereotypeMethodElement> extractMethods(StereotypeClassElement type) {
-				return List.of();
-			}
-
-			@Override
-			public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
-				return springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class).stream()
-					.filter(element -> element.getType().startsWith(pkg.getPackageName()))
-					.toList();
-			}
-		};
+		var structureProvider = new ToolsStructureProvider(springIndex, project);
 		
 		// json output
 		BiConsumer<Node, Object> consumer = (node, c) -> {
-			node.withAttribute(HierarchicalNodeHandler.TEXT, labels.getCustomLabel(c))
+			node.withAttribute(HierarchicalNodeHandler.TEXT, labelProvider.getCustomLabel(c))
 			 .withAttribute("icon", "fa-named-interface");
 		};
 		
-		var jsonHandler = new ToolsJsonNodeHandler(labels, consumer);
+		var jsonHandler = new ToolsJsonNodeHandler(labelProvider, consumer);
 
 		var jsonTree = new ProjectTree<>(factory, catalog, jsonHandler)
 				.withStructureProvider(structureProvider)
@@ -104,6 +84,11 @@ public class SpringIndexCommands {
 		else {
 			return LabelUtils.abbreviate(it.getType(), mainApplicationPackage.getPackageName());
 		}
+	}
+	
+	private String getMethodLabel(StereotypeMethodElement method, StereotypeClassElement clazz) {
+		// TODO: special treatment for methods that have specific index elements with specific labels (e.g. mapping methods)
+		return method.getMethodLabel();
 	}
 	
 	public StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, SpringMetamodelIndex springIndex) {

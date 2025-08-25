@@ -72,11 +72,6 @@ public class StereotypesIndexer implements SymbolProvider {
 	}
 	
 	@Override
-	public void addSymbols(MethodDeclaration methodDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		// TODO
-	}
-	
-	@Override
 	public void addSymbols(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
 		try {
 			createStereotypeElementForType(recordDeclaration, context, doc);
@@ -153,6 +148,53 @@ public class StereotypesIndexer implements SymbolProvider {
 		}
 
 		Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
+		List<String> annotationTypes = getAnnotationTypes(annotationHierarchies, superTypeAnnotations, annotations);
+
+		SimpleName astNodeForLocation = typeDeclaration.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
+		
+		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes);
+		
+		indexMethods(indexElement, typeDeclaration, annotationHierarchies, doc);
+		
+		context.getBeans().add(new CachedBean(context.getDocURI(), indexElement));
+	}
+
+	private void indexMethods(StereotypeClassElement indexElement, AbstractTypeDeclaration typeDeclaration, AnnotationHierarchies annotationHierarchies, TextDocument doc) throws BadLocationException {
+		MethodDeclaration[] methods = null;
+		
+		if (typeDeclaration instanceof TypeDeclaration) {
+			methods = ((TypeDeclaration) typeDeclaration).getMethods();
+		}
+		else if (typeDeclaration instanceof RecordDeclaration) {
+			methods = ((RecordDeclaration) typeDeclaration).getMethods();
+		}
+		
+		if (methods == null) {
+			return;
+		}
+		
+		for (MethodDeclaration method : methods) {
+			String methodName = method.getName().getFullyQualifiedName();
+
+			Collection<Annotation> annotations = ASTUtils.getAnnotations(method);
+			List<String> annotationTypes = getAnnotationTypes(annotationHierarchies, List.of(), annotations);
+			
+			if (annotationTypes.size() > 0) { // only index annotated methods to avoid creating all those useless index elements for each and every method
+				SimpleName astNodeForLocation = method.getName();
+				Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
+				
+				String methodSignature = ASTUtils.getMethodSignature(method, true);
+				String methodLabel = ASTUtils.getMethodSignature(method, false);
+	
+				StereotypeMethodElement methodElement = new StereotypeMethodElement(methodName, methodLabel, methodSignature, location, annotationTypes);
+				indexElement.addChild(methodElement);
+			}
+		}
+	}
+
+	private List<String> getAnnotationTypes(AnnotationHierarchies annotationHierarchies,
+			List<IAnnotationBinding> superTypeAnnotations, Collection<Annotation> annotations) {
 		Stream<IAnnotationBinding> annotationBindings = annotations.stream()
 				.map(annotation -> annotation.resolveAnnotationBinding())
 				.filter(binding -> binding != null)
@@ -163,19 +205,8 @@ public class StereotypesIndexer implements SymbolProvider {
 				.distinct()
 				.map(binding -> binding.getAnnotationType().getQualifiedName())
 				.toList();
-
-		SimpleName astNodeForLocation = typeDeclaration.getName();
-		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
 		
-		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes);
-		context.getBeans().add(new CachedBean(context.getDocURI(), indexElement));
-	}
-	
-	private boolean isStereotype(TypeDeclaration typeDeclaration, ITypeBinding binding) {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
-		boolean isStereotype = annotationHierarchies.isAnnotatedWith(binding, Annotations.JMOLECULES_STEREOTYPE);
-		
-		return isStereotype;
+		return annotationTypes;
 	}
 	
 	private Collection<IAnnotationBinding> getMetaAnnotations(AnnotationHierarchies annotationHierarchies, IAnnotationBinding annotationBinding) {
@@ -186,5 +217,14 @@ public class StereotypesIndexer implements SymbolProvider {
 		
 		return result;
 	}
+	
+	private boolean isStereotype(TypeDeclaration typeDeclaration, ITypeBinding binding) {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
+		boolean isStereotype = annotationHierarchies.isAnnotatedWith(binding, Annotations.JMOLECULES_STEREOTYPE);
+		
+		return isStereotype;
+	}
+	
+	
 	
 }

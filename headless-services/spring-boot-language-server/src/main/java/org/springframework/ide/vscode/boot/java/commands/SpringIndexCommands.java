@@ -23,6 +23,7 @@ import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
@@ -38,7 +39,11 @@ public class SpringIndexCommands {
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 	private static final String SPRING_STRUCTURE_CMD_2 = "sts/spring-boot/structure2";
 	
+	private final SpringMetamodelIndex springIndex;
+	
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex, JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry) {
+		this.springIndex = springIndex;
+		
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> server.getAsync().invoke(() -> springIndex.getProjects()));
 		server.onCommand(SPRING_STRUCTURE_CMD_2, params -> server.getAsync().invoke(() -> {
 			return projectFinder.all().stream().map(project -> nodeFrom(stereotypeCatalogRegistry, springIndex, project)).filter(Objects::nonNull).collect(Collectors.toList());
@@ -55,7 +60,7 @@ public class SpringIndexCommands {
 		var labelProvider = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
 				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString)
 				.withTypeLabel(it -> abbreviate(mainApplicationPackage, it))
-				.withMethodLabel((m, c) -> getMethodLabel(m, c));
+				.withMethodLabel((m, c) -> getMethodLabel(project, m, c));
 
 		var structureProvider = new ToolsStructureProvider(springIndex, project);
 		
@@ -86,9 +91,20 @@ public class SpringIndexCommands {
 		}
 	}
 	
-	private String getMethodLabel(StereotypeMethodElement method, StereotypeClassElement clazz) {
+	private String getMethodLabel(IJavaProject project, StereotypeMethodElement method, StereotypeClassElement clazz) {
 		// TODO: special treatment for methods that have specific index elements with specific labels (e.g. mapping methods)
-		return method.getMethodLabel();
+		
+		Optional<RequestMappingIndexElement> mapping = springIndex.getNodesOfType(project.getElementName(), RequestMappingIndexElement.class).stream()
+			.filter(mappingElement -> mappingElement.getMethodSignature() != null && mappingElement.getMethodSignature().equals(method.getMethodSignature()))
+			.findAny();
+		
+		if (mapping.isPresent()) {
+			return mapping.get().getDocumentSymbol().getName();
+		}
+		else {
+			return method.getMethodLabel();
+		}
+		
 	}
 	
 	public StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, SpringMetamodelIndex springIndex) {

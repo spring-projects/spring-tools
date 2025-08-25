@@ -13,8 +13,16 @@ package org.springframework.ide.vscode.boot.java.requestmapping;
 import org.eclipse.lsp4j.Range;
 
 public class RequestMappingIndexElement extends WebEndpointIndexElement {
+	
+	private String methodSignature;
 
-	public RequestMappingIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, Range range, String symbolLabel) {
+	public RequestMappingIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, Range range, String symbolLabel, String methodSignature) {
 		super(path, httpMethods, contentTypes, acceptTypes, range, symbolLabel);
+		this.methodSignature = methodSignature;
 	}
+	
+	public String getMethodSignature() {
+		return methodSignature;
+	}
+
 }

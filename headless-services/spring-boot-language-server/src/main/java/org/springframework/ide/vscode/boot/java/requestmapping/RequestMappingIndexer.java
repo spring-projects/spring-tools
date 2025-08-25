@@ -87,6 +87,8 @@ public class RequestMappingIndexer {
 
 		if (node.getParent() instanceof MethodDeclaration) {
 			try {
+				String methodSignature = ASTUtils.getMethodSignature((MethodDeclaration) node.getParent(), true);
+				
 				Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 				String[] path = getPath(node, context);
 				String[] parentPath = getParentPath(node, context);
@@ -105,7 +107,7 @@ public class RequestMappingIndexer {
 							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes);
 	
 							// index element for request mapping
-							RequestMappingIndexElement requestMappingIndexElement = new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, location.getRange(), symbol.getName());
+							RequestMappingIndexElement requestMappingIndexElement = new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, location.getRange(), symbol.getName(), methodSignature);
 							controller.addChild(requestMappingIndexElement);
 						});
 

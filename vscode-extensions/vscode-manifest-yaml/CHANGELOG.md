@@ -1,3 +1,7 @@
+## 2025-08-26 (1.56.0)
+
+* _(CF-Manifest)_ Cloudfoundry Manifest YML Support on vs code for mac , the extension fails with error [#1589](https://github.com/spring-projects/spring-tools/issues/1589)
+
 ## 2024-06-12 (4.23.0 RELEASE, incl. language servers version 1.55.0)
 
 * no major changes

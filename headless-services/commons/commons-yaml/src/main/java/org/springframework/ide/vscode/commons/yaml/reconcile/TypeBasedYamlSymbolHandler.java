@@ -88,7 +88,7 @@ public class TypeBasedYamlSymbolHandler implements DocumentSymbolHandler {
 		Range range = doc.toRange(region.getStart(), region.getLength());
 
 		DocumentSymbol symbol = new DocumentSymbol();
-		symbol.setName(region.toString());
+		symbol.setName(region.toString().isEmpty() ? " " : region.toString());
 		symbol.setKind(symbolKind(type));
 		symbol.setRange(range);
 		symbol.setSelectionRange(range);

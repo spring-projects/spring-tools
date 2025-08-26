@@ -42,8 +42,8 @@ import com.google.gson.GsonBuilder;
 public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, Object> {
 
 	private static final String LOCATION = "location";
-	public static final String ICON = "icon";
-	public static final String TEXT = "text";
+	static final String ICON = "icon";
+	static final String TEXT = "text";
 
 	private final Node root;
 	private final LabelProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, Object> labels;
@@ -92,6 +92,7 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 		addChildFoo(node -> node
 			.withAttribute(TEXT, labels.getMethodLabel(method, context.getContextualType()))
 			.withAttribute(LOCATION, method.getLocation())
+			.withAttribute(ICON, "fa-method")
 		);
 	}
 

@@ -37,15 +37,13 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
 public class SpringIndexCommands {
 	
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
-	private static final String SPRING_STRUCTURE_CMD_2 = "sts/spring-boot/structure2";
 	
 	private final SpringMetamodelIndex springIndex;
 	
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex, JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry) {
 		this.springIndex = springIndex;
 		
-		server.onCommand(SPRING_STRUCTURE_CMD, params -> server.getAsync().invoke(() -> springIndex.getProjects()));
-		server.onCommand(SPRING_STRUCTURE_CMD_2, params -> server.getAsync().invoke(() -> {
+		server.onCommand(SPRING_STRUCTURE_CMD, params -> server.getAsync().invoke(() -> {
 			return projectFinder.all().stream().map(project -> nodeFrom(stereotypeCatalogRegistry, springIndex, project)).filter(Objects::nonNull).collect(Collectors.toList());
 		}));
 	}
@@ -67,7 +65,7 @@ public class SpringIndexCommands {
 		// json output
 		BiConsumer<Node, Object> consumer = (node, c) -> {
 			node.withAttribute(HierarchicalNodeHandler.TEXT, labelProvider.getCustomLabel(c))
-			 .withAttribute("icon", "fa-named-interface");
+			 .withAttribute(ToolsJsonNodeHandler.ICON, "fa-named-interface");
 		};
 		
 		var jsonHandler = new ToolsJsonNodeHandler(labelProvider, consumer);

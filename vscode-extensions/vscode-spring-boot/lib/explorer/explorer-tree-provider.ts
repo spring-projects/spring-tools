@@ -1,7 +1,6 @@
-import { CancellationToken, commands, Event, EventEmitter, ProviderResult, TreeDataProvider, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { Event, EventEmitter, ProviderResult, TreeDataProvider, TreeItem } from "vscode";
 import { StructureManager } from "./structure-tree-manager";
-import { DocumentNode, ProjectNode, SpringNode } from "./nodes";
-import * as Path from "path";
+import { SpringNode } from "./nodes";
 
 export class ExplorerTreeProvider implements TreeDataProvider<SpringNode> {
 

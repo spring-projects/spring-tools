@@ -91,8 +91,33 @@ public class StereotypesIndexerTest {
     
     @Test
     void testPackageElement() throws Exception {
+    	// check package elements for package-info
     	List<StereotypePackageElement> packages = springIndex.getNodesOfType(StereotypePackageElement.class);
     	assertEquals(2, packages.size()); // package nodes are created for package declarations in package-info.java files only
+    	
+    	StereotypePackageElement packageElement1 = packages.stream().filter(packageElement -> packageElement.getPackageName().equals(("example"))).findFirst().get();
+    	StereotypePackageElement packageElement2 = packages.stream().filter(packageElement -> packageElement.getPackageName().equals(("example.application"))).findFirst().get();
+    	
+    	List<String> annotationTypes1 = packageElement1.getAnnotationTypes();
+    	assertEquals(1, annotationTypes1.size());
+    	assertEquals("org.jmolecules.architecture.hexagonal.Port", annotationTypes1.get(0));
+    	
+    	List<String> annotationTypes2 = packageElement2.getAnnotationTypes();
+    	assertEquals(1, annotationTypes2.size());
+    	assertEquals("org.jmolecules.architecture.hexagonal.Application", annotationTypes2.get(0));
+    	
+    	// check type elements for package-info
+    	List<StereotypeClassElement> packagesTypeElements = springIndex.getNodesOfType(StereotypeClassElement.class);
+    	StereotypeClassElement packageClassElement1 = packagesTypeElements.stream().filter(packageType -> packageType.getType().equals(("example.package-info"))).findFirst().get();
+    	StereotypeClassElement packageClassElement2 = packagesTypeElements.stream().filter(packageType -> packageType.getType().equals(("example.application.package-info"))).findFirst().get();
+    	
+    	List<String> packageTypeAnnotations1 = packageClassElement1.getAnnotationTypes();
+    	assertEquals(1, packageTypeAnnotations1.size());
+    	assertEquals("org.jmolecules.architecture.hexagonal.Port", packageTypeAnnotations1.get(0));
+
+    	List<String> packageTypeAnnotations2 = packageClassElement2.getAnnotationTypes();
+    	assertEquals(1, packageTypeAnnotations2.size());
+    	assertEquals("org.jmolecules.architecture.hexagonal.Application", packageTypeAnnotations2.get(0));
     }
     
     @Test

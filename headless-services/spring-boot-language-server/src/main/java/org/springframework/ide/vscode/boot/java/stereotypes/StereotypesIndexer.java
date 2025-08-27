@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
@@ -83,6 +84,15 @@ public class StereotypesIndexer implements SymbolProvider {
 	
 	@Override
 	public void addSymbols(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+		try {
+			createStereotypeElementForPackage(packageDeclaration, context, doc);
+		}
+		catch (BadLocationException e) {
+			log.error("error identifying location of type declaration", e);
+		}
+	}
+	
+	private void createStereotypeElementForPackage(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		if (!context.getDocURI().endsWith("package-info.java")) {
 			return;
 		}
@@ -103,6 +113,11 @@ public class StereotypesIndexer implements SymbolProvider {
 		
 		StereotypePackageElement packageElement = new StereotypePackageElement(packageBinding.getName(), annotationTypes);
 		context.getBeans().add(new CachedBean(context.getDocURI(), packageElement));
+		
+		Name astNodeForLocation = packageDeclaration.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
+		StereotypeClassElement classElement = new StereotypeClassElement(packageBinding.getName() + ".package-info", location, Set.of(), annotationTypes);
+		context.getBeans().add(new CachedBean(context.getDocURI(), classElement));
 	}
 
 	@Override

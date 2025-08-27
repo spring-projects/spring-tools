@@ -49,7 +49,7 @@ jobs:
         run: |
           vsix_file=`ls ./vsix | head -n 1`
           echo "VSIX file to upload ${vsix_file}"
-          s3_path=snapshot/vscode-extensions/${{ inputs.extension-name }}
+          s3_path=snapshot/sts4/vscode-extensions/${{ inputs.extension-name }}
           echo "S3 path: ${s3_path}"
           aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive
           aws s3 cp ./vsix/$vsix_file s3://$AWS_S3_BUCKET/$s3_path/$vsix_file --no-progress --checksum-algorithm CRC32

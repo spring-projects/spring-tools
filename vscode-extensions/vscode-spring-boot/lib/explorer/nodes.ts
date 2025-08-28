@@ -39,15 +39,15 @@ export class StereotypedNode extends SpringNode {
             case "fa-named-interface": // specify the case
                 return new ThemeIcon("symbol-interface");
             case "fa-package":
-                return new ThemeIcon("package");
+                return new ThemeIcon("symbol-constant");
             case "fa-stereotype":
-                return new ThemeIcon("symbol-class");
+                return new ThemeIcon("mention");
             case "fa-application":
                 return new ThemeIcon("folder");
             case "fa-method":
                 return new ThemeIcon("symbol-method");
             default:
-                return new ThemeIcon("symbol-object");
+                return new ThemeIcon("symbol-class");
         }
     }
 

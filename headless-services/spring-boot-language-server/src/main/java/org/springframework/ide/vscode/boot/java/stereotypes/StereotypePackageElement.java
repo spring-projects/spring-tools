@@ -17,15 +17,25 @@ import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringInde
 public class StereotypePackageElement extends AbstractSpringIndexElement implements StereotypeAnnotatedElement {
 	
 	private final String packageName;
+	private final boolean isMainPackage;
 	private final List<String> annotationTypes;
 	
 	public StereotypePackageElement(String packageName, List<String> annotationTypes) {
+		this(packageName, annotationTypes, false);
+	}
+	
+	public StereotypePackageElement(String packageName, List<String> annotationTypes, boolean isMainPackage) {
 		this.packageName = packageName;
+		this.isMainPackage = isMainPackage;
 		this.annotationTypes = annotationTypes;
 	}
 	
 	public String getPackageName() {
 		return packageName;
+	}
+	
+	public boolean isMainPackage() {
+		return isMainPackage;
 	}
 	
 	public List<String> getAnnotationTypes() {

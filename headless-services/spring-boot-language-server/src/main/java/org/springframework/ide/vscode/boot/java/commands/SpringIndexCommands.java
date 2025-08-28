@@ -58,7 +58,9 @@ public class SpringIndexCommands {
 		var labelProvider = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
 				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString)
 				.withTypeLabel(it -> abbreviate(mainApplicationPackage, it))
-				.withMethodLabel((m, c) -> getMethodLabel(project, m, c));
+				.withMethodLabel((m, c) -> getMethodLabel(project, m, c))
+				.withPackageLabel((p) -> getPackageLabel(p))
+				.withApplicationLabel((p) -> getPackageLabel(p));
 
 		var structureProvider = new ToolsStructureProvider(springIndex, project);
 		
@@ -78,6 +80,16 @@ public class SpringIndexCommands {
 		jsonTree.process(mainApplicationPackage);
 
 		return jsonHandler.getRoot();
+	}
+
+	private String getPackageLabel(StereotypePackageElement p) {
+		String packageName = p.getPackageName();
+		if (p.isMainPackage() && (packageName == null || packageName.isEmpty())) {
+			return "(no main application package identified)";
+		}
+		else {
+			return packageName;
+		}
 	}
 
 	private String abbreviate(StereotypePackageElement mainApplicationPackage, StereotypeClassElement it) {
@@ -115,10 +127,10 @@ public class SpringIndexCommands {
 			.findFirst();
 		
 		if (packageElement.isPresent()) {
-			return packageElement.get();
+			return new StereotypePackageElement(packageElement.get().getPackageName(), packageElement.get().getAnnotationTypes(), true);
 		}
 		else {
-			return new StereotypePackageElement("", null);
+			return new StereotypePackageElement("", null, true);
 		}
 	}
 	

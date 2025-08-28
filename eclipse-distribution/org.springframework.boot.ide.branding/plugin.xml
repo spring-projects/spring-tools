@@ -2,9 +2,9 @@
 <?eclipse version="3.2"?>
 <plugin>
 
-   <extension id="sts4" point="org.eclipse.core.runtime.products"> 
+   <extension id="springtools" point="org.eclipse.core.runtime.products"> 
       <product name="%productName" application="org.eclipse.ui.ide.workbench" description="%productBlurb"> 
-          <property name="windowImages" value="sts4-16.png,sts4-32.png,sts4-48.png"/> 
+          <property name="windowImages" value="springtools-16.png,springtools-32.png,springtools-48.png"/> 
           <property name="aboutImage" value="sts_lg.gif"/> 
           <property name="aboutText" value="%productBlurb"/> 
           <property name="appName" value="Spring Tools for Eclipse"/> 

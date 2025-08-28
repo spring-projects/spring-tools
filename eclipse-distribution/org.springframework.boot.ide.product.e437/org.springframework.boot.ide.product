@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
-<product name="Spring Tools for Eclipse" id="org.springframework.boot.ide.branding.sts4" uid="org.springframework.boot.ide.branding.sts4" application="org.eclipse.ui.ide.workbench" version="5.0.0.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Spring Tools for Eclipse" id="org.springframework.boot.ide.branding.springtools" uid="org.springframework.boot.ide.branding.springtools" application="org.eclipse.ui.ide.workbench" version="5.0.0.qualifier" useFeatures="true" includeLaunchers="true">
 
    <configIni use="default">
    </configIni>
 
    <launcherArgs>
-      <programArgs>-product org.springframework.boot.ide.branding.sts4
+      <programArgs>-product org.springframework.boot.ide.branding.springtools
 --launcher.defaultAction openFile
 </programArgs>
       <vmArgs>-Dosgi.requiredJavaVersion=21
@@ -22,13 +22,13 @@
       <vmArgsLin>
       </vmArgsLin>
       <vmArgsMac>-XstartOnFirstThread
--Dorg.eclipse.swt.internal.carbon.smallFonts -Xdock:icon=../Resources/sts4.icns
+-Dorg.eclipse.swt.internal.carbon.smallFonts -Xdock:icon=../Resources/springtools.icns
       </vmArgsMac>
       <vmArgsWin>
       </vmArgsWin>
    </launcherArgs>
 
-   <windowImages i16="/org.springframework.boot.ide.branding/sts4-16.png" i32="/org.springframework.boot.ide.branding/sts4-32.png" i48="/orgorg.springframework.boot.ide.branding/sts4-48.png" i64="/org.springframework.boot.ide.branding/sts4-64.png" i128="/org.springframework.boot.ide.branding/sts4-128.png"/>
+   <windowImages i16="/org.springframework.boot.ide.branding/springtools-16.png" i32="/org.springframework.boot.ide.branding/springtools-32.png" i48="/orgorg.springframework.boot.ide.branding/springtools-48.png" i64="/org.springframework.boot.ide.branding/springtools-64.png" i128="/org.springframework.boot.ide.branding/springtools-128.png"/>
 
    <splash
       location="org.springframework.boot.ide.branding"
@@ -36,14 +36,14 @@
       startupMessageRect="7,220,441,20"
       startupForegroundColor="c1d72e" />
 
-   <launcher name="SpringToolSuite4">
-      <macosx icon="../org.springframework.boot.ide.branding/sts4.icns"/>
+   <launcher name="SpringToolsForEclipse">
+      <macosx icon="../org.springframework.boot.ide.branding/springtools.icns"/>
       <solaris/>
       <win useIco="true">
-         <ico path="../org.springframework.boot.ide.branding/sts4.ico"/>
+         <ico path="../org.springframework.boot.ide.branding/springtools.ico"/>
          <bmp/>
       </win>
-      <linux icon="../org.springframework.boot.ide.branding/sts4.xpm"/>
+      <linux icon="../org.springframework.boot.ide.branding/springtools.xpm"/>
    </launcher>
 
    <plugins>

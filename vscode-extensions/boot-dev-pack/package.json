@@ -9,14 +9,14 @@
     "color": "#0F3D5F",
     "theme": "dark"
   },
-  "icon": "STS4-256x256.png",
+  "icon": "SpringTools-256x256.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/spring-projects/sts4.git"
+    "url": "https://github.com/spring-projects/spring-tools.git"
   },
-  "homepage": "https://github.com/spring-projects/sts4",
+  "homepage": "https://github.com/spring-projects/spring-tools",
   "bugs": {
-    "url": "https://github.com/spring-projects/sts4/issues"
+    "url": "https://github.com/spring-projects/spring-tools/issues"
   },
   "keywords": [
     "spring-boot",

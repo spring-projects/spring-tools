@@ -102,9 +102,9 @@
       "explorer": [
         {
           "id": "explorer.spring",
-          "name": "Spring",
+          "name": "Logical Structure",
           "when": "java:serverMode || workbenchState==empty",
-          "contextualTitle": "Spring",
+          "contextualTitle": "Logical Structure",
           "icon": "resources/logo.png"
         }
       ]

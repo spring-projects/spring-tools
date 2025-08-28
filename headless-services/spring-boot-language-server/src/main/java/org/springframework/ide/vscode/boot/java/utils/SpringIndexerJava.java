@@ -46,6 +46,8 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.PackageDeclaration;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
@@ -92,7 +94,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	// whenever the implementation of the indexer changes in a way that the stored data in the cache is no longer valid,
 	// we need to change the generation - this will result in a re-indexing due to no up-to-date cache data being found
-	private static final String GENERATION = "GEN-22";
+	private static final String GENERATION = "GEN-26";
 	private static final String INDEX_FILES_TASK_ID = "index-java-source-files-task-";
 
 	private static final String SYMBOL_KEY = "symbols";
@@ -144,7 +146,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	@Override
 	public boolean isInterestedIn(String resource) {
-		return resource.endsWith(".java") && !resource.endsWith("package-info.java");
+		return resource.endsWith(".java");
 	}
 
 	@Override
@@ -719,9 +721,39 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void scanAST(final SpringIndexerJavaContext context, boolean includeReconcile) {
 		try {
 			context.getCu().accept(new ASTVisitor() {
+				
+				@Override
+				public boolean visit(PackageDeclaration node) {
+					try {
+						extractSymbolInformation(node, context);
+					}
+					catch (RequiredCompleteAstException e) {
+						throw e;
+					}
+					catch (Exception e) {
+						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
+					}
+					return super.visit(node);
+				}
 	
 				@Override
 				public boolean visit(TypeDeclaration node) {
+					try {
+						context.addScannedType(node.resolveBinding());
+						extractSymbolInformation(node, context);
+					}
+					catch (RequiredCompleteAstException e) {
+						throw e;
+					}
+					catch (Exception e) {
+						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
+					}
+					
+					return super.visit(node);
+				}
+	
+				@Override
+				public boolean visit(RecordDeclaration node) {
 					try {
 						context.addScannedType(node.resolveBinding());
 						extractSymbolInformation(node, context);
@@ -883,12 +915,32 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 	}
 
+	private void extractSymbolInformation(RecordDeclaration typeDeclaration, final SpringIndexerJavaContext context) throws Exception {
+		Collection<SymbolProvider> providers = symbolProviders.getAll();
+		if (!providers.isEmpty()) {
+			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
+			for (SymbolProvider provider : providers) {
+				provider.addSymbols(typeDeclaration, context, doc);
+			}
+		}
+	}
+
 	private void extractSymbolInformation(MethodDeclaration methodDeclaration, final SpringIndexerJavaContext context) throws Exception {
 		Collection<SymbolProvider> providers = symbolProviders.getAll();
 		if (!providers.isEmpty()) {
 			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
 			for (SymbolProvider provider : providers) {
 				provider.addSymbols(methodDeclaration, context, doc);
+			}
+		}
+	}
+
+	private void extractSymbolInformation(PackageDeclaration packageDeclaration, final SpringIndexerJavaContext context) throws Exception {
+		Collection<SymbolProvider> providers = symbolProviders.getAll();
+		if (!providers.isEmpty()) {
+			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
+			for (SymbolProvider provider : providers) {
+				provider.addSymbols(packageDeclaration, context, doc);
 			}
 		}
 	}

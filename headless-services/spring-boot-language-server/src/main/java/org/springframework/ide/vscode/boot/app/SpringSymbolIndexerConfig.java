@@ -25,13 +25,15 @@ import org.springframework.ide.vscode.boot.java.events.EventListenerSymbolProvid
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.HttpExchangeSymbolProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingSymbolProvider;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypesIndexer;
 import org.springframework.ide.vscode.boot.java.utils.RestrictedDefaultSymbolProvider;
 
 @Configuration(proxyBeanMethods = false)
 public class SpringSymbolIndexerConfig {
 
 	@Bean
-	AnnotationHierarchyAwareLookup<SymbolProvider> symbolProviders(IndexCache cache, DataRepositoryAotMetadataService repositoryMetadataService) {
+	AnnotationHierarchyAwareLookup<SymbolProvider> symbolProviders(IndexCache cache, DataRepositoryAotMetadataService repositoryMetadataService, StereotypeCatalogRegistry stereotypeCatalogRegistry) {
 		AnnotationHierarchyAwareLookup<SymbolProvider> providers = new AnnotationHierarchyAwareLookup<>();
 
 		RequestMappingSymbolProvider requestMappingSymbolProvider = new RequestMappingSymbolProvider();
@@ -82,6 +84,8 @@ public class SpringSymbolIndexerConfig {
 		
 		providers.put(Annotations.FEIGN_CLIENT, new FeignClientSymbolProvider());
 		providers.put(Annotations.HTTP_EXCHANGE, new HttpExchangeSymbolProvider());
+		
+		providers.put(Annotations.JMOLECULES_STEREOTYPE, new StereotypesIndexer(stereotypeCatalogRegistry));
 
 		return providers;
 	}

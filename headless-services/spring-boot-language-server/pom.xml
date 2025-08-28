@@ -50,6 +50,18 @@
 				<enabled>false</enabled>
 			</releases>
 		</repository>
+		
+		<repository>
+			<id>jmolecules-snapshots</id>
+			<url>https://central.sonatype.com/repository/maven-snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
+
 	</repositories>
 
 	<dependencies>
@@ -98,6 +110,10 @@
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework.ide.vscode</groupId>
 			<artifactId>java-properties</artifactId>
 			<version>${dependencies.version}</version>
@@ -122,6 +138,7 @@
 			<artifactId>commons-rewrite</artifactId>
 			<version>${dependencies.version}</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.core</artifactId>
@@ -145,6 +162,12 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.jmolecules.integrations</groupId>
+			<artifactId>jmolecules-stereotype</artifactId>
+			<version>0.29.0-STEREOTYPE-SNAPSHOT</version>
 		</dependency>
 
 

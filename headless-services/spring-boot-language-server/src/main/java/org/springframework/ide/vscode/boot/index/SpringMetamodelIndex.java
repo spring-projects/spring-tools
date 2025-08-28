@@ -81,6 +81,11 @@ public class SpringMetamodelIndex {
 		return getNodesOfType(type, rootNodes);
 	}
 
+	public <T extends SpringIndexElement> List<T> getNodesOfType(String projectName, Class<T> type) {
+		ProjectElement project = this.projectRootElements.get(projectName);
+		return project == null ? List.of() : getNodesOfType(type, List.of(project));
+	}
+	
 	public Bean[] getBeans() {
 		List<SpringIndexElement> rootNodes = new ArrayList<SpringIndexElement>(this.projectRootElements.values());
 		return getNodesOfType(Bean.class, rootNodes).toArray(Bean[]::new);

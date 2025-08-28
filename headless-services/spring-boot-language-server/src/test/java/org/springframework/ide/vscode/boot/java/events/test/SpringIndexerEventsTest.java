@@ -43,6 +43,7 @@ import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement
 import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContainerElement;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -141,9 +142,8 @@ public class SpringIndexerEventsTest {
         assertEquals(1, beans.length);
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<SpringIndexElement> docChildren = document.getChildren();
+        List<Bean> docChildren = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
         assertEquals(1, docChildren.size());
-        assertTrue(docChildren.get(0) instanceof Bean);
         
         Bean listenerComponentBean = Arrays.stream(beans).filter(bean -> bean.getName().equals("eventListenerPerInterface")).findFirst().get();
         assertEquals("com.example.events.demo.EventListenerPerInterface", listenerComponentBean.getType());

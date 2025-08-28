@@ -98,7 +98,25 @@
         "configuration": "./properties-support/language-configuration.json"
       }
     ],
+    "views": {
+      "explorer": [
+        {
+          "id": "explorer.spring",
+          "name": "Spring",
+          "when": "java:serverMode || workbenchState==empty",
+          "contextualTitle": "Spring",
+          "icon": "resources/logo.png"
+        }
+      ]
+    },
     "menus": {
+      "view/title": [
+        {
+          "command": "vscode-spring-boot.structure.refresh",
+          "when": "view == explorer.spring",
+          "group": "navigation@5"
+        }
+      ],
       "editor/context": [
         {
           "when": "resourceFilename == pom.xml || resourceFilename == build.gradle",

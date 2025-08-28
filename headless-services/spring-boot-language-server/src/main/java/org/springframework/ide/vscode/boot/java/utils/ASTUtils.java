@@ -37,6 +37,7 @@ import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
@@ -861,5 +862,41 @@ public class ASTUtils {
 		public String[] values;
 		public ITypeBinding dereferencedType;
 	}
+	
+	public static String getMethodSignature(MethodDeclaration method, boolean fullyQualifiedTypeNames) {
+		StringBuilder result = new StringBuilder();
+		
+		IMethodBinding binding = method.resolveBinding();
+
+		// class name
+		String className = fullyQualifiedTypeNames ? binding.getDeclaringClass().getBinaryName() : binding.getDeclaringClass().getName();
+		result.append(className);
+		result.append('.');
+
+		// method name
+		String methodName = binding.getName();
+		result.append(methodName);
+		
+		// params
+		result.append('(');
+		
+		ITypeBinding[] parameterTypes = binding.getParameterTypes();
+		String[] parameterTypeNames = new String[parameterTypes.length];
+
+		for (int i = 0; i < parameterTypes.length; i++) {
+			parameterTypeNames[i] = fullyQualifiedTypeNames ? parameterTypes[i].getBinaryName() : parameterTypes[i].getName();
+		}
+		result.append(String.join(", ", parameterTypeNames));
+
+		result.append(") : ");
+		
+		// return type
+		String returnTypeName = fullyQualifiedTypeNames ? binding.getReturnType().getBinaryName() : binding.getReturnType().getName();
+		result.append(returnTypeName);
+		
+		return result.toString();
+	}
+
+
 
 }

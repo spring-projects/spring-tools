@@ -34,4 +34,8 @@ public class StereotypeCatalogRegistry {
 		return new JsonPathStereotypeCatalog(source);
 	}
 
+	public void reset(IJavaProject project) {
+		this.catalogs.remove(project.getElementName());
+	}
+
 }

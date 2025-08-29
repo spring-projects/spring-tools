@@ -12,8 +12,8 @@ export class StructureManager {
         return this._rootElements;
     }
 
-    refresh(): void {
-        this._rootElements = commands.executeCommand(SPRING_STRUCTURE_CMD).then(json => {
+    refresh(updateMetadata: boolean): void {
+        this._rootElements = commands.executeCommand(SPRING_STRUCTURE_CMD, updateMetadata).then(json => {
             const nodes = this.parseArray(json);
             this._onDidChange.fire(undefined);
             return nodes;

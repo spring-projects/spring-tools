@@ -181,7 +181,7 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
         const structureManager = new StructureManager();
         const explorerTreeProvider = new ExplorerTreeProvider(structureManager);
         context.subscriptions.push(window.createTreeView('explorer.spring', { treeDataProvider: explorerTreeProvider, showCollapseAll: true }));
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => structureManager.refresh())); 
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => structureManager.refresh(true))); 
 
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
             // Boot LS is fully started
@@ -213,7 +213,7 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
         const api = new ApiManager(client).api
 
-        context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(e => structureManager.refresh()));
+        context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(e => structureManager.refresh(false)));
         
         return api;
     });

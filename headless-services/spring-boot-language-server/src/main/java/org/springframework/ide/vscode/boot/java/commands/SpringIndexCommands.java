@@ -20,6 +20,8 @@ import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.LabelUtils;
 import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler.Node;
@@ -34,9 +36,12 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
+import com.google.gson.JsonPrimitive;
+
 public class SpringIndexCommands {
 	
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
+	private static final Logger log = LoggerFactory.getLogger(SpringIndexCommands.class);
 	
 	private final SpringMetamodelIndex springIndex;
 	
@@ -44,11 +49,24 @@ public class SpringIndexCommands {
 		this.springIndex = springIndex;
 		
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> server.getAsync().invoke(() -> {
-			return projectFinder.all().stream().map(project -> nodeFrom(stereotypeCatalogRegistry, springIndex, project)).filter(Objects::nonNull).collect(Collectors.toList());
+			boolean updateMetadata =
+					params.getArguments() != null
+					&& params.getArguments().size() == 1
+					&& params.getArguments().get(0) instanceof JsonPrimitive
+					? ((JsonPrimitive) params.getArguments().get(0)).getAsBoolean() : false;
+			
+			return projectFinder.all().stream().map(project -> nodeFrom(stereotypeCatalogRegistry, springIndex, project, updateMetadata)).filter(Objects::nonNull).collect(Collectors.toList());
 		}));
 	}
 	
-	private Node nodeFrom(StereotypeCatalogRegistry stereotypeCatalogRegistry, SpringMetamodelIndex springIndex, IJavaProject project) {
+	private Node nodeFrom(StereotypeCatalogRegistry stereotypeCatalogRegistry, SpringMetamodelIndex springIndex, IJavaProject project, boolean updateMetadata) {
+		log.info("create structural view tree information for project: " + project.getElementName());
+		
+		if (updateMetadata) {
+			stereotypeCatalogRegistry.reset(project);
+			log.info("stereotype registry reset for project: " + project.getElementName());
+		}
+		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
 		factory.registerStereotypeDefinitions();

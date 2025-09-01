@@ -35,7 +35,9 @@ export class StereotypedNode extends SpringNode {
     }
 
     computeIcon() {
-        switch (this.n.attributes.icon) {
+        return new ThemeIcon(this.n.attributes.icon);
+/*        switch (this.n.attributes.icon) {
+            retur
             case "fa-named-interface": // specify the case
                 return new ThemeIcon("symbol-interface");
             case "fa-package":
@@ -48,7 +50,7 @@ export class StereotypedNode extends SpringNode {
                 return new ThemeIcon("symbol-method");
             default:
                 return new ThemeIcon("symbol-class");
-        }
+        } */
     }
 
 }

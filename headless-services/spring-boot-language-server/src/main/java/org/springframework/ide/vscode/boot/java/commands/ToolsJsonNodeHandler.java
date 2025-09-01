@@ -56,27 +56,34 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 		this.customHandler = customHandler;
 		this.current = root;
 	}
+	
+	@Override
+	public void handleStereotype(Stereotype stereotype, NodeContext context) {
+		
+		String stereotypeID = stereotype.getIdentifier();
+		String icon = StereotypeIcons.ICONS.containsKey(stereotypeID) ? StereotypeIcons.ICONS.get(stereotypeID) : StereotypeIcons.ICONS.get("Stereotype");
+
+		addChild(node -> node
+			.withAttribute(TEXT, labels.getSterotypeLabel(stereotype))
+			.withAttribute(ICON, icon)
+		);
+	}
 
 	@Override
 	public void handleApplication(StereotypePackageElement application) {
 		this.root
 			.withAttribute(TEXT, labels.getApplicationLabel(application))
-			.withAttribute(ICON, "fa-application");
+			.withAttribute(ICON, StereotypeIcons.ICONS.get("Application"))
+		;
 	}
 
 	@Override
 	public void handlePackage(StereotypePackageElement pkg, NodeContext context) {
 
 		addChild(node -> node
-				.withAttribute(ICON, "fa-package")
-				.withAttribute(TEXT, labels.getPackageLabel(pkg)));
-	}
-
-	@Override
-	public void handleStereotype(Stereotype stereotype, NodeContext context) {
-
-		addChild(node -> node.withAttribute(ICON, "fa-stereotype")
-				.withAttribute(TEXT, labels.getSterotypeLabel(stereotype)));
+			.withAttribute(TEXT, labels.getPackageLabel(pkg))
+			.withAttribute(ICON, StereotypeIcons.ICONS.get("Packages"))
+		);
 	}
 
 	@Override
@@ -84,6 +91,7 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getTypeLabel(type))
 			.withAttribute(LOCATION, type.getLocation())
+			.withAttribute(ICON, StereotypeIcons.ICONS.get("Type"))
 		);
 	}
 
@@ -92,7 +100,7 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 		addChildFoo(node -> node
 			.withAttribute(TEXT, labels.getMethodLabel(method, context.getContextualType()))
 			.withAttribute(LOCATION, method.getLocation())
-			.withAttribute(ICON, "fa-method")
+			.withAttribute(ICON, StereotypeIcons.ICONS.get("Method"))
 		);
 	}
 

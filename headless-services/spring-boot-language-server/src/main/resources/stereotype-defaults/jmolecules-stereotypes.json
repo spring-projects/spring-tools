@@ -1,0 +1,71 @@
+{
+	"stereotypes" : [
+		{
+			"id" : "org.springframework.boot.jackson.JsonMixin",
+			"assignments" : [ "@org.springframework.boot.jackson.JsonMixin" ],
+			"displayName" : "JSON Mixin",
+			"groups" : [ "spring.web.rest" ]
+		},
+		{
+			"id" : "org.springframework.context.annotation.Configuration",
+			"assignments" : [ "@org.springframework.context.annotation.Configuration" ],
+			"groups" : [ "spring" ]
+		},
+		{
+			"id" : "org.springframework.context.event.EventListener",
+			"assignments" : [ "@org.springframework.context.event.EventListener" ],
+			"groups" : [ "spring" ]
+		},
+		{
+			"id" : "org.springframework.data.rest.core.config.Projection",
+			"assignments" : [ "@org.springframework.data.rest.core.config.Projection" ],
+			"groups" : [ "spring.data" ]
+		},
+		{
+			"id" : "org.springframework.hateoas.server.RepresentationModelProcessor",
+			"assignments" : [ "org.springframework.hateoas.server.RepresentationModelProcessor" ],
+			"groups" : [ "spring.web.rest.hypermedia" ]
+		},
+		{
+			"id" : "org.springframework.stereotype.Controller",
+			"assignments" : [
+				"@org.springframework.stereotype.Controller",
+				"@org.springframework.data.rest.webmvc.BasePathAwareController"
+			],
+			"groups" : [ "spring.web" ]
+		},
+		{
+			"id" : "org.springframework.stereotype.Service",
+			"assignments" : [ "@org.springframework.stereotype.Service" ],
+			"groups" : [ "spring", "org.jmolecules.ddd" ]
+		},
+		{
+			"id" : "org.springframework.web.bind.annotation.RequestMapping",
+			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
+			"displayName" : "Request mappings",
+			"groups" : [ "spring.web" ]
+		}
+	],
+	"groups" : [
+		{
+			"ids" : [ "spring"],
+			"displayName" : "Spring"
+		},
+		{
+			"ids" : [ "spring.data" ],
+			"displayName" : "Spring Data"
+		},
+		{
+			"ids" : [ "spring.web" ],
+			"displayName" : "Web"
+		},
+		{
+			"ids" : [ "spring.web.rest" ],
+			"displayName" : "REST"
+		},
+		{
+			"ids" : [ "spring.web.rest.hypermedia" ],
+			"displayName" : "Hypermedia"
+		}
+	]
+}

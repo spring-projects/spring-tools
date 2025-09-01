@@ -21,12 +21,16 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 
 import org.jmolecules.stereotype.catalog.support.CatalogSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 
 public class ProjectBasedCatalogSource implements CatalogSource {
+
+	private static final Logger log = LoggerFactory.getLogger(ProjectBasedCatalogSource.class);
 
 	private final IJavaProject project;
 
@@ -75,8 +79,23 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 					}
 				}
 			}
+
+			if (result.size() == 0) {
+				URL defaultSpringStereotypes = this.getClass().getResource("/stereotype-defaults/jmolecules-stereotypes.json");
+
+				if (defaultSpringStereotypes != null) {
+					log.info("using default stereotypes for project: " + this.project.getElementName());
+					result.add(defaultSpringStereotypes);
+				}
+				else {
+					log.error("error looking up default stereotypes for project: " + this.project.getElementName());
+				}
+			}
+
 		} catch (Exception e) {
+			log.error("error looking up stereotype metadata for project: " + this.project.getElementName(), e);
 		}
+		
 		
 		return result.stream();
 	}

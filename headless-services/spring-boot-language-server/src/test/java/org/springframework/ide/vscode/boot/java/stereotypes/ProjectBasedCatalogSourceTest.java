@@ -52,17 +52,25 @@ public class ProjectBasedCatalogSourceTest {
 	@Autowired private SpringSymbolIndex indexer;
 	@Autowired private SpringMetamodelIndex springIndex;
 
-	private File directory;
-	private IJavaProject project;
+	private File regularProjectDirectory;
+	private File fallbackProjectDirectory;
+
+	private IJavaProject regularProject;
+	private IJavaProject fallbackProject;
 
 	@BeforeEach
 	public void setup() throws Exception {
 		harness.intialize(null);
 
-		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
-		String projectDir = directory.toURI().toString();
+		regularProjectDirectory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
+		String regularProjectDir = regularProjectDirectory.toURI().toString();
 
-		project = projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+		regularProject = projectFinder.find(new TextDocumentIdentifier(regularProjectDir)).get();
+
+		fallbackProjectDirectory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support-fallback/").toURI());
+		String fallbackProjectDir = fallbackProjectDirectory.toURI().toString();
+
+		fallbackProject = projectFinder.find(new TextDocumentIdentifier(fallbackProjectDir)).get();
 
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(5, TimeUnit.SECONDS);
@@ -70,13 +78,13 @@ public class ProjectBasedCatalogSourceTest {
 
     @Test
     void testCatalogLookupFromSource() throws Exception {
-    	var source = new ProjectBasedCatalogSource(project);
+    	var source = new ProjectBasedCatalogSource(regularProject);
 		
 		Stream<URL> sources = source.getSources();
 		List<URL> list = sources.toList();
 		
-		URL url1 = new File(directory, "src/main/resources/META-INF/jmolecules-stereotypes.json").toURI().toURL();
-		URL url2 = new File(directory, "src/main/resources/META-INF/jmolecules-stereotype-groups.json").toURI().toURL();
+		URL url1 = new File(regularProjectDirectory, "src/main/resources/META-INF/jmolecules-stereotypes.json").toURI().toURL();
+		URL url2 = new File(regularProjectDirectory, "src/main/resources/META-INF/jmolecules-stereotype-groups.json").toURI().toURL();
 		
 		assertTrue(list.contains(url1));
 		assertTrue(list.contains(url2));
@@ -84,13 +92,24 @@ public class ProjectBasedCatalogSourceTest {
     
     @Test
     void testCatalogLookupFromLibraries() throws Exception {
-    	var source = new ProjectBasedCatalogSource(project);
+    	var source = new ProjectBasedCatalogSource(regularProject);
 		var catalog = new JsonPathStereotypeCatalog(source);
 		
 		StereotypeGroups groups = catalog.getGroups("org.jmolecules.ddd");
 		StereotypeGroup primary = groups.getPrimary();
 		
 		assertEquals("Domain-Driven Design", primary.getDisplayName());
+    }
+    
+    @Test
+    void testCatalogDefaultLookupFromLanguageServer() throws Exception {
+    	var source = new ProjectBasedCatalogSource(fallbackProject);
+		
+		Stream<URL> sources = source.getSources();
+		List<URL> list = sources.toList();
+		
+		assertEquals(1, list.size());
+		assertTrue(list.get(0).toString().endsWith("jmolecules-stereotypes.json"));
     }
     
 }

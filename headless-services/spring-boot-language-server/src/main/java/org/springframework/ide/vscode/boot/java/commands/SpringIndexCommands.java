@@ -55,7 +55,10 @@ public class SpringIndexCommands {
 					&& params.getArguments().get(0) instanceof JsonPrimitive
 					? ((JsonPrimitive) params.getArguments().get(0)).getAsBoolean() : false;
 			
-			return projectFinder.all().stream().map(project -> nodeFrom(stereotypeCatalogRegistry, springIndex, project, updateMetadata)).filter(Objects::nonNull).collect(Collectors.toList());
+			return projectFinder.all().stream()
+					.map(project -> nodeFrom(stereotypeCatalogRegistry, springIndex, project, updateMetadata))
+					.filter(Objects::nonNull)
+					.collect(Collectors.toList());
 		}));
 	}
 	

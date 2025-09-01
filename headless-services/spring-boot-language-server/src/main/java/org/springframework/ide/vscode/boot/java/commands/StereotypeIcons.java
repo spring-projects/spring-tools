@@ -22,14 +22,14 @@ public class StereotypeIcons {
 			Map.entry("architecture.layered", "layers"),
 			Map.entry("architecture.onion", "target"),
 			Map.entry("architecture.onion.Application", "circuit-board"),
-			Map.entry("architecture.onion.Domain", "?"),						// TODO
+//			Map.entry("architecture.onion.Domain", "?"),						// TODO
 			Map.entry("architecture.onion.Infrastructure", "debug-disconnect"),
 			Map.entry("ddd.AggregateRoot", "symbol-class"),
 			Map.entry("ddd.Association", "link"),
 			Map.entry("ddd.Entity", "symbol-field"),
 			Map.entry("ddd.Identifier", "lightbulb"),
 			Map.entry("ddd.Repository", "database"),
-			Map.entry("ddd.Service", "?"),										// TODO
+//			Map.entry("ddd.Service", "?"),										// TODO
 			Map.entry("ddd.ValueObject", "symbol-value"),
 			Map.entry("event.DomainEvent", "bell"),
 			Map.entry("event.DomainEventHandler", "callhierarchy-incoming"),
@@ -41,14 +41,14 @@ public class StereotypeIcons {
 			Map.entry("org.jmolecules.architecture.layered", "layers"),
 			Map.entry("org.jmolecules.architecture.onion", "target"),
 			Map.entry("org.jmolecules.architecture.onion.Application", "circuit-board"),
-			Map.entry("org.jmolecules.architecture.onion.Domain", "?"),						// TODO
+//			Map.entry("org.jmolecules.architecture.onion.Domain", "?"),						// TODO
 			Map.entry("org.jmolecules.architecture.onion.Infrastructure", "debug-disconnect"),
 			Map.entry("org.jmolecules.ddd.AggregateRoot", "symbol-class"),
 			Map.entry("org.jmolecules.ddd.Association", "link"),
 			Map.entry("org.jmolecules.ddd.Entity", "symbol-field"),
 			Map.entry("org.jmolecules.ddd.Identifier", "lightbulb"),
 			Map.entry("org.jmolecules.ddd.Repository", "database"),
-			Map.entry("org.jmolecules.ddd.Service", "?"),										// TODO
+//			Map.entry("org.jmolecules.ddd.Service", "?"),										// TODO
 			Map.entry("org.jmolecules.ddd.ValueObject", "symbol-value"),
 			Map.entry("org.jmolecules.event.DomainEvent", "bell"),
 			Map.entry("org.jmolecules.event.DomainEventHandler", "callhierarchy-incoming"),

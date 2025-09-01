@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -60,12 +61,25 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 	@Override
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
 		
+		// icon for concrete stereotype
 		String stereotypeID = stereotype.getIdentifier();
-		String icon = StereotypeIcons.ICONS.containsKey(stereotypeID) ? StereotypeIcons.ICONS.get(stereotypeID) : StereotypeIcons.ICONS.get("Stereotype");
+		
+		String icon = StereotypeIcons.ICONS.get(stereotypeID);
 
+		// group fallback
+		if (icon == null) {
+			Optional<String> groupIcon = stereotype.getGroups().stream()
+				.filter(group -> StereotypeIcons.ICONS.containsKey(group))
+				.map(group -> StereotypeIcons.ICONS.get(group))
+				.findFirst();
+			
+			icon = groupIcon.isPresent() ? icon = groupIcon.get() : StereotypeIcons.ICONS.get("Stereotype");
+		}
+
+		String finalIcon = icon;
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getSterotypeLabel(stereotype))
-			.withAttribute(ICON, icon)
+			.withAttribute(ICON, finalIcon)
 		);
 	}
 

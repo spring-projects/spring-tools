@@ -247,7 +247,7 @@ public class StereotypesIndexerTest {
 		List<Stereotype> myControllerStereotypes = factory.fromType(myControllerClassElement).stream().toList();
 		assertEquals(2, myControllerStereotypes.size());
 		
-		assertEquals("spring.Controller", myControllerStereotypes.get(0).getIdentifier());
+		assertEquals("spring.web.Controller", myControllerStereotypes.get(0).getIdentifier());
 		assertEquals("architecture.hexagonal.Port", myControllerStereotypes.get(1).getIdentifier());
 
 

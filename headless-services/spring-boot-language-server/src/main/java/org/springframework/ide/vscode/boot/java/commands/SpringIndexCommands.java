@@ -10,12 +10,16 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import org.jmolecules.stereotype.catalog.StereotypeGroup;
+import org.jmolecules.stereotype.catalog.StereotypeGroups;
+import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.LabelUtils;
 import org.jmolecules.stereotype.tooling.ProjectTree;
@@ -36,6 +40,7 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
+import com.google.common.collect.Streams;
 import com.google.gson.JsonPrimitive;
 
 public class SpringIndexCommands {
@@ -90,19 +95,62 @@ public class SpringIndexCommands {
 			node.withAttribute(HierarchicalNodeHandler.TEXT, labelProvider.getCustomLabel(c))
 			 .withAttribute(ToolsJsonNodeHandler.ICON, "fa-named-interface");
 		};
-		
-		var jsonHandler = new ToolsJsonNodeHandler(labelProvider, consumer);
 
+		// create json nodes to display the structure in a nice way
+		var jsonHandler = new ToolsJsonNodeHandler(labelProvider, consumer);
+		
+		// create the project tree and apply all the groupers from the project
+		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI
 		var jsonTree = new ProjectTree<>(factory, catalog, jsonHandler)
-				.withStructureProvider(structureProvider)
-				.withGrouper("org.jmolecules.architecture")
-				.withGrouper("org.jmolecules.ddd", "org.jmolecules.event", "spring", "jpa", "java");
+				.withStructureProvider(structureProvider);
+		
+		List<String[]> groupers = identifyGroupers(catalog);
+		for (String[] grouper : groupers) {
+			jsonTree = jsonTree.withGrouper(grouper);
+		}
 		
 		jsonTree.process(mainApplicationPackage);
 
 		return jsonHandler.getRoot();
 	}
 
+	private List<String[]> identifyGroupers(AbstractStereotypeCatalog catalog) {
+		
+//		List<String[]> allGroupsWithSpecificOrder = Arrays.asList(
+//			new String[] {"architecture"},
+//			new String[] {"ddd", "event", "spring", "jpa", "java"}
+//		);
+//		
+//		return allGroupsWithSpecificOrder;
+		
+		
+//		var yourList = List.of("foo");
+		
+		StereotypeGroups groups = catalog.getGroups();
+
+        var architectureIds = groups.streamByType(StereotypeGroup.Type.ARCHITECTURE)
+                .map(StereotypeGroup::getIdentifier)
+//                .filter(yourList::contains)
+                .toList();
+
+        var designIds = groups.streamByType(StereotypeGroup.Type.DESIGN)
+                .map(StereotypeGroup::getIdentifier);
+//                .filter(yourList::contains)
+        
+        var customIds = new ArrayList<String>().stream();
+
+        var technologyIds = groups.streamByType(StereotypeGroup.Type.TECHNOLOGY)
+                .map(StereotypeGroup::getIdentifier);
+//                .filter(yourList::contains)
+        
+        ArrayList<String[]> result = new ArrayList<String[]>();
+        result.add(architectureIds.toArray(String[]::new));
+        result.add(Streams.concat(designIds, customIds, technologyIds)
+        		.toArray(String[]::new));
+        
+        return result;
+	}
+	
 	private String getPackageLabel(StereotypePackageElement p) {
 		String packageName = p.getPackageName();
 		if (p.isMainPackage() && (packageName == null || packageName.isEmpty())) {

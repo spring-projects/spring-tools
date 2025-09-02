@@ -167,13 +167,13 @@
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-stereotype</artifactId>
-			<version>0.29.0-STEREOTYPE-SNAPSHOT</version>
+			<version>0.30.0-STEREOTYPE-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-spring</artifactId>
-			<version>0.29.0-STEREOTYPE-SNAPSHOT</version>
+			<version>0.30.0-STEREOTYPE-SNAPSHOT</version>
 		</dependency>
 
 

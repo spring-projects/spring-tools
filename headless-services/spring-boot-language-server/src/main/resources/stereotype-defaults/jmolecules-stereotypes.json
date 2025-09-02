@@ -1,71 +1,93 @@
 {
-	"stereotypes" : [
-		{
-			"id" : "org.springframework.boot.jackson.JsonMixin",
+	"stereotypes" : {
+		"spring.boot.JsonMixin" : {
 			"assignments" : [ "@org.springframework.boot.jackson.JsonMixin" ],
 			"displayName" : "JSON Mixin",
-			"groups" : [ "spring.web.rest" ]
+			"groups" : [ "spring.boot", "spring.web.rest" ]
 		},
-		{
-			"id" : "org.springframework.context.annotation.Configuration",
+		"spring.boot.ConfigurationProperties" : {
+			"assignments" : [ "@org.springframework.boot.context.properties.ConfigurationProperties" ],
+			"groups" : [ "spring.boot" ]
+		},
+		"spring.Configuration" : {
+			"displayName" : "Configuration class",
 			"assignments" : [ "@org.springframework.context.annotation.Configuration" ],
 			"groups" : [ "spring" ]
 		},
-		{
-			"id" : "org.springframework.context.event.EventListener",
-			"assignments" : [ "@org.springframework.context.event.EventListener" ],
-			"groups" : [ "spring" ]
-		},
-		{
-			"id" : "org.springframework.data.rest.core.config.Projection",
-			"assignments" : [ "@org.springframework.data.rest.core.config.Projection" ],
-			"groups" : [ "spring.data" ]
-		},
-		{
-			"id" : "org.springframework.hateoas.server.RepresentationModelProcessor",
-			"assignments" : [ "org.springframework.hateoas.server.RepresentationModelProcessor" ],
-			"groups" : [ "spring.web.rest.hypermedia" ]
-		},
-		{
-			"id" : "org.springframework.stereotype.Controller",
+		"spring.Controller" : {
 			"assignments" : [
 				"@org.springframework.stereotype.Controller",
 				"@org.springframework.data.rest.webmvc.BasePathAwareController"
 			],
 			"groups" : [ "spring.web" ]
 		},
-		{
-			"id" : "org.springframework.stereotype.Service",
-			"assignments" : [ "@org.springframework.stereotype.Service" ],
-			"groups" : [ "spring", "org.jmolecules.ddd" ]
+		"spring.EventListener" : {
+			"assignments" : [
+				"@org.springframework.context.event.EventListener",
+				"org.springframework.context.ApplicationListener",
+				"org.springframework.data.rest.core.event.AbstractRepositoryEventListener"
+			],
+			"groups" : [ "spring" ]
 		},
-		{
-			"id" : "org.springframework.web.bind.annotation.RequestMapping",
+		"spring.Repository" : {
+			"assignments" : [
+				"@org.springframework.stereotype.Repository",
+				"org.springframework.data.repository.Repository",
+				"@org.springframework.data.repository.RepositoryDefinition"
+			],
+			"groups" : [ "spring" ]
+		},
+		"spring.RequestMapping" : {
 			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
 			"displayName" : "Request mappings",
 			"groups" : [ "spring.web" ]
+		},
+		"spring.Service" : {
+			"assignments" : [ "@org.springframework.stereotype.Service" ],
+			"groups" : [ "spring", "org.jmolecules.ddd" ]
+		},
+		"spring.MessageListener" : {
+			"assignments" : [
+				"@org.springframework.kafka.annotation.KafkaListener",
+				"@org.springframework.amqp.rabbit.annotation.RabbitListener",
+				"@org.springframework.messaging.handler.annotation.MessageMapping"
+			],
+			"groups" : [ "spring.messaging" ]
+		},
+		"spring.data.rest.Projection" : {
+			"assignments" : [ "@org.springframework.data.rest.core.config.Projection" ],
+			"groups" : [ "spring.data" ]
+		},
+		"spring.hateoas.RepresentationModel" : {
+			"assignments" : [ "org.springframework.hateoas.RepresentationModel" ],
+			"groups" : [ "spring.web.rest.hypermedia" ]
+		},
+		"spring.hateoas.RepresentationModelProcessor" : {
+			"assignments" : [ "org.springframework.hateoas.server.RepresentationModelProcessor" ],
+			"groups" : [ "spring.web.rest.hypermedia" ]
 		}
-	],
-	"groups" : [
-		{
-			"ids" : [ "spring"],
+	},
+	"groups" : {
+		"spring" : {
 			"displayName" : "Spring"
 		},
-		{
-			"ids" : [ "spring.data" ],
+		"spring.data" : {
 			"displayName" : "Spring Data"
 		},
-		{
-			"ids" : [ "spring.web" ],
+		"spring.messaging" : {
+			"displayName" : "Spring Messaging"
+		},
+		"spring.web" : {
 			"displayName" : "Web"
 		},
-		{
-			"ids" : [ "spring.web.rest" ],
+		"spring.web.rest" : {
 			"displayName" : "REST"
 		},
-		{
-			"ids" : [ "spring.web.rest.hypermedia" ],
+		"spring.web.rest.hypermedia" : {
 			"displayName" : "Hypermedia"
+		},
+		"spring.boot" : {
+			"displayName" : "Spring Boot"
 		}
-	]
+	}
 }

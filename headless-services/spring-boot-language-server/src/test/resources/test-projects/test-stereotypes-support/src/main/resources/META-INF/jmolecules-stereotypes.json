@@ -1,25 +1,15 @@
 {
-	"stereotypes" : [
-		{
-			"id" : "org.springframework.stereotype.Controller",
-			"assignments" : [ "@org.springframework.stereotype.Controller" ],
-			"groups" : [ "spring.web" ],
+	"stereotypes" : {
+		"my.test.group" : {
+			"assignments" : [ "@org.example.Test" ],
+			"groups" : [ "my.test" ],
 			"priority" : 10
 		},
-		{
-			"id" : "org.springframework.boot.jackson.JsonMixin",
-			"assignments" : [ "@org.springframework.boot.jackson.JsonMixin" ],
-			"displayName" : "JSON Mixin",
-			"groups" : [ "spring.web.rest" ],
-			"priority" : 10
-		},
-		{
-			"id" : "example.application.DescribedStereotype",
+		"example.application.DescribedStereotype" : {
 			"assignments" : [ "example.application.DescribedStereotype" ],
 			"displayName" : "Some Described Stereotype",
 			"groups" : [ "custom.group" ],
 			"priority" : 5
 		}
-		
-	]
+	}
 }

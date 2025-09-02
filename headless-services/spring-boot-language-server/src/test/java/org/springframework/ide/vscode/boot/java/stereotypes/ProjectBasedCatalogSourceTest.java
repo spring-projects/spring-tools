@@ -95,7 +95,7 @@ public class ProjectBasedCatalogSourceTest {
     	var source = new ProjectBasedCatalogSource(regularProject);
 		var catalog = new JsonPathStereotypeCatalog(source);
 		
-		StereotypeGroups groups = catalog.getGroups("org.jmolecules.ddd");
+		StereotypeGroups groups = catalog.getGroups("ddd");
 		StereotypeGroup primary = groups.getPrimary();
 		
 		assertEquals("Domain-Driven Design", primary.getDisplayName());

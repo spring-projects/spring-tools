@@ -221,7 +221,7 @@ public class StereotypesIndexerTest {
 		List<Stereotype> allStereotypesFound = factory.fromPackage(packageElement).stream().toList();
 		assertEquals(1, allStereotypesFound.size());
 		
-		assertEquals("org.jmolecules.architecture.hexagonal.Port", allStereotypesFound.get(0).getIdentifier());
+		assertEquals("architecture.hexagonal.Port", allStereotypesFound.get(0).getIdentifier());
 
 		StereotypePackageElement subpackageElement = springIndex.getNodesOfType(StereotypePackageElement.class).stream()
 				.filter(pkg -> pkg.getPackageName().equals("example.application"))
@@ -230,7 +230,7 @@ public class StereotypesIndexerTest {
 		allStereotypesFound = factory.fromPackage(subpackageElement).stream().toList();
 		assertEquals(1, allStereotypesFound.size());
 		
-		assertEquals("org.jmolecules.architecture.hexagonal.Application", allStereotypesFound.get(0).getIdentifier());
+		assertEquals("architecture.hexagonal.Application", allStereotypesFound.get(0).getIdentifier());
 	}
 	
 	@Test
@@ -247,8 +247,8 @@ public class StereotypesIndexerTest {
 		List<Stereotype> myControllerStereotypes = factory.fromType(myControllerClassElement).stream().toList();
 		assertEquals(2, myControllerStereotypes.size());
 		
-		assertEquals("org.springframework.stereotype.Controller", myControllerStereotypes.get(0).getIdentifier());
-		assertEquals("org.jmolecules.architecture.hexagonal.Port", myControllerStereotypes.get(1).getIdentifier());
+		assertEquals("spring.Controller", myControllerStereotypes.get(0).getIdentifier());
+		assertEquals("architecture.hexagonal.Port", myControllerStereotypes.get(1).getIdentifier());
 
 
 		StereotypeClassElement somePrimaryPortClassElement = springIndex.getNodesOfType(StereotypeClassElement.class).stream()
@@ -258,8 +258,8 @@ public class StereotypesIndexerTest {
 		List<Stereotype> somePrimaryPortStereotypes = factory.fromType(somePrimaryPortClassElement).stream().toList();
 		assertEquals(2, somePrimaryPortStereotypes.size());
 
-		assertEquals("org.jmolecules.ddd.ValueObject", somePrimaryPortStereotypes.get(0).getIdentifier());
-		assertEquals("org.jmolecules.architecture.hexagonal.Application", somePrimaryPortStereotypes.get(1).getIdentifier());
+		assertEquals("ddd.ValueObject", somePrimaryPortStereotypes.get(0).getIdentifier());
+		assertEquals("architecture.hexagonal.Application", somePrimaryPortStereotypes.get(1).getIdentifier());
 	}
 
 	@Test
@@ -278,7 +278,7 @@ public class StereotypesIndexerTest {
 		assertEquals(2, myStereotypeMarkedClassStereotypes.size());
 		
 		assertEquals("example.application.MyStereotype", myStereotypeMarkedClassStereotypes.get(0).getIdentifier());
-		assertEquals("org.jmolecules.architecture.hexagonal.Application", myStereotypeMarkedClassStereotypes.get(1).getIdentifier());
+		assertEquals("architecture.hexagonal.Application", myStereotypeMarkedClassStereotypes.get(1).getIdentifier());
 		
 		// catalog definition
 		Optional<? extends StereotypeDefinition> found = catalog.getDefinitions().stream()
@@ -301,8 +301,8 @@ public class StereotypesIndexerTest {
 		List<Stereotype> stereotypes = factory.fromType(classElement).stream().toList();
 		assertEquals(2, stereotypes.size());
 		
-		assertEquals("org.jmolecules.ddd.ValueObject", stereotypes.get(0).getIdentifier());
-		assertEquals("org.jmolecules.architecture.hexagonal.Application", stereotypes.get(1).getIdentifier());
+		assertEquals("ddd.ValueObject", stereotypes.get(0).getIdentifier());
+		assertEquals("architecture.hexagonal.Application", stereotypes.get(1).getIdentifier());
 	}
 
 	@Test

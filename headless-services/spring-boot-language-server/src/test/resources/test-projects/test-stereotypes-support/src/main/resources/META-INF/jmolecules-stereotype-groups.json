@@ -1,16 +1,7 @@
 {
-	"groups" : [
-		{
-			"ids" : [ "spring.web" ],
-			"displayName" : "Web"
-		},
-		{
-			"ids" : [ "spring.web.rest" ],
-			"displayName" : "REST"
-		},
-		{
-			"ids" : [ "custom.group" ],
-			"displayName" : "My Custom Stereotype Group"
+	"groups" : {
+		"my.test" : {
+			"displayName" :"Test Group"
 		}
-	]
+	}
 }

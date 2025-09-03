@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2024 VMware, Inc.
+ * Copyright (c) 2023, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -423,14 +423,20 @@ public class ModulithService {
 	
 	private static AppModule loadAppModule(String name, JsonObject json) {
 		String basePackage = json.get("basePackage").getAsString();
+		String displayName = json.get("displayName").getAsString();
 		JsonObject nameInterfacesJson = json.get("namedInterfaces").getAsJsonObject();
-		List<String> namedInterfaces = nameInterfacesJson.keySet()
-				.stream()
-				.flatMap(k -> nameInterfacesJson.get(k).getAsJsonArray().asList().stream().map(js -> js.getAsString()))
-				.collect(Collectors.toList());
-		return new AppModule(name, basePackage, namedInterfaces);
-	}
 
+		List<NamedInterface> namedInterfaces = nameInterfacesJson.keySet().stream()
+				.map(interfaceName -> new NamedInterface(interfaceName, nameInterfacesJson.get(interfaceName).getAsJsonArray().asList().stream().map(jsonElement -> jsonElement.getAsString()).toList()))
+				.toList();
+//		nameInterfacesJson.keySet()
+//				.stream()
+//				,map(k -> new NamedInterface())
+//				.flatMap(k -> nameInterfacesJson.get(k).getAsJsonArray().asList().stream().map(js -> js.getAsString()))
+//				.collect(Collectors.toList());
+		return new AppModule(name, displayName, basePackage, namedInterfaces);
+	}
+	
 	private static boolean anyClassFilesPresent(IJavaProject p) {
 		return getNonTestClassOutputFolders(p).anyMatch(path -> {
 			try {

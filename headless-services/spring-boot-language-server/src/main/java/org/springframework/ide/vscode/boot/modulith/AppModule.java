@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,8 +14,9 @@ import java.util.Collection;
 
 public record AppModule(
 		String name,
+		String displayName,
 		String basePackage,
-		Collection<String> namedInterfaces
+		Collection<NamedInterface> namedInterfaces
 ) {
 
 }

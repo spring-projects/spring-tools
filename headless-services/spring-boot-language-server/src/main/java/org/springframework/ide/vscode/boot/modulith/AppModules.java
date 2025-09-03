@@ -11,9 +11,11 @@
 package org.springframework.ide.vscode.boot.modulith;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public final class AppModules {
 	
@@ -25,7 +27,7 @@ public final class AppModules {
 	
 	public Optional<AppModule> getModuleNotExposingType(String targetPackage, String referenceFqName) {
 		return getModuleForType(referenceFqName).flatMap(refModule -> {
-			if (refModule.namedInterfaces().contains(referenceFqName)) {
+			if (containsInsideOfAnyNamedInterface(refModule, referenceFqName)) {
 				return Optional.empty();
 			} else {
 				if (getModuleForPackage(targetPackage).map(targetModule -> targetModule == refModule).orElse(false)) {
@@ -35,6 +37,17 @@ public final class AppModules {
 				return Optional.of(refModule);
 			}
 		});
+	}
+
+	private boolean containsInsideOfAnyNamedInterface(AppModule refModule, String referenceFqName) {
+		Collection<NamedInterface> namedInterfaces = refModule.namedInterfaces();
+		for (NamedInterface namedInterface : namedInterfaces) {
+			if (namedInterface.getClasses().contains(referenceFqName)) {
+				return true;
+			}
+		}
+		
+		return false;
 	}
 	
 	public Optional<AppModule> getModuleForPackage(String pkgName) {
@@ -59,6 +72,10 @@ public final class AppModules {
 			}
 		}
 		return packageHierarchy;
+	}
+	
+	public Stream<AppModule> stream() {
+		return modules.stream();
 	}
 
 	@Override

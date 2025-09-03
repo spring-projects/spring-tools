@@ -74,14 +74,26 @@ public class ModulithServiceTest {
     	assertTrue(modulithService.requestMetadata(jp, Duration.ZERO).get());
     	List<AppModule> modules = modulithService.getModulesData(jp).modules;
     	assertEquals(2, modules.size());
+
     	AppModule orderModule = modules.get(0);
     	assertEquals("order", orderModule.name());
     	assertEquals("org.example.order", orderModule.basePackage());
-    	assertEquals(6, orderModule.namedInterfaces().size());
+    	
+//    	assertEquals(6, orderModule.namedInterfaces().size());
+    	assertEquals(2, orderModule.namedInterfaces().size());
+
+    	NamedInterface orderUnnamedInterface = orderModule.namedInterfaces().stream().filter(namedInterface -> namedInterface.getName().equals("<<UNNAMED>>")).findAny().get();
+    	assertEquals(4, orderUnnamedInterface.getClasses().size());
+
+    	NamedInterface orderSpiInterface = orderModule.namedInterfaces().stream().filter(namedInterface -> namedInterface.getName().equals("spi")).findAny().get();
+    	assertEquals(2, orderSpiInterface.getClasses().size());
+
     	AppModule inventoryModule = modules.get(1);
     	assertEquals("inventory", inventoryModule.name());
     	assertEquals("org.example.inventory", inventoryModule.basePackage());
-    	assertEquals(0, inventoryModule.namedInterfaces().size());
+
+    	NamedInterface inventoryUnnamedInterface = inventoryModule.namedInterfaces().stream().filter(namedInterface -> namedInterface.getName().equals("<<UNNAMED>>")).findAny().get();
+    	assertEquals(0, inventoryUnnamedInterface.getClasses().size());
     }
 
 

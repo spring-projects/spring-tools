@@ -16,6 +16,7 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
 import org.springframework.ide.vscode.boot.java.commands.WorkspaceBootExecutableProjects;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
+import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
@@ -28,8 +29,8 @@ public class CommandsConfig {
 	
 	@Bean
 	SpringIndexCommands springIndexCommands(SimpleLanguageServer server, JavaProjectFinder projectFinder,
-			SpringMetamodelIndex symbolIndex, StereotypeCatalogRegistry stereotypeCatalogRegistry) {
-		return new SpringIndexCommands(server, symbolIndex, projectFinder, stereotypeCatalogRegistry);
+			SpringMetamodelIndex symbolIndex, ModulithService modulithService, StereotypeCatalogRegistry stereotypeCatalogRegistry) {
+		return new SpringIndexCommands(server, symbolIndex, modulithService, projectFinder, stereotypeCatalogRegistry);
 	}	
 
 }

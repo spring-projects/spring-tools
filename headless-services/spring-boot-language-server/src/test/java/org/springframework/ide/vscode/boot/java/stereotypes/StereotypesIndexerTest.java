@@ -43,9 +43,9 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
-import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
+import org.springframework.ide.vscode.boot.java.commands.Node;
+import org.springframework.ide.vscode.boot.java.commands.StructureViewUtil;
 import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler;
-import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler.Node;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -65,7 +65,6 @@ public class StereotypesIndexerTest {
 	@Autowired private SpringSymbolIndex indexer;
 	@Autowired private SpringMetamodelIndex springIndex;
 	@Autowired private StereotypeCatalogRegistry stereotypeCatalogRegistry;
-	@Autowired private SpringIndexCommands indexCommands;
 
 	private File directory;
 	private IJavaProject project;
@@ -203,7 +202,7 @@ public class StereotypesIndexerTest {
     
     @Test
     void testIdentifyMainApplicationPackage() throws Exception {
-    	StereotypePackageElement mainPackage = indexCommands.identifyMainApplicationPackage(project, springIndex);
+    	StereotypePackageElement mainPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
     	assertEquals("example.application", mainPackage.getPackageName());
     }
     

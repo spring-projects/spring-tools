@@ -19,6 +19,7 @@ import org.jmolecules.stereotype.api.Stereotype;
 public class StereotypeIcons {
 	
 	public static final String APPLICATION_KEY = "Application";
+	public static final String MODULE_KEY = "Module";
 	public static final String PACKAGES_KEY = "Packages";
 	public static final String METHOD_KEY = "Method";
 	public static final String TYPE_KEY = "Type";
@@ -68,7 +69,7 @@ public class StereotypeIcons {
 			Map.entry("spring.web.rest.hypermedia", "link"),
 			
 			Map.entry(APPLICATION_KEY, "project"),
-			Map.entry("Module", "library"),
+			Map.entry(MODULE_KEY, "library"),
 			Map.entry(PACKAGES_KEY, "package"),
 			Map.entry(METHOD_KEY, "symbol-method"),
 			Map.entry(TYPE_KEY, "symbol-class"),

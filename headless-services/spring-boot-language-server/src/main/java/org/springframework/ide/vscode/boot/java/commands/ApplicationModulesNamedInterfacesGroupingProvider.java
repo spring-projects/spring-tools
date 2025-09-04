@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.jmolecules.stereotype.tooling.Grouped;
@@ -44,7 +45,7 @@ public class ApplicationModulesNamedInterfacesGroupingProvider extends Applicati
 				namedInterface -> new NamedInterfaceNode(namedInterface),
 				namedInterface -> getClassElements(namedInterface),
 				(l, r) -> r,
-				LinkedHashMap::new));
+				TreeMap::new));
 
 		interfaces.put(NamedInterfaceNode.INTERNAL, getInternalTypes(module));
 

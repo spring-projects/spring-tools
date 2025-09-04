@@ -62,12 +62,12 @@ public class SpringIndexCommands {
 		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 		
-		if (ModulithService.isModulithDependentProject(project)) {
-			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project);
-		}
-		else {
+//		if (ModulithService.isModulithDependentProject(project)) {
+//			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project);
+//		}
+//		else {
 			return new JMoleculesStructureView(catalog, springIndex).createTree(project);
-		}
+//		}
 	}
 
 }

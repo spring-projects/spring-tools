@@ -157,12 +157,12 @@
 <!--					<url>https://download.eclipse.org/buildship/updates/latest-snapshot/</url>-->
 					<url>https://download.eclipse.org/buildship/updates/latest</url>
 				</repository>
-				<repository>
+<!--				<repository>
 					<id>m2e</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/technology/m2e/releases/latest/</url>
-<!--					<url>https://download.eclipse.org/technology/m2e/snapshots/latest/</url>-->
-				</repository>
+					<url>https://download.eclipse.org/technology/m2e/snapshots/latest/</url>
+				</repository> -->
 				<repository>
 					<id>latest-m2e-wtp-release</id>
 					<layout>p2</layout>
@@ -198,15 +198,15 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/wildwebdeveloper/releases/latest/</url>
 				</repository>
-				<repository>
+<!--				<repository>
 					<id>cdt-updates</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/tools/cdt/releases/latest/</url>
-				</repository>
+				</repository> -->
 				<repository>
 					<id>lsp4e</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/lsp4e/releases/0.27.5/</url>
+					<url>https://download.eclipse.org/lsp4e/releases/0.27.9/</url>
 <!--					<url>https://download.eclipse.org/lsp4e/snapshots/</url> -->
 				</repository>
 				<repository>
@@ -262,12 +262,12 @@
 					<!--					<url>https://download.eclipse.org/buildship/updates/latest-snapshot/</url>-->
 					<url>https://download.eclipse.org/buildship/updates/latest</url>
 				</repository>
-				<repository>
+<!--				<repository>
 					<id>m2e</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/technology/m2e/releases/latest/</url>
-					<!--					<url>https://download.eclipse.org/technology/m2e/snapshots/latest/</url>-->
-				</repository>
+										<url>https://download.eclipse.org/technology/m2e/snapshots/latest/</url>
+				</repository> -->
 				<repository>
 					<id>latest-m2e-wtp-release</id>
 					<layout>p2</layout>
@@ -303,16 +303,16 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/wildwebdeveloper/releases/latest/</url>
 				</repository>
-				<repository>
+<!--				<repository>
 					<id>cdt-updates</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/tools/cdt/releases/latest/</url>
-				</repository>
+				</repository> -->
 				<repository>
 					<id>lsp4e</id>
 					<layout>p2</layout>
-<!--					<url>https://download.eclipse.org/lsp4e/releases/0.27.5/</url> -->
-					<url>https://download.eclipse.org/lsp4e/snapshots/</url>
+					<url>https://download.eclipse.org/lsp4e/releases/0.27.9/</url>
+<!--					<url>https://download.eclipse.org/lsp4e/snapshots/</url> -->
 				</repository>
 				<repository>
 					<id>tm4e-snapshots</id>
@@ -408,16 +408,16 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/wildwebdeveloper/releases/latest/</url>
 				</repository>
-				<repository>
+<!--				<repository>
 					<id>cdt-updates</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/tools/cdt/releases/latest/</url>
-				</repository>
+				</repository> -->
 				<repository>
 					<id>lsp4e</id>
 					<layout>p2</layout>
-<!--					<url>https://download.eclipse.org/lsp4e/releases/0.27.5/</url> -->
-					<url>https://download.eclipse.org/lsp4e/snapshots/</url>
+					<url>https://download.eclipse.org/lsp4e/releases/0.27.9/</url>
+<!--					<url>https://download.eclipse.org/lsp4e/snapshots/</url> -->
 				</repository>
 				<repository>
 					<id>tm4e-snapshots</id>

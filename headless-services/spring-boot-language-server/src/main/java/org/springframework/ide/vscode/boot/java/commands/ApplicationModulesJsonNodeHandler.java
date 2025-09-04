@@ -16,7 +16,6 @@
 
 package org.springframework.ide.vscode.boot.java.commands;
 
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -56,26 +55,9 @@ public class ApplicationModulesJsonNodeHandler implements NodeHandler<Applicatio
 	
 	@Override
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
-		
-		// icon for concrete stereotype
-		String stereotypeID = stereotype.getIdentifier();
-		
-		String icon = StereotypeIcons.ICONS.get(stereotypeID);
-
-		// group fallback
-		if (icon == null) {
-			Optional<String> groupIcon = stereotype.getGroups().stream()
-				.filter(group -> StereotypeIcons.ICONS.containsKey(group))
-				.map(group -> StereotypeIcons.ICONS.get(group))
-				.findFirst();
-			
-			icon = groupIcon.isPresent() ? icon = groupIcon.get() : StereotypeIcons.ICONS.get("Stereotype");
-		}
-
-		String finalIcon = icon;
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getSterotypeLabel(stereotype))
-			.withAttribute(ICON, finalIcon)
+			.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
 		);
 	}
 
@@ -83,7 +65,7 @@ public class ApplicationModulesJsonNodeHandler implements NodeHandler<Applicatio
 	public void handleApplication(ApplicationModules application) {
 		this.root
 			.withAttribute(TEXT, labels.getApplicationLabel(application))
-			.withAttribute(ICON, StereotypeIcons.ICONS.get("Application"))
+			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.APPLICATION_KEY))
 		;
 	}
 
@@ -92,7 +74,7 @@ public class ApplicationModulesJsonNodeHandler implements NodeHandler<Applicatio
 
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getPackageLabel(pkg))
-			.withAttribute(ICON, StereotypeIcons.ICONS.get("Packages"))
+			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.PACKAGES_KEY))
 		);
 	}
 
@@ -101,7 +83,7 @@ public class ApplicationModulesJsonNodeHandler implements NodeHandler<Applicatio
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getTypeLabel(type))
 			.withAttribute(LOCATION, type.getLocation())
-			.withAttribute(ICON, StereotypeIcons.ICONS.get("Type"))
+			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.TYPE_KEY))
 		);
 	}
 
@@ -110,7 +92,7 @@ public class ApplicationModulesJsonNodeHandler implements NodeHandler<Applicatio
 		addChildFoo(node -> node
 			.withAttribute(TEXT, labels.getMethodLabel(method, context.getContextualType()))
 			.withAttribute(LOCATION, method.getLocation())
-			.withAttribute(ICON, StereotypeIcons.ICONS.get("Method"))
+			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
 		);
 	}
 

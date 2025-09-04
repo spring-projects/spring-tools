@@ -32,7 +32,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
-import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -50,7 +49,6 @@ public class ProjectBasedCatalogSourceTest {
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
-	@Autowired private SpringMetamodelIndex springIndex;
 
 	private File regularProjectDirectory;
 	private File fallbackProjectDirectory;
@@ -108,8 +106,9 @@ public class ProjectBasedCatalogSourceTest {
 		Stream<URL> sources = source.getSources();
 		List<URL> list = sources.toList();
 		
-		assertEquals(1, list.size());
-		assertTrue(list.get(0).toString().endsWith("jmolecules-stereotypes.json"));
+		assertEquals(2, list.size());
+		assertTrue(list.get(0).toString().endsWith("spring-jmolecules-stereotypes.json"));
+		assertTrue(list.get(1).toString().endsWith("jpa-jmolecules-stereotypes.json"));
     }
     
 }

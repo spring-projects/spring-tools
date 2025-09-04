@@ -31,6 +31,10 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 public class ProjectBasedCatalogSource implements CatalogSource {
 
 	private static final Logger log = LoggerFactory.getLogger(ProjectBasedCatalogSource.class);
+	
+	private static final String[] DEFAULT_STEREOTYPE_DEFINITIONS = {
+			"/stereotype-defaults/spring-jmolecules-stereotypes.json", 
+			"/stereotype-defaults/jpa-jmolecules-stereotypes.json"};
 
 	private final IJavaProject project;
 
@@ -81,14 +85,19 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 			}
 
 			if (result.size() == 0) {
-				URL defaultSpringStereotypes = this.getClass().getResource("/stereotype-defaults/jmolecules-stereotypes.json");
 
-				if (defaultSpringStereotypes != null) {
-					log.info("using default stereotypes for project: " + this.project.getElementName());
-					result.add(defaultSpringStereotypes);
-				}
-				else {
-					log.error("error looking up default stereotypes for project: " + this.project.getElementName());
+				// use default hard-coded stereotype definitions for projects that don't have jmolecules on the classpath
+
+				for (String defaultDefinition : DEFAULT_STEREOTYPE_DEFINITIONS) {
+					URL defaultStereotypes = this.getClass().getResource(defaultDefinition);
+
+					if (defaultStereotypes != null) {
+						log.info("using default stereotypes " + defaultDefinition + " for project: " + this.project.getElementName());
+						result.add(defaultStereotypes);
+					}
+					else {
+						log.error("error looking up default stereotypes " + defaultDefinition + " for project: " + this.project.getElementName());
+					}
 				}
 			}
 

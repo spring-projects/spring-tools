@@ -1,0 +1,39 @@
+{
+	"stereotypes" : {
+		"jpa.AttributeConverter" : {
+			"assignments" : [
+				"jakarta.persistence.AttributeConverter",
+				"javax.persistence.AttributeConverter"
+			],
+			"groups" : [ "jpa" ]
+		},
+		"jpa.Embeddable" : {
+			"assignments" : [
+				"@jakarta.persistence.Embeddable",
+				"@javax.persistence.Embeddable"
+			],
+			"groups" : [ "jpa" ]
+		},
+		"jpa.Entity" : {
+			"assignments" : [
+				"@jakarta.persistence.Entity",
+				"@javax.persistence.Entity"
+			],
+			"groups" : [ "jpa" ]
+		},
+		"jpa.MappedSuperclass" : {
+			"assignments" : [
+				"@jakarta.persistence.MappedSuperclass",
+				"@javax.persistence.MappedSuperclass"
+			],
+			"groups" : [ "jpa" ]
+		}
+	},
+	"groups" : {
+		"jpa" : {
+			"displayName" : "JPA",
+			"type" : "technology",
+			"priority" : 20
+		}
+	}
+}

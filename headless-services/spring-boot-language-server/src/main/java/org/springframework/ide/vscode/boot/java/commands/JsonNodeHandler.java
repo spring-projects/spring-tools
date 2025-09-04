@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import org.atteo.evo.inflector.English;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
@@ -61,7 +62,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	@Override
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
 		addChild(node -> node
-			.withAttribute(TEXT, labels.getSterotypeLabel(stereotype))
+			.withAttribute(TEXT, English.plural(labels.getSterotypeLabel(stereotype)))
 			.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
 		);
 	}

@@ -164,6 +164,8 @@
 			<artifactId>commons-text</artifactId>
 		</dependency>
 		
+		<!-- stereotype support, especially for the new logical structure view -->
+		
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-stereotype</artifactId>
@@ -176,6 +178,11 @@
 			<version>0.30.0-STEREOTYPE-SNAPSHOT</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.atteo</groupId>
+			<artifactId>evo-inflector</artifactId>
+			<version>1.3</version>
+		</dependency>
 
 		<dependency>
 			<groupId>org.eclipse.lemminx</groupId>
@@ -196,7 +203,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
+
 		<!-- Test harness -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -389,7 +396,7 @@
 							</resources>
 						</configuration>
 					</execution>
-<!--
+					<!--
 					<execution>
 						<id>copy-license-files</id>
 						<phase>process-classes</phase>

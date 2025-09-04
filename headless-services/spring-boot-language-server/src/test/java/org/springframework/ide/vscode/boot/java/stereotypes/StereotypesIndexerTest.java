@@ -43,9 +43,9 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
-import org.springframework.ide.vscode.boot.java.commands.Node;
+import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler;
+import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewUtil;
-import org.springframework.ide.vscode.boot.java.commands.ToolsJsonNodeHandler;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -359,7 +359,7 @@ public class StereotypesIndexerTest {
 			 .withAttribute("icon", "fa-named-interface");
 		};
 		
-		var jsonHandler = new ToolsJsonNodeHandler(labels, consumer);
+		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labels, consumer);
 
 		var jsonTree = new ProjectTree<>(factory, catalog, jsonHandler)
 				.withStructureProvider(structureProvider)

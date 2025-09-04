@@ -16,6 +16,10 @@
 
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -35,18 +39,19 @@ import com.google.gson.GsonBuilder;
  * @author Oliver Drotbohm
  * @author Martin Lippert
  */
-public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, Object> {
+public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> {
 
 	private static final String LOCATION = "location";
-	static final String ICON = "icon";
-	static final String TEXT = "text";
+	
+	public static final String ICON = "icon";
+	public static final String TEXT = "text";
 
 	private final Node root;
-	private final LabelProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, Object> labels;
-	private final BiConsumer<Node, Object> customHandler;
+	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
+	private final BiConsumer<Node, C> customHandler;
 	private Node current;
 
-	public ToolsJsonNodeHandler(LabelProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, Object> labels, BiConsumer<Node, Object> customHandler) {
+	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler) {
 		this.labels = labels;
 		this.root = new Node(null);
 		this.customHandler = customHandler;
@@ -62,7 +67,7 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 	}
 
 	@Override
-	public void handleApplication(StereotypePackageElement application) {
+	public void handleApplication(A application) {
 		this.root
 			.withAttribute(TEXT, labels.getApplicationLabel(application))
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.APPLICATION_KEY))
@@ -97,7 +102,7 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 	}
 
 	@Override
-	public void handleCustom(Object custom, NodeContext context) {
+	public void handleCustom(C custom, NodeContext context) {
 		addChild(node -> customHandler.accept(node, custom));
 	}
 
@@ -133,5 +138,24 @@ public class ToolsJsonNodeHandler implements NodeHandler<StereotypePackageElemen
 	Node getRoot() {
 		return root;
 	}
+	
+	public static class Node {
+
+		transient final Node parent;
+		final Map<String, Object> attributes;
+		final List<Node> children;
+
+		Node(Node parent) {
+			this.parent = parent;
+			this.attributes = new LinkedHashMap<>();
+			this.children = new ArrayList<>();
+		}
+
+		public Node withAttribute(String key, Object value) {
+			this.attributes.put(key, value);
+			return this;
+		}
+	}
+
 
 }

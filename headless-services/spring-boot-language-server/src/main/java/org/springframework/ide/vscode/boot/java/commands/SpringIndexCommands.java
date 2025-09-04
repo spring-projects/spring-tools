@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;

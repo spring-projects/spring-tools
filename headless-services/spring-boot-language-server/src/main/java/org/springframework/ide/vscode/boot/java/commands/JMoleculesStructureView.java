@@ -18,6 +18,7 @@ import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
@@ -53,11 +54,11 @@ public class JMoleculesStructureView {
 		// json output
 		BiConsumer<Node, Object> consumer = (node, c) -> {
 			node.withAttribute(HierarchicalNodeHandler.TEXT, labelProvider.getCustomLabel(c))
-			 .withAttribute(ToolsJsonNodeHandler.ICON, "fa-named-interface");
+			 .withAttribute(JsonNodeHandler.ICON, "fa-named-interface");
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new ToolsJsonNodeHandler(labelProvider, consumer);
+		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labelProvider, consumer);
 		
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI

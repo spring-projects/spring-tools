@@ -39,7 +39,7 @@ public class ApplicationModulesLabelProvider implements
 	
 	@Override
 	public String getApplicationLabel(ApplicationModules application) {
-		return modules.getSystemName().orElse("Application");
+		return modules.getSystemName().orElse(project.getElementName());
 	}
 
 	@Override

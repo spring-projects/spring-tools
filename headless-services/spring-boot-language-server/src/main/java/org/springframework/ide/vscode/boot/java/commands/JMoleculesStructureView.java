@@ -47,7 +47,7 @@ public class JMoleculesStructureView {
 				.withTypeLabel(it -> StructureViewUtil.abbreviate(mainApplicationPackage, it))
 				.withMethodLabel((m, c) -> StructureViewUtil.getMethodLabel(project, springIndex, m, c))
 				.withPackageLabel((p) -> StructureViewUtil.getPackageLabel(p))
-				.withApplicationLabel((p) -> StructureViewUtil.getPackageLabel(p));
+				.withApplicationLabel((p) -> project.getElementName());
 
 		var structureProvider = new ToolsStructureProvider(springIndex, project);
 		

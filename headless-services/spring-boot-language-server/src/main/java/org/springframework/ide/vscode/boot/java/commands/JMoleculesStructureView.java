@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import org.atteo.evo.inflector.English;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
@@ -47,6 +48,7 @@ public class JMoleculesStructureView {
 				.withTypeLabel(it -> StructureViewUtil.abbreviate(mainApplicationPackage, it))
 				.withMethodLabel((m, c) -> StructureViewUtil.getMethodLabel(project, springIndex, m, c))
 				.withPackageLabel((p) -> StructureViewUtil.getPackageLabel(p))
+				.withStereotypeLabel((s) -> StructureViewUtil.getStereotypeLabeler(catalog).apply(s))
 				.withApplicationLabel((p) -> project.getElementName());
 
 		var structureProvider = new ToolsStructureProvider(springIndex, project);

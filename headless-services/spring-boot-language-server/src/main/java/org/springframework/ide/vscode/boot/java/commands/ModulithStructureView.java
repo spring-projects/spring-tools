@@ -48,14 +48,14 @@ public class ModulithStructureView {
 		}
 		
 		ApplicationModules modules = new ApplicationModules(modulesData);
-
+		
 		var labelProvider = new ApplicationModulesLabelProvider(catalog, project, springIndex, modules);
 		var structureProvider = new ApplicationModulesNamedInterfacesGroupingProvider(modules, project, springIndex);
 
 		// json output
 		BiConsumer<Node, NamedInterfaceNode> consumer = (node, c) -> {
 			node.withAttribute(HierarchicalNodeHandler.TEXT, labelProvider.getCustomLabel(c))
-			.withAttribute(JsonNodeHandler.ICON, "fa-named-interface");
+			.withAttribute(JsonNodeHandler.ICON, c.getIcon());
 		};
 
 		// create json nodes to display the structure in a nice way

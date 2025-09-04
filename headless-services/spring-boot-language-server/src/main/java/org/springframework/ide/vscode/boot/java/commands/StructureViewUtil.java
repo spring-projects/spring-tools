@@ -13,8 +13,14 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.atteo.evo.inflector.English;
+import org.jmolecules.stereotype.api.Stereotype;
+import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.catalog.StereotypeGroup;
+import org.jmolecules.stereotype.catalog.StereotypeGroup.Type;
 import org.jmolecules.stereotype.catalog.StereotypeGroups;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelUtils;
@@ -138,5 +144,24 @@ public class StructureViewUtil {
 			return new StereotypePackageElement(packageName, null);
 		}
 	}
-	
+
+	private static final List<String> EXCLUSIONS = List.of("Application", "Properties", "Mappings");
+
+	static Function<Stereotype, String> getStereotypeLabeler(StereotypeCatalog catalog) {
+
+		return stereotype -> {
+
+			var groups = catalog.getGroupsFor(stereotype);
+			var name = stereotype.getDisplayName();
+
+			var doNotPluralize = groups.stream().anyMatch(it -> it.hasType(Type.ARCHITECTURE))
+					|| EXCLUSIONS.stream().anyMatch(name::endsWith);
+
+			var plural = doNotPluralize ? name : English.plural(name);
+
+			return plural + (groups.isEmpty() ? ""
+					: " " + groups.stream().map(StereotypeGroup::getDisplayName)
+							.collect(Collectors.joining(", ", "(", ")")));
+		};
+	}
 }

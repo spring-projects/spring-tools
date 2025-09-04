@@ -10,12 +10,12 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
-import java.util.stream.Collectors;
+import java.util.Collections;
 
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
-import org.jmolecules.stereotype.catalog.StereotypeGroup;
 import org.jmolecules.stereotype.tooling.LabelProvider;
+import org.jmolecules.stereotype.tooling.LabelUtils;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
@@ -39,21 +39,31 @@ public class ApplicationModulesLabelProvider implements
 	
 	@Override
 	public String getApplicationLabel(ApplicationModules application) {
-		return modules.getSystemName().orElse(project.getElementName());
+		
+		var mainPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
+		
+		return modules.getSystemName()	.orElse(project.getElementName()) + " (" + mainPackage.getPackageName() + ")";
 	}
 
 	@Override
 	public String getPackageLabel(StereotypePackageElement pkg) {
+
 		var name = pkg.getPackageName();
-		return modules.getModuleForPackage(name).map(ApplicationModule::getDisplayName).orElse(name);
+
+		return modules.getModuleForPackage(name)
+				.map(ApplicationModule::getDisplayName)
+				.map(it -> it + " (" + LabelUtils.abbreviate(name) +")")
+				.orElse(name);
 	}
 
 	@Override
 	public String getTypeLabel(StereotypeClassElement type) {
-		
-		return type.getType();
-		
-		// TODO: abbreviate with module name
+
+		return modules.getModuleByType(type)
+				.map(it -> it.getBasePackage())
+				.map(it -> new StereotypePackageElement(it, Collections.emptyList()))
+				.map(it -> StructureViewUtil.abbreviate(it, type))
+				.orElseGet(type::getType);
 	}
 
 	@Override
@@ -67,12 +77,7 @@ public class ApplicationModulesLabelProvider implements
 	}
 
 	@Override
-	public String getSterotypeLabel(Stereotype stereotype) {
-
-		var groups = catalog.getGroupsFor(stereotype);
-
-		return stereotype.getDisplayName() + (groups.isEmpty() ? ""
-				: " " + groups.stream().map(StereotypeGroup::getDisplayName)
-						.collect(Collectors.joining(", ", "(", ")")));
+	public String getStereotypeLabel(Stereotype stereotype) {
+		return StructureViewUtil.getStereotypeLabeler(catalog).apply(stereotype);
 	}
 }

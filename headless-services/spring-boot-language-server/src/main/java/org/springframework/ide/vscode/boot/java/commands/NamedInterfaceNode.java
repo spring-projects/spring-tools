@@ -10,9 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.Comparator;
+
 import org.springframework.ide.vscode.boot.modulith.NamedInterface;
 
-public class NamedInterfaceNode {
+public class NamedInterfaceNode implements Comparable<NamedInterfaceNode> {
 
 	public static final NamedInterfaceNode INTERNAL = new NamedInterfaceNode(null);
 	
@@ -20,6 +22,10 @@ public class NamedInterfaceNode {
 
 	public NamedInterfaceNode(NamedInterface namedInterface) {
 		this.namedInterface = namedInterface;
+	}
+	
+	public String getIcon() {
+		return namedInterface == null ? "lock" : "symbol-interface";
 	}
 
 	@Override
@@ -30,4 +36,11 @@ public class NamedInterfaceNode {
 		return namedInterface.isUnnamed() ? "API" : namedInterface.getName();
 	}
 
+	@Override
+	public int compareTo(NamedInterfaceNode that) {
+		
+		return Comparator.comparing((String it) -> "Internal".equals(it))
+				.thenComparing(String::compareTo)
+				.compare(toString(), that.toString());
+	}
 }

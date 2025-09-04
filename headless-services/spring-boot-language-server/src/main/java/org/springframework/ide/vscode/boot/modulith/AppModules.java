@@ -59,7 +59,7 @@ public final class AppModules {
 			.findFirst();
 	}
 	
-	private Optional<AppModule> getModuleForType(String typeFqName) {
+	public Optional<AppModule> getModuleForType(String typeFqName) {
 		return getModuleForPackage(ModulithService.getPackageNameFromTypeFQName(typeFqName));
 	}
 	

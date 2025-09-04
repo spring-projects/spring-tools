@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
-import org.springframework.ide.vscode.boot.modulith.AppModule;
 import org.springframework.ide.vscode.boot.modulith.AppModules;
 
 public class ApplicationModules {
@@ -30,19 +29,15 @@ public class ApplicationModules {
 	}
 
 	public Optional<ApplicationModule> getModuleForPackage(String name) {
-		Optional<AppModule> module = modules.getModuleForPackage(name);
-		if (module.isPresent()) {
-			return Optional.of(new ApplicationModule(module.get()));
-		}
-		return Optional.empty();
+		return modules.getModuleForPackage(name).map(ApplicationModule::new);
 	}
 
 	public Optional<ApplicationModule> getModuleByType(StereotypeClassElement type) {
-		return Optional.empty();
+		return modules.getModuleForType(type.getType()).map(ApplicationModule::new);
 	}
 
 	public Stream<ApplicationModule> stream() {
-		return modules.stream().map(module -> new ApplicationModule(module));
+		return modules.stream().map(ApplicationModule::new);
 	}
 
 }

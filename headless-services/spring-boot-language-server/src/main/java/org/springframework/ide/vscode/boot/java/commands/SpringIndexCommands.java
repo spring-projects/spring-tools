@@ -45,7 +45,7 @@ public class SpringIndexCommands {
 					&& params.getArguments().size() == 1
 					&& params.getArguments().get(0) instanceof JsonPrimitive
 					? ((JsonPrimitive) params.getArguments().get(0)).getAsBoolean() : false;
-			
+
 			return projectFinder.all().stream()
 					.map(project -> nodeFrom(project, updateMetadata))
 					.filter(Objects::nonNull)
@@ -63,12 +63,12 @@ public class SpringIndexCommands {
 		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 		
-//		if (ModulithService.isModulithDependentProject(project)) {
-//			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project);
-//		}
-//		else {
+		if (ModulithService.isModulithDependentProject(project) && System.getProperty("structure-view-modulith-support") != null) {
+			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project);
+		}
+		else {
 			return new JMoleculesStructureView(catalog, springIndex).createTree(project);
-//		}
+		}
 	}
 
 }

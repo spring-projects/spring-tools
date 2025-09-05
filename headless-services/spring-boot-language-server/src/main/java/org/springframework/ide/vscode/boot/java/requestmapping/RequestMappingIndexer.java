@@ -58,10 +58,11 @@ public class RequestMappingIndexer {
 	public static void indexRequestMappings(Bean controller, TypeDeclaration type, ITypeBinding annotationType, SpringIndexerJavaContext context, TextDocument doc) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);		
 
-		boolean isController = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.CONTROLLER);
+		boolean isWebController = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.CONTROLLER);
+		boolean isDataRestWebController = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.DATA_REST_BASE_PATH_AWARE_CONTROLLER);
 		boolean isFeignClient = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.FEIGN_CLIENT);
 		
-		if (isController || isFeignClient) {
+		if (isWebController || isDataRestWebController || isFeignClient) {
 			MethodDeclaration[] methods = type.getMethods();
 			if (methods == null) {
 				return;

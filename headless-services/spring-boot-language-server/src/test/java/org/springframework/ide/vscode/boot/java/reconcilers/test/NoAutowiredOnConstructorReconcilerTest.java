@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -98,6 +98,27 @@ public class NoAutowiredOnConstructorReconcilerTest extends BaseReconcilerTest {
 		List<ReconcileProblem> problems = reconcile("A.java", source, false);
 		
 		assertEquals(0, problems.size());
-		
 	}
+
+	@Test
+	void multipleConstructorsViaLombok() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.beans.factory.annotation.Autowired;
+				import lombok.RequiredArgsConstructor;
+				
+				@RequiredArgsConstructor
+				class A {
+				
+					@Autowired
+					A() {};
+					
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, false);
+		
+		assertEquals(0, problems.size());
+	}
+
 }

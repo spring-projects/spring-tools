@@ -26,6 +26,7 @@ import org.openrewrite.java.spring.NoAutowiredOnConstructor;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
@@ -67,6 +68,15 @@ public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 				if (IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(project.getClasspath())
 						.anyMatch(f -> sourceFile.startsWith(f.toPath()))) {
 
+					// lombok annotation around -> don't check for constructors
+					if (ASTUtils.getAnnotations(typeDecl).stream()
+							.map(annotation -> annotation.resolveTypeBinding().getQualifiedName())
+							.filter(annotationType -> Annotations.LOMBOK_CONSTRUCTOR_ANNOTATIONS.contains(annotationType))
+							.findAny().isPresent()) {
+						return super.visit(typeDecl);
+					}
+
+					// more than one constructor ?
 					int constructorCount = 0;
 					MethodDeclaration constructor = null;
 					for (MethodDeclaration method : typeDecl.getMethods()) {
@@ -79,7 +89,8 @@ public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 							}
 						}
 					}
-					
+
+					// one constructor -> check for autowired annotation
 					if (constructor != null) {
 						Annotation autowiredAnnotation = ReconcileUtils.findAnnotation(annotationHierarchies, constructor,
 								Annotations.AUTOWIRED, false);

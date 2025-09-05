@@ -132,5 +132,11 @@ public class Annotations {
 	);
 	
 	public static final String JMOLECULES_STEREOTYPE = "org.jmolecules.stereotype.Stereotype";
-
+	
+	public static final Set<String> LOMBOK_CONSTRUCTOR_ANNOTATIONS = Set.of(
+			"lombok.RequiredArgsConstructor",
+			"lombok.NoArgsConstructor",
+			"lombok.AllArgsConstructor"
+	);
+	
 }

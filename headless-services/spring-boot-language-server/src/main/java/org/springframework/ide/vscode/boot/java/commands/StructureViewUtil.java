@@ -145,7 +145,7 @@ public class StructureViewUtil {
 		}
 	}
 
-	private static final List<String> EXCLUSIONS = List.of("Application", "Properties", "Mappings");
+	private static final List<String> EXCLUSIONS = List.of("Application", "Properties", "Mappings", "Hints");
 
 	static Function<Stereotype, String> getStereotypeLabeler(StereotypeCatalog catalog) {
 

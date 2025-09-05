@@ -10,10 +10,12 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
+import org.springframework.ide.vscode.boot.modulith.AppModule;
 import org.springframework.ide.vscode.boot.modulith.AppModules;
 
 public class ApplicationModules {
@@ -37,7 +39,10 @@ public class ApplicationModules {
 	}
 
 	public Stream<ApplicationModule> stream() {
-		return modules.stream().map(ApplicationModule::new);
+		
+		return modules.stream()
+				.sorted(Comparator.comparing(AppModule::displayName))
+				.map(ApplicationModule::new);
 	}
 
 }

@@ -32,6 +32,7 @@ public abstract class ApplicationModulesStructureProvider
 
 	@Override
 	public Collection<StereotypePackageElement> extractPackages(ApplicationModules application) {
+		
 		return application.stream()
 				.map(ApplicationModule::getBasePackage)
 				.map(pkg -> StructureViewUtil.findPackageNode(pkg, project, springIndex))

@@ -20,8 +20,9 @@ import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.api.Stereotypes;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
-import org.jmolecules.stereotype.catalog.StereotypeMatcher;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
+import org.jmolecules.stereotype.catalog.support.StereotypeDetector.AnalysisLevel;
+import org.jmolecules.stereotype.catalog.support.StereotypeMatcher;
 import org.jmolecules.stereotype.support.StringBasedStereotype;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 
@@ -55,26 +56,26 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 
 	@Override
 	public Stereotypes fromPackage(StereotypePackageElement pkg) {
-		return new Stereotypes(fromAnnotatedElement(pkg));
+		return new Stereotypes(fromAnnotatedElement(pkg, AnalysisLevel.DIRECT));
 	}
 
 	@Override
 	public Stereotypes fromType(StereotypeClassElement type) {
-		return new Stereotypes(fromTypeInternal(type))
+		return new Stereotypes(fromTypeInternal(type, AnalysisLevel.DIRECT))
 				.and(fromPackage(findPackageFor(type)));
 	}
 
 	@Override
 	public Stereotypes fromMethod(StereotypeMethodElement method) {
-		return new Stereotypes(fromAnnotatedElement(method));
+		return new Stereotypes(fromAnnotatedElement(method, AnalysisLevel.DIRECT));
 	}
 	
-	private <T extends StereotypeAnnotatedElement> Collection<Stereotype> fromAnnotatedElement(StereotypeAnnotatedElement element) {
+	private <T extends StereotypeAnnotatedElement> Collection<Stereotype> fromAnnotatedElement(StereotypeAnnotatedElement element, AnalysisLevel level) {
 
 		var result = new ArrayList<Stereotype>();
 
 		if (element != null) {
-			result.addAll(catalog.getAnnotationBasedStereotypes(element, STEREOTYPE_MATCHER));
+			result.addAll(catalog.getAnnotationBasedStereotypes(element, level, STEREOTYPE_MATCHER));
 	
 	//		for (Annotation annotation : element.getAnnotations()) {
 	//			for (Class<?> type : fromAnnotation(annotation)) {
@@ -86,11 +87,11 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 		return result;
 	}
 	
-	private Collection<Stereotype> fromTypeInternal(StereotypeClassElement type) {
+	private Collection<Stereotype> fromTypeInternal(StereotypeClassElement type, AnalysisLevel level) {
 
 		var result = new TreeSet<Stereotype>();
 
-		result.addAll(catalog.getTypeBasedStereotypes(type, STEREOTYPE_MATCHER));
+		result.addAll(catalog.getTypeBasedStereotypes(type, level, STEREOTYPE_MATCHER));
 
 //		if (type.isAnnotation()) {
 //
@@ -118,7 +119,7 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 //		}
 //
 //		if (!type.isAnnotation()) {
-			result.addAll(fromAnnotatedElement(type));
+			result.addAll(fromAnnotatedElement(type, level));
 //		}
 
 		return result;

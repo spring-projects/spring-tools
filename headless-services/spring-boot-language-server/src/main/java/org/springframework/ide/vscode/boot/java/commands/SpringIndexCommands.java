@@ -63,7 +63,7 @@ public class SpringIndexCommands {
 		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 		
-		if (ModulithService.isModulithDependentProject(project) && System.getProperty("structure-view-modulith-support") != null) {
+		if (ModulithService.isModulithDependentProject(project) && System.getProperty("disable-modulith-structure-view") == null) {
 			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project);
 		}
 		else {

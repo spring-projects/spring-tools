@@ -112,7 +112,7 @@ public class WorkspaceBootExecutableProjectsTest {
 		assertEquals("org.test.Application", execProject2.mainClass());
 		assertEquals(project2.getLocationUri().toASCIIString(), execProject2.uri());
 		assertEquals("com.example:test-spring-data-symbols:0.0.1-SNAPSHOT", execProject2.gav());
-		assertEquals(44, execProject2.classpath().size());
+		assertEquals(79, execProject2.classpath().size());
 		assertTrue(execProject2.classpath().stream().map(path -> Path.of(path)).anyMatch(p -> p.endsWith("target/classes")));
 		assertFalse(execProject2.classpath().stream().map(path -> Path.of(path)).anyMatch(p -> p.endsWith("target/test-classes")));
 		

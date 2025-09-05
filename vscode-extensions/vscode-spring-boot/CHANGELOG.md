@@ -1,3 +1,9 @@
+## 2025-09-10 (4.32.0 RELEASE, incl. language servers version 1.64.0)
+
+- _(Spring Boot)_ [backport to 4.x] [aot repositories] adapt support to changed naming convention [#1622](https://github.com/spring-projects/spring-tools/issues/1622)
+- _(Spring Boot)_ PostgreSQL syntax highlighting doesn't recognize jsonb question mark (?) operator [#1615](https://github.com/spring-projects/spring-tools/issues/1615)
+- _(Spring Boot)_ [backport into 4.x] correct property values from enums are sometimes flagged as error [#1606](https://github.com/spring-projects/spring-tools/issues/1606)
+
 # 2025-06-11 (4.31.0 RELEASE, incl. language servers version 1.63.0)
 
 #### important highlights

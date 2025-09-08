@@ -35,10 +35,8 @@ public class ModulithStructureView {
 		this.modulithService = modulithService;
 	}
 
-	public Node createTree(IJavaProject project) {
-		
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
-		factory.registerStereotypeDefinitions();
+	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory) {
+
 		var adapter = new ModulithStereotypeFactoryAdapter(factory);
 
 		AppModules modulesData = modulithService.getModulesData(project);

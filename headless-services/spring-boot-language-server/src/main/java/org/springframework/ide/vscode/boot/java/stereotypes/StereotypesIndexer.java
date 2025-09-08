@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -22,6 +23,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -32,10 +34,11 @@ import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
+import org.jmolecules.stereotype.api.Stereotype;
+import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedBean;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
@@ -53,12 +56,6 @@ public class StereotypesIndexer implements SymbolProvider {
 	
 	private static final Logger log = LoggerFactory.getLogger(StereotypesIndexer.class);
 
-	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
-	
-	public StereotypesIndexer(StereotypeCatalogRegistry stereotypeCatalogRegistry) {
-		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
-	}
-	
 	@Override
 	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
 		ASTNode parent = node.getParent();
@@ -67,7 +64,13 @@ public class StereotypesIndexer implements SymbolProvider {
 			AnnotationTypeDeclaration annotationType = (AnnotationTypeDeclaration) parent;
 			ITypeBinding annotationBinding = annotationType.resolveBinding();
 			
-			StereotypeDefinitionElement stereotypeDefinitionElement = new StereotypeDefinitionElement(annotationBinding.getQualifiedName(), Type.IS_ANNOTATED);
+			StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement(annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, doc);
+			context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
+		}
+		else if (parent instanceof TypeDeclaration && ((TypeDeclaration) parent).isInterface()) {
+			ITypeBinding interfaceType = ((TypeDeclaration) parent).resolveBinding();
+
+			StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement(interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, doc);
 			context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
 		}
 	}
@@ -134,18 +137,6 @@ public class StereotypesIndexer implements SymbolProvider {
 		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
 		if (typeBinding == null) {
 			return;
-		}
-		
-		// identify stereotype definitions themselves
-		if (typeDeclaration instanceof TypeDeclaration && ((TypeDeclaration) typeDeclaration).isInterface()) {
-			Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
-			boolean isStereotypeAnnotated = annotations.stream()
-				.anyMatch(annotation -> annotation.resolveTypeBinding().getQualifiedName().equals(Annotations.JMOLECULES_STEREOTYPE));
-			
-			if (isStereotypeAnnotated) {
-				StereotypeDefinitionElement stereotypeDefinitionElement = new StereotypeDefinitionElement(typeBinding.getQualifiedName(), Type.IS_ANNOTATED);
-				context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
-			}
 		}
 		
 		// capture type information element for later tree generation
@@ -233,13 +224,27 @@ public class StereotypesIndexer implements SymbolProvider {
 		return result;
 	}
 	
-	private boolean isStereotype(TypeDeclaration typeDeclaration, ITypeBinding binding) {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
-		boolean isStereotype = annotationHierarchies.isAnnotatedWith(binding, Annotations.JMOLECULES_STEREOTYPE);
-		
-		return isStereotype;
+	private StereotypeDefinitionElement createDefinitionElement(String id, StereotypeDefinition.Assignment.Type assignment, Annotation additionalDetails, TextDocument doc) {
+		int priority = Stereotype.DEFAULT_PRIORITY;
+		Optional<Expression> attribute = ASTUtils.getAttribute(additionalDetails, "priority");
+		if (attribute.isPresent()) {
+			String priorityValue = ASTUtils.getExpressionValueAsString(attribute.get(), (a) -> {});
+			priority = Integer.valueOf(priorityValue);
+		}
+
+		String displayName = null;
+		Optional<Expression> name = ASTUtils.getAttribute(additionalDetails, "name");
+		if (name.isPresent()) {
+			displayName = ASTUtils.getExpressionValueAsString(name.get(), (a) -> {});
+		}
+
+		String[] groups = null;
+		Optional<Expression> groupsAttribute = ASTUtils.getAttribute(additionalDetails, "groups");
+		if (groupsAttribute.isPresent()) {
+			groups = ASTUtils.getExpressionValueAsArray(groupsAttribute.get(), (a) -> {});
+		}
+
+		return new StereotypeDefinitionElement(id, priority, displayName, groups, assignment);
 	}
-	
-	
 	
 }

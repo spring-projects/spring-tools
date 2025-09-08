@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import org.atteo.evo.inflector.English;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
@@ -36,11 +35,8 @@ public class JMoleculesStructureView {
 		this.springIndex = springIndex;
 	}
 
-	public Node createTree(IJavaProject project) {
+	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory) {
 		
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
-		factory.registerStereotypeDefinitions();
-
 		StereotypePackageElement mainApplicationPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
 		
 		var labelProvider = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,

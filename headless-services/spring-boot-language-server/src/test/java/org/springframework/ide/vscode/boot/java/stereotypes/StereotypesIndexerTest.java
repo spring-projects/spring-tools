@@ -16,24 +16,16 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition;
-import org.jmolecules.stereotype.tooling.AsciiArtNodeHandler;
-import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
-import org.jmolecules.stereotype.tooling.ProjectTree;
-import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
-import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvider;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +35,6 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
-import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler;
-import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -262,12 +252,18 @@ public class StereotypesIndexerTest {
 	}
 
 	@Test
-	void testSelfDefinedAnnotationStereotype() {
+	void testSelfDefinedStereotypeAsAnnotation() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
 		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
 		factory.registerStereotypeDefinitions();
 		
+		// catalog definition
+		Optional<? extends StereotypeDefinition> found = catalog.getDefinitions().stream()
+			.filter(definition -> definition.getStereotype().getIdentifier().equals("example.application.MyStereotype"))
+			.findAny();
+		assertTrue(found.isPresent());
+
 		// stereotype matching
 		StereotypeClassElement myStereotypeMarkedClass = springIndex.getNodesOfType(StereotypeClassElement.class).stream()
 			.filter(type -> type.getType().equals("example.application.MyStereotypeMarkedClass"))
@@ -278,12 +274,53 @@ public class StereotypesIndexerTest {
 		
 		assertEquals("example.application.MyStereotype", myStereotypeMarkedClassStereotypes.get(0).getIdentifier());
 		assertEquals("architecture.hexagonal.Application", myStereotypeMarkedClassStereotypes.get(1).getIdentifier());
+	}
+	
+	@Test
+	void testSelfDefinedStereotypeAsInterface() {
+		
+		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
+		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		factory.registerStereotypeDefinitions();
 		
 		// catalog definition
 		Optional<? extends StereotypeDefinition> found = catalog.getDefinitions().stream()
-			.filter(definition -> definition.getStereotype().getIdentifier().equals("example.application.MyStereotype"))
+			.filter(definition -> definition.getStereotype().getIdentifier().equals("example.application.DirectStereotypeInterface"))
 			.findAny();
 		assertTrue(found.isPresent());
+		
+		StereotypeDefinition stereotypeDefinition = found.get();
+		assertEquals("example.application.DirectStereotypeInterface", stereotypeDefinition.getStereotype().getIdentifier());
+		
+		// stereotype matching
+		StereotypeClassElement classImplementsStereotypeInterface = springIndex.getNodesOfType(StereotypeClassElement.class).stream()
+			.filter(type -> type.getType().equals("example.application.ClassWithDirectStereotypeSuperinterface"))
+			.findAny().get();
+		
+		List<Stereotype> stereotypes = factory.fromType(classImplementsStereotypeInterface).stream().toList();
+		assertEquals(2, stereotypes.size());
+		
+		assertEquals("example.application.DirectStereotypeInterface", stereotypes.get(0).getIdentifier());
+		assertEquals("architecture.hexagonal.Application", stereotypes.get(1).getIdentifier());
+	}
+	
+	@Test
+	void testSelfDefinedStereotypeViaInterfaceWithAttributes() {
+		
+		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
+		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		factory.registerStereotypeDefinitions();
+		
+		// catalog definition
+		Optional<? extends StereotypeDefinition> found = catalog.getDefinitions().stream()
+			.filter(definition -> definition.getStereotype().getIdentifier().equals("example.application.StereotypeInterfaceWithAttributes"))
+			.findAny();
+		assertTrue(found.isPresent());
+		
+		StereotypeDefinition stereotypeDefinition = found.get();
+		assertEquals("example.application.StereotypeInterfaceWithAttributes", stereotypeDefinition.getStereotype().getIdentifier());
+		assertEquals("Super Stereotype", stereotypeDefinition.getStereotype().getDisplayName());
+		assertEquals(List.of("group1", "group2"), stereotypeDefinition.getStereotype().getGroups());
 	}
 	
 	@Test
@@ -304,80 +341,4 @@ public class StereotypesIndexerTest {
 		assertEquals("architecture.hexagonal.Application", stereotypes.get(1).getIdentifier());
 	}
 
-	@Test
-	@Disabled
-	void testTree() {
-		
-		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
-		factory.registerStereotypeDefinitions();
-
-		var labels = SimpleLabelProvider.forPackage(StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
-				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString);
-
-		SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> structureProvider =
-				new SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement>() {
-
-			@Override
-			public Collection<StereotypePackageElement> extractPackages(StereotypePackageElement pkg) {
-				return getAllPackageElements().stream()
-					.filter(packageElement -> packageElement.getPackageName().startsWith(pkg.getPackageName()))
-					.toList();
-
-				// return extractTypes(pkg).stream()
-				// .map(Class::getPackage)
-				// .distinct()
-				// .toList();
-			}
-
-			@Override
-			public Collection<StereotypeMethodElement> extractMethods(StereotypeClassElement type) {
-				return List.of();
-			}
-
-			@Override
-			public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
-				return getAllClassElements().stream()
-					.filter(element -> element.getType().startsWith(pkg.getPackageName()))
-					.toList();
-			}
-		};
-		
-		// ascii art output
-		var asciiHandler = new AsciiArtNodeHandler<>(labels);
-		var tree = new ProjectTree<>(factory, catalog, asciiHandler)
-				.withStructureProvider(structureProvider)
-				.withGrouper("org.jmolecules.architecture")
-				.withGrouper("org.jmolecules.ddd", "org.jmolecules.event", "spring", "jpa", "java");
-
-		tree.process(new StereotypePackageElement("example.application", null));
-		System.out.println(asciiHandler.getWriter().toString());
-
-		// json output
-		BiConsumer<Node, Object> consumer = (node, c) -> {
-			node.withAttribute(HierarchicalNodeHandler.TEXT, labels.getCustomLabel(c))
-			 .withAttribute("icon", "fa-named-interface");
-		};
-		
-		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labels, consumer);
-
-		var jsonTree = new ProjectTree<>(factory, catalog, jsonHandler)
-				.withStructureProvider(structureProvider)
-				.withGrouper("org.jmolecules.architecture")
-				.withGrouper("org.jmolecules.ddd", "org.jmolecules.event", "spring", "jpa", "java");
-		
-		jsonTree.process(new StereotypePackageElement("example.application", null));
-
-		tree.process(new StereotypePackageElement("example.application", null));
-		System.out.println(jsonHandler.toString());
-	}
-
-	private List<StereotypeClassElement> getAllClassElements() {
-		return springIndex.getNodesOfType(StereotypeClassElement.class);
-	}
-	
-	private List<StereotypePackageElement> getAllPackageElements() {
-		return springIndex.getNodesOfType(StereotypePackageElement.class);
-	}
-	
 }

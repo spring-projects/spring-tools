@@ -10,16 +10,24 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
+import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
+import org.jmolecules.stereotype.support.StringBasedStereotype;
 import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
 
 public class StereotypeDefinitionElement extends AbstractSpringIndexElement {
 
 	private final String type;
+	private final int priority;
+	private final String displayName;
+	private final String[] groups;
 	private final Type assignment;
 	
-	public StereotypeDefinitionElement(String type, Type assignment) {
+	public StereotypeDefinitionElement(String type, int priority, String displayName, String[] groups, Type assignment) {
 		this.type = type;
+		this.priority = priority;
+		this.displayName = displayName;
+		this.groups = groups;
 		this.assignment = assignment;
 	}
 
@@ -30,4 +38,21 @@ public class StereotypeDefinitionElement extends AbstractSpringIndexElement {
 	public Type getAssignment() {
 		return this.assignment;
 	}
+	
+	public Stereotype createStereotype() {
+		var stereotype = StringBasedStereotype.of(type, priority);
+		
+		// add assigment
+		stereotype = stereotype.withDisplayName(displayName);
+
+		// add groups
+		if (groups != null) {
+			for (String group : groups) {
+				stereotype = stereotype.addGroup(group);
+			}
+		}
+
+		return stereotype;
+	}
+
 }

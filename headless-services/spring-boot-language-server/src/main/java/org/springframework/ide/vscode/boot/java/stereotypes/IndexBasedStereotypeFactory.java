@@ -23,7 +23,6 @@ import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.catalog.support.StereotypeDetector.AnalysisLevel;
 import org.jmolecules.stereotype.catalog.support.StereotypeMatcher;
-import org.jmolecules.stereotype.support.StringBasedStereotype;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 
 public class IndexBasedStereotypeFactory implements StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
@@ -41,19 +40,6 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 		this.springIndex = springIndex;
 	}
 	
-	public void registerStereotypeDefinitions() {
-		springIndex.getNodesOfType(StereotypeDefinitionElement.class).stream()
-			.forEach(element -> registerStereotype(element));
-	}
-
-	private void registerStereotype(StereotypeDefinitionElement element) {
-		var stereotype = StringBasedStereotype.of(element.getType());
-		Type assignment = element.getAssignment();
-		
-		catalog.getOrRegister(stereotype, () -> Assignment.of(element.getType(), assignment))
-				.getStereotype();
-	}
-
 	@Override
 	public Stereotypes fromPackage(StereotypePackageElement pkg) {
 		return new Stereotypes(fromAnnotatedElement(pkg, AnalysisLevel.DIRECT));
@@ -68,6 +54,11 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 	@Override
 	public Stereotypes fromMethod(StereotypeMethodElement method) {
 		return new Stereotypes(fromAnnotatedElement(method, AnalysisLevel.DIRECT));
+	}
+	
+	public void registerStereotypeDefinitions() {
+		springIndex.getNodesOfType(StereotypeDefinitionElement.class).stream()
+			.forEach(element -> registerStereotype(element));
 	}
 	
 	private <T extends StereotypeAnnotatedElement> Collection<Stereotype> fromAnnotatedElement(StereotypeAnnotatedElement element, AnalysisLevel level) {
@@ -124,8 +115,6 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 
 		return result;
 	}
-
-
 	
 	private static boolean isAnnotated(StereotypeAnnotatedElement element, String fqn) {
 		return element.getAnnotationTypes().stream()
@@ -146,13 +135,15 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 		
 		return result.isPresent() ? result.get() : null;
 	}
+	
+	private void registerStereotype(StereotypeDefinitionElement element) {
+		var stereotype = element.createStereotype();
 
-
-
-
-
-
-
-
+		String type = element.getType();
+		Type assignment = element.getAssignment();
+		
+		catalog.getOrRegister(stereotype, () -> Assignment.of(type, assignment))
+				.getStereotype();
+	}
 
 }

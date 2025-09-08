@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -62,12 +63,17 @@ public class SpringIndexCommands {
 		}
 		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
+		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		
+		if (System.getProperty("enable-source-defined-stereotypes") != null) {
+			factory.registerStereotypeDefinitions();
+		}
 		
 		if (ModulithService.isModulithDependentProject(project) && System.getProperty("disable-modulith-structure-view") == null) {
-			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project);
+			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project, factory);
 		}
 		else {
-			return new JMoleculesStructureView(catalog, springIndex).createTree(project);
+			return new JMoleculesStructureView(catalog, springIndex).createTree(project, factory);
 		}
 	}
 

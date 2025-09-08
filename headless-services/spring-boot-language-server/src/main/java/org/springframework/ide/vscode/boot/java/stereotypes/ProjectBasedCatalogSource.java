@@ -105,7 +105,7 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 			log.error("error looking up stereotype metadata for project: " + this.project.getElementName(), e);
 		}
 		
-		
+		log.info("project based stereotype catalogs lookup for project '" + project.getElementName() + "' found: " + result.toString());
 		return result.stream();
 	}
 

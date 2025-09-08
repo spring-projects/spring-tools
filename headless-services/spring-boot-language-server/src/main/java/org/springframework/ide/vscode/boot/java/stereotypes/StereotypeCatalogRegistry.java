@@ -15,14 +15,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.catalog.support.JsonPathStereotypeCatalog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 
 public class StereotypeCatalogRegistry {
-	
+
+	private static final Logger log = LoggerFactory.getLogger(StereotypeCatalogRegistry.class);
+
 	private final Map<String, AbstractStereotypeCatalog> catalogs;
 	
-	public StereotypeCatalogRegistry() {
+	public StereotypeCatalogRegistry(ProjectObserver projectObserver) {
 		this.catalogs = new ConcurrentHashMap<>();
+		registerProjectListener(projectObserver);
 	}
 	
 	public AbstractStereotypeCatalog getCatalogOf(IJavaProject project) {
@@ -36,6 +42,27 @@ public class StereotypeCatalogRegistry {
 
 	public void reset(IJavaProject project) {
 		this.catalogs.remove(project.getElementName());
+		log.info("stereotype catalog registry reset for project '" + project.getElementName() + "'");
+	}
+
+	// reset cache when projects change or disappear
+	private void registerProjectListener(ProjectObserver projectObserver) {
+		projectObserver.addListener(new ProjectObserver.Listener() {
+			
+			@Override
+			public void deleted(IJavaProject project) {
+				reset(project);
+			}
+			
+			@Override
+			public void created(IJavaProject project) {
+			}
+			
+			@Override
+			public void changed(IJavaProject project) {
+				reset(project);
+			}
+		});
 	}
 
 }

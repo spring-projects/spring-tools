@@ -442,8 +442,8 @@ public class BootLanguageServerBootApp {
 	}
 	
 	@Bean
-	StereotypeCatalogRegistry stereotypeCatalogRegistry() {
-		return new StereotypeCatalogRegistry();
+	StereotypeCatalogRegistry stereotypeCatalogRegistry(ProjectObserver projectObserver) {
+		return new StereotypeCatalogRegistry(projectObserver);
 	}
 	
 	@Bean ResponseModifier responseModifier() {

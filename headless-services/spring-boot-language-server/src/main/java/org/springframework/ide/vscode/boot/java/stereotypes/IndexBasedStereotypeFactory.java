@@ -117,9 +117,7 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 	}
 	
 	private static boolean isAnnotated(StereotypeAnnotatedElement element, String fqn) {
-		return element.getAnnotationTypes().stream()
-				.filter(it -> !it.startsWith("java"))
-				.anyMatch(it -> it.equals(fqn) /* || isAnnotated(it, fqn)*/ );
+		return element.isAnnotatedWith(fqn);
 	}
 	
 	private static boolean doesImplement(StereotypeClassElement type, String fqn) {

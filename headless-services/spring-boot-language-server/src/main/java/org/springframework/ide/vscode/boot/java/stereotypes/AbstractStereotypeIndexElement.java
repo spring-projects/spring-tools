@@ -12,27 +12,24 @@ package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import java.util.Set;
 
-public class StereotypePackageElement extends AbstractStereotypeIndexElement {
-	
-	private final String packageName;
-	private final boolean isMainPackage;
-	
-	public StereotypePackageElement(String packageName, Set<String> annotationTypes) {
-		this(packageName, annotationTypes, false);
+import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
+
+public abstract class AbstractStereotypeIndexElement extends AbstractSpringIndexElement implements StereotypeAnnotatedElement {
+
+	private Set<String> annotationTypes;
+
+	public AbstractStereotypeIndexElement(Set<String> annotationTypes) {
+		this.annotationTypes = annotationTypes;
 	}
 	
-	public StereotypePackageElement(String packageName, Set<String> annotationTypes, boolean isMainPackage) {
-		super(annotationTypes);
-		this.packageName = packageName;
-		this.isMainPackage = isMainPackage;
+	@Override
+	public Set<String> getAnnotationTypes() {
+		return annotationTypes;
 	}
 	
-	public String getPackageName() {
-		return packageName;
+	@Override
+	public boolean isAnnotatedWith(String annotationType) {
+		return annotationTypes.contains(annotationType);
 	}
-	
-	public boolean isMainPackage() {
-		return isMainPackage;
-	}
-	
+
 }

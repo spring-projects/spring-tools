@@ -61,7 +61,7 @@ public class ApplicationModulesLabelProvider implements
 
 		return modules.getModuleByType(type)
 				.map(it -> it.getBasePackage())
-				.map(it -> new StereotypePackageElement(it, Collections.emptyList()))
+				.map(it -> new StereotypePackageElement(it, Collections.emptySet()))
 				.map(it -> StructureViewUtil.abbreviate(it, type))
 				.orElseGet(type::getType);
 	}

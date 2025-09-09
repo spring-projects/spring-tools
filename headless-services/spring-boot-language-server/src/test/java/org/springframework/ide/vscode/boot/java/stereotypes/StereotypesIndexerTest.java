@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -87,26 +88,32 @@ public class StereotypesIndexerTest {
     	StereotypePackageElement packageElement1 = packages.stream().filter(packageElement -> packageElement.getPackageName().equals(("example"))).findFirst().get();
     	StereotypePackageElement packageElement2 = packages.stream().filter(packageElement -> packageElement.getPackageName().equals(("example.application"))).findFirst().get();
     	
-    	List<String> annotationTypes1 = packageElement1.getAnnotationTypes();
+    	Set<String> annotationTypes1 = packageElement1.getAnnotationTypes();
     	assertEquals(1, annotationTypes1.size());
-    	assertEquals("org.jmolecules.architecture.hexagonal.Port", annotationTypes1.get(0));
+    	assertTrue(annotationTypes1.contains("org.jmolecules.architecture.hexagonal.Port"));
+    	assertTrue(packageElement1.isAnnotatedWith("org.jmolecules.architecture.hexagonal.Port"));
+    	assertFalse(packageElement1.isAnnotatedWith("notFound"));
     	
-    	List<String> annotationTypes2 = packageElement2.getAnnotationTypes();
+    	Set<String> annotationTypes2 = packageElement2.getAnnotationTypes();
     	assertEquals(1, annotationTypes2.size());
-    	assertEquals("org.jmolecules.architecture.hexagonal.Application", annotationTypes2.get(0));
+    	assertTrue(annotationTypes2.contains("org.jmolecules.architecture.hexagonal.Application"));
+    	assertTrue(packageElement2.isAnnotatedWith("org.jmolecules.architecture.hexagonal.Application"));
+    	assertFalse(packageElement2.isAnnotatedWith("notFound"));
     	
     	// check type elements for package-info
     	List<StereotypeClassElement> packagesTypeElements = springIndex.getNodesOfType(StereotypeClassElement.class);
     	StereotypeClassElement packageClassElement1 = packagesTypeElements.stream().filter(packageType -> packageType.getType().equals(("example.package-info"))).findFirst().get();
     	StereotypeClassElement packageClassElement2 = packagesTypeElements.stream().filter(packageType -> packageType.getType().equals(("example.application.package-info"))).findFirst().get();
     	
-    	List<String> packageTypeAnnotations1 = packageClassElement1.getAnnotationTypes();
+    	Set<String> packageTypeAnnotations1 = packageClassElement1.getAnnotationTypes();
     	assertEquals(1, packageTypeAnnotations1.size());
-    	assertEquals("org.jmolecules.architecture.hexagonal.Port", packageTypeAnnotations1.get(0));
+    	assertTrue(packageTypeAnnotations1.contains("org.jmolecules.architecture.hexagonal.Port"));
+    	assertTrue(packageClassElement1.isAnnotatedWith("org.jmolecules.architecture.hexagonal.Port"));
 
-    	List<String> packageTypeAnnotations2 = packageClassElement2.getAnnotationTypes();
+    	Set<String> packageTypeAnnotations2 = packageClassElement2.getAnnotationTypes();
     	assertEquals(1, packageTypeAnnotations2.size());
-    	assertEquals("org.jmolecules.architecture.hexagonal.Application", packageTypeAnnotations2.get(0));
+    	assertTrue(packageTypeAnnotations2.contains("org.jmolecules.architecture.hexagonal.Application"));
+    	assertTrue(packageClassElement2.isAnnotatedWith("org.jmolecules.architecture.hexagonal.Application"));
     }
     
     @Test
@@ -180,10 +187,14 @@ public class StereotypesIndexerTest {
     	assertFalse(methodWithoutAnnotations.isPresent());
 
     	StereotypeMethodElement methodWithAnnotations = methods.stream().filter(method -> method.getMethodName().equals("methodWithAnnotations")).findAny().get();
-    	List<String> annotationTypes = methodWithAnnotations.getAnnotationTypes();
+    	Set<String> annotationTypes = methodWithAnnotations.getAnnotationTypes();
 		assertEquals(4, annotationTypes.size());
     	assertTrue(annotationTypes.contains(Annotations.SPRING_GET_MAPPING));
     	assertTrue(annotationTypes.contains(Annotations.SPRING_REQUEST_MAPPING));
+    	assertTrue(methodWithAnnotations.isAnnotatedWith(Annotations.SPRING_GET_MAPPING));
+    	assertTrue(methodWithAnnotations.isAnnotatedWith(Annotations.SPRING_REQUEST_MAPPING));
+    	
+    	assertFalse(methodWithAnnotations.isAnnotatedWith(Annotations.BOOT_APP));
     	
     	assertEquals("methodWithAnnotations", methodWithAnnotations.getMethodName());
     	assertEquals("example.application.ClassWithMethods.methodWithAnnotations(java.lang.String) : V", methodWithAnnotations.getMethodSignature());

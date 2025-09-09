@@ -10,10 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
-import java.util.List;
+import java.util.Set;
 
 public interface StereotypeAnnotatedElement {
 
-	public List<String> getAnnotationTypes();
+	public Set<String> getAnnotationTypes();
+	public boolean isAnnotatedWith(String annotationType);
 
 }

@@ -14,9 +14,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -108,11 +110,11 @@ public class StereotypesIndexer implements SymbolProvider {
 		@SuppressWarnings("unchecked")
 		List<Annotation> annotations = packageDeclaration.annotations();
 		
-		List<String> annotationTypes = annotations.stream()
+		Set<String> annotationTypes = annotations.stream()
 			.map(annotation -> annotation.resolveAnnotationBinding())
 			.filter(binding -> binding != null)
 			.map(binding -> binding.getAnnotationType().getQualifiedName())
-			.toList();
+			.collect(Collectors.toCollection(LinkedHashSet<String>::new));
 		
 		StereotypePackageElement packageElement = new StereotypePackageElement(packageBinding.getName(), annotationTypes);
 		context.getBeans().add(new CachedBean(context.getDocURI(), packageElement));
@@ -154,7 +156,7 @@ public class StereotypesIndexer implements SymbolProvider {
 		}
 
 		Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
-		List<String> annotationTypes = getAnnotationTypes(annotationHierarchies, superTypeAnnotations, annotations);
+		Set<String> annotationTypes = getAnnotationTypes(annotationHierarchies, superTypeAnnotations, annotations);
 
 		SimpleName astNodeForLocation = typeDeclaration.getName();
 		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
@@ -184,7 +186,7 @@ public class StereotypesIndexer implements SymbolProvider {
 			String methodName = method.getName().getFullyQualifiedName();
 
 			Collection<Annotation> annotations = ASTUtils.getAnnotations(method);
-			List<String> annotationTypes = getAnnotationTypes(annotationHierarchies, List.of(), annotations);
+			Set<String> annotationTypes = getAnnotationTypes(annotationHierarchies, List.of(), annotations);
 			
 			if (annotationTypes.size() > 0) { // only index annotated methods to avoid creating all those useless index elements for each and every method
 				SimpleName astNodeForLocation = method.getName();
@@ -199,7 +201,7 @@ public class StereotypesIndexer implements SymbolProvider {
 		}
 	}
 
-	private List<String> getAnnotationTypes(AnnotationHierarchies annotationHierarchies,
+	private Set<String> getAnnotationTypes(AnnotationHierarchies annotationHierarchies,
 			List<IAnnotationBinding> superTypeAnnotations, Collection<Annotation> annotations) {
 		Stream<IAnnotationBinding> annotationBindings = annotations.stream()
 				.map(annotation -> annotation.resolveAnnotationBinding())
@@ -207,10 +209,10 @@ public class StereotypesIndexer implements SymbolProvider {
 				.flatMap(binding -> Stream.concat(Stream.of(binding), getMetaAnnotations(annotationHierarchies, binding).stream()))
 				.filter(binding -> !binding.getAnnotationType().getQualifiedName().startsWith("java"));
 
-		List<String> annotationTypes = Streams.concat(annotationBindings, superTypeAnnotations.stream())
+		Set<String> annotationTypes = Streams.concat(annotationBindings, superTypeAnnotations.stream())
 				.distinct()
 				.map(binding -> binding.getAnnotationType().getQualifiedName())
-				.toList();
+				.collect(Collectors.toCollection(LinkedHashSet<String>::new));
 		
 		return annotationTypes;
 	}

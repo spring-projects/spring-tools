@@ -111,7 +111,7 @@ public class StructureViewUtil {
 		List<StereotypeClassElement> classNodes = springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class);
 		
 		Optional<StereotypePackageElement> packageElement = classNodes.stream()
-			.filter(node -> node.getAnnotationTypes().contains(Annotations.BOOT_APP))
+			.filter(node -> node.isAnnotatedWith(Annotations.BOOT_APP))
 			.map(node -> getPackage(node.getType()))
 			.map(packageName -> findPackageNode(packageName, project, springIndex))
 			.findFirst();

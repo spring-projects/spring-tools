@@ -11,8 +11,6 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -61,7 +59,7 @@ public class ApplicationModulesNamedInterfacesGroupingProvider extends Applicati
 	private StereotypeClassElement findClassElement(String className, IJavaProject project, SpringMetamodelIndex springIndex) {
 		return springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class).stream()
 			.filter(classElement -> classElement.getType().equals(className))
-			.findAny().orElse(new StereotypeClassElement(className, null, Set.of(), List.of()));
+			.findAny().orElse(new StereotypeClassElement(className, null, Set.of(), Set.of()));
 	}
 
 	private Collection<StereotypeClassElement> getInternalTypes(ApplicationModule module) {

@@ -15,21 +15,18 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
-import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
 
-public class StereotypeClassElement extends AbstractSpringIndexElement implements StereotypeAnnotatedElement {
+public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 	
 	private final String type;
 	private final Location location;
-	
 	private final Set<String> supertypes;
-	private List<String> annotationTypes;
 	
-	public StereotypeClassElement(String type, Location location, Set<String> supertypes, List<String> annotationTypes) {
+	public StereotypeClassElement(String type, Location location, Set<String> supertypes, Set<String> annotationTypes) {
+		super(annotationTypes);
 		this.type = type;
 		this.location = location;
 		this.supertypes = supertypes;
-		this.annotationTypes = annotationTypes;
 	}
 	
 	public String getType() {
@@ -49,11 +46,6 @@ public class StereotypeClassElement extends AbstractSpringIndexElement implement
 		return supertypes.contains(fqn);
 	}
 
-	@Override
-	public List<String> getAnnotationTypes() {
-		return annotationTypes;
-	}
-	
 	public List<StereotypeMethodElement> getMethods() {
 		return SpringMetamodelIndex.getNodesOfType(StereotypeMethodElement.class, List.of(this));
 	}

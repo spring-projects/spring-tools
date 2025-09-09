@@ -13,7 +13,12 @@ export class StructureManager {
     }
 
     refresh(updateMetadata: boolean): void {
-        this._rootElements = commands.executeCommand(SPRING_STRUCTURE_CMD, updateMetadata).then(json => {
+        this._rootElements = commands.executeCommand(SPRING_STRUCTURE_CMD,
+                {
+                    "updateMetadata" : updateMetadata,
+                    "groups" : [
+                    ]
+                }).then(json => {
             const nodes = this.parseArray(json);
             this._onDidChange.fire(undefined);
             return nodes;

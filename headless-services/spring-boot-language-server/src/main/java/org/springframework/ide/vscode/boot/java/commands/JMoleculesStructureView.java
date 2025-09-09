@@ -35,7 +35,7 @@ public class JMoleculesStructureView {
 		this.springIndex = springIndex;
 	}
 
-	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory) {
+	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, List<String> selectedGroups) {
 		
 		StereotypePackageElement mainApplicationPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
 		
@@ -63,7 +63,7 @@ public class JMoleculesStructureView {
 		var jsonTree = new ProjectTree<>(factory, catalog, jsonHandler)
 				.withStructureProvider(structureProvider);
 		
-		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog);
+		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog, selectedGroups);
 		for (String[] grouper : groupers) {
 			jsonTree = jsonTree.withGrouper(grouper);
 		}

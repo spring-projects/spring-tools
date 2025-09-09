@@ -35,7 +35,7 @@ public class ModulithStructureView {
 		this.modulithService = modulithService;
 	}
 
-	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory) {
+	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, List<String> selectedGroups) {
 
 		var adapter = new ModulithStereotypeFactoryAdapter(factory);
 
@@ -64,7 +64,7 @@ public class ModulithStructureView {
 		var jsonTree = new ProjectTree<>(adapter, catalog, jsonHandler)
 				.withStructureProvider(structureProvider);
 
-		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog);
+		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog, selectedGroups);
 		for (String[] grouper : groupers) {
 			jsonTree = jsonTree.withGrouper(grouper);
 		}

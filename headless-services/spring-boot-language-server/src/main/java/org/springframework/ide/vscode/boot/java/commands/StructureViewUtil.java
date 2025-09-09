@@ -37,7 +37,7 @@ import com.google.common.collect.Streams;
 
 public class StructureViewUtil {
 
-	public static List<String[]> identifyGroupers(AbstractStereotypeCatalog catalog) {
+	public static List<String[]> identifyGroupers(AbstractStereotypeCatalog catalog, List<String> selectedGroups) {
 		
 //		List<String[]> allGroupsWithSpecificOrder = Arrays.asList(
 //			new String[] {"architecture"},
@@ -47,24 +47,22 @@ public class StructureViewUtil {
 //		return allGroupsWithSpecificOrder;
 		
 		
-//		var yourList = List.of("foo");
-		
 		StereotypeGroups groups = catalog.getGroups();
 
         var architectureIds = groups.streamByType(StereotypeGroup.Type.ARCHITECTURE)
                 .map(StereotypeGroup::getIdentifier)
-//                .filter(yourList::contains)
+                .filter(selectedGroups::contains)
                 .toList();
 
         var designIds = groups.streamByType(StereotypeGroup.Type.DESIGN)
-                .map(StereotypeGroup::getIdentifier);
-//                .filter(yourList::contains)
+                .map(StereotypeGroup::getIdentifier)
+                .filter(selectedGroups::contains);
         
         var customIds = new ArrayList<String>().stream();
 
         var technologyIds = groups.streamByType(StereotypeGroup.Type.TECHNOLOGY)
-                .map(StereotypeGroup::getIdentifier);
-//                .filter(yourList::contains)
+                .map(StereotypeGroup::getIdentifier)
+                .filter(selectedGroups::contains);
         
         ArrayList<String[]> result = new ArrayList<String[]>();
         result.add(architectureIds.toArray(String[]::new));

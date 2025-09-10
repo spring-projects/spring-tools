@@ -26,10 +26,10 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 public class ModulithStructureView {
 
 	private final AbstractStereotypeCatalog catalog;
-	private final SpringMetamodelIndex springIndex;
+	private final CachedSpringMetamodelIndex springIndex;
 	private final ModulithService modulithService;
 
-	public ModulithStructureView(AbstractStereotypeCatalog catalog, SpringMetamodelIndex springIndex, ModulithService modulithService) {
+	public ModulithStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, ModulithService modulithService) {
 		this.catalog = catalog;
 		this.springIndex = springIndex;
 		this.modulithService = modulithService;

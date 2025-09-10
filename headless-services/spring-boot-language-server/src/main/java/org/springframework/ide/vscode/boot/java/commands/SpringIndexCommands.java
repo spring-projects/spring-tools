@@ -38,22 +38,21 @@ public class SpringIndexCommands {
 
 	private static final Logger log = LoggerFactory.getLogger(SpringIndexCommands.class);
 	
-	private final SpringMetamodelIndex springIndex;
 	private final ModulithService modulithService;
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
 	
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex, ModulithService modulithService,
 			JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry) {
 
-		this.springIndex = springIndex;
 		this.modulithService = modulithService;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> server.getAsync().invoke(() -> {
 			StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
 
+			CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
 			return projectFinder.all().stream()
-					.map(project -> nodeFrom(project, args.updateMetadata, args.selectedGroups))
+					.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata, args.selectedGroups))
 					.filter(Objects::nonNull)
 					.collect(Collectors.toList());
 		}));
@@ -75,7 +74,7 @@ public class SpringIndexCommands {
 		return new Groups(project.getElementName(), groups);
 	}
 	
-	private Node nodeFrom(IJavaProject project, boolean updateMetadata, List<String> selectedGroups) {
+	private Node nodeFrom(IJavaProject project, CachedSpringMetamodelIndex springIndex, boolean updateMetadata, List<String> selectedGroups) {
 		log.info("create structural view tree information for project: " + project.getElementName());
 		
 		if (updateMetadata) {
@@ -84,7 +83,7 @@ public class SpringIndexCommands {
 		}
 		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, springIndex);
 		
 		if (System.getProperty("enable-source-defined-stereotypes") != null) {
 			factory.registerStereotypeDefinitions();

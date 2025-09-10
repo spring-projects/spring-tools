@@ -27,10 +27,10 @@ public class ApplicationModulesLabelProvider implements
 
 	private final StereotypeCatalog catalog;
 	private final IJavaProject project;
-	private final SpringMetamodelIndex springIndex;
+	private final CachedSpringMetamodelIndex springIndex;
 	private final ApplicationModules modules;
 	
-	public ApplicationModulesLabelProvider(StereotypeCatalog catalog, IJavaProject project, SpringMetamodelIndex springIndex, ApplicationModules modules) {
+	public ApplicationModulesLabelProvider(StereotypeCatalog catalog, IJavaProject project, CachedSpringMetamodelIndex springIndex, ApplicationModules modules) {
 		this.catalog = catalog;
 		this.project = project;
 		this.springIndex = springIndex;

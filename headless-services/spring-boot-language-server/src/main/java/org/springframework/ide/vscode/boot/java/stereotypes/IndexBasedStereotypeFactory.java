@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.TreeSet;
 
 import org.jmolecules.stereotype.api.Stereotype;
@@ -23,20 +22,24 @@ import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.catalog.support.StereotypeDetector.AnalysisLevel;
 import org.jmolecules.stereotype.catalog.support.StereotypeMatcher;
-import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.CachedSpringMetamodelIndex;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 public class IndexBasedStereotypeFactory implements StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 	
 	private final AbstractStereotypeCatalog catalog;
-	private final SpringMetamodelIndex springIndex;
+	private final IJavaProject project;
+
+	private final CachedSpringMetamodelIndex springIndex;
 	
 	private static final StereotypeMatcher<StereotypeClassElement, StereotypeAnnotatedElement> STEREOTYPE_MATCHER = StereotypeMatcher
 			.<StereotypeClassElement, StereotypeAnnotatedElement> isAnnotatedWith((element, fqn) -> isAnnotated(element, fqn))
 			.orImplements((type, fqn) -> doesImplement(type, fqn));
 
 
-	public IndexBasedStereotypeFactory(AbstractStereotypeCatalog catalog, SpringMetamodelIndex springIndex) {
+	public IndexBasedStereotypeFactory(AbstractStereotypeCatalog catalog, IJavaProject project, CachedSpringMetamodelIndex springIndex) {
 		this.catalog = catalog;
+		this.project = project;
 		this.springIndex = springIndex;
 	}
 	
@@ -57,7 +60,7 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 	}
 	
 	public void registerStereotypeDefinitions() {
-		springIndex.getNodesOfType(StereotypeDefinitionElement.class).stream()
+		springIndex.getNodesOfType(project.getElementName(), StereotypeDefinitionElement.class).stream()
 			.forEach(element -> registerStereotype(element));
 	}
 	
@@ -126,12 +129,7 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 	
 	private StereotypePackageElement findPackageFor(StereotypeClassElement type) {
 		String packageName = type.getType().substring(0, type.getType().lastIndexOf('.'));
-		
-		Optional<StereotypePackageElement> result = springIndex.getNodesOfType(StereotypePackageElement.class).stream()
-			.filter(pkg -> pkg.getPackageName().equals(packageName))
-			.findFirst();
-		
-		return result.isPresent() ? result.get() : null;
+		return springIndex.findPackageNode(packageName, this.project.getElementName());
 	}
 	
 	private void registerStereotype(StereotypeDefinitionElement element) {

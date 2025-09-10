@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.util.Collection;
 
 import org.jmolecules.stereotype.tooling.StructureProvider;
-import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
@@ -23,9 +22,9 @@ public abstract class ApplicationModulesStructureProvider
 		implements StructureProvider<ApplicationModules, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
 	protected final IJavaProject project;
-	protected final SpringMetamodelIndex springIndex;
+	protected final CachedSpringMetamodelIndex springIndex;
 	
-	public ApplicationModulesStructureProvider(IJavaProject project, SpringMetamodelIndex springIndex) {
+	public ApplicationModulesStructureProvider(IJavaProject project, CachedSpringMetamodelIndex springIndex) {
 		this.project = project;
 		this.springIndex = springIndex;
 	}

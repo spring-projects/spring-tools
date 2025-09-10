@@ -36,6 +36,7 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.commands.CachedSpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -203,7 +204,7 @@ public class StereotypesIndexerTest {
     
     @Test
     void testIdentifyMainApplicationPackage() throws Exception {
-    	StereotypePackageElement mainPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
+    	StereotypePackageElement mainPackage = StructureViewUtil.identifyMainApplicationPackage(project, new CachedSpringMetamodelIndex(springIndex));
     	assertEquals("example.application", mainPackage.getPackageName());
     }
     
@@ -211,7 +212,7 @@ public class StereotypesIndexerTest {
 	void testFromPackageIndexBasedFactory() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, new CachedSpringMetamodelIndex(springIndex));
 		factory.registerStereotypeDefinitions();
 		
 		StereotypePackageElement packageElement = springIndex.getNodesOfType(StereotypePackageElement.class).stream()
@@ -237,7 +238,7 @@ public class StereotypesIndexerTest {
 	void testFromClassIndexBasedFactory() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, new CachedSpringMetamodelIndex(springIndex));
 		factory.registerStereotypeDefinitions();
 		
 		StereotypeClassElement myControllerClassElement = springIndex.getNodesOfType(StereotypeClassElement.class).stream()
@@ -266,7 +267,7 @@ public class StereotypesIndexerTest {
 	void testSelfDefinedStereotypeAsAnnotation() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, new CachedSpringMetamodelIndex(springIndex));
 		factory.registerStereotypeDefinitions();
 		
 		// catalog definition
@@ -291,7 +292,7 @@ public class StereotypesIndexerTest {
 	void testSelfDefinedStereotypeAsInterface() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, new CachedSpringMetamodelIndex(springIndex));
 		factory.registerStereotypeDefinitions();
 		
 		// catalog definition
@@ -319,7 +320,7 @@ public class StereotypesIndexerTest {
 	void testSelfDefinedStereotypeViaInterfaceWithAttributes() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, new CachedSpringMetamodelIndex(springIndex));
 		factory.registerStereotypeDefinitions();
 		
 		// catalog definition
@@ -338,7 +339,7 @@ public class StereotypesIndexerTest {
 	void testWithStereotypeInSuperclass() {
 		
 		var catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, new CachedSpringMetamodelIndex(springIndex));
 		factory.registerStereotypeDefinitions();
 		
 		StereotypeClassElement classElement = springIndex.getNodesOfType(StereotypeClassElement.class).stream()

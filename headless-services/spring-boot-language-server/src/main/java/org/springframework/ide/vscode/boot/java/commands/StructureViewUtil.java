@@ -24,7 +24,6 @@ import org.jmolecules.stereotype.catalog.StereotypeGroup.Type;
 import org.jmolecules.stereotype.catalog.StereotypeGroups;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelUtils;
-import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
@@ -91,7 +90,7 @@ public class StructureViewUtil {
 		}
 	}
 	
-	public static String getMethodLabel(IJavaProject project, SpringMetamodelIndex springIndex, StereotypeMethodElement method, StereotypeClassElement clazz) {
+	public static String getMethodLabel(IJavaProject project, CachedSpringMetamodelIndex springIndex, StereotypeMethodElement method, StereotypeClassElement clazz) {
 		// TODO: special treatment for methods that have specific index elements with specific labels (e.g. mapping methods)
 		
 		Optional<RequestMappingIndexElement> mapping = springIndex.getNodesOfType(project.getElementName(), RequestMappingIndexElement.class).stream()
@@ -107,8 +106,8 @@ public class StructureViewUtil {
 		
 	}
 	
-	public static StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, SpringMetamodelIndex springIndex) {
-		List<StereotypeClassElement> classNodes = springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class);
+	public static StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, CachedSpringMetamodelIndex springIndex) {
+		List<StereotypeClassElement> classNodes = springIndex.getClassesForProject(project.getElementName());
 		
 		Optional<StereotypePackageElement> packageElement = classNodes.stream()
 			.filter(node -> node.isAnnotatedWith(Annotations.BOOT_APP))
@@ -128,19 +127,9 @@ public class StructureViewUtil {
 		return ModulithService.getPackageNameFromTypeFQName(fullyQualifiedClassName);
 	}
 	
-	public static StereotypePackageElement findPackageNode(String packageName, IJavaProject project, SpringMetamodelIndex springIndex) {
-		List<StereotypePackageElement> packageNodes = springIndex.getNodesOfType(project.getElementName(), StereotypePackageElement.class);
-
-		Optional<StereotypePackageElement> found = packageNodes.stream()
-			.filter(packageNode -> packageNode.getPackageName().equals(packageName))
-			.findAny();
-		
-		if (found.isPresent()) {
-			return found.get();
-		}
-		else {
-			return new StereotypePackageElement(packageName, null);
-		}
+	public static StereotypePackageElement findPackageNode(String packageName, IJavaProject project, CachedSpringMetamodelIndex springIndex) {
+		StereotypePackageElement packageElement = springIndex.findPackageNode(packageName, project.getElementName());
+		return packageElement != null ? packageElement : new StereotypePackageElement(packageName, null);
 	}
 
 	private static final List<String> EXCLUSIONS = List.of("Application", "Properties", "Mappings", "Hints");

@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 import org.jmolecules.stereotype.tooling.Grouped;
 import org.jmolecules.stereotype.tooling.StructureProvider.GroupingStructureProvider;
-import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
@@ -29,7 +28,7 @@ public class ApplicationModulesNamedInterfacesGroupingProvider extends Applicati
 	
 	private final ApplicationModules modules;
 
-	public ApplicationModulesNamedInterfacesGroupingProvider(ApplicationModules modules, IJavaProject project, SpringMetamodelIndex springIndex) {
+	public ApplicationModulesNamedInterfacesGroupingProvider(ApplicationModules modules, IJavaProject project, CachedSpringMetamodelIndex springIndex) {
 		super(project, springIndex);
 		this.modules = modules;
 	}
@@ -56,14 +55,14 @@ public class ApplicationModulesNamedInterfacesGroupingProvider extends Applicati
 				.toList();
 	}
 	
-	private StereotypeClassElement findClassElement(String className, IJavaProject project, SpringMetamodelIndex springIndex) {
-		return springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class).stream()
+	private StereotypeClassElement findClassElement(String className, IJavaProject project, CachedSpringMetamodelIndex springIndex) {
+		return springIndex.getClassesForProject(project.getElementName()).stream()
 			.filter(classElement -> classElement.getType().equals(className))
 			.findAny().orElse(new StereotypeClassElement(className, null, Set.of(), Set.of()));
 	}
 
 	private Collection<StereotypeClassElement> getInternalTypes(ApplicationModule module) {
-		return springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class).stream()
+		return springIndex.getClassesForProject(project.getElementName()).stream()
 				.filter(classElement -> classElement.getType().startsWith(module.getBasePackage()))
 				.filter(classElement -> !(module.getNamedInterfaces().stream().filter(namedInterface -> namedInterface.getClasses().contains(classElement.getType())).findAny().isPresent()))
 			.toList();

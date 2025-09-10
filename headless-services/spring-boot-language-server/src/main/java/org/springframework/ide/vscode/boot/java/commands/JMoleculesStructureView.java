@@ -28,9 +28,9 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 public class JMoleculesStructureView {
 
 	private final AbstractStereotypeCatalog catalog;
-	private final SpringMetamodelIndex springIndex;
+	private final CachedSpringMetamodelIndex springIndex;
 
-	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, SpringMetamodelIndex springIndex) {
+	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex) {
 		this.catalog = catalog;
 		this.springIndex = springIndex;
 	}

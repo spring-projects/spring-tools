@@ -1388,6 +1388,18 @@
             ]
           }
         }
+      },
+      {
+        "id": "ai",
+        "title": "AI",
+        "order": 420,
+        "properties": {
+          "boot-java.ai.mcp-server-enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable embedded MCP server"
+          }
+        }
       }
     ],
     "grammars": [

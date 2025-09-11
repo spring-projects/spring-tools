@@ -222,6 +222,12 @@
             name="XML Config Files">
       </page>
       <page
+            category="org.springsource.ide.eclipse.commons.preferencePage"
+            class="org.springframework.tooling.boot.ls.prefs.AiConfigPreferencePage"
+            id="org.springframework.tooling.boot.ls.ai.preferences"
+            name="AI">
+      </page>
+      <page
             class="org.springframework.tooling.boot.ls.prefs.BootJavaPreferencesPage"
             id="org.springsource.ide.eclipse.commons.preferencePage"
             name="Spring">

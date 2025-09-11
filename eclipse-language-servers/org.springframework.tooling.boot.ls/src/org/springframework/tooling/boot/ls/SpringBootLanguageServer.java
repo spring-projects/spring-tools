@@ -46,6 +46,11 @@ public class SpringBootLanguageServer extends STS4LanguageServerProcessStreamCon
 		args.add("-XX:TieredStopAtLevel=1");
 		args.add("-Dspring.config.location=classpath:/application.properties");
 		
+		// disable embedded MCP server, depending on preference
+		if (BootLanguageServerPlugin.getDefault().getPreferenceStore().getBoolean(Constants.PREF_START_LS_EARLY) == false) {
+			args.add("-Dspring.main.web-application-type=NONE");
+		}
+		
 		addCustomJVMArgs(args);
 		
 		return args;

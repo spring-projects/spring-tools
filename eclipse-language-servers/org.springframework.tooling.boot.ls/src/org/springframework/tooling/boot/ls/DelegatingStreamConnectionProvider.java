@@ -256,6 +256,12 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 			)
 		);
 		
+		bootJavaObj.put("ai", Map.of(
+				"mcp-server-enabled", preferenceStore.getBoolean(Constants.PREF_AI_ENABLE_MCP)
+			)
+		);
+		
+
 		settings.put("boot-java", bootJavaObj);
 		
 		settings.put("http", createHttpProxySettings());

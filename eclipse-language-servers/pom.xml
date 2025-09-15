@@ -56,7 +56,6 @@
 
 		<module>org.springframework.tooling.cloudfoundry.manifest.ls</module>
 		<module>org.springframework.tooling.cloudfoundry.manifest.ls.feature</module>
-<!--		<module>org.springframework.tooling.ls.repository</module> -->
 
 		<module>org.springframework.tooling.cloudfoundry.manifest.ls.integration</module>
 		<module>org.springframework.tooling.cloudfoundry.manifest.ls.integration.feature</module>
@@ -79,7 +78,7 @@
 		<p2.qualifier>SNAPSHOT</p2.qualifier>
 		<p2.repository.name>Spring Boot IDE Language Server</p2.repository.name>
 
-		<tycho-version>4.0.12</tycho-version>
+		<tycho-version>4.0.13</tycho-version>
 		<encoding>UTF-8</encoding>
 
 		<dist.bucket>tools-spring-io</dist.bucket>
@@ -249,7 +248,7 @@
 				<repository>
 					<id>2025-09</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/staging/2025-09/</url>
+					<url>https://download.eclipse.org/releases/2025-09/</url>
 				</repository>
 				<repository>
 					<id>orbit</id>
@@ -323,26 +322,6 @@
 
 	<build>
 		<plugins>
-
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<executions>
-					<execution>
-						<id>plugin-source</id>
-						<goals>
-							<goal>plugin-source</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>feature-source</id>
-						<goals>
-							<goal>feature-source</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>

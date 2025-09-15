@@ -77,9 +77,10 @@
 		<dist.path>${dist.type}/${dist.key}/${dist.project}/${dist.pathpostfix}</dist.path>
 
 		<sts-language-servers-version></sts-language-servers-version>
+
 		<sts4-language-servers-p2-repo>https://cdn.spring.io/spring-tools/${dist.type}/language-server-integrations/${sts-language-servers-version}</sts4-language-servers-p2-repo>
 		
-		<tycho-version>4.0.12</tycho-version>
+		<tycho-version>4.0.13</tycho-version>
 		<encoding>UTF-8</encoding>
 
 		<misc.p2.repo.version>3.9.4.202211021051</misc.p2.repo.version>
@@ -323,26 +324,6 @@
 
 	<build>
 		<plugins>
-
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<executions>
-					<execution>
-						<id>plugin-source</id>
-						<goals>
-							<goal>plugin-source</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>feature-source</id>
-						<goals>
-							<goal>feature-source</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>

@@ -5,7 +5,6 @@
 	</description>
 
 	<category-def name="Spring Tools" label="Spring Tools"/>
-	<category-def name="Spring Tools - Developer Resources" label="Spring Tools - Developer Resources"/>
 
 	<!-- STS4 branding and custom features -->
 	<feature
@@ -13,25 +12,11 @@
 		<category name="Spring Tools" />
 	</feature>
 
-	<feature
-		id="org.springframework.boot.ide.main.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
-	</feature>
-
 	<feature id="org.springframework.boot.ide.branding.feature" version="0.0.0" />
-
-	<feature
-		id="org.springframework.boot.ide.branding.feature.source" version="0.0.0">
-	</feature>
 
 	<feature
 		id="org.springframework.ide.eclipse.boot.dash.feature" version="0.0.0">
 		<category name="Spring Tools" />
-	</feature>
-
-	<feature
-		id="org.springframework.ide.eclipse.boot.dash.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
 	</feature>
 
 	<feature
@@ -40,18 +25,8 @@
 	</feature>
 
 	<feature
-		id="org.springframework.ide.eclipse.xml.namespaces.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
-	</feature>
-
-	<feature
 		id="org.springframework.tooling.cloudfoundry.manifest.ls.feature" version="0.0.0">
 		<category name="Spring Tools" />
-	</feature>
-
-	<feature
-		id="org.springframework.tooling.cloudfoundry.manifest.ls.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
 	</feature>
 
 	<feature
@@ -60,18 +35,8 @@
 	</feature>
 
 	<feature
-		id="org.springframework.tooling.boot.ls.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
-	</feature>
-
-	<feature
 		id="org.springframework.tooling.bosh.ls.feature" version="0.0.0">
 		<category name="Spring Tools" />
-	</feature>
-
-	<feature
-		id="org.springframework.tooling.bosh.ls.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
 	</feature>
 
 	<feature
@@ -79,65 +44,28 @@
 		<category name="Spring Tools" />
 	</feature>
 
-	<feature
-		id="org.springframework.tooling.concourse.ls.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
-	</feature>
-<!--
-	<feature
-		id="org.springframework.ide.eclipse.xterm.feature" version="0.0.0">
-		<category name="Spring Tools" />
-	</feature>
-
-	<feature
-		id="org.springframework.ide.eclipse.xterm.feature.source" version="0.0.0">
-		<category name="Spring Tools - Developer Resources" />
-	</feature>
-
-	<feature id="com.make.chromium.cef.feature"/>
--->	
 	<feature id="org.eclipse.wildwebdeveloper.embedder.node.feature"/>
 
 	<bundle id="org.springframework.tooling.ls.eclipse.commons" />
-	<bundle id="org.springframework.tooling.ls.eclipse.commons.source" />
 	<bundle id="org.springsource.ide.eclipse.commons.boot.ls" />
-	<bundle id="org.springsource.ide.eclipse.commons.boot.ls.source"/>
 	<bundle id="org.springframework.tooling.jdt.ls.commons"/>
-	<bundle id="org.springframework.tooling.jdt.ls.commons.source"/>
 	<bundle id="org.springframework.tooling.ls.eclipse.gotosymbol"/>
-	<bundle id="org.springframework.tooling.ls.eclipse.gotosymbol.source"/>
 	<bundle id="org.springframework.tooling.gradle"/>
 	<bundle id="org.springsource.ide.eclipse.commons.core"/>
-	<bundle id="org.springsource.ide.eclipse.commons.core.source"/>
 	<bundle id="org.springsource.ide.eclipse.commons.ui"/>
-	<bundle id="org.springsource.ide.eclipse.commons.ui.source"/>
 	<bundle id="org.springsource.ide.eclipse.commons.frameworks.core"/>
-	<bundle id="org.springsource.ide.eclipse.commons.frameworks.core.source"/>
 	<bundle id="org.springsource.ide.eclipse.commons.frameworks.ui"/>
-	<bundle id="org.springsource.ide.eclipse.commons.frameworks.ui.source"/>
 	<bundle id="org.springsource.ide.eclipse.commons.livexp"/>
-	<bundle id="org.springsource.ide.eclipse.commons.livexp.source"/>
 	<bundle id="org.springsource.ide.eclipse.commons.tests.util"/>
-	<bundle id="org.springsource.ide.eclipse.commons.tests.util.source"/>
 
 	<bundle id="io.projectreactor.reactor-core"/>
-<!--	<bundle id="io.projectreactor.reactor-core.source"/> -->
 	<bundle id="org.reactivestreams.reactive-streams"/>
-<!--	<bundle id="org.reactivestreams.reactive-streams.source"/> -->
 
 	<feature id="org.eclipse.mylyn.wikitext.feature"/>
 	<feature id="org.eclipse.tm4e.feature"/>
 
 	<bundle id="javassist"/>
-<!--	<bundle id="javassist.source"/> -->
 	<bundle id="javax.activation"/>
-<!--	<bundle id="javax.activation.source"/> -->
-<!--	<bundle id="javax.annotation"/> -->
-<!--	<bundle id="javax.annotation.source"/> -->
-<!--	<bundle id="javax.ws.rs"/> -->
-<!--	<bundle id="javax.xml.bind"/> -->
-<!--	<bundle id="javax.xml.bind.source"/> -->
-<!--	<bundle id="javax.xml.stream"/> -->
 	<bundle id="org.aopalliance"/>
 	<bundle id="org.apache.log4j"/>
 	<bundle id="org.yaml.snakeyaml"/>
@@ -159,32 +87,11 @@
 	<bundle id="org.jsoup"/>
 	<bundle id="org.apache.commons.lang3"/>
 	<bundle id="org.apache.commons.collections"/>
-<!--    <bundle id="org.bouncycastle.bcpg"/> -->
-<!--    <bundle id="org.bouncycastle.bcpg.source"/> -->
-<!--    <bundle id="org.bouncycastle.bcpkix"/> -->
-<!--    <bundle id="org.bouncycastle.bcpkix.source"/> -->
-<!--    <bundle id="org.bouncycastle.bcprov"/> -->
-<!--    <bundle id="org.bouncycastle.bcprov.source"/> -->
     <bundle id="com.hierynomus.sshj"/>
-<!--    <bundle id="com.hierynomus.sshj.source"/> -->
     <bundle id="com.jcraft.jzlib"/>
-<!--    <bundle id="com.jcraft.jzlib.source"/> -->
 	<bundle id="com.fasterxml.jackson.core.jackson-annotations"/>
 	<bundle id="com.fasterxml.jackson.core.jackson-core"/>
 	<bundle id="com.fasterxml.jackson.core.jackson-databind"/>
     <bundle id="net.i2p.crypto.eddsa"/>
-<!--    <bundle id="net.i2p.crypto.eddsa.source"/> -->
-
-	<!-- additional test bundles, required for other tests that might reuse this, e.g. from STS3 -->
-<!--	<bundle id="org.springframework.ide.eclipse.boot.dash.test"/>
-	<bundle id="org.springframework.ide.eclipse.boot.dash.test.source"/>
-	<bundle id="org.springframework.ide.eclipse.boot.launch.test"/>
-	<bundle id="org.springframework.ide.eclipse.boot.launch.test.source"/>
-	<bundle id="org.springframework.ide.eclipse.boot.refactoring.test"/>
-	<bundle id="org.springframework.ide.eclipse.boot.refactoring.test.source"/>
-	<bundle id="org.springframework.ide.eclipse.boot.test"/>
-	<bundle id="org.springframework.ide.eclipse.boot.test.source"/>
-	<bundle id="org.springframework.ide.eclipse.maven.pom.tests"/>
-	<bundle id="org.springframework.ide.eclipse.maven.pom.tests.source"/> -->
 
 </site>

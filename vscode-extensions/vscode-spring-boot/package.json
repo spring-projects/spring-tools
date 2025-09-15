@@ -706,6 +706,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot2.PATH_IN_CONTROLLER_ANNOTATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Controller annotation default attribute might contain a path - whereas the default attribute is the component name",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

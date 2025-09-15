@@ -22,6 +22,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
 
 public enum Boot2JavaProblemType implements ProblemType {
 
+	PATH_IN_CONTROLLER_ANNOTATION(WARNING, "Controller annotation default attribute might contain a path", "Controller annotation default attribute might contain a path"),
 	JAVA_AUTOWIRED_CONSTRUCTOR(WARNING, "Unnecessary `@Autowired` over the only constructor", "Unnecessary `@Autowired`", List.of(DiagnosticTag.Unnecessary)),
 	JAVA_PUBLIC_BEAN_METHOD(HINT, "Public modifier on `@Bean` method. They no longer have to be public visibility to be usable by Spring.", "public `@Bean` method", List.of(DiagnosticTag.Unnecessary)),
 	JAVA_TEST_SPRING_EXTENSION(WARNING, "`@SpringBootTest` and all test slice annotations already applies `@SpringExtension` as of Spring Boot 2.1.0.", "Unnecessary `@SpringExtension`", List.of(DiagnosticTag.Unnecessary)),

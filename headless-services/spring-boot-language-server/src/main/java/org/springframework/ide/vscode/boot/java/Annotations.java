@@ -30,6 +30,7 @@ public class Annotations {
 	public static final String IMPORT = "org.springframework.context.annotation.Import";
 
 	public static final String CONTROLLER = "org.springframework.stereotype.Controller";
+	public static final String REST_CONTROLLER = "org.springframework.web.bind.annotation.RestController";
 	
 	public static final String CONFIGURATION_PROPERTIES = "org.springframework.boot.context.properties.ConfigurationProperties";
 

@@ -85,7 +85,13 @@
         "label": "Implicit web annotations names",
         "description": "Web annotation names are unnecessary when it is the same as method parameter name",
         "defaultSeverity": "HINT"
-      }
+      },
+	  {
+	    "code": "WEB_ANNOTATION_NAMES",
+	    "label": "Controller annotation default attribute might contain a path",
+	    "description": "Controller annotation default attribute might contain a path - whereas the default attribute is the component name",
+	    "defaultSeverity": "WARNING"
+	  }
     ]
   },
   {

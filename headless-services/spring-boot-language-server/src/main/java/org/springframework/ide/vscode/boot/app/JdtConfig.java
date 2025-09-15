@@ -49,6 +49,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.NoAutowiredOnConstru
 import org.springframework.ide.vscode.boot.java.reconcilers.NoRepoAnnotationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.NoRequestMappingAnnotationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.PathInControllerAnnotationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.PreciseBeanTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ServerHttpSecurityLambdaDslReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.UnnecessarySpringExtensionReconciler;
@@ -93,6 +94,10 @@ public class JdtConfig {
 	
 	@Bean NoAutowiredOnConstructorReconciler noAutowiredOnConstructorReconciler(SimpleLanguageServer server) {
 		return new NoAutowiredOnConstructorReconciler(server.getQuickfixRegistry());
+	}
+	
+	@Bean PathInControllerAnnotationReconciler pathInControllerAnnotationReconciler() {
+		return new PathInControllerAnnotationReconciler();
 	}
 	
 	@Bean WebSecurityConfigurerAdapterReconciler webSecurityConfigurerAdapterReconciler(SimpleLanguageServer server) {

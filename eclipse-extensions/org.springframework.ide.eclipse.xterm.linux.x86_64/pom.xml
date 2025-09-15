@@ -88,7 +88,6 @@
 				<artifactId>target-platform-configuration</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
-					<resolver>p2</resolver>
 					<pomDependencies>ignore</pomDependencies>
 					<environments>
 						<environment>

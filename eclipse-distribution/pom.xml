@@ -80,7 +80,7 @@
 
 		<sts4-language-servers-p2-repo>https://cdn.spring.io/spring-tools/${dist.type}/language-server-integrations/${sts-language-servers-version}</sts4-language-servers-p2-repo>
 		
-		<tycho-version>4.0.13</tycho-version>
+		<tycho-version>5.0.0</tycho-version>
 		<encoding>UTF-8</encoding>
 
 		<misc.p2.repo.version>3.9.4.202211021051</misc.p2.repo.version>
@@ -351,9 +351,6 @@
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>target-platform-configuration</artifactId>
 				<version>${tycho-version}</version>
-				<configuration>
-					<resolver>p2</resolver>
-				</configuration>
 			</plugin>
 
 			<plugin>
@@ -412,17 +409,13 @@
 						<compilerArgument>-err:-forbidden</compilerArgument>
 					</configuration>
 				</plugin>
+
 				<plugin>
 					<groupId>org.eclipse.tycho</groupId>
 					<artifactId>target-platform-configuration</artifactId>
 					<version>${tycho-version}</version>
 					<configuration>
-						<resolver>p2</resolver>
 						<pomDependencies>ignore</pomDependencies>
-						<ignoreTychoRepositories>true</ignoreTychoRepositories>
-						<!--						<dependency-resolution>
-							<optionalDependencies>ignore</optionalDependencies>
-						</dependency-resolution> -->
 						<environments>
 							<environment>
 								<os>macosx</os>
@@ -468,7 +461,7 @@
 					<version>${tycho-version}</version>
 					<configuration>
 						<format>yyyyMMddHHmm</format>
-						<archiveSite>false</archiveSite>
+<!--						<archiveSite>false</archiveSite> -->
 						<archive>
 							<addMavenDescriptor>false</addMavenDescriptor>
 						</archive>

@@ -23,7 +23,6 @@
 				<artifactId>target-platform-configuration</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
-					<resolver>p2</resolver>
 					<pomDependencies>ignore</pomDependencies>
 					<dependency-resolution>
 						<extraRequirements>
@@ -35,12 +34,6 @@
 						</extraRequirements>
 					</dependency-resolution>
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-compiler-plugin</artifactId>
-				<version>${tycho-version}</version>
 			</plugin>
 
 			<plugin>

@@ -47,7 +47,7 @@
 				<artifactId>tycho-p2-publisher-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
-					<publishArtifacts>true</publishArtifacts>
+<!--					<publishArtifacts>true</publishArtifacts> -->
 				</configuration>
 			</plugin>
 <!--
@@ -95,12 +95,13 @@
 						<linux>tar.gz</linux>
 						<macosx>tar.gz</macosx>
 					</formats>
+					<parallel>true</parallel>
 				</configuration>
 			</plugin>
 
 			<plugin>
-				<groupId>org.eclipse.tycho.extras</groupId>
-				<artifactId>tycho-eclipserun-plugin</artifactId>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-eclipse-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
 					<repositories>
@@ -284,7 +285,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>

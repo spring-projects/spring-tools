@@ -70,7 +70,6 @@
 				<artifactId>target-platform-configuration</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
-					<resolver>p2</resolver>
 					<pomDependencies>ignore</pomDependencies>
 					<dependency-resolution>
 						<optionalDependencies>require</optionalDependencies>
@@ -90,12 +89,6 @@
 					<!-- 						</filter> -->
 					<!-- 					</filters> -->
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-compiler-plugin</artifactId>
-				<version>${tycho-version}</version>
 			</plugin>
 
 			<plugin>

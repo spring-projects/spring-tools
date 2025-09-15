@@ -78,7 +78,7 @@
 		<p2.qualifier>SNAPSHOT</p2.qualifier>
 		<p2.repository.name>Spring Boot IDE Language Server</p2.repository.name>
 
-		<tycho-version>4.0.13</tycho-version>
+		<tycho-version>5.0.0</tycho-version>
 		<encoding>UTF-8</encoding>
 
 		<dist.bucket>tools-spring-io</dist.bucket>
@@ -307,13 +307,13 @@
 			<name>Spring Repository</name>
 			<url>https://repo.spring.io/plugins-release/</url>
 		</pluginRepository> -->
-
+<!--
 		<pluginRepository>
 			<id>springsource-maven-release</id>
 			<name>SpringSource Maven Release Repository</name>
 			<url>https://repository.springsource.com/maven/bundles/release</url>
 		</pluginRepository>
-
+-->
 <!--		<pluginRepository>
 			<id>sonatype.snapshots</id>
 			<url>https://repository.sonatype.org/content/repositories/snapshots/</url>
@@ -334,9 +334,6 @@
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>target-platform-configuration</artifactId>
 				<version>${tycho-version}</version>
-				<configuration>
-					<resolver>p2</resolver>
-				</configuration>
 			</plugin>
 
 			<plugin>
@@ -388,9 +385,7 @@
 					<artifactId>target-platform-configuration</artifactId>
 					<version>${tycho-version}</version>
 					<configuration>
-						<resolver>p2</resolver>
 						<pomDependencies>consider</pomDependencies>
-						<ignoreTychoRepositories>true</ignoreTychoRepositories>
 						<dependency-resolution>
 							<optionalDependencies>ignore</optionalDependencies>
 						</dependency-resolution>
@@ -419,7 +414,7 @@
 					<version>${tycho-version}</version>
 					<configuration>
 						<format>yyyyMMddHHmm</format>
-						<archiveSite>true</archiveSite>
+<!--						<archiveSite>true</archiveSite> -->
 						<archive>
 							<addMavenDescriptor>false</addMavenDescriptor>
 						</archive>

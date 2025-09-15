@@ -15,6 +15,12 @@
     "order": 1,
     "problemTypes": [
       {
+        "code": "PATH_IN_CONTROLLER_ANNOTATION",
+        "label": "Controller annotation default attribute might contain a path",
+        "description": "Controller annotation default attribute might contain a path",
+        "defaultSeverity": "WARNING"
+      },
+      {
         "code": "JAVA_AUTOWIRED_CONSTRUCTOR",
         "label": "Unnecessary `@Autowired`",
         "description": "Unnecessary `@Autowired` over the only constructor",
@@ -85,13 +91,7 @@
         "label": "Implicit web annotations names",
         "description": "Web annotation names are unnecessary when it is the same as method parameter name",
         "defaultSeverity": "HINT"
-      },
-	  {
-	    "code": "WEB_ANNOTATION_NAMES",
-	    "label": "Controller annotation default attribute might contain a path",
-	    "description": "Controller annotation default attribute might contain a path - whereas the default attribute is the component name",
-	    "defaultSeverity": "WARNING"
-	  }
+      }
     ]
   },
   {

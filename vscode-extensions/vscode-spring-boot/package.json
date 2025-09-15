@@ -549,6 +549,18 @@
         }
       },
       {
+        "id": "ai",
+        "title": "AI",
+        "order": 420,
+        "properties": {
+          "boot-java.ai.mcp-server-enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable embedded MCP server"
+          }
+        }
+      },
+      {
         "id": "boot2",
         "title": "Boot 2.x Best Practices & Optimizations",
         "order": 401,
@@ -561,6 +573,18 @@
               "AUTO",
               "OFF",
               "ON"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.PATH_IN_CONTROLLER_ANNOTATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Controller annotation default attribute might contain a path",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
             ]
           },
           "spring-boot.ls.problem.boot2.JAVA_AUTOWIRED_CONSTRUCTOR": {
@@ -699,18 +723,6 @@
             "type": "string",
             "default": "HINT",
             "description": "Web annotation names are unnecessary when it is the same as method parameter name",
-            "enum": [
-              "IGNORE",
-              "INFO",
-              "WARNING",
-              "HINT",
-              "ERROR"
-            ]
-          },
-          "spring-boot.ls.problem.boot2.PATH_IN_CONTROLLER_ANNOTATION": {
-            "type": "string",
-            "default": "WARNING",
-            "description": "Controller annotation default attribute might contain a path - whereas the default attribute is the component name",
             "enum": [
               "IGNORE",
               "INFO",
@@ -1398,18 +1410,6 @@
               "HINT",
               "ERROR"
             ]
-          }
-        }
-      },
-      {
-        "id": "ai",
-        "title": "AI",
-        "order": 420,
-        "properties": {
-          "boot-java.ai.mcp-server-enabled": {
-            "type": "boolean",
-            "default": true,
-            "description": "Enable embedded MCP server"
           }
         }
       }

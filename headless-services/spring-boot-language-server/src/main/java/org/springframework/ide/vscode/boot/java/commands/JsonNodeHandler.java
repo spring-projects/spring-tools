@@ -45,6 +45,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	
 	public static final String ICON = "icon";
 	public static final String TEXT = "text";
+	public static final String HOVER = "hover";
 
 	private final Node root;
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
@@ -63,6 +64,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
 			.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
+			.withAttribute(HOVER, "<stereotype catalog source coming soon...>")
 		);
 	}
 

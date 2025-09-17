@@ -18,7 +18,6 @@ import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.api.Stereotypes;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment;
-import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.catalog.support.StereotypeDetector.AnalysisLevel;
 import org.jmolecules.stereotype.catalog.support.StereotypeMatcher;
@@ -133,13 +132,12 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 	}
 	
 	private void registerStereotype(StereotypeDefinitionElement element) {
-		var stereotype = element.createStereotype();
 
-		String type = element.getType();
-		Type assignment = element.getAssignment();
-		
-		catalog.getOrRegister(stereotype, () -> Assignment.of(type, assignment))
-				.getStereotype();
+		var stereotype = element.createStereotype();
+		var type = element.getType();
+		var assignment = element.getAssignment();
+
+		catalog.getOrRegister(stereotype, Assignment.of(type, assignment), type).getStereotype();
 	}
 
 }

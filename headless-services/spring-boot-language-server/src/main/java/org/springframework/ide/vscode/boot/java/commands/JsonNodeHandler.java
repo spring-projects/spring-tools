@@ -28,6 +28,7 @@ import java.util.function.Consumer;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.api.Stereotype;
+import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
 import org.jmolecules.stereotype.tooling.NodeContext;
@@ -58,19 +59,25 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private final CachedSpringMetamodelIndex springIndex;
 
 	private Node current;
+	private StereotypeCatalog catalog;
 
 	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler,
-			CachedSpringMetamodelIndex springIndex) {
+			CachedSpringMetamodelIndex springIndex, StereotypeCatalog catalog) {
 		this.labels = labels;
 		this.springIndex = springIndex;
 		this.customHandler = customHandler;
 
 		this.root = new Node(null);
 		this.current = root;
+		this.catalog = catalog;
 	}
 	
 	@Override
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
+
+		// var definition = catalog.getDefinition(stereotype);
+		// var sources = definition.getSources();
+
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
 			.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))

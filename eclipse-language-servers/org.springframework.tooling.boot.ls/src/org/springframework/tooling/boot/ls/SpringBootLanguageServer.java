@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 Pivotal, Inc.
+ * Copyright (c) 2017, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -47,7 +47,7 @@ public class SpringBootLanguageServer extends STS4LanguageServerProcessStreamCon
 		args.add("-Dspring.config.location=classpath:/application.properties");
 		
 		// disable embedded MCP server, depending on preference
-		if (BootLanguageServerPlugin.getDefault().getPreferenceStore().getBoolean(Constants.PREF_START_LS_EARLY) == false) {
+		if (BootLanguageServerPlugin.getDefault().getPreferenceStore().getBoolean(Constants.PREF_AI_ENABLE_MCP) == false) {
 			args.add("-Dspring.main.web-application-type=NONE");
 		}
 		

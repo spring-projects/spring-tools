@@ -59,11 +59,18 @@ public class ApplicationModulesLabelProvider implements
 	@Override
 	public String getTypeLabel(StereotypeClassElement type) {
 
-		return modules.getModuleByType(type)
+		var result = modules.getModuleByType(type)
 				.map(it -> it.getBasePackage())
 				.map(it -> new StereotypePackageElement(it, Collections.emptySet()))
 				.map(it -> StructureViewUtil.abbreviate(it, type))
 				.orElseGet(type::getType);
+
+		return "true".equals(System.getProperty("disable-named-interfaces"))
+				? result + modules.getModuleByType(type)
+						.filter(it -> it.isExposed(type.getType()))
+						.map(__ -> " (API)")
+						.orElse(" (internal)")
+				: result;
 	}
 
 	@Override

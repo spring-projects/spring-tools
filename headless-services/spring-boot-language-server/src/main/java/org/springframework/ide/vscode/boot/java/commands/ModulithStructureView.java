@@ -16,6 +16,8 @@ import java.util.function.BiConsumer;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
+import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.ApplicationModulesStructureProvider.SimpleApplicationModulesStructureProvider;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.modulith.AppModules;
@@ -43,11 +45,12 @@ public class ModulithStructureView {
 			// TODO; logging
 			return null;
 		}
-		
+
 		ApplicationModules modules = new ApplicationModules(modulesData);
-		
+
 		var labelProvider = new ApplicationModulesLabelProvider(catalog, project, springIndex, modules);
-		var structureProvider = new ApplicationModulesNamedInterfacesGroupingProvider(modules, project, springIndex);
+		
+		
 
 		// json output
 		BiConsumer<Node, NamedInterfaceNode> consumer = (node, c) -> {
@@ -60,8 +63,13 @@ public class ModulithStructureView {
 
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI
-		var jsonTree = new ProjectTree<>(adapter, catalog, jsonHandler)
-				.withStructureProvider(structureProvider);
+		var jsonTree = new ProjectTree<>(adapter, catalog, jsonHandler);
+
+		if ("true".equals(System.getProperty("disable-named-interfaces"))) {
+			jsonTree = jsonTree.withStructureProvider(new SimpleApplicationModulesStructureProvider(project, springIndex));
+		} else {
+			jsonTree = jsonTree.withStructureProvider(new ApplicationModulesNamedInterfacesGroupingProvider(modules, project, springIndex));
+		}
 
 		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog, selectedGroups);
 		for (String[] grouper : groupers) {
@@ -72,5 +80,4 @@ public class ModulithStructureView {
 
 		return jsonHandler.getRoot();
 	}
-
 }

@@ -17,12 +17,16 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
@@ -31,6 +35,7 @@ import org.jmolecules.stereotype.tooling.NodeHandler;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -50,12 +55,17 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private final Node root;
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
 	private final BiConsumer<Node, C> customHandler;
+	private final CachedSpringMetamodelIndex springIndex;
+
 	private Node current;
 
-	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler) {
+	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler,
+			CachedSpringMetamodelIndex springIndex) {
 		this.labels = labels;
-		this.root = new Node(null);
+		this.springIndex = springIndex;
 		this.customHandler = customHandler;
+
+		this.root = new Node(null);
 		this.current = root;
 	}
 	
@@ -91,7 +101,35 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(TEXT, labels.getTypeLabel(type))
 			.withAttribute(LOCATION, type.getLocation())
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.TYPE_KEY))
+			.withChildren(createTypeSubnotes(node, type))
 		);
+	}
+
+	private List<Node> createTypeSubnotes(Node parent, StereotypeClassElement type) {
+		if (System.getProperty("enable-structure-view-details") == null) {
+			return Collections.emptyList();
+		}
+		
+		if (type.getLocation() == null) {
+			return Collections.emptyList();
+		}
+		
+		String docUri = type.getLocation().getUri();
+		ArrayList<Node> result = new ArrayList<Node>();
+
+		Arrays.stream(springIndex.getBeansOfDocument(docUri))
+				.filter(bean -> bean.getType().equals(type.getType()))
+				.flatMap(bean -> bean.getChildren().stream())
+				.filter(child -> child instanceof SymbolElement)
+				.map(child -> ((SymbolElement) child))
+				.forEach(symbolElement -> {
+					DocumentSymbol symbol = symbolElement.getDocumentSymbol();
+					result.add(new Node(parent)
+							.withAttribute(TEXT, symbol.getName())
+							.withAttribute(LOCATION, new Location(docUri, symbol.getRange())));
+				});
+						
+		return result;
 	}
 
 	@Override
@@ -157,6 +195,12 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			this.attributes.put(key, value);
 			return this;
 		}
+		
+		public Node withChildren(List<Node> children) {
+			this.children.addAll(children);
+			return this;
+		}
+		
 	}
 
 

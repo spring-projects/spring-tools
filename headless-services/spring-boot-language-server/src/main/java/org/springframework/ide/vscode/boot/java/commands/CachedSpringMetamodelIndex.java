@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
+import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
 public class CachedSpringMetamodelIndex {
@@ -51,6 +52,10 @@ public class CachedSpringMetamodelIndex {
 	
 	public <T extends SpringIndexElement> List<T> getNodesOfType(String projectName, Class<T> type) {
 		return springIndex.getNodesOfType(projectName, type);
+	}
+	
+	public Bean[] getBeansOfDocument(String docUri) {
+		return springIndex.getBeansOfDocument(docUri);
 	}
 	
 	private record ProjectCache(List<StereotypeClassElement> classes, ConcurrentMap<String, StereotypePackageElement> packages) {}

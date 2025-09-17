@@ -16,7 +16,6 @@ import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.LabelUtils;
-import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;

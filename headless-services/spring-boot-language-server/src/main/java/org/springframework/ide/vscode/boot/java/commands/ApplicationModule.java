@@ -46,5 +46,11 @@ public class ApplicationModule {
 	public Collection<NamedInterface> getNamedInterfaces() {
 		return appModule.namedInterfaces();
 	}
-
+	
+	public boolean isExposed(String type) {
+		
+		return appModule.namedInterfaces().stream()
+				.flatMap(it -> it.getClasses().stream())
+				.anyMatch(type::equals);
+	}
 }

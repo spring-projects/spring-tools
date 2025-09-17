@@ -42,5 +42,19 @@ public abstract class ApplicationModulesStructureProvider
 	public Collection<StereotypeMethodElement> extractMethods(StereotypeClassElement type) {
 		return type.getMethods();
 	}
+	
+	static class SimpleApplicationModulesStructureProvider extends ApplicationModulesStructureProvider implements SimpleStructureProvider<ApplicationModules, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
+		SimpleApplicationModulesStructureProvider(IJavaProject project, SpringMetamodelIndex springIndex) {
+			super(project, springIndex);
+		}
+
+		@Override
+		public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
+			
+			return springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class).stream()
+					.filter(element -> element.getType().startsWith(pkg.getPackageName()))
+					.toList();
+		}
+	}
 }

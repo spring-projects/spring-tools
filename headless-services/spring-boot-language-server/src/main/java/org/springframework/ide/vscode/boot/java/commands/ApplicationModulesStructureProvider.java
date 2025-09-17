@@ -45,7 +45,7 @@ public abstract class ApplicationModulesStructureProvider
 	
 	static class SimpleApplicationModulesStructureProvider extends ApplicationModulesStructureProvider implements SimpleStructureProvider<ApplicationModules, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
-		SimpleApplicationModulesStructureProvider(IJavaProject project, SpringMetamodelIndex springIndex) {
+		SimpleApplicationModulesStructureProvider(IJavaProject project, CachedSpringMetamodelIndex springIndex) {
 			super(project, springIndex);
 		}
 

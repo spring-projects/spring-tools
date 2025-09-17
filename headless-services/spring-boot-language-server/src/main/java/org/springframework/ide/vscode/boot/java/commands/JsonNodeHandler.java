@@ -16,6 +16,8 @@
 
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +29,8 @@ import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelProvider;
@@ -75,14 +79,38 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	@Override
 	public void handleStereotype(Stereotype stereotype, NodeContext context) {
 
-		// var definition = catalog.getDefinition(stereotype);
-		// var sources = definition.getSources();
-
-		addChild(node -> node
-			.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
-			.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
-			.withAttribute(HOVER, "<stereotype catalog source coming soon...>")
-		);
+		if (stereotype.getIdentifier().equals("org.jmolecules.misc.Other")) {
+			addChild(node -> node
+					.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
+					.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
+				);
+		} else {
+			var definition = catalog.getDefinition(stereotype);
+			var sources = definition.getSources();
+			
+			Location location = null;
+			for (Object source : sources) {
+				if (source instanceof URL) {
+					try {
+						String uri = ((URL)source).toURI().toString();
+						location = new Location(uri, new Range(new Position(0, 0), new Position(0, 0)));
+					} catch (URISyntaxException e) {
+						// ignore
+					}
+				}
+				else if (source instanceof Location) {
+					location = ((Location) source);
+				}
+			}
+			
+			final Location finalLocation = location;
+			addChild(node -> node
+				.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
+				.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
+				.withAttribute(HOVER, "defined in: " + sources.toString())
+				.withAttribute(LOCATION, finalLocation)
+			);
+		}
 	}
 
 	@Override

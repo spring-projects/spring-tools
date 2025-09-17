@@ -62,18 +62,30 @@ public class StereotypesIndexer implements SymbolProvider {
 	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
 		ASTNode parent = node.getParent();
 		
-		if (parent instanceof AnnotationTypeDeclaration) {
-			AnnotationTypeDeclaration annotationType = (AnnotationTypeDeclaration) parent;
-			ITypeBinding annotationBinding = annotationType.resolveBinding();
-			
-			StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement(annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, doc);
-			context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
+		try {
+			if (parent instanceof AnnotationTypeDeclaration) {
+				AnnotationTypeDeclaration annotationType = (AnnotationTypeDeclaration) parent;
+				ITypeBinding annotationBinding = annotationType.resolveBinding();
+				
+				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
+						annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, doc);
+	
+				context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
+			}
+			else if (parent instanceof TypeDeclaration && ((TypeDeclaration) parent).isInterface()) {
+				ITypeBinding interfaceType = ((TypeDeclaration) parent).resolveBinding();
+	
+				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
+						interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, doc);
+	
+				context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
+			}
 		}
-		else if (parent instanceof TypeDeclaration && ((TypeDeclaration) parent).isInterface()) {
-			ITypeBinding interfaceType = ((TypeDeclaration) parent).resolveBinding();
-
-			StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement(interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, doc);
-			context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
+		catch (BadLocationException e) {
+			log.error("error identifying location of type declaration for: " + parent.toString(), e);
+		}
+		catch (NullPointerException e) {
+			log.error("error creating stereotype definition element for: " + parent.toString(), e);
 		}
 	}
 	
@@ -226,7 +238,9 @@ public class StereotypesIndexer implements SymbolProvider {
 		return result;
 	}
 	
-	private StereotypeDefinitionElement createDefinitionElement(String id, StereotypeDefinition.Assignment.Type assignment, Annotation additionalDetails, TextDocument doc) {
+	private StereotypeDefinitionElement createDefinitionElement(AbstractTypeDeclaration parent, String id, StereotypeDefinition.Assignment.Type assignment,
+			Annotation additionalDetails, TextDocument doc) throws BadLocationException, NullPointerException {
+
 		int priority = Stereotype.DEFAULT_PRIORITY;
 		Optional<Expression> attribute = ASTUtils.getAttribute(additionalDetails, "priority");
 		if (attribute.isPresent()) {
@@ -245,8 +259,11 @@ public class StereotypesIndexer implements SymbolProvider {
 		if (groupsAttribute.isPresent()) {
 			groups = ASTUtils.getExpressionValueAsArray(groupsAttribute.get(), (a) -> {});
 		}
+		
+		SimpleName typeName = parent.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(typeName.getStartPosition(), typeName.getLength()));
 
-		return new StereotypeDefinitionElement(id, priority, displayName, groups, assignment);
+		return new StereotypeDefinitionElement(id, priority, displayName, groups, assignment, location);
 	}
 	
 }

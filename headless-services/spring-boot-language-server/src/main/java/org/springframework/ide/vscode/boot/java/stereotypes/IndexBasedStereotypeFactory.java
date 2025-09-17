@@ -136,8 +136,9 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 		var stereotype = element.createStereotype();
 		var type = element.getType();
 		var assignment = element.getAssignment();
-
-		catalog.getOrRegister(stereotype, Assignment.of(type, assignment), type).getStereotype();
+		var location = element.getLocation();
+		
+		catalog.getOrRegister(stereotype, Assignment.of(type, assignment), location).getStereotype();
 	}
 
 }

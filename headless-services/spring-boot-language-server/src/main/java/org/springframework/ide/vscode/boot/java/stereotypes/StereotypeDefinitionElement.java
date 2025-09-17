@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
+import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.jmolecules.stereotype.support.StringBasedStereotype;
@@ -23,12 +24,16 @@ public class StereotypeDefinitionElement extends AbstractSpringIndexElement {
 	private final String[] groups;
 	private final Type assignment;
 	
-	public StereotypeDefinitionElement(String type, int priority, String displayName, String[] groups, Type assignment) {
+	private final Location location;
+	
+	public StereotypeDefinitionElement(String type, int priority, String displayName, String[] groups, Type assignment,
+			Location location) {
 		this.type = type;
 		this.priority = priority;
 		this.displayName = displayName;
 		this.groups = groups;
 		this.assignment = assignment;
+		this.location = location;
 	}
 
 	public String getType() {
@@ -37,6 +42,10 @@ public class StereotypeDefinitionElement extends AbstractSpringIndexElement {
 
 	public Type getAssignment() {
 		return this.assignment;
+	}
+	
+	public Location getLocation() {
+		return location;
 	}
 	
 	public Stereotype createStereotype() {
@@ -54,5 +63,5 @@ public class StereotypeDefinitionElement extends AbstractSpringIndexElement {
 
 		return stereotype;
 	}
-
+	
 }

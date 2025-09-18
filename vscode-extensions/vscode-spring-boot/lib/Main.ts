@@ -43,15 +43,21 @@ const STOP_ASKING = "Stop Asking";
 export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
     // registerPipelineGenerator(context);
+
+    const specificVmArgs = ["-Dspring.config.location=classpath:/application.properties"];
+
+    const workspaceConfig = workspace.getConfiguration("boot-java.ai");
+    if (workspaceConfig.get("mcp-server-enabled") === false) {
+        specificVmArgs.push("-Dspring.main.web-application-type=NONE");
+    }
+
     let options : commons.ActivatorOptions = {
         DEBUG: false,
         CONNECT_TO_LS: false,
         extensionId: 'vscode-spring-boot',
         preferJdk: true,
         jvmHeap: '1024m',
-        vmArgs: [
-            "-Dspring.config.location=classpath:/application.properties"
-        ],
+        vmArgs: specificVmArgs,
         checkjvm: (context: ExtensionContext, jvm: commons.JVM) => {
             let version = jvm.getMajorVersion();
             if (version < 21) {

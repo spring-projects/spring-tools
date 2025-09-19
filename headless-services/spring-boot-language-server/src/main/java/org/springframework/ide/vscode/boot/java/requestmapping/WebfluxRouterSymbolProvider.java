@@ -341,9 +341,11 @@ public class WebfluxRouterSymbolProvider {
 
 						String handlerMethod = methodBinding.getMethodDeclaration().toString();
 						if (handlerMethod != null) handlerMethod = handlerMethod.trim();
+						
+						String ver = version != null ? version.getElement() : null;
 
 						return new WebfluxHandlerMethodIndexElement(handlerClass, handlerMethod, path, getElementStrings(httpMethods), getElementStrings(contentTypes),
-								getElementStrings(acceptTypes), version.getElement(), range, symbolLabel);
+								getElementStrings(acceptTypes), ver, range, symbolLabel);
 					}
 				}
 			}

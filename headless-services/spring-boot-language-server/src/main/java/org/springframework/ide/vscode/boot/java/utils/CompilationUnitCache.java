@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 Pivotal, Inc.
+ * Copyright (c) 2017, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -337,14 +337,14 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 			needToResolveBindings = false;
 		}
 		
-		CompilationUnit cu = CUResolver.convert(unit, source, AST.JLS21, options, needToResolveBindings, DefaultWorkingCopyOwner.PRIMARY, flags);
+		CompilationUnit cu = CUResolver.convert(unit, source, AST.JLS24, options, needToResolveBindings, DefaultWorkingCopyOwner.PRIMARY, flags);
 
 		AnnotationHierarchies.set(cu, annotations);
 		return cu;
 	}
 	
 	private static List<Classpath> createClasspath(String[] classpathEntries) {
-		ASTParser parser = ASTParser.newParser(AST.JLS21);
+		ASTParser parser = ASTParser.newParser(AST.JLS24);
 		String[] sourceEntries = new String[] {};
 		parser.setEnvironment(classpathEntries, sourceEntries, null, false);
 		return CUResolver.getClasspath(parser);

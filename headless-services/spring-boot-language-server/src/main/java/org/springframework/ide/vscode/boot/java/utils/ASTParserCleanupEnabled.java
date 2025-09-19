@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom
+ * Copyright (c) 2024, 2025 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -36,7 +36,7 @@ public class ASTParserCleanupEnabled {
 	
 	public ASTParserCleanupEnabled(String[] classpathEntries, String[] sourceEntries, String complianceVersion, AnnotationHierarchies annotationHierarchies, boolean ignoreMethodBodies) {
 		this.annotationHierachies = annotationHierarchies; 
-		parser = ASTParser.newParser(AST.JLS21);
+		parser = ASTParser.newParser(AST.JLS24);
 		options = JavaCore.getOptions();
 		JavaCore.setComplianceOptions(complianceVersion, options);
 

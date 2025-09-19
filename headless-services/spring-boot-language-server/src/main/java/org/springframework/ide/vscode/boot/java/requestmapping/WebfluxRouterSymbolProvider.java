@@ -107,6 +107,9 @@ public class WebfluxRouterSymbolProvider {
 		WebfluxRouteElement[] httpMethods = extractMethods(node, doc);
 		WebfluxRouteElement[] contentTypes = extractContentTypes(node, doc);
 		WebfluxRouteElement[] acceptTypes = extractAcceptTypes(node, doc);
+		WebfluxRouteElement version = extractVersion(node, doc);
+		
+		// TODO: version
 
 		int methodNameStart = node.getName().getStartPosition();
 		int invocationStart = node.getStartPosition();
@@ -124,11 +127,11 @@ public class WebfluxRouterSymbolProvider {
 				Location location = new Location(doc.getUri(), doc.toRange(methodNameStart, node.getLength() - (methodNameStart - invocationStart)));
 				
 				WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, path, getElementStrings(httpMethods),
-						getElementStrings(contentTypes), getElementStrings(acceptTypes));
+						getElementStrings(contentTypes), getElementStrings(acceptTypes), null);
 
 				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 
-				WebfluxHandlerMethodIndexElement handler = extractHandlerInformation(node, path, httpMethods, contentTypes, acceptTypes, location.getRange(), symbol.getName());
+				WebfluxHandlerMethodIndexElement handler = extractHandlerInformation(node, path, httpMethods, contentTypes, acceptTypes, version, location.getRange(), symbol.getName());
 				WebfluxRouteElementRangesIndexElement elements = extractElementsInformation(pathElements, httpMethods, contentTypes, acceptTypes);
 				
 				if (handler != null) beanDefinition.addChild(handler);
@@ -138,6 +141,11 @@ public class WebfluxRouterSymbolProvider {
 				log.error("bad location while extracting mapping symbol for " + doc.getUri(), e);
 			}
 		}
+	}
+
+	private static WebfluxRouteElement extractVersion(MethodInvocation node, TextDocument doc) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	private static WebfluxRouteElementRangesIndexElement extractElementsInformation(WebfluxRouteElement[] path, WebfluxRouteElement[] methods,
@@ -317,7 +325,7 @@ public class WebfluxRouterSymbolProvider {
 	}
 
 	private static WebfluxHandlerMethodIndexElement extractHandlerInformation(MethodInvocation node, String path, WebfluxRouteElement[] httpMethods,
-			WebfluxRouteElement[] contentTypes, WebfluxRouteElement[] acceptTypes, Range range, String symbolLabel) {
+			WebfluxRouteElement[] contentTypes, WebfluxRouteElement[] acceptTypes, WebfluxRouteElement version, Range range, String symbolLabel) {
 
 		List<?> arguments = node.arguments();
 
@@ -335,7 +343,7 @@ public class WebfluxRouterSymbolProvider {
 						if (handlerMethod != null) handlerMethod = handlerMethod.trim();
 
 						return new WebfluxHandlerMethodIndexElement(handlerClass, handlerMethod, path, getElementStrings(httpMethods), getElementStrings(contentTypes),
-								getElementStrings(acceptTypes), range, symbolLabel);
+								getElementStrings(acceptTypes), version.getElement(), range, symbolLabel);
 					}
 				}
 			}

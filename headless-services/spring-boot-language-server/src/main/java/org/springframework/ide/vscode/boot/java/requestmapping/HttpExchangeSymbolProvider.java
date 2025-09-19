@@ -44,7 +44,8 @@ public class HttpExchangeSymbolProvider implements SymbolProvider {
 				String[] methods = HttpExchangeIndexer.getMethod(node, context);
 				String[] contentTypes = HttpExchangeIndexer.getContentTypes(node, context);
 				String[] acceptTypes = HttpExchangeIndexer.getAcceptTypes(node, context);
-
+				String version = HttpExchangeIndexer.getVersion(node, context);
+				
 				Stream<String> stream = parentPath == null ? Stream.of("") : Arrays.stream(parentPath);
 				stream.filter(Objects::nonNull)
 						.flatMap(parent -> (path == null ? Stream.<String>empty() : Arrays.stream(path))
@@ -53,11 +54,13 @@ public class HttpExchangeSymbolProvider implements SymbolProvider {
 								}))
 						.forEach(p -> {
 							// symbol
-							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes);
+							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes, version);
 							context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 							
 							// index element
-							HttpExchangeIndexElement requestMappingIndexElement = new HttpExchangeIndexElement(p, methods, contentTypes, acceptTypes, location.getRange(), symbol.getName());
+							HttpExchangeIndexElement requestMappingIndexElement =
+									new HttpExchangeIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), symbol.getName());
+
 							context.getBeans().add(new CachedBean(doc.getUri(), requestMappingIndexElement));
 						});
 

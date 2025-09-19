@@ -14,7 +14,7 @@ import org.eclipse.lsp4j.Range;
 
 public class HttpExchangeIndexElement extends WebEndpointIndexElement {
 
-	public HttpExchangeIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, Range range, String symbolLabel) {
-		super(path, httpMethods, contentTypes, acceptTypes, range, symbolLabel);
+	public HttpExchangeIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, String version, Range range, String symbolLabel) {
+		super(path, httpMethods, contentTypes, acceptTypes, version, range, symbolLabel);
 	}
 }

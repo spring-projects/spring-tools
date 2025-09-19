@@ -18,8 +18,8 @@ public class WebfluxHandlerMethodIndexElement extends RequestMappingIndexElement
 	private final String handlerMethod;
 	
 	public WebfluxHandlerMethodIndexElement(String handlerClass, String handlerMethod, String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes,
-			Range range, String symbolLabel) {
-		super(path, httpMethods, contentTypes, acceptTypes, range, symbolLabel, null);
+			String version, Range range, String symbolLabel) {
+		super(path, httpMethods, contentTypes, acceptTypes, version, range, symbolLabel, null);
 
 		this.handlerClass = handlerClass;
 		this.handlerMethod = handlerMethod;

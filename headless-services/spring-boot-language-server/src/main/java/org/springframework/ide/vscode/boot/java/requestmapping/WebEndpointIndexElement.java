@@ -22,14 +22,16 @@ public class WebEndpointIndexElement extends AbstractSpringIndexElement implemen
 	private final String[] httpMethods;
 	private final String[] contentTypes;
 	private final String[] acceptTypes;
+	private final String version;
 	private final String symbolLabel;
 	private final Range range;
 	
-	public WebEndpointIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, Range range, String symbolLabel) {
+	public WebEndpointIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, String version, Range range, String symbolLabel) {
 		this.path = path;
 		this.httpMethods = httpMethods;
 		this.contentTypes = contentTypes;
 		this.acceptTypes = acceptTypes;
+		this.version = version;
 		this.range = range;
 		this.symbolLabel = symbolLabel;
 	}
@@ -48,6 +50,10 @@ public class WebEndpointIndexElement extends AbstractSpringIndexElement implemen
 	
 	public String[] getAcceptTypes() {
 		return acceptTypes;
+	}
+	
+	public String getVersion() {
+		return version;
 	}
 
 	@Override

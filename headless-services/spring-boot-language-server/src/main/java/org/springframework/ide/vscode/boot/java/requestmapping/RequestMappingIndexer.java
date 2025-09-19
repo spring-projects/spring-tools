@@ -44,6 +44,7 @@ public class RequestMappingIndexer {
 	private static final Set<String> ATTRIBUTE_NAME_METHOD = Set.of("method");
 	private static final Set<String> ATTRIBUTE_NAME_CONSUMES = Set.of("consumes");
 	private static final Set<String> ATTRIBUTE_NAME_PRODUCES = Set.of("produces");
+	private static final Set<String> ATTRIBUTE_NAME_VERSION = Set.of("version");
 	
 	private static final Map<String, String[]> METHOD_MAPPING = Map.of(
 			Annotations.SPRING_GET_MAPPING, new String[] { "GET" },
@@ -96,6 +97,7 @@ public class RequestMappingIndexer {
 				String[] methods = getMethod(node, context);
 				String[] contentTypes = getContentTypes(node, context);
 				String[] acceptTypes = getAcceptTypes(node, context);
+				String version = getVersion(node, context);
 
 				Stream<String> stream = parentPath == null ? Stream.of("") : Arrays.stream(parentPath);
 				stream.filter(Objects::nonNull)
@@ -105,10 +107,12 @@ public class RequestMappingIndexer {
 								}))
 						.forEach(p -> {
 							// symbol
-							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes);
+							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes, version);
 	
 							// index element for request mapping
-							RequestMappingIndexElement requestMappingIndexElement = new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, location.getRange(), symbol.getName(), methodSignature);
+							RequestMappingIndexElement requestMappingIndexElement =
+									new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), symbol.getName(), methodSignature);
+
 							controller.addChild(requestMappingIndexElement);
 						});
 
@@ -136,6 +140,11 @@ public class RequestMappingIndexer {
 
 	public static String[] getMethod(Annotation node, SpringIndexerJavaContext context) {
 		return WebEndpointIndexer.getMethod(node, context, ATTRIBUTE_NAME_METHOD, METHOD_MAPPING, Annotations.SPRING_REQUEST_MAPPING);
+	}
+
+	public static String getVersion(Annotation node, SpringIndexerJavaContext context) {
+		String[] versions = WebEndpointIndexer.getAttributeValues(node, context, ATTRIBUTE_NAME_VERSION, Annotations.SPRING_REQUEST_MAPPING);
+		return versions != null && versions.length == 1 ? versions[0] : null;
 	}
 
 }

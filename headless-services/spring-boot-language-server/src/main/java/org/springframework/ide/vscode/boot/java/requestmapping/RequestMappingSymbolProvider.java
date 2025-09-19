@@ -46,6 +46,7 @@ public class RequestMappingSymbolProvider implements SymbolProvider {
 				String[] methods = RequestMappingIndexer.getMethod(node, context);
 				String[] contentTypes = RequestMappingIndexer.getContentTypes(node, context);
 				String[] acceptTypes = RequestMappingIndexer.getAcceptTypes(node, context);
+				String version = RequestMappingIndexer.getVersion(node, context);
 
 				Stream<String> stream = parentPath == null ? Stream.of("") : Arrays.stream(parentPath);
 				stream.filter(Objects::nonNull)
@@ -55,7 +56,7 @@ public class RequestMappingSymbolProvider implements SymbolProvider {
 								}))
 						.forEach(p -> {
 							// symbol
-							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes);
+							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes, version);
 							context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 						});
 

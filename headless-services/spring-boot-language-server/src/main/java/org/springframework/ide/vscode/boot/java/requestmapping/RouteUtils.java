@@ -21,11 +21,13 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 public class RouteUtils {
 	
 	public static WorkspaceSymbol createRouteSymbol(Location location, String path,
-			String[] httpMethods, String[] contentTypes, String[] acceptTypes) {
+			String[] httpMethods, String[] contentTypes, String[] acceptTypes, String version) {
 		
 		if (path != null && path.length() > 0) {
 			String label = "@" + (path.startsWith("/") ? path : ("/" + path));
 			label += (httpMethods == null || httpMethods.length == 0 ? "" : " -- " + WebfluxUtils.getStringRep(httpMethods, string -> string));
+			
+			label += version != null ? " - Version: " + version : "";
 			
 			String acceptType = WebfluxUtils.getStringRep(acceptTypes, WebfluxUtils::getMediaType);
 			label += acceptType != null ? " - Accept: " + acceptType : "";

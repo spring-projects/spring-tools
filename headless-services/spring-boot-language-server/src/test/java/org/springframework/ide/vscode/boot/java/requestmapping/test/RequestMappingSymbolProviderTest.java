@@ -419,7 +419,7 @@ public class RequestMappingSymbolProviderTest {
         List<? extends WorkspaceSymbol> symbols =  getSymbols(docUri);
         assertTrue(containsSymbol(symbols, "@/path1/path/from/constant -- GET", docUri, 20, 1, 20, 56));
     }
-
+    
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri, int startLine, int startCHaracter, int endLine, int endCharacter) {
 		for (Iterator<? extends WorkspaceSymbol> iterator = symbols.iterator(); iterator.hasNext();) {
 			WorkspaceSymbol symbol = iterator.next();

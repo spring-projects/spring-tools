@@ -27,6 +27,7 @@ public class HttpExchangeIndexer {
 	private static final Set<String> ATTRIBUTE_NAME_METHOD = Set.of("method");
 	private static final Set<String> ATTRIBUTE_NAME_ACCEPT = Set.of("accept");
 	private static final Set<String> ATTRIBUTE_NAME_CONTENT_TYPE = Set.of("contentType");
+	private static final Set<String> ATTRIBUTE_NAME_VERSION = Set.of("version");
 	
 	private static final Map<String, String[]> METHOD_MAPPING = Map.of(
 			Annotations.GET_EXCHANGE, new String[] { "GET" },
@@ -55,6 +56,11 @@ public class HttpExchangeIndexer {
 
 	public static String[] getMethod(Annotation node, SpringIndexerJavaContext context) {
 		return WebEndpointIndexer.getMethod(node, context, ATTRIBUTE_NAME_METHOD, METHOD_MAPPING, Annotations.HTTP_EXCHANGE);
+	}
+
+	public static String getVersion(Annotation node, SpringIndexerJavaContext context) {
+		String[] versions = WebEndpointIndexer.getAttributeValues(node, context, ATTRIBUTE_NAME_VERSION, Annotations.SPRING_REQUEST_MAPPING);
+		return versions != null && versions.length == 1 ? versions[0] : null;
 	}
 
 }

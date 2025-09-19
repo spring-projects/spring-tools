@@ -16,8 +16,8 @@ public class RequestMappingIndexElement extends WebEndpointIndexElement {
 	
 	private String methodSignature;
 
-	public RequestMappingIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, Range range, String symbolLabel, String methodSignature) {
-		super(path, httpMethods, contentTypes, acceptTypes, range, symbolLabel);
+	public RequestMappingIndexElement(String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes, String version, Range range, String symbolLabel, String methodSignature) {
+		super(path, httpMethods, contentTypes, acceptTypes, version, range, symbolLabel);
 		this.methodSignature = methodSignature;
 	}
 	

@@ -18,6 +18,7 @@
 		<jdt.core.version>3.43.0</jdt.core.version>
 		<lsp4xml.version>0.24.0</lsp4xml.version>
 		<spring-ai.version>1.0.0</spring-ai.version>
+		<jmolecules.version>2025.0.0-RC5</jmolecules.version>
 	</properties>
 
 	<repositories>
@@ -169,13 +170,11 @@
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-stereotype</artifactId>
-			<version>0.30.0-STEREOTYPE-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-spring</artifactId>
-			<version>0.30.0-STEREOTYPE-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
@@ -441,6 +440,7 @@
 	
 	<dependencyManagement>
 		<dependencies>
+
 			<dependency>
 				<groupId>org.springframework.ai</groupId>
 				<artifactId>spring-ai-bom</artifactId>
@@ -448,6 +448,15 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+
+			<dependency>
+				<groupId>org.jmolecules</groupId>
+				<artifactId>jmolecules-bom</artifactId>
+				<version>${jmolecules.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
 		</dependencies>
 	</dependencyManagement>
 </project>

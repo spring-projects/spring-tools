@@ -14,13 +14,6 @@
 			"assignments" : [ "@org.springframework.context.annotation.Configuration" ],
 			"groups" : [ "spring" ]
 		},
-		"spring.Controller" : {
-			"assignments" : [
-				"@org.springframework.stereotype.Controller",
-				"@org.springframework.data.rest.webmvc.BasePathAwareController"
-			],
-			"groups" : [ "spring.web" ]
-		},
 		"spring.EventListener" : {
 			"assignments" : [
 				"@org.springframework.context.event.EventListener",
@@ -29,30 +22,29 @@
 			],
 			"groups" : [ "spring" ]
 		},
-		"spring.Repository" : {
+		"spring.Formatter" : {
+			"assignments" : [ "org.springframework.format.Formatter" ],
+			"groups" : [ "spring" ]
+		},
+		"spring.Service" : {
+			"assignments" : [ "@org.springframework.stereotype.Service" ],
+			"groups" : [ "spring", "ddd" ]
+		},
+		"spring.Validator" : {
+			"assignments" : [ "org.springframework.validation.Validator" ],
+			"groups" : [ "spring" ]
+		},
+		"spring.aot.RuntimeHints" : {
+			"assignments" : [ "org.springframework.aot.hint.RuntimeHintsRegistrar" ],
+			"groups" : [ "spring" ]
+		},
+		"spring.data.Repository" : {
 			"assignments" : [
 				"@org.springframework.stereotype.Repository",
 				"org.springframework.data.repository.Repository",
 				"@org.springframework.data.repository.RepositoryDefinition"
 			],
 			"groups" : [ "spring" ]
-		},
-		"spring.RequestMapping" : {
-			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
-			"displayName" : "Request Mappings",
-			"groups" : [ "spring.web" ]
-		},
-		"spring.Service" : {
-			"assignments" : [ "@org.springframework.stereotype.Service" ],
-			"groups" : [ "spring", "org.jmolecules.ddd" ]
-		},
-		"spring.MessageListener" : {
-			"assignments" : [
-				"@org.springframework.kafka.annotation.KafkaListener",
-				"@org.springframework.amqp.rabbit.annotation.RabbitListener",
-				"@org.springframework.messaging.handler.annotation.MessageMapping"
-			],
-			"groups" : [ "spring.messaging" ]
 		},
 		"spring.data.rest.Projection" : {
 			"assignments" : [ "@org.springframework.data.rest.core.config.Projection" ],
@@ -65,11 +57,40 @@
 		"spring.hateoas.RepresentationModelProcessor" : {
 			"assignments" : [ "org.springframework.hateoas.server.RepresentationModelProcessor" ],
 			"groups" : [ "spring.web.rest.hypermedia" ]
+		},
+		"spring.messaging.MessageListener" : {
+			"assignments" : [
+				"@org.springframework.kafka.annotation.KafkaListener",
+				"@org.springframework.amqp.rabbit.annotation.RabbitListener",
+				"@org.springframework.messaging.handler.annotation.MessageMapping"
+			],
+			"groups" : [ "spring.messaging" ]
+		},
+		"spring.web.Controller" : {
+			"assignments" : [
+				"@org.springframework.data.rest.webmvc.BasePathAwareController",
+				"@org.springframework.stereotype.Controller",
+				"@org.springframework.web.bind.annotation.RestController"
+			],
+			"groups" : [ "spring.web" ]
+		},
+		"spring.web.RequestMapping" : {
+			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
+			"displayName" : "Request Mappings",
+			"groups" : [ "spring.web" ]
 		}
 	},
 	"groups" : {
 		"spring" : {
-			"displayName" : "Spring"
+			"displayName" : "Spring",
+			"type" : "technology",
+			"priority" : 10
+		},
+		"spring.aot" : {
+			"displayName" : "Spring AOT"
+		},
+		"spring.boot" : {
+			"displayName" : "Spring Boot"
 		},
 		"spring.data" : {
 			"displayName" : "Spring Data"
@@ -78,16 +99,13 @@
 			"displayName" : "Spring Messaging"
 		},
 		"spring.web" : {
-			"displayName" : "Web"
+			"displayName" : "Spring Web"
 		},
 		"spring.web.rest" : {
-			"displayName" : "REST"
+			"displayName" : "Spring REST"
 		},
 		"spring.web.rest.hypermedia" : {
-			"displayName" : "Hypermedia"
-		},
-		"spring.boot" : {
-			"displayName" : "Spring Boot"
+			"displayName" : "Spring Hypermedia"
 		}
 	}
 }

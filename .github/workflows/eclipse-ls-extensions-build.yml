@@ -108,15 +108,15 @@ jobs:
           urls: ${{ steps.compute-invalid-urls.outputs.invalid_urls }}
           cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           cloudflare_cache_token: ${{ secrets.CLOUDFLARE_CACHE_TOKEN }}
-      - name: Verify Eclipse LS Extensions on e436
-        if: ${{ inputs.build_type == 'snapshot' }}
-        run: |
-          cd eclipse-language-servers
-          if command -v xvfb-run ; then
-            xvfb-run ./mvnw --batch-mode clean package -Pe436 -P${{ inputs.build_type }} -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dmaven.test.skip=true -Dtycho.localArtifacts=ignore
-          else
-            ./mvnw --batch-mode clean package -Pe436 -P${{ inputs.build_type }} -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dmaven.test.skip=true -Dtycho.localArtifacts=ignore
-          fi
+#      - name: Verify Eclipse LS Extensions on e436
+#        if: ${{ inputs.build_type == 'snapshot' }}
+#        run: |
+#          cd eclipse-language-servers
+#          if command -v xvfb-run ; then
+#            xvfb-run ./mvnw --batch-mode clean package -Pe436 -P${{ inputs.build_type }} -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dmaven.test.skip=true -Dtycho.localArtifacts=ignore
+#          else
+#            ./mvnw --batch-mode clean package -Pe436 -P${{ inputs.build_type }} -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dmaven.test.skip=true -Dtycho.localArtifacts=ignore
+#          fi
       - name: GChat spring-tools-team notification
         if: ${{ inputs.build_type == 'release' }}
         run: |

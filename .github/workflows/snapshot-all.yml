@@ -24,7 +24,7 @@ jobs:
     needs: [ language-servers-multiplatform-build ]
     uses: ./.github/workflows/eclipse-ls-extensions-build.yml
     with:
-      eclipse_profile: 'e436'
+      eclipse_profile: 'e437'
       build_type: 'snapshot'
       skip_tests: true
     secrets: inherit

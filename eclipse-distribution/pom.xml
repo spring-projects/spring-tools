@@ -131,17 +131,13 @@
 			<properties>
 				<dist.target>e4.37.0</dist.target>
 				<dist.target.major>e4.37</dist.target.major>
-				<dist.platform.name>2025-09</dist.platform.name>
-				<dist.platform.name.long>2025-09 (4.37)</dist.platform.name.long>
-				<dist.platform.id>2025-09</dist.platform.id>
 				<dist.platform.version>4.37.0</dist.platform.version>
-				<package.qualifierPrefix>e437</package.qualifierPrefix>
 			</properties>
 			<repositories>
 				<repository>
 					<id>2025-09</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/staging/2025-09/</url>
+					<url>https://download.eclipse.org/releases/2025-09/</url>
 				</repository>
 				<repository>
 					<id>orbit</id>
@@ -185,11 +181,6 @@
 					<layout>p2</layout>
 					<url>https://ianbrandt.github.io/m2e-maven-dependency-plugin/</url>
 				</repository>
-				<!--				<repository>
-                                    <id>mylyn-markdown</id>
-                                    <layout>p2</layout>
-                                    <url>https://download.eclipse.org/mylyn/docs/releases/3.0.45/</url>
-                                </repository> -->
 				<repository>
 					<id>wildwebdeveloper</id>
 					<layout>p2</layout>
@@ -212,20 +203,99 @@
 					<url>https://download.eclipse.org/tm4e/releases/latest/</url>
 					<!--					<url>https://download.eclipse.org/tm4e/snapshots/</url> -->
 				</repository>
-				<!--				<repository>
-                                    <id>chromium-binaries</id>
-                                    <layout>p2</layout>
-                                    <url>https://dl.maketechnology.io/chromium-cef/rls/repository</url>
-                                </repository> -->
 			</repositories>
 			<modules>
-				<!-- Xterm modules -->
-				<!--				<module>../eclipse-extensions/org.springframework.ide.eclipse.xterm</module>
-                                <module>../eclipse-extensions/org.springframework.ide.eclipse.xterm.feature</module>
-                                <module>../eclipse-extensions/org.springframework.ide.eclipse.xterm.linux.x86_64</module>
-                                <module>../eclipse-extensions/org.springframework.ide.eclipse.xterm.macosx.x86_64</module>
-                                <module>../eclipse-extensions/org.springframework.ide.eclipse.xterm.win32.x86_64</module>
-                -->
+				<module>org.springframework.boot.ide.product.e437</module>
+			</modules>
+
+		</profile>
+
+		<profile>
+			<id>e438</id>
+			<properties>
+				<dist.target>e4.38.0</dist.target>
+				<dist.target.major>e4.38</dist.target.major>
+				<dist.platform.version>4.38.0</dist.platform.version>
+			</properties>
+			<repositories>
+				<repository>
+					<id>2025-09</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/staging/2025-12/</url>
+				</repository>
+				<repository>
+					<id>orbit</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-12</url>
+				</repository>
+				
+				<repository> <!-- TEMPORARY to GRAB Java 25 support in early builds -->
+					<id>2025-09-i-builds</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/eclipse/updates/4.38-I-builds/</url>
+				</repository>
+
+				<repository> <!-- temporary p2 repo to grab early snapshot builds for testing fixes -->
+					<id>buildship-snapshots</id>
+					<layout>p2</layout>
+					<!--					<url>https://download.eclipse.org/buildship/updates/latest-snapshot/</url>-->
+					<url>https://download.eclipse.org/buildship/updates/latest</url>
+				</repository>
+				<repository>
+					<id>m2e</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/technology/m2e/releases/latest/</url>
+					<!--					<url>https://download.eclipse.org/technology/m2e/snapshots/latest/</url>-->
+				</repository>
+				<repository>
+					<id>latest-m2e-wtp-release</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/m2e-wtp/releases/latest/</url>
+				</repository>
+				<repository>
+					<id>maven-extras-mirror</id>
+					<layout>p2</layout>
+					<url>https://cdn.spring.io/spring-tools/release/TOOLS/third-party/m2e-sts310-signed/</url>
+				</repository>
+				<repository>
+					<id>maven-egit</id>
+					<layout>p2</layout>
+					<url>https://github.com/tesla/m2eclipse-egit/releases/download/0.17.0/</url>
+				</repository>
+				<repository>
+					<id>maven-wro4j</id>
+					<layout>p2</layout>
+					<url>https://github.com/jbosstools/m2e-wro4j/releases/download/1.2.1/</url>
+				</repository>
+				<repository>
+					<id>maven-dependency-support</id>
+					<layout>p2</layout>
+					<url>https://ianbrandt.github.io/m2e-maven-dependency-plugin/</url>
+				</repository>
+				<repository>
+					<id>wildwebdeveloper</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/wildwebdeveloper/releases/latest/</url>
+				</repository>
+				<repository>
+					<id>cdt-updates</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/tools/cdt/releases/latest/</url>
+				</repository>
+				<repository>
+					<id>lsp4e</id>
+					<layout>p2</layout>
+<!--					<url>https://download.eclipse.org/lsp4e/releases/0.27.5/</url> -->
+					<url>https://download.eclipse.org/lsp4e/snapshots/</url>
+				</repository>
+				<repository>
+					<id>tm4e-snapshots</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/tm4e/releases/latest/</url>
+					<!--					<url>https://download.eclipse.org/tm4e/snapshots/</url> -->
+				</repository>
+			</repositories>
+			<modules>
 				<module>org.springframework.boot.ide.product.e437</module>
 			</modules>
 
@@ -261,31 +331,11 @@
 			<layout>p2</layout>
 			<url>https://cdn.spring.io/spring-tools/release/TOOLS/third-party/misc-p2-repo/${misc.p2.repo.version}</url>
 		</repository>
-		<!--		<repository>
-			<id>egit-github</id>
-			<layout>p2</layout>
-			<url>https://download.eclipse.org/egit/github/updates</url>
-		</repository> -->
-<!--		<repository>
-			<id>egit-github</id>
-			<layout>p2</layout>
-			<url>https://download.eclipse.org/egit/github/updates-stable-nightly/</url>
-		</repository> -->
-		<!--		<repository>
-			<id>m2e-apt</id>
-			<layout>p2</layout>
-			<url>https://download.jboss.org/jbosstools/updates/m2e-extensions/m2e-apt</url>
-		</repository> -->
 		<repository>
 			<id>m2e-apt</id>
 			<layout>p2</layout>
 			<url>https://download.jboss.org/jbosstools/updates/m2e-extensions/m2e-apt/1.5.2-2018-12-24_15-46-05-H18/</url>
 		</repository>
-<!--		<repository>
-			<id>justj</id>
-			<url>https://download.eclipse.org/justj/jres/15/updates/release/latest/</url>
-			<layout>p2</layout>
-		</repository> -->
 	</repositories>
 
 	<pluginRepositories>
@@ -293,33 +343,11 @@
 			<id>tycho-snapshots</id>
 			<url>https://repo.eclipse.org/content/repositories/tycho-snapshots/</url>
 		</pluginRepository>
-		<!-- necessary for Maven and Ant AWS dependency -->
-<!--		<pluginRepository>
-			<id>spring-maven-release</id>
-			<name>Spring Repository</name>
-			<url>https://repo.spring.io/release/</url>
-		</pluginRepository> -->
-<!--		<pluginRepository>
-			<id>spring-maven-plugin-release</id>
-			<name>Spring Repository</name>
-			<url>https://repo.spring.io/plugins-release/</url>
-		</pluginRepository> -->
-<!--		<pluginRepository>
-			<id>spring-maven-release</id>
-			<name>Spring Maven Release Repository</name>
-			<url>https://maven.springframework.org/release</url>
-		</pluginRepository> -->
-
 		<pluginRepository>
 			<id>springsource-maven-release</id>
 			<name>SpringSource Maven Release Repository</name>
 			<url>https://repository.springsource.com/maven/bundles/release</url>
 		</pluginRepository>
-
-<!--		<pluginRepository>
-			<id>sonatype.snapshots</id>
-			<url>https://repository.sonatype.org/content/repositories/snapshots/</url>
-		</pluginRepository> -->
 	</pluginRepositories>
 
 	<build>

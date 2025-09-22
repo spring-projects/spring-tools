@@ -205,7 +205,7 @@
 				</repository>
 			</repositories>
 			<modules>
-				<module>org.springframework.boot.ide.product.e437</module>
+				<module>org.springframework.boot.ide.product</module>
 			</modules>
 
 		</profile>
@@ -296,7 +296,7 @@
 				</repository>
 			</repositories>
 			<modules>
-				<module>org.springframework.boot.ide.product.e437</module>
+				<module>org.springframework.boot.ide.product</module>
 			</modules>
 
 		</profile>

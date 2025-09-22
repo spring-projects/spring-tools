@@ -14,30 +14,30 @@ on:
 
 jobs:
 
-  e435-distro:
-    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
-    with:
-      eclipse_profile: 'e435'
-      build_type: 'release'
-      p2-qualifier: 'RELEASE'
-      sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
-      java_version: '21'
-    secrets: inherit
-
-  e436-distro:
-    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
-    with:
-      eclipse_profile: 'e436'
-      build_type: 'release'
-      p2-qualifier: 'RELEASE'
-      sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
-      java_version: '21'
-    secrets: inherit
+#  e435-distro:
+#    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+#    with:
+#      eclipse_profile: 'e435'
+#      build_type: 'release'
+#      p2-qualifier: 'RELEASE'
+#      sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
+#      java_version: '21'
+#    secrets: inherit
 
   e437-distro:
     uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
     with:
       eclipse_profile: 'e437'
+      build_type: 'release'
+      p2-qualifier: 'RELEASE'
+      sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
+      java_version: '21'
+    secrets: inherit
+
+  e438-distro:
+    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+    with:
+      eclipse_profile: 'e438'
       build_type: 'release'
       p2-qualifier: 'RELEASE'
       sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}

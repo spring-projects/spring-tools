@@ -38,20 +38,20 @@ jobs:
 #      java_version: '21'
 #    secrets: inherit
 #
-#  e436-distro:
-#    needs: [ eclipse-ls-extensions ]
-#    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
-#    with:
-#      eclipse_profile: 'e436'
-#      build_type: 'snapshot'
-#      java_version: '21'
-#    secrets: inherit
-#
   e437-distro:
     needs: [ eclipse-ls-extensions ]
     uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
     with:
       eclipse_profile: 'e437'
+      build_type: 'snapshot'
+      java_version: '21'
+    secrets: inherit
+
+  e438-distro:
+    needs: [ eclipse-ls-extensions ]
+    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+    with:
+      eclipse_profile: 'e438'
       build_type: 'snapshot'
       java_version: '21'
     secrets: inherit

@@ -64,7 +64,7 @@ public class ApplicationModulesLabelProvider implements
 				.map(it -> StructureViewUtil.abbreviate(it, type))
 				.orElseGet(type::getType);
 
-		return "true".equals(System.getProperty("disable-named-interfaces"))
+		return !StructureViewUtil.hasNamedInterfaceNodesEnabled()
 				? result + modules.getModuleByType(type)
 						.filter(it -> it.isExposed(type.getType()))
 						.map(__ -> " (API)")

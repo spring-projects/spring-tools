@@ -131,6 +131,18 @@ public class StructureViewUtil {
 		StereotypePackageElement packageElement = springIndex.findPackageNode(packageName, project.getElementName());
 		return packageElement != null ? packageElement : new StereotypePackageElement(packageName, null);
 	}
+	
+	public static boolean hasSourceDefinedStereotypesEnabled() {
+		return System.getProperty("disable-source-defined-stereotypes") == null;
+	}
+	
+	public static boolean hasModulithStructureViewEnabled() {
+		return System.getProperty("disable-modulith-structure-view") == null;
+	}
+	
+	public static boolean hasNamedInterfaceNodesEnabled() {
+		return System.getProperty("enable-named-interface-nodes") != null;
+	}
 
 	private static final List<String> EXCLUSIONS = List.of("Application", "Properties", "Mappings", "Hints");
 

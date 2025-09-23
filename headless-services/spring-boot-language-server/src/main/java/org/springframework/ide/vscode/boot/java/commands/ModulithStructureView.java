@@ -48,8 +48,6 @@ public class ModulithStructureView {
 		ApplicationModules modules = new ApplicationModules(modulesData);
 
 		var labelProvider = new ApplicationModulesLabelProvider(catalog, project, springIndex, modules);
-		
-		
 
 		// json output
 		BiConsumer<Node, NamedInterfaceNode> consumer = (node, c) -> {
@@ -64,13 +62,14 @@ public class ModulithStructureView {
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI
 		var jsonTree = new ProjectTree<>(adapter, catalog, jsonHandler);
 
-		if ("true".equals(System.getProperty("disable-named-interfaces"))) {
-			jsonTree = jsonTree.withStructureProvider(new SimpleApplicationModulesStructureProvider(project, springIndex));
-		} else {
+		if (StructureViewUtil.hasNamedInterfaceNodesEnabled()) {
 			jsonTree = jsonTree.withStructureProvider(new ApplicationModulesNamedInterfacesGroupingProvider(modules, project, springIndex));
+		} else {
+			jsonTree = jsonTree.withStructureProvider(new SimpleApplicationModulesStructureProvider(project, springIndex));
 		}
 
 		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog, selectedGroups);
+
 		for (String[] grouper : groupers) {
 			jsonTree = jsonTree.withGrouper(grouper);
 		}

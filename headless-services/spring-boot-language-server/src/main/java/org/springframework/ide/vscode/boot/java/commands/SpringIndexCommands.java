@@ -85,7 +85,7 @@ public class SpringIndexCommands {
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 		var factory = new IndexBasedStereotypeFactory(catalog, project, springIndex);
 		
-		if (System.getProperty("enable-source-defined-stereotypes") != null) {
+		if (StructureViewUtil.hasSourceDefinedStereotypesEnabled()) {
 			factory.registerStereotypeDefinitions();
 		}
 		
@@ -93,7 +93,7 @@ public class SpringIndexCommands {
 			selectedGroups = catalog.getGroups().stream().map(group -> group.getIdentifier()).toList();
 		}
 		
-		if (ModulithService.isModulithDependentProject(project) && System.getProperty("disable-modulith-structure-view") == null) {
+		if (ModulithService.isModulithDependentProject(project) && StructureViewUtil.hasModulithStructureViewEnabled()) {
 			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project, factory, selectedGroups);
 		}
 		else {

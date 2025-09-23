@@ -229,6 +229,11 @@ public class BootJavaConfig implements InitializingBean {
 		return Boolean.TRUE.equals(b);
 	}
 	
+	public boolean isEnabledCodeLensForWebConfigs() {
+		Boolean b = settings.getBoolean("boot-java", "java", "codelens-web-configs-on-controller-classes");
+		return Boolean.TRUE.equals(b);
+	}
+	
 	public Settings getRawSettings() {
 		return settings;
 	}

@@ -116,6 +116,8 @@ public class Annotations {
 	public static final String BEAN_REGISTRAR_INTERFACE = "org.springframework.beans.factory.BeanRegistrar";
 	public static final String BEAN_REGISTRY_INTERFACE = "org.springframework.beans.factory.BeanRegistry";
 
+	public static final String WEB_MVC_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.WebMvcConfigurer";
+	public static final String WEB_MVC_API_VERSION_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.ApiVersionConfigurer";
 	
 	public static final Map<String, String> AOP_ANNOTATIONS = Map.of(
 	        "org.aspectj.lang.annotation.Pointcut", "Pointcut",

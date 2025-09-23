@@ -58,6 +58,8 @@ public class Constants {
 	
 	public static final String PREF_CODELENS_QUERY_METHODS = "boot-java.java.codelens-over-query-methods";
 	
+	public static final String PREF_CODELENS_WEB_CONFIGS_ON_CONTROLLER_CLASSES = "boot-java.java.codelens-web-configs-on-controller-classes";
+	
 	public static final String PREF_AI_ENABLE_MCP = "boot-java.ai.mcp-server-enabled";
 	
 }

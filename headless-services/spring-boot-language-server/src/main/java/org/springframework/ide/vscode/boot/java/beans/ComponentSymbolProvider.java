@@ -46,6 +46,7 @@ import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.DefaultSymbolProvider;
@@ -148,6 +149,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		indexRequestMappings(beanDefinition, type, annotationType, context, doc);
 		indexConfigurationProperties(beanDefinition, type, context, doc);
 		indexBeanRegistrarImplementation(beanDefinition, type, context, doc);
+		indexWebConfig(beanDefinition, type, context, doc);
 
 		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 		context.getBeans().add(new CachedBean(context.getDocURI(), beanDefinition));
@@ -455,6 +457,10 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		} catch (BadLocationException e) {
 			log.error("", e);
 		}
+	}
+	
+	private void indexWebConfig(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
+		WebConfigIndexer.indexWebConfig(beanDefinition, type, context, doc);
 	}
 
 	private void scanBeanRegistryInvocations(SpringIndexElement parent, Block body, SpringIndexerJavaContext context, TextDocument doc) {

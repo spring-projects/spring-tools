@@ -406,6 +406,11 @@
             "default": true,
             "description": "Show CodeLens with AOT generated query over Data Query methods"
           },
+          "boot-java.java.codelens-web-configs-on-controller-classes": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show CodeLens with web config details on controller classes"
+          },
           "boot-java.remote-apps": {
             "type": "array",
             "items": {

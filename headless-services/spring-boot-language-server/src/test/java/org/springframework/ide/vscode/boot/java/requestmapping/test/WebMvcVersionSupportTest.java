@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.requestmapping.test;
 
+import static org.junit.Assert.assertSame;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,6 +32,7 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.utils.test.SpringIndexerTest;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -45,7 +47,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(SymbolProviderTestConf.class)
-public class RequestMappingVersionSupportSymbolProviderTest {
+public class WebMvcVersionSupportTest {
+	
+	private static final String PROJECT_NAME = "test-request-mapping-version-support-symbols";
 	
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -58,7 +62,7 @@ public class RequestMappingVersionSupportSymbolProviderTest {
 	public void setup() throws Exception {
 		harness.intialize(null);
 
-		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-request-mapping-version-support-symbols/").toURI());
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/" + PROJECT_NAME + "/").toURI());
 		String projectDir = directory.toURI().toString();
 
 		// trigger project creation
@@ -73,7 +77,7 @@ public class RequestMappingVersionSupportSymbolProviderTest {
 	}
 
     @Test
-    void testMappingsWithVersions() throws Exception {
+    void testSymbolsForRequestMappingsWithVersions() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java").toUri().toString();
         List<? extends WorkspaceSymbol> symbols = getSymbols(docUri);
         assertEquals(3, symbols.size());
@@ -82,8 +86,8 @@ public class RequestMappingVersionSupportSymbolProviderTest {
     }
     
     @Test
-    void testMappingsWithVersionIndexElements() throws Exception {
-        Bean[] beans = springIndex.getBeansWithName("test-request-mapping-version-support-symbols", "mappingClassWithMultipleVersions");
+    void testIndexElementsForRequestMappingsWithVersion() throws Exception {
+        Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "mappingClassWithMultipleVersions");
         assertEquals(1, beans.length);
         
         List<SpringIndexElement> children = beans[0].getChildren();
@@ -103,12 +107,32 @@ public class RequestMappingVersionSupportSymbolProviderTest {
     }
     
     @Test
-    void testeHttpExchangeSymbolWithClassLevelAnnotation() throws Exception {
+    void testSymbolsForHttpExchangeWithClassLevelAnnotation() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/versions/HttpExchangeExampleWithClassLevelAnnotation.java").toUri().toString();
         
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
         assertEquals(1, symbols.size());
         assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/stores/all -- GET - Version: 2", docUri));
+    }
+    
+    @Test
+    void testWebConfigIndexElement() throws Exception {
+    	Bean[] webConfigBean = springIndex.getMatchingBeans(PROJECT_NAME, "org.springframework.web.servlet.config.annotation.WebMvcConfigurer");
+    	assertEquals(1, webConfigBean.length);
+    	
+    	Bean[] webConfigBeanViaName = springIndex.getBeansWithName(PROJECT_NAME, "webConfig");
+    	assertEquals(1, webConfigBeanViaName.length);
+    	
+    	assertSame(webConfigBean[0], webConfigBeanViaName[0]);
+    	
+    	List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean[0]));
+    	assertEquals(1, webConfigElements.size());
+    	
+    	WebConfigIndexElement webConfigElement = webConfigElements.get(0);
+    	assertTrue(webConfigElement.isVersioningSupported());
+    	assertEquals("Request Header: X-API-Version", webConfigElement.getVersionSupportStrategy());
+    	assertEquals(1, webConfigElement.getSupportedVersions().length);
+    	assertEquals("1", webConfigElement.getSupportedVersions()[0]);
     }
 
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri) {

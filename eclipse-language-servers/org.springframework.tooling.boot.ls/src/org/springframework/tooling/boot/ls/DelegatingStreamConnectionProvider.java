@@ -226,6 +226,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		javaSettings.put("completions", javaCompletionSettings);
 		javaSettings.put("reconcilers", preferenceStore.getBoolean(Constants.PREF_JAVA_RECONCILE));
 		javaSettings.put("codelens-over-query-methods", preferenceStore.getBoolean(Constants.PREF_CODELENS_QUERY_METHODS));
+		javaSettings.put("codelens-web-configs-on-controller-classes", preferenceStore.getBoolean(Constants.PREF_CODELENS_WEB_CONFIGS_ON_CONTROLLER_CLASSES));
 
 		bootJavaObj.put("jpql", preferenceStore.getBoolean(Constants.PREF_JPQL));
 		bootJavaObj.put("live-information", liveInformation);

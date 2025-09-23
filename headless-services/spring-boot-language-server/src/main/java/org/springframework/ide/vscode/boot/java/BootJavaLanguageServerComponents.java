@@ -60,6 +60,7 @@ import org.springframework.ide.vscode.boot.java.livehover.v2.SpringProcessLiveDa
 import org.springframework.ide.vscode.boot.java.livehover.v2.SpringProcessLiveHoverUpdater;
 import org.springframework.ide.vscode.boot.java.requestmapping.LiveAppURLSymbolProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingHoverProvider;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigCodeLensProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxHandlerCodeLensProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouteHighlightProdivder;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
@@ -325,6 +326,7 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 		codeLensProvider.add(new WebfluxHandlerCodeLensProvider(springIndex));
 		codeLensProvider.add(new CopilotCodeLensProvider(projectFinder, server, spelSemanticTokens));
 		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(projectFinder, repositoryAotMetadataService, refactorings, config));
+		codeLensProvider.add(new WebConfigCodeLensProvider(projectFinder, springIndex, config));
 
 		return new BootJavaCodeLensEngine(this, codeLensProvider);
 	}

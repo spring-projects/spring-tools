@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -52,6 +53,7 @@ public class SpringIndexCommands {
 
 			CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
 			return projectFinder.all().stream()
+					.sorted(Comparator.comparing(IJavaProject::getElementName))
 					.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata, args.selectedGroups))
 					.filter(Objects::nonNull)
 					.collect(Collectors.toList());

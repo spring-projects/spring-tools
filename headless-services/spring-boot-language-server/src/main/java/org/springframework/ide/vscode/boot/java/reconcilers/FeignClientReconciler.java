@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
@@ -29,7 +30,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement
 import org.springframework.ide.vscode.commons.util.UriUtil;
 
 public class FeignClientReconciler implements JdtAstReconciler {
-
+	
 	private final SpringMetamodelIndex springIndex;
 
 	public FeignClientReconciler(SpringMetamodelIndex springIndex) {
@@ -43,7 +44,7 @@ public class FeignClientReconciler implements JdtAstReconciler {
 
 	@Override
 	public ProblemType getProblemType() {
-		return null;
+		return Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION;
 	}
 
 	@Override

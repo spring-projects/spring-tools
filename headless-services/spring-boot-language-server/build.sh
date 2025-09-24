@@ -1,5 +1,8 @@
 #!/bin/bash
 set -e
+
+profiles=$1
+
 modules=spring-boot-language-server,sts-gradle-model-plugin,:org.springframework.tooling.gradle,:org.springframework.tooling.jdt.ls.extension,:org.springframework.tooling.jdt.ls.commons,:org.springframework.tooling.jdt.ls.commons.test
 cd ../jdt-ls-extension
 if command -v xvfb-run ; then
@@ -10,7 +13,7 @@ if command -v xvfb-run ; then
         -pl $modules \
         -am \
         -B \
-        clean install
+        clean install $profiles
 else
     ../mvnw \
         -DtrimStackTrace=false \
@@ -18,7 +21,7 @@ else
         -pl $modules \
         -am \
         -B \
-        clean install
+        clean install $profiles
 fi
 cd ../xml-ls-extension
     ../mvnw \
@@ -27,4 +30,4 @@ cd ../xml-ls-extension
         -pl xml-ls-extension \
         -am \
         -B \
-        clean install
+        clean install $profiles

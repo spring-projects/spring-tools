@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+profiles=$1
+
 workdir=`pwd`
 
 # Preinstall commons-vscode package
@@ -9,7 +11,7 @@ npm install ../commons-vscode/*-commons-vscode-*.tgz
 
 # Use maven to build fat jar of the language server
 cd ../../headless-services/manifest-yaml-language-server
-./build.sh
+./build.sh $profiles
 
 #Clean old LS folder
 rm -fr ${workdir}/language-server

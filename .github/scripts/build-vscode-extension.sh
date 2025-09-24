@@ -1,6 +1,8 @@
 set -e
+
 extension_id=$1
 dist_type=$2
+
 workdir=`pwd`
 sources=$workdir/vscode-extensions/$extension_id
 # server_id=${extension_id#vscode-}
@@ -10,6 +12,7 @@ cd "$sources"
 base_version=`jq -r .version package.json`
 if [ "$dist_type" = release ]; then
     echo -e "\n\n*Version: ${base_version}-RELEASE*" >> README.md
+    profiles=-Pgenerate-and-include-license-files
 else
     if [ "$dist_type" = pre ]; then
         # for pre-release build, work the timestamp into package.json patch version. No minutes in the timestamp due VSCode pre-release lack of support for semver
@@ -17,6 +20,7 @@ else
         qualified_version=`echo $base_version | sed "s/\([0-9]\{1,\}.[0-9]\{1,\}.\)[0-9]\{1,\}/\1$timestamp/"`
         npm version ${qualified_version}
         echo -e "\n\n*Version: ${base_version}-PRE-RELEASE*" >> README.md
+        profiles=-Pgenerate-and-include-license-files
     else
         # for snapshot build, work the timestamp into package.json version qualifier
         timestamp=`date -u +%Y%m%d%H%M`
@@ -27,7 +31,7 @@ else
 fi
 
 if [ -f "./scripts/preinstall.sh" ]; then
-   ./scripts/preinstall.sh
+   ./scripts/preinstall.sh $profiles
 fi
 
 npm install

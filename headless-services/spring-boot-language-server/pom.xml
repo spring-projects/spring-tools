@@ -27,7 +27,8 @@
 			<url>file://${project.basedir}/repo</url>
 		</repository>
 
-		<!-- <repository> <id>oss-jfrog-snapshots</id> <url>https://oss.jfrog.org/artifactory/libs-snapshot</url> 
+		<!-- <repository> <id>oss-jfrog-snapshots</id>
+		<url>https://oss.jfrog.org/artifactory/libs-snapshot</url> 
 			<snapshots> <enabled>true</enabled> </snapshots> </repository> -->
 
 		<repository>
@@ -40,7 +41,7 @@
 				<enabled>true</enabled>
 			</releases>
 		</repository>
-		
+
 		<repository>
 			<id>rewrite-snapshots</id>
 			<url>https://central.sonatype.com/repository/maven-snapshots/</url>
@@ -51,7 +52,7 @@
 				<enabled>false</enabled>
 			</releases>
 		</repository>
-		
+
 		<repository>
 			<id>jmolecules-snapshots</id>
 			<url>https://central.sonatype.com/repository/maven-snapshots/</url>
@@ -72,7 +73,7 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context-indexer</artifactId>
@@ -139,12 +140,12 @@
 			<artifactId>commons-rewrite</artifactId>
 			<version>${dependencies.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.core</artifactId>
 			<version>${jdt.core.version}</version>
-    	</dependency>
+		</dependency>
 
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -164,9 +165,9 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
 		</dependency>
-		
+
 		<!-- stereotype support, especially for the new logical structure view -->
-		
+
 		<dependency>
 			<groupId>org.jmolecules.integrations</groupId>
 			<artifactId>jmolecules-stereotype</artifactId>
@@ -249,18 +250,18 @@
 
 		<!-- Cron expression descriptor library -->
 		<dependency>
-		    <groupId>com.cronutils</groupId>
-		    <artifactId>cron-utils</artifactId>
-		    <version>9.2.0</version>
+			<groupId>com.cronutils</groupId>
+			<artifactId>cron-utils</artifactId>
+			<version>9.2.0</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.commonmark</groupId>
-		    <artifactId>commonmark</artifactId>
-		    <version>0.22.0</version>
+			<groupId>org.commonmark</groupId>
+			<artifactId>commonmark</artifactId>
+			<version>0.22.0</version>
 		</dependency>
 		<dependency>
-		    <groupId>com.fasterxml.jackson.dataformat</groupId>
-		    <artifactId>jackson-dataformat-xml</artifactId>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-xml</artifactId>
 		</dependency>
 	</dependencies>
 
@@ -283,6 +284,135 @@
 				</dependency>
 			</dependencies>
 		</profile>
+
+		<profile>
+			<id>generate-and-include-license-files</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>license-maven-plugin</artifactId>
+						<version>1.20</version>
+						<executions>
+							<execution>
+								<id>download-licenses</id>
+								<phase>process-classes</phase>
+								<goals>
+									<goal>download-licenses</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<licenseUrlReplacements>
+								<licenseUrlReplacement>
+									<regexp>http://(.*)</regexp>
+									<replacement>https://$1</replacement>
+								</licenseUrlReplacement>
+							</licenseUrlReplacements>
+							<licenseContentSanitizers>
+								<licenseContentSanitizer>
+									<id>all-http</id>
+									<urlRegexp>http(.*)</urlRegexp>
+									<contentRegexp>http://(.*)</contentRegexp>
+									<contentReplacement>https://$1</contentReplacement>
+								</licenseContentSanitizer>
+							</licenseContentSanitizers>
+						</configuration>
+					</plugin>
+
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>xml-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<phase>process-classes</phase>
+								<goals>
+									<goal>transform</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<transformationSets>
+								<transformationSet>
+									<dir>${basedir}/target/generated-resources/</dir>
+									<includes>*.xml</includes>
+									<stylesheet>
+										${basedir}/license-format-stylesheet.xsl</stylesheet>
+									<outputDir>
+										${project.build.directory}/generated-license-information</outputDir>
+								</transformationSet>
+							</transformationSets>
+						</configuration>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>copy-own-license</id>
+								<phase>process-classes</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>
+										${project.build.outputDirectory}</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${basedir}</directory>
+											<filtering>true</filtering>
+											<include>LICENSE</include>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<!--
+					<execution>
+						<id>copy-license-files</id>
+						<phase>process-classes</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.outputDirectory}/META-INF/third-party-open-source-licenses/</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.build.directory}/generated-resources/licenses</directory>
+									<filtering>false</filtering>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				-->
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>com.coderplus.maven.plugins</groupId>
+						<artifactId>copy-rename-maven-plugin</artifactId>
+						<version>1.0</version>
+						<executions>
+							<execution>
+								<id>copy-and-rename-license-summary</id>
+								<phase>process-classes</phase>
+								<goals>
+									<goal>copy</goal>
+								</goals>
+								<configuration>
+									<sourceFile>
+										${project.build.directory}/generated-license-information/licenses.xml</sourceFile>
+									<destinationFile>
+										${project.build.outputDirectory}/META-INF/third-party-open-source-licenses.txt</destinationFile>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+
+				</plugins>
+			</build>
+
+		</profile>
 	</profiles>
 
 	<build>
@@ -294,7 +424,8 @@
 				<configuration>
 					<layout>ZIP</layout>
 					<classifier>exec</classifier>
-					<mainClass>org.springframework.ide.vscode.boot.app.BootLanguageServerBootApp</mainClass>
+					<mainClass>
+						org.springframework.ide.vscode.boot.app.BootLanguageServerBootApp</mainClass>
 				</configuration>
 				<executions>
 					<execution>
@@ -318,126 +449,9 @@
 				</configuration>
 			</plugin>
 
-			<!-- generate and package license information for included dependencies -->
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>license-maven-plugin</artifactId>
-				<version>1.20</version>
-				<executions>
-					<execution>
-						<id>download-licenses</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>download-licenses</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<licenseUrlReplacements>
-						<licenseUrlReplacement>
-							<regexp>http://(.*)</regexp>
-							<replacement>https://$1</replacement>
-						</licenseUrlReplacement>
-					</licenseUrlReplacements>
-					<licenseContentSanitizers>
-						<licenseContentSanitizer>
-							<id>all-http</id>
-							<urlRegexp>http(.*)</urlRegexp>
-							<contentRegexp>http://(.*)</contentRegexp>
-							<contentReplacement>https://$1</contentReplacement>
-						</licenseContentSanitizer>
-					</licenseContentSanitizers>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>xml-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>transform</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<transformationSets>
-						<transformationSet>
-							<dir>${basedir}/target/generated-resources/</dir>
-							<includes>*.xml</includes>
-							<stylesheet>${basedir}/license-format-stylesheet.xsl</stylesheet>
-							<outputDir>${project.build.directory}/generated-license-information</outputDir>
-						</transformationSet>
-					</transformationSets>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy-own-license</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.outputDirectory}</outputDirectory>
-							<resources>
-								<resource>
-									<directory>${basedir}</directory>
-									<filtering>true</filtering>
-									<include>LICENSE</include>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
-					<!--
-					<execution>
-						<id>copy-license-files</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.outputDirectory}/META-INF/third-party-open-source-licenses/</outputDirectory>
-							<resources>
-								<resource>
-									<directory>${project.build.directory}/generated-resources/licenses</directory>
-									<filtering>false</filtering>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
-				-->
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>com.coderplus.maven.plugins</groupId>
-				<artifactId>copy-rename-maven-plugin</artifactId>
-				<version>1.0</version>
-				<executions>
-					<execution>
-						<id>copy-and-rename-license-summary</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>copy</goal>
-						</goals>
-						<configuration>
-							<sourceFile>${project.build.directory}/generated-license-information/licenses.xml</sourceFile>
-							<destinationFile>${project.build.outputDirectory}/META-INF/third-party-open-source-licenses.txt</destinationFile>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
 		</plugins>
 	</build>
-	
+
 	<dependencyManagement>
 		<dependencies>
 

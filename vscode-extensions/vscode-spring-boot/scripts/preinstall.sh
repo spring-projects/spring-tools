@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+profiles=$1
+
 workdir=`pwd`
 
 # Preinstall commons-vscode package
@@ -17,7 +19,7 @@ mkdir -p ${workdir}/language-server
 
 # Use maven to build fat jar of the language server
 cd ${workdir}/../../headless-services/spring-boot-language-server
-./build.sh
+./build.sh $profiles
 
 # Extract LS JAR
 cd ${workdir}/../../headless-services/spring-boot-language-server/target

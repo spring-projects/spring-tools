@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.bosh;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
@@ -20,15 +21,13 @@ import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.ide.vscode.bosh.bootiful.BoshLanguageServerTest;
-import org.springframework.ide.vscode.bosh.mocks.MockCloudConfigProvider;
 import org.springframework.ide.vscode.bosh.models.CloudConfigModel;
 import org.springframework.ide.vscode.bosh.models.DynamicModelProvider;
 import org.springframework.ide.vscode.bosh.models.ReleasesModel;
 import org.springframework.ide.vscode.bosh.models.StemcellsModel;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @ExtendWith(SpringExtension.class)
@@ -39,9 +38,9 @@ public class BoshLanguageServerInitializerTest {
 		return Paths.get(BoshLanguageServerInitializerTest.class.getResource(name).toURI()).toFile();
 	}
 
-	@MockBean DynamicModelProvider<CloudConfigModel> cloudConfigProvider;
-	@MockBean DynamicModelProvider<StemcellsModel> stemcellsProvider;
-	@MockBean DynamicModelProvider<ReleasesModel> releasesProvider;
+	@MockitoBean DynamicModelProvider<CloudConfigModel> cloudConfigProvider;
+	@MockitoBean DynamicModelProvider<StemcellsModel> stemcellsProvider;
+	@MockitoBean DynamicModelProvider<ReleasesModel> releasesProvider;
 
 	@Autowired
 	LanguageServerHarness harness;

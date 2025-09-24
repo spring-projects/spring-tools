@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022 VMware, Inc.
+ * Copyright (c) 2022, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,13 +11,11 @@
 package org.springframework.ide.vscode.boot.java.livehover.v2;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.google.gson.Gson;
@@ -28,18 +26,18 @@ import com.google.gson.JsonObject;
 public class HttpActuatorConnection implements ActuatorConnection {
 	
 	private Gson gson;
-	private RestTemplate restTemplate;
+	private RestClient restClient;
 	private String actuatorUrl;
 
 	public HttpActuatorConnection(String actuatorUrl) {
 		this.actuatorUrl = actuatorUrl;
-		this.restTemplate = new RestTemplateBuilder().rootUri(actuatorUrl).build();
+		this.restClient = RestClient.create();
 		this.gson = new Gson();
 	}
 
 	@Override
 	public String getEnvironment() {
-		return restTemplate.getForObject("/env", String.class);
+		return restClient.get().uri(actuatorUrl + "/env").retrieve().toEntity(String.class).getBody();
 	}
 
 	@Override
@@ -67,22 +65,22 @@ public class HttpActuatorConnection implements ActuatorConnection {
 
 	@Override
 	public String getConditionalsReport() throws IOException {
-		return restTemplate.getForObject("/conditions", String.class);
+		return restClient.get().uri(actuatorUrl + "/conditions").retrieve().toEntity(String.class).getBody();
 	}
 
 	@Override
 	public String getRequestMappings() throws IOException {
-		return restTemplate.getForObject("/mappings", String.class);
+		return restClient.get().uri(actuatorUrl + "/mappings").retrieve().toEntity(String.class).getBody();
 	}
 
 	@Override
 	public String getBeans() throws IOException {
-		return restTemplate.getForObject("/beans", String.class);
+		return restClient.get().uri(actuatorUrl + "/beans").retrieve().toEntity(String.class).getBody();
 	}
 	
 	@Override
 	public String getLoggers() throws IOException {
-		return restTemplate.getForObject("/loggers", String.class);
+		return restClient.get().uri(actuatorUrl + "/loggers").retrieve().toEntity(String.class).getBody();
 	}
 	
 	@Override
@@ -92,7 +90,7 @@ public class HttpActuatorConnection implements ActuatorConnection {
 				uriBuilder.queryParam("configuredLevel", args.get("configuredLevel"));
 		}
 		String url = actuatorUrl + uriBuilder.toUriString();
-		return restTemplate.postForObject(URI.create(url), null, String.class);
+		return restClient.post().uri(url).body(null).retrieve().toEntity(String.class).getBody();
 	}
 	
 	@Override
@@ -103,7 +101,7 @@ public class HttpActuatorConnection implements ActuatorConnection {
 		}
 		// /{ownerId}/new cases make REST Template URI template handler to think that {ownerId} is a URI parameter which it is not.
 		String url = actuatorUrl + uriBuilder.toUriString();
-		return restTemplate.getForObject(URI.create(url), String.class);
+		return restClient.get().uri(url).retrieve().toEntity(String.class).getBody();
 	}
 
 	@Override
@@ -116,7 +114,7 @@ public class HttpActuatorConnection implements ActuatorConnection {
 		}
 		// /{ownerId}/new cases make REST Template URI template handler to think that {ownerId} is a URI parameter which it is not.
 		String url = actuatorUrl + uriBuilder.toUriString();
-		return restTemplate.getForObject(URI.create(url), String.class);
+		return restClient.get().uri(url).retrieve().toEntity(String.class).getBody();
 	}
 
 	@Override

@@ -37,7 +37,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.ide.vscode.commons.util.IOUtil;
 import org.springframework.ide.vscode.commons.util.Unicodes;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
@@ -49,6 +48,7 @@ import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness;
 import org.springframework.ide.vscode.languageserver.testharness.SynchronizationPoint;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.ImmutableList;
@@ -72,7 +72,7 @@ public class ConcourseEditorTest {
 	@Autowired
 	LanguageServerHarness harness;
 
-	@MockBean
+	@MockitoBean
 	private GithubInfoProvider github;
 	
 	@BeforeEach public void setup() throws Exception {

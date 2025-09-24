@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.ide.vscode.bosh.bootiful.BoshLanguageServerTest;
 import org.springframework.ide.vscode.bosh.mocks.MockCloudConfigProvider;
 import org.springframework.ide.vscode.bosh.models.BoshCommandReleasesProvider;
@@ -47,6 +46,7 @@ import org.springframework.ide.vscode.commons.yaml.reconcile.YamlSchemaProblems;
 import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.ImmutableMultiset;
@@ -62,8 +62,8 @@ public class BoshEditorTest {
 	@Autowired BoshCliConfig cliConfig;
 	@Autowired MockCloudConfigProvider cloudConfigProvider;
 
-	@MockBean DynamicModelProvider<StemcellsModel> stemcellsProvider;
-	@MockBean DynamicModelProvider<ReleasesModel> releasesProvider;
+	@MockitoBean DynamicModelProvider<StemcellsModel> stemcellsProvider;
+	@MockitoBean DynamicModelProvider<ReleasesModel> releasesProvider;
 
 	@BeforeEach public void setup() throws Exception {
 		harness.intialize(null);
@@ -1035,7 +1035,6 @@ public class BoshEditorTest {
         assertContains("Couldn't connect to bosh", getDocString(c));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void contentAssistStemcellVersionNoDirector() throws Exception {
         Editor editor;

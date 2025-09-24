@@ -29,8 +29,6 @@ import org.springframework.ide.vscode.bosh.models.StemcellsModel;
 import org.springframework.ide.vscode.commons.util.Assert;
 import org.springframework.ide.vscode.commons.util.CollectorUtil;
 import org.springframework.ide.vscode.commons.util.PartialCollection;
-import org.springframework.ide.vscode.commons.util.Renderable;
-import org.springframework.ide.vscode.commons.util.Renderables;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 import org.springframework.ide.vscode.commons.util.ValueParsers;
 import org.springframework.ide.vscode.commons.yaml.ast.NodeUtil;
@@ -46,12 +44,10 @@ import org.springframework.ide.vscode.commons.yaml.schema.YTypeFactory.AbstractT
 import org.springframework.ide.vscode.commons.yaml.schema.YTypeFactory.YAtomicType;
 import org.springframework.ide.vscode.commons.yaml.schema.YTypeFactory.YBeanType;
 import org.springframework.ide.vscode.commons.yaml.schema.YTypeFactory.YContextSensitive;
-import org.springframework.ide.vscode.commons.yaml.schema.YTypeFactory.YTypedPropertyImpl;
 import org.springframework.ide.vscode.commons.yaml.schema.YTypeUtil;
 import org.springframework.ide.vscode.commons.yaml.schema.YTypedProperty;
 import org.springframework.ide.vscode.commons.yaml.schema.YamlSchema;
 import org.springframework.ide.vscode.commons.yaml.schema.constraints.Constraints;
-import org.springframework.ide.vscode.commons.yaml.snippet.SchemaBasedSnippetGenerator;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

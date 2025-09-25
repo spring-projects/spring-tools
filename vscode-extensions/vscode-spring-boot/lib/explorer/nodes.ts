@@ -20,6 +20,12 @@ export class StereotypedNode extends SpringNode {
         const item = super.getTreeItem();
         item.label = this.n.attributes.text;
         item.iconPath = this.computeIcon();
+        
+        // Add context value if reference attribute exists
+        if (this.n.attributes.reference) {
+            item.contextValue = "stereotypedNodeWithReference";
+        }
+        
         if (this.n.attributes.location) {
             const location = this.n.attributes.location as Location;
             // Hard-coded range. Not present... likely not serialized correctly.
@@ -32,6 +38,10 @@ export class StereotypedNode extends SpringNode {
             };
         }
         return item;
+    }
+
+    getReferenceValue(): any {
+        return this.n.attributes.reference;
     }
 
     computeIcon() {

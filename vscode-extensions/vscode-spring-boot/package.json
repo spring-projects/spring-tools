@@ -203,6 +203,13 @@
           "command": "vscode-spring-boot.live.hide.active",
           "group": "Spring Boot"
         }
+      ],
+      "view/item/context": [
+        {
+          "command": "vscode-spring-boot.structure.openReference",
+          "when": "view == explorer.spring && viewItem == stereotypedNodeWithReference",
+          "group": "inline"
+        }
       ]
     },
     "commands": [
@@ -296,6 +303,12 @@
         "title": "Apply Changes",
         "category": "Spring Boot Agent",
         "enablement": "false"
+      },
+      {
+        "command": "vscode-spring-boot.structure.openReference",
+        "title": "Open Reference",
+        "category": "Spring Boot",
+        "icon": "$(link-external)"
       }
     ],
     "configuration": [

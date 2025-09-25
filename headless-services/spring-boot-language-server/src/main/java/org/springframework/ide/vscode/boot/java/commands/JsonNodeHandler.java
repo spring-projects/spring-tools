@@ -29,8 +29,6 @@ import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.Range;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelProvider;
@@ -52,6 +50,7 @@ import com.google.gson.GsonBuilder;
 public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> {
 
 	private static final String LOCATION = "location";
+	private static final String REFERENCE = "reference";
 	
 	public static final String ICON = "icon";
 	public static final String TEXT = "text";
@@ -88,27 +87,26 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			var definition = catalog.getDefinition(stereotype);
 			var sources = definition.getSources();
 			
-			Location location = null;
+			String reference = null;
 			for (Object source : sources) {
 				if (source instanceof URL) {
 					try {
-						String uri = ((URL)source).toURI().toString();
-						location = new Location(uri, new Range(new Position(0, 0), new Position(0, 0)));
+						reference = ((URL)source).toURI().toASCIIString();
 					} catch (URISyntaxException e) {
 						// ignore
 					}
 				}
 				else if (source instanceof Location) {
-					location = ((Location) source);
+					reference = ((Location) source).getUri();
 				}
 			}
 			
-			final Location finalLocation = location;
+			final String referenceUri = reference;
 			addChild(node -> node
 				.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
 				.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
 				.withAttribute(HOVER, "defined in: " + sources.toString())
-				.withAttribute(LOCATION, finalLocation)
+				.withAttribute(REFERENCE, referenceUri)
 			);
 		}
 	}

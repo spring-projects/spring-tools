@@ -187,7 +187,16 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
         const structureManager = new StructureManager();
         const explorerTreeProvider = new ExplorerTreeProvider(structureManager);
         context.subscriptions.push(window.createTreeView('explorer.spring', { treeDataProvider: explorerTreeProvider, showCollapseAll: true }));
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => structureManager.refresh(true))); 
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => structureManager.refresh(true)));
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node) => {
+            if (node && node.getReferenceValue) {
+                const reference = node.getReferenceValue();
+                if (reference) {
+                    // Reference is a specific URL that should be passed to java.open.file command
+                    commands.executeCommand('java.open.file', reference);
+                }
+            }
+        })); 
 
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
             // Boot LS is fully started

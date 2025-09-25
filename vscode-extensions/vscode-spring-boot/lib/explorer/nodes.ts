@@ -4,11 +4,18 @@ import { LsStereoTypedNode } from "./structure-tree-manager";
 
 export class SpringNode {
     constructor(readonly children: SpringNode[]) {}
-    getTreeItem(): TreeItem {
-        return new TreeItem("<node>", this.computeState(TreeItemCollapsibleState.Expanded));
+    
+    getTreeItem(savedState?: TreeItemCollapsibleState): TreeItem {
+        const defaultState = savedState !== undefined ? savedState : TreeItemCollapsibleState.Collapsed;
+        return new TreeItem("<node>", this.computeState(defaultState));
     }
-    computeState(defaultState: TreeItemCollapsibleState.Collapsed | TreeItemCollapsibleState.Expanded): TreeItemCollapsibleState {
+    
+    computeState(defaultState: TreeItemCollapsibleState): TreeItemCollapsibleState {
         return Array.isArray(this.children) && this.children.length ? defaultState : TreeItemCollapsibleState.None;
+    }
+    
+    getNodeId(): string {
+        return "<base-node>";
     }
 }
 
@@ -16,8 +23,9 @@ export class StereotypedNode extends SpringNode {
     constructor(private n: LsStereoTypedNode, children: SpringNode[]) {
         super(children);
     }
-    getTreeItem(): TreeItem {
-        const item = super.getTreeItem();
+    
+    getTreeItem(savedState?: TreeItemCollapsibleState): TreeItem {
+        const item = super.getTreeItem(savedState);
         item.label = this.n.attributes.text;
         item.iconPath = this.computeIcon();
         
@@ -38,6 +46,19 @@ export class StereotypedNode extends SpringNode {
             };
         }
         return item;
+    }
+    
+    getNodeId(): string {
+        // Create a unique identifier based on node attributes
+        // Use text, icon, and location as identifying factors
+        const textId = this.n.attributes.text || '';
+        const iconId = this.n.attributes.icon || '';
+        const locationId = this.n.attributes.location ? 
+            `${this.n.attributes.location.uri}:${this.n.attributes.location.range.start.line}:${this.n.attributes.location.range.start.character}` : '';
+        const referenceId = this.n.attributes.reference ? String(this.n.attributes.reference) : '';
+        
+        // Create a stable ID that can be used to match nodes across refreshes
+        return `${textId}|${iconId}|${locationId}|${referenceId}`.replace(/\|+$/, ''); // Remove trailing separators
     }
 
     getReferenceValue(): any {

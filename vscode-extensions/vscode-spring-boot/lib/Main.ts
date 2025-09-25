@@ -7,8 +7,9 @@ import {
     workspace,
     ExtensionContext,
     Uri,
-    lm
- } from 'vscode';
+    lm,
+    TreeItemCollapsibleState
+} from 'vscode';
 
 import * as commons from '@pivotal-tools/commons-vscode';
 import * as liveHoverUi from './live-hover-connect-ui';
@@ -186,7 +187,20 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
          */
         const structureManager = new StructureManager();
         const explorerTreeProvider = new ExplorerTreeProvider(structureManager);
-        context.subscriptions.push(window.createTreeView('explorer.spring', { treeDataProvider: explorerTreeProvider, showCollapseAll: true }));
+        const treeView = window.createTreeView('explorer.spring', { treeDataProvider: explorerTreeProvider, showCollapseAll: true });
+        
+        // Track expansion/collapse events to preserve state across refreshes
+        context.subscriptions.push(treeView.onDidExpandElement(e => {
+            const nodeId = e.element.getNodeId();
+            explorerTreeProvider.setExpansionState(nodeId, TreeItemCollapsibleState.Expanded);
+        }));
+        
+        context.subscriptions.push(treeView.onDidCollapseElement(e => {
+            const nodeId = e.element.getNodeId();
+            explorerTreeProvider.setExpansionState(nodeId, TreeItemCollapsibleState.Collapsed);
+        }));
+        
+        context.subscriptions.push(treeView);
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => structureManager.refresh(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node) => {
             if (node && node.getReferenceValue) {

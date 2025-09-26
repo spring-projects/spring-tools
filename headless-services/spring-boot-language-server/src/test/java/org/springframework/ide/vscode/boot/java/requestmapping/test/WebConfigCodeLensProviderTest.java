@@ -76,7 +76,8 @@ public class WebConfigCodeLensProviderTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
-		assertEquals("Web Config - Versioning via Request Header: X-API-Version - supported versions: 1", cls.get(0).getCommand().getTitle());
+		assertEquals("Web Config - Versioning via Request Header: X-API-Version - Supported Versions: 1", cls.get(0).getCommand().getTitle());
+		assertEquals("Web Config - Path Prefix: /{version} - Versioning via Path Segment: 0 - Supported Versions: 1.1, 1.2", cls.get(1).getCommand().getTitle());
 	}
 
 }

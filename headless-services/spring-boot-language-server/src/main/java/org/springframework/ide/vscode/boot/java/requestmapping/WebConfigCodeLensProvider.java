@@ -91,9 +91,13 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 	
 		// Display label
 		String label = "Web Config";
+		if (webConfig.getPathPrefix() != null) {
+			label += " - " + webConfig.getPathPrefix();
+		}
+		
 		if (webConfig.isVersioningSupported()) {
 			label += " - Versioning via " + webConfig.getVersionSupportStrategy();
-			label += " - supported versions: " + String.join(", ", webConfig.getSupportedVersions());
+			label += " - Supported Versions: " + String.join(", ", webConfig.getSupportedVersions());
 		}
 		
 		Location targetLocation = webConfig.getLocation();

@@ -118,6 +118,7 @@ public class Annotations {
 
 	public static final String WEB_MVC_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.WebMvcConfigurer";
 	public static final String WEB_MVC_API_VERSION_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.ApiVersionConfigurer";
+	public static final String WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.PathMatchConfigurer";
 	
 	public static final Map<String, String> AOP_ANNOTATIONS = Map.of(
 	        "org.aspectj.lang.annotation.Pointcut", "Pointcut",

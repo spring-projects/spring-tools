@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
@@ -35,6 +35,11 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 public class WebConfigIndexer {
 	
+	private static final String CONFIGURE_API_VERSIONING_METHOD = "configureApiVersioning";
+	private static final String CONFIGURE_PATH_MATCHING_METHOD = "configurePathMatch";
+	
+	private static Map<String, MethodInvocationExtractor> methodExtractors = initializeMethodExtractors();
+	
 	public static void indexWebConfig(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
 		
@@ -54,98 +59,53 @@ public class WebConfigIndexer {
 			throw new RequiredCompleteAstException();
 		}
 		
-		Builder builder = new WebConfigIndexElement.Builder();
+		MethodDeclaration configureVersioningMethod = findMethod(type, inTypeHierarchy, CONFIGURE_API_VERSIONING_METHOD);
+		MethodDeclaration configurePathMethod = findMethod(type, inTypeHierarchy, CONFIGURE_PATH_MATCHING_METHOD);
 
-		MethodDeclaration configureVersioningMethod = findConfigureVersioningMethod(type, inTypeHierarchy);
-		if (configureVersioningMethod != null) {
-			scanConfigureApiVersioningMethodBody(builder, configureVersioningMethod.getBody(), context, doc);
-		}
+
+		if (configureVersioningMethod != null || configurePathMethod != null) {
+			Builder builder = new WebConfigIndexElement.Builder();
+			
+			if (configureVersioningMethod != null) scanMethodBody(builder, configureVersioningMethod.getBody(), context, doc);
+			if (configurePathMethod != null) scanMethodBody(builder, configurePathMethod.getBody(), context, doc);
 		
-		WebConfigIndexElement webConfigIndexElement = builder.buildFor(beanDefinition.getLocation());
-		if (webConfigIndexElement != null) {
-			beanDefinition.addChild(webConfigIndexElement);
+			WebConfigIndexElement webConfigIndexElement = builder.buildFor(beanDefinition.getLocation());
+			if (webConfigIndexElement != null) {
+				beanDefinition.addChild(webConfigIndexElement);
+			}
 		}
 		
 	}
 	
-	private static void scanConfigureApiVersioningMethodBody(Builder builder, Block body, SpringIndexerJavaContext context, TextDocument doc) {
+	private static void scanMethodBody(Builder builder, Block body, SpringIndexerJavaContext context, TextDocument doc) {
 		if (body == null) {
 			return;
 		}
 		
-		builder.isVersionSupported(true);
-		
-		Map<String, Consumer<MethodInvocation>> apiVersionConfigurerMethods = new HashMap<>();
-		apiVersionConfigurerMethods.put("addSupportedVersions", (invocation) -> {
-
-			@SuppressWarnings("unchecked")
-			List<Expression> arguments = invocation.arguments();
-			for (Expression arg : arguments) {
-				String[] expressionValueAsArray = ASTUtils.getExpressionValueAsArray(arg, (dep) -> {});
-				for (String supportedVersion : expressionValueAsArray) {
-					builder.supportedVersion(supportedVersion);
-				}
-			}
-		});
-
-		apiVersionConfigurerMethods.put("useRequestHeader", (invocation) -> {
-
-			@SuppressWarnings("unchecked")
-			List<Expression> arguments = invocation.arguments();
-			if (arguments != null && arguments.size() == 1) {
-				String value = ASTUtils.getExpressionValueAsString(arguments.get(0), (d) -> {});
-				if (value != null) {
-					builder.versionStrategy("Request Header: " + value);
-				}
-			}
-		});
-
-		apiVersionConfigurerMethods.put("usePathSegment", (invocation) -> {
-
-			@SuppressWarnings("unchecked")
-			List<Expression> arguments = invocation.arguments();
-			if (arguments != null && arguments.size() == 1) {
-				String value = ASTUtils.getExpressionValueAsString(arguments.get(0), (d) -> {});
-				if (value != null) {
-					builder.versionStrategy("Path Segment: " + value);
-				}
-			}
-		});
-
-		apiVersionConfigurerMethods.put("useQueryParam", (invocation) -> {
-
-			@SuppressWarnings("unchecked")
-			List<Expression> arguments = invocation.arguments();
-			if (arguments != null && arguments.size() == 1) {
-				String value = ASTUtils.getExpressionValueAsString(arguments.get(0), (d) -> {});
-				if (value != null) {
-					builder.versionStrategy("Query Param: " + value);
-				}
-			}
-		});
-
 		body.accept(new ASTVisitor() {
 			
 			@Override
 			public boolean visit(MethodInvocation methodInvocation) {
 				String methodName = methodInvocation.getName().toString();
-				if (apiVersionConfigurerMethods.containsKey(methodName)) {
+				
+				MethodInvocationExtractor invocationExtractor = methodExtractors.get(methodName);
+				if (invocationExtractor != null) {
 
 					IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
 					ITypeBinding declaringClass = methodBinding.getDeclaringClass();
 
-					if (declaringClass != null && Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE.equals(declaringClass.getQualifiedName())) {
-						apiVersionConfigurerMethods.get(methodName).accept(methodInvocation);
+					if (declaringClass != null && invocationExtractor.getTargetInvocationType().equals(declaringClass.getQualifiedName())) {
+						invocationExtractor.extractParameters(methodInvocation, builder);
 					}
 				}
 				
 				return super.visit(methodInvocation);
 			}
 		});
-		
-	}
 
-	private static MethodDeclaration findConfigureVersioningMethod(TypeDeclaration type, ITypeBinding webmvcConfigurerType) {
+	}
+	
+	private static MethodDeclaration findMethod(TypeDeclaration type, ITypeBinding webmvcConfigurerType, String methodName) {
 		IMethodBinding[] webConfigurerMethods = webmvcConfigurerType.getDeclaredMethods();
 		if (webConfigurerMethods == null) {
 			return null;
@@ -153,7 +113,7 @@ public class WebConfigIndexer {
 		
 		IMethodBinding configureVersioningMethod = null;
 		for (IMethodBinding method : webConfigurerMethods) {
-			if ("configureApiVersioning".equals(method.getName())) {
+			if (methodName.equals(method.getName())) {
 				configureVersioningMethod = method;
 			}
 		}
@@ -174,5 +134,85 @@ public class WebConfigIndexer {
 
 		return null;
 	}
+	
+	private static Map<String, MethodInvocationExtractor> initializeMethodExtractors() {
+		Map<String, MethodInvocationExtractor> result = new HashMap<>();
+		
+		result.put("addSupportedVersions", new MultipleArgumentsExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, (expression, webconfigBuilder) -> {
+			String[] expressionValueAsArray = ASTUtils.getExpressionValueAsArray(expression, (dep) -> {});
+			for (String supportedVersion : expressionValueAsArray) {
+				webconfigBuilder.supportedVersion(supportedVersion);
+			}
+		}));
+		
+		result.put("useRequestHeader", new SingleArgumentExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+			if (value != null) {
+				webconfigBuilder.versionStrategy("Request Header: " + value);
+			}
+		}));
 
+		result.put("usePathSegment", new SingleArgumentExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+			if (value != null) {
+				webconfigBuilder.versionStrategy("Path Segment: " + value);
+			}
+		}));
+
+		result.put("useQueryParam", new SingleArgumentExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+			if (value != null) {
+				webconfigBuilder.versionStrategy("Query Param: " + value);
+			}
+		}));
+
+		result.put("addPathPrefix", new SingleArgumentExtractor(Annotations.WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+			if (value != null) {
+				webconfigBuilder.pathPrefix("Path Prefix: " + value);
+			}
+		}));
+
+		
+		return result;
+	}
+	
+	interface MethodInvocationExtractor {
+		String getTargetInvocationType();
+		void extractParameters(MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder);
+	}
+
+	record SingleArgumentExtractor (String invocationTargetType, int argumentNo, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
+		
+		@Override
+		public String getTargetInvocationType() {
+			return invocationTargetType;
+		}
+		
+		public void extractParameters(MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder) {
+			@SuppressWarnings("unchecked")
+			List<Expression> arguments = methodInvocation.arguments();
+			Expression expression = arguments.get(argumentNo);
+			consumer.accept(expression, builder);
+		}
+		
+	}
+	
+	record MultipleArgumentsExtractor (String invocationTargetType, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
+		
+		@Override
+		public String getTargetInvocationType() {
+			return invocationTargetType;
+		}
+		
+		public void extractParameters(MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder) {
+			@SuppressWarnings("unchecked")
+			List<Expression> arguments = methodInvocation.arguments();
+			for (Expression expression : arguments) {
+				consumer.accept(expression, builder);
+			}
+		}
+		
+	}
+	
 }

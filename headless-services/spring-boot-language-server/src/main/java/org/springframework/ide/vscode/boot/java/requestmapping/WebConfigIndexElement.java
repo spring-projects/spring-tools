@@ -21,14 +21,14 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 	private final String pathPrefix;
 	
 	private final boolean isVersioningSupported;
-	private final String versionSupportStrategy;
-	private final String[] supportedVersions;
+	private final List<String> versionSupportStrategies;
+	private final List<String> supportedVersions;
 	private final Location location;
 	
-	public WebConfigIndexElement(String pathPrefix, boolean isVersioningSupported, String versionSupportStrategy, String[] supportedVersions, Location location) {
+	public WebConfigIndexElement(String pathPrefix, boolean isVersioningSupported, List<String> versionSupportStrategies, List<String> supportedVersions, Location location) {
 		this.pathPrefix = pathPrefix;
 		this.isVersioningSupported = isVersioningSupported;
-		this.versionSupportStrategy = versionSupportStrategy;
+		this.versionSupportStrategies = versionSupportStrategies;
 		this.supportedVersions = supportedVersions;
 		this.location = location;
 	}
@@ -41,11 +41,11 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		return isVersioningSupported;
 	}
 	
-	public String getVersionSupportStrategy() {
-		return versionSupportStrategy;
+	public List<String> getVersionSupportStrategies() {
+		return versionSupportStrategies;
 	}
 	
-	public String[] getSupportedVersions() {
+	public List<String> getSupportedVersions() {
 		return supportedVersions;
 	}
 	
@@ -56,9 +56,10 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 	public static class Builder {
 		
 		private String pathPrefix = null;
+
 		private boolean isVersioningSupported = false;
-		private String versionSupportStrategy = null;
-		private List<String> supportedVersions = new ArrayList<>(10);
+		private List<String> versionSupportStrategies = new ArrayList<>(2);
+		private List<String> supportedVersions = new ArrayList<>(2);
 		
 		public Builder pathPrefix(String pathPrefix) {
 			this.pathPrefix = pathPrefix;
@@ -66,7 +67,7 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		}
 		
 		public Builder versionStrategy(String versionSupportStrategy) {
-			this.versionSupportStrategy = versionSupportStrategy;
+			this.versionSupportStrategies.add(versionSupportStrategy);
 			this.isVersioningSupported = true;
 			return this;
 		}
@@ -78,7 +79,7 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		}
 		
 		public WebConfigIndexElement buildFor(Location location) {
-			return new WebConfigIndexElement(this.pathPrefix, this.isVersioningSupported, this.versionSupportStrategy, (String[]) this.supportedVersions.toArray(new String[this.supportedVersions.size()]), location);
+			return new WebConfigIndexElement(this.pathPrefix, this.isVersioningSupported, this.versionSupportStrategies, this.supportedVersions, location);
 		}
 
 	}

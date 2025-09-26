@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.requestmapping.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -19,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -78,14 +76,10 @@ public class WebConfigCodeLensProviderTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
+		assertEquals(1, cls.size());
 		
-		Optional<CodeLens> lens1 = cls.stream().filter(lens -> lens.getCommand().getTitle().equals("Web Config - Versioning via Request Header: X-API-Version - Supported Versions: 1")).findFirst();
-		assertTrue(lens1.isPresent());
-
-		Optional<CodeLens> lens2 = cls.stream().filter(lens -> lens.getCommand().getTitle().equals("Web Config - Path Prefix: /{version} - Versioning via Path Segment: 0 - Supported Versions: 1.1, 1.2")).findFirst();
-		assertTrue(lens2.isPresent());
-		
-		assertEquals(2, cls.size());
+		assertEquals("Web Config - Path Prefix: /{version} - Versioning via Request Header: X-API-Version, Path Segment: 0 - Supported Versions: 1.1, 1.2",
+				cls.get(0).getCommand().getTitle());
 	}
 
 }

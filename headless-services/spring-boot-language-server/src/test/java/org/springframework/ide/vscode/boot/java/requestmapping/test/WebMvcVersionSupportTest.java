@@ -49,7 +49,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Import(SymbolProviderTestConf.class)
 public class WebMvcVersionSupportTest {
 	
-	private static final String PROJECT_NAME = "test-request-mapping-version-support-symbols";
+	private static final String PROJECT_NAME = "test-web-config-support";
 	
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -130,9 +130,16 @@ public class WebMvcVersionSupportTest {
     	
     	WebConfigIndexElement webConfigElement = webConfigElements.get(0);
     	assertTrue(webConfigElement.isVersioningSupported());
-    	assertEquals("Request Header: X-API-Version", webConfigElement.getVersionSupportStrategy());
-    	assertEquals(1, webConfigElement.getSupportedVersions().length);
-    	assertEquals("1", webConfigElement.getSupportedVersions()[0]);
+    	
+    	List<String> versionSupportStrategies = webConfigElement.getVersionSupportStrategies();
+    	assertEquals(2, versionSupportStrategies.size());
+    	assertTrue(versionSupportStrategies.contains("Request Header: X-API-Version"));
+    	assertTrue(versionSupportStrategies.contains("Path Segment: 0"));
+    	
+    	List<String> supportedVersions = webConfigElement.getSupportedVersions();
+		assertEquals(2, supportedVersions.size());
+    	assertTrue(supportedVersions.contains("1.1"));
+    	assertTrue(supportedVersions.contains("1.2"));
     }
 
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri) {

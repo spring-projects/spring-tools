@@ -96,7 +96,7 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 		}
 		
 		if (webConfig.isVersioningSupported()) {
-			label += " - Versioning via " + webConfig.getVersionSupportStrategy();
+			label += " - Versioning via " + String.join(", ", webConfig.getVersionSupportStrategies());
 			label += " - Supported Versions: " + String.join(", ", webConfig.getSupportedVersions());
 		}
 		

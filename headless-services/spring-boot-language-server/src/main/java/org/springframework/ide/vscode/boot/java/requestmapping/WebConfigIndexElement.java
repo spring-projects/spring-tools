@@ -18,27 +18,28 @@ import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringInde
 
 public class WebConfigIndexElement extends AbstractSpringIndexElement {
 	
+	private final ConfigType configType;
+	
 	private final String pathPrefix;
 	
-	private final boolean isVersioningSupported;
 	private final List<String> versionSupportStrategies;
 	private final List<String> supportedVersions;
 	private final Location location;
 	
-	public WebConfigIndexElement(String pathPrefix, boolean isVersioningSupported, List<String> versionSupportStrategies, List<String> supportedVersions, Location location) {
+	public WebConfigIndexElement(ConfigType configType, String pathPrefix, List<String> versionSupportStrategies, List<String> supportedVersions, Location location) {
+		this.configType = configType;
 		this.pathPrefix = pathPrefix;
-		this.isVersioningSupported = isVersioningSupported;
 		this.versionSupportStrategies = versionSupportStrategies;
 		this.supportedVersions = supportedVersions;
 		this.location = location;
 	}
 	
-	public String getPathPrefix() {
-		return pathPrefix;
+	public ConfigType getConfigType() {
+		return configType;
 	}
 	
-	public boolean isVersioningSupported() {
-		return isVersioningSupported;
+	public String getPathPrefix() {
+		return pathPrefix;
 	}
 	
 	public List<String> getVersionSupportStrategies() {
@@ -55,11 +56,15 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 	
 	public static class Builder {
 		
+		private ConfigType configType;
+		
 		private String pathPrefix = null;
-
-		private boolean isVersioningSupported = false;
 		private List<String> versionSupportStrategies = new ArrayList<>(2);
 		private List<String> supportedVersions = new ArrayList<>(2);
+		
+		public Builder(ConfigType configType) {
+			this.configType = configType;
+		}
 		
 		public Builder pathPrefix(String pathPrefix) {
 			this.pathPrefix = pathPrefix;
@@ -68,20 +73,33 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		
 		public Builder versionStrategy(String versionSupportStrategy) {
 			this.versionSupportStrategies.add(versionSupportStrategy);
-			this.isVersioningSupported = true;
 			return this;
 		}
 		
 		public Builder supportedVersion(String supportedVersion) {
 			this.supportedVersions.add(supportedVersion);
-			this.isVersioningSupported = true;
 			return this;
 		}
 		
 		public WebConfigIndexElement buildFor(Location location) {
-			return new WebConfigIndexElement(this.pathPrefix, this.isVersioningSupported, this.versionSupportStrategies, this.supportedVersions, location);
+			return new WebConfigIndexElement(this.configType, this.pathPrefix, this.versionSupportStrategies, this.supportedVersions, location);
 		}
 
 	}
+	
+	public enum ConfigType {
+		WEB_CONFIG ("Web Config"),
+		PROPERTIES ("Properties Config");
+		
+		private final String label;
+
+		private ConfigType(String label) {
+			this.label = label;
+		}
+
+		String getLabel() {
+			return this.label;
+		}
+	};
 
 }

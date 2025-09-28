@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.requestmapping.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -76,10 +77,14 @@ public class WebConfigCodeLensProviderTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
-		assertEquals(1, cls.size());
+		assertEquals(2, cls.size());
 		
-		assertEquals("Web Config - Path Prefix: /{version} - Versioning via Request Header: X-API-Version, Path Segment: 0 - Supported Versions: 1.1, 1.2",
-				cls.get(0).getCommand().getTitle());
+		assertTrue(contains(cls, "Web Config - Path Prefix: /{version} - Versioning via Request Header: X-API-Version, Path Segment: 0 - Supported Versions: 1.1, 1.2"));
+		assertTrue(contains(cls, "Properties Config - Versioning via Request Header: X-API-Version - Supported Versions: 1"));
+	}
+	
+	private boolean contains(List<CodeLens> cls, String title) {
+		return cls.stream().filter(cl -> cl.getCommand().getTitle().equals(title)).findAny().isPresent();
 	}
 
 }

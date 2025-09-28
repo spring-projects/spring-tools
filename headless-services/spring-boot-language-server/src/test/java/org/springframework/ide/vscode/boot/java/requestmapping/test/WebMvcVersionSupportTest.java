@@ -129,7 +129,6 @@ public class WebMvcVersionSupportTest {
     	assertEquals(1, webConfigElements.size());
     	
     	WebConfigIndexElement webConfigElement = webConfigElements.get(0);
-    	assertTrue(webConfigElement.isVersioningSupported());
     	
     	List<String> versionSupportStrategies = webConfigElement.getVersionSupportStrategies();
     	assertEquals(2, versionSupportStrategies.size());

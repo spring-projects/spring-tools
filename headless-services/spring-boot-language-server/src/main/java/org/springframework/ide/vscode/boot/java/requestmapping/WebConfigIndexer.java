@@ -28,6 +28,7 @@ import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement.Builder;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement.ConfigType;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -64,7 +65,7 @@ public class WebConfigIndexer {
 
 
 		if (configureVersioningMethod != null || configurePathMethod != null) {
-			Builder builder = new WebConfigIndexElement.Builder();
+			Builder builder = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG);
 			
 			if (configureVersioningMethod != null) scanMethodBody(builder, configureVersioningMethod.getBody(), context, doc);
 			if (configurePathMethod != null) scanMethodBody(builder, configurePathMethod.getBody(), context, doc);
@@ -169,7 +170,7 @@ public class WebConfigIndexer {
 		result.put("addPathPrefix", new SingleArgumentExtractor(Annotations.WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
 			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 			if (value != null) {
-				webconfigBuilder.pathPrefix("Path Prefix: " + value);
+				webconfigBuilder.pathPrefix(value);
 			}
 		}));
 

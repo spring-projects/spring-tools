@@ -3,7 +3,7 @@ import { Location } from "vscode-languageclient";
 import { LsStereoTypedNode } from "./structure-tree-manager";
 
 export class SpringNode {
-    constructor(readonly children: SpringNode[]) {}
+    constructor(public children: SpringNode[], private parent?: SpringNode) {}
     
     getTreeItem(savedState?: TreeItemCollapsibleState): TreeItem {
         const defaultState = savedState !== undefined ? savedState : TreeItemCollapsibleState.Collapsed;
@@ -17,11 +17,27 @@ export class SpringNode {
     getNodeId(): string {
         return "<base-node>";
     }
+    
+    protected getParentPath(): string {
+        if (!this.parent) {
+            return "";
+        }
+        
+        const parentText = this.parent.getNodeText();
+        // Recursively get the full path of all ancestors up to the root
+        const ancestorPath = this.parent.getParentPath();
+        
+        return ancestorPath ? `${ancestorPath}/${parentText}` : parentText;
+    }
+    
+    protected getNodeText(): string {
+        return "<node>";
+    }
 }
 
 export class StereotypedNode extends SpringNode {
-    constructor(private n: LsStereoTypedNode, children: SpringNode[]) {
-        super(children);
+    constructor(private n: LsStereoTypedNode, children: SpringNode[], parent?: SpringNode) {
+        super(children, parent);
     }
     
     getTreeItem(savedState?: TreeItemCollapsibleState): TreeItem {
@@ -49,16 +65,23 @@ export class StereotypedNode extends SpringNode {
     }
     
     getNodeId(): string {
-        // Create a unique identifier based on node attributes
-        // Use text, icon, and location as identifying factors
+        // Create a unique identifier based on node attributes, excluding icon
+        // Include parent path in the computation for better uniqueness
         const textId = this.n.attributes.text || '';
-        const iconId = this.n.attributes.icon || '';
         const locationId = this.n.attributes.location ? 
             `${this.n.attributes.location.uri}:${this.n.attributes.location.range.start.line}:${this.n.attributes.location.range.start.character}` : '';
         const referenceId = this.n.attributes.reference ? String(this.n.attributes.reference) : '';
         
-        // Create a stable ID that can be used to match nodes across refreshes
-        return `${textId}|${iconId}|${locationId}|${referenceId}`.replace(/\|+$/, ''); // Remove trailing separators
+        // Build the node-specific part of the ID (without icon)
+        const nodeSpecificId = `${textId}|${locationId}|${referenceId}`.replace(/\|+$/, ''); // Remove trailing separators
+        
+        // Include parent path for better uniqueness
+        const parentPath = this.getParentPath();
+        return parentPath ? `${parentPath}/${nodeSpecificId}` : nodeSpecificId;
+    }
+    
+    protected getNodeText(): string {
+        return this.n.attributes.text || '';
     }
 
     getReferenceValue(): any {

@@ -25,12 +25,15 @@ export class StructureManager {
         });
     }
 
-    private parseNode(json: any): SpringNode | undefined {
-        return new StereotypedNode(json as LsStereoTypedNode, this.parseArray(json.children));
+    private parseNode(json: any, parent?: SpringNode): SpringNode | undefined {
+        const node = new StereotypedNode(json as LsStereoTypedNode, [], parent);
+        // Parse children after creating the node so we can pass it as parent
+        node.children.push(...this.parseArray(json.children, node));
+        return node;
     }
 
-    private parseArray(json: any): SpringNode[] {
-        return Array.isArray(json) ? (json as []).map(j => this.parseNode(j)).filter(e => !!e) : [];
+    private parseArray(json: any, parent?: SpringNode): SpringNode[] {
+        return Array.isArray(json) ? (json as []).map(j => this.parseNode(j, parent)).filter(e => !!e) : [];
     }
 
     public get onDidChange(): Event<SpringNode | undefined> {

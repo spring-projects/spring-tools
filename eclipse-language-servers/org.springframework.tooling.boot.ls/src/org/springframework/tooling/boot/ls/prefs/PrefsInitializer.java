@@ -67,6 +67,7 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		preferenceStore.setDefault(Constants.PREF_BEANS_STRUCTURE_TREE, true);
 		preferenceStore.setDefault(Constants.PREF_SYMBOLS_FROM_NEW_INDEX, true);
 		preferenceStore.setDefault(Constants.PREF_CODELENS_QUERY_METHODS, true);
+		preferenceStore.setDefault(Constants.PREF_CODELENS_WEB_CONFIGS_ON_CONTROLLER_CLASSES, true);
 		
 		preferenceStore.setDefault(Constants.PREF_AI_ENABLE_MCP, true);
 	}

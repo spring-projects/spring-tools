@@ -56,7 +56,7 @@ public class ModulithStructureView {
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, springIndex, catalog);
+		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, springIndex, catalog, project);
 
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI

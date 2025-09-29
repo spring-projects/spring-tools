@@ -16,6 +16,7 @@
 
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import org.jmolecules.stereotype.tooling.NodeHandler;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 import com.google.gson.Gson;
@@ -60,15 +62,17 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
 	private final BiConsumer<Node, C> customHandler;
 	private final CachedSpringMetamodelIndex springIndex;
+	private final IJavaProject project;
 
 	private Node current;
 	private StereotypeCatalog catalog;
 
 	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler,
-			CachedSpringMetamodelIndex springIndex, StereotypeCatalog catalog) {
+			CachedSpringMetamodelIndex springIndex, StereotypeCatalog catalog, IJavaProject project) {
 		this.labels = labels;
 		this.springIndex = springIndex;
 		this.customHandler = customHandler;
+		this.project = project;
 
 		this.root = new Node(null);
 		this.current = root;
@@ -90,10 +94,17 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			String reference = null;
 			for (Object source : sources) {
 				if (source instanceof URL) {
-					try {
-						reference = ((URL)source).toURI().toASCIIString();
-					} catch (URISyntaxException e) {
-						// ignore
+					URL url = (URL) source;
+					if (url.getProtocol().equals("jar")) {
+						reference = convertUrlToJdtUri((URL) source, project.getElementName());
+					}
+					else if (url.getProtocol().equals("file")) {
+						try {
+							reference = url.toURI().toASCIIString();
+						}
+						catch (URISyntaxException e) {
+							// something went wrong
+						}
 					}
 				}
 				else if (source instanceof Location) {
@@ -111,6 +122,38 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		}
 	}
 
+	private String convertUrlToJdtUri(URL url, String projectName) {
+		try {
+			URI uri = url.toURI();
+        
+			// Extract the scheme-specific part (everything after "jar:")
+			String schemeSpecificPart = uri.getSchemeSpecificPart();
+
+			// Split on "!/" to separate jar file path from internal path
+			String[] parts = schemeSpecificPart.split("!/", 2);
+
+			if (parts.length != 2) {
+				return null;
+			}
+
+			String jarFilePath = parts[0];
+			String internalPath = parts[1];
+
+			// Remove "file:" prefix from jar file path if present
+			if (jarFilePath.startsWith("file:")) {
+				jarFilePath = jarFilePath.substring(5);
+			}
+			
+	        String jarFileName = jarFilePath.substring(jarFilePath.lastIndexOf('/') + 1);
+	        
+	        // Construct the JDT URI with just the jar file name
+	        return "jdt://contents/" + jarFileName + "/" + internalPath + "?=" + projectName;
+
+		} catch (URISyntaxException e) {
+			return null;
+		}
+    }
+		
 	@Override
 	public void handleApplication(A application) {
 		this.root

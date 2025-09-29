@@ -1,4 +1,4 @@
-import { TextDocumentShowOptions, ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { TextDocumentShowOptions, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { Location } from "vscode-languageclient";
 import { LsStereoTypedNode } from "./structure-tree-manager";
 
@@ -56,7 +56,7 @@ export class StereotypedNode extends SpringNode {
             item.command = {
                 command: "vscode.open",
                 title: "Navigate",
-                arguments: [location.uri, {
+                arguments: [Uri.parse(location.uri), {
                     selection: location.range
                 } as TextDocumentShowOptions]
             };

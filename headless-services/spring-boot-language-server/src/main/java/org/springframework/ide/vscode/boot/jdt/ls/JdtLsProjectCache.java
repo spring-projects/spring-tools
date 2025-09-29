@@ -59,6 +59,7 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 	private static final Logger log = LoggerFactory.getLogger(JdtLsProjectCache.class);
 
 	private static final String CMD_SPRING_BOOT_ENABLE_CLASSPATH_LISTENING = "sts.vscode-spring-boot.enableClasspathListening";
+	private static final String VSCODE_JAVA_INTERNAL_PROJECT_NAME = "jdt.ls-java-project";
 	
 	private static final Duration INITIALIZE_TIMEOUT = Duration.ofSeconds(10);
 	private static final Object JDT_SCHEME = "jdt";
@@ -343,6 +344,11 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 		 */
 		@Override
 		public synchronized void changed(Event event) {
+			// ignore events for vscode-java specific internal project, it is not a user-facing project
+			if (event.name != null && event.name.contains(VSCODE_JAVA_INTERNAL_PROJECT_NAME)) {
+				return;
+			}
+			
 			log.debug("claspath event received {}", event);
 			server.doOnInitialized(() -> {
 				try {

@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.requestmapping.test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -71,16 +70,33 @@ public class WebConfigCodeLensProviderTest {
 	}
 	
 	@Test
-	void codeLensOverMethod() throws Exception {		
+	void codeLensOverMethodFromWebConfig() throws Exception {		
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
-		assertEquals(2, cls.size());
-		
 		assertTrue(contains(cls, "Web Config - Path Prefix: /{version} - Versioning via Request Header: X-API-Version, Path Segment: 0 - Supported Versions: 1.1, 1.2"));
+	}
+	
+	@Test
+	void codeLensOverMethodFromProperties() throws Exception {		
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
+		
+		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
 		assertTrue(contains(cls, "Properties Config - Versioning via Request Header: X-API-Version - Supported Versions: 1"));
+	}
+	
+	@Test
+	void codeLensOverMethodFromPropertiesYaml() throws Exception {		
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
+		
+		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
+		assertTrue(contains(cls, "Properties Config - Versioning via Path Segment: 3, Request Header: X-API-HEADER-VIA-YML - Supported Versions: 2, 3"));
 	}
 	
 	private boolean contains(List<CodeLens> cls, String title) {

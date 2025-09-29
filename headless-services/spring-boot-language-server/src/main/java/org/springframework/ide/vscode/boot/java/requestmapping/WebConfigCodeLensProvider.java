@@ -11,9 +11,13 @@
 package org.springframework.ide.vscode.boot.java.requestmapping;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +52,18 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
+import org.springframework.ide.vscode.commons.yaml.ast.NodeUtil;
 import org.springframework.ide.vscode.java.properties.antlr.parser.AntlrParser;
 import org.springframework.ide.vscode.java.properties.parser.ParseResults;
 import org.springframework.ide.vscode.java.properties.parser.Parser;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.nodes.MappingNode;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeTuple;
+import org.yaml.snakeyaml.nodes.ScalarNode;
+import org.yaml.snakeyaml.nodes.SequenceNode;
 
 public class WebConfigCodeLensProvider implements CodeLensProvider {
 
@@ -215,9 +228,63 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 	}
 	
 	private Stream<PropertyKeyValue> getPropertiesFromYamlFile(File file) {
+		if (file.isFile()) {
+			Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
+
+			try (Reader reader = new InputStreamReader(new FileInputStream(file), "UTF8")) {
+
+				List<PropertyKeyValue> result = new ArrayList<>();
+				for (Node node : yaml.composeAll(reader)) {
+					flattenProperties("", node, result);
+				}
+
+				return result.stream();
+			} catch (Exception e ) {
+				//ignore failed attempt to read bad file
+			}
+		}
 		return Stream.empty();
+	}
+
+	private void flattenProperties(String prefix, Node node, List<PropertyKeyValue> props) {
+		switch (node.getNodeId()) {
 		
-		// TODO !!!
+		case mapping:
+			if (!prefix.isEmpty()) {
+				prefix = prefix + ".";
+			}
+			MappingNode mapping = (MappingNode)node;
+			for (NodeTuple tup : mapping.getValue()) {
+				String key = NodeUtil.asScalar(tup.getKeyNode());
+				if (key != null) {
+					flattenProperties(prefix + key, tup.getValueNode(), props);
+				}
+			}
+			break;
+			
+		case scalar:
+			//End of the line.
+			props.add(new PropertyKeyValue(prefix, NodeUtil.asScalar(node)));
+			break;
+		
+		case sequence:
+			SequenceNode sequenceNode = (SequenceNode) node;
+			List<String> values = sequenceNode.getValue().stream()
+					.filter(valueNode -> valueNode instanceof ScalarNode)
+					.map(scalarNode -> NodeUtil.asScalar(scalarNode))
+					.toList();
+			
+			props.add(new PropertyKeyValue(prefix, String.join(", ", values)));
+			
+			break;
+			
+		default:
+			if (!prefix.isEmpty()) {
+				props.add(new PropertyKeyValue(prefix, "<object>"));
+			}
+
+			break;
+		}
 	}
 
 	record PropertyKeyValue (String key, String value) {}

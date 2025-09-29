@@ -1,0 +1,9 @@
+spring:
+  mvc:
+    apiversion:
+      use:
+        path-segment: 3
+        header: X-API-HEADER-VIA-YML
+      supported:
+      - 2
+      - 3

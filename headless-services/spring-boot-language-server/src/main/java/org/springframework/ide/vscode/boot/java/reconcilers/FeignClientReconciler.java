@@ -74,8 +74,10 @@ public class FeignClientReconciler implements JdtAstReconciler {
 				
 				List<BeanMethodContainerElement> beanMethodContainers = springIndex.getNodesOfType(BeanMethodContainerElement.class);
 
-				beanMethodContainers.stream().filter(beanContainer -> configurationTypes.contains(beanContainer.getType()))
-						.map(beanContainer -> beanContainer.getLocation().getUri()).map(docURI -> UriUtil.toFileString(docURI))
+				beanMethodContainers.stream()
+						.filter(beanContainer -> configurationTypes.contains(beanContainer.getType()))
+						.map(beanContainer -> beanContainer.getLocation().getUri())
+						.map(docURI -> UriUtil.toFileString(docURI))
 						.forEach(file -> context.markForAffetcedFilesIndexing(file));
 
 				return true;

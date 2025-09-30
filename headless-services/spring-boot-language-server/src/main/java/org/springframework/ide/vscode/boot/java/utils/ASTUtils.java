@@ -739,9 +739,10 @@ public class ASTUtils {
 			result.put("value", attributeValues);
 
 		} else if (annotation.isNormalAnnotation()) {
-			List<?> attributes = ((NormalAnnotation) annotation).values();
-			for (Object attribute : attributes) {
-				MemberValuePair pair = (MemberValuePair) attribute;
+
+			@SuppressWarnings("unchecked")
+			List<MemberValuePair> attributes = ((NormalAnnotation) annotation).values();
+			for (MemberValuePair pair : attributes) {
 				
 				SimpleName attributeName = pair.getName();
 				Expression attributeValue = pair.getValue();

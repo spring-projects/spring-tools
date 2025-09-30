@@ -42,17 +42,8 @@ public class WebConfigIndexer {
 	private static Map<String, MethodInvocationExtractor> methodExtractors = initializeMethodExtractors();
 	
 	public static void indexWebConfig(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
-		
-		ITypeBinding binding = type.resolveBinding();
-		if (binding == null) return;
-		
-		if (!annotationHierarchies.isAnnotatedWith(binding, Annotations.CONFIGURATION)) {
-			return;
-		}
-		
-		ITypeBinding inTypeHierarchy = ASTUtils.findInTypeHierarchy(binding, Set.of(Annotations.WEB_MVC_CONFIGURER_INTERFACE));
-		if (inTypeHierarchy == null) {
+		ITypeBinding webmvcConfigType = getWebConfig(type);
+		if (webmvcConfigType == null) {
 			return;
 		}
 		
@@ -60,9 +51,8 @@ public class WebConfigIndexer {
 			throw new RequiredCompleteAstException();
 		}
 		
-		MethodDeclaration configureVersioningMethod = findMethod(type, inTypeHierarchy, CONFIGURE_API_VERSIONING_METHOD);
-		MethodDeclaration configurePathMethod = findMethod(type, inTypeHierarchy, CONFIGURE_PATH_MATCHING_METHOD);
-
+		MethodDeclaration configureVersioningMethod = findMethod(type, webmvcConfigType, CONFIGURE_API_VERSIONING_METHOD);
+		MethodDeclaration configurePathMethod = findMethod(type, webmvcConfigType, CONFIGURE_PATH_MATCHING_METHOD);
 
 		if (configureVersioningMethod != null || configurePathMethod != null) {
 			Builder builder = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG);
@@ -76,6 +66,19 @@ public class WebConfigIndexer {
 			}
 		}
 		
+	}
+
+	public static ITypeBinding getWebConfig(TypeDeclaration type) {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
+		
+		ITypeBinding binding = type.resolveBinding();
+		if (binding == null) return null;
+		
+		if (!annotationHierarchies.isAnnotatedWith(binding, Annotations.CONFIGURATION)) {
+			return null;
+		}
+		
+		return ASTUtils.findInTypeHierarchy(binding, Set.of(Annotations.WEB_MVC_CONFIGURER_INTERFACE));
 	}
 	
 	private static void scanMethodBody(Builder builder, Block body, SpringIndexerJavaContext context, TextDocument doc) {

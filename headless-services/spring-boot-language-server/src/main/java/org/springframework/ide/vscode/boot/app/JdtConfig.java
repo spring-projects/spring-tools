@@ -53,6 +53,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.PathInControllerAnno
 import org.springframework.ide.vscode.boot.java.reconcilers.PreciseBeanTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ServerHttpSecurityLambdaDslReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.UnnecessarySpringExtensionReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigurerAdapterReconciler;
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
 import org.springframework.ide.vscode.boot.java.semantictokens.JavaSemanticTokensProvider;
@@ -98,6 +99,10 @@ public class JdtConfig {
 	
 	@Bean PathInControllerAnnotationReconciler pathInControllerAnnotationReconciler() {
 		return new PathInControllerAnnotationReconciler();
+	}
+	
+	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex) {
+		return new WebApiVersioningReconciler(springIndex);
 	}
 	
 	@Bean WebSecurityConfigurerAdapterReconciler webSecurityConfigurerAdapterReconciler(SimpleLanguageServer server) {

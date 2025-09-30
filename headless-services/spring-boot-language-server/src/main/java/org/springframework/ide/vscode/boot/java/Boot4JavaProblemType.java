@@ -23,7 +23,8 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
 public enum Boot4JavaProblemType implements ProblemType {
 	
 	REGISTRAR_BEAN_INVALID_ANNOTATION(WARNING, "Bean Registrar cannot be registered as a bean via `@Component` annotations", "Invalid annotation over bean registrar"),
-	REGISTRAR_BEAN_DECLARATION(WARNING, "Bean Registrar should be added to a configurarion bean via `@Import`", "Not added to configurartion via `@Import`");
+	REGISTRAR_BEAN_DECLARATION(WARNING, "Bean Registrar should be added to a configurarion bean via `@Import`", "Not added to configurartion via `@Import`"),
+	API_VERSIONING_NOT_CONFIGURED(WARNING, "API Versioning used but not configured anywhere", "API Versioning not configured anywhere");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

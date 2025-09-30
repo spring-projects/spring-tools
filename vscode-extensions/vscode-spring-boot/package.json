@@ -842,6 +842,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSIONING_NOT_CONFIGURED": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API Versioninig not configured anywhere",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

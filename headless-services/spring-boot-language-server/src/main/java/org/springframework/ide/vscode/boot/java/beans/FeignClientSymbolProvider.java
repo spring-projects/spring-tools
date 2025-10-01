@@ -55,7 +55,7 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 				Bean beanDefinition = result.getSecond();
 				
 				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-				context.getBeans().add(new CachedBean(context.getDocURI(), beanDefinition));
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 			}
 		}
 		catch (BadLocationException e) {

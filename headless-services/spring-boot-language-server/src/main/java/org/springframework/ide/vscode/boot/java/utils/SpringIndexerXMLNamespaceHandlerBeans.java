@@ -21,7 +21,7 @@ import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.springframework.ide.vscode.boot.java.beans.BeanUtils;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -34,7 +34,7 @@ public class SpringIndexerXMLNamespaceHandlerBeans implements SpringIndexerXMLNa
 
 	@Override
 	public void processNode(DOMNode node, IJavaProject project, String docURI, long lastModified, TextDocument document,
-			List<CachedSymbol> generatedSymbols, List<CachedBean> generatedBeans) throws Exception {
+			List<CachedSymbol> generatedSymbols, List<CachedIndexElement> generatedBeans) throws Exception {
 		String localName = node.getLocalName();
 		if (localName != null && "bean".equals(localName)) {
 			createBeanSymbol(node, project, docURI, lastModified, document, generatedSymbols, generatedBeans);
@@ -42,7 +42,7 @@ public class SpringIndexerXMLNamespaceHandlerBeans implements SpringIndexerXMLNa
 	}
 
 	private void createBeanSymbol(DOMNode node, IJavaProject project, String docURI, long lastModified, TextDocument document,
-			List<CachedSymbol> generatedSymbols, List<CachedBean> generatedBeans) throws Exception {
+			List<CachedSymbol> generatedSymbols, List<CachedIndexElement> generatedBeans) throws Exception {
 		String beanID = null;
 		int symbolStart = 0;
 		int symbolEnd = 0;
@@ -95,7 +95,7 @@ public class SpringIndexerXMLNamespaceHandlerBeans implements SpringIndexerXMLNa
 			generatedSymbols.add(cachedSymbol);
 			
 			// TODO: bean index
-			generatedBeans.add(new CachedBean(docURI, new Bean(beanID, fqBeanClass, location, null, null, null, false, symbol.getName())));
+			generatedBeans.add(new CachedIndexElement(docURI, new Bean(beanID, fqBeanClass, location, null, null, null, false, symbol.getName())));
 		}
 	}
 

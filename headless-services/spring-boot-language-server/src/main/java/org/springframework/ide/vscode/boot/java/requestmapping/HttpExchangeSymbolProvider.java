@@ -22,7 +22,7 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
@@ -61,7 +61,7 @@ public class HttpExchangeSymbolProvider implements SymbolProvider {
 							HttpExchangeIndexElement requestMappingIndexElement =
 									new HttpExchangeIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), symbol.getName());
 
-							context.getBeans().add(new CachedBean(doc.getUri(), requestMappingIndexElement));
+							context.getGeneratedIndexElements().add(new CachedIndexElement(doc.getUri(), requestMappingIndexElement));
 						});
 
 			} catch (BadLocationException e) {

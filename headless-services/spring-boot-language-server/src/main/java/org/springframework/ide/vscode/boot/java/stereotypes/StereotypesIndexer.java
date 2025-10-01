@@ -42,7 +42,7 @@ import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
@@ -70,7 +70,7 @@ public class StereotypesIndexer implements SymbolProvider {
 				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
 						annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, doc);
 	
-				context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
 			}
 			else if (parent instanceof TypeDeclaration && ((TypeDeclaration) parent).isInterface()) {
 				ITypeBinding interfaceType = ((TypeDeclaration) parent).resolveBinding();
@@ -78,7 +78,7 @@ public class StereotypesIndexer implements SymbolProvider {
 				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
 						interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, doc);
 	
-				context.getBeans().add(new CachedBean(context.getDocURI(), stereotypeDefinitionElement));
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
 			}
 		}
 		catch (BadLocationException e) {
@@ -129,12 +129,12 @@ public class StereotypesIndexer implements SymbolProvider {
 			.collect(Collectors.toCollection(LinkedHashSet<String>::new));
 		
 		StereotypePackageElement packageElement = new StereotypePackageElement(packageBinding.getName(), annotationTypes);
-		context.getBeans().add(new CachedBean(context.getDocURI(), packageElement));
+		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), packageElement));
 		
 		Name astNodeForLocation = packageDeclaration.getName();
 		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
 		StereotypeClassElement classElement = new StereotypeClassElement(packageBinding.getName() + ".package-info", location, Set.of(), annotationTypes);
-		context.getBeans().add(new CachedBean(context.getDocURI(), classElement));
+		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), classElement));
 	}
 
 	@Override
@@ -177,7 +177,7 @@ public class StereotypesIndexer implements SymbolProvider {
 		
 		indexMethods(indexElement, typeDeclaration, annotationHierarchies, doc);
 		
-		context.getBeans().add(new CachedBean(context.getDocURI(), indexElement));
+		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), indexElement));
 	}
 
 	private void indexMethods(StereotypeClassElement indexElement, AbstractTypeDeclaration typeDeclaration, AnnotationHierarchies annotationHierarchies, TextDocument doc) throws BadLocationException {

@@ -13,7 +13,7 @@ package org.springframework.ide.vscode.boot.java.utils;
 import java.util.List;
 
 import org.eclipse.lemminx.dom.DOMNode;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -23,6 +23,6 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 public interface SpringIndexerXMLNamespaceHandler {
 
 	void processNode(DOMNode node, IJavaProject project, String docURI, long lastModifiued, TextDocument document,
-			List<CachedSymbol> generatedSymbols, List<CachedBean> generatedBeans) throws Exception;
+			List<CachedSymbol> generatedSymbols, List<CachedIndexElement> generatedBeans) throws Exception;
 
 }

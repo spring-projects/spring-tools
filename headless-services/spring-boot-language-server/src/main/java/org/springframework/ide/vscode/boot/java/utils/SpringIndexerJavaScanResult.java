@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
@@ -42,7 +42,7 @@ public class SpringIndexerJavaScanResult {
 	private final Set<String> markedForAffetcedFilesIndexing; // file
 	
 	private final List<CachedSymbol> generatedSymbols;
-	private final List<CachedBean> generatedBeans;
+	private final List<CachedIndexElement> generatedIndexElements;
 	private final List<CachedDiagnostics> generatedDiagnostics;
 
 	private final IJavaProject project;
@@ -57,12 +57,12 @@ public class SpringIndexerJavaScanResult {
 		this.markedForAffetcedFilesIndexing = new HashSet<>();
 		
 		this.generatedSymbols = new ArrayList<CachedSymbol>();
-		this.generatedBeans = new ArrayList<CachedBean>();
+		this.generatedIndexElements = new ArrayList<CachedIndexElement>();
 		this.generatedDiagnostics = new ArrayList<CachedDiagnostics>();
 	}
 	
 	public SpringIndexerJavaScanResult(IJavaProject project, String[] javaFiles, SymbolHandler symbolHandler,
-			CachedSymbol[] symbols, CachedBean[] beans, CachedDiagnostics[] diagnostics) {
+			CachedSymbol[] symbols, CachedIndexElement[] indexElements, CachedDiagnostics[] diagnostics) {
 		
 		this.project = project;
 		this.javaFiles = javaFiles;
@@ -71,7 +71,7 @@ public class SpringIndexerJavaScanResult {
 		this.markedForAffetcedFilesIndexing = new HashSet<>();
 
 		this.generatedSymbols = Arrays.asList(symbols);
-		this.generatedBeans = Arrays.asList(beans);
+		this.generatedIndexElements = Arrays.asList(indexElements);
 		this.generatedDiagnostics = Arrays.asList(diagnostics);
 	}
 	
@@ -93,8 +93,8 @@ public class SpringIndexerJavaScanResult {
 	}
 	
 
-	public List<CachedBean> getGeneratedBeans() {
-		return generatedBeans;
+	public List<CachedIndexElement> getGeneratedIndexElements() {
+		return generatedIndexElements;
 	}
 	
 	public List<CachedSymbol> getGeneratedSymbols() {
@@ -107,14 +107,14 @@ public class SpringIndexerJavaScanResult {
 	
 	public void publishResults(SymbolHandler symbolHandler) {
 		WorkspaceSymbol[] enhancedSymbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
-		Map<String, List<SpringIndexElement>> allBeans = generatedBeans.stream().filter(cachedBean -> cachedBean.getBean() != null).collect(Collectors.groupingBy(CachedBean::getDocURI, Collectors.mapping(CachedBean::getBean, Collectors.toList())));
+		Map<String, List<SpringIndexElement>> allIndexElements = generatedIndexElements.stream().filter(cachedIndexElement -> cachedIndexElement.getIndexElement() != null).collect(Collectors.groupingBy(CachedIndexElement::getDocURI, Collectors.mapping(CachedIndexElement::getIndexElement, Collectors.toList())));
 		Map<String, List<Diagnostic>> diagnosticsByDoc = generatedDiagnostics.stream().filter(cachedDiagnostic -> cachedDiagnostic.getDiagnostic() != null).collect(Collectors.groupingBy(CachedDiagnostics::getDocURI, Collectors.mapping(CachedDiagnostics::getDiagnostic, Collectors.toList())));
 
 		// to make sure that files without index elements or diagnostics publish an empty array of diagnostics
 		addEmptyDiagnostics(diagnosticsByDoc, javaFiles);
-		addEmptyIndexElements(allBeans, javaFiles);
+		addEmptyIndexElements(allIndexElements, javaFiles);
 
-		symbolHandler.addSymbols(this.project, enhancedSymbols, allBeans, diagnosticsByDoc);
+		symbolHandler.addSymbols(this.project, enhancedSymbols, allIndexElements, diagnosticsByDoc);
 	}
 	
 	public void publishDiagnosticsOnly(SymbolHandler symbolHandler) {
@@ -123,13 +123,13 @@ public class SpringIndexerJavaScanResult {
 		symbolHandler.addSymbols(this.project, null, null, diagnosticsByDoc);
 	}
 	
-	private void addEmptyIndexElements(Map<String, List<SpringIndexElement>> allBeans, String[] javaFiles) {
+	private void addEmptyIndexElements(Map<String, List<SpringIndexElement>> allIndexElements, String[] javaFiles) {
 		for (int i = 0; i < javaFiles.length; i++) {
 			File file = new File(javaFiles[i]);
 			String docURI = UriUtil.toUri(file).toASCIIString();
 
-			if (!allBeans.containsKey(docURI)) {
-				allBeans.put(docURI, Collections.emptyList());
+			if (!allIndexElements.containsKey(docURI)) {
+				allIndexElements.put(docURI, Collections.emptyList());
 			}
 		}
 	}

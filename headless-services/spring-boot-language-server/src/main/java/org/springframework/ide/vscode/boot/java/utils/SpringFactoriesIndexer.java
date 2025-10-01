@@ -42,7 +42,7 @@ import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.beans.BeanUtils;
 import org.springframework.ide.vscode.boot.java.beans.BeansIndexer;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
@@ -67,7 +67,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 	private static final String GENERATION = "GEN-14";
 	
 	private static final String SYMBOL_KEY = "symbols";
-	private static final String BEANS_KEY = "beans";
+	private static final String INDEX_KEY = "index";
 	
 	private static final String FILE_PATTERN = "**/META-INF/spring/*.factories";
 	
@@ -190,37 +190,37 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 		log.info("scan factories files for symbols for project: " + project.getElementName() + " - no. of files: " + files.size());
 
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 
 		CachedSymbol[] symbols = this.cache.retrieveSymbols(symbolsCacheKey, filesStr, CachedSymbol.class);
-		CachedBean[] beans = this.cache.retrieveSymbols(beansCacheKey, filesStr, CachedBean.class);
+		CachedIndexElement[] indexElements = this.cache.retrieveSymbols(indexCacheKey, filesStr, CachedIndexElement.class);
 
-		if (symbols == null || beans == null || clean) {
+		if (symbols == null || indexElements == null || clean) {
 			List<CachedSymbol> generatedSymbols = new ArrayList<CachedSymbol>();
-			List<CachedBean> generatedBeans = new ArrayList<CachedBean>();
+			List<CachedIndexElement> generatedIndexElements = new ArrayList<CachedIndexElement>();
 
 			for (Path file : files) {
 				ScanResult scanResult = scanFile(file);
 				
 				if (scanResult != null) {
 					generatedSymbols.addAll(scanResult.symbols);
-					generatedBeans.addAll(scanResult.beans);
+					generatedIndexElements.addAll(scanResult.beans);
 				}
 			}
 
 			this.cache.store(symbolsCacheKey, filesStr, generatedSymbols, null, CachedSymbol.class);
-			this.cache.store(beansCacheKey, filesStr, generatedBeans, null, CachedBean.class);
+			this.cache.store(indexCacheKey, filesStr, generatedIndexElements, null, CachedIndexElement.class);
 
 			symbols = (CachedSymbol[]) generatedSymbols.toArray(new CachedSymbol[generatedSymbols.size()]);
-			beans = (CachedBean[]) generatedBeans.toArray(new CachedBean[generatedBeans.size()]);
+			indexElements = (CachedIndexElement[]) generatedIndexElements.toArray(new CachedIndexElement[generatedIndexElements.size()]);
 		}
 		else {
 			log.info("scan factories files used cached data: " + project.getElementName() + " - no. of cached symbols retrieved: " + symbols.length);
 		}
 
-		if (symbols != null && beans != null) {
+		if (symbols != null && indexElements != null) {
 			WorkspaceSymbol[] enhancedSymbols = Arrays.stream(symbols).map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
-			Map<String, List<SpringIndexElement>> beansByDoc = Arrays.stream(beans).filter(cachedBean -> cachedBean.getBean() != null).collect(Collectors.groupingBy(CachedBean::getDocURI, Collectors.mapping(CachedBean::getBean, Collectors.toList())));
+			Map<String, List<SpringIndexElement>> beansByDoc = Arrays.stream(indexElements).filter(cachedBean -> cachedBean.getIndexElement() != null).collect(Collectors.groupingBy(CachedIndexElement::getDocURI, Collectors.mapping(CachedIndexElement::getIndexElement, Collectors.toList())));
 			symbolHandler.addSymbols(project, enhancedSymbols, beansByDoc, null);
 		}
 
@@ -233,10 +233,10 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 	@Override
 	public void removeProject(IJavaProject project) throws Exception {
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 
 		this.cache.remove(symbolsCacheKey);
-		this.cache.remove(beansCacheKey);
+		this.cache.remove(indexCacheKey);
 	}
 
 	@Override
@@ -252,22 +252,22 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 			ScanResult scanResult = scanFile(path);
 			
 			List<CachedSymbol> generatedSymbols = Collections.emptyList();
-			List<CachedBean> generatedBeans = Collections.emptyList(); 
+			List<CachedIndexElement> generatedIndexElements = Collections.emptyList(); 
 
 			if (scanResult != null) {
 				generatedSymbols = scanResult.symbols;
-				generatedBeans = scanResult.beans; 
+				generatedIndexElements = scanResult.beans; 
 			}
 
 			IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-			IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+			IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 
 			String file = new File(new URI(docURI)).getAbsolutePath();
 			this.cache.update(symbolsCacheKey, file, updatedDoc.getLastModified(), generatedSymbols, null, CachedSymbol.class);
-			this.cache.update(beansCacheKey, file, updatedDoc.getLastModified(), generatedBeans, null, CachedBean.class);
+			this.cache.update(indexCacheKey, file, updatedDoc.getLastModified(), generatedIndexElements, null, CachedIndexElement.class);
 
 			WorkspaceSymbol[] symbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
-			List<SpringIndexElement> beans = generatedBeans.stream().filter(cachedBean -> cachedBean.getBean() != null).map(cachedBean -> cachedBean.getBean()).toList();
+			List<SpringIndexElement> beans = generatedIndexElements.stream().filter(cachedBean -> cachedBean.getIndexElement() != null).map(cachedBean -> cachedBean.getIndexElement()).toList();
 			symbolHandler.addSymbols(project, docURI, symbols, beans, null);
 		}
 	}
@@ -275,7 +275,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 	@Override
 	public void updateFiles(IJavaProject project, DocumentDescriptor[] updatedDocs) throws Exception {
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 
 		List<Path> outputFolders = IClasspathUtil.getOutputFolders(project.getClasspath()).map(f -> f.toPath()).collect(Collectors.toList());
 
@@ -292,7 +292,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 					String file = new File(new URI(d.getDocURI())).getAbsolutePath();
 
 					cache.removeFile(symbolsCacheKey, file, CachedSymbol.class);
-					cache.removeFile(beansCacheKey, file, CachedBean.class);
+					cache.removeFile(indexCacheKey, file, CachedIndexElement.class);
 				}
 			}
 		}
@@ -309,10 +309,10 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 		}).toArray(String[]::new);
 		
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, SYMBOL_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, SYMBOL_KEY);
 
 		cache.removeFiles(symbolsCacheKey, files, CachedSymbol.class);
-		cache.removeFiles(beansCacheKey, files, CachedBean.class);
+		cache.removeFiles(indexCacheKey, files, CachedIndexElement.class);
 	}
 	
 	private ScanResult scanFile(Path file) {
@@ -321,7 +321,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 			String content = Files.readString(file);
 			
 			ImmutableList.Builder<CachedSymbol> symbols = ImmutableList.builder();
-			ImmutableList.Builder<CachedBean> beans = ImmutableList.builder();
+			ImmutableList.Builder<CachedIndexElement> beans = ImmutableList.builder();
 			
 			long lastModified = Files.getLastModifiedTime(file).toMillis();
 			String docUri = file.toUri().toASCIIString();
@@ -333,7 +333,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 			}
 
 			for (Bean bean : result.beans) {
-				beans.add(new CachedBean(docUri, bean));
+				beans.add(new CachedIndexElement(docUri, bean));
 			}
 
 			return new ScanResult(symbols.build(), beans.build());
@@ -383,7 +383,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 		return new IndexCacheKey(project.getElementName(), "factories", elementType, DigestUtils.md5Hex(GENERATION + "-" + filesIndentifier).toUpperCase());
 	}
 	
-	private static record ScanResult (List<CachedSymbol> symbols, List<CachedBean> beans) {}
+	private static record ScanResult (List<CachedSymbol> symbols, List<CachedIndexElement> beans) {}
 	private static record ComputeResult (List<WorkspaceSymbol> symbols, List<Bean> beans) {}
 	
 }

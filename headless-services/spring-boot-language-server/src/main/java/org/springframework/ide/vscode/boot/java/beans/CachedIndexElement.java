@@ -13,17 +13,17 @@ package org.springframework.ide.vscode.boot.java.beans;
 import org.springframework.ide.vscode.boot.index.cache.AbstractIndexCacheable;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
-public class CachedBean extends AbstractIndexCacheable {
+public class CachedIndexElement extends AbstractIndexCacheable {
 	
-	private final SpringIndexElement element;
+	private final SpringIndexElement indexElement;
 
-	public CachedBean(String docURI, SpringIndexElement bean) {
+	public CachedIndexElement(String docURI, SpringIndexElement indexElement) {
 		super(docURI);
-		this.element = bean;
+		this.indexElement = indexElement;
 	}
 	
-	public SpringIndexElement getBean() {
-		return this.element;
+	public SpringIndexElement getIndexElement() {
+		return this.indexElement;
 	}
 
 }

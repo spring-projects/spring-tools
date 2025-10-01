@@ -61,7 +61,7 @@ import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchyAwareLookup;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
@@ -98,7 +98,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	private static final String INDEX_FILES_TASK_ID = "index-java-source-files-task-";
 
 	private static final String SYMBOL_KEY = "symbols";
-	private static final String BEANS_KEY = "beans";
+	private static final String INDEX_KEY = "index";
 	private static final String DIAGNOSTICS_KEY = "diagnostics";
 
 	private final SymbolHandler symbolHandler;
@@ -165,23 +165,23 @@ public class SpringIndexerJava implements SpringIndexer {
 	@Override
 	public void removeProject(IJavaProject project) throws Exception {
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		this.cache.remove(symbolsCacheKey);
-		this.cache.remove(beansCacheKey);
+		this.cache.remove(indexCacheKey);
 		this.cache.remove(diagnosticsCacheKey);
 	}
 
 	@Override
 	public void updateFile(IJavaProject project, DocumentDescriptor updatedDoc, String content) throws Exception {
 		IndexCacheKey symbolCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		if (updatedDoc != null && shouldProcessDocument(project, updatedDoc.getDocURI())) {
 			if (isCacheOutdated(symbolCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())
-					|| isCacheOutdated(beansCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())
+					|| isCacheOutdated(indexCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())
 					|| isCacheOutdated(diagnosticsCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())) {
 
 				this.symbolHandler.removeSymbols(project, updatedDoc.getDocURI());
@@ -216,11 +216,11 @@ public class SpringIndexerJava implements SpringIndexer {
 		}).toArray(String[]::new);
 		
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		this.cache.removeFiles(symbolsCacheKey, files, CachedSymbol.class);
-		this.cache.removeFiles(beansCacheKey, files, CachedBean.class);
+		this.cache.removeFiles(indexCacheKey, files, CachedIndexElement.class);
 		this.cache.removeFiles(diagnosticsCacheKey, files, CachedDiagnostics.class);
 	}
 	
@@ -303,8 +303,8 @@ public class SpringIndexerJava implements SpringIndexer {
 
 				scanAST(context, false);
 
-				List<SpringIndexElement> indexElements = result.getGeneratedBeans().stream()
-					.map(cachedBean -> cachedBean.getBean())
+				List<SpringIndexElement> indexElements = result.getGeneratedIndexElements().stream()
+					.map(cachedBean -> cachedBean.getIndexElement())
 					.toList();
 
 				return SpringIndexToSymbolsConverter.createDocumentSymbols(indexElements);
@@ -320,12 +320,12 @@ public class SpringIndexerJava implements SpringIndexer {
 	 */
 	private DocumentDescriptor[] filterDocuments(IJavaProject project, DocumentDescriptor[] updatedDocs) {
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		return Arrays.stream(updatedDocs).filter(doc -> shouldProcessDocument(project, doc.getDocURI()))
 				.filter(doc -> isCacheOutdated(symbolsCacheKey, doc.getDocURI(), doc.getLastModified())
-						|| isCacheOutdated(beansCacheKey, doc.getDocURI(), doc.getLastModified())
+						|| isCacheOutdated(indexCacheKey, doc.getDocURI(), doc.getLastModified())
 						|| isCacheOutdated(diagnosticsCacheKey, doc.getDocURI(), doc.getLastModified()))
 				.toArray(DocumentDescriptor[]::new);
 	}
@@ -407,11 +407,11 @@ public class SpringIndexerJava implements SpringIndexer {
 			// update cache
 			
 			IndexCacheKey symbolCacheKey = getCacheKey(project, SYMBOL_KEY);
-			IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+			IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 			IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 			
 			this.cache.update(symbolCacheKey, file, lastModified, result.getGeneratedSymbols(), context.getDependencies(), CachedSymbol.class);
-			this.cache.update(beansCacheKey, file, lastModified, result.getGeneratedBeans(), context.getDependencies(), CachedBean.class);
+			this.cache.update(indexCacheKey, file, lastModified, result.getGeneratedIndexElements(), context.getDependencies(), CachedIndexElement.class);
 			this.cache.update(diagnosticsCacheKey, file, lastModified, result.getGeneratedDiagnostics(), context.getDependencies(), CachedDiagnostics.class);
 			
 			Set<String> scannedFiles = new HashSet<>();
@@ -491,11 +491,11 @@ public class SpringIndexerJava implements SpringIndexer {
 		// update the cache
 		
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		this.cache.update(symbolsCacheKey, javaFiles, lastModified, result.getGeneratedSymbols(), dependencies, CachedSymbol.class);
-		this.cache.update(beansCacheKey, javaFiles, lastModified, result.getGeneratedBeans(), dependencies, CachedBean.class);
+		this.cache.update(indexCacheKey, javaFiles, lastModified, result.getGeneratedIndexElements(), dependencies, CachedIndexElement.class);
 		this.cache.update(diagnosticsCacheKey, javaFiles, lastModified, result.getGeneratedDiagnostics(), dependencies, CachedDiagnostics.class);
 		
 		result.publishResults(symbolHandler);
@@ -552,17 +552,17 @@ public class SpringIndexerJava implements SpringIndexer {
 		
 		// check cached elements first
 		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
-		IndexCacheKey beansCacheKey = getCacheKey(project, BEANS_KEY);
+		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		Pair<CachedSymbol[], Multimap<String, String>> cachedSymbols = this.cache.retrieve(symbolsCacheKey, javaFiles, CachedSymbol.class);
-		Pair<CachedBean[], Multimap<String, String>> cachedBeans = this.cache.retrieve(beansCacheKey, javaFiles, CachedBean.class);
+		Pair<CachedIndexElement[], Multimap<String, String>> cachedIndexElements = this.cache.retrieve(indexCacheKey, javaFiles, CachedIndexElement.class);
 		Pair<CachedDiagnostics[], Multimap<String, String>> cachedDiagnostics = this.cache.retrieve(diagnosticsCacheKey, javaFiles, CachedDiagnostics.class);
 
-		if (!clean && cachedSymbols != null && cachedBeans != null && cachedDiagnostics != null) {
+		if (!clean && cachedSymbols != null && cachedIndexElements != null && cachedDiagnostics != null) {
 			// use cached data
 
-			result = new SpringIndexerJavaScanResult(project, javaFiles, symbolHandler, cachedSymbols.getLeft(), cachedBeans.getLeft(), cachedDiagnostics.getLeft());
+			result = new SpringIndexerJavaScanResult(project, javaFiles, symbolHandler, cachedSymbols.getLeft(), cachedIndexElements.getLeft(), cachedDiagnostics.getLeft());
 			this.dependencyTracker.restore(cachedSymbols.getRight());
 
 			log.info("scan java files used cached data: {} - no. of cached symbols retrieved: {}", project.getElementName(), result.getGeneratedSymbols().size());
@@ -598,7 +598,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			log.info("scan java files done, number of symbols created: " + result.getGeneratedSymbols().size());
 
 			this.cache.store(symbolsCacheKey, javaFiles, result.getGeneratedSymbols(), dependencyTracker.getAllDependencies(), CachedSymbol.class);
-			this.cache.store(beansCacheKey, javaFiles, result.getGeneratedBeans(), dependencyTracker.getAllDependencies(), CachedBean.class);
+			this.cache.store(indexCacheKey, javaFiles, result.getGeneratedIndexElements(), dependencyTracker.getAllDependencies(), CachedIndexElement.class);
 			this.cache.store(diagnosticsCacheKey, javaFiles, result.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(), CachedDiagnostics.class);
 		}
 		
@@ -878,9 +878,9 @@ public class SpringIndexerJava implements SpringIndexer {
 
 			problemCollector.beginCollecting();
 
-			List<SpringIndexElement> createdElements = context.getBeans().stream()
-					.filter(cachedBean -> cachedBean.getDocURI().equals(context.getDocURI()))
-					.map(cachedBean -> cachedBean.getBean())
+			List<SpringIndexElement> createdElements = context.getGeneratedIndexElements().stream()
+					.filter(cachedIndexElement -> cachedIndexElement.getDocURI().equals(context.getDocURI()))
+					.map(cachedIndexElement -> cachedIndexElement.getIndexElement())
 					.toList();
 
 			ReconcilingContext reconcilingContext = new ReconcilingContext(context.getDocURI(), problemCollector, context.isFullAst(), context.isIndexComplete(), createdElements);

@@ -84,7 +84,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 			else if (Annotations.NAMED_ANNOTATIONS.contains(annotationType.getQualifiedName())) {
 				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, doc);
 				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-				context.getBeans().add(new CachedBean(context.getDocURI(), new SimpleSymbolElement(symbol)));
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), new SimpleSymbolElement(symbol)));
 			}
 		}
 		catch (BadLocationException e) {
@@ -152,7 +152,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		indexWebConfig(beanDefinition, type, context, doc);
 
 		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-		context.getBeans().add(new CachedBean(context.getDocURI(), beanDefinition));
+		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
 	private void createSymbol(RecordDeclaration record, Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
@@ -192,7 +192,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		indexConfigurationProperties(beanDefinition, record, context, doc);
 
 		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-		context.getBeans().add(new CachedBean(context.getDocURI(), beanDefinition));
+		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
 	private void indexConfigurationProperties(Bean beanDefinition, AbstractTypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
@@ -244,7 +244,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		}
 		
 		if (bean == null && parent.getChildren().size() > 0) {
-			context.getBeans().add(new CachedBean(context.getDocURI(), parent));
+			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), parent));
 		}
 	}
 
@@ -344,7 +344,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 			String docUri = context.getDocURI();
 			
 			AotProcessorElement aotProcessorElement = new AotProcessorElement(type, docUri);
-			context.getBeans().add(new CachedBean(context.getDocURI(), aotProcessorElement));
+			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), aotProcessorElement));
 		}
 	}
 
@@ -378,7 +378,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 					bean.addChild(eventElement);
 				}
 				else {
-					context.getBeans().add(new CachedBean(context.getDocURI(), eventElement));
+					context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), eventElement));
 				}
 			}
 		} catch (BadLocationException e) {
@@ -449,7 +449,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 				parentNode = new BeanRegistrarElement(name, type, location);
 
 				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-				context.getBeans().add(new CachedBean(context.getDocURI(), parentNode));
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), parentNode));
 			}
 			
 			scanBeanRegistryInvocations(parentNode, registerMethod.getBody(), context, doc);

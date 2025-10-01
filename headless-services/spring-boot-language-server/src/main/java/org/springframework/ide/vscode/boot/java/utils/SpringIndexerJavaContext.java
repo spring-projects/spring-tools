@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -109,8 +109,8 @@ public class SpringIndexerJavaContext {
 		return getResult().getGeneratedSymbols();
 	}
 	
-	public List<CachedBean> getBeans() {
-		return getResult().getGeneratedBeans();
+	public List<CachedIndexElement> getGeneratedIndexElements() {
+		return getResult().getGeneratedIndexElements();
 	}
 	
 	public List<String> getNextPassFiles() {
@@ -162,7 +162,7 @@ public class SpringIndexerJavaContext {
 	}
 	
 	public void resetDocumentRelatedElements(String docURI) {
-		Iterator<CachedBean> beansIterator = getBeans().iterator();
+		Iterator<CachedIndexElement> beansIterator = getGeneratedIndexElements().iterator();
 		while (beansIterator.hasNext()) {
 			if (beansIterator.next().getDocURI().equals(docURI)) {
 				beansIterator.remove();

@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.BeanUtils;
-import org.springframework.ide.vscode.boot.java.beans.CachedBean;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils.EmbeddedQueryExpression;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
@@ -98,7 +98,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				Bean beanDefinition = new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, symbol.getName());
 				indexQueryMethods(beanDefinition, typeDeclaration, context, doc);
 				
-				context.getBeans().add(new CachedBean(context.getDocURI(), beanDefinition));
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 
 			} catch (BadLocationException e) {
 				log.error("error creating data repository symbol for a specific range", e);

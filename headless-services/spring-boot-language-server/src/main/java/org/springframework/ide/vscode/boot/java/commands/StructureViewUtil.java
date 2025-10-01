@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -36,7 +37,7 @@ import com.google.common.collect.Streams;
 
 public class StructureViewUtil {
 
-	public static List<String[]> identifyGroupers(AbstractStereotypeCatalog catalog, List<String> selectedGroups) {
+	public static List<String[]> identifyGroupers(AbstractStereotypeCatalog catalog, Collection<String> selectedGroups) {
 		
 //		List<String[]> allGroupsWithSpecificOrder = Arrays.asList(
 //			new String[] {"architecture"},

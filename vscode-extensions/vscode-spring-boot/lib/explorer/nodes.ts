@@ -3,7 +3,7 @@ import { Location } from "vscode-languageclient";
 import { LsStereoTypedNode } from "./structure-tree-manager";
 
 export class SpringNode {
-    constructor(public children: SpringNode[], private parent?: SpringNode) {}
+    constructor(public children: SpringNode[], protected parent?: SpringNode) {}
     
     getTreeItem(savedState?: TreeItemCollapsibleState): TreeItem {
         const defaultState = savedState !== undefined ? savedState : TreeItemCollapsibleState.Collapsed;
@@ -39,7 +39,7 @@ export class StereotypedNode extends SpringNode {
     constructor(private n: LsStereoTypedNode, children: SpringNode[], parent?: SpringNode) {
         super(children, parent);
     }
-    
+        
     getTreeItem(savedState?: TreeItemCollapsibleState): TreeItem {
         const item = super.getTreeItem(savedState);
         item.label = this.n.attributes.text;
@@ -49,10 +49,14 @@ export class StereotypedNode extends SpringNode {
         if (this.n.attributes.reference) {
             item.contextValue = "stereotypedNodeWithReference";
         }
+
+        if (this.n.attributes.icon === 'project') {
+            item.contextValue = "project";
+        }
+        
         
         if (this.n.attributes.location) {
             const location = this.n.attributes.location as Location;
-            // Hard-coded range. Not present... likely not serialized correctly.
             item.command = {
                 command: "vscode.open",
                 title: "Navigate",

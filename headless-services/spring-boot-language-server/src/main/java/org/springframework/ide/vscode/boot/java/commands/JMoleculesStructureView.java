@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -34,7 +35,7 @@ public class JMoleculesStructureView {
 		this.springIndex = springIndex;
 	}
 
-	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, List<String> selectedGroups) {
+	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, Collection<String> selectedGroups) {
 		
 		StereotypePackageElement mainApplicationPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
 		

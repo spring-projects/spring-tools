@@ -100,9 +100,9 @@ public class IndexCacheOnDiscTest {
         assertNotNull(cachedSymbols);
         assertEquals(1, cachedSymbols.length);
 
-        assertEquals("symbol1", cachedSymbols[0].getEnhancedSymbol().getName());
-        assertEquals(SymbolKind.Field, cachedSymbols[0].getEnhancedSymbol().getKind());
-        assertEquals(new Location("docURI", new Range(new Position(3, 10), new Position(3, 20))), cachedSymbols[0].getEnhancedSymbol().getLocation().getLeft());
+        assertEquals("symbol1", cachedSymbols[0].getSymbol().getName());
+        assertEquals(SymbolKind.Field, cachedSymbols[0].getSymbol().getKind());
+        assertEquals(new Location("docURI", new Range(new Position(3, 10), new Position(3, 20))), cachedSymbols[0].getSymbol().getLocation().getLeft());
 
         Multimap<String, String> dependencies = result.getRight();
         assertEquals(2, dependencies.keySet().size());
@@ -354,7 +354,7 @@ public class IndexCacheOnDiscTest {
 
 	private void assertSymbol(WorkspaceSymbol enhancedSymbol, CachedSymbol[] cachedSymbols) {
 		for (CachedSymbol cachedSymbol : cachedSymbols) {
-			WorkspaceSymbol symbol = cachedSymbol.getEnhancedSymbol();
+			WorkspaceSymbol symbol = cachedSymbol.getSymbol();
 			
 			if (symbol.toString().equals(enhancedSymbol.toString())) {
 				return;
@@ -549,9 +549,9 @@ public class IndexCacheOnDiscTest {
         assertNotNull(result);
         assertEquals(1, cachedSymbols.length);
 
-        assertEquals("symbol2", cachedSymbols[0].getEnhancedSymbol().getName());
-        assertEquals(SymbolKind.Field, cachedSymbols[0].getEnhancedSymbol().getKind());
-        assertEquals(new Location(doc2URI, new Range(new Position(5, 10), new Position(5, 20))), cachedSymbols[0].getEnhancedSymbol().getLocation().getLeft());
+        assertEquals("symbol2", cachedSymbols[0].getSymbol().getName());
+        assertEquals(SymbolKind.Field, cachedSymbols[0].getSymbol().getKind());
+        assertEquals(new Location(doc2URI, new Range(new Position(5, 10), new Position(5, 20))), cachedSymbols[0].getSymbol().getLocation().getLeft());
 
         Multimap<String, String> cachedDependencies = result.getRight();
         assertEquals(ImmutableSet.of(), cachedDependencies.get(file1.toString()));
@@ -613,13 +613,13 @@ public class IndexCacheOnDiscTest {
         assertNotNull(result);
         assertEquals(2, cachedSymbols.length);
 
-        assertEquals("symbol2", cachedSymbols[0].getEnhancedSymbol().getName());
-        assertEquals(SymbolKind.Field, cachedSymbols[0].getEnhancedSymbol().getKind());
-        assertEquals(new Location(doc2URI, new Range(new Position(5, 10), new Position(5, 20))), cachedSymbols[0].getEnhancedSymbol().getLocation().getLeft());
+        assertEquals("symbol2", cachedSymbols[0].getSymbol().getName());
+        assertEquals(SymbolKind.Field, cachedSymbols[0].getSymbol().getKind());
+        assertEquals(new Location(doc2URI, new Range(new Position(5, 10), new Position(5, 20))), cachedSymbols[0].getSymbol().getLocation().getLeft());
 
-        assertEquals("symbol4", cachedSymbols[1].getEnhancedSymbol().getName());
-        assertEquals(SymbolKind.Field, cachedSymbols[1].getEnhancedSymbol().getKind());
-        assertEquals(new Location(doc4URI, new Range(new Position(4, 4), new Position(5, 5))), cachedSymbols[1].getEnhancedSymbol().getLocation().getLeft());
+        assertEquals("symbol4", cachedSymbols[1].getSymbol().getName());
+        assertEquals(SymbolKind.Field, cachedSymbols[1].getSymbol().getKind());
+        assertEquals(new Location(doc4URI, new Range(new Position(4, 4), new Position(5, 5))), cachedSymbols[1].getSymbol().getLocation().getLeft());
 
         Multimap<String, String> cachedDependencies = result.getRight();
         assertEquals(ImmutableSet.of(), cachedDependencies.get(file1.toString()));

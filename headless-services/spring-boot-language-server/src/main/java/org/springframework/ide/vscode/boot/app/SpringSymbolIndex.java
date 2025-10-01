@@ -173,11 +173,11 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 		SymbolHandler handler = new SymbolHandler() {
 			@Override
-			public void addSymbols(IJavaProject project, String docURI, WorkspaceSymbol[] enhancedSymbols, List<SpringIndexElement> beanDefinitions,
+			public void addSymbols(IJavaProject project, String docURI, WorkspaceSymbol[] symbols, List<SpringIndexElement> beanDefinitions,
 					List<Diagnostic> diagnostics) {
 
-				if (enhancedSymbols != null) {
-					SpringSymbolIndex.this.addSymbolsByDoc(project, docURI, enhancedSymbols);
+				if (symbols != null) {
+					SpringSymbolIndex.this.addSymbolsByDoc(project, docURI, symbols);
 				}
 
 				if (beanDefinitions != null) {
@@ -191,14 +191,14 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			}
 
 			@Override
-			public void addSymbols(IJavaProject project, WorkspaceSymbol[] enhancedSymbols,
+			public void addSymbols(IJavaProject project, WorkspaceSymbol[] symbols,
 					Map<String, List<SpringIndexElement>> beanDefinitionsByDoc, Map<String, List<Diagnostic>> diagnosticsPerDoc) {
 
-				if (enhancedSymbols != null) {
+				if (symbols != null) {
 
 					// organize symbols by doc URI
 					Map<String, List<WorkspaceSymbol>> symbolsPerDoc = new HashMap<>();
-					for (WorkspaceSymbol symbol : enhancedSymbols) {
+					for (WorkspaceSymbol symbol : symbols) {
 						Either<Location, WorkspaceSymbolLocation> location = symbol.getLocation();
 						String docURI = location.isLeft() ? location.getLeft().getUri() : location.getRight().getUri();
 						
@@ -208,9 +208,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 					// add symbols per doc
 					for (Map.Entry<String, List<WorkspaceSymbol>> entry : symbolsPerDoc.entrySet()) {
 						String docURI = entry.getKey();
-						List<WorkspaceSymbol> symbols = entry.getValue();
+						List<WorkspaceSymbol> symbolsForDoc = entry.getValue();
 						
-						SpringSymbolIndex.this.addSymbolsByDoc(project, docURI, (WorkspaceSymbol[]) symbols.toArray(new WorkspaceSymbol[symbols.size()]));
+						SpringSymbolIndex.this.addSymbolsByDoc(project, docURI, (WorkspaceSymbol[]) symbolsForDoc.toArray(new WorkspaceSymbol[symbolsForDoc.size()]));
 					}
 				}
 				
@@ -873,9 +873,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 					for (SpringIndexer indexer : this.indexers) {
 						if (indexer.isInterestedIn(docURI)) {
 							try {
-								for (WorkspaceSymbol enhanced : indexer.computeSymbols(project, docURI,
+								for (WorkspaceSymbol symbol : indexer.computeSymbols(project, docURI,
 										doc.get())) {
-									builder.add(enhanced);
+									builder.add(symbol);
 								}
 							} catch (Exception e) {
 								log.error("{}", e);
@@ -1118,23 +1118,23 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 	}
 
-	private void addSymbolsByDoc(IJavaProject project, String docURI, WorkspaceSymbol[] enhancedSymbols) {
+	private void addSymbolsByDoc(IJavaProject project, String docURI, WorkspaceSymbol[] workspaceSymbols) {
 
 		List<WorkspaceSymbol> docSymbols = symbolsByDoc.computeIfAbsent(docURI, s -> new ArrayList<WorkspaceSymbol>());
 		List<WorkspaceSymbol> projectSymbols = symbolsByProject.computeIfAbsent(project.getElementName(), s -> new ArrayList<WorkspaceSymbol>());
 
-		for (WorkspaceSymbol enhancedSymbol : enhancedSymbols) {
+		for (WorkspaceSymbol symbol : workspaceSymbols) {
 
 			synchronized(this.symbols) {
-				symbols.add(enhancedSymbol);
+				symbols.add(symbol);
 			}
 
 			synchronized(docSymbols) {
-				docSymbols.add(enhancedSymbol);
+				docSymbols.add(symbol);
 			}
 
 			synchronized(projectSymbols) {
-				projectSymbols.add(enhancedSymbol);
+				projectSymbols.add(symbol);
 			}
 
 		}

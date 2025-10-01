@@ -143,9 +143,9 @@ public class SpringIndexerXML implements SpringIndexer {
 		}
 
 		if (symbols != null && indexElements != null) {
-			WorkspaceSymbol[] enhancedSymbols = Arrays.stream(symbols).map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
+			WorkspaceSymbol[] allSymbols = Arrays.stream(symbols).map(cachedSymbol -> cachedSymbol.getSymbol()).toArray(WorkspaceSymbol[]::new);
 			Map<String, List<SpringIndexElement>> allIndexElements = Arrays.stream(indexElements).filter(cachedIndexElement -> cachedIndexElement.getIndexElement() != null).collect(Collectors.groupingBy(CachedIndexElement::getDocURI, Collectors.mapping(CachedIndexElement::getIndexElement, Collectors.toList())));
-			symbolHandler.addSymbols(project, enhancedSymbols, allIndexElements, null);
+			symbolHandler.addSymbols(project, allSymbols, allIndexElements, null);
 		}
 
 		long endTime = System.currentTimeMillis();
@@ -181,7 +181,7 @@ public class SpringIndexerXML implements SpringIndexer {
 		this.cache.update(symbolsCacheKey, file, updatedDoc.getLastModified(), generatedSymbols, null, CachedSymbol.class);
 		this.cache.update(indexCacheKey, file, updatedDoc.getLastModified(), generatedIndexElements, null, CachedIndexElement.class);
 
-		WorkspaceSymbol[] symbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
+		WorkspaceSymbol[] symbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getSymbol()).toArray(WorkspaceSymbol[]::new);
 		List<SpringIndexElement> indexElements = generatedIndexElements.stream().filter(cachedBean -> cachedBean.getIndexElement() != null).map(cachedBean -> cachedBean.getIndexElement()).toList();
 		symbolHandler.addSymbols(project, docURI, symbols, indexElements, null);
 	}
@@ -208,7 +208,7 @@ public class SpringIndexerXML implements SpringIndexer {
 			this.cache.update(symbolCacheKey, file, updatedDoc.getLastModified(), generatedSymbols, null, CachedSymbol.class);
 			this.cache.update(indexCacheKey, file, updatedDoc.getLastModified(), generatedIndexElements, null, CachedIndexElement.class);
 			
-			WorkspaceSymbol[] symbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
+			WorkspaceSymbol[] symbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getSymbol()).toArray(WorkspaceSymbol[]::new);
 			List<SpringIndexElement> indexElements = generatedIndexElements.stream().filter(cachedBean -> cachedBean.getIndexElement() != null).map(cachedBean -> cachedBean.getIndexElement()).toList();
 			symbolHandler.addSymbols(project, docURI, symbols, indexElements, null);
 		}
@@ -360,7 +360,7 @@ public class SpringIndexerXML implements SpringIndexer {
 	        List<CachedIndexElement> generatedIndexElements = new ArrayList<>();
 
 	        scanFile(project, content, docURI, 0, generatedSymbols, generatedIndexElements);
-			return generatedSymbols.stream().map(s -> s.getEnhancedSymbol()).collect(Collectors.toList());			
+			return generatedSymbols.stream().map(s -> s.getSymbol()).collect(Collectors.toList());			
 		}
 
 		return Collections.emptyList();

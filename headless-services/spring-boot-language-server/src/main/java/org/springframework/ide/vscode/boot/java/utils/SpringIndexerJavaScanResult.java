@@ -106,7 +106,7 @@ public class SpringIndexerJavaScanResult {
 	}
 	
 	public void publishResults(SymbolHandler symbolHandler) {
-		WorkspaceSymbol[] enhancedSymbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
+		WorkspaceSymbol[] allSymbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getSymbol()).toArray(WorkspaceSymbol[]::new);
 		Map<String, List<SpringIndexElement>> allIndexElements = generatedIndexElements.stream().filter(cachedIndexElement -> cachedIndexElement.getIndexElement() != null).collect(Collectors.groupingBy(CachedIndexElement::getDocURI, Collectors.mapping(CachedIndexElement::getIndexElement, Collectors.toList())));
 		Map<String, List<Diagnostic>> diagnosticsByDoc = generatedDiagnostics.stream().filter(cachedDiagnostic -> cachedDiagnostic.getDiagnostic() != null).collect(Collectors.groupingBy(CachedDiagnostics::getDocURI, Collectors.mapping(CachedDiagnostics::getDiagnostic, Collectors.toList())));
 
@@ -114,7 +114,7 @@ public class SpringIndexerJavaScanResult {
 		addEmptyDiagnostics(diagnosticsByDoc, javaFiles);
 		addEmptyIndexElements(allIndexElements, javaFiles);
 
-		symbolHandler.addSymbols(this.project, enhancedSymbols, allIndexElements, diagnosticsByDoc);
+		symbolHandler.addSymbols(this.project, allSymbols, allIndexElements, diagnosticsByDoc);
 	}
 	
 	public void publishDiagnosticsOnly(SymbolHandler symbolHandler) {

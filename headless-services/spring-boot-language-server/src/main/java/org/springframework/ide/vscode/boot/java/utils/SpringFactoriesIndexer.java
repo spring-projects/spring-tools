@@ -219,9 +219,9 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 		}
 
 		if (symbols != null && indexElements != null) {
-			WorkspaceSymbol[] enhancedSymbols = Arrays.stream(symbols).map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
+			WorkspaceSymbol[] allSymbols = Arrays.stream(symbols).map(cachedSymbol -> cachedSymbol.getSymbol()).toArray(WorkspaceSymbol[]::new);
 			Map<String, List<SpringIndexElement>> beansByDoc = Arrays.stream(indexElements).filter(cachedBean -> cachedBean.getIndexElement() != null).collect(Collectors.groupingBy(CachedIndexElement::getDocURI, Collectors.mapping(CachedIndexElement::getIndexElement, Collectors.toList())));
-			symbolHandler.addSymbols(project, enhancedSymbols, beansByDoc, null);
+			symbolHandler.addSymbols(project, allSymbols, beansByDoc, null);
 		}
 
 		long endTime = System.currentTimeMillis();
@@ -266,7 +266,7 @@ public class SpringFactoriesIndexer implements SpringIndexer {
 			this.cache.update(symbolsCacheKey, file, updatedDoc.getLastModified(), generatedSymbols, null, CachedSymbol.class);
 			this.cache.update(indexCacheKey, file, updatedDoc.getLastModified(), generatedIndexElements, null, CachedIndexElement.class);
 
-			WorkspaceSymbol[] symbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getEnhancedSymbol()).toArray(WorkspaceSymbol[]::new);
+			WorkspaceSymbol[] symbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getSymbol()).toArray(WorkspaceSymbol[]::new);
 			List<SpringIndexElement> beans = generatedIndexElements.stream().filter(cachedBean -> cachedBean.getIndexElement() != null).map(cachedBean -> cachedBean.getIndexElement()).toList();
 			symbolHandler.addSymbols(project, docURI, symbols, beans, null);
 		}

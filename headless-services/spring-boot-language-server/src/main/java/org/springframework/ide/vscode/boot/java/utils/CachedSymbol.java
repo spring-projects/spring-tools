@@ -16,16 +16,16 @@ import org.springframework.ide.vscode.boot.index.cache.AbstractIndexCacheable;
 public class CachedSymbol extends AbstractIndexCacheable {
 
 	private final long lastModified;
-	private final WorkspaceSymbol enhancedSymbol;
+	private final WorkspaceSymbol symbol;
 
-	public CachedSymbol(String docURI, long lastModified, WorkspaceSymbol enhancedSymbol) {
+	public CachedSymbol(String docURI, long lastModified, WorkspaceSymbol symbol) {
 		super(docURI);
 		this.lastModified = lastModified;
-		this.enhancedSymbol = enhancedSymbol;
+		this.symbol = symbol;
 	}
 
-	public WorkspaceSymbol getEnhancedSymbol() {
-		return enhancedSymbol;
+	public WorkspaceSymbol getSymbol() {
+		return symbol;
 	}
 	
 	public long getLastModified() {
@@ -34,7 +34,7 @@ public class CachedSymbol extends AbstractIndexCacheable {
 
 	@Override
 	public String toString() {
-		return "CachedSymbol [docURI=" + getDocURI() + ", enhancedSymbol=" + enhancedSymbol + "]";
+		return "CachedSymbol [docURI=" + getDocURI() + ", symbol=" + symbol + "]";
 	}
 	
 }

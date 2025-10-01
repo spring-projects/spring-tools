@@ -260,7 +260,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 				scanAST(context, false);
 
-				return result.getGeneratedSymbols().stream().map(s -> s.getEnhancedSymbol()).collect(Collectors.toList());
+				return result.getGeneratedSymbols().stream().map(s -> s.getSymbol()).collect(Collectors.toList());
 			});
 		}
 		

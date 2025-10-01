@@ -39,7 +39,10 @@ export class StructureManager {
                 title: `Select groups to show/hide for project ${projectName}`,
                 placeHolder: 'Select groups to show/hide'
             });
-            this.setVisibleGroups(projectName, items.length === selectedGroupItems.length ? undefined : selectedGroupItems.map(i => i.group.identifier));
+            if (selectedGroupItems) {
+                await this.setVisibleGroups(projectName, items.length === selectedGroupItems.length ? undefined : selectedGroupItems.map(i => i.group.identifier));
+                this.refresh(false);
+            }
         }));
     }
 
@@ -97,7 +100,6 @@ export class StructureManager {
             }
         }
         await this.workspaceState.update(`vscode-spring-boot.structure.group`, groupings);
-        this.refresh(false);
     }
 
 }

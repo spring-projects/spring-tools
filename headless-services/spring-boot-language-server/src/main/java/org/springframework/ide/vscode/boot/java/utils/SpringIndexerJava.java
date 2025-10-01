@@ -512,7 +512,12 @@ public class SpringIndexerJava implements SpringIndexer {
 		
 		Multimap<String, String> dependencies = dependencyTracker.getAllDependencies();
 		Set<String> filesToScan = new HashSet<>();
-		filesToScan.addAll(alreadyMarkedForAffectedFilesIndexing);
+		
+		for (String affectedFile : alreadyMarkedForAffectedFilesIndexing) {
+			if (!alreadyScannedFiles.contains(affectedFile)) {
+				filesToScan.add(affectedFile);
+			}
+		}
 		
 		for (String file : dependencies.keys()) {
 			if (!alreadyScannedFiles.contains(file)) {

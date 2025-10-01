@@ -319,7 +319,7 @@
         "command": "vscode-spring-boot.structure.grouping",
         "title": "Select Groups to Show/Hide",
         "category": "Spring Boot",
-        "icon": "$(organization)"
+        "icon": "$(checklist)"
       }
     ],
     "configuration": [

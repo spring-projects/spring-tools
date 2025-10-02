@@ -120,6 +120,10 @@ public class Annotations {
 	public static final String WEB_MVC_API_VERSION_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.ApiVersionConfigurer";
 	public static final String WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.PathMatchConfigurer";
 	
+	public static final String WEB_FLUX_CONFIGURER_INTERFACE = "org.springframework.web.reactive.config.WebFluxConfigurer";
+	public static final String WEB_FLUX_API_VERSION_CONFIGURER_INTERFACE = "org.springframework.web.reactive.config.ApiVersionConfigurer";
+	public static final String WEB_FLUX_PATH_MATCH_CONFIGURER_INTERFACE = "org.springframework.web.reactive.config.PathMatchConfigurer";
+	
 	public static final Map<String, String> AOP_ANNOTATIONS = Map.of(
 	        "org.aspectj.lang.annotation.Pointcut", "Pointcut",
 	        "org.aspectj.lang.annotation.Before", "Before",

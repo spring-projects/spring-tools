@@ -42,8 +42,8 @@ public class WebConfigIndexer {
 	private static Map<String, MethodInvocationExtractor> methodExtractors = initializeMethodExtractors();
 	
 	public static void indexWebConfig(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
-		ITypeBinding webmvcConfigType = getWebConfig(type);
-		if (webmvcConfigType == null) {
+		ITypeBinding webConfigType = getWebConfig(type);
+		if (webConfigType == null) {
 			return;
 		}
 		
@@ -51,8 +51,8 @@ public class WebConfigIndexer {
 			throw new RequiredCompleteAstException();
 		}
 		
-		MethodDeclaration configureVersioningMethod = findMethod(type, webmvcConfigType, CONFIGURE_API_VERSIONING_METHOD);
-		MethodDeclaration configurePathMethod = findMethod(type, webmvcConfigType, CONFIGURE_PATH_MATCHING_METHOD);
+		MethodDeclaration configureVersioningMethod = findMethod(type, webConfigType, CONFIGURE_API_VERSIONING_METHOD);
+		MethodDeclaration configurePathMethod = findMethod(type, webConfigType, CONFIGURE_PATH_MATCHING_METHOD);
 
 		if (configureVersioningMethod != null || configurePathMethod != null) {
 			Builder builder = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG);
@@ -78,7 +78,10 @@ public class WebConfigIndexer {
 			return null;
 		}
 		
-		return ASTUtils.findInTypeHierarchy(binding, Set.of(Annotations.WEB_MVC_CONFIGURER_INTERFACE));
+		return ASTUtils.findInTypeHierarchy(binding, Set.of(
+				Annotations.WEB_MVC_CONFIGURER_INTERFACE,
+				Annotations.WEB_FLUX_CONFIGURER_INTERFACE
+		));
 	}
 	
 	private static void scanMethodBody(Builder builder, Block body, SpringIndexerJavaContext context, TextDocument doc) {
@@ -98,7 +101,7 @@ public class WebConfigIndexer {
 					IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
 					ITypeBinding declaringClass = methodBinding.getDeclaringClass();
 
-					if (declaringClass != null && invocationExtractor.getTargetInvocationType().equals(declaringClass.getQualifiedName())) {
+					if (declaringClass != null && invocationExtractor.getTargetInvocationType().contains(declaringClass.getQualifiedName())) {
 						invocationExtractor.extractParameters(methodInvocation, builder);
 					}
 				}
@@ -142,35 +145,46 @@ public class WebConfigIndexer {
 	private static Map<String, MethodInvocationExtractor> initializeMethodExtractors() {
 		Map<String, MethodInvocationExtractor> result = new HashMap<>();
 		
-		result.put("addSupportedVersions", new MultipleArgumentsExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, (expression, webconfigBuilder) -> {
+		Set<String> apiConfigurerInterfaces = Set.of(
+				Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE,
+				Annotations.WEB_FLUX_API_VERSION_CONFIGURER_INTERFACE
+		);
+		
+		result.put("addSupportedVersions", new MultipleArgumentsExtractor(apiConfigurerInterfaces, (expression, webconfigBuilder) -> {
 			String[] expressionValueAsArray = ASTUtils.getExpressionValueAsArray(expression, (dep) -> {});
 			for (String supportedVersion : expressionValueAsArray) {
 				webconfigBuilder.supportedVersion(supportedVersion);
 			}
 		}));
 		
-		result.put("useRequestHeader", new SingleArgumentExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+		result.put("useRequestHeader", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
 			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 			if (value != null) {
 				webconfigBuilder.versionStrategy("Request Header: " + value);
 			}
 		}));
 
-		result.put("usePathSegment", new SingleArgumentExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+		result.put("usePathSegment", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
 			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 			if (value != null) {
 				webconfigBuilder.versionStrategy("Path Segment: " + value);
 			}
 		}));
 
-		result.put("useQueryParam", new SingleArgumentExtractor(Annotations.WEB_MVC_API_VERSION_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+		result.put("useQueryParam", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
 			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 			if (value != null) {
 				webconfigBuilder.versionStrategy("Query Param: " + value);
 			}
 		}));
 
-		result.put("addPathPrefix", new SingleArgumentExtractor(Annotations.WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE, 0, (expression, webconfigBuilder) -> {
+
+		Set<String> pathConfigurerInterfaces = Set.of(
+				Annotations.WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE,
+				Annotations.WEB_FLUX_PATH_MATCH_CONFIGURER_INTERFACE
+		);
+		
+		result.put("addPathPrefix", new SingleArgumentExtractor(pathConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
 			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 			if (value != null) {
 				webconfigBuilder.pathPrefix(value);
@@ -182,14 +196,14 @@ public class WebConfigIndexer {
 	}
 	
 	interface MethodInvocationExtractor {
-		String getTargetInvocationType();
+		Set<String> getTargetInvocationType();
 		void extractParameters(MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder);
 	}
 
-	record SingleArgumentExtractor (String invocationTargetType, int argumentNo, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
+	record SingleArgumentExtractor (Set<String> invocationTargetType, int argumentNo, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
 		
 		@Override
-		public String getTargetInvocationType() {
+		public Set<String> getTargetInvocationType() {
 			return invocationTargetType;
 		}
 		
@@ -202,10 +216,10 @@ public class WebConfigIndexer {
 		
 	}
 	
-	record MultipleArgumentsExtractor (String invocationTargetType, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
+	record MultipleArgumentsExtractor (Set<String> invocationTargetType, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
 		
 		@Override
-		public String getTargetInvocationType() {
+		public Set<String> getTargetInvocationType() {
 			return invocationTargetType;
 		}
 		

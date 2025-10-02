@@ -47,7 +47,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(SymbolProviderTestConf.class)
-public class WebMvcVersionSupportTest {
+public class WebVersionSupportTest {
 	
 	private static final String PROJECT_NAME = "test-web-config-support";
 	
@@ -116,7 +116,7 @@ public class WebMvcVersionSupportTest {
     }
     
     @Test
-    void testWebConfigIndexElement() throws Exception {
+    void testWebMvcConfigIndexElement() throws Exception {
     	Bean[] webConfigBean = springIndex.getMatchingBeans(PROJECT_NAME, "org.springframework.web.servlet.config.annotation.WebMvcConfigurer");
     	assertEquals(1, webConfigBean.length);
     	
@@ -139,6 +139,32 @@ public class WebMvcVersionSupportTest {
 		assertEquals(2, supportedVersions.size());
     	assertTrue(supportedVersions.contains("1.1"));
     	assertTrue(supportedVersions.contains("1.2"));
+    }
+
+    @Test
+    void testWebFluxConfigIndexElement() throws Exception {
+    	Bean[] webConfigBean = springIndex.getMatchingBeans(PROJECT_NAME, "org.springframework.web.reactive.config.WebFluxConfigurer");
+    	assertEquals(1, webConfigBean.length);
+    	
+    	Bean[] webConfigBeanViaName = springIndex.getBeansWithName(PROJECT_NAME, "webfluxConfig");
+    	assertEquals(1, webConfigBeanViaName.length);
+    	
+    	assertSame(webConfigBean[0], webConfigBeanViaName[0]);
+    	
+    	List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean[0]));
+    	assertEquals(1, webConfigElements.size());
+    	
+    	WebConfigIndexElement webConfigElement = webConfigElements.get(0);
+    	
+    	List<String> versionSupportStrategies = webConfigElement.getVersionSupportStrategies();
+    	assertEquals(2, versionSupportStrategies.size());
+    	assertTrue(versionSupportStrategies.contains("Request Header: Webflux-X-API-Version"));
+    	assertTrue(versionSupportStrategies.contains("Path Segment: 0"));
+    	
+    	List<String> supportedVersions = webConfigElement.getSupportedVersions();
+		assertEquals(2, supportedVersions.size());
+    	assertTrue(supportedVersions.contains("2.1"));
+    	assertTrue(supportedVersions.contains("2.2"));
     }
 
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri) {

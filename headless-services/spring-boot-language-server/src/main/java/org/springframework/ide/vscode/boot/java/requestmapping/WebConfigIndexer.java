@@ -37,7 +37,9 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 public class WebConfigIndexer {
 	
 	private static final String CONFIGURE_API_VERSIONING_METHOD = "configureApiVersioning";
-	private static final String CONFIGURE_PATH_MATCHING_METHOD = "configurePathMatch";
+
+	private static final String CONFIGURE_MVC_PATH_MATCHING_METHOD = "configurePathMatch";
+	private static final String CONFIGURE_FLUX_PATH_MATCHING_METHOD = "configurePathMatching";
 	
 	private static Map<String, MethodInvocationExtractor> methodExtractors = initializeMethodExtractors();
 	
@@ -52,7 +54,7 @@ public class WebConfigIndexer {
 		}
 		
 		MethodDeclaration configureVersioningMethod = findMethod(type, webConfigType, CONFIGURE_API_VERSIONING_METHOD);
-		MethodDeclaration configurePathMethod = findMethod(type, webConfigType, CONFIGURE_PATH_MATCHING_METHOD);
+		MethodDeclaration configurePathMethod = findMethod(type, webConfigType, Set.of(CONFIGURE_MVC_PATH_MATCHING_METHOD, CONFIGURE_FLUX_PATH_MATCHING_METHOD));
 
 		if (configureVersioningMethod != null || configurePathMethod != null) {
 			Builder builder = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG);
@@ -112,15 +114,19 @@ public class WebConfigIndexer {
 
 	}
 	
-	private static MethodDeclaration findMethod(TypeDeclaration type, ITypeBinding webmvcConfigurerType, String methodName) {
-		IMethodBinding[] webConfigurerMethods = webmvcConfigurerType.getDeclaredMethods();
+	private static MethodDeclaration findMethod(TypeDeclaration type, ITypeBinding webConfigurerType, String methodName) {
+		return findMethod(type, webConfigurerType, Set.of(methodName));
+	}
+	
+	private static MethodDeclaration findMethod(TypeDeclaration type, ITypeBinding webConfigurerType, Set<String> methodNames) {
+		IMethodBinding[] webConfigurerMethods = webConfigurerType.getDeclaredMethods();
 		if (webConfigurerMethods == null) {
 			return null;
 		}
 		
 		IMethodBinding configureVersioningMethod = null;
 		for (IMethodBinding method : webConfigurerMethods) {
-			if (methodName.equals(method.getName())) {
+			if (methodNames.contains(method.getName())) {
 				configureVersioningMethod = method;
 			}
 		}

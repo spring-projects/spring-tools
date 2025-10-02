@@ -139,6 +139,8 @@ public class WebVersionSupportTest {
 		assertEquals(2, supportedVersions.size());
     	assertTrue(supportedVersions.contains("1.1"));
     	assertTrue(supportedVersions.contains("1.2"));
+    	
+    	assertEquals("/{version}", webConfigElement.getPathPrefix());
     }
 
     @Test
@@ -165,6 +167,8 @@ public class WebVersionSupportTest {
 		assertEquals(2, supportedVersions.size());
     	assertTrue(supportedVersions.contains("2.1"));
     	assertTrue(supportedVersions.contains("2.2"));
+    	
+    	assertEquals("/{webflux-variant-version}", webConfigElement.getPathPrefix());
     }
 
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri) {

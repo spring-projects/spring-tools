@@ -8,7 +8,8 @@ import {
     ExtensionContext,
     Uri,
     lm,
-    TreeItemCollapsibleState
+    TreeItemCollapsibleState,
+    TextDocumentContentProvider
 } from 'vscode';
 
 import * as commons from '@pivotal-tools/commons-vscode';
@@ -239,6 +240,16 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
         registerMiscCommands(context);
 
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit));
+
+		// Register content loader for URIs of type `spring-boot-ls://resource/...` (load boot ls classpath resources)
+        context.subscriptions.push(workspace.registerTextDocumentContentProvider('spring-boot-ls', new (class implements TextDocumentContentProvider {
+            provideTextDocumentContent(uri: Uri) {
+                if (uri.authority === 'resource') {
+                    return commands.executeCommand<string>('sts/resource/fetch-content', uri.fsPath);
+                }
+                throw new Error(`Unsupported uri: ${uri.toString()}`);
+            }
+        })()));
 
         const api = new ApiManager(client).api
 

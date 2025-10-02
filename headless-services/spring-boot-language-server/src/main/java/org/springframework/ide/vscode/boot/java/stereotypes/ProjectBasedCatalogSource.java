@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -40,6 +41,15 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 
 	public ProjectBasedCatalogSource(IJavaProject project) {
 		this.project = project;
+	}
+	
+	public static Optional<String> getDefaultStereotypePath(URL url) {
+		for (String p : DEFAULT_STEREOTYPE_DEFINITIONS) {
+			if (url.equals(ProjectBasedCatalogSource.class.getResource(p))) {
+				return Optional.of(p);
+			}
+		}
+		return Optional.empty();
 	}
 
 	@Override

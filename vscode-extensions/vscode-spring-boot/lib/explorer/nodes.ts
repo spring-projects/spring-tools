@@ -67,6 +67,10 @@ export class StereotypedNode extends SpringNode {
         }
         return item;
     }
+
+    getProjectId(): string {
+        return this.n.attributes.projectId || this.n.attributes.text;
+    }
     
     getNodeId(): string {
         // Create a unique identifier based on node attributes, excluding icon

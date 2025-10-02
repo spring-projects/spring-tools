@@ -51,6 +51,8 @@ import com.google.gson.GsonBuilder;
  */
 public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> {
 
+	private static final String PROJECT_ID = "projectId";
+	
 	private static final String LOCATION = "location";
 	private static final String REFERENCE = "reference";
 	
@@ -159,6 +161,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		this.root
 			.withAttribute(TEXT, labels.getApplicationLabel(application))
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.APPLICATION_KEY))
+			.withAttribute(PROJECT_ID, project.getElementName())
 		;
 	}
 

@@ -41,7 +41,7 @@ public class ApplicationModulesLabelProvider implements
 		
 		var mainPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
 		
-		return modules.getSystemName()	.orElse(project.getElementName()) + " (" + mainPackage.getPackageName() + ")";
+		return modules.getSystemName().orElse(project.getElementName()) + " (" + mainPackage.getPackageName() + ")";
 	}
 
 	@Override

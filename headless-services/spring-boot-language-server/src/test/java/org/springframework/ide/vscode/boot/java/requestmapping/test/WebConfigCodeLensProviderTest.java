@@ -70,13 +70,23 @@ public class WebConfigCodeLensProviderTest {
 	}
 	
 	@Test
-	void codeLensOverMethodFromWebConfig() throws Exception {		
+	void codeLensOverMethodFromWebMvcConfig() throws Exception {		
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
 		assertTrue(contains(cls, "Web Config - Path Prefix: /{version} - Versioning via Request Header: X-API-Version, Path Segment: 0 - Supported Versions: 1.1, 1.2"));
+	}
+	
+	@Test
+	void codeLensOverMethodFromWebFluxConfig() throws Exception {		
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
+		
+		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
+		assertTrue(contains(cls, "Web Config - Path Prefix: /{webflux-variant-version} - Versioning via Request Header: Webflux-X-API-Version, Path Segment: 0 - Supported Versions: 2.1, 2.2"));
 	}
 	
 	@Test
@@ -87,6 +97,16 @@ public class WebConfigCodeLensProviderTest {
 		
 		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
 		assertTrue(contains(cls, "Properties Config - Versioning via Request Header: X-API-Version - Supported Versions: 1"));
+	}
+	
+	@Test
+	void codeLensOverMethodFromPropertiesForWebFlux() throws Exception {		
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
+		
+		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
+		assertTrue(contains(cls, "Properties Config - Versioning via Request Header: Webflux-X-API-Version - Supported Versions: 2"));
 	}
 	
 	@Test

@@ -171,10 +171,17 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 	
 	private List<WebConfigIndexElement> findWebConfigFromProperties(IJavaProject project) {
 		Map<String, BiConsumer<String, WebConfigIndexElement.Builder>> converters = new HashMap<>();
+		
 		converters.put("spring.mvc.apiversion.use.header", (value, configBuilder) -> configBuilder.versionStrategy("Request Header: " + value));
 		converters.put("spring.mvc.apiversion.use.path-segment", (value, configBuilder) -> configBuilder.versionStrategy("Path Segment: " + value));
+		converters.put("spring.mvc.apiversion.use.query-parameter", (value, configBuilder) -> configBuilder.versionStrategy("Query Param: " + value));
 		converters.put("spring.mvc.apiversion.supported", (value, configBuilder) -> configBuilder.supportedVersion(value));
 		
+		converters.put("spring.webflux.apiversion.use.header", (value, configBuilder) -> configBuilder.versionStrategy("Request Header: " + value));
+		converters.put("spring.webflux.apiversion.use.path-segment", (value, configBuilder) -> configBuilder.versionStrategy("Path Segment: " + value));
+		converters.put("spring.webflux.apiversion.use.query-parameter", (value, configBuilder) -> configBuilder.versionStrategy("Query Param: " + value));
+		converters.put("spring.webflux.apiversion.supported", (value, configBuilder) -> configBuilder.supportedVersion(value));
+
 		return IClasspathUtil.getClasspathResourcesFullPaths(project.getClasspath())
 			.filter(path -> ValuePropertyReferencesProvider.isPropertiesFile(path))
 			.map(path -> {

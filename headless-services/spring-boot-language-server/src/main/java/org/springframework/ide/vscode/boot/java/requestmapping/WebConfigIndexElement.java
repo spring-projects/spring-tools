@@ -54,6 +54,12 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		return location;
 	}
 	
+	public boolean isEmpty() {
+		return (pathPrefix == null || pathPrefix.isBlank())
+				&& (versionSupportStrategies == null || versionSupportStrategies.isEmpty())
+				&& (supportedVersions == null || supportedVersions.isEmpty());
+	}
+	
 	public static class Builder {
 		
 		private ConfigType configType;

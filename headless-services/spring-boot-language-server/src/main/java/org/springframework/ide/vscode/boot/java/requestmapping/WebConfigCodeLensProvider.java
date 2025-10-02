@@ -189,6 +189,7 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 				Location location = new Location(path.toUri().toASCIIString(), new Range(new Position(0, 0), new Position(0, 0)));
 				return builder.buildFor(location);
 			})
+			.filter(configElement -> !configElement.isEmpty())
 			.toList();
 	}
 	

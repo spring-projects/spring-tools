@@ -1,4 +1,4 @@
-import { commands, EventEmitter, Event, ExtensionContext, window, Memento } from "vscode";
+import { commands, EventEmitter, Event, ExtensionContext, window, Memento, Uri, QuickPickItem } from "vscode";
 import { SpringNode, StereotypedNode } from "./nodes";
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";

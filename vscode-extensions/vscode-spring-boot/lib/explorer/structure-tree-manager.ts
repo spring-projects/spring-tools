@@ -1,6 +1,5 @@
-import { commands, EventEmitter, Event, ExtensionContext, Disposable, window, TreeItemCollapsibleState, TreeItem, QuickPickItem, QuickPickOptions, Memento, workspace } from "vscode";
+import { commands, EventEmitter, Event, ExtensionContext, window, Memento } from "vscode";
 import { SpringNode, StereotypedNode } from "./nodes";
-import { ExplorerTreeProvider } from "./explorer-tree-provider";
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 
@@ -17,14 +16,20 @@ export class StructureManager {
             if (node && node.getReferenceValue) {
                 const reference = node.getReferenceValue();
                 if (reference) {
-                    // Reference is a specific URL that should be passed to java.open.file command
-                    commands.executeCommand('java.open.file', reference);
+                    const uri = Uri.parse(reference);
+                    if (uri.scheme === 'jdt') {
+                        // Reference is a specific URL that should be passed to java.open.file command
+                        commands.executeCommand('java.open.file', reference);
+                    } else {
+                        // Reference is a specific URL that should be passed to vscode.open command
+                        commands.executeCommand('vscode.open', uri);
+                    }
                 }
             }
         }));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.grouping", async (node: StereotypedNode) => {
-            const projectName = node.getProjectId();
+            const projectName = node.getNodeId();
             const groups = await commands.executeCommand<Groups>("sts/spring-boot/structure/groups", projectName);
             const initialGroups: string[] | undefined = this.getVisibleGroups(projectName);
             const items = (groups?.groups || []).map(g => ({

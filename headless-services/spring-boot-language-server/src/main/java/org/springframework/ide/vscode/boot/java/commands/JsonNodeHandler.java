@@ -36,6 +36,7 @@ import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
 import org.jmolecules.stereotype.tooling.NodeContext;
 import org.jmolecules.stereotype.tooling.NodeHandler;
+import org.springframework.ide.vscode.boot.java.stereotypes.ProjectBasedCatalogSource;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
@@ -97,17 +98,22 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			for (Object source : sources) {
 				if (source instanceof URL) {
 					URL url = (URL) source;
-					if (url.getProtocol().equals("jar")) {
-						reference = convertUrlToJdtUri((URL) source, project.getElementName());
-					}
-					else if (url.getProtocol().equals("file")) {
-						try {
-							reference = url.toURI().toASCIIString();
-						}
-						catch (URISyntaxException e) {
-							// something went wrong
-						}
-					}
+					reference = ProjectBasedCatalogSource.getDefaultStereotypePath(url)
+							.map(p -> "spring-boot-ls://resource" + p)
+							.orElseGet(() -> {
+								if (url.getProtocol().equals("jar")) {
+									return convertUrlToJdtUri((URL) source, project.getElementName());
+								} else if (url.getProtocol().equals("file")) {
+									try {
+										return url.toURI().toASCIIString();
+									}
+									catch (URISyntaxException e) {
+										// something went wrong
+									}
+								}
+								return null;
+							});
+
 				}
 				else if (source instanceof Location) {
 					reference = ((Location) source).getUri();
@@ -123,7 +129,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			);
 		}
 	}
-
+	
 	private String convertUrlToJdtUri(URL url, String projectName) {
 		try {
 			URI uri = url.toURI();

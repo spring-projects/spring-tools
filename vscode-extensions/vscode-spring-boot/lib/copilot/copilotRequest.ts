@@ -41,7 +41,6 @@ export default class CopilotRequest {
                 let response: string = '';
                 messages.push(...message);
                 try {
-                    messages.forEach(m => logger.info(m.content));
                     response = await this.sendRequest(messages, modelOptions, cancellationToken);
                     answer += response;
                     logger.info(`Response: \n`, response);

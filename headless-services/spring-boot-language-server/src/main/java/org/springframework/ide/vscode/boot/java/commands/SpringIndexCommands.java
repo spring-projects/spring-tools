@@ -10,9 +10,12 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
@@ -27,10 +30,11 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
-import com.google.gson.JsonArray;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.reflect.TypeToken;
 
 public class SpringIndexCommands {
 	
@@ -54,15 +58,27 @@ public class SpringIndexCommands {
 			CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
 			return projectFinder.all().stream()
 					.sorted(Comparator.comparing(IJavaProject::getElementName))
-					.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata, args.selectedGroups))
+					.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata,
+							args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))
 					.filter(Objects::nonNull)
 					.collect(Collectors.toList());
 		}));
 
 		server.onCommand(SPRING_STRUCTURE_GROUPS_CMD, params -> server.getAsync().invoke(() -> {
-			return projectFinder.all().stream()
-					.map(project -> getGroups(project))
-					.toList();
+			if (params.getArguments().size() == 1) {
+				Object o = params.getArguments().get(0);
+				String name = null;
+				if (o instanceof JsonElement) {
+					name = ((JsonElement) o).getAsString();
+				} else if (o instanceof String) {
+					name = (String) o;
+				}
+				if (name != null) {
+					final String projectName = name;
+					return projectFinder.all().stream().filter(p -> projectName.equals(p.getElementName())).findFirst().map(this::getGroups).orElseThrow();
+				}
+			}
+			return projectFinder.all().stream().map(this::getGroups);
 		}));
 	}
 	
@@ -76,7 +92,7 @@ public class SpringIndexCommands {
 		return new Groups(project.getElementName(), groups);
 	}
 	
-	private Node nodeFrom(IJavaProject project, CachedSpringMetamodelIndex springIndex, boolean updateMetadata, List<String> selectedGroups) {
+	private Node nodeFrom(IJavaProject project, CachedSpringMetamodelIndex springIndex, boolean updateMetadata, Collection<String> selectedGroups) {
 		log.info("create structural view tree information for project: " + project.getElementName());
 		
 		if (updateMetadata) {
@@ -103,11 +119,11 @@ public class SpringIndexCommands {
 		}
 	}
 	
-	private static record StructureCommandArgs(boolean updateMetadata, List<String> selectedGroups) {
+	private static record StructureCommandArgs(boolean updateMetadata, Map<String, Set<String>> selectedGroups) {
 		
 		public static StructureCommandArgs parseFrom(ExecuteCommandParams params) {
 			boolean updateMetadata = false;
-			List<String> selectedGroups = null;
+			Map<String, Set<String>> selectedGroups = null;
 			
 			List<Object> arguments = params.getArguments();
 			if (arguments != null && arguments.size() == 1) {
@@ -119,11 +135,8 @@ public class SpringIndexCommands {
 					updateMetadata = jsonElement != null && jsonElement instanceof JsonPrimitive ? jsonElement.getAsBoolean() : false;
 					
 					JsonElement groupsElement = paramObject.get("groups");
-					if (groupsElement instanceof JsonArray && ((JsonArray) groupsElement).size() > 0) {
-						JsonArray groupsArray = (JsonArray) groupsElement;
-						selectedGroups = groupsArray.asList().stream()
-							.map(groupEntry -> groupEntry.getAsString())
-							.toList();
+					if (groupsElement != null) {
+						selectedGroups = new Gson().fromJson(groupsElement, new TypeToken<Map<String, Set<String>>>() {});
 					}
 				}
 			}

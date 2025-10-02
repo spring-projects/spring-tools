@@ -28,8 +28,8 @@ import * as springBootAgent from './copilot/springBootAgent';
 import { applyLspEdit } from "./copilot/guideApply";
 import { isLlmApiReady } from "./copilot/util";
 import CopilotRequest, { logger } from "./copilot/copilotRequest";
-import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
 import { StructureManager } from "./explorer/structure-tree-manager";
+import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
 
 const PROPERTIES_LANGUAGE_ID = "spring-boot-properties";
 const YAML_LANGUAGE_ID = "spring-boot-properties-yaml";
@@ -159,58 +159,9 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
     return commons.activate(options, context).then(client => {
 
-        // Spring structure tree in the Explorer view
-        /*
-          Requires the following code to be added in the `package.json` to
-            1. Declare view:
-                "views": {
-                    "explorer": [
-                        {
-                            "id": "explorer.spring",
-                            "name": "Spring",
-                            "when": "java:serverMode || workbenchState==empty",
-                            "contextualTitle": "Spring",
-                            "icon": "resources/logo.png"
-                        }
-                    ]
-                },
-            
-            2. Menu item (toolbar action) on the explorer view delegating to the command
-                "view/title": [
-                    {
-                        "command": "vscode-spring-boot.structure.refresh",
-                        "when": "view == explorer.spring",
-                        "group": "navigation@5"
-                    }
-                ],
-
-         */
-        const structureManager = new StructureManager();
-        const explorerTreeProvider = new ExplorerTreeProvider(structureManager);
-        const treeView = window.createTreeView('explorer.spring', { treeDataProvider: explorerTreeProvider, showCollapseAll: true });
-        
-        // Track expansion/collapse events to preserve state across refreshes
-        context.subscriptions.push(treeView.onDidExpandElement(e => {
-            const nodeId = e.element.getNodeId();
-            explorerTreeProvider.setExpansionState(nodeId, TreeItemCollapsibleState.Expanded);
-        }));
-        
-        context.subscriptions.push(treeView.onDidCollapseElement(e => {
-            const nodeId = e.element.getNodeId();
-            explorerTreeProvider.setExpansionState(nodeId, TreeItemCollapsibleState.Collapsed);
-        }));
-        
-        context.subscriptions.push(treeView);
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => structureManager.refresh(true)));
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node) => {
-            if (node && node.getReferenceValue) {
-                const reference = node.getReferenceValue();
-                if (reference) {
-                    // Reference is a specific URL that should be passed to java.open.file command
-                    commands.executeCommand('java.open.file', reference);
-                }
-            }
-        })); 
+        // Activation of structure explorer
+        const structureManager = new StructureManager(context);
+        new ExplorerTreeProvider(structureManager).createTreeView(context, 'explorer.spring');
 
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
             // Boot LS is fully started

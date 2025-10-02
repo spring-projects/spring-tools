@@ -209,6 +209,11 @@
           "command": "vscode-spring-boot.structure.openReference",
           "when": "view == explorer.spring && viewItem == stereotypedNodeWithReference",
           "group": "inline"
+        },
+        {
+          "command": "vscode-spring-boot.structure.grouping",
+          "when": "view == explorer.spring && viewItem == project",
+          "group": "inline"
         }
       ]
     },
@@ -309,6 +314,12 @@
         "title": "Open Reference",
         "category": "Spring Boot",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.grouping",
+        "title": "Select Groups to Show/Hide",
+        "category": "Spring Boot",
+        "icon": "$(checklist)"
       }
     ],
     "configuration": [

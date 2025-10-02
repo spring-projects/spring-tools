@@ -1,4 +1,4 @@
-import { Event, EventEmitter, ProviderResult, TreeDataProvider, TreeItem, TreeItemCollapsibleState } from "vscode";
+import { Event, EventEmitter, ExtensionContext, ProviderResult, TreeDataProvider, TreeItem, TreeItemCollapsibleState, window } from "vscode";
 import { StructureManager } from "./structure-tree-manager";
 import { SpringNode } from "./nodes";
 
@@ -15,6 +15,24 @@ export class ExplorerTreeProvider implements TreeDataProvider<SpringNode> {
             // Expansion states are tracked via onDidExpandElement/onDidCollapseElement events
             this.emitter.fire(e);
         });
+    }
+
+    createTreeView(context: ExtensionContext, viewId: string) {
+        const treeView = window.createTreeView(viewId, { treeDataProvider: this, showCollapseAll: true });
+            
+        // Track expansion/collapse events to preserve state across refreshes
+        context.subscriptions.push(treeView.onDidExpandElement(e => {
+            const nodeId = e.element.getNodeId();
+            this.setExpansionState(nodeId, TreeItemCollapsibleState.Expanded);
+        }));
+            
+        context.subscriptions.push(treeView.onDidCollapseElement(e => {
+            const nodeId = e.element.getNodeId();
+            this.setExpansionState(nodeId, TreeItemCollapsibleState.Collapsed);
+        }));
+        
+        context.subscriptions.push(treeView);
+        return treeView
     }
 
     getTreeItem(element: SpringNode): TreeItem | Thenable<TreeItem> {
@@ -35,11 +53,11 @@ export class ExplorerTreeProvider implements TreeDataProvider<SpringNode> {
     }
 
 
-    getExpansionState(nodeId: string): TreeItemCollapsibleState | undefined {
+    private getExpansionState(nodeId: string): TreeItemCollapsibleState | undefined {
         return this.expansionStates.get(nodeId);
     }
 
-    setExpansionState(nodeId: string, state: TreeItemCollapsibleState): void {
+    private setExpansionState(nodeId: string, state: TreeItemCollapsibleState): void {
         this.expansionStates.set(nodeId, state);
     }
 

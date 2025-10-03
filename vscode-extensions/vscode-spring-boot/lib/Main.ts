@@ -8,7 +8,8 @@ import {
     ExtensionContext,
     Uri,
     lm,
-    TreeItemCollapsibleState
+    TreeItemCollapsibleState,
+    TextDocumentContentProvider
 } from 'vscode';
 
 import * as commons from '@pivotal-tools/commons-vscode';
@@ -190,6 +191,13 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
         registerMiscCommands(context);
 
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit));
+
+		// Register content loader for URIs of type `spring-boot-ls:...` (load JAR content via Boot LS)
+        context.subscriptions.push(workspace.registerTextDocumentContentProvider('spring-boot-ls', new (class implements TextDocumentContentProvider {
+            provideTextDocumentContent(uri: Uri) {
+                return commands.executeCommand<string>('sts/jar/fetch-content', uri.toString());
+            }
+        })()));
 
         const api = new ApiManager(client).api
 

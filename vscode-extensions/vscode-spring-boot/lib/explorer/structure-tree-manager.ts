@@ -1,6 +1,5 @@
-import { commands, EventEmitter, Event, ExtensionContext, Disposable, window, TreeItemCollapsibleState, TreeItem, QuickPickItem, QuickPickOptions, Memento, workspace } from "vscode";
+import { commands, EventEmitter, Event, ExtensionContext, window, Memento, Uri, QuickPickItem } from "vscode";
 import { SpringNode, StereotypedNode } from "./nodes";
-import { ExplorerTreeProvider } from "./explorer-tree-provider";
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 
@@ -17,8 +16,7 @@ export class StructureManager {
             if (node && node.getReferenceValue) {
                 const reference = node.getReferenceValue();
                 if (reference) {
-                    // Reference is a specific URL that should be passed to java.open.file command
-                    commands.executeCommand('java.open.file', reference);
+                    commands.executeCommand('vscode.open', Uri.parse(reference));
                 }
             }
         }));

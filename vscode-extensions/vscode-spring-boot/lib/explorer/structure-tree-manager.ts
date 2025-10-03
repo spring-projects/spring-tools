@@ -22,7 +22,7 @@ export class StructureManager {
         }));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.grouping", async (node: StereotypedNode) => {
-            const projectName = node.getNodeId();
+            const projectName = node.getProjectId();
             const groups = await commands.executeCommand<Groups>("sts/spring-boot/structure/groups", projectName);
             const initialGroups: string[] | undefined = this.getVisibleGroups(projectName);
             const items = (groups?.groups || []).map(g => ({

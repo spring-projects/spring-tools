@@ -192,13 +192,10 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit));
 
-		// Register content loader for URIs of type `spring-boot-ls://resource/...` (load boot ls classpath resources)
+		// Register content loader for URIs of type `spring-boot-ls:...` (load JAR content via Boot LS)
         context.subscriptions.push(workspace.registerTextDocumentContentProvider('spring-boot-ls', new (class implements TextDocumentContentProvider {
             provideTextDocumentContent(uri: Uri) {
-                if (uri.authority === 'resource') {
-                    return commands.executeCommand<string>('sts/resource/fetch-content', uri.fsPath);
-                }
-                throw new Error(`Unsupported uri: ${uri.toString()}`);
+                return commands.executeCommand<string>('sts/jar/fetch-content', uri.toString());
             }
         })()));
 

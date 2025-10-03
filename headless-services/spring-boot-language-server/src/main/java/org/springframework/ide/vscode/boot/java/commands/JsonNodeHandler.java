@@ -16,7 +16,6 @@
 
 package org.springframework.ide.vscode.boot.java.commands;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
 import org.jmolecules.stereotype.tooling.NodeContext;
 import org.jmolecules.stereotype.tooling.NodeHandler;
-import org.springframework.ide.vscode.boot.java.stereotypes.ProjectBasedCatalogSource;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
@@ -98,22 +96,14 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			for (Object source : sources) {
 				if (source instanceof URL) {
 					URL url = (URL) source;
-					reference = ProjectBasedCatalogSource.getDefaultStereotypePath(url)
-							.map(p -> "spring-boot-ls://resource" + p)
-							.orElseGet(() -> {
-								if (url.getProtocol().equals("jar")) {
-									return convertUrlToJdtUri((URL) source, project.getElementName());
-								} else if (url.getProtocol().equals("file")) {
-									try {
-										return url.toURI().toASCIIString();
-									}
-									catch (URISyntaxException e) {
-										// something went wrong
-									}
-								}
-								return null;
-							});
-
+					try {
+						reference = url.toURI().toASCIIString();
+						if (reference.startsWith(Misc.JAR_URL_PROTOCOL_PREFIX)) {
+							reference = reference.replaceFirst(Misc.JAR_URL_PROTOCOL_PREFIX, Misc.BOOT_LS_URL_PRTOCOL_PREFIX);
+						}
+					} catch (URISyntaxException e) {
+						// something went wrong
+					}
 				}
 				else if (source instanceof Location) {
 					reference = ((Location) source).getUri();
@@ -130,38 +120,6 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		}
 	}
 	
-	private String convertUrlToJdtUri(URL url, String projectName) {
-		try {
-			URI uri = url.toURI();
-        
-			// Extract the scheme-specific part (everything after "jar:")
-			String schemeSpecificPart = uri.getSchemeSpecificPart();
-
-			// Split on "!/" to separate jar file path from internal path
-			String[] parts = schemeSpecificPart.split("!/", 2);
-
-			if (parts.length != 2) {
-				return null;
-			}
-
-			String jarFilePath = parts[0];
-			String internalPath = parts[1];
-
-			// Remove "file:" prefix from jar file path if present
-			if (jarFilePath.startsWith("file:")) {
-				jarFilePath = jarFilePath.substring(5);
-			}
-			
-	        String jarFileName = jarFilePath.substring(jarFilePath.lastIndexOf('/') + 1);
-	        
-	        // Construct the JDT URI with just the jar file name
-	        return "jdt://contents/" + jarFileName + "/" + internalPath + "?=" + projectName;
-
-		} catch (URISyntaxException e) {
-			return null;
-		}
-    }
-		
 	@Override
 	public void handleApplication(A application) {
 		this.root

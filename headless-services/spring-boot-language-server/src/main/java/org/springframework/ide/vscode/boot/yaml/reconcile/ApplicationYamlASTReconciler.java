@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2019 Pivotal, Inc.
+ * Copyright (c) 2016, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -341,6 +341,8 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 					reconcile(root, element, domainType);
 				}
 			}
+		} else if (typeUtil.isObjectOrSequence(type)) {
+			// skip reconciling further as it can be anything - no schema
 		} else {
 			expectTypeFoundSequence(type, seq);
 		}

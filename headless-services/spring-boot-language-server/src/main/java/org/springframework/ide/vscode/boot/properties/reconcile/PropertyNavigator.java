@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016-2017 Pivotal, Inc.
+ * Copyright (c) 2016, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -92,7 +92,7 @@ public class PropertyNavigator {
 				} else if (navOp=='[') {
 					if (typeUtil.isBracketable(type)) {
 						return bracketNavigate(offset, type);
-					} else {
+					} else if (!typeUtil.isObjectOrSequence(type)) {
 						problemCollector.accept(problem(ApplicationPropertiesProblemType.PROP_INVALID_INDEXED_NAVIGATION,
 								"Can't use '[..]' navigation for property '"+textBetween(region.getStart(), offset)+"' of type "+type,
 								offset, region.getEnd()-offset));

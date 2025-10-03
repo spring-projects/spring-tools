@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -5059,6 +5059,35 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         Diagnostic problem = editor.assertProblems("local-port|Deprecated").get(0);
         editor.assertNoCodeAction(problem);
         assertEquals(DiagnosticSeverity.Error, problem.getSeverity());
+    }
+    
+    @Test
+    void sequenceOrObject() throws Exception {
+        IJavaProject p = createPredefinedMavenProject("map-of-pojo");
+        useProject(p);
+        data("my.any", "java.util.Map<java.lang.String,java.lang.Object>", null, "Some map");
+
+        Editor editor = newEditor(
+                "my:\n" +
+                        "  any:\n" +
+                		"    entry:\n" + 
+                        "      - value:\n" +
+                        "        name: Freddy\n" +
+                        "        age: the-age\n" +
+                        "        bad: 123"
+        );
+        editor.assertProblems();
+
+        editor = newEditor(
+                "my:\n" +
+                        "  any:\n" +
+                		"    entry:\n" + 
+                        "      value:\n" +
+                        "        name: Freddy\n" +
+                        "        age: the-age\n" +
+                        "        bad: 123"
+        );
+        editor.assertProblems();
     }
 
 	///////////////// cruft ////////////////////////////////////////////////////////

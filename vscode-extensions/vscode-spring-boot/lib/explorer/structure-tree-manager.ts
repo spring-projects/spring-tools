@@ -16,14 +16,7 @@ export class StructureManager {
             if (node && node.getReferenceValue) {
                 const reference = node.getReferenceValue();
                 if (reference) {
-                    const uri = Uri.parse(reference);
-                    if (uri.scheme === 'jdt') {
-                        // Reference is a specific URL that should be passed to java.open.file command
-                        commands.executeCommand('java.open.file', reference);
-                    } else {
-                        // Reference is a specific URL that should be passed to vscode.open command
-                        commands.executeCommand('vscode.open', uri);
-                    }
+                    commands.executeCommand('vscode.open', Uri.parse(reference));
                 }
             }
         }));

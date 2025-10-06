@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -2309,6 +2309,30 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
                 "my.color-set=red,BLUE<*>"
         );
     }
+    
+    @Test
+    void sequenceOrObject() throws Exception {
+        data("my.any", "java.util.Map<java.lang.String,java.lang.Object>", null, "Some map");
+
+        Editor editor = newEditor(
+        		"""
+        		my.any.entry.value.name=Freddy
+        		my.any.entry.value.age=the-age
+        		my.any.entry.value.bad=123
+        		"""
+        );
+        editor.assertProblems();
+
+        editor = newEditor(
+        		"""
+        		my.any.entry[0].value.name=Freddy
+        		my.any.entry[0].value.age=the-age
+        		my.any.entry[0].value.bad=123
+        		"""
+        );
+        editor.assertProblems();
+    }
+
 
 	////////////// harness code below /////////////////////////
 

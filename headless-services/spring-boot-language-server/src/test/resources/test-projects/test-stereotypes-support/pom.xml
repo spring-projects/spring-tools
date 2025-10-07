@@ -20,8 +20,8 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>17</java.version>
 
-		<jmolecules.version>2.0.0-STEREOTYPE-SNAPSHOT</jmolecules.version>
-		<jmolecules.integrations.version>0.30.0-STEREOTYPE-SNAPSHOT</jmolecules.integrations.version>
+		<jmolecules.version>2.0.0-SNAPSHOT</jmolecules.version>
+		<jmolecules.integrations.version>0.31.0-SNAPSHOT</jmolecules.integrations.version>
 
 	</properties>
 

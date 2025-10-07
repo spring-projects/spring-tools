@@ -97,8 +97,8 @@ public class JdtConfig {
 		return new NoAutowiredOnConstructorReconciler(server.getQuickfixRegistry());
 	}
 	
-	@Bean PathInControllerAnnotationReconciler pathInControllerAnnotationReconciler() {
-		return new PathInControllerAnnotationReconciler();
+	@Bean PathInControllerAnnotationReconciler pathInControllerAnnotationReconciler(SimpleLanguageServer server) {
+		return new PathInControllerAnnotationReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex) {

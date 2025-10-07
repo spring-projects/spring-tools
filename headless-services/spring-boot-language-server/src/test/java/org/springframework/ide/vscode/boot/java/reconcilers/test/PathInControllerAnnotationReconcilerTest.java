@@ -20,10 +20,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.PathInControllerAnnotationReconciler;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
 
 public class PathInControllerAnnotationReconcilerTest extends BaseReconcilerTest {
-
+	
 	@Override
 	protected String getFolder() {
 		return "pathincontrollerannotation";
@@ -36,7 +37,7 @@ public class PathInControllerAnnotationReconcilerTest extends BaseReconcilerTest
 
 	@Override
 	protected JdtAstReconciler getReconciler() {
-		return new PathInControllerAnnotationReconciler();
+		return new PathInControllerAnnotationReconciler(new QuickfixRegistry());
 	}
 
 	@BeforeEach
@@ -71,9 +72,34 @@ public class PathInControllerAnnotationReconcilerTest extends BaseReconcilerTest
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("\"/mypath\"", markedStr);
 
-		assertEquals(0, problem.getQuickfixes().size());
+		assertEquals(2, problem.getQuickfixes().size());
 	}
 
+	@Test
+	void controllerWithPath() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.stereotype.Controller;
+				
+				@Controller("/mypath")
+				public class A {
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		
+		assertEquals(Boot2JavaProblemType.PATH_IN_CONTROLLER_ANNOTATION, problem.getType());
+		
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("\"/mypath\"", markedStr);
+
+		assertEquals(2, problem.getQuickfixes().size());
+	}
+	
 	@Test
 	void restControllerWithoutPath() throws Exception {
 		String source = """

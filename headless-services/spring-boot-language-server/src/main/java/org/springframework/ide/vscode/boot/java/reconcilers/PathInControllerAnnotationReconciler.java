@@ -15,6 +15,8 @@ import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.spri
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -28,14 +30,25 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
+import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
+import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
+import org.springframework.ide.vscode.commons.rewrite.java.NoPathInControllerAnnotation;
 
 public class PathInControllerAnnotationReconciler implements JdtAstReconciler {
 
-	private static final String PROBLEM_LABEL = "attribute refers to the component name, but looks like a path definition";
+	private static final String FIX_LABEL = "Move path to a `@RequestMapping`";
 
-	public PathInControllerAnnotationReconciler() {
+	private static final String PROBLEM_LABEL = "attribute refers to the component name, but looks like a path definition";
+	
+	private static final List<String> CONTROLLER_ANNOTATIONS = List.of(Annotations.CONTROLLER); 
+	
+	private final QuickfixRegistry registry;
+
+	public PathInControllerAnnotationReconciler(QuickfixRegistry registry) {
+		this.registry = registry;
 	}
 
 	@Override
@@ -64,13 +77,13 @@ public class PathInControllerAnnotationReconciler implements JdtAstReconciler {
 				if (!insideOfSourceFolders) {
 					return super.visit(typeDecl);
 				}
-					
-				boolean isRestController = annotationHierarchies.isAnnotatedWith(typeDecl.resolveBinding(), Annotations.REST_CONTROLLER);
-				if (!isRestController) {
+				
+				Optional<String> annotatedWith = CONTROLLER_ANNOTATIONS.stream().filter(annotationType -> annotationHierarchies.isAnnotatedWith(typeDecl.resolveBinding(), annotationType)).findFirst();
+				if (annotatedWith.isEmpty()) {
 					return super.visit(typeDecl);
 				}
 					
-				Annotation controllerAnnotation = ReconcileUtils.findAnnotation(annotationHierarchies, typeDecl, Annotations.REST_CONTROLLER, false);
+				Annotation controllerAnnotation = ReconcileUtils.findAnnotation(annotationHierarchies, typeDecl, annotatedWith.get(), true);
 				if (controllerAnnotation.isSingleMemberAnnotation()) {
 					SingleMemberAnnotation sma = (SingleMemberAnnotation) controllerAnnotation;
 					Expression value = sma.getValue();
@@ -80,6 +93,16 @@ public class PathInControllerAnnotationReconciler implements JdtAstReconciler {
 
 						ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
 								value.getStartPosition(), value.getLength());
+						
+						String strUri = docUri.toASCIIString();
+						ReconcileUtils.setRewriteFixes(registry, problem, List.of(
+								// Assume node scope is just the whole file for this reconciler and quick fix only
+								new FixDescriptor(NoPathInControllerAnnotation.class.getName(), List.of(strUri), ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.NODE))
+									.withRecipeScope(RecipeScope.FILE),
+								new FixDescriptor(NoPathInControllerAnnotation.class.getName(), List.of(strUri), ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.PROJECT))
+									.withRecipeScope(RecipeScope.PROJECT)
+									
+						));
 
 						context.getProblemCollector().accept(problem);
 					}

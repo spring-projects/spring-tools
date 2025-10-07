@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,7 +102,7 @@ public class WebApiVersioningNotConfiguredReconcilerTest extends BaseReconcilerT
 		List<ReconcileProblem> problems = reconcile(() -> {
 			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
 			
-			WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG).versionStrategy("version-strategy-configured").buildFor(null);
+			WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG).versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4))).buildFor(null);
 			springIndex.updateElements(getProjectName(), "soneURI", new SpringIndexElement[] {webConfig});
 
 			WebApiVersioningReconciler r = new WebApiVersioningReconciler(springIndex);

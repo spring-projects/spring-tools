@@ -1,6 +1,7 @@
 package org.test.versions;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.accept.SemanticApiVersionParser;
 import org.springframework.web.reactive.config.ApiVersionConfigurer;
 import org.springframework.web.reactive.config.PathMatchConfigurer;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
@@ -17,6 +18,7 @@ public class WebfluxConfig implements WebFluxConfigurer {
 	public void configureApiVersioning(ApiVersionConfigurer configurer) {
 		configurer.useRequestHeader("Webflux-X-API-Version");
 		configurer.usePathSegment(0).addSupportedVersions("2.1", "2.2");
+		configurer.setVersionParser(new SemanticApiVersionParser());
 	}
 
 }

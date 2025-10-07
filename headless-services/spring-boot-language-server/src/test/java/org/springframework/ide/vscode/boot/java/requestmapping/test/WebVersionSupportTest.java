@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,7 @@ import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement.VersioningStrategy;
 import org.springframework.ide.vscode.boot.java.utils.test.SpringIndexerTest;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -135,12 +138,22 @@ public class WebVersionSupportTest {
     	assertTrue(versionSupportStrategies.contains("Request Header: X-API-Version"));
     	assertTrue(versionSupportStrategies.contains("Path Segment: 0"));
     	
+    	List<VersioningStrategy> strategiesWithRanges = webConfigElement.getVersionSupportStrategiesWithRanges();
+    	assertEquals(2, strategiesWithRanges.size());
+    	VersioningStrategy headerVersioningStrategy = strategiesWithRanges.stream().filter(strategy -> strategy.versioningStrategy().contains("Request Header")).findFirst().get();
+    	assertEquals(new Range(new Position(17, 2), new Position(17, 46)), headerVersioningStrategy.range());
+
+    	VersioningStrategy pathVersioningStrategy = strategiesWithRanges.stream().filter(strategy -> strategy.versioningStrategy().contains("Path Segment")).findFirst().get();
+    	assertEquals(new Range(new Position(18, 2), new Position(18, 30)), pathVersioningStrategy.range());
+    	
     	List<String> supportedVersions = webConfigElement.getSupportedVersions();
 		assertEquals(2, supportedVersions.size());
     	assertTrue(supportedVersions.contains("1.1"));
     	assertTrue(supportedVersions.contains("1.2"));
     	
     	assertEquals("/{version}", webConfigElement.getPathPrefix());
+    	
+    	assertEquals("org.test.versions.TestApiVersionParser", webConfigElement.getVersionParser());
     }
 
     @Test

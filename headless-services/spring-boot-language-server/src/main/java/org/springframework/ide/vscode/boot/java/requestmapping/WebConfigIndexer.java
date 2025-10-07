@@ -14,8 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
+import org.apache.commons.lang3.function.TriConsumer;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Expression;
@@ -24,6 +25,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.lsp4j.Range;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
@@ -32,6 +34,7 @@ import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexEle
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 public class WebConfigIndexer {
@@ -104,7 +107,7 @@ public class WebConfigIndexer {
 					ITypeBinding declaringClass = methodBinding.getDeclaringClass();
 
 					if (declaringClass != null && invocationExtractor.getTargetInvocationType().contains(declaringClass.getQualifiedName())) {
-						invocationExtractor.extractParameters(methodInvocation, builder);
+						invocationExtractor.extractParameters(doc, methodInvocation, builder);
 					}
 				}
 				
@@ -156,31 +159,56 @@ public class WebConfigIndexer {
 				Annotations.WEB_FLUX_API_VERSION_CONFIGURER_INTERFACE
 		);
 		
-		result.put("addSupportedVersions", new MultipleArgumentsExtractor(apiConfigurerInterfaces, (expression, webconfigBuilder) -> {
+		result.put("addSupportedVersions", new MultipleArgumentsExtractor(apiConfigurerInterfaces, (doc, expression, webconfigBuilder) -> {
 			String[] expressionValueAsArray = ASTUtils.getExpressionValueAsArray(expression, (dep) -> {});
 			for (String supportedVersion : expressionValueAsArray) {
 				webconfigBuilder.supportedVersion(supportedVersion);
 			}
 		}));
 		
-		result.put("useRequestHeader", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
-			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
-			if (value != null) {
-				webconfigBuilder.versionStrategy("Request Header: " + value);
+		result.put("useRequestHeader", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+			try {
+				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				if (value != null) {
+					ASTNode parent = expression.getParent();
+					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
+					webconfigBuilder.versionStrategy("Request Header: " + value, range);
+				}
+			}
+			catch (BadLocationException e) {
 			}
 		}));
 
-		result.put("usePathSegment", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
-			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
-			if (value != null) {
-				webconfigBuilder.versionStrategy("Path Segment: " + value);
+		result.put("usePathSegment", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+			try {
+				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				if (value != null) {
+					ASTNode parent = expression.getParent();
+					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
+					webconfigBuilder.versionStrategy("Path Segment: " + value, range);
+				}
+			}
+			catch (BadLocationException e) {
 			}
 		}));
 
-		result.put("useQueryParam", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
-			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
-			if (value != null) {
-				webconfigBuilder.versionStrategy("Query Param: " + value);
+		result.put("useQueryParam", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+			try {
+				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				if (value != null) {
+					ASTNode parent = expression.getParent();
+					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
+					webconfigBuilder.versionStrategy("Query Param: " + value, range);
+				}
+			}
+			catch (BadLocationException e) {
+			}
+		}));
+
+		result.put("setVersionParser", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+			ITypeBinding typeBinding = expression.resolveTypeBinding();
+			if (typeBinding != null) {
+				webconfigBuilder.versionParser(typeBinding.getQualifiedName());
 			}
 		}));
 
@@ -190,7 +218,7 @@ public class WebConfigIndexer {
 				Annotations.WEB_FLUX_PATH_MATCH_CONFIGURER_INTERFACE
 		);
 		
-		result.put("addPathPrefix", new SingleArgumentExtractor(pathConfigurerInterfaces, 0, (expression, webconfigBuilder) -> {
+		result.put("addPathPrefix", new SingleArgumentExtractor(pathConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 			if (value != null) {
 				webconfigBuilder.pathPrefix(value);
@@ -203,37 +231,37 @@ public class WebConfigIndexer {
 	
 	interface MethodInvocationExtractor {
 		Set<String> getTargetInvocationType();
-		void extractParameters(MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder);
+		void extractParameters(TextDocument doc, MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder);
 	}
 
-	record SingleArgumentExtractor (Set<String> invocationTargetType, int argumentNo, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
+	record SingleArgumentExtractor (Set<String> invocationTargetType, int argumentNo, TriConsumer<TextDocument, Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
 		
 		@Override
 		public Set<String> getTargetInvocationType() {
 			return invocationTargetType;
 		}
 		
-		public void extractParameters(MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder) {
+		public void extractParameters(TextDocument doc, MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder) {
 			@SuppressWarnings("unchecked")
 			List<Expression> arguments = methodInvocation.arguments();
 			Expression expression = arguments.get(argumentNo);
-			consumer.accept(expression, builder);
+			consumer.accept(doc, expression, builder);
 		}
 		
 	}
 	
-	record MultipleArgumentsExtractor (Set<String> invocationTargetType, BiConsumer<Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
+	record MultipleArgumentsExtractor (Set<String> invocationTargetType, TriConsumer<TextDocument, Expression, WebConfigIndexElement.Builder> consumer) implements MethodInvocationExtractor {
 		
 		@Override
 		public Set<String> getTargetInvocationType() {
 			return invocationTargetType;
 		}
 		
-		public void extractParameters(MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder) {
+		public void extractParameters(TextDocument doc, MethodInvocation methodInvocation, WebConfigIndexElement.Builder builder) {
 			@SuppressWarnings("unchecked")
 			List<Expression> arguments = methodInvocation.arguments();
 			for (Expression expression : arguments) {
-				consumer.accept(expression, builder);
+				consumer.accept(doc, expression, builder);
 			}
 		}
 		

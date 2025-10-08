@@ -845,7 +845,7 @@
           "spring-boot.ls.problem.boot4.REGISTRAR_BEAN_DECLARATION": {
             "type": "string",
             "default": "WARNING",
-            "description": "Bean Registrar should be added to a configurarion bean via `@Import`",
+            "description": "Bean Registrar should be added to a configuration bean via `@Import`",
             "enum": [
               "IGNORE",
               "INFO",
@@ -857,7 +857,43 @@
           "spring-boot.ls.problem.boot4.API_VERSIONING_NOT_CONFIGURED": {
             "type": "string",
             "default": "WARNING",
-            "description": "API Versioninig not configured anywhere",
+            "description": "API Versioning used but not configured anywhere",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSION_SYNTAX_ERROR": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API version cannot be parsed into a standard semantic version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API versioninig path segment strategy should not be mixed with other strategies",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API versioninig strategy is configured multiple times with the same strategy",
             "enum": [
               "IGNORE",
               "INFO",

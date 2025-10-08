@@ -39,10 +39,24 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 public class WebConfigIndexer {
 	
-	private static final String CONFIGURE_API_VERSIONING_METHOD = "configureApiVersioning";
+	public static final String CONFIGURE_API_VERSIONING_METHOD = "configureApiVersioning";
 
-	private static final String CONFIGURE_MVC_PATH_MATCHING_METHOD = "configurePathMatch";
-	private static final String CONFIGURE_FLUX_PATH_MATCHING_METHOD = "configurePathMatching";
+	public static final String CONFIGURE_MVC_PATH_MATCHING_METHOD = "configurePathMatch";
+	public static final String CONFIGURE_FLUX_PATH_MATCHING_METHOD = "configurePathMatching";
+
+	public static final String ADD_PATH_PREFIX = "addPathPrefix";
+	public static final String SET_VERSION_PARSER = "setVersionParser";
+	public static final String USE_QUERY_PARAM = "useQueryParam";
+	public static final String USE_PATH_SEGMENT = "usePathSegment";
+	public static final String USE_REQUEST_HEADER = "useRequestHeader";
+	public static final String ADD_SUPPORTED_VERSIONS = "addSupportedVersions";
+	
+	public static final Set<String> VERSIONING_CONFIG_METHODS = Set.of(
+			USE_PATH_SEGMENT,
+			USE_QUERY_PARAM,
+			USE_REQUEST_HEADER
+	);
+
 	
 	private static Map<String, MethodInvocationExtractor> methodExtractors = initializeMethodExtractors();
 	
@@ -117,7 +131,7 @@ public class WebConfigIndexer {
 
 	}
 	
-	private static MethodDeclaration findMethod(TypeDeclaration type, ITypeBinding webConfigurerType, String methodName) {
+	public static MethodDeclaration findMethod(TypeDeclaration type, ITypeBinding webConfigurerType, String methodName) {
 		return findMethod(type, webConfigurerType, Set.of(methodName));
 	}
 	
@@ -159,14 +173,14 @@ public class WebConfigIndexer {
 				Annotations.WEB_FLUX_API_VERSION_CONFIGURER_INTERFACE
 		);
 		
-		result.put("addSupportedVersions", new MultipleArgumentsExtractor(apiConfigurerInterfaces, (doc, expression, webconfigBuilder) -> {
+		result.put(ADD_SUPPORTED_VERSIONS, new MultipleArgumentsExtractor(apiConfigurerInterfaces, (doc, expression, webconfigBuilder) -> {
 			String[] expressionValueAsArray = ASTUtils.getExpressionValueAsArray(expression, (dep) -> {});
 			for (String supportedVersion : expressionValueAsArray) {
 				webconfigBuilder.supportedVersion(supportedVersion);
 			}
 		}));
 		
-		result.put("useRequestHeader", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+		result.put(USE_REQUEST_HEADER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
 				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 				if (value != null) {
@@ -179,7 +193,7 @@ public class WebConfigIndexer {
 			}
 		}));
 
-		result.put("usePathSegment", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+		result.put(USE_PATH_SEGMENT, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
 				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 				if (value != null) {
@@ -192,7 +206,7 @@ public class WebConfigIndexer {
 			}
 		}));
 
-		result.put("useQueryParam", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+		result.put(USE_QUERY_PARAM, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
 				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 				if (value != null) {
@@ -205,7 +219,7 @@ public class WebConfigIndexer {
 			}
 		}));
 
-		result.put("setVersionParser", new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+		result.put(SET_VERSION_PARSER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			ITypeBinding typeBinding = expression.resolveTypeBinding();
 			if (typeBinding != null) {
 				webconfigBuilder.versionParser(typeBinding.getQualifiedName());
@@ -218,7 +232,7 @@ public class WebConfigIndexer {
 				Annotations.WEB_FLUX_PATH_MATCH_CONFIGURER_INTERFACE
 		);
 		
-		result.put("addPathPrefix", new SingleArgumentExtractor(pathConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+		result.put(ADD_PATH_PREFIX, new SingleArgumentExtractor(pathConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
 			if (value != null) {
 				webconfigBuilder.pathPrefix(value);

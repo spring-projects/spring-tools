@@ -53,6 +53,9 @@ import org.springframework.ide.vscode.boot.java.reconcilers.PathInControllerAnno
 import org.springframework.ide.vscode.boot.java.reconcilers.PreciseBeanTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ServerHttpSecurityLambdaDslReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.UnnecessarySpringExtensionReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrategyDuplicatedReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrategyPathSegmentReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionSyntaxReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigurerAdapterReconciler;
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
@@ -103,6 +106,18 @@ public class JdtConfig {
 	
 	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex) {
 		return new WebApiVersioningReconciler(springIndex);
+	}
+	
+	@Bean WebApiVersionSyntaxReconciler webApiVersionSyntaxReconciler(SpringMetamodelIndex springIndex) {
+		return new WebApiVersionSyntaxReconciler(springIndex);
+	}
+	
+	@Bean WebApiVersionStrategyPathSegmentReconciler webApiVersionStrategyPathSegmentReconciler() {
+		return new WebApiVersionStrategyPathSegmentReconciler();
+	}
+	
+	@Bean WebApiVersionStrategyDuplicatedReconciler webApiVersionStrategyDuplicatedReconciler() {
+		return new WebApiVersionStrategyDuplicatedReconciler();
 	}
 	
 	@Bean WebSecurityConfigurerAdapterReconciler webSecurityConfigurerAdapterReconciler(SimpleLanguageServer server) {

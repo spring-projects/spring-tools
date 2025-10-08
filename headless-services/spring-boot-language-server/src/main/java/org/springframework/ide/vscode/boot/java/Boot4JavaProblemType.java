@@ -23,8 +23,11 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
 public enum Boot4JavaProblemType implements ProblemType {
 	
 	REGISTRAR_BEAN_INVALID_ANNOTATION(WARNING, "Bean Registrar cannot be registered as a bean via `@Component` annotations", "Invalid annotation over bean registrar"),
-	REGISTRAR_BEAN_DECLARATION(WARNING, "Bean Registrar should be added to a configurarion bean via `@Import`", "Not added to configurartion via `@Import`"),
-	API_VERSIONING_NOT_CONFIGURED(WARNING, "API Versioning used but not configured anywhere", "API Versioning not configured anywhere");
+	REGISTRAR_BEAN_DECLARATION(WARNING, "Bean Registrar should be added to a configuration bean via `@Import`", "Not added to configuration via `@Import`"),
+	API_VERSIONING_NOT_CONFIGURED(WARNING, "API Versioning used but not configured anywhere", "API Versioning not configured anywhere"),
+	API_VERSION_SYNTAX_ERROR(WARNING, "API version cannot be parsed into a standard semantic version", "API version cannot be parsed into a standard semantic version"),
+	API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION(WARNING, "API versioninig path segment strategy should not be mixed with other strategies", "API versioninig path segment strategy should not be mixed with other strategies"),
+	API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED(WARNING, "API versioninig strategy is configured multiple times with the same strategy", "API versioninig strategy is configured multiple times with the same strategy");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

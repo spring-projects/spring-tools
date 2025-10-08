@@ -90,7 +90,7 @@ public class JdtReconciler implements JavaReconciler {
 			if (cu != null) {
 
 				try {
-					ReconcilingContext reconcilingContext = new ReconcilingContext(doc.getUri(), problemCollector, true, true, Collections.emptyList());
+					ReconcilingContext reconcilingContext = new ReconcilingContext(doc.getUri(), problemCollector, true, true, Collections.emptyList(), new ReconcilingIndex());
 					reconcile(project, URI.create(doc.getUri()), cu, reconcilingContext);
 				} catch (RequiredCompleteAstException e) {
 					log.error("Unexpected incomplete AST", e);

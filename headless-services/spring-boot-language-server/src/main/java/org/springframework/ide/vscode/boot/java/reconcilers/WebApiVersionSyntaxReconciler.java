@@ -29,7 +29,7 @@ import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexer;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
@@ -116,7 +116,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 			 */
 			@Override
 			public boolean visit(TypeDeclaration type) {
-				if (WebConfigIndexer.getWebConfig(type) == null) {
+				if (WebConfigJavaIndexer.getWebConfig(type) == null) {
 					return super.visit(type);
 				}
 				

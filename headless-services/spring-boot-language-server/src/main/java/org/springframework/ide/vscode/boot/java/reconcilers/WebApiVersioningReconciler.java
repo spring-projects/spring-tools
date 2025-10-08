@@ -28,12 +28,14 @@ import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexer;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.UriUtil;
+
+import com.google.common.collect.Streams;
 
 public class WebApiVersioningReconciler implements JdtAstReconciler {
 
@@ -84,7 +86,7 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 							throw new RequiredCompleteIndexException();
 						}
 						
-						if (!isApiVersioningConfigured(project)) {
+						if (!isApiVersioningConfigured(project, context)) {
 							ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
 									pair.getStartPosition(), pair.getLength());
 
@@ -102,7 +104,7 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 			 */
 			@Override
 			public boolean visit(TypeDeclaration type) {
-				if (WebConfigIndexer.getWebConfig(type) == null) {
+				if (WebConfigJavaIndexer.getWebConfig(type) == null) {
 					return super.visit(type);
 				}
 				
@@ -116,15 +118,14 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 		};
 	}
 	
-	private boolean isApiVersioningConfigured(IJavaProject project) {
-		List<WebConfigIndexElement> webConfigs = springIndex.getNodesOfType(project.getElementName(), WebConfigIndexElement.class);
-		for (WebConfigIndexElement webConfig : webConfigs) {
-			if (webConfig.getVersionSupportStrategies() != null && webConfig.getVersionSupportStrategies().size() > 0) {
-				return true;
-			}
-		}
+	private boolean isApiVersioningConfigured(IJavaProject project, ReconcilingContext context) {
+		List<WebConfigIndexElement> javaWebConfigs = springIndex.getNodesOfType(project.getElementName(), WebConfigIndexElement.class);
+		List<WebConfigIndexElement> propertiesWebConfigs = context.getReconcilingIndex().getWebConfigProperties(project);
 		
-		return false;
+		return Streams.concat(javaWebConfigs.stream(), propertiesWebConfigs.stream())
+			.filter(webConfig -> webConfig.getVersionSupportStrategies() != null && webConfig.getVersionSupportStrategies().size() > 0)
+			.findAny()
+			.isPresent();
 	}
 	
 	private boolean isAnnotatedWith(Bean bean, String annotationType) {

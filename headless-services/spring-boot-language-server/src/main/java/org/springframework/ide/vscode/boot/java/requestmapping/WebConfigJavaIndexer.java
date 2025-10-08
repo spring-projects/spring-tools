@@ -37,7 +37,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
-public class WebConfigIndexer {
+public class WebConfigJavaIndexer {
 	
 	public static final String CONFIGURE_API_VERSIONING_METHOD = "configureApiVersioning";
 

@@ -33,6 +33,7 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.reconcilers.CompositeASTVisitor;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingContext;
+import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
 import org.springframework.ide.vscode.boot.java.value.test.ValueSpelExpressionValidationTest.TestProblemCollector;
@@ -83,25 +84,31 @@ public abstract class BaseReconcilerTest {
 	}
 
 	List<ReconcileProblem> reconcile(String fileName, String source, boolean isCompleteAst, Path... additionalSources) throws Exception {
-		return reconcile(this::getReconciler, fileName, source, isCompleteAst, true, additionalSources);
+		return reconcile(this::getReconciler, fileName, source, isCompleteAst, true, new ReconcilingIndex(), additionalSources);
 	}
 
 	List<ReconcileProblem> reconcile(String fileName, String source, boolean isCompleteAst, boolean isIndexComplete, Path... additionalSources) throws Exception {
-		return reconcile(this::getReconciler, fileName, source, isCompleteAst, isIndexComplete, additionalSources);
+		return reconcile(this::getReconciler, fileName, source, isCompleteAst, isIndexComplete, new ReconcilingIndex(), additionalSources);
 	}
 
 	List<ReconcileProblem> reconcile(Supplier<JdtAstReconciler> reconcilerFactory, String fileName, String source, boolean isCompleteAst,
 			Path... additionalSources) throws Exception {
-		return reconcile(reconcilerFactory, fileName, source, isCompleteAst, true, additionalSources);
+		return reconcile(reconcilerFactory, fileName, source, isCompleteAst, true, new ReconcilingIndex(), additionalSources);
 	}
 		
 	List<ReconcileProblem> reconcile(Supplier<JdtAstReconciler> reconcilerFactory, String fileName, String source, boolean isCompleteAst,
-			boolean isIndexComplete, Path... additionalSources) throws Exception {
+			ReconcilingIndex reconcilingIndex, Path... additionalSources) throws Exception {
+		return reconcile(reconcilerFactory, fileName, source, isCompleteAst, true, reconcilingIndex, additionalSources);
+	}
+		
+	List<ReconcileProblem> reconcile(Supplier<JdtAstReconciler> reconcilerFactory, String fileName, String source, boolean isCompleteAst,
+			boolean isIndexComplete, ReconcilingIndex reconcilingIndex, Path... additionalSources) throws Exception {
 
 		Path path = createFile(fileName, source);
 		TestProblemCollector problemCollector = new TestProblemCollector();
 		AtomicBoolean requiredCompleteAst = new AtomicBoolean(false);
 		String[] sources = Stream.concat(Arrays.stream(additionalSources), Stream.of(path)).map(p -> p.toFile().toString()).toArray(String[]::new);
+		
 		SpringIndexerJava.createParser(project, new AnnotationHierarchies(), !isCompleteAst).createASTs(sources, null, new String[0], new FileASTRequestor() {
 
 			@Override
@@ -110,7 +117,7 @@ public abstract class BaseReconcilerTest {
 					JdtAstReconciler reconciler = reconcilerFactory.get();
 					String docURI = path.toUri().toASCIIString();
 
-					ReconcilingContext reconcilingContext = new ReconcilingContext(docURI, problemCollector, isCompleteAst, isIndexComplete, Collections.emptyList());
+					ReconcilingContext reconcilingContext = new ReconcilingContext(docURI, problemCollector, isCompleteAst, isIndexComplete, Collections.emptyList(), reconcilingIndex);
 					ASTVisitor visitor = reconciler.createVisitor(project,  path.toUri(), cu, reconcilingContext);
 					
 					if (visitor != null) {

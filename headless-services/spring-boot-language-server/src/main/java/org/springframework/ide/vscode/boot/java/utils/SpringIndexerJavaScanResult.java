@@ -74,7 +74,6 @@ public class SpringIndexerJavaScanResult {
 		this.generatedIndexElements = Arrays.asList(indexElements);
 		this.generatedDiagnostics = Arrays.asList(diagnostics);
 	}
-	
 
 	public Map<String, Long> getMarkedForReconcilingWithCompleteIndex() {
 		return markedForReconciling;

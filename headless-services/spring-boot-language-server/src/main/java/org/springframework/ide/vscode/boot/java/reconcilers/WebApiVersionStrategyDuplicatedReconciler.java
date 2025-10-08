@@ -26,7 +26,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexer;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
@@ -54,12 +54,12 @@ public class WebApiVersionStrategyDuplicatedReconciler implements JdtAstReconcil
 
 			@Override
 			public boolean visit(TypeDeclaration type) {
-				ITypeBinding webConfigType = WebConfigIndexer.getWebConfig(type);
+				ITypeBinding webConfigType = WebConfigJavaIndexer.getWebConfig(type);
 				if (webConfigType == null) {
 					return super.visit(type);
 				}
 				
-				MethodDeclaration configureVersioningMethod = WebConfigIndexer.findMethod(type, webConfigType, WebConfigIndexer.CONFIGURE_API_VERSIONING_METHOD);
+				MethodDeclaration configureVersioningMethod = WebConfigJavaIndexer.findMethod(type, webConfigType, WebConfigJavaIndexer.CONFIGURE_API_VERSIONING_METHOD);
 				if (configureVersioningMethod == null) {
 					return super.visit(type);
 				}
@@ -93,7 +93,7 @@ public class WebApiVersionStrategyDuplicatedReconciler implements JdtAstReconcil
 				}
 				
 				String methodName = methodInvocation.getName().toString();
-				if (WebConfigIndexer.VERSIONING_CONFIG_METHODS.contains(methodName)) {
+				if (WebConfigJavaIndexer.VERSIONING_CONFIG_METHODS.contains(methodName)) {
 					invocations.computeIfAbsent(methodName, (n) -> new ArrayList<MethodInvocation>()).add(methodInvocation);
 				}
 				

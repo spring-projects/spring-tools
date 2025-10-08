@@ -78,7 +78,7 @@ public class ReconcileProblemCodeActionProvider implements JdtAstCodeActionProvi
 			}
 		};
 		CompositeASTVisitor v = new CompositeASTVisitor();
-		ReconcilingContext ctx = new ReconcilingContext(docURI.toASCIIString(), problemCollector, true, true, List.of());
+		ReconcilingContext ctx = new ReconcilingContext(docURI.toASCIIString(), problemCollector, true, true, List.of(), new ReconcilingIndex());
 		for (JdtAstReconciler r : reconciler.reconcilers) {
 			if (r.isApplicable(project) && severityProvider.getDiagnosticSeverity(r.getProblemType()) == null) {
 				v.add(r.createVisitor(project, docURI, cu, ctx));

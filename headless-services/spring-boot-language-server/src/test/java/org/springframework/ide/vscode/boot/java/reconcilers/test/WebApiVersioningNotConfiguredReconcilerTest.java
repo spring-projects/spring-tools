@@ -22,9 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement.ConfigType;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
@@ -70,8 +72,7 @@ public class WebApiVersioningNotConfiguredReconcilerTest extends BaseReconcilerT
 				""";
 		List<ReconcileProblem> problems = reconcile(() -> {
 			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
-			WebApiVersioningReconciler r = new WebApiVersioningReconciler(springIndex);
-			return r;
+			return new WebApiVersioningReconciler(springIndex);
 		}, "A.java", source, false);
 		
 		assertEquals(1, problems.size());
@@ -102,12 +103,44 @@ public class WebApiVersioningNotConfiguredReconcilerTest extends BaseReconcilerT
 		List<ReconcileProblem> problems = reconcile(() -> {
 			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
 			
-			WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG).versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4))).buildFor(null);
+			WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG)
+					.versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4))).buildFor(null);
 			springIndex.updateElements(getProjectName(), "soneURI", new SpringIndexElement[] {webConfig});
 
-			WebApiVersioningReconciler r = new WebApiVersioningReconciler(springIndex);
-			return r;
+			return new WebApiVersioningReconciler(springIndex);
 		}, "A.java", source, false);
+		
+		assertEquals(0, problems.size());
+	}
+
+	@Test
+	void controllerUsesVersioningWithVersioningConfiguredViaProperties() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.web.bind.annotation.RestController;
+				import org.springframework.web.bind.annotation.RequestMapping;
+				
+				@RestController
+				@RequestMapping(path = "mypath", version = "1")
+				public class A {
+				}
+				""";
+		
+		WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG)
+				.versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4))).buildFor(null);
+
+		ReconcilingIndex reconcilingIndex = new ReconcilingIndex() {
+			@Override
+			public List<WebConfigIndexElement> getWebConfigProperties(IJavaProject project) {
+				return List.of(webConfig);
+			}
+		};
+		
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			return new WebApiVersioningReconciler(springIndex);
+		}, "A.java", source, false, reconcilingIndex);
 		
 		assertEquals(0, problems.size());
 	}

@@ -46,7 +46,7 @@ import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexer;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.DefaultSymbolProvider;
@@ -460,7 +460,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 	}
 	
 	private void indexWebConfig(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
-		WebConfigIndexer.indexWebConfig(beanDefinition, type, context, doc);
+		WebConfigJavaIndexer.indexWebConfig(beanDefinition, type, context, doc);
 	}
 
 	private void scanBeanRegistryInvocations(SpringIndexElement parent, Block body, SpringIndexerJavaContext context, TextDocument doc) {

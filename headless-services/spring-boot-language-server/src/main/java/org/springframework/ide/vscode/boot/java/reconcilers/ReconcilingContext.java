@@ -32,8 +32,11 @@ public class ReconcilingContext {
 	private final Set<String> markedForAffectedFilesIndexing; // set of files
 	
 	private final List<SpringIndexElement> createdIndexElements;
+	
+	private final ReconcilingIndex reconcilingIndex;
 
-	public ReconcilingContext(String docURI, IProblemCollector problemCollector, boolean isCompleteAst, boolean isIndexComplete, List<SpringIndexElement> createdIndexElements) {
+	public ReconcilingContext(String docURI, IProblemCollector problemCollector, boolean isCompleteAst, boolean isIndexComplete,
+			List<SpringIndexElement> createdIndexElements, ReconcilingIndex reconcilingIndex) {
 		this.docURI = docURI;
 		this.problemCollector = problemCollector;
 		this.isCompleteAst = isCompleteAst;
@@ -43,6 +46,7 @@ public class ReconcilingContext {
 		this.markedForAffectedFilesIndexing = new HashSet<>();
 		
 		this.createdIndexElements = createdIndexElements;
+		this.reconcilingIndex = reconcilingIndex;
 	}
 	
 	public String getDocURI() {
@@ -79,6 +83,10 @@ public class ReconcilingContext {
 	
 	public List<SpringIndexElement> getCreatedIndexElements() {
 		return createdIndexElements;
+	}
+	
+	public ReconcilingIndex getReconcilingIndex() {
+		return this.reconcilingIndex;
 	}
 
 }

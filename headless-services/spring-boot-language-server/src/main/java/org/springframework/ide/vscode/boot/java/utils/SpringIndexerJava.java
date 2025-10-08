@@ -66,6 +66,7 @@ import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingContext;
+import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteIndexException;
 import org.springframework.ide.vscode.commons.java.IClasspath;
@@ -258,7 +259,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
 						0, docRef, content, voidProblemCollector, new ArrayList<>(), true, true, result);
 
-				scanAST(context, false);
+				scanAST(context, false, new ReconcilingIndex());
 
 				return result.getGeneratedSymbols().stream().map(s -> s.getSymbol()).collect(Collectors.toList());
 			});
@@ -301,7 +302,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
 						0, docRef, content, voidProblemCollector, new ArrayList<>(), true, true, result);
 
-				scanAST(context, false);
+				scanAST(context, false, new ReconcilingIndex());
 
 				List<SpringIndexElement> indexElements = result.getGeneratedIndexElements().stream()
 					.map(cachedBean -> cachedBean.getIndexElement())
@@ -386,6 +387,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			String file = UriUtil.toFileString(docURI);
 
 			SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, new String[] {file});
+			ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 			
 			AtomicReference<TextDocument> docRef = new AtomicReference<>();
 			BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
@@ -400,7 +402,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
 					lastModified, docRef, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
 
-			scanAST(context, true);
+			scanAST(context, true, reconcilingIndex);
 
 			result.publishResults(symbolHandler);
 
@@ -444,6 +446,8 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 		
 		SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, javaFiles);
+		ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
+		
 		Multimap<String, String> dependencies = MultimapBuilder.hashKeys().hashSetValues().build();
 		
 		BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
@@ -469,7 +473,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
 						lastModified, docRef, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
 				
-				scanAST(context, true);
+				scanAST(context, true, reconcilingIndex);
 				
 				dependencies.putAll(sourceFilePath, context.getDependencies());
 				scannedTypes.addAll(context.getScannedTypes());
@@ -573,6 +577,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			// continue scanning everything
 
 			result = new SpringIndexerJavaScanResult(project, javaFiles);
+			ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 
 			final SpringIndexerJavaScanResult finalResult = result;
 			BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
@@ -587,11 +592,11 @@ public class SpringIndexerJava implements SpringIndexer {
 			for (int i = 0; i < chunks.size(); i++) {
 
 				log.info("scan java files, AST parse, chunk {} for files: {}", i, javaFiles.length);
-	            String[] pass2Files = scanFiles(project, annotations, chunks.get(i), diagnosticsAggregator, true, result);
+	            String[] pass2Files = scanFiles(project, annotations, chunks.get(i), diagnosticsAggregator, true, result, reconcilingIndex);
 
 	            if (pass2Files.length > 0) {
 					log.info("scan java files, AST parse, pass 2, chunk {} for files: {}", i, javaFiles.length);
-					scanFiles(project, annotations, pass2Files, diagnosticsAggregator, false, result);
+					scanFiles(project, annotations, pass2Files, diagnosticsAggregator, false, result, reconcilingIndex);
 				}
 	        }
 			
@@ -610,7 +615,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	}
 
 	private String[] scanFiles(IJavaProject project, AnnotationHierarchies annotations, String[] javaFiles,
-			BiConsumer<String, Diagnostic> diagnosticsAggregator, boolean ignoreMethodBodies, SpringIndexerJavaScanResult result) throws Exception {
+			BiConsumer<String, Diagnostic> diagnosticsAggregator, boolean ignoreMethodBodies, SpringIndexerJavaScanResult result, ReconcilingIndex reconcilingIndex) throws Exception {
 		
 		PercentageProgressTask progressTask = this.progressService.createPercentageProgressTask(INDEX_FILES_TASK_ID + project.getElementName(),
 				javaFiles.length, "Spring Tools: Indexing Java Sources for '" + project.getElementName() + "'");
@@ -631,7 +636,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
 						lastModified, docRef, null, problemCollector, nextPassFiles, !ignoreMethodBodies, false, result);
 
-				scanAST(context, true);
+				scanAST(context, true, reconcilingIndex);
 				progressTask.increment();
 			}
 		};
@@ -668,6 +673,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		
 		// reconcile
 		SpringIndexerJavaScanResult reconcilingResult = new SpringIndexerJavaScanResult(project, javaFiles);
+		ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 		
 		BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
 			@Override
@@ -692,7 +698,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 				try {
 					DocumentUtils.getTempTextDocument(docURI, docRef, null); // initialize the docRef with a real document before running validations
-					reconcile(context);
+					reconcile(context, reconcilingIndex);
 					
 					Collection<String> dependencies = dependencyTracker.get(context.getFile());
 					for (String dependency : context.getDependencies()) {
@@ -723,7 +729,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		reconcilingResult.publishDiagnosticsOnly(symbolHandler);
 	}
 
-	private void scanAST(final SpringIndexerJavaContext context, boolean includeReconcile) {
+	private void scanAST(final SpringIndexerJavaContext context, boolean includeReconcile, ReconcilingIndex reconcilingIndex) {
 		try {
 			context.getCu().accept(new ASTVisitor() {
 				
@@ -844,13 +850,13 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 			
 		if (includeReconcile) {
-			reconcile(context);
+			reconcile(context, reconcilingIndex);
 		}
 		
 		dependencyTracker.update(context.getFile(), context.getDependencies());;
 	}
 
-	private void reconcile(SpringIndexerJavaContext context) {
+	private void reconcile(SpringIndexerJavaContext context, ReconcilingIndex reconcilingIndex) {
 		// reconciling
 		IProblemCollector problemCollector = new IProblemCollector() {
 			
@@ -883,7 +889,7 @@ public class SpringIndexerJava implements SpringIndexer {
 					.map(cachedIndexElement -> cachedIndexElement.getIndexElement())
 					.toList();
 
-			ReconcilingContext reconcilingContext = new ReconcilingContext(context.getDocURI(), problemCollector, context.isFullAst(), context.isIndexComplete(), createdElements);
+			ReconcilingContext reconcilingContext = new ReconcilingContext(context.getDocURI(), problemCollector, context.isFullAst(), context.isIndexComplete(), createdElements, reconcilingIndex);
 
 			reconciler.reconcile(context.getProject(), URI.create(context.getDocURI()), context.getCu(), reconcilingContext);
 			

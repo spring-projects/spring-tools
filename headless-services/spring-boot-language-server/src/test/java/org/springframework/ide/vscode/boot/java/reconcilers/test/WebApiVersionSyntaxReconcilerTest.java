@@ -84,6 +84,67 @@ public class WebApiVersionSyntaxReconcilerTest extends BaseReconcilerTest {
 	}
 
 	@Test
+	void parseWildcardVersion() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.web.bind.annotation.RestController;
+				import org.springframework.web.bind.annotation.RequestMapping;
+				
+				@RestController
+				@RequestMapping(path = "mypath", version = "1.1+")
+				public class A {
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG)
+					.versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4)))
+					.buildFor(null);
+			springIndex.updateElements(getProjectName(), "soneURI", new SpringIndexElement[] {webConfig});
+
+			WebApiVersionSyntaxReconciler r = new WebApiVersionSyntaxReconciler(springIndex);
+			return r;
+		}, "A.java", source, false);
+		
+		assertEquals(0, problems.size());
+	}
+
+	@Test
+	void parseWrongWildcardVersion() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.web.bind.annotation.RestController;
+				import org.springframework.web.bind.annotation.RequestMapping;
+				
+				@RestController
+				@RequestMapping(path = "mypath", version = "1.1++")
+				public class A {
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG)
+					.versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4)))
+					.buildFor(null);
+			springIndex.updateElements(getProjectName(), "soneURI", new SpringIndexElement[] {webConfig});
+
+			WebApiVersionSyntaxReconciler r = new WebApiVersionSyntaxReconciler(springIndex);
+			return r;
+		}, "A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		ReconcileProblem problem = problems.get(0);
+		assertEquals(Boot4JavaProblemType.API_VERSION_SYNTAX_ERROR, problem.getType());
+		
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("\"1.1++\"", markedStr);
+	}
+
+	@Test
 	void parseWithConfiguredDefaultStandardVersionWithoutErrors() throws Exception {
 		String source = """
 				package example.demo;

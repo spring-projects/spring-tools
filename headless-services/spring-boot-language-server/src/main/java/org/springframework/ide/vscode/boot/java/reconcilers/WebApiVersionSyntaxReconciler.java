@@ -93,6 +93,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 						
 						Expression valueExpression = pair.getValue();
 						String versionValue = ASTUtils.getExpressionValueAsString(valueExpression, (d) -> {});
+						versionValue = updateVersion(versionValue);
 
 						SemanticApiVersionParser parser = new SemanticApiVersionParser();
 						try {
@@ -128,6 +129,11 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 				return super.visit(type);
 			}
 		};
+	}
+	
+	private String updateVersion(String version) {
+		boolean baselineVersion = version.endsWith("+");
+		return (baselineVersion ? version.substring(0, version.length() - 1) : version);
 	}
 	
 	private boolean isApiVersioningConfiguredWithStanardVersionParser(IJavaProject project) {

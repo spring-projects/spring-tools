@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +37,7 @@ import org.springframework.ide.vscode.commons.util.UriUtil;
  */
 public class SpringIndexerJavaScanResult {
 	
-	private final Map<String, Long> markedForReconciling; // file + modification timestamp
+	private final List<DocumentDescriptor> markedForReconciling; // file + modification timestamp
 	private final Set<String> markedForAffetcedFilesIndexing; // file
 	
 	private final List<CachedSymbol> generatedSymbols;
@@ -53,7 +52,7 @@ public class SpringIndexerJavaScanResult {
 		this.project = project;
 		this.javaFiles = javaFiles;
 
-		this.markedForReconciling = new HashMap<>();
+		this.markedForReconciling = new ArrayList<>();
 		this.markedForAffetcedFilesIndexing = new HashSet<>();
 		
 		this.generatedSymbols = new ArrayList<CachedSymbol>();
@@ -67,7 +66,7 @@ public class SpringIndexerJavaScanResult {
 		this.project = project;
 		this.javaFiles = javaFiles;
 		
-		this.markedForReconciling = new HashMap<>();
+		this.markedForReconciling = new ArrayList<>();
 		this.markedForAffetcedFilesIndexing = new HashSet<>();
 
 		this.generatedSymbols = Arrays.asList(symbols);
@@ -75,12 +74,12 @@ public class SpringIndexerJavaScanResult {
 		this.generatedDiagnostics = Arrays.asList(diagnostics);
 	}
 
-	public Map<String, Long> getMarkedForReconcilingWithCompleteIndex() {
+	public List<DocumentDescriptor> getMarkedForReconcilingWithCompleteIndex() {
 		return markedForReconciling;
 	}
 	
 	public void markForReconcilingWithCompleteIndex(String file, long lastModified) {
-		this.markedForReconciling.put(file, lastModified);
+		this.markedForReconciling.add(DocumentDescriptor.createFromFile(file, lastModified));
 	}
 	
 	public void markForAffectedFilesIndexing(Collection<String> markedForAffectedFilesIndexing) {

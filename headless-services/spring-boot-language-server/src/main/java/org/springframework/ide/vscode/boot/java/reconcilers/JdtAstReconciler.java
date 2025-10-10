@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
+import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -32,5 +33,9 @@ public interface JdtAstReconciler {
 	ProblemType getProblemType();
 
 	ASTVisitor createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context);
+
+	default List<String> identifyFilesToReconcile(IJavaProject project, List<String> changedPropertyFiles) {
+		return List.of();
+	};
 
 }

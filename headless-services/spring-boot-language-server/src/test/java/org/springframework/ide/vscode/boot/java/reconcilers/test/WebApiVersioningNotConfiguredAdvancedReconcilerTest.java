@@ -13,7 +13,10 @@ package org.springframework.ide.vscode.boot.java.reconcilers.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -154,8 +157,58 @@ public class WebApiVersioningNotConfiguredAdvancedReconcilerTest {
 		fileScanListener.assertScannedUri(controllerUri, 1);
 		fileScanListener.assertFileScanCount(2);
 	}
+	
+	@Test
+	void testValidationRunsOnPropertyChanges() throws Exception {
+		String webConfigUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/WebConfig.java").toUri().toString();
+		String controllerUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/TestController.java").toUri().toString();
+		String applicationPropertiesUri = directory.toPath().resolve("src/main/resources/application.properties").toUri().toString();
 
+		// now change the web config class source code and update doc
 
+		String webConfigSource = FileUtils.readFileToString(UriUtil.toFile(webConfigUri), Charset.defaultCharset());
+		String updatedWebConfigSource = webConfigSource.replace("configurer.useRequestHeader(\"X-API-Version\");",
+				"");
 
+		CompletableFuture<Void> updateFuture = indexer.updateDocument(webConfigUri, updatedWebConfigSource, "test triggered");
+		updateFuture.get(5, TimeUnit.SECONDS);
+		
+		PublishDiagnosticsParams diagnosticsResult = harness.getDiagnostics(controllerUri);
+		List<Diagnostic> diagnostics = diagnosticsResult.getDiagnostics();
+		assertEquals(1, diagnostics.size());
+
+		//
+		// next step is to update the properties file on disc
+		//
+		
+        File propFile = new File(new URI(applicationPropertiesUri));
+        String originalContent = FileUtils.readFileToString(propFile, Charset.defaultCharset());
+        FileTime modifiedTime = Files.getLastModifiedTime(propFile.toPath());
+
+        try {
+            String newContent = originalContent.replace("spring.application.name=sf7-validation",
+            		"""
+            		spring.application.name=sf7-validation
+            		spring.mvc.apiversion.use.header=X-API-Version
+            		""");
+            FileUtils.writeStringToFile(new File(new URI(applicationPropertiesUri)), newContent, Charset.defaultCharset());
+            Files.setLastModifiedTime(propFile.toPath(), FileTime.fromMillis(modifiedTime.toMillis() + 1000));
+
+            TestFileScanListener fileScanListener = new TestFileScanListener();
+            indexer.getJavaIndexer().setFileScanListener(fileScanListener);
+
+            CompletableFuture<Void> updatePropFileFuture = indexer.updateDocuments(new String[] {applicationPropertiesUri}, "test triggered");
+            updatePropFileFuture.get(5, TimeUnit.SECONDS);
+
+    		// check diagnostics result
+    		diagnosticsResult = harness.getDiagnostics(controllerUri);
+    		diagnostics = diagnosticsResult.getDiagnostics();
+    		assertEquals(0, diagnostics.size());
+        }
+        finally {
+            FileUtils.writeStringToFile(new File(new URI(applicationPropertiesUri)), originalContent, Charset.defaultCharset());
+        }
+
+	}
     
 }

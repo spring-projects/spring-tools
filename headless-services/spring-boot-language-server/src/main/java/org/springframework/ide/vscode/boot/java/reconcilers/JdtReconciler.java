@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -155,6 +156,12 @@ public class JdtReconciler implements JavaReconciler {
 		return Collections.emptyMap();
 	}
 	
+	public List<String> identifyFilesToReconcile(IJavaProject project, List<String> changedPropertyFiles) {
+		return Arrays.stream(this.reconcilers)
+			.flatMap(reconciler -> reconciler.identifyFilesToReconcile(project, changedPropertyFiles).stream())
+			.toList();
+	}
+	
 	private List<JdtAstReconciler> getApplicableReconcilers(IJavaProject project) {
 		return this.applicableReconcilersCache.computeIfAbsent(project.getElementName(), (name) -> {
 			return computeApplicableReconcilers(project);
@@ -199,6 +206,5 @@ public class JdtReconciler implements JavaReconciler {
 	public long getStatsCounter() {
 		return stats_counter;
 	}
-	
 	
 }

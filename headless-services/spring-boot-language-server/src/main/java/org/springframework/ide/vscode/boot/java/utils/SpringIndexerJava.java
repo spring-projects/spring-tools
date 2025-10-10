@@ -142,12 +142,13 @@ public class SpringIndexerJava implements SpringIndexer {
 	
 	@Override
 	public String[] getFileWatchPatterns() {
-		return new String[] {"**/*.java"};
+		return new String[] {"**/*.java", "**/*.properties", "**/*.yaml", "**/*.yml"};
 	}
 
 	@Override
 	public boolean isInterestedIn(String resource) {
-		return resource.endsWith(".java");
+		return resource.endsWith(".java") || 
+				(resource.contains("application") && (resource.endsWith(".properties") || resource.endsWith(".yml") || resource.endsWith(".yaml")));
 	}
 
 	@Override
@@ -193,6 +194,11 @@ public class SpringIndexerJava implements SpringIndexer {
 	
 	@Override
 	public void updateFiles(IJavaProject project, DocumentDescriptor[] updatedDocs) throws Exception {
+		updateJavaFiles(project, updatedDocs);
+		updatePropertyFiles(project, updatedDocs);
+	}
+	
+	private void updateJavaFiles(IJavaProject project, DocumentDescriptor[] updatedDocs) throws Exception {
 		if (updatedDocs != null) {
 			DocumentDescriptor[] docs = filterDocuments(project, updatedDocs);
 
@@ -205,6 +211,26 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 	}
 	
+	private void updatePropertyFiles(IJavaProject project, DocumentDescriptor[] updatedDocs) {
+		List<String> changedPropertyFiles = Arrays.stream(updatedDocs)
+			.filter(doc -> doc.getDocURI().contains("application"))
+			.filter(doc -> doc.getDocURI().endsWith(".properties") || doc.getDocURI().endsWith(".yml") || doc.getDocURI().endsWith(".yaml"))
+			.map(doc -> doc.getDocURI())
+			.toList();
+		
+		if (changedPropertyFiles.size() > 0) {
+			List<String> filesToReconcile = reconciler.identifyFilesToReconcile(project, changedPropertyFiles);
+			List<DocumentDescriptor> filesWithTimestamps = DocumentDescriptor.createFromUris(filesToReconcile);
+
+			try {
+				reconcileWithCompleteIndex(project, filesWithTimestamps);
+			}
+			catch (Exception e) {
+				log.error("error reconcling java source as reaction to property file change", e);
+			}
+		}
+	}
+
 	@Override
 	public void removeFiles(IJavaProject project, String[] docURIs) throws Exception {
 		
@@ -324,7 +350,9 @@ public class SpringIndexerJava implements SpringIndexer {
 		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
-		return Arrays.stream(updatedDocs).filter(doc -> shouldProcessDocument(project, doc.getDocURI()))
+		return Arrays.stream(updatedDocs)
+				.filter(doc -> doc.getDocURI().endsWith(".java"))
+				.filter(doc -> shouldProcessDocument(project, doc.getDocURI()))
 				.filter(doc -> isCacheOutdated(symbolsCacheKey, doc.getDocURI(), doc.getLastModified())
 						|| isCacheOutdated(indexCacheKey, doc.getDocURI(), doc.getLastModified())
 						|| isCacheOutdated(diagnosticsCacheKey, doc.getDocURI(), doc.getLastModified()))
@@ -356,8 +384,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void scanFiles(IJavaProject project, DocumentDescriptor[] docs) throws Exception {
 		Set<String> scannedFiles = new HashSet<>();
 		for (int i = 0; i < docs.length; i++) {
-			String file = UriUtil.toFileString(docs[i].getDocURI());
-			scannedFiles.add(file);
+			scannedFiles.add(docs[i].getFile());
 		}
 		
 		ScanFilesInternallyResult result = scanFilesInternally(project, docs);
@@ -439,9 +466,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		for (int i = 0; i < docs.length; i++) {
 			updatedDocs.put(docs[i].getDocURI(), docs[i]);
 
-			String file = UriUtil.toFileString(docs[i].getDocURI());
-
-			javaFiles[i] = file;
+			javaFiles[i] = docs[i].getFile();
 			lastModified[i] = docs[i].getLastModified();
 		}
 		
@@ -533,12 +558,9 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 		
 		if (!filesToScan.isEmpty()) {
-			DocumentDescriptor[] docsToScan = filesToScan.stream().map(file -> {
-				File realFile = new File(file);
-				String docURI = UriUtil.toUri(realFile).toASCIIString();
-				long lastModified = realFile.lastModified();
-				return new DocumentDescriptor(docURI, lastModified);
-			}).toArray(DocumentDescriptor[]::new);
+			DocumentDescriptor[] docsToScan = filesToScan.stream()
+					.map(file -> DocumentDescriptor.createFromFile(file))
+					.toArray(DocumentDescriptor[]::new);
 			
 			for (DocumentDescriptor docToScan : docsToScan) {
 				this.symbolHandler.removeSymbols(project, docToScan.getDocURI());
@@ -655,21 +677,22 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 	}
 
-	private void reconcileWithCompleteIndex(IJavaProject project, Map<String, Long> markedForReconcilingWithCompleteIndex) throws Exception {
-		if (markedForReconcilingWithCompleteIndex.isEmpty()) {
+	private void reconcileWithCompleteIndex(IJavaProject project, List<DocumentDescriptor> filesWithTimestamps) throws Exception {
+		if (filesWithTimestamps.isEmpty()) {
 			return;
 		}
 		
 		boolean ignoreMethodBodies = false;
 		
-		String[] javaFiles = markedForReconcilingWithCompleteIndex.keySet().toArray(String[]::new);
+		String[] javaFiles = new String[filesWithTimestamps.size()];
+		long[] modificationTimestamps = new long[filesWithTimestamps.size()];
 		
-		log.info("additional reconciling with complete index triggere for: " + Arrays.toString(javaFiles));
-		
-		long[] modificationTimestamps = new long[javaFiles.length];
-		for (int i = 0; i < javaFiles.length; i++) {
-			modificationTimestamps[i] = markedForReconcilingWithCompleteIndex.get(javaFiles[i]);
+		for (int i = 0; i < filesWithTimestamps.size(); i++) {
+			javaFiles[i] = filesWithTimestamps.get(i).getFile();
+			modificationTimestamps[i] = filesWithTimestamps.get(i).getLastModified();
 		}
+		
+		log.info("additional reconciling with complete index triggered for: " + Arrays.toString(javaFiles));
 		
 		// reconcile
 		SpringIndexerJavaScanResult reconcilingResult = new SpringIndexerJavaScanResult(project, javaFiles);
@@ -1164,7 +1187,7 @@ public class SpringIndexerJava implements SpringIndexer {
 					File file = path.toFile();
 					URI docUri = UriUtil.toUri(file);
 					String content = FileUtils.readFileToString(file, Charset.defaultCharset());
-					scanFile(project, new DocumentDescriptor(docUri.toASCIIString(), file.lastModified()), content);
+					scanFile(project, DocumentDescriptor.createFromUri(docUri.toASCIIString()), content);
 				}
 			} catch (Exception e) {
 				log.error("{}", e);

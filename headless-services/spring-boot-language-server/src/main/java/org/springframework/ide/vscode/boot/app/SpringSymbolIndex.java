@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.app;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -469,7 +468,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 					List<String> docs = projectMapping.get(project);
 					
 					try {
-						DocumentDescriptor[] updatedDocs = docs.stream().map(doc -> createUpdatedDoc(doc)).toArray(DocumentDescriptor[]::new);
+						DocumentDescriptor[] updatedDocs = docs.stream().map(doc -> DocumentDescriptor.createFromUri(doc)).toArray(DocumentDescriptor[]::new);
 						futures.add(updateItems(project, updatedDocs, indexer));
 					}
 					catch (Exception e) {
@@ -525,7 +524,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 					Optional<IJavaProject> maybeProject = projectFinder().find(new TextDocumentIdentifier(docURI));
 					if (maybeProject.isPresent()) {
 						try {
-							DocumentDescriptor updatedDoc = createUpdatedDoc(docURI);
+							DocumentDescriptor updatedDoc = DocumentDescriptor.createFromUri(docURI);
 							futures.add(updateItem(maybeProject.get(), updatedDoc, content, indexer));
 						}
 						catch (Exception e) {
@@ -557,7 +556,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 					List<String> docs = projectMapping.get(project);
 					
 					try {
-						DocumentDescriptor[] updatedDocs = docs.stream().map(doc -> createUpdatedDoc(doc)).toArray(DocumentDescriptor[]::new);
+						DocumentDescriptor[] updatedDocs = docs.stream().map(doc -> DocumentDescriptor.createFromUri(doc)).toArray(DocumentDescriptor[]::new);
 						futures.add(updateItems(project, updatedDocs, indexer));
 					}
 					catch (Exception e) {
@@ -633,16 +632,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 	private String[] getDocumentsInterestingForIndexer(SpringIndexer indexer, String[] docURIs) {
 		return Arrays.stream(docURIs).filter(docURI -> indexer.isInterestedIn(docURI)).toArray(String[]::new);
-	}
-
-	private DocumentDescriptor createUpdatedDoc(String docURI) throws RuntimeException {
-		try {
-			File file = new File(new URI(docURI));
-			long lastModified = file.lastModified();
-			return new DocumentDescriptor(UriUtil.toUri(file).toASCIIString(), lastModified);
-		} catch (URISyntaxException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	public CompletableFuture<Void> deleteDocument(String deletedDocURI) {

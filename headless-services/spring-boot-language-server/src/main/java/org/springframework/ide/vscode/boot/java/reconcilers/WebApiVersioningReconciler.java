@@ -15,6 +15,7 @@ import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.spri
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -108,14 +109,25 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 					return super.visit(type);
 				}
 				
-				Arrays.stream(springIndex.getBeansOfProject(project.getElementName()))
-					.filter(bean -> isAnnotatedWith(bean, Annotations.CONTROLLER))
+				identifyBeansToReconcile(project)
 					.map(bean -> UriUtil.toFileString(bean.getLocation().getUri()))
 					.forEach(file -> context.markForAffetcedFilesIndexing(file));
 					
 				return super.visit(type);
 			}
 		};
+	}
+	
+	@Override
+	public List<String> identifyFilesToReconcile(IJavaProject project, List<String> changedPropertyFiles) {
+		return identifyBeansToReconcile(project)
+				.map(bean -> bean.getLocation().getUri())
+				.toList();
+	}
+	
+	private Stream<Bean> identifyBeansToReconcile(IJavaProject project) {
+		return Arrays.stream(springIndex.getBeansOfProject(project.getElementName()))
+				.filter(bean -> isAnnotatedWith(bean, Annotations.CONTROLLER));
 	}
 	
 	private boolean isApiVersioningConfigured(IJavaProject project, ReconcilingContext context) {

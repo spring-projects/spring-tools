@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Pivotal, Inc.
+ * Copyright (c) 2020, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
@@ -86,7 +87,7 @@ public class SpringIndexerMultipleFilesTest {
     void testUpdateChangedSingleDocumentOnDisc() throws Exception {
         String changedDocURI = directory.toPath().resolve("src/main/java/org/test/SimpleMappingClass.java").toUri().toString();
         File file = new File(new URI(changedDocURI));
-        String originalContent = FileUtils.readFileToString(file);
+        String originalContent = FileUtils.readFileToString(file, Charset.defaultCharset());
         FileTime modifiedTime = Files.getLastModifiedTime(file.toPath());
 
         try {
@@ -95,7 +96,7 @@ public class SpringIndexerMultipleFilesTest {
             assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/mapping1", changedDocURI));
 
             String newContent = originalContent.replace("mapping1", "mapping1-CHANGED");
-            FileUtils.writeStringToFile(new File(new URI(changedDocURI)), newContent);
+            FileUtils.writeStringToFile(new File(new URI(changedDocURI)), newContent, Charset.defaultCharset());
             Files.setLastModifiedTime(file.toPath(), FileTime.fromMillis(modifiedTime.toMillis() + 1000));
 
             TestFileScanListener fileScanListener = new TestFileScanListener();
@@ -114,7 +115,7 @@ public class SpringIndexerMultipleFilesTest {
             fileScanListener.assertScannedUri(changedDocURI, 1);
         }
         finally {
-            FileUtils.writeStringToFile(new File(new URI(changedDocURI)), originalContent);
+            FileUtils.writeStringToFile(new File(new URI(changedDocURI)), originalContent, Charset.defaultCharset());
         }
     }
 
@@ -123,30 +124,30 @@ public class SpringIndexerMultipleFilesTest {
 
         String doc1URI = directory.toPath().resolve("src/main/java/org/test/SimpleMappingClass.java").toUri().toString();
         File file1 = new File(new URI(doc1URI));
-        String original1Content = FileUtils.readFileToString(file1);
+        String original1Content = FileUtils.readFileToString(file1, Charset.defaultCharset());
         FileTime modifiedTime1 = Files.getLastModifiedTime(file1.toPath());
 
         String doc2URI = directory.toPath().resolve("src/main/java/org/test/MainClass.java").toUri().toString();
         File file2 = new File(new URI(doc2URI));
-        String original2Content = FileUtils.readFileToString(file2);
+        String original2Content = FileUtils.readFileToString(file2, Charset.defaultCharset());
         FileTime modifiedTime2 = Files.getLastModifiedTime(file2.toPath());
 
         String doc3URI = directory.toPath().resolve("src/main/java/org/test/sub/MappingClassSubpackage.java").toUri().toString();
         File file3 = new File(new URI(doc3URI));
-        String original3Content = FileUtils.readFileToString(file3);
+        String original3Content = FileUtils.readFileToString(file3, Charset.defaultCharset());
         FileTime modifiedTime3 = Files.getLastModifiedTime(file3.toPath());
 
         try {
             String new1Content = original1Content.replace("mapping1", "mapping1-CHANGED");
-            FileUtils.writeStringToFile(new File(new URI(doc1URI)), new1Content);
+            FileUtils.writeStringToFile(new File(new URI(doc1URI)), new1Content, Charset.defaultCharset());
             Files.setLastModifiedTime(file1.toPath(), FileTime.fromMillis(modifiedTime1.toMillis() + 1000));
 
             String new2Content = original2Content.replace("\"/embedded-foo-mapping\"", "\"/embedded-foo-mapping-CHANGED\"");
-            FileUtils.writeStringToFile(new File(new URI(doc2URI)), new2Content);
+            FileUtils.writeStringToFile(new File(new URI(doc2URI)), new2Content, Charset.defaultCharset());
             Files.setLastModifiedTime(file2.toPath(), FileTime.fromMillis(modifiedTime2.toMillis() + 1000));
 
             String new3Content = original3Content.replace("classlevel", "classlevel-CHANGED");
-            FileUtils.writeStringToFile(new File(new URI(doc3URI)), new3Content);
+            FileUtils.writeStringToFile(new File(new URI(doc3URI)), new3Content, Charset.defaultCharset());
             Files.setLastModifiedTime(file3.toPath(), FileTime.fromMillis(modifiedTime3.toMillis() + 1000));
 
             CompletableFuture<Void> updateFuture = indexer.updateDocuments(new String[]{doc1URI, doc2URI, doc3URI}, "test triggered");
@@ -167,9 +168,9 @@ public class SpringIndexerMultipleFilesTest {
             assertTrue(SpringIndexerTest.containsSymbol(symbols3, "@/classlevel-CHANGED/mapping-subpackage", doc3URI, 7, 1, 7, 38));
         }
         finally {
-            FileUtils.writeStringToFile(new File(new URI(doc1URI)), original1Content);
-            FileUtils.writeStringToFile(new File(new URI(doc2URI)), original2Content);
-            FileUtils.writeStringToFile(new File(new URI(doc3URI)), original3Content);
+            FileUtils.writeStringToFile(new File(new URI(doc1URI)), original1Content, Charset.defaultCharset());
+            FileUtils.writeStringToFile(new File(new URI(doc2URI)), original2Content, Charset.defaultCharset());
+            FileUtils.writeStringToFile(new File(new URI(doc3URI)), original3Content, Charset.defaultCharset());
         }
     }
 
@@ -195,23 +196,23 @@ public class SpringIndexerMultipleFilesTest {
 
         String doc1URI = directory.toPath().resolve("src/main/java/org/test/SimpleMappingClass.java").toUri().toString();
         File file1 = new File(new URI(doc1URI));
-        String original1Content = FileUtils.readFileToString(file1);
+        String original1Content = FileUtils.readFileToString(file1, Charset.defaultCharset());
         FileTime modifiedTime1 = Files.getLastModifiedTime(file1.toPath());
 
         String doc2URI = directory.toPath().resolve("src/main/java/org/test/MainClass.java").toUri().toString();
 
         String doc3URI = directory.toPath().resolve("src/main/java/org/test/sub/MappingClassSubpackage.java").toUri().toString();
         File file3 = new File(new URI(doc3URI));
-        String original3Content = FileUtils.readFileToString(file3);
+        String original3Content = FileUtils.readFileToString(file3, Charset.defaultCharset());
         FileTime modifiedTime3 = Files.getLastModifiedTime(file3.toPath());
 
         try {
             String new1Content = original1Content.replace("mapping1", "mapping1-CHANGED");
-            FileUtils.writeStringToFile(file1, new1Content);
+            FileUtils.writeStringToFile(file1, new1Content, Charset.defaultCharset());
             Files.setLastModifiedTime(file1.toPath(), FileTime.fromMillis(modifiedTime1.toMillis() + 1000));
 
             String new3Content = original3Content.replace("classlevel", "classlevel-CHANGED");
-            FileUtils.writeStringToFile(new File(new URI(doc3URI)), new3Content);
+            FileUtils.writeStringToFile(new File(new URI(doc3URI)), new3Content, Charset.defaultCharset());
             Files.setLastModifiedTime(file3.toPath(), FileTime.fromMillis(modifiedTime3.toMillis() + 1000));
 
             TestFileScanListener fileScanListener = new TestFileScanListener();
@@ -238,8 +239,8 @@ public class SpringIndexerMultipleFilesTest {
             fileScanListener.assertScannedUri(doc3URI, 1);
         }
         finally {
-            FileUtils.writeStringToFile(file1, original1Content);
-            FileUtils.writeStringToFile(new File(new URI(doc3URI)), original3Content);
+            FileUtils.writeStringToFile(file1, original1Content, Charset.defaultCharset());
+            FileUtils.writeStringToFile(new File(new URI(doc3URI)), original3Content, Charset.defaultCharset());
         }
     }
 

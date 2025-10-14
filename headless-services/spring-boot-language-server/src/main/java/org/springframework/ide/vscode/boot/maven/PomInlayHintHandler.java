@@ -47,6 +47,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserve
 import org.springframework.ide.vscode.commons.languageserver.util.InlayHintHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
+import org.springframework.ide.vscode.commons.util.Optionals;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 public class PomInlayHintHandler implements InlayHintHandler {
@@ -132,14 +133,20 @@ public class PomInlayHintHandler implements InlayHintHandler {
 										hint.setLabel(List.of(label));
 										return hint;
 									}, (d, e) -> {
+										
 										Optional<String> parentArtifactIdOpt = findChildElement(e, 0, "parent", "artifactId")
 												.flatMap(PomInlayHintHandler::getNodeValue);
+
 										if (parentArtifactIdOpt.isPresent() && "spring-boot-starter-parent".equals(parentArtifactIdOpt.get())) {
+
 											Optional<DOMElement> parentVersionOpt = findChildElement(e, 0, "parent", "version");
 											if (parentVersionOpt.isPresent()) {
 												DOMElement parentVersion = parentVersionOpt.get();
 												// Get the current version in the POM in case file is not saved
-												Optional<Version> parentVersionValueOpt = getNodeValue(parentVersion).flatMap(s -> Optional.ofNullable(Version.parse(s)));
+												
+												Optional<Version> parentVersionValueOpt = getNodeValue(parentVersion)
+														.flatMap(value -> Optionals.ofThrowable((s) -> Version.parse(s), value));
+
 												if (parentVersionValueOpt.isPresent() && parentVersionValueOpt.get().compareTo(latestPatch) < 0) {
 													try {
 														return List.of(d.toPosition(parentVersion.getEndTagCloseOffset() + 1));

@@ -75,30 +75,23 @@ public class PomInlayHintHandlerTest {
 		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
-		PomInlayHintHandler inlayHanlder = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
 		
-		List<InlayHint> hints = inlayHanlder.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		
 		assertEquals(1, hints.size());
 		
 		InlayHint hint = hints.get(0);
-		
 		assertEquals(new Position(27, 15), hint.getPosition());
-		
 		assertTrue(hint.getLabel().isRight());
-		
 		assertEquals(1, hint.getLabel().getRight().size());
 		
 		InlayHintLabelPart labelPart = hint.getLabel().getRight().get(0);
-		
 		assertEquals("Add Spring Boot Starters...", labelPart.getValue());
 				
 		Command cmd = labelPart.getCommand();
-		
 		assertNotNull(cmd);
-		
 		assertEquals("spring.initializr.addStarters", cmd.getCommand());
-		
 	}
 
 	@Test
@@ -127,12 +120,10 @@ public class PomInlayHintHandlerTest {
 		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
-		PomInlayHintHandler inlayHanlder = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
 		
-		List<InlayHint> hints = inlayHanlder.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
-		
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
-		
 	}
 	
 	@Test
@@ -165,32 +156,148 @@ public class PomInlayHintHandlerTest {
 		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
-		PomInlayHintHandler inlayHanlder = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
 		
-		List<InlayHint> hints = inlayHanlder.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
-		
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(1, hints.size());
 		
 		InlayHint hint = hints.get(0);
-		
 		assertEquals(new Position(17, 34), hint.getPosition());
-		
 		assertTrue(hint.getLabel().isRight());
-		
 		assertEquals(1, hint.getLabel().getRight().size());
 		
 		InlayHintLabelPart labelPart = hint.getLabel().getRight().get(0);
-		
 		assertEquals("Upgrade to the Latest Patch", labelPart.getValue());
 				
 		Command cmd = labelPart.getCommand();
 		
 		assertNotNull(cmd);
-		
 		assertEquals("sts/upgrade/spring-boot", cmd.getCommand());
 		assertEquals(jp.getLocationUri().toASCIIString(), cmd.getArguments().get(0));
 		assertEquals("1.5.10", cmd.getArguments().get(1));
+	}
+	
+	@Test
+	void noInlayHintOnEmptyVersionTag() throws Exception {
+		MavenJavaProject jp =  projects.mavenProject("empty-boot-15-web-app");
 		
+		String docUri = jp.getProjectBuild().getBuildFile().toASCIIString();
+
+		String pomFileContent = Files.readString(Paths.get(jp.getProjectBuild().getBuildFile()));
+		pomFileContent = docUri.replace("1.5.8.RELEASE", "");
+
+		TextDocument doc = new TextDocument(docUri, LanguageId.XML, 0, pomFileContent);
+		
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		when(projectFinder.find(any())).thenReturn(Optional.of(jp));
+		
+		SimpleTextDocumentService documents = mock(SimpleTextDocumentService.class);
+		when(documents.getLatestSnapshot(anyString())).thenReturn(doc);
+		
+		SimpleLanguageServer server = mock(SimpleLanguageServer.class);
+		when(server.getTextDocumentService()).thenReturn(documents);
+		
+		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
+		when(resolvedProject.getGenerations()).thenReturn(null);
+		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
+		when(resolvedProject.getReleases()).thenReturn(List.of(
+				Version.parse("1.5.6"),
+				Version.parse("1.5.7"),
+				Version.parse("1.5.8"),
+				Version.parse("1.5.9"),
+				Version.parse("1.5.10"),
+				Version.parse("2.0.0")
+		));
+		
+		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
+		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
+		
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+		
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
+		assertEquals(0, hints.size());
+	}
+
+	@Test
+	void noInlayHintOnEmptyVersionWithSpacesTag() throws Exception {
+		MavenJavaProject jp =  projects.mavenProject("empty-boot-15-web-app");
+		
+		String docUri = jp.getProjectBuild().getBuildFile().toASCIIString();
+
+		String pomFileContent = Files.readString(Paths.get(jp.getProjectBuild().getBuildFile()));
+		pomFileContent = pomFileContent.replace("1.5.8.RELEASE", "  ");
+
+		TextDocument doc = new TextDocument(docUri, LanguageId.XML, 0, pomFileContent);
+		
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		when(projectFinder.find(any())).thenReturn(Optional.of(jp));
+		
+		SimpleTextDocumentService documents = mock(SimpleTextDocumentService.class);
+		when(documents.getLatestSnapshot(anyString())).thenReturn(doc);
+		
+		SimpleLanguageServer server = mock(SimpleLanguageServer.class);
+		when(server.getTextDocumentService()).thenReturn(documents);
+		
+		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
+		when(resolvedProject.getGenerations()).thenReturn(null);
+		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
+		when(resolvedProject.getReleases()).thenReturn(List.of(
+				Version.parse("1.5.6"),
+				Version.parse("1.5.7"),
+				Version.parse("1.5.8"),
+				Version.parse("1.5.9"),
+				Version.parse("1.5.10"),
+				Version.parse("2.0.0")
+		));
+		
+		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
+		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
+		
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+		
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
+		assertEquals(0, hints.size());
+	}
+
+	@Test
+	void noInlayHintOnVersionTagWithNonParseableValue() throws Exception {
+		MavenJavaProject jp =  projects.mavenProject("empty-boot-15-web-app");
+		
+		String docUri = jp.getProjectBuild().getBuildFile().toASCIIString();
+
+		String pomFileContent = Files.readString(Paths.get(jp.getProjectBuild().getBuildFile()));
+		pomFileContent = pomFileContent.replace("1.5.8.RELEASE", "foo");
+
+		TextDocument doc = new TextDocument(docUri, LanguageId.XML, 0, pomFileContent);
+		
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		when(projectFinder.find(any())).thenReturn(Optional.of(jp));
+		
+		SimpleTextDocumentService documents = mock(SimpleTextDocumentService.class);
+		when(documents.getLatestSnapshot(anyString())).thenReturn(doc);
+		
+		SimpleLanguageServer server = mock(SimpleLanguageServer.class);
+		when(server.getTextDocumentService()).thenReturn(documents);
+		
+		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
+		when(resolvedProject.getGenerations()).thenReturn(null);
+		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
+		when(resolvedProject.getReleases()).thenReturn(List.of(
+				Version.parse("1.5.6"),
+				Version.parse("1.5.7"),
+				Version.parse("1.5.8"),
+				Version.parse("1.5.9"),
+				Version.parse("1.5.10"),
+				Version.parse("2.0.0")
+		));
+		
+		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
+		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
+		
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+		
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
+		assertEquals(0, hints.size());
 	}
 
 	@Test
@@ -221,10 +328,9 @@ public class PomInlayHintHandlerTest {
 		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
-		PomInlayHintHandler inlayHanlder = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
 		
-		List<InlayHint> hints = inlayHanlder.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
-		
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());		
 	}
 

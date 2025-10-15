@@ -36,6 +36,7 @@ import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.jsonrpc.messages.Message;
+import org.eclipse.lsp4j.jsonrpc.messages.NotificationMessage;
 import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.PlatformUI;
@@ -127,6 +128,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 
 	@Override
 	public void stop() {
+		BootLanguageServerPlugin.getDefault().getLsState().stopped();
 		IProxyService proxyService = PlatformUI.getWorkbench().getService(IProxyService.class);
 		if (proxyService != null) {
 			proxyService.removeProxyChangeListener(proxySettingsListener);
@@ -171,7 +173,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 				
 				//Add remote boot apps listener
 				RemoteBootAppsDataHolder.getDefault().getRemoteApps().addListener(remoteAppsListener);
-
+				
 				if (isCopilotInstalled()) {
 					// Enable Copilot features if the Copilot plugin is installed
 					languageServer.getWorkspaceService().executeCommand(new ExecuteCommandParams(
@@ -179,8 +181,18 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 							List.of(true)
 					));
 				}
+				
+				BootLanguageServerPlugin.getDefault().getLsState().initialized();
+			}
+		} else if (message instanceof NotificationMessage) {
+			NotificationMessage notification = (NotificationMessage) message;
+			// Handle spring/index/updated notification
+			if ("spring/index/updated".equals(notification.getMethod())) {
+				// Emit event to the Flux
+				BootLanguageServerPlugin.getDefault().getLsState().indexed();
 			}
 		}
+		
 	}
 	
 	private boolean isCopilotInstalled() {

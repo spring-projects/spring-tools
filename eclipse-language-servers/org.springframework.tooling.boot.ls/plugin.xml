@@ -928,5 +928,17 @@
       </jar>
    </extension>
 -->
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            category="org.springframework.ide.eclipse.ui.views"
+            class="org.springframework.tooling.boot.ls.views.LogicalStructureView"
+            icon="icons/spring_obj.gif"
+            id="org.springframework.tooling.boot.ls.views.LogicalStructureView"
+            name="Logical Structure"
+            restorable="true">
+      </view>
+   </extension>
 
 </plugin>

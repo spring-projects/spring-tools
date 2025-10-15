@@ -58,6 +58,8 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String ICON = "icon";
 	public static final String TEXT = "text";
 	public static final String HOVER = "hover";
+	
+	private static final String NODE_ID = "nodeId";
 
 	private final Node root;
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
@@ -127,6 +129,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.APPLICATION_KEY))
 			.withAttribute(PROJECT_ID, project.getElementName())
 		;
+		assignNodeId(root, null);
 	}
 
 	@Override
@@ -201,11 +204,26 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private void addChild(Consumer<Node> consumer) {
 		this.current = addChildFoo(consumer);
 	}
-
+	
+	private static void assignNodeId(Node n, Node p) {
+		String textId = n.attributes.containsKey(TEXT) ? (String) n.attributes.get(TEXT) : "";
+		
+		Location location = (Location) n.attributes.get(LOCATION);
+		String locationId = location == null ? "" : "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter());
+		
+		String referenceId = n.attributes.containsKey(REFERENCE) ? (String) n.attributes.get(REFERENCE) : "";
+		
+		String nodeSpecificId = "%s|%s|%s".formatted(textId, locationId, referenceId).replaceAll("\\|+$", "");
+		
+		n.attributes.put(NODE_ID, p != null && p.attributes.containsKey(NODE_ID) ? "%s//%s".formatted(p.attributes.get(NODE_ID), nodeSpecificId) : nodeSpecificId);
+	}
+	
 	private Node addChildFoo(Consumer<Node> consumer) {
 
 		var node = new Node(this.current);
 		consumer.accept(node);
+		
+		assignNodeId(node, current);
 
 		this.current.children.add(node);
 

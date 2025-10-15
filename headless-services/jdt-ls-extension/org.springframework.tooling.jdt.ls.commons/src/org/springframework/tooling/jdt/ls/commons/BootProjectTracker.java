@@ -11,12 +11,14 @@
 package org.springframework.tooling.jdt.ls.commons;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -55,14 +57,18 @@ public class BootProjectTracker {
 	}
 	
 	private void processProject(IJavaProject jp) {
-		if (isSpringProject(jp)) {
-			if (springProjects.add(jp)) {
-				fireEvent();
+		try {
+			if (isSpringProject(jp)) {
+				if (springProjects.add(jp)) {
+					fireEvent();
+				}
+			} else {
+				if (springProjects.remove(jp)) {
+					fireEvent();
+				}
 			}
-		} else {
-			if (springProjects.remove(jp)) {
-				fireEvent();
-			}
+		} catch (JavaModelException e) {
+			logger.log(e);
 		}
 	}
 	
@@ -84,21 +90,24 @@ public class BootProjectTracker {
 		listeners.remove(l);
 	}
 	
-	private boolean isSpringProject(IJavaProject jp) {
+	private static boolean isSpringProject(IJavaProject jp) throws JavaModelException {
 		if (jp.exists()) {
-			try {
-				IClasspathEntry[] classpath = jp.getResolvedClasspath(true);
-				//Look for a 'spring-core' jar or project entry
-				for (IClasspathEntry e : classpath) {
-					if (isBootJar(e) || isBootProject(e)) {
-						return true;
-					}
+			IClasspathEntry[] classpath = jp.getResolvedClasspath(true);
+			// Look for a 'spring-core' jar or project entry
+			for (IClasspathEntry e : classpath) {
+				if (isBootJar(e) || isBootProject(e)) {
+					return true;
 				}
-			} catch (JavaModelException e) {
-				logger.log(e);
 			}
 		}
 		return false;
+	}
+	
+	public static Stream<IJavaProject> streamSpringProjects() {
+		return Arrays.stream(ResourcesPlugin.getWorkspace().getRoot().getProjects())
+			.filter(p -> p != null && p.isAccessible())
+			.map(JavaCore::create)
+			.filter(jp -> jp != null && jp.exists());
 	}
 	
 	private static boolean isBootProject(IClasspathEntry e) {

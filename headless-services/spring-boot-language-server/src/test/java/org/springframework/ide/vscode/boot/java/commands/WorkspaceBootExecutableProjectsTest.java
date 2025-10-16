@@ -43,6 +43,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Import(SymbolProviderTestConf.class)
 public class WorkspaceBootExecutableProjectsTest {
 	
+	private static final String PROJECT_NAME = "test-spring-find-executable-projects";
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex symbolIndex;
@@ -56,7 +57,7 @@ public class WorkspaceBootExecutableProjectsTest {
 	@SuppressWarnings("unchecked")
 	@Test 
 	void singleProject() throws Exception {
-		MavenJavaProject project = ProjectsHarness.INSTANCE.mavenProject("test-spring-indexing");
+		MavenJavaProject project = ProjectsHarness.INSTANCE.mavenProject(PROJECT_NAME);
 		
 		// trigger project creation
 		projectFinder.find(new TextDocumentIdentifier(project.getProjectBuild().getBuildFile().toASCIIString())).get();
@@ -68,11 +69,11 @@ public class WorkspaceBootExecutableProjectsTest {
 		assertNotNull(res);
 		assertEquals(1,  res.size());
 		ExecutableProject execProject = res.get(0);
-		assertEquals("test-spring-indexing", execProject.name());
+		assertEquals(PROJECT_NAME, execProject.name());
 		assertEquals("org.test.MainClass", execProject.mainClass());
 		assertEquals(project.getLocationUri().toASCIIString(), execProject.uri());
-		assertEquals("com.example:test-spring-indexing:0.0.1-SNAPSHOT", execProject.gav());
-		assertEquals(99, execProject.classpath().size());
+		assertEquals("com.example:test-spring-find-executable-projects:0.0.1-SNAPSHOT", execProject.gav());
+		assertEquals(100, execProject.classpath().size());
 		
 		assertTrue(execProject.classpath().stream().map(path -> Path.of(path)).anyMatch(p -> p.endsWith("target/classes")));
 		assertFalse(execProject.classpath().stream().map(path -> Path.of(path)).anyMatch(p -> p.endsWith("target/test-classes")));
@@ -81,7 +82,7 @@ public class WorkspaceBootExecutableProjectsTest {
 	@SuppressWarnings("unchecked")
 	@Test
 	void multipleProjects() throws Exception {
-		MavenJavaProject project1 = ProjectsHarness.INSTANCE.mavenProject("test-spring-indexing");
+		MavenJavaProject project1 = ProjectsHarness.INSTANCE.mavenProject(PROJECT_NAME);
 		MavenJavaProject project2 = ProjectsHarness.INSTANCE.mavenProject("test-spring-data-symbols");
 		ProjectsHarness.INSTANCE.mavenProject("test-annotation-indexing-non-boot-project");
 		ProjectsHarness.INSTANCE.mavenProject("test-xml-validations");
@@ -98,12 +99,12 @@ public class WorkspaceBootExecutableProjectsTest {
 		assertNotNull(res);
 		assertEquals(2,  res.size());
 		
-		ExecutableProject execProject1 = res.stream().filter(p -> "test-spring-indexing".equals(p.name())).findFirst().orElseThrow();
-		assertEquals("test-spring-indexing", execProject1.name());
+		ExecutableProject execProject1 = res.stream().filter(p -> PROJECT_NAME.equals(p.name())).findFirst().orElseThrow();
+		assertEquals(PROJECT_NAME, execProject1.name());
 		assertEquals("org.test.MainClass", execProject1.mainClass());
 		assertEquals(project1.getLocationUri().toASCIIString(), execProject1.uri());
-		assertEquals("com.example:test-spring-indexing:0.0.1-SNAPSHOT", execProject1.gav());
-		assertEquals(99, execProject1.classpath().size());
+		assertEquals("com.example:test-spring-find-executable-projects:0.0.1-SNAPSHOT", execProject1.gav());
+		assertEquals(100, execProject1.classpath().size());
 		assertTrue(execProject1.classpath().stream().map(path -> Path.of(path)).anyMatch(p -> p.endsWith("target/classes")));
 		assertFalse(execProject1.classpath().stream().map(path -> Path.of(path)).anyMatch(p -> p.endsWith("target/test-classes")));
 		

@@ -45,7 +45,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Import(SymbolProviderTestConf.class)
 public class SpringMetamodelIndexingTest {
 	
-	public static final int NO_OF_EXPECTED_BEANS = 30;
+	public static final int NO_OF_EXPECTED_BEANS = 31;
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;

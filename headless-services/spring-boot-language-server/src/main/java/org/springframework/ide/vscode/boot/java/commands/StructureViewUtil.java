@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -26,6 +27,7 @@ import org.jmolecules.stereotype.catalog.StereotypeGroups;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelUtils;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.beans.SpringBootApplicationIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
@@ -108,11 +110,22 @@ public class StructureViewUtil {
 	}
 	
 	public static StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, CachedSpringMetamodelIndex springIndex) {
-		List<StereotypeClassElement> classNodes = springIndex.getClassesForProject(project.getElementName());
+		List<SpringBootApplicationIndexElement> mainAppNodes = springIndex.getSpringBootApplicationElementsForProject(project.getElementName());
 		
-		Optional<StereotypePackageElement> packageElement = classNodes.stream()
-			.filter(node -> node.isAnnotatedWith(Annotations.BOOT_APP))
-			.map(node -> getPackage(node.getType()))
+		Optional<StereotypePackageElement> packageElement = mainAppNodes.stream()
+			.sorted(new Comparator<SpringBootApplicationIndexElement>() {
+				@Override
+				public int compare(SpringBootApplicationIndexElement o1, SpringBootApplicationIndexElement o2) {
+					if (o1.isClassDeclaration() && o2.isClassDeclaration()) return 0;
+					if (o1.isAnnotationDeclaration() && o2.isAnnotationDeclaration()) return 0;
+					
+					if (o1.isClassDeclaration() && o2.isAnnotationDeclaration()) return -1;
+					if (o1.isAnnotationDeclaration() && o2.isClassDeclaration()) return 1;
+					
+					return 0;
+				}
+			})
+			.map(element -> element.getPackageName())
 			.map(packageName -> findPackageNode(packageName, project, springIndex))
 			.findFirst();
 		

@@ -22,6 +22,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -80,6 +81,9 @@ public class ComponentSymbolProvider implements SymbolProvider {
 			}
 			else if (node != null && node.getParent() != null && node.getParent() instanceof RecordDeclaration record) {
 				createSymbol(record, node, annotationType, metaAnnotations, context, doc);
+			}
+			else if (node != null && node.getParent() != null && node.getParent() instanceof AnnotationTypeDeclaration annotationDeclaration) {
+				createSymbol(annotationDeclaration, node, annotationType, metaAnnotations, context, doc);
 			}
 			else if (Annotations.NAMED_ANNOTATIONS.contains(annotationType.getQualifiedName())) {
 				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, doc);
@@ -150,6 +154,8 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		indexConfigurationProperties(beanDefinition, type, context, doc);
 		indexBeanRegistrarImplementation(beanDefinition, type, context, doc);
 		indexWebConfig(beanDefinition, type, context, doc);
+		
+		SpringBootApplicationIndexer.createIndexElement(type, annotationType, metaAnnotations, context);
 
 		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
@@ -193,6 +199,12 @@ public class ComponentSymbolProvider implements SymbolProvider {
 
 		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+	}
+	
+	private void createSymbol(AnnotationTypeDeclaration annotationDeclaration, Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations,
+			SpringIndexerJavaContext context, TextDocument doc) {
+		
+		SpringBootApplicationIndexer.createIndexElement(annotationDeclaration, annotationType, metaAnnotations, context);
 	}
 	
 	private void indexConfigurationProperties(Bean beanDefinition, AbstractTypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {

@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.beans.SpringBootApplicationIndexElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -38,6 +39,10 @@ public class CachedSpringMetamodelIndex {
 		return this.cache.computeIfAbsent(projectName, pn -> createProjectCache(pn)).packages.get(packageName);
 	}
 	
+	public List<SpringBootApplicationIndexElement> getSpringBootApplicationElementsForProject(String projectName) {
+		return this.cache.computeIfAbsent(projectName, pn -> createProjectCache(pn)).springBootAppElements;
+	}
+	
 	private ProjectCache createProjectCache(String projectName) {
 		var classes = this.springIndex.getNodesOfType(projectName, StereotypeClassElement.class);
 
@@ -47,7 +52,9 @@ public class CachedSpringMetamodelIndex {
 			packages.put(packageNode.getPackageName(), packageNode);
 		}
 
-		return new ProjectCache(classes, packages);
+		var springBootAppElements = this.springIndex.getNodesOfType(projectName, SpringBootApplicationIndexElement.class);
+
+		return new ProjectCache(classes, packages, springBootAppElements);
 	}
 	
 	public <T extends SpringIndexElement> List<T> getNodesOfType(String projectName, Class<T> type) {
@@ -58,6 +65,7 @@ public class CachedSpringMetamodelIndex {
 		return springIndex.getBeansOfDocument(docUri);
 	}
 	
-	private record ProjectCache(List<StereotypeClassElement> classes, ConcurrentMap<String, StereotypePackageElement> packages) {}
+	private record ProjectCache(List<StereotypeClassElement> classes, ConcurrentMap<String, StereotypePackageElement> packages,
+			List<SpringBootApplicationIndexElement> springBootAppElements) {}
 
 }

@@ -19,9 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,8 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
-import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Boot3JavaProblemType;
+import org.springframework.ide.vscode.boot.java.beans.SpringBootApplicationIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaReconcileEngine;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -53,7 +52,6 @@ import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserve
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle.Option;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
-import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.BeansParams;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -80,10 +78,11 @@ public class ModulithService {
 	private final ProjectObserver projectObserver;
 	private final JavaProjectFinder projectFinder;
 	
-	private SimpleLanguageServer server;
-	private SpringSymbolIndex springIndex;
-	private BootJavaReconcileEngine reconciler;
-	private BootJavaConfig config;
+	private final SimpleLanguageServer server;
+	private final SpringSymbolIndex springIndexer;
+	private final SpringMetamodelIndex springIndex;
+	private final BootJavaReconcileEngine reconciler;
+	private final BootJavaConfig config;
 	private boolean autoTrackingProjects;
 	
 	private Map<URI, AppModules> cache;
@@ -94,7 +93,8 @@ public class ModulithService {
 			SimpleLanguageServer server,
 			JavaProjectFinder projectFinder,
 			ProjectObserver projectObserver,
-			SpringSymbolIndex springIndex,
+			SpringSymbolIndex springIndexer,
+			SpringMetamodelIndex springIndex,
 			BootJavaReconcileEngine reconciler,
 			BootJavaConfig config
 	) {
@@ -105,6 +105,7 @@ public class ModulithService {
 		this.metadataRequested = new ConcurrentHashMap<>();
 		this.classFilesListeners = new ConcurrentHashMap<>();
 		this.server = server;
+		this.springIndexer = springIndexer;
 		this.springIndex = springIndex;
 		this.reconciler = reconciler;
 		this.executor = Executors.newCachedThreadPool();
@@ -313,7 +314,7 @@ public class ModulithService {
 				}
 			}
 			String[] uris = fileUriToUpdate.toArray(new String[fileUriToUpdate.size()]);
-			springIndex.deleteDocuments(uris).thenAccept(v -> springIndex.updateDocuments(uris, "Modulith Metadata Changed"));
+			springIndexer.deleteDocuments(uris).thenAccept(v -> springIndexer.updateDocuments(uris, "Modulith Metadata Changed"));
 		}
 	}
 
@@ -378,30 +379,56 @@ public class ModulithService {
 		return Collections.emptyList();
 	}
 	
+//	private CompletableFuture<Set<String>> findRootPackages(IJavaProject project, Duration delay) {
+//		return CompletableFuture.supplyAsync(() -> {
+//			Set<String> rootPackages = springIndex.getNodesOfType(project.getElementName(), SpringBootApplicationIndexElement.class)
+//					.stream()
+//					.map(element -> element.getPackageName())
+//					.collect(Collectors.toSet());
+//
+//			return rootPackages;
+//		}, CompletableFuture.delayedExecutor(delay.toSeconds(), TimeUnit.SECONDS, executor));
+//	}
+	
+	
 	private CompletableFuture<Set<String>> findRootPackages(IJavaProject project, Duration delay) {
 		return CompletableFuture.supplyAsync(() -> {
 			BeansParams params = new BeansParams();
 			params.setProjectName(project.getElementName());
 			return params;
 		}, CompletableFuture.delayedExecutor(delay.toSeconds(), TimeUnit.SECONDS, executor))
-		.thenComposeAsync(params -> springIndex.beans(params), executor)
+		.thenComposeAsync(params -> springIndexer.beans(params), executor)
 		.thenApply(beansOfProject -> {
-			HashSet<String> packages = new HashSet<>();
-			if (beansOfProject != null) {
-				for (Bean bean : beansOfProject) {
-					String beanType = bean.getType();
-					if (beanType != null) {
-						if (Arrays.stream(bean.getAnnotations())
-								.map(annotation -> annotation.getAnnotationType())
-								.anyMatch(Annotations.BOOT_APP::equals)) {
-							packages.add(getPackageNameFromTypeFQName(beanType));
-						}
-					}
-				}
-			}
-			return packages;
+//			HashSet<String> packages = new HashSet<>();
+//			if (beansOfProject != null) {
+//				for (Bean bean : beansOfProject) {
+//					String beanType = bean.getType();
+//					if (beanType != null) {
+//						if (Arrays.stream(bean.getAnnotations())
+//								.map(annotation -> annotation.getAnnotationType())
+//								.anyMatch(Annotations.BOOT_APP::equals)) {
+//							packages.add(getPackageNameFromTypeFQName(beanType));
+//						}
+//					}
+//				}
+//			}
+//			return packages;
+			
+			Set<String> rootPackages = springIndex.getNodesOfType(project.getElementName(), SpringBootApplicationIndexElement.class)
+					.stream()
+					.map(element -> element.getPackageName())
+					.collect(Collectors.toSet());
+
+			return rootPackages;
+
 		});
 	}
+	
+	
+	
+	
+	
+	
 	
 	public static String getPackageNameFromTypeFQName(String fqn) {
 		int idx = 0;

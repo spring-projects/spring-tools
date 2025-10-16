@@ -36,6 +36,7 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.beans.SpringBootApplicationIndexElement;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
@@ -58,6 +59,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Import(SymbolProviderTestConf.class)
 public class SpringMetamodelIndexerBeansTest {
 
+	private static final String PROJECT_NAME = "test-spring-indexing";
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringMetamodelIndex springIndex;
@@ -87,7 +89,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeansNameAndTypeFromBeanAnnotatedMethod() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "bean1");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "bean1");
 
 		assertEquals(1, beans.length);
 		assertEquals("bean1", beans[0].getName());
@@ -98,7 +100,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeansDefintionLocationFromBeanAnnotatedMethod() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "bean1");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "bean1");
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/MainClass.java").toUri().toString();
 		Location location = new Location(docUri, new Range(new Position(15, 1), new Position(15, 6)));
@@ -107,7 +109,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeansNameAndTypeFromComponentAnnotatedClassExists() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "constructorInjectionService");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "constructorInjectionService");
 
 		assertEquals(1, beans.length);
 		assertEquals("constructorInjectionService", beans[0].getName());
@@ -116,7 +118,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeansDefintionLocationFromComponentAnnotatedClass() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "constructorInjectionService");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "constructorInjectionService");
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/injections/ConstructorInjectionService.java").toUri().toString();
 		Location location = new Location(docUri, new Range(new Position(6, 0), new Position(6, 8)));
@@ -125,7 +127,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeansNameAndTypeFromConfigurationAnnotatedClassExists() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "configurationWithoutInjection");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "configurationWithoutInjection");
 
 		assertEquals(1, beans.length);
 		assertEquals("configurationWithoutInjection", beans[0].getName());
@@ -135,7 +137,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeansDefinitionLocationFromConfigurationAnnotatedClass() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "configurationWithoutInjection");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "configurationWithoutInjection");
 		assertEquals(1, beans.length);
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/injections/ConfigurationWithoutInjection.java").toUri().toString();
@@ -148,7 +150,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testBeanNoInjectionPointsFromBeanAnnotatedMethod() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "beanWithoutInjections");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "beanWithoutInjections");
 		assertEquals(1, beans.length);
 
 		InjectionPoint[] injectionPoints = beans[0].getInjectionPoints();
@@ -158,7 +160,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testBeanInjectionPointsFromBeanAnnotatedMethod() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "manualBeanWithConstructor");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "manualBeanWithConstructor");
 		assertEquals(1, beans.length);
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/injections/ConfigurationWithInjections.java").toUri().toString();
@@ -179,7 +181,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeanInjectionPointsFromConstructor() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "constructorInjectionService");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "constructorInjectionService");
 		assertEquals(1, beans.length);
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/injections/ConstructorInjectionService.java").toUri().toString();
@@ -200,7 +202,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testSetterInjectionPointsFromConstructor() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "setterInjectionService");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "setterInjectionService");
 		assertEquals(1, beans.length);
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/injections/SetterInjectionService.java").toUri().toString();
@@ -246,7 +248,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeanInjectionPointsFromAutowiredFields() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "autowiredInjectionService");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "autowiredInjectionService");
 		assertEquals(1, beans.length);
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/injections/AutowiredInjectionService.java").toUri().toString();
@@ -267,7 +269,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testBeanFromSpringDataRepository() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "customerRepository");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "customerRepository");
 
 		assertEquals(1, beans.length);
 		Bean repositoryBean = beans[0];
@@ -285,7 +287,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testBeansWithSupertypes() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "beanWithSupertypes");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "beanWithSupertypes");
 		assertEquals(1, beans.length);
 		
 		assertTrue(beans[0].isTypeCompatibleWith("java.lang.Object"));
@@ -302,7 +304,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testAnnotationMetadataFromComponentBeans() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "mainClass");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "mainClass");
 		assertEquals(1, beans.length);
 		
 		Bean mainClassBean = beans[0];
@@ -324,7 +326,7 @@ public class SpringMetamodelIndexerBeansTest {
 
 	@Test
 	void testAnnotationMetadataFromBeanMethodBean() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "bean3");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "bean3");
 		assertEquals(1, beans.length);
 		
 		Bean mainClassBean = beans[0];
@@ -375,7 +377,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testAnnotationMetadataFromBeanMethodWithInjectionPointAnnotations() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "beanWithAnnotationsOnInjectionPoints");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "beanWithAnnotationsOnInjectionPoints");
 		assertEquals(1, beans.length);
 		
 		Bean bean = beans[0];
@@ -428,7 +430,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testAnnotationMetadataFromComponentClass() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "configurationWithInjectionsAndAnnotations");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "configurationWithInjectionsAndAnnotations");
 		assertEquals(1, beans.length);
 		
 		Bean bean = beans[0];
@@ -479,7 +481,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testAnnotationMetadataFromInjectionPointsFromAutowiredFields() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "autowiredInjectionService");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "autowiredInjectionService");
 		assertEquals(1, beans.length);
 
 		InjectionPoint[] injectionPoints = beans[0].getInjectionPoints();
@@ -513,7 +515,7 @@ public class SpringMetamodelIndexerBeansTest {
 	
 	@Test
 	void testAnnotationMetadataFromSpringDataRepository() {
-		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "customerRepository");
+		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "customerRepository");
 
 		assertEquals(1, beans.length);
 		
@@ -570,11 +572,43 @@ public class SpringMetamodelIndexerBeansTest {
 		assertEquals("beanWithoutConfig", bean1.getName());
 		assertEquals("beanWithoutConfig2", bean2.getName());
 		
-		Bean[] beansFound = springIndex.getBeansWithName("test-spring-indexing", "beanWithoutConfig");
+		Bean[] beansFound = springIndex.getBeansWithName(PROJECT_NAME, "beanWithoutConfig");
 		assertEquals(1, beansFound.length);
 		assertSame(bean1, beansFound[0]);
 	}
 
-
+	@Test
+	void testSpringBootApplicationElementOnClass() {
+		List<SpringBootApplicationIndexElement> mainElements = springIndex.getNodesOfType(PROJECT_NAME, SpringBootApplicationIndexElement.class)
+				.stream().filter(element -> element.isClassDeclaration()).toList();
+		
+		SpringBootApplicationIndexElement mainElement = mainElements.stream().filter(element -> element.getTypeName().equals("MainClass")).findAny().get();
+		assertEquals("org.test", mainElement.getPackageName());
+		assertEquals("MainClass", mainElement.getTypeName());
+		assertTrue(mainElement.isClassDeclaration());
+		assertFalse(mainElement.isAnnotationDeclaration());
+		
+		SpringBootApplicationIndexElement mainElementFromMetaAnnotation = mainElements.stream().filter(element -> element.getTypeName().equals("MainClassFromMetaAnnotation")).findAny().get();
+		assertEquals("org.test", mainElementFromMetaAnnotation.getPackageName());
+		assertEquals("MainClassFromMetaAnnotation", mainElementFromMetaAnnotation.getTypeName());
+		assertTrue(mainElementFromMetaAnnotation.isClassDeclaration());
+		assertFalse(mainElementFromMetaAnnotation.isAnnotationDeclaration());
+		
+		assertEquals(2, mainElements.size());
+	}
+	
+	@Test
+	void testSpringBootApplicationElementOnAnnotation() {
+		List<SpringBootApplicationIndexElement> mainElements = springIndex.getNodesOfType(PROJECT_NAME, SpringBootApplicationIndexElement.class)
+				.stream().filter(element -> element.isAnnotationDeclaration()).toList();
+		
+		assertEquals(1, mainElements.size());
+		SpringBootApplicationIndexElement mainElement = mainElements.get(0);
+		
+		assertEquals("org.test", mainElement.getPackageName());
+		assertEquals("MainAnnotation", mainElement.getTypeName());
+		assertFalse(mainElement.isClassDeclaration());
+		assertTrue(mainElement.isAnnotationDeclaration());
+	}
 	
 }

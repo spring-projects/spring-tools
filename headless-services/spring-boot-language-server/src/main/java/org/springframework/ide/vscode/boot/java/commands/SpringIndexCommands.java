@@ -78,7 +78,7 @@ public class SpringIndexCommands {
 					return projectFinder.all().stream().filter(p -> projectName.equals(p.getElementName())).findFirst().map(this::getGroups).orElseThrow();
 				}
 			}
-			return projectFinder.all().stream().map(this::getGroups);
+			return projectFinder.all().stream().map(this::getGroups).toList();
 		}));
 	}
 	

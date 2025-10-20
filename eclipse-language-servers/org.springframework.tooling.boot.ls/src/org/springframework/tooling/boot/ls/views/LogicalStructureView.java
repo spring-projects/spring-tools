@@ -11,15 +11,24 @@
 package org.springframework.tooling.boot.ls.views;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.lsp4e.LSPEclipseUtils;
 import org.eclipse.lsp4e.ui.UI;
+import org.eclipse.lsp4j.Location;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.part.ViewPart;
 import org.springframework.tooling.boot.ls.BootLanguageServerPlugin;
 import org.springframework.tooling.boot.ls.BootLsState;
+import org.springframework.tooling.boot.ls.views.StructureClient.Groups;
+import org.springframework.tooling.boot.ls.views.StructureClient.StructureParameter;
 
 
 /**
@@ -33,7 +42,9 @@ public class LogicalStructureView extends ViewPart {
 	
 	private TreeViewer treeViewer;
 	
-	final private StructureClient client = new StructureClient();
+	final private StructureClient structureClient = new StructureClient();
+	
+	final private GroupingRepository groupingRepository = new GroupingRepository();
 	
 	private Consumer<BootLsState> lsStateListener = state -> {
 		if (state.isIndexed()) {
@@ -44,7 +55,7 @@ public class LogicalStructureView extends ViewPart {
 	};
 	
 	void fetchStructure(boolean updateMetadata) {
-		client.fetch(updateMetadata).thenAccept(nodes -> {
+		structureClient.fetchStructure(new StructureParameter(updateMetadata, getGroupings())).thenAccept(nodes -> {
 			UI.getDisplay().asyncExec(() -> {
 				Object[] expanded = treeViewer.getExpandedElements();
 				treeViewer.setInput(nodes);
@@ -52,7 +63,12 @@ public class LogicalStructureView extends ViewPart {
 			});
 		});
 	}
+	
+	CompletableFuture<List<Groups>> fetchGroups() {
+		return structureClient.fetchGroups();
+	}
 
+	@SuppressWarnings("restriction")
 	@Override
 	public void createPartControl(Composite parent) {
 		treeViewer = new TreeViewer(parent, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL);
@@ -69,30 +85,47 @@ public class LogicalStructureView extends ViewPart {
 		BootLsState lsState = BootLanguageServerPlugin.getDefault().getLsState();
 		
 		if (lsState.isIndexed()) {
-			client.fetch(false).thenAccept(nodes -> {
-				UI.getDisplay().asyncExec(() -> {
-					treeViewer.setInput(nodes);
-				});
-			});
+			fetchStructure(false);
 		}
 		
 		lsState.addStateChangedListener(lsStateListener);
 		
 		treeViewer.getControl().addDisposeListener(e -> lsState.removeStateChangedListener(lsStateListener));
 		
+		treeViewer.addDoubleClickListener(e -> {
+			Object o = ((IStructuredSelection) e.getSelection()).getFirstElement();
+			if (o instanceof StereotypeNode) {
+				StereotypeNode n = (StereotypeNode) o;
+				Location l = n.location();
+				if (l != null) {
+					LSPEclipseUtils.openInEditor(l);
+				}
+			}
+		});
+		
 		// Make the viewer available for selection
 		getSite().setSelectionProvider(treeViewer);
 		
-		initActions();
+		initActions(getViewSite().getActionBars());
 	}
 
-	private void initActions() {
-		getViewSite().getActionBars().getToolBarManager().add(new RefreshAction(this));
+	private void initActions(IActionBars actionBars) {
+		actionBars.getToolBarManager().add(new GroupingAction(this));
+		actionBars.getToolBarManager().add(new RefreshAction(this));
 	}
 
 	@Override
 	public void setFocus() {
 		treeViewer.getControl().setFocus();
 	}
+
+	void setGroupings(Map<String, List<String>> groupings) {
+		groupingRepository.saveWorkspaceGroupings(groupings);
+	}
+	
+	Map<String, List<String>> getGroupings() {
+		return groupingRepository.getWorkspaceGroupings();
+	}
+
 }
 

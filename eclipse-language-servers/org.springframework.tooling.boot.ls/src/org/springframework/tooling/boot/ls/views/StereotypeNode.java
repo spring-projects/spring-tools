@@ -12,6 +12,7 @@ package org.springframework.tooling.boot.ls.views;
 
 import java.util.Map;
 
+import org.eclipse.lsp4j.Location;
 
 /**
  * Represents a node in the logical structure tree.
@@ -19,45 +20,24 @@ import java.util.Map;
  * 
  * @author Alex Boyko
  */
-record StereotypeNode(StereotypeNode[] children, Map<String, Object> attributes) {
-	
-	private static final String PROJECT_ID = "projectId";
-	
-	private static final String LOCATION = "location";
-	
-	private static final String ICON = "icon";
-	private static final String TEXT = "text";
-	
-	private static final String NODE_ID = "nodeId";
-	
-	public String getText() {
-		return (String) attributes.get(TEXT);
-	}
-	
-	public String getId() {
-		return (String) attributes.get(NODE_ID);
-	}
-
-	public String getIcon() {
-		return (String) attributes.get(ICON);
-	}
+record StereotypeNode(String id, String text, String icon, Location location, String reference, Map<String, Object> attributes, StereotypeNode[] children) {
 	
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof StereotypeNode) {
-			return getId().equals(((StereotypeNode) obj).getId());
+			return id().equals(((StereotypeNode) obj).id());
 		}
 		return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return getId().hashCode();
+		return id().hashCode();
 	}
 
 	@Override
 	public String toString() {
-		return getId();
+		return text;
 	}
 
 }

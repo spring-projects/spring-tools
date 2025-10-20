@@ -107,7 +107,13 @@ public class BootProjectTracker {
 		return Arrays.stream(ResourcesPlugin.getWorkspace().getRoot().getProjects())
 			.filter(p -> p != null && p.isAccessible())
 			.map(JavaCore::create)
-			.filter(jp -> jp != null && jp.exists());
+			.filter(jp -> {
+				try {
+					return jp != null && jp.exists() && isSpringProject(jp);
+				} catch (JavaModelException e) {
+					return false;
+				}
+			});
 	}
 	
 	private static boolean isBootProject(IClasspathEntry e) {

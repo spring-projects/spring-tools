@@ -25,7 +25,7 @@ public class StructureTreeLabelProvider extends LabelProvider {
 	@Override
 	public String getText(Object element) {
 		if (element instanceof StereotypeNode) {
-			return ((StereotypeNode) element).getText();
+			return ((StereotypeNode) element).text();
 		}
 		return super.getText(element);
 	}
@@ -33,7 +33,7 @@ public class StructureTreeLabelProvider extends LabelProvider {
 	@Override
 	public Image getImage(Object element) {
 		if (element instanceof StereotypeNode) {
-			String descriptor = ((StereotypeNode) element).getIcon();
+			String descriptor = ((StereotypeNode) element).icon();
 			if (descriptor != null && !descriptor.isBlank()) {
 				return BootLanguageServerPlugin.getDefault().getStereotypeImage(descriptor);
 			}

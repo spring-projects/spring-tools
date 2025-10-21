@@ -44,6 +44,9 @@ public class EclipseSourceLinks implements SourceLinks {
 	private static final String RESOURCE_COMMAND = "org.springframework.tooling.ls.eclipse.commons.commands.OpenResourceInEditor";
 	private static final String PATH = "path";
 
+	private static final String JAR_ENTRY_COMMAND = "org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor";
+	private static final String JAR_URI_PARAM = "jarUri";
+
 	private static final Logger log = LoggerFactory.getLogger(EclipseSourceLinks.class);
 
 	private JavaProjectFinder projectFinder;
@@ -120,6 +123,31 @@ public class EclipseSourceLinks implements SourceLinks {
 				paramBuilder.append(EQUALS);
 				paramBuilder.append(project.getElementName());
 			}
+			paramBuilder.append(PARAMETERS_END);
+
+			StringBuilder urlBuilder = new StringBuilder(URL_PREFIX);
+			urlBuilder.append(URLEncoder.encode(paramBuilder.toString(), "UTF8"));
+			return URI.create(urlBuilder.toString());
+		} catch (UnsupportedEncodingException e) {
+			log.error("{}", e);
+		}
+		return null;
+	}
+	
+	public static URI eclipseIntroUriForJarEntry(String projectName, URI jarEntryUri) {
+		try {
+			StringBuilder paramBuilder = new StringBuilder(JAR_ENTRY_COMMAND);
+
+			paramBuilder.append(PARAMETERS_START);
+			paramBuilder.append(JAR_URI_PARAM);
+			paramBuilder.append(EQUALS);
+			paramBuilder.append(jarEntryUri.toString());
+
+			paramBuilder.append(PARAMETERS_SEPARATOR);
+			paramBuilder.append(PROJECT_NAME_PARAMETER_ID);
+			paramBuilder.append(EQUALS);
+			paramBuilder.append(projectName);
+
 			paramBuilder.append(PARAMETERS_END);
 
 			StringBuilder urlBuilder = new StringBuilder(URL_PREFIX);

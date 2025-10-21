@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2019 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -35,7 +35,7 @@ import org.springframework.tooling.ls.eclipse.commons.Utils;
 public class OpenJavaElementInEditor extends AbstractHandler {
 
 	private static final String BINDING_KEY = "bindingKey";
-	private static final String PROJECT_NAME = "projectName";
+	static final String PROJECT_NAME = "projectName";
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {

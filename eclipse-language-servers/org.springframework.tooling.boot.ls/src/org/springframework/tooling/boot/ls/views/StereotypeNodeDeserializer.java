@@ -42,7 +42,7 @@ public class StereotypeNodeDeserializer implements com.google.gson.JsonDeseriali
 				extractString(attributes, TEXT),
 				extractString(attributes, ICON),
 				context.deserialize(attributes.get(LOCATION), Location.class),
-				extractString(attributes, REFERENCE),
+				context.deserialize(attributes.get(REFERENCE), Location.class),
 				context.deserialize(attributes, new TypeToken<Map<String, Object>>(){}.getType()),
 				context.deserialize(object.get(CHILDREN), StereotypeNode[].class)
 		);

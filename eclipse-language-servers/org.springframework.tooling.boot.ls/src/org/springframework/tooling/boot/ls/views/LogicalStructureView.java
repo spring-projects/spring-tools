@@ -97,6 +97,9 @@ public class LogicalStructureView extends ViewPart {
 			if (o instanceof StereotypeNode) {
 				StereotypeNode n = (StereotypeNode) o;
 				Location l = n.location();
+				if (l == null) {
+					l = n.reference();
+				}
 				if (l != null) {
 					LSPEclipseUtils.openInEditor(l);
 				}

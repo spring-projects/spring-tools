@@ -29,16 +29,20 @@ import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Range;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
 import org.jmolecules.stereotype.tooling.NodeContext;
 import org.jmolecules.stereotype.tooling.NodeHandler;
+import org.springframework.ide.vscode.boot.java.links.EclipseSourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
+import org.springframework.ide.vscode.commons.languageserver.util.LspClient.Client;
 import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 import com.google.gson.Gson;
@@ -94,30 +98,35 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			var definition = catalog.getDefinition(stereotype);
 			var sources = definition.getSources();
 			
-			String reference = null;
+			Location reference = null;
 			for (Object source : sources) {
 				if (source instanceof URL) {
 					URL url = (URL) source;
+					
 					try {
-						reference = url.toURI().toASCIIString();
-						if (reference.startsWith(Misc.JAR_URL_PROTOCOL_PREFIX)) {
-							reference = reference.replaceFirst(Misc.JAR_URL_PROTOCOL_PREFIX, Misc.BOOT_LS_URL_PRTOCOL_PREFIX);
+						reference = new Location(url.toURI().toASCIIString(), new Range());
+						if ("jar".equals(url.getProtocol())) {
+							if (LspClient.currentClient() == Client.ECLIPSE) {
+								reference.setUri(EclipseSourceLinks.eclipseIntroUriForJarEntry(project.getElementName(), url.toURI()).toASCIIString());
+							} else {
+								reference.setUri(url.toURI().toASCIIString().replaceFirst(Misc.JAR_URL_PROTOCOL_PREFIX, Misc.BOOT_LS_URL_PRTOCOL_PREFIX));
+							}
 						}
 					} catch (URISyntaxException e) {
 						// something went wrong
 					}
 				}
 				else if (source instanceof Location) {
-					reference = ((Location) source).getUri();
+					reference = (Location) source;
 				}
 			}
 			
-			final String referenceUri = reference;
+			final Location referenceLocation = reference;
 			addChild(node -> node
 				.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
 				.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
 				.withAttribute(HOVER, "defined in: " + sources.toString())
-				.withAttribute(REFERENCE, referenceUri)
+				.withAttribute(REFERENCE, referenceLocation)
 			);
 		}
 	}
@@ -211,7 +220,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		Location location = (Location) n.attributes.get(LOCATION);
 		String locationId = location == null ? "" : "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter());
 		
-		String referenceId = n.attributes.containsKey(REFERENCE) ? (String) n.attributes.get(REFERENCE) : "";
+		String referenceId = n.attributes.containsKey(REFERENCE) ? ((Location) n.attributes.get(REFERENCE)).getUri() : "";
 		
 		String nodeSpecificId = "%s|%s|%s".formatted(textId, locationId, referenceId).replaceAll("\\|+$", "");
 		

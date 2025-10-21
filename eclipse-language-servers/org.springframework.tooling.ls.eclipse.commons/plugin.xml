@@ -103,6 +103,10 @@
             class="org.springframework.tooling.ls.eclipse.commons.commands.ExplainwithAi"
             commandId="vscode-spring-boot.query.explain">
       </handler>
+      <handler
+            class="org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor"
+            commandId="org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
@@ -175,6 +179,20 @@
                name="Command id (unnecessary, only to make lsp4e happy)"
                optional="true"
                typeId="org.eclipse.lsp4e.commandParameterType">
+         </commandParameter>
+      </command>
+      <command
+            id="org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor"
+            name="Open Jar Entry in Editor">
+         <commandParameter
+               id="jarUri"
+               name="jarUri"
+               optional="false">
+         </commandParameter>
+         <commandParameter
+               id="projectName"
+               name="projectName"
+               optional="false">
          </commandParameter>
       </command>
    </extension>

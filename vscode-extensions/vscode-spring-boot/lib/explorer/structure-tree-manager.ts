@@ -16,11 +16,10 @@ export class StructureManager {
         this.workspaceState = context.workspaceState;
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => this.refresh(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node) => {
-            if (node && node.getReferenceValue) {
-                const reference = node.getReferenceValue();
-                if (reference) {
-                    commands.executeCommand('vscode.open', api.client.protocol2CodeConverter.asLocation(reference as ls.Location));
-                }
+            const reference = node?.getReferenceValue() as ls.Location;;
+            if (reference) {
+                const location = api.client.protocol2CodeConverter.asLocation(reference)
+                window.showTextDocument(location.uri, { selection: location.range });
             }
         }));
 

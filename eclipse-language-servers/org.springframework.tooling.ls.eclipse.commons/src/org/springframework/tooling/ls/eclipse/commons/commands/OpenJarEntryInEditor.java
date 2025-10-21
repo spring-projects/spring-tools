@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.springframework.tooling.ls.eclipse.commons.commands;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URI;
 import java.util.Optional;
 
@@ -18,7 +21,9 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
@@ -65,13 +70,78 @@ public class OpenJarEntryInEditor extends AbstractHandler implements IHandler {
 			IJavaProject javaProject = JavaCore.create(project);
 			if (javaProject != null) {
 				JarUri jarUri = createJarUri(uri);
-				findJavaObj(javaProject, jarUri).ifPresent(s -> {
+				Object inputElement = findJavaObj(javaProject, jarUri).orElseGet(() -> {
 					try {
-						EditorUtility.openInEditor(s, true);
+						JarURLConnection c = (JarURLConnection) uri.toURL().openConnection();
+						return new IStorage() {
+
+							@Override
+							public <T> T getAdapter(Class<T> adapter) {
+								if (URI.class.equals(adapter)) {
+									return (T) uri;
+								}
+								return null;
+							}
+
+							@Override
+							public InputStream getContents() throws CoreException {
+								try {
+									return c.getInputStream();
+								} catch (IOException e) {
+									throw new CoreException(new Status(IStatus.ERROR,
+											LanguageServerCommonsActivator.PLUGIN_ID, "Cannot load JAR entry", e));
+								}
+							}
+
+							@Override
+							public IPath getFullPath() {
+								return new Path(jarUriStr);
+							}
+
+							@Override
+							public String getName() {
+								return new Path(c.getEntryName()).lastSegment();
+							}
+
+							@Override
+							public boolean isReadOnly() {
+								return true;
+							}
+
+							@Override
+							public int hashCode() {
+								return uri.hashCode();
+							}
+
+							@Override
+							public boolean equals(Object obj) {
+								if (obj instanceof IStorage s) {
+									return uri.equals(s.getAdapter(URI.class));
+								}
+								return false;
+							}
+
+							@Override
+							public String toString() {
+								return jarUriStr;
+							}
+
+
+
+						};
+					} catch (IOException e) {
+						LanguageServerCommonsActivator.getInstance().getLog().log(new Status(IStatus.ERROR,
+								LanguageServerCommonsActivator.PLUGIN_ID, "Cannot load JAR entry: " + uri));
+						return null;
+					}
+				});
+				if (inputElement != null) {
+					try {
+						EditorUtility.openInEditor(inputElement, true);
 					} catch (PartInitException e) {
 						LanguageServerCommonsActivator.getInstance().getLog().log(e.getStatus());
 					}
-				});
+				}
 			} else {
 				LanguageServerCommonsActivator.getInstance().getLog().log(new Status(IStatus.WARNING,
 						LanguageServerCommonsActivator.PLUGIN_ID, "Cannot find project: " + projectName));

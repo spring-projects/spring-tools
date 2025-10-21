@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
@@ -110,7 +111,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 					
 					try {
 						URI uri = url.toURI();
-						reference = new Location(uri.toASCIIString(), new Range());
+						reference = new Location(uri.toASCIIString(), new Range(new Position(0,0), new Position(0,0)));
 						if (Misc.JAR.equals(uri.getScheme())) {
 							sourceLinks.sourceLinkForJarEntry(project, uri).map(u -> u.toASCIIString()).ifPresent(reference::setUri);
 						}

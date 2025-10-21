@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
@@ -45,12 +46,14 @@ public class SpringIndexCommands {
 	
 	private final ModulithService modulithService;
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
+	private final SourceLinks sourceLinks;
 	
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex, ModulithService modulithService,
-			JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry) {
+			JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks) {
 
 		this.modulithService = modulithService;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
+		this.sourceLinks = sourceLinks;
 		
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> server.getAsync().invoke(() -> {
 			StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
@@ -112,10 +115,10 @@ public class SpringIndexCommands {
 		}
 		
 		if (ModulithService.isModulithDependentProject(project) && StructureViewUtil.hasModulithStructureViewEnabled()) {
-			return new ModulithStructureView(catalog, springIndex, modulithService).createTree(project, factory, selectedGroups);
+			return new ModulithStructureView(catalog, springIndex, sourceLinks, modulithService).createTree(project, factory, selectedGroups);
 		}
 		else {
-			return new JMoleculesStructureView(catalog, springIndex).createTree(project, factory, selectedGroups);
+			return new JMoleculesStructureView(catalog, springIndex, sourceLinks).createTree(project, factory, selectedGroups);
 		}
 	}
 	

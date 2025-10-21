@@ -24,7 +24,8 @@ import com.google.gson.JsonElement;
 public class Misc {
 	
 	public static final String BOOT_LS_URL_PRTOCOL_PREFIX = "spring-boot-ls:";
-	public static final String JAR_URL_PROTOCOL_PREFIX = "jar:";
+	public static final String JAR = "jar";
+	public static final String JAR_URL_PROTOCOL_PREFIX = JAR + ":";
 	
 	private static final String STS_FETCH_JAR_CONTENT = "sts/jar/fetch-content";
 

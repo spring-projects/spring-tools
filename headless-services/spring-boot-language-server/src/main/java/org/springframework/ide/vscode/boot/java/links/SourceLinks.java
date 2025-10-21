@@ -26,6 +26,7 @@ import java.util.Optional;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.commands.Misc;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaModuleData;
@@ -132,7 +133,7 @@ public interface SourceLinks {
 						// URL for CF resources looks like jar:file:/home/vcap/app/lib/gs-rest-service-complete.jar!/hello/MyService.class
 						// The above doesn't wotk with "filePath.toUri().toURL()"
 						URL url = new URL(path.substring(0, idx));
-						if (url.getProtocol().equals("jar")) {
+						if (url.getProtocol().equals(Misc.JAR)) {
 							URLConnection connection = url.openConnection();
 							if (connection instanceof JarURLConnection) {
 								JarURLConnection jarConnection = (JarURLConnection) connection;
@@ -192,5 +193,12 @@ public interface SourceLinks {
 	 * @return the link URL optional
 	 */
 	Optional<String> sourceLinkForResourcePath(Path path);
-
+	
+	/**
+	 * From URI produces a source link compatible with the client
+	 * @param contextProject
+	 * @param uri
+	 * @return
+	 */
+	Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri);
 }

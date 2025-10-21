@@ -19,6 +19,7 @@ import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.springframework.ide.vscode.boot.java.commands.ApplicationModulesStructureProvider.SimpleApplicationModulesStructureProvider;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.modulith.AppModules;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
@@ -29,10 +30,12 @@ public class ModulithStructureView {
 	private final AbstractStereotypeCatalog catalog;
 	private final CachedSpringMetamodelIndex springIndex;
 	private final ModulithService modulithService;
+	private SourceLinks sourceLinks;
 
-	public ModulithStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, ModulithService modulithService) {
+	public ModulithStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks, ModulithService modulithService) {
 		this.catalog = catalog;
 		this.springIndex = springIndex;
+		this.sourceLinks = sourceLinks;
 		this.modulithService = modulithService;
 	}
 
@@ -57,7 +60,7 @@ public class ModulithStructureView {
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, springIndex, catalog, project);
+		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, springIndex, sourceLinks, catalog, project);
 
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI

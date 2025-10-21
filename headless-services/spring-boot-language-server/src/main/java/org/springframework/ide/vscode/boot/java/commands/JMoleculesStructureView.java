@@ -19,6 +19,7 @@ import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
@@ -29,10 +30,12 @@ public class JMoleculesStructureView {
 
 	private final AbstractStereotypeCatalog catalog;
 	private final CachedSpringMetamodelIndex springIndex;
+	private final SourceLinks sourceLinks;
 
-	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex) {
+	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks) {
 		this.catalog = catalog;
 		this.springIndex = springIndex;
+		this.sourceLinks = sourceLinks;
 	}
 
 	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, Collection<String> selectedGroups) {
@@ -56,7 +59,7 @@ public class JMoleculesStructureView {
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labelProvider, consumer, springIndex, catalog, project);
+		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labelProvider, consumer, springIndex, sourceLinks, catalog, project);
 		
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI

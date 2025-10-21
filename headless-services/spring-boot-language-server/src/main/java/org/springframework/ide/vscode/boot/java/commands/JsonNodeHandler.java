@@ -16,6 +16,7 @@
 
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,13 +37,13 @@ import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
 import org.jmolecules.stereotype.tooling.NodeContext;
 import org.jmolecules.stereotype.tooling.NodeHandler;
-import org.springframework.ide.vscode.boot.java.links.EclipseSourceLinks;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
-import org.springframework.ide.vscode.commons.languageserver.util.LspClient.Client;
 import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 import com.google.gson.Gson;
@@ -53,6 +54,8 @@ import com.google.gson.GsonBuilder;
  * @author Martin Lippert
  */
 public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> {
+	
+	private static final Logger log = LoggerFactory.getLogger(JsonNodeHandler.class);
 
 	private static final String PROJECT_ID = "projectId";
 	
@@ -69,16 +72,18 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
 	private final BiConsumer<Node, C> customHandler;
 	private final CachedSpringMetamodelIndex springIndex;
+	private final SourceLinks sourceLinks;
 	private final IJavaProject project;
 
 	private Node current;
 	private StereotypeCatalog catalog;
 
 	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler,
-			CachedSpringMetamodelIndex springIndex, StereotypeCatalog catalog, IJavaProject project) {
+			CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks, StereotypeCatalog catalog, IJavaProject project) {
 		this.labels = labels;
 		this.springIndex = springIndex;
 		this.customHandler = customHandler;
+		this.sourceLinks = sourceLinks;
 		this.project = project;
 
 		this.root = new Node(null);
@@ -104,16 +109,13 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 					URL url = (URL) source;
 					
 					try {
-						reference = new Location(url.toURI().toASCIIString(), new Range());
-						if ("jar".equals(url.getProtocol())) {
-							if (LspClient.currentClient() == Client.ECLIPSE) {
-								reference.setUri(EclipseSourceLinks.eclipseIntroUriForJarEntry(project.getElementName(), url.toURI()).toASCIIString());
-							} else {
-								reference.setUri(url.toURI().toASCIIString().replaceFirst(Misc.JAR_URL_PROTOCOL_PREFIX, Misc.BOOT_LS_URL_PRTOCOL_PREFIX));
-							}
+						URI uri = url.toURI();
+						reference = new Location(uri.toASCIIString(), new Range());
+						if (Misc.JAR.equals(uri.getScheme())) {
+							sourceLinks.sourceLinkForJarEntry(project, uri).map(u -> u.toASCIIString()).ifPresent(reference::setUri);
 						}
 					} catch (URISyntaxException e) {
-						// something went wrong
+						log.error("", e);
 					}
 				}
 				else if (source instanceof Location) {

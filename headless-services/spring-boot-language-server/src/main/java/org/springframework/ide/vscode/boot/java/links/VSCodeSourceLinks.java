@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2019 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,7 +26,7 @@ import org.springframework.ide.vscode.commons.util.text.Region;
  * @author Alex Boyko
  *
  */
-public class VSCodeSourceLinks extends AbstractSourceLinks {
+public class VSCodeSourceLinks extends LegacySourceLinks {
 
 	public VSCodeSourceLinks(CompilationUnitCache cuCache, JavaProjectFinder projectFinder) {
 		super(cuCache, projectFinder);

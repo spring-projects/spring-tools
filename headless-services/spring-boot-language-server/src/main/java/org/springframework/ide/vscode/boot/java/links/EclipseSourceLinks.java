@@ -29,7 +29,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
  * @author Alex Boyko
  *
  */
-public class EclipseSourceLinks implements SourceLinks {
+public class EclipseSourceLinks extends AbstractSourceLinks {
 
 	private static final String URL_PREFIX = "http://org.eclipse.ui.intro/execute?command=";
 	private static final String EQUALS = "=";
@@ -134,7 +134,7 @@ public class EclipseSourceLinks implements SourceLinks {
 		return null;
 	}
 	
-	public static URI eclipseIntroUriForJarEntry(String projectName, URI jarEntryUri) {
+	static URI eclipseIntroUriForJarEntry(String projectName, URI jarEntryUri) {
 		try {
 			StringBuilder paramBuilder = new StringBuilder(JAR_ENTRY_COMMAND);
 
@@ -157,6 +157,12 @@ public class EclipseSourceLinks implements SourceLinks {
 			log.error("{}", e);
 		}
 		return null;
+	}
+
+	@Override
+	public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri) {
+		return super.sourceLinkForJarEntry(contextProject, uri)
+				.map(u -> eclipseIntroUriForJarEntry(contextProject.getElementName(), u));
 	}
 
 }

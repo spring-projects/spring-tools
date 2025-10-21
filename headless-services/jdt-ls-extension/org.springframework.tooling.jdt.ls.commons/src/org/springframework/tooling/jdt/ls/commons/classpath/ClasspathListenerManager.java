@@ -130,7 +130,7 @@ public class ClasspathListenerManager {
 			if (delta.getResourceDeltas() != null && (delta.getFlags() & (IJavaElementDelta.F_CONTENT | IJavaElementDelta.F_CHILDREN)) != 0) {
 				IFile classpathFile = jp.getProject().getFile(IJavaProject.CLASSPATH_FILE_NAME);
 				for (IResourceDelta resourceDelta : delta.getResourceDeltas()) {
-					if (classpathFile.equals(resourceDelta.getResource())) {
+					if (resourceDelta != null && classpathFile.equals(resourceDelta.getResource())) {
 						switch (resourceDelta.getKind()) {
 						case IResourceDelta.ADDED:
 							return true;

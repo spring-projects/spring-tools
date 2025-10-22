@@ -44,20 +44,6 @@ public class OpenJarEntryInEditor extends AbstractHandler implements IHandler {
 
 	private static final String JAR_URI_PARAM = "jarUri";
 
-	record JarUri(IPath jar, IPath path) {}
-
-	private static JarUri createJarUri(URI uri) {
-		if (!"jar".equals(uri.getScheme())) {
-			throw new IllegalArgumentException();
-		}
-		String s = uri.getSchemeSpecificPart();
-		int idx = s.indexOf('!');
-		if (idx <= 0) {
-			throw new IllegalArgumentException();
-		}
-		return new JarUri(new Path(URI.create(s.substring(0, idx)).getPath()), new Path(s.substring(idx + 1)));
- 	}
-
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		String projectName = event.getParameter(OpenJavaElementInEditor.PROJECT_NAME);
@@ -69,12 +55,12 @@ public class OpenJarEntryInEditor extends AbstractHandler implements IHandler {
 			URI uri = URI.create(jarUriStr);
 			IJavaProject javaProject = JavaCore.create(project);
 			if (javaProject != null) {
-				JarUri jarUri = createJarUri(uri);
-				Object inputElement = findJavaObj(javaProject, jarUri).orElseGet(() -> {
-					try {
-						JarURLConnection c = (JarURLConnection) uri.toURL().openConnection();
+				try {
+				final JarURLConnection c = (JarURLConnection) uri.toURL().openConnection();
+				Object inputElement = findJavaObj(javaProject, c).orElseGet(() -> {
 						return new IStorage() {
 
+							@SuppressWarnings("unchecked")
 							@Override
 							public <T> T getAdapter(Class<T> adapter) {
 								if (URI.class.equals(adapter)) {
@@ -129,11 +115,6 @@ public class OpenJarEntryInEditor extends AbstractHandler implements IHandler {
 
 
 						};
-					} catch (IOException e) {
-						LanguageServerCommonsActivator.getInstance().getLog().log(new Status(IStatus.ERROR,
-								LanguageServerCommonsActivator.PLUGIN_ID, "Cannot load JAR entry: " + uri));
-						return null;
-					}
 				});
 				if (inputElement != null) {
 					try {
@@ -141,6 +122,11 @@ public class OpenJarEntryInEditor extends AbstractHandler implements IHandler {
 					} catch (PartInitException e) {
 						LanguageServerCommonsActivator.getInstance().getLog().log(e.getStatus());
 					}
+				}
+				} catch (IOException e) {
+					LanguageServerCommonsActivator.getInstance().getLog().log(new Status(IStatus.ERROR,
+							LanguageServerCommonsActivator.PLUGIN_ID, "Cannot load JAR entry: " + uri));
+					return null;
 				}
 			} else {
 				LanguageServerCommonsActivator.getInstance().getLog().log(new Status(IStatus.WARNING,
@@ -151,20 +137,23 @@ public class OpenJarEntryInEditor extends AbstractHandler implements IHandler {
 		return null;
 	}
 
-	private static Optional<Object> findJavaObj(IJavaProject j, JarUri uri) {
+	private static Optional<Object> findJavaObj(IJavaProject j, JarURLConnection c) {
 		try {
+			IPath jarPath = new Path(c.getJarFileURL().getPath());
+			// jar entry name doesn't start with '/' but the JarEntryResource full path does start from '/'
+			IPath entryPath = new Path("/" + c.getEntryName());
 			for (IPackageFragmentRoot fr : j.getAllPackageFragmentRoots()) {
-				if (uri.jar().equals(fr.getPath())) {
+				if (jarPath.equals(fr.getPath())) {
 					for (Object o : fr.getNonJavaResources()) {
 						if (o instanceof IJarEntryResource je) {
-							return findJarEntry(je, uri.path());
+							return findJarEntry(je, entryPath);
 						}
 					}
-					if ("class".equals(uri.path().getFileExtension())) {
-						String packageName = uri.path().removeLastSegments(1).toString().replace(IPath.SEPARATOR, '.');
+					if ("class".equals(entryPath.getFileExtension())) {
+						String packageName = entryPath.removeLastSegments(1).toString().replace(IPath.SEPARATOR, '.');
 						IPackageFragment pkg = fr.getPackageFragment(packageName);
 						if (pkg != null) {
-							IClassFile cf = pkg.getClassFile(uri.path().lastSegment());
+							IClassFile cf = pkg.getClassFile(entryPath.lastSegment());
 							if (cf != null) {
 								return Optional.of(cf);
 							}

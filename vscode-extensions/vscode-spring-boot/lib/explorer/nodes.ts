@@ -73,19 +73,7 @@ export class StereotypedNode extends SpringNode {
     }
     
     getNodeId(): string {
-        // Create a unique identifier based on node attributes, excluding icon
-        // Include parent path in the computation for better uniqueness
-        const textId = this.n.attributes.text || '';
-        const locationId = this.n.attributes.location ? 
-            `${this.n.attributes.location.uri}:${this.n.attributes.location.range.start.line}:${this.n.attributes.location.range.start.character}` : '';
-        const referenceId = this.n.attributes.reference ? String(this.n.attributes.reference) : '';
-        
-        // Build the node-specific part of the ID (without icon)
-        const nodeSpecificId = `${textId}|${locationId}|${referenceId}`.replace(/\|+$/, ''); // Remove trailing separators
-        
-        // Include parent path for better uniqueness
-        const parentPath = this.getParentPath();
-        return parentPath ? `${parentPath}/${nodeSpecificId}` : nodeSpecificId;
+        return this.n.attributes.nodeId || this.n.attributes.text;
     }
     
     protected getNodeText(): string {
@@ -98,21 +86,6 @@ export class StereotypedNode extends SpringNode {
 
     computeIcon() {
         return new ThemeIcon(this.n.attributes.icon);
-/*        switch (this.n.attributes.icon) {
-            retur
-            case "fa-named-interface": // specify the case
-                return new ThemeIcon("symbol-interface");
-            case "fa-package":
-                return new ThemeIcon("symbol-constant");
-            case "fa-stereotype":
-                return new ThemeIcon("mention");
-            case "fa-application":
-                return new ThemeIcon("folder");
-            case "fa-method":
-                return new ThemeIcon("symbol-method");
-            default:
-                return new ThemeIcon("symbol-class");
-        } */
     }
 
 }

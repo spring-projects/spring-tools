@@ -160,10 +160,6 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
     return commons.activate(options, context).then(client => {
 
-        // Activation of structure explorer
-        const structureManager = new StructureManager(context);
-        new ExplorerTreeProvider(structureManager).createTreeView(context, 'explorer.spring');
-
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
             // Boot LS is fully started
             registerClasspathService(client);
@@ -201,8 +197,10 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
         const api = new ApiManager(client).api
 
-        context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(e => structureManager.refresh(false)));
-        
+                // Activation of structure explorer
+        const structureManager = new StructureManager(context, api);
+        new ExplorerTreeProvider(structureManager).createTreeView(context, 'explorer.spring');
+
         return api;
     });
 }

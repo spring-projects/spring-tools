@@ -127,8 +127,12 @@ public class IndexBasedStereotypeFactory implements StereotypeFactory<Stereotype
 	}
 	
 	private StereotypePackageElement findPackageFor(StereotypeClassElement type) {
-		String packageName = type.getType().substring(0, type.getType().lastIndexOf('.'));
-		return springIndex.findPackageNode(packageName, this.project.getElementName());
+		int index = type.getType().lastIndexOf('.');
+		if (index >= 0) {
+			String packageName = type.getType().substring(0, index);
+			return springIndex.findPackageNode(packageName, this.project.getElementName());
+		}
+		return null;
 	}
 	
 	private void registerStereotype(StereotypeDefinitionElement element) {

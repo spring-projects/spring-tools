@@ -1,5 +1,8 @@
 import { commands, EventEmitter, Event, ExtensionContext, window, Memento, Uri, QuickPickItem } from "vscode";
 import { SpringNode, StereotypedNode } from "./nodes";
+import { ExtensionAPI } from "../api";
+import * as ls from 'vscode-languageserver-protocol';
+
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 
@@ -9,15 +12,14 @@ export class StructureManager {
     private _onDidChange: EventEmitter<SpringNode | undefined> = new EventEmitter<SpringNode | undefined>();
     private workspaceState: Memento;
 
-    constructor(context: ExtensionContext) {
+    constructor(context: ExtensionContext, api: ExtensionAPI) {
         this.workspaceState = context.workspaceState;
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => this.refresh(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node) => {
-            if (node && node.getReferenceValue) {
-                const reference = node.getReferenceValue();
-                if (reference) {
-                    commands.executeCommand('vscode.open', Uri.parse(reference));
-                }
+            const reference = node?.getReferenceValue() as ls.Location;;
+            if (reference) {
+                const location = api.client.protocol2CodeConverter.asLocation(reference)
+                window.showTextDocument(location.uri, { selection: location.range });
             }
         }));
 
@@ -42,6 +44,9 @@ export class StructureManager {
                 this.refresh(false);
             }
         }));
+
+        context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(e => this.refresh(false)));
+        
     }
 
     get rootElements(): Thenable<SpringNode[]> {

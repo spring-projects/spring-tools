@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.links;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -19,12 +20,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.springframework.ide.vscode.boot.java.commands.Misc;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
+import org.springframework.ide.vscode.commons.languageserver.util.LspClient.Client;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.java.JavaDataParams;
 
-public class JavaServerSourceLinks implements SourceLinks {
+public class JavaServerSourceLinks extends AbstractSourceLinks {
 
 	private SimpleLanguageServer server;
 	private JavaProjectFinder projectFinder;
@@ -64,6 +68,15 @@ public class JavaServerSourceLinks implements SourceLinks {
 	@Override
 	public Optional<String> sourceLinkForResourcePath(Path path) {
 		return Optional.ofNullable(path).map(p -> p.toUri().toASCIIString());
+	}
+
+	@Override
+	public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri) {
+		// Ideally client should be asked for a URI for a JAR entry that it can deal with.
+		// It feels a bit too much adding this message to STS Client at the moment hence we check if the client is Eclipse here
+		return super.sourceLinkForJarEntry(contextProject, uri).map(u -> LspClient.currentClient() == Client.ECLIPSE
+				? EclipseSourceLinks.eclipseIntroUriForJarEntry(contextProject.getElementName(), uri)
+				: URI.create(uri.toString().replace(Misc.JAR_URL_PROTOCOL_PREFIX, Misc.BOOT_LS_URL_PRTOCOL_PREFIX)));
 	}
 
 }

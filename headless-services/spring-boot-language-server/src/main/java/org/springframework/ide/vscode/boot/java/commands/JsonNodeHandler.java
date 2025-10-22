@@ -16,6 +16,7 @@
 
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -29,12 +30,17 @@ import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeCatalog;
 import org.jmolecules.stereotype.tooling.LabelProvider;
 import org.jmolecules.stereotype.tooling.MethodNodeContext;
 import org.jmolecules.stereotype.tooling.NodeContext;
 import org.jmolecules.stereotype.tooling.NodeHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
@@ -49,6 +55,8 @@ import com.google.gson.GsonBuilder;
  * @author Martin Lippert
  */
 public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> {
+	
+	private static final Logger log = LoggerFactory.getLogger(JsonNodeHandler.class);
 
 	private static final String PROJECT_ID = "projectId";
 	
@@ -58,21 +66,25 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String ICON = "icon";
 	public static final String TEXT = "text";
 	public static final String HOVER = "hover";
+	
+	private static final String NODE_ID = "nodeId";
 
 	private final Node root;
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
 	private final BiConsumer<Node, C> customHandler;
 	private final CachedSpringMetamodelIndex springIndex;
+	private final SourceLinks sourceLinks;
 	private final IJavaProject project;
 
 	private Node current;
 	private StereotypeCatalog catalog;
 
 	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler,
-			CachedSpringMetamodelIndex springIndex, StereotypeCatalog catalog, IJavaProject project) {
+			CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks, StereotypeCatalog catalog, IJavaProject project) {
 		this.labels = labels;
 		this.springIndex = springIndex;
 		this.customHandler = customHandler;
+		this.sourceLinks = sourceLinks;
 		this.project = project;
 
 		this.root = new Node(null);
@@ -92,30 +104,32 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			var definition = catalog.getDefinition(stereotype);
 			var sources = definition.getSources();
 			
-			String reference = null;
+			Location reference = null;
 			for (Object source : sources) {
 				if (source instanceof URL) {
 					URL url = (URL) source;
+					
 					try {
-						reference = url.toURI().toASCIIString();
-						if (reference.startsWith(Misc.JAR_URL_PROTOCOL_PREFIX)) {
-							reference = reference.replaceFirst(Misc.JAR_URL_PROTOCOL_PREFIX, Misc.BOOT_LS_URL_PRTOCOL_PREFIX);
+						URI uri = url.toURI();
+						reference = new Location(uri.toASCIIString(), new Range(new Position(0,0), new Position(0,0)));
+						if (Misc.JAR.equals(uri.getScheme())) {
+							sourceLinks.sourceLinkForJarEntry(project, uri).map(u -> u.toASCIIString()).ifPresent(reference::setUri);
 						}
 					} catch (URISyntaxException e) {
-						// something went wrong
+						log.error("", e);
 					}
 				}
 				else if (source instanceof Location) {
-					reference = ((Location) source).getUri();
+					reference = (Location) source;
 				}
 			}
 			
-			final String referenceUri = reference;
+			final Location referenceLocation = reference;
 			addChild(node -> node
 				.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
 				.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
 				.withAttribute(HOVER, "defined in: " + sources.toString())
-				.withAttribute(REFERENCE, referenceUri)
+				.withAttribute(REFERENCE, referenceLocation)
 			);
 		}
 	}
@@ -127,6 +141,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.APPLICATION_KEY))
 			.withAttribute(PROJECT_ID, project.getElementName())
 		;
+		assignNodeId(root, null);
 	}
 
 	@Override
@@ -201,11 +216,26 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private void addChild(Consumer<Node> consumer) {
 		this.current = addChildFoo(consumer);
 	}
-
+	
+	private static void assignNodeId(Node n, Node p) {
+		String textId = n.attributes.containsKey(TEXT) ? (String) n.attributes.get(TEXT) : "";
+		
+		Location location = (Location) n.attributes.get(LOCATION);
+		String locationId = location == null ? "" : "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter());
+		
+		String referenceId = n.attributes.containsKey(REFERENCE) ? ((Location) n.attributes.get(REFERENCE)).getUri() : "";
+		
+		String nodeSpecificId = "%s|%s|%s".formatted(textId, locationId, referenceId).replaceAll("\\|+$", "");
+		
+		n.attributes.put(NODE_ID, p != null && p.attributes.containsKey(NODE_ID) ? "%s/%s".formatted(p.attributes.get(NODE_ID), nodeSpecificId) : nodeSpecificId);
+	}
+	
 	private Node addChildFoo(Consumer<Node> consumer) {
 
 		var node = new Node(this.current);
 		consumer.accept(node);
+		
+		assignNodeId(node, current);
 
 		this.current.children.add(node);
 

@@ -29,7 +29,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
  * @author Alex Boyko
  *
  */
-public class EclipseSourceLinks implements SourceLinks {
+public class EclipseSourceLinks extends AbstractSourceLinks {
 
 	private static final String URL_PREFIX = "http://org.eclipse.ui.intro/execute?command=";
 	private static final String EQUALS = "=";
@@ -43,6 +43,9 @@ public class EclipseSourceLinks implements SourceLinks {
 
 	private static final String RESOURCE_COMMAND = "org.springframework.tooling.ls.eclipse.commons.commands.OpenResourceInEditor";
 	private static final String PATH = "path";
+
+	private static final String JAR_ENTRY_COMMAND = "org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor";
+	private static final String JAR_URI_PARAM = "jarUri";
 
 	private static final Logger log = LoggerFactory.getLogger(EclipseSourceLinks.class);
 
@@ -129,6 +132,37 @@ public class EclipseSourceLinks implements SourceLinks {
 			log.error("{}", e);
 		}
 		return null;
+	}
+	
+	static URI eclipseIntroUriForJarEntry(String projectName, URI jarEntryUri) {
+		try {
+			StringBuilder paramBuilder = new StringBuilder(JAR_ENTRY_COMMAND);
+
+			paramBuilder.append(PARAMETERS_START);
+			paramBuilder.append(JAR_URI_PARAM);
+			paramBuilder.append(EQUALS);
+			paramBuilder.append(jarEntryUri.toString());
+
+			paramBuilder.append(PARAMETERS_SEPARATOR);
+			paramBuilder.append(PROJECT_NAME_PARAMETER_ID);
+			paramBuilder.append(EQUALS);
+			paramBuilder.append(projectName);
+
+			paramBuilder.append(PARAMETERS_END);
+
+			StringBuilder urlBuilder = new StringBuilder(URL_PREFIX);
+			urlBuilder.append(URLEncoder.encode(paramBuilder.toString(), "UTF8"));
+			return URI.create(urlBuilder.toString());
+		} catch (UnsupportedEncodingException e) {
+			log.error("{}", e);
+		}
+		return null;
+	}
+
+	@Override
+	public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri) {
+		return super.sourceLinkForJarEntry(contextProject, uri)
+				.map(u -> eclipseIntroUriForJarEntry(contextProject.getElementName(), u));
 	}
 
 }

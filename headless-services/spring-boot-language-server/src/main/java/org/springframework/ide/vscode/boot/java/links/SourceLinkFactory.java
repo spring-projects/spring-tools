@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2019 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.links;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -41,6 +42,11 @@ public final class SourceLinkFactory {
 
 		@Override
 		public Optional<String> sourceLinkForResourcePath(Path path) {
+			return Optional.empty();
+		}
+
+		@Override
+		public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri) {
 			return Optional.empty();
 		}
 

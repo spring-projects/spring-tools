@@ -227,7 +227,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		
 		String nodeSpecificId = "%s|%s|%s".formatted(textId, locationId, referenceId).replaceAll("\\|+$", "");
 		
-		n.attributes.put(NODE_ID, p != null && p.attributes.containsKey(NODE_ID) ? "%s//%s".formatted(p.attributes.get(NODE_ID), nodeSpecificId) : nodeSpecificId);
+		n.attributes.put(NODE_ID, p != null && p.attributes.containsKey(NODE_ID) ? "%s/%s".formatted(p.attributes.get(NODE_ID), nodeSpecificId) : nodeSpecificId);
 	}
 	
 	private Node addChildFoo(Consumer<Node> consumer) {

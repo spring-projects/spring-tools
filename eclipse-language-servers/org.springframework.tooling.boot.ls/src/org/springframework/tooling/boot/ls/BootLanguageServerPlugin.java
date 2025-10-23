@@ -11,18 +11,30 @@
 package org.springframework.tooling.boot.ls;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
-import org.eclipse.jdt.internal.ui.JavaPluginImages;
+import org.eclipse.e4.ui.css.swt.theme.IThemeEngine;
 import org.eclipse.jface.bindings.Binding;
+import org.eclipse.jface.preference.JFacePreferences;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.keys.IBindingService;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
@@ -121,7 +133,6 @@ public class BootLanguageServerPlugin extends AbstractUIPlugin {
 		}
 	}
 
-	@SuppressWarnings("restriction")
 	@Override
 	protected void initializeImageRegistry(ImageRegistry reg) {
 		super.initializeImageRegistry(reg);
@@ -135,9 +146,49 @@ public class BootLanguageServerPlugin extends AbstractUIPlugin {
 			if (p.getFileExtension().equals("svg")) {
 				String fileName = p.lastSegment();
 				String name = fileName.substring(0, fileName.length() - 4);
-				reg.put(STEREOTYPE_IMG_PREFIX + name, JavaPluginImages.createImageDescriptor(getBundle(), p, false));
+				
+				try {
+					URI uri = new URI("platform", null, "/plugin/" + PLUGIN_ID + "/" + p, null);
+					reg.put(STEREOTYPE_IMG_PREFIX + name, createStereotypeImageDescriptor(uri.toURL(), p));
+				} catch (URISyntaxException | MalformedURLException e) {
+					getLog().log(Status.error("Failed to create image descriptor for " + p, e));
+				}
 			}
 		}
+	}
+	
+	@SuppressWarnings("restriction")
+	private Optional<String> getActiveThemeId() {
+		return Optional.ofNullable(PlatformUI.getWorkbench().getService(IThemeEngine.class))
+			.flatMap(themeEngine -> Optional.ofNullable(themeEngine.getActiveTheme()))
+			.map(theme -> theme.getId());
+	}
+	
+	private ImageDescriptor createStereotypeImageDescriptor(URL url, IPath p) {
+		RGB rgb = PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getColorRegistry().getRGB(JFacePreferences.INFORMATION_FOREGROUND_COLOR);
+		if (rgb != null) {
+			final String fileName = p.lastSegment();
+			Optional<String> optThemeId = getActiveThemeId();
+			if (optThemeId.isPresent()) {
+				try {
+					java.nio.file.Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), PLUGIN_ID, optThemeId.get());
+					if (!Files.exists(tempDir)) {
+						Files.createDirectories(tempDir);
+					}
+					java.nio.file.Path tempSvgPath = tempDir.resolve(fileName);
+					if (!Files.exists(tempSvgPath)) {
+						String svg = new String(url.openStream().readAllBytes(), StandardCharsets.UTF_8)
+								.replace("currentColor", "rgb(%d,%d,%d)".formatted(rgb.red, rgb.green, rgb.blue));
+						Files.createFile(tempSvgPath);
+						Files.write(tempSvgPath, svg.getBytes(StandardCharsets.UTF_8));
+					}
+					return ImageDescriptor.createFromURL(tempSvgPath.toUri().toURL());
+				} catch (IOException e) {
+					getLog().error("Failed to create theme compatible SVG icon " + p, e);
+				}
+			}
+		}
+		return ImageDescriptor.createFromURL(url);
 	}
 	
 	public BootLsState getLsState() {

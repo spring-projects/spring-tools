@@ -1,3 +1,10 @@
+## 2025-10-29 (4.32.1 RELEASE, incl. language servers version 1.64.1)
+
+- _(Spring Boot)_ [backport] language server throws NumberFormatException [#1696](https://github.com/spring-projects/spring-tools/issues/1696)
+- _(Spring Boot)_ [backport] NullPointerException: Cannot invoke "org.eclipse.core.resources.IResourceDelta.getResource()" because "resourceDelta" is null [#1695](https://github.com/spring-projects/spring-tools/issues/1695)
+- _(Spring Boot)_ [backport] YAML editor barfs on sequences [#1694](https://github.com/spring-projects/spring-tools/issues/1694)
+- _(Spring Boot)_ [backport] reading support ranges from spring.io API throws exception [#1693](https://github.com/spring-projects/spring-tools/issues/1693)
+
 ## 2025-09-10 (4.32.0 RELEASE, incl. language servers version 1.64.0)
 
 - _(Spring Boot)_ [backport to 4.x] [aot repositories] adapt support to changed naming convention [#1622](https://github.com/spring-projects/spring-tools/issues/1622)

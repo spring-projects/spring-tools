@@ -21,14 +21,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
-import org.eclipse.e4.ui.css.swt.theme.IThemeEngine;
 import org.eclipse.jface.bindings.Binding;
 import org.eclipse.jface.preference.JFacePreferences;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -157,35 +155,27 @@ public class BootLanguageServerPlugin extends AbstractUIPlugin {
 		}
 	}
 	
-	@SuppressWarnings("restriction")
-	private Optional<String> getActiveThemeId() {
-		return Optional.ofNullable(PlatformUI.getWorkbench().getService(IThemeEngine.class))
-			.flatMap(themeEngine -> Optional.ofNullable(themeEngine.getActiveTheme()))
-			.map(theme -> theme.getId());
-	}
-	
 	private ImageDescriptor createStereotypeImageDescriptor(URL url, IPath p) {
-		RGB rgb = PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getColorRegistry().getRGB(JFacePreferences.INFORMATION_FOREGROUND_COLOR);
+		RGB rgb = PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getColorRegistry()
+				.getRGB(JFacePreferences.INFORMATION_FOREGROUND_COLOR);
 		if (rgb != null) {
 			final String fileName = p.lastSegment();
-			Optional<String> optThemeId = getActiveThemeId();
-			if (optThemeId.isPresent()) {
-				try {
-					java.nio.file.Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), PLUGIN_ID, optThemeId.get());
-					if (!Files.exists(tempDir)) {
-						Files.createDirectories(tempDir);
-					}
-					java.nio.file.Path tempSvgPath = tempDir.resolve(fileName);
-					if (!Files.exists(tempSvgPath)) {
-						String svg = new String(url.openStream().readAllBytes(), StandardCharsets.UTF_8)
-								.replace("currentColor", "rgb(%d,%d,%d)".formatted(rgb.red, rgb.green, rgb.blue));
-						Files.createFile(tempSvgPath);
-						Files.write(tempSvgPath, svg.getBytes(StandardCharsets.UTF_8));
-					}
-					return ImageDescriptor.createFromURL(tempSvgPath.toUri().toURL());
-				} catch (IOException e) {
-					getLog().error("Failed to create theme compatible SVG icon " + p, e);
+			try {
+				String rgbStr = "%02x-%02x-%02x".formatted(rgb.red, rgb.green, rgb.blue);
+				java.nio.file.Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"), PLUGIN_ID, rgbStr);
+				if (!Files.exists(tempDir)) {
+					Files.createDirectories(tempDir);
 				}
+				java.nio.file.Path tempSvgPath = tempDir.resolve(fileName);
+				if (!Files.exists(tempSvgPath)) {
+					String svg = new String(url.openStream().readAllBytes(), StandardCharsets.UTF_8)
+							.replace("currentColor", "rgb(%d,%d,%d)".formatted(rgb.red, rgb.green, rgb.blue));
+					Files.createFile(tempSvgPath);
+					Files.write(tempSvgPath, svg.getBytes(StandardCharsets.UTF_8));
+				}
+				return ImageDescriptor.createFromURL(tempSvgPath.toUri().toURL());
+			} catch (IOException e) {
+				getLog().error("Failed to create theme compatible SVG icon " + p, e);
 			}
 		}
 		return ImageDescriptor.createFromURL(url);

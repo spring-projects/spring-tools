@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Test
 Fragment-Host: org.springframework.ide.eclipse.boot.refactoring;bundle-version="3.7.3"
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.refactoring.test
-Bundle-Version: 4.32.0.qualifier
+Bundle-Version: 4.32.1.qualifier
 Bundle-Vendor: VMware, Inc
 Require-Bundle: org.eclipse.core.runtime,
  org.junit,

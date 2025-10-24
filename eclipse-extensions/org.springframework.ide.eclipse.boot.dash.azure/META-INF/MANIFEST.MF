@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.dash.azure;singleton:=true
-Bundle-Version: 4.32.0.qualifier
+Bundle-Version: 4.32.1.qualifier
 Bundle-Vendor: VMware, Inc
 Bundle-Name: Spring Boot Dash CF Support
 Require-Bundle: org.eclipse.ui,

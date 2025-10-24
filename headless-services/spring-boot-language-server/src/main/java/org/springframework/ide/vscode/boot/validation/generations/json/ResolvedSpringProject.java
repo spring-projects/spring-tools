@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022,2023 VMware, Inc.
+ * Copyright (c) 2022, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,9 +23,11 @@ public class ResolvedSpringProject extends SpringProject {
 	private final SpringProjectsClient client;
 	private Generations generations;
 	private List<Version> releases;
+	private List<Release> releasesDetails;
 
 	public ResolvedSpringProject(SpringProject project, SpringProjectsClient client) {
 		this.client = client;
+		
 		setName(project.getName());
 		setRepositoryUrl(project.getRepositoryUrl());
 		setSlug(project.getSlug());
@@ -49,8 +51,6 @@ public class ResolvedSpringProject extends SpringProject {
 
 	/**
 	 * Sorted list of released versions
-	 * @return
-	 * @throws Exception
 	 */
 	public List<Version> getReleases() throws Exception {
 		// cache the releases to prevent frequent calls to the client
@@ -70,4 +70,21 @@ public class ResolvedSpringProject extends SpringProject {
 		return this.releases != null ? releases : ImmutableList.of();
 	}
 
+	/**
+	 * Sorted list of released versions with details about each release
+	 */
+	public List<Release> getReleasesDetails() throws Exception {
+		// cache the releases to prevent frequent calls to the client
+		if (this.releasesDetails == null) {
+			Links _links = get_links();
+			if (_links != null) {
+				Link genLink = _links.getReleases();
+				if (genLink != null) {
+					Releases rs = client.getReleases(genLink.getHref());
+					releasesDetails = rs.getReleases();
+				}
+			}
+		}
+		return this.releasesDetails != null ? releasesDetails : ImmutableList.of();
+	}
 }

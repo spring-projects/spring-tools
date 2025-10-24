@@ -24,8 +24,22 @@ import org.springframework.context.annotation.Configuration;
 public class McpConfig {
 	
     @Bean
-    public List<ToolCallback> registerTools(SpringIoApi springIoApi, SpringIndexAccess springIndexAccess) {
-        return List.of(ToolCallbacks.from(springIoApi, springIndexAccess));
+    public List<ToolCallback> registerTools(
+    		SpringVersionsAndGenerations springVersionsAndGenerations,
+    		SpringIndexAccess springIndexAccess,
+    		ProjectInformation projectInformation,
+    		StereotypeInformation stereotypeInformation) {
+    	
+        return List.of(ToolCallbacks.from(
+        		springVersionsAndGenerations,
+        		springIndexAccess,
+        		projectInformation,
+        		stereotypeInformation));
     }
-
+    
+//    @Bean
+//    List<McpServerFeatures.SyncPromptSpecification> springToolsPrompts() {
+//    	return Prompts.PROMPTS;
+//    }
+    
 }

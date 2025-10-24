@@ -24,7 +24,9 @@ import org.springframework.ide.vscode.boot.validation.generations.json.Releases;
 import org.springframework.ide.vscode.boot.validation.generations.json.SpringProjects;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class SpringProjectsClient {
 
@@ -58,7 +60,11 @@ public class SpringProjectsClient {
 			if (result != null) {
 				Object obj = result.get("_embedded");
 				if (obj != null) {
-					ObjectMapper mapper = new ObjectMapper();
+					
+					ObjectMapper mapper = JsonMapper.builder()
+						    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+						    .build();
+					
 					return mapper.convertValue(obj, clazz);
 				}
 			}
@@ -71,7 +77,7 @@ public class SpringProjectsClient {
 
 		headers.setAccept(MediaType.parseMediaTypes("application/hal+json"));
 
-		@SuppressWarnings({ "rawtypes", "unchecked" })
+		@SuppressWarnings({ "rawtypes" })
 		HttpEntity<?> entity = new HttpEntity(headers);
 
 		URI uri = URI.create(url);

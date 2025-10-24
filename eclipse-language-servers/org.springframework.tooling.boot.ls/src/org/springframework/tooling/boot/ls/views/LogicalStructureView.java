@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -46,6 +47,8 @@ public class LogicalStructureView extends ViewPart {
 	
 	final private GroupingRepository groupingRepository = new GroupingRepository();
 	
+	private final AtomicBoolean fetching = new AtomicBoolean();
+	
 	private Consumer<BootLsState> lsStateListener = state -> {
 		if (state.isIndexed()) {
 			fetchStructure(false);
@@ -55,13 +58,16 @@ public class LogicalStructureView extends ViewPart {
 	};
 	
 	void fetchStructure(boolean updateMetadata) {
-		structureClient.fetchStructure(new StructureParameter(updateMetadata, getGroupings())).thenAccept(nodes -> {
-			UI.getDisplay().asyncExec(() -> {
-				Object[] expanded = treeViewer.getExpandedElements();
-				treeViewer.setInput(nodes);
-				treeViewer.setExpandedElements(expanded);
+		if (!fetching.compareAndExchange(false, true)) {
+			structureClient.fetchStructure(new StructureParameter(updateMetadata, getGroupings())).thenAccept(nodes -> {
+				fetching.set(false);
+				UI.getDisplay().asyncExec(() -> {
+					Object[] expanded = treeViewer.getExpandedElements();
+					treeViewer.setInput(nodes);
+					treeViewer.setExpandedElements(expanded);
+				});
 			});
-		});
+		}
 	}
 	
 	CompletableFuture<List<Groups>> fetchGroups() {

@@ -130,17 +130,10 @@
 			<dependency>
 			    <groupId>org.openrewrite</groupId>
 			    <artifactId>rewrite-bom</artifactId>
-			    <version>8.42.5</version>
+			    <version>8.64.0</version>
 			    <type>pom</type>
                 <scope>import</scope>
 			</dependency>
-            <dependency>
-                <groupId>org.openrewrite.recipe</groupId>
-                <artifactId>rewrite-recipe-bom</artifactId>
-                <version>2.23.1</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
             <dependency>
                 <groupId>org.gradle</groupId>
                 <artifactId>gradle-tooling-api</artifactId>

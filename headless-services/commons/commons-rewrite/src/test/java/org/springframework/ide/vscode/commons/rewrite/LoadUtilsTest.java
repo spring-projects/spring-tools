@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Duration;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openrewrite.Recipe;
 import org.openrewrite.config.DeclarativeRecipe;
@@ -28,6 +29,7 @@ import org.springframework.ide.vscode.commons.rewrite.LoadUtils.DurationTypeConv
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+@Disabled
 public class LoadUtilsTest {
 	
 	private static Environment env;

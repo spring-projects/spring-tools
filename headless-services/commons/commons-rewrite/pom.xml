@@ -77,6 +77,11 @@
 			<artifactId>rewrite-java-21</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.openrewrite</groupId>
+			<artifactId>rewrite-java-25</artifactId>
+			<scope>runtime</scope>
+		</dependency>
         <dependency>
             <groupId>org.openrewrite.gradle.tooling</groupId>
             <artifactId>model</artifactId>
@@ -101,17 +106,6 @@
 			<version>1.3.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.openrewrite.recipe</groupId>
-			<artifactId>rewrite-spring</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.openrewrite.recipe</groupId>
-					<artifactId>rewrite-static-analysis</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		
 		<dependency>
 			<groupId>org.springframework.ide.vscode</groupId>
 			<artifactId>commons-maven</artifactId>
@@ -139,7 +133,24 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 			<scope>test</scope>
-		</dependency>		 
+		</dependency>
+		<dependency>
+			<groupId>org.openrewrite.recipe</groupId>
+			<artifactId>rewrite-java-dependencies</artifactId>
+			<version>1.43.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-commons</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 </project>

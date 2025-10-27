@@ -502,9 +502,7 @@ public class RewriteRecipeRepository {
     private static ProjectParser createRewriteProjectParser(IJavaProject jp, Function<Path, Parser.Input> inputProvider) {
 		switch (jp.getProjectBuild().getType()) {
     	case ProjectBuild.MAVEN_PROJECT_TYPE:
-    		Path absoluteProjectDir = Paths.get(jp.getLocationUri()).toAbsolutePath();
-            MavenParser.Builder mavenParserBuilder = MavenParser.builder()
-            	.mavenConfig(absoluteProjectDir.resolve(".mvn/maven.config"));
+            MavenParser.Builder mavenParserBuilder = MavenParser.builder();
     		return new MavenIJavaProjectParser(jp, JavaParser.fromJavaVersion(), inputProvider, mavenParserBuilder);
     	case ProjectBuild.GRADLE_PROJECT_TYPE:
     		return new GradleIJavaProjectParser(jp, JavaParser.fromJavaVersion(), inputProvider);

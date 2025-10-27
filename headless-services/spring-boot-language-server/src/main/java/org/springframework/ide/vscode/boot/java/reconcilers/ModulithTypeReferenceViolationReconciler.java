@@ -78,7 +78,7 @@ public class ModulithTypeReferenceViolationReconciler implements JdtAstReconcile
 					}
 					
 					private void validate(ASTNode node, ITypeBinding type) {
-						if (type != null) {
+						if (type != null && type.getBinaryName() != null) {
 							appModules.getModuleNotExposingType(packageName, type.getBinaryName()).ifPresent(module -> {
 								context.getProblemCollector().accept(new ReconcileProblemImpl(getProblemType(),
 										"Invalid reference to non-exposed type of module '%s'!".formatted(module.name()),

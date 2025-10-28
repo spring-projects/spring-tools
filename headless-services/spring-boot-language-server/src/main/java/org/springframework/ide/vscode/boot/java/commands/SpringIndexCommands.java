@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.slf4j.Logger;
@@ -59,7 +60,13 @@ public class SpringIndexCommands {
 			StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
 
 			CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
-			return projectFinder.all().stream()
+			
+			Stream<? extends IJavaProject> projects = projectFinder.all().stream();
+			if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
+				projects = projects.filter(project -> args.affectedProjects.contains(project.getElementName()));
+			}
+
+			return projects
 					.sorted(Comparator.comparing(IJavaProject::getElementName))
 					.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata,
 							args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))
@@ -122,11 +129,12 @@ public class SpringIndexCommands {
 		}
 	}
 	
-	private static record StructureCommandArgs(boolean updateMetadata, Map<String, Set<String>> selectedGroups) {
+	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups) {
 		
 		public static StructureCommandArgs parseFrom(ExecuteCommandParams params) {
 			boolean updateMetadata = false;
 			Map<String, Set<String>> selectedGroups = null;
+			List<String> affectedProjects = null;
 			
 			List<Object> arguments = params.getArguments();
 			if (arguments != null && arguments.size() == 1) {
@@ -137,6 +145,11 @@ public class SpringIndexCommands {
 					JsonElement jsonElement = paramObject.get("updateMetadata");
 					updateMetadata = jsonElement != null && jsonElement instanceof JsonPrimitive ? jsonElement.getAsBoolean() : false;
 					
+					JsonElement affectedProjectsElement = paramObject.get("affectedProjects");
+					if (affectedProjectsElement != null) {
+						affectedProjects = new Gson().fromJson(affectedProjectsElement, new TypeToken<List<String>>(){}.getType());
+					}
+					
 					JsonElement groupsElement = paramObject.get("groups");
 					if (groupsElement != null) {
 						selectedGroups = new Gson().fromJson(groupsElement, new TypeToken<Map<String, Set<String>>>() {});
@@ -144,7 +157,7 @@ public class SpringIndexCommands {
 				}
 			}
 			
-			return new StructureCommandArgs(updateMetadata, selectedGroups);
+			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups);
 		}		
 	}
 	

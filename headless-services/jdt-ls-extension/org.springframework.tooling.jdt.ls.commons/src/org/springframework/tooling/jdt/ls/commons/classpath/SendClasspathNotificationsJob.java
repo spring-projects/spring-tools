@@ -137,7 +137,7 @@ public class SendClasspathNotificationsJob extends Job {
 								}
 								if (filteredCPEs.size() != classpath.getEntries().size()) {
 									// Only send effective classpath that has all entries physically present.
-									classpath = new Classpath(filteredCPEs, "");
+									classpath = new Classpath(filteredCPEs, null);
 								}
 							} catch (Exception e) {
 								logger.log(e);

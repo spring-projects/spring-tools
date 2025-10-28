@@ -28,15 +28,14 @@ public class Classpath {
 
 	public static final String ENTRY_KIND_SOURCE = "source";
 	public static final String ENTRY_KIND_BINARY = "binary";
-	public static final Classpath EMPTY = new Classpath(Collections.<CPE>emptyList(), "");
+	public static final Classpath EMPTY = new Classpath(Collections.<CPE>emptyList(), null);
 
 	private List<CPE> entries;
-	private String javaVersion;
+	private VM vm;
 
-	public Classpath(List<CPE> entries, String javaVersion) {
-		super();
+	public Classpath(List<CPE> entries, VM vm) {
 		this.entries = entries;
-		this.javaVersion = javaVersion;
+		this.vm = vm;
 	}
 
 	public List<CPE> getEntries() {
@@ -47,17 +46,17 @@ public class Classpath {
 		this.entries = entries;
 	}
 	
-	public String getJavaVersion() {
-		return javaVersion;
+	public VM getVM() {
+		return vm;
 	}
 
-	public void setJavaVersion(String javaVersion) {
-		this.javaVersion = javaVersion;
+	public void setVM(VM vm) {
+		this.vm = vm;
 	}
 
 	@Override
 	public String toString() {
-		return "Classpath [entries=" + entries + ", javaVersion=" + javaVersion + "]";
+		return "Classpath [entries=" + entries + ", vm=" + vm + "]";
 	}
 
 	public static class CPE {

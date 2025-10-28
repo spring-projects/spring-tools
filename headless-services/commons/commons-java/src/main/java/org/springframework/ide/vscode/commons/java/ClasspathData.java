@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.VM;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -36,16 +37,16 @@ public class ClasspathData implements IClasspath {
 
 	private String name;
 	private Set<CPE> classpathEntries;
-	private String javaVersion;
+	private VM vm;
 	
 	private Cache<String, Optional<CPE>> binaryLibLookupCache;
 
 	public ClasspathData() {}
 
-	public ClasspathData(String name, Collection<CPE> classpathEntries, String javaVersion) {
+	public ClasspathData(String name, Collection<CPE> classpathEntries, VM vm) {
 		this.name = name;
 		this.classpathEntries = ImmutableSet.copyOf(classpathEntries);
-		this.javaVersion = javaVersion;
+		this.vm = vm;
 		this.binaryLibLookupCache = CacheBuilder.newBuilder().build();
 	}
 
@@ -60,7 +61,7 @@ public class ClasspathData implements IClasspath {
 		return new ClasspathData(
 				d.getName(),
 				entries==null ? ImmutableSet.of() : entries,
-				d.getJavaVersion()
+				d.getVM()
 		);
 	}
 
@@ -74,12 +75,12 @@ public class ClasspathData implements IClasspath {
 	}
 	
 	@Override
-	public String getJavaVersion() {
-		return javaVersion;
+	public VM getVM() {
+		return vm;
 	}
 
-	public void setJavaVersion(String javaVersion) {
-		this.javaVersion = javaVersion;
+	public void setVM(VM javaVersion) {
+		this.vm = vm;
 	}
 
 	@Override

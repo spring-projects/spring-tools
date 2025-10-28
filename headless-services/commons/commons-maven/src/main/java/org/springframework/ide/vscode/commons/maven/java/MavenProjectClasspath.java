@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.commons.maven.java;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -30,6 +31,7 @@ import org.springframework.ide.vscode.commons.java.JavaUtils;
 import org.springframework.ide.vscode.commons.maven.MavenCore;
 import org.springframework.ide.vscode.commons.maven.MavenException;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.VM;
 import org.springframework.ide.vscode.commons.util.RunnableWithException;
 
 import com.google.common.base.Objects;
@@ -228,8 +230,8 @@ public class MavenProjectClasspath implements IClasspath {
 	}
 	
 	@Override
-	public String getJavaVersion() {
-		return cachedData.getJavaVersion() != null ? cachedData.getJavaVersion() : null;
+	public VM getVM() {
+		return cachedData.getVM() != null ? cachedData.getVM() : null;
 	}
 
 	private Set<Artifact> projectDependencies(MavenProject project) {
@@ -258,8 +260,9 @@ public class MavenProjectClasspath implements IClasspath {
 		ImmutableList<CPE> entries = resolveClasspathEntries(project);
 		String name = project.getArtifact().getArtifactId();
 		String javaVersion = maven.getJavaRuntimeVersion();
+		String javaHome = maven.getJavaHome();
 		
-		return new ClasspathData(name, new LinkedHashSet<>(entries), javaVersion);
+		return new ClasspathData(name, new LinkedHashSet<>(entries), new VM(javaVersion, Paths.get(javaHome).toString()));
 	}
 
 	@Override

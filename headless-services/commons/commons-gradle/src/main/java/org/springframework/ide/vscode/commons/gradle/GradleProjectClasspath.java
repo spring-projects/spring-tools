@@ -15,6 +15,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.gradle.tooling.model.build.BuildEnvironment;
@@ -25,6 +27,7 @@ import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.JavaUtils;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.VM;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -128,8 +131,11 @@ public class GradleProjectClasspath implements IClasspath {
 	}
 	
 	@Override
-	public String getJavaVersion() {
-		return JavaUtils.getJavaRuntimeMinorVersion(getJavaRuntimeVersion());
+	public VM getVM() {
+		if (buildEnvironment == null) {
+			throw new IllegalArgumentException("No Gradle build available");
+		}
+		return new VM(getJavaRuntimeVersion(), buildEnvironment.getJava().getJavaHome().toPath().toString());
 	}
 
 	public String getGradleVersion()  throws GradleException {
@@ -152,14 +158,14 @@ public class GradleProjectClasspath implements IClasspath {
 		return System.getProperty(JAVA_RUNTIME_VERSION);
 	}
 
-	private String getJavaHome() {
+	public Optional<Path> getJavaHome() {
 		if (buildEnvironment == null) {
-			return System.getProperty(JAVA_HOME);
+			return Optional.of(Paths.get(System.getProperty(JAVA_HOME)));
 		} else {
-			return buildEnvironment.getJava().getJavaHome().toString();
+			return Optional.of(buildEnvironment.getJava().getJavaHome().toPath());
 		}
 	}
-
+	
 	private Stream<Path> getJreLibs() {
 		return JavaUtils.jreLibs(() -> JavaUtils.getJavaRuntimeMinorVersion(getJavaRuntimeVersion()), this::getJavaHome, () -> System.getProperty(JAVA_BOOT_CLASS_PATH));
 	}

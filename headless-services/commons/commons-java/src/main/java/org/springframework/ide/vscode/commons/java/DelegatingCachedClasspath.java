@@ -14,6 +14,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.VM;
 import org.springframework.ide.vscode.commons.util.Assert;
 
 import com.google.common.base.Objects;
@@ -81,8 +82,8 @@ public class DelegatingCachedClasspath implements IClasspath {
 	}
 	
 	@Override
-	public String getJavaVersion() {
-		return cachedData.get().getJavaVersion();
+	public VM getVM() {
+		return cachedData.get().getVM();
 	}
 
 	public boolean isCached() {

@@ -44,7 +44,7 @@ public class ProjectInformation {
 	public List<Project> getProjectList() throws Exception {
 		return projectFinder.all()
 				.stream()
-				.map(project -> new Project(project.getElementName(), SpringProjectUtil.isBootProject(project), project.getClasspath().getJavaVersion()))
+				.map(project -> new Project(project.getElementName(), SpringProjectUtil.isBootProject(project), project.getClasspath().getVM() == null ? null : project.getClasspath().getVM().version()))
 				.toList();
 	}
 	
@@ -77,7 +77,7 @@ public class ProjectInformation {
 		IJavaProject project = getProject(projectName);
 		IClasspath classpath = project.getClasspath();
 		
-		return classpath.getJavaVersion();
+		return classpath.getVM().version();
 	}
 
 

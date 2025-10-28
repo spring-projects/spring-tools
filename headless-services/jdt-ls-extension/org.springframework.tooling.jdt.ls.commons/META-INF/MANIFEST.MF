@@ -17,7 +17,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.m2e.core,
  org.eclipse.buildship.core,
  org.springframework.tooling.gradle,
- org.eclipse.m2e.maven.runtime
+ org.eclipse.m2e.maven.runtime,
+ org.eclipse.jdt.launching
 Export-Package: org.springframework.ide.vscode.commons.protocol,
  org.springframework.ide.vscode.commons.protocol.java,
  org.springframework.ide.vscode.commons.protocol.spring,

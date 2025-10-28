@@ -14,7 +14,12 @@ interface BootProjectInfo {
     mainClass: string;
     buildTool: string;
     springBootVersion: string;
-    javaVersion: string;
+    vm: VM;
+}
+
+interface VM {
+    version: string;
+    installationPath: string;
 }
 
 interface SpringBootChatAgentResult extends ChatResult {
@@ -49,7 +54,7 @@ export default class SpringBootChatAgent {
             Root Package name: ${bootProjInfo.mainClass.substring(0, bootProjInfo.mainClass.lastIndexOf('.'))}
             Build tool: ${bootProjInfo.buildTool}
             Spring Boot version: ${bootProjInfo.springBootVersion}
-            Java version: ${bootProjInfo.javaVersion}
+            Java version: ${bootProjInfo?.vm.version}
             User prompt: ${request.prompt}
         `;
 

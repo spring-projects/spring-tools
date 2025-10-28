@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.value.test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.net.URI;
@@ -27,10 +30,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-
 import org.springframework.ide.vscode.commons.java.ClasspathIndex;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -40,6 +39,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserve
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver.Listener;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.VM;
 import org.springframework.ide.vscode.commons.util.FileObserver;
 import org.springframework.ide.vscode.commons.util.IOUtil;
 
@@ -103,7 +103,7 @@ public class MockProjects {
 			}
 
 			@Override
-			public String getJavaVersion() {
+			public VM getVM() {
 //				return javaVersion;
 				return null;
 			}

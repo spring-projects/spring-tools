@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -31,6 +33,45 @@ import com.google.common.base.Supplier;
 public class JavaUtils {
 
 	private static Logger log = LoggerFactory.getLogger(JavaUtils.class);
+	
+	private static final String JRE = "jre"; //$NON-NLS-1$
+
+	/**
+	 * The list of locations in which to look for the java executable in candidate
+	 * VM install locations, relative to the VM install location. From Java 9 onwards, there may not be a jre directory.
+	 */
+	private static final List<Path> CANDIDATE_JAVA_FILES = Stream.of("javaw", "javaw.exe", "java", "java.exe", "j9w", "j9w.exe", "j9", "j9.exe").map(Path::of).toList(); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$
+	private static final Path[] CANDIDATE_JAVA_LOCATIONS = { Path.of(""), Path.of("bin"), Path.of(JRE, "bin") }; //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$
+	private static final Path BIN = Path.of("bin"); //$NON-NLS-1$
+
+	/**
+	 * Starting in the specified VM install location, attempt to find the 'java' executable
+	 * file.  If found, return the corresponding <code>File</code> object, otherwise return
+	 * <code>null</code>.
+	 * @param vmInstallLocation the {@link File} location to look in
+	 * @return the {@link File} for the Java executable or <code>null</code>
+	 */
+	public static File findJavaExecutable(File vmInstallLocation) {
+		// Try each candidate in order.  The first one found wins.  Thus, the order
+		// of fgCandidateJavaLocations and fgCandidateJavaFiles is significant.
+
+		Path filePath = vmInstallLocation.toPath();
+		boolean isBin = filePath.endsWith(BIN);
+		for (Path exeName : CANDIDATE_JAVA_FILES) {
+			for (int j = 0; j < CANDIDATE_JAVA_LOCATIONS.length; j++) {
+				if (!isBin && j == 0) {
+					// search in "." only under bin for java executables for Java 9 and above
+					continue;
+				}
+				Path javaFile = filePath.resolve(CANDIDATE_JAVA_LOCATIONS[j]).resolve(exeName);
+				if (Files.isRegularFile(javaFile)) {
+					return javaFile.toFile();
+				}
+			}
+		}
+		return null;
+	}
+
 
 	/**
 	 * Find JRE libs jars
@@ -40,14 +81,14 @@ public class JavaUtils {
 	 * @param bootClasspathSupplier
 	 * @return
 	 */
-	public static Stream<Path> jreLibs(Supplier<String> javaMinorVersionSupplier, Supplier<String> javaHomeSupplier, Supplier<String> bootClasspathSupplier) {
+	public static Stream<Path> jreLibs(Supplier<String> javaMinorVersionSupplier, Supplier<Optional<Path>> javaHomeSupplier, Supplier<String> bootClasspathSupplier) {
 		String versionString = javaMinorVersionSupplier.get();
 		try {
 			int version = versionString == null ? 8 : Integer.valueOf(versionString);
 			if (version > 8) {
-				String javaHome = javaHomeSupplier.get();
-				if (javaHome != null) {
-					Path rtPath= Paths.get(javaHome, "lib", "jrt-fs.jar");
+				Optional<Path> javaHomeOpt = javaHomeSupplier.get();
+				if (javaHomeOpt.isPresent()) {
+					Path rtPath= javaHomeOpt.get().resolve("lib").resolve("jrt-fs.jar");
 					if (Files.exists(rtPath)) {
 						return Stream.of(rtPath);
 					} else {
@@ -74,7 +115,7 @@ public class JavaUtils {
 	 */
 	public static String getJavaRuntimeMinorVersion(String fullVersion) {
 		String[] tokenized = fullVersion.split("\\.");
-		if (tokenized[0] == "1") {
+		if ("1".equals(tokenized[0])) {
 			if (tokenized.length > 1) {
 				return tokenized[1];
 			} else {

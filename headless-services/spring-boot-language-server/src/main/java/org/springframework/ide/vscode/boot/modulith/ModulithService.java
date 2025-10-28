@@ -247,7 +247,7 @@ public class ModulithService {
 			server.getClient().showMessage(new MessageParams(MessageType.Error, "Project '" + project.getElementName() + "' output folder does not contain any '.class' files. Consider re-building."));
 			return CompletableFuture.completedFuture(false);
 		}
-		clearMetadataRequest(project);
+		
 		return requestMetadata(project, Duration.ZERO).whenComplete((refreshed, throwable) -> {
 			if (throwable != null) {
 				server.getClient().showMessage(new MessageParams(MessageType.Error, "Project '" + project.getElementName() + "' Modulith metadata refresh has failed. " + throwable.getMessage()));
@@ -261,7 +261,7 @@ public class ModulithService {
 		});
 	}
 	
-	CompletableFuture<Boolean> requestMetadata(IJavaProject p, Duration delay) {
+	public CompletableFuture<Boolean> requestMetadata(IJavaProject p, Duration delay) {
 		clearMetadataRequest(p);
 		CompletableFuture<Boolean> f = loadModulesMetadata(p, delay).thenApply(appModules -> updateAppModulesCache(p, appModules));
 		metadataRequested.put(p.getLocationUri(), f);

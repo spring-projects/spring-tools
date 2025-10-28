@@ -115,7 +115,7 @@ public class SpringIndexCommands {
 		}
 		
 		if (ModulithService.isModulithDependentProject(project) && StructureViewUtil.hasModulithStructureViewEnabled()) {
-			return new ModulithStructureView(catalog, springIndex, sourceLinks, modulithService).createTree(project, factory, selectedGroups);
+			return new ModulithStructureView(catalog, springIndex, sourceLinks, modulithService).createTree(project, factory, selectedGroups, updateMetadata);
 		}
 		else {
 			return new JMoleculesStructureView(catalog, springIndex, sourceLinks).createTree(project, factory, selectedGroups);

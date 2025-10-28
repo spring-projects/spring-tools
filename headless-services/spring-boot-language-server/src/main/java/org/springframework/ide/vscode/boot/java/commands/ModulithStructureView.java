@@ -10,13 +10,18 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.commands.ApplicationModulesStructureProvider.SimpleApplicationModulesStructureProvider;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
@@ -26,6 +31,8 @@ import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 public class ModulithStructureView {
+
+	private static final Logger log = LoggerFactory.getLogger(ModulithStructureView.class);
 
 	private final AbstractStereotypeCatalog catalog;
 	private final CachedSpringMetamodelIndex springIndex;
@@ -39,9 +46,20 @@ public class ModulithStructureView {
 		this.modulithService = modulithService;
 	}
 
-	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, Collection<String> selectedGroups) {
+	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, Collection<String> selectedGroups, boolean updateMetadata) {
 
 		var adapter = new ModulithStereotypeFactoryAdapter(factory);
+
+		if (updateMetadata) {
+			log.info("update modulith metadata when reloading structure view for project: " + project.getElementName());
+
+			CompletableFuture<Boolean> requestMetadata = modulithService.requestMetadata(project, Duration.ofMinutes(0));
+			try {
+				requestMetadata.get(5, TimeUnit.SECONDS);
+			} catch (Exception e) {
+				log.error("update modulith metadata when reloading structure view failed for project: " + project.getElementName(), e);
+			}
+		}
 
 		AppModules modulesData = modulithService.getModulesData(project);
 		if (modulesData == null) {

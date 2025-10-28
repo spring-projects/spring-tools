@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -176,7 +176,7 @@ public class LanguageServerHarness {
 
 	private boolean enableHierarchicalDocumentSymbols = false;
 
-	private int indexUpdated;
+	private List<List<String>> indexUpdated = new ArrayList<>();
 
 
 	public LanguageServerHarness(SimpleLanguageServer server, LanguageId defaultLanguageId) {
@@ -262,12 +262,16 @@ public class LanguageServerHarness {
 		}
 	}
 	
-	private void receiveIndexUpdated() {
-		this.indexUpdated++;
+	private void receiveIndexUpdated(List<String> affectedProjects) {
+		this.indexUpdated.add(affectedProjects);
 	}
 	
 	public int getIndexUpdatedCount() {
-		return this.indexUpdated;
+		return this.indexUpdated.size();
+	}
+
+	public List<String> getIndexUpdatedDetails(int updateNo) {
+		return this.indexUpdated.get(updateNo);
 	}
 
 	public void ensureInitialized() throws Exception {
@@ -453,8 +457,8 @@ public class LanguageServerHarness {
 				}
 
 				@Override
-				public void indexUpdated() {
-					receiveIndexUpdated();
+				public void indexUpdated(List<String> affectedProjects) {
+					receiveIndexUpdated(affectedProjects);
 				}
 
 				@Override

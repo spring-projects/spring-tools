@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,12 +10,14 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.protocol.spring;
 
+import java.util.List;
+
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;
 import org.eclipse.lsp4j.services.LanguageClient;
 
 public interface SpringIndexLanguageClient extends LanguageClient {
 	
 	@JsonNotification("spring/index/updated")
-	void indexUpdated();
+	void indexUpdated(List<String> affectedProjects);
 
 }

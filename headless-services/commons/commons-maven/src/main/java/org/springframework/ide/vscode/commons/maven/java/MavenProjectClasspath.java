@@ -11,12 +11,11 @@
 package org.springframework.ide.vscode.commons.maven.java;
 
 import java.io.File;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
@@ -30,6 +29,7 @@ import org.springframework.ide.vscode.commons.java.JavaUtils;
 import org.springframework.ide.vscode.commons.maven.MavenCore;
 import org.springframework.ide.vscode.commons.maven.MavenException;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.util.RunnableWithException;
 
 import com.google.common.base.Objects;
@@ -91,7 +91,7 @@ public class MavenProjectClasspath implements IClasspath {
 			if (javaVersion == null) {
 				javaVersion = "8";
 			}
-			cpe.setJavadocContainerUrl(new URL("https://docs.oracle.com/javase/" + javaVersion + "/docs/api/"));
+			cpe.setJavadocContainerUrl(URI.create("https://docs.oracle.com/javase/" + javaVersion + "/docs/api/").toURL());
 			cpe.setSystem(true);
 			entries.add(cpe);
 			// Add at the end, not critical if throws exception, but the CPE needs to be around regardless if the below throws
@@ -228,20 +228,12 @@ public class MavenProjectClasspath implements IClasspath {
 	}
 	
 	@Override
-	public String getJavaVersion() {
-		return cachedData.getJavaVersion() != null ? cachedData.getJavaVersion() : null;
+	public Jre getJre() {
+		return cachedData.getJre() != null ? cachedData.getJre() : null;
 	}
 
 	private Set<Artifact> projectDependencies(MavenProject project) {
 		return project == null ? Collections.emptySet() : project.getArtifacts();
-	}
-
-	private List<File> projectOutput(MavenProject project) {
-		if (project == null) {
-			return Collections.emptyList();
-		} else {
-			return Arrays.asList(new File(project.getBuild().getOutputDirectory()), new File(project.getBuild().getTestOutputDirectory()));
-		}
 	}
 
 	private static void safe(RunnableWithException do_stuff) {
@@ -258,8 +250,9 @@ public class MavenProjectClasspath implements IClasspath {
 		ImmutableList<CPE> entries = resolveClasspathEntries(project);
 		String name = project.getArtifact().getArtifactId();
 		String javaVersion = maven.getJavaRuntimeVersion();
+		String javaHome = maven.getJavaHome();
 		
-		return new ClasspathData(name, new LinkedHashSet<>(entries), javaVersion);
+		return new ClasspathData(name, new LinkedHashSet<>(entries), new Jre(javaVersion, Paths.get(javaHome).toString()));
 	}
 
 	@Override

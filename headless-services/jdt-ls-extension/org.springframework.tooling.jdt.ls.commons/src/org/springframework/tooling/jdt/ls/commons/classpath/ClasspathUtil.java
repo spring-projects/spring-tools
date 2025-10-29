@@ -37,9 +37,13 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.JavaProject;
+import org.eclipse.jdt.launching.IVMInstall;
+import org.eclipse.jdt.launching.IVMInstall2;
+import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.tooling.jdt.ls.commons.Logger;
 
@@ -48,9 +52,8 @@ public class ClasspathUtil {
 
 	private static final Object JRE_CONTAINER_ID = "org.eclipse.jdt.launching.JRE_CONTAINER";
 	
-	private static Set<String> getSystemLibraryPaths(IJavaProject javaProject) {
+	private static Set<String> getSystemLibraryPaths(IJavaProject javaProject, IClasspathEntry jreContainer) {
 		try {
-			IClasspathEntry jreContainer = getJreContainer(javaProject.getRawClasspath());
 			if (jreContainer!=null) {
 				IClasspathEntry[] resolvedJreEntries = ((JavaProject)javaProject).resolveClasspath(new IClasspathEntry[] {jreContainer});
 				Set<String> paths = new HashSet<>();
@@ -83,7 +86,8 @@ public class ClasspathUtil {
 		List<CPE> cpEntries = new ArrayList<>();
 		
 		IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
-		Set<String> systemLibs = getSystemLibraryPaths(javaProject);
+		IClasspathEntry jreContainer = getJreContainer(javaProject.getRawClasspath());
+		Set<String> systemLibs = getSystemLibraryPaths(javaProject, jreContainer);
 
 		if (entries != null) {
 			for (IClasspathEntry entry : entries) {
@@ -94,36 +98,21 @@ public class ClasspathUtil {
 				}
 			}
 		}
-		IClasspathEntry jreContainer = getJreContainer(javaProject.getRawClasspath());
-		String javaVersion = jreContainer == null ? null : extractJavaVersion(jreContainer.getPath().lastSegment());
-		Classpath classpath = new Classpath(cpEntries, javaVersion);
+		IVMInstall vmInstall = JavaRuntime.getVMInstall(javaProject);
+		if (vmInstall == null) {
+			vmInstall = JavaRuntime.getVMInstall(jreContainer.getPath());
+		}
+		String javaVersion = vmInstall instanceof IVMInstall2 ? ((IVMInstall2) vmInstall).getJavaVersion() : null;
+		String installationPath = vmInstall == null ? null : vmInstall.getInstallLocation().toPath().toString();
+		Classpath classpath = new Classpath(cpEntries, vmInstall == null ? null : new Jre(javaVersion, installationPath));
 		logger.debug("classpath=" + classpath.getEntries().size() + " entries");
 		return classpath;
 	}
 	
-	private static String extractJavaVersion(String versionString) {
-        String[] parts = versionString.split("-");
-        if (parts.length > 1) {
-            return parts[1]; // for "JavaSE-17" style
-        } else if (versionString.contains(".")) {
-            parts = versionString.split("\\.");
-            if (parts[0] == "1") {
-    			if (parts.length > 1) {
-    				return parts[1];
-    			}
-    		} else {
-    			String version = parts[0];
-    			int idx = version.indexOf('+');
-    			return idx >= 0 ? version.substring(0, idx) : version;
-    		}
-        }
-        return versionString;      
-    }
-	
 	private static AtomicBoolean enabledDownloadSources = new AtomicBoolean(false);
 	
 	public static List<CPE> createCpes(IJavaProject javaProject, IClasspathEntry entry) throws MalformedURLException, JavaModelException {
-		return createCpes(getSystemLibraryPaths(javaProject), javaProject, entry);
+		return createCpes(getSystemLibraryPaths(javaProject, getJreContainer(javaProject.getRawClasspath())), javaProject, entry);
 	}
 	
 	public static void enableDownloadSources() {

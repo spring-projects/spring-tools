@@ -1054,15 +1054,33 @@ public class SpringIndexerJava implements SpringIndexer {
 	public static ASTParserCleanupEnabled createParser(IJavaProject project, AnnotationHierarchies annotationHierarchies, boolean ignoreMethodBodies) throws Exception {
 		String[] classpathEntries = getClasspathEntries(project);
 		String[] sourceEntries = getSourceEntries(project);
-		String complianceJavaVersion = getComplianceJavaVersion(project.getClasspath().getJavaVersion());
+		String complianceJavaVersion = getComplianceJavaVersion(project.getClasspath().getJre() == null ? null : project.getClasspath().getJre().version());
 		
 		return new ASTParserCleanupEnabled(classpathEntries, sourceEntries, complianceJavaVersion, annotationHierarchies, ignoreMethodBodies);
 	}
 
 	private static String getComplianceJavaVersion(String javaVersion) {
+		String complianceLevel = extractComplianceVersion(javaVersion);
 		// Currently the java version in the classpath seems to be 1.8, 17, 21 etc.
-		return javaVersion == null || javaVersion.isBlank() ? JavaCore.VERSION_21 : javaVersion;
+		return complianceLevel == null || complianceLevel.isBlank() ? JavaCore.VERSION_25 : complianceLevel;
 	}
+	
+	private static String extractComplianceVersion(String versionString) {
+        if (versionString.contains(".")) {
+            String[] parts = versionString.split("\\.");
+            if ("1".equals(parts[0])) {
+    			if (parts.length > 1) {
+    				return "%s.%s".formatted(parts[0], parts[1]);
+    			}
+    		} else {
+    			String version = parts[0];
+    			int idx = version.indexOf('+');
+    			return idx >= 0 ? version.substring(0, idx) : version;
+    		}
+        }
+        return null;
+    }
+
 
 	private static String[] getClasspathEntries(IJavaProject project) throws Exception {
 		IClasspath classpath = project.getClasspath();

@@ -12,9 +12,11 @@ package org.springframework.ide.vscode.commons.gradle;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.gradle.tooling.model.build.BuildEnvironment;
@@ -25,6 +27,7 @@ import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.JavaUtils;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -50,20 +53,8 @@ public class GradleProjectClasspath implements IClasspath {
 		this.buildEnvironment = gradle.getModel(projectDir, BuildEnvironment.class);
 	}
 
-	private EclipseProject getRootProject() {
-		EclipseProject root = project;
-		if (root == null) {
-			return root;
-		}
-		while(root.getParent() != null) {
-			root = root.getParent();
-		}
-		return root;
-	}
-
 	@Override
 	public ImmutableList<CPE> getClasspathEntries() throws Exception {
-		EclipseProject root = getRootProject();
 		if (project == null) {
 			return ImmutableList.of();
 		} else {
@@ -76,7 +67,7 @@ public class GradleProjectClasspath implements IClasspath {
 				}
 				String urlStr = "https://docs.oracle.com/javase/" + javaVersion + "/docs/api/";
 				try {
-					cpe.setJavadocContainerUrl(new URL(urlStr));
+					cpe.setJavadocContainerUrl(URI.create(urlStr).toURL());
 				} catch (MalformedURLException e) {
 					log.error("Invalid javadoc URL: " + urlStr, e);
 				}
@@ -118,18 +109,17 @@ public class GradleProjectClasspath implements IClasspath {
 		return CPE.source(sourceFolder.getAbsoluteFile(), new File(project.getProjectDirectory(), of));
 	}
 
-	private EclipseProject findPeer(EclipseProject root, String name) {
-		return root.getChildren().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
-	}
-
 	@Override
 	public String getName() {
 		return project == null ? null : project.getName();
 	}
 	
 	@Override
-	public String getJavaVersion() {
-		return JavaUtils.getJavaRuntimeMinorVersion(getJavaRuntimeVersion());
+	public Jre getJre() {
+		if (buildEnvironment == null) {
+			throw new IllegalArgumentException("No Gradle build available");
+		}
+		return new Jre(getJavaRuntimeVersion(), buildEnvironment.getJava().getJavaHome().toPath().toString());
 	}
 
 	public String getGradleVersion()  throws GradleException {
@@ -152,14 +142,14 @@ public class GradleProjectClasspath implements IClasspath {
 		return System.getProperty(JAVA_RUNTIME_VERSION);
 	}
 
-	private String getJavaHome() {
+	public Optional<Path> getJavaHome() {
 		if (buildEnvironment == null) {
-			return System.getProperty(JAVA_HOME);
+			return Optional.of(Paths.get(System.getProperty(JAVA_HOME)));
 		} else {
-			return buildEnvironment.getJava().getJavaHome().toString();
+			return Optional.of(buildEnvironment.getJava().getJavaHome().toPath());
 		}
 	}
-
+	
 	private Stream<Path> getJreLibs() {
 		return JavaUtils.jreLibs(() -> JavaUtils.getJavaRuntimeMinorVersion(getJavaRuntimeVersion()), this::getJavaHome, () -> System.getProperty(JAVA_BOOT_CLASS_PATH));
 	}

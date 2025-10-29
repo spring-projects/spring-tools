@@ -63,7 +63,7 @@ public class JandexClasspathTest {
 		ClasspathData getClasspath() {
 			return new ClasspathData(name, ImmutableList.of(
 					CPE.source(new File(root, "src"), outputFolder)
-			), "");
+			), null);
 		}
 
 		JandexClasspath getJandexClasspath() {

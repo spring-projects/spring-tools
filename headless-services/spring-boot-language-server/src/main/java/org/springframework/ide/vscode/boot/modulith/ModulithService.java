@@ -46,12 +46,14 @@ import org.springframework.ide.vscode.boot.java.beans.SpringBootApplicationIndex
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaReconcileEngine;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.JavaUtils;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle.Option;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.protocol.spring.BeansParams;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -323,7 +325,9 @@ public class ModulithService {
 		return findRootPackages(project, delay).thenComposeAsync(packages -> {
 			if (!packages.isEmpty()) {
 				try {
-					String javaCmd = ProcessHandle.current().info().command().orElseThrow();
+					Jre jre = project.getClasspath().getJre();
+					String exec = jre == null ? ProcessHandle.current().info().command().orElseThrow()
+							: JavaUtils.findJavaExecutable(Paths.get(jre.installationPath()).toFile()).toString();
 					String classpathStr = project.getClasspath().getClasspathEntries().stream().map(cpe -> {
 						if (Classpath.ENTRY_KIND_SOURCE.equals(cpe.getKind())) {
 							return cpe.getOutputFolder();
@@ -333,7 +337,7 @@ public class ModulithService {
 					}).collect(Collectors.joining(System.getProperty("path.separator")));
 					List<AppModule> allAppModules = new ArrayList<>();
 					CompletableFuture<?>[] aggregateFuture = packages.stream()
-							.map(pkg -> CompletableFuture.supplyAsync(() -> computeAppModules(project.getElementName(), javaCmd, classpathStr, pkg), executor)
+							.map(pkg -> CompletableFuture.supplyAsync(() -> computeAppModules(project.getElementName(), exec, classpathStr, pkg), executor)
 									.thenAccept(allAppModules::addAll))
 							.toArray(CompletableFuture[]::new);
 					return CompletableFuture.allOf(aggregateFuture).thenApply(r -> new AppModules(allAppModules));

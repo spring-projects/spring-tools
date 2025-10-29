@@ -12,6 +12,7 @@ package org.springframework.tooling.boot.ls.prefs;
 
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
+import org.eclipse.jface.preference.StringFieldEditor;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
@@ -25,10 +26,6 @@ public class AiConfigPreferencePage extends FieldEditorPreferencePage implements
 	}
 	
 	@Override
-	protected void adjustGridLayout() {
-	}
-
-	@Override
 	public void init(IWorkbench workbench) {
 		setPreferenceStore(BootLanguageServerPlugin.getDefault().getPreferenceStore());
 	}
@@ -36,8 +33,8 @@ public class AiConfigPreferencePage extends FieldEditorPreferencePage implements
 	@Override
 	protected void createFieldEditors() {
 		Composite fieldEditorParent = getFieldEditorParent();
-		addField(new BooleanFieldEditor(Constants.PREF_AI_ENABLE_MCP, "Enable embedded MCP server", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_AI_MCP_ENABLED, "Enable embedded MCP server", fieldEditorParent));
+		addField(new StringFieldEditor(Constants.PREF_AI_MCP_PORT, "Port used by the embedded MCP server", fieldEditorParent));
 	}
-
 
 }

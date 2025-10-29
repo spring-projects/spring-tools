@@ -48,9 +48,14 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
 
     const specificVmArgs = ["-Dspring.config.location=classpath:/application.properties"];
 
-    const workspaceConfig = workspace.getConfiguration("boot-java.ai");
-    if (workspaceConfig.get("mcp-server-enabled") === false) {
+    const aiPreferencesConfig = workspace.getConfiguration("boot-java.ai");
+    if (aiPreferencesConfig.get("mcp-server-enabled") === false) {
         specificVmArgs.push("-Dspring.main.web-application-type=NONE");
+    }
+
+    var mcpServerPort = aiPreferencesConfig.get<number>("mcp-server-port", 0);
+    if (mcpServerPort >= 0 && mcpServerPort <= 655536) {
+        specificVmArgs.push("-Dserver.port=" + mcpServerPort);
     }
 
     let options : commons.ActivatorOptions = {

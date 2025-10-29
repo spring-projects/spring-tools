@@ -138,7 +138,7 @@ public class WorkspaceBootExecutableProjects {
 					String appBean = bootAppBeans.get(0) != null ? bootAppBeans.get(0).getType() : null;
 					String springBootVersion = SpringProjectUtil.getSpringBootVersion(project).toString();
 					String buildTool = project.getProjectBuild().getType();
-					String javaVersion = project.getClasspath().getVM() == null ? null : project.getClasspath().getVM().version();
+					String javaVersion = project.getClasspath().getJre() == null ? null : project.getClasspath().getJre().version();
 					return Optional
 							.of(new BootProjectInfo(project.getElementName(), project.getLocationUri().toASCIIString(),
 									appBean, buildTool, springBootVersion, javaVersion));

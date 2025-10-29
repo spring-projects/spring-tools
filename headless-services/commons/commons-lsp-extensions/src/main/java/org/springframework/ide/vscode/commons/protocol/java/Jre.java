@@ -10,5 +10,5 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.protocol.java;
 
-public record VM(String version, String installationPath) {
+public record Jre(String version, String installationPath) {
 }

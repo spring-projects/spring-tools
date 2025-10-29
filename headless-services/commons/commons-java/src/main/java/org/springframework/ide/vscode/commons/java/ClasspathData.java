@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
-import org.springframework.ide.vscode.commons.protocol.java.VM;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -37,16 +37,16 @@ public class ClasspathData implements IClasspath {
 
 	private String name;
 	private Set<CPE> classpathEntries;
-	private VM vm;
+	private Jre jre;
 	
 	private Cache<String, Optional<CPE>> binaryLibLookupCache;
 
 	public ClasspathData() {}
 
-	public ClasspathData(String name, Collection<CPE> classpathEntries, VM vm) {
+	public ClasspathData(String name, Collection<CPE> classpathEntries, Jre jre) {
 		this.name = name;
 		this.classpathEntries = ImmutableSet.copyOf(classpathEntries);
-		this.vm = vm;
+		this.jre = jre;
 		this.binaryLibLookupCache = CacheBuilder.newBuilder().build();
 	}
 
@@ -61,7 +61,7 @@ public class ClasspathData implements IClasspath {
 		return new ClasspathData(
 				d.getName(),
 				entries==null ? ImmutableSet.of() : entries,
-				d.getVM()
+				d.getJre()
 		);
 	}
 
@@ -75,12 +75,12 @@ public class ClasspathData implements IClasspath {
 	}
 	
 	@Override
-	public VM getVM() {
-		return vm;
+	public Jre getJre() {
+		return jre;
 	}
 
-	public void setVM(VM javaVersion) {
-		this.vm = vm;
+	public void setJre(Jre jre) {
+		this.jre = jre;
 	}
 
 	@Override

@@ -12,7 +12,7 @@ package org.springframework.ide.vscode.commons.gradle;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,7 +27,7 @@ import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.JavaUtils;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
-import org.springframework.ide.vscode.commons.protocol.java.VM;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -53,20 +53,8 @@ public class GradleProjectClasspath implements IClasspath {
 		this.buildEnvironment = gradle.getModel(projectDir, BuildEnvironment.class);
 	}
 
-	private EclipseProject getRootProject() {
-		EclipseProject root = project;
-		if (root == null) {
-			return root;
-		}
-		while(root.getParent() != null) {
-			root = root.getParent();
-		}
-		return root;
-	}
-
 	@Override
 	public ImmutableList<CPE> getClasspathEntries() throws Exception {
-		EclipseProject root = getRootProject();
 		if (project == null) {
 			return ImmutableList.of();
 		} else {
@@ -79,7 +67,7 @@ public class GradleProjectClasspath implements IClasspath {
 				}
 				String urlStr = "https://docs.oracle.com/javase/" + javaVersion + "/docs/api/";
 				try {
-					cpe.setJavadocContainerUrl(new URL(urlStr));
+					cpe.setJavadocContainerUrl(URI.create(urlStr).toURL());
 				} catch (MalformedURLException e) {
 					log.error("Invalid javadoc URL: " + urlStr, e);
 				}
@@ -121,21 +109,17 @@ public class GradleProjectClasspath implements IClasspath {
 		return CPE.source(sourceFolder.getAbsoluteFile(), new File(project.getProjectDirectory(), of));
 	}
 
-	private EclipseProject findPeer(EclipseProject root, String name) {
-		return root.getChildren().stream().filter(p -> p.getName().equals(name)).findFirst().orElse(null);
-	}
-
 	@Override
 	public String getName() {
 		return project == null ? null : project.getName();
 	}
 	
 	@Override
-	public VM getVM() {
+	public Jre getJre() {
 		if (buildEnvironment == null) {
 			throw new IllegalArgumentException("No Gradle build available");
 		}
-		return new VM(getJavaRuntimeVersion(), buildEnvironment.getJava().getJavaHome().toPath().toString());
+		return new Jre(getJavaRuntimeVersion(), buildEnvironment.getJava().getJavaHome().toPath().toString());
 	}
 
 	public String getGradleVersion()  throws GradleException {

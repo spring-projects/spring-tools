@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
-import org.springframework.ide.vscode.commons.protocol.java.VM;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 
 /**
  * Classpath for a Java artifact
@@ -63,6 +63,6 @@ public interface IClasspath {
 	 * VM info
 	 * @return returns java version
 	 */
-	VM getVM();
+	Jre getJre();
 
 }

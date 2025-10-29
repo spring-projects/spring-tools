@@ -43,8 +43,8 @@ import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.m2e.core.MavenPlugin;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
-import org.springframework.ide.vscode.commons.protocol.java.VM;
 import org.springframework.tooling.jdt.ls.commons.Logger;
 
 @SuppressWarnings("restriction")
@@ -104,7 +104,7 @@ public class ClasspathUtil {
 		}
 		String javaVersion = vmInstall instanceof IVMInstall2 ? ((IVMInstall2) vmInstall).getJavaVersion() : null;
 		String installationPath = vmInstall == null ? null : vmInstall.getInstallLocation().toPath().toString();
-		Classpath classpath = new Classpath(cpEntries, vmInstall == null ? null : new VM(javaVersion, installationPath));
+		Classpath classpath = new Classpath(cpEntries, vmInstall == null ? null : new Jre(javaVersion, installationPath));
 		logger.debug("classpath=" + classpath.getEntries().size() + " entries");
 		return classpath;
 	}

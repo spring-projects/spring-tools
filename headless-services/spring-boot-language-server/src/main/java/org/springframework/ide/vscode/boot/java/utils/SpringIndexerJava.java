@@ -1054,7 +1054,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	public static ASTParserCleanupEnabled createParser(IJavaProject project, AnnotationHierarchies annotationHierarchies, boolean ignoreMethodBodies) throws Exception {
 		String[] classpathEntries = getClasspathEntries(project);
 		String[] sourceEntries = getSourceEntries(project);
-		String complianceJavaVersion = getComplianceJavaVersion(project.getClasspath().getVM() == null ? null : project.getClasspath().getVM().version());
+		String complianceJavaVersion = getComplianceJavaVersion(project.getClasspath().getJre() == null ? null : project.getClasspath().getJre().version());
 		
 		return new ASTParserCleanupEnabled(classpathEntries, sourceEntries, complianceJavaVersion, annotationHierarchies, ignoreMethodBodies);
 	}

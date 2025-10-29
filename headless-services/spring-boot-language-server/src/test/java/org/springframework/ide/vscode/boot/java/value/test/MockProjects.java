@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2022 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,8 +15,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.ArrayList;
@@ -39,11 +41,9 @@ import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserve
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver.Listener;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
-import org.springframework.ide.vscode.commons.protocol.java.VM;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.util.FileObserver;
 import org.springframework.ide.vscode.commons.util.IOUtil;
-
-import com.google.common.io.Files;
 
 public class MockProjects {
 
@@ -103,7 +103,7 @@ public class MockProjects {
 			}
 
 			@Override
-			public VM getVM() {
+			public Jre getJre() {
 //				return javaVersion;
 				return null;
 			}
@@ -114,11 +114,15 @@ public class MockProjects {
 				assertFalse(projectsByName.containsKey(name));
 				this.name = name;
 //				this.javaVersion = "";
-				this.root = Files.createTempDir();
-				createSourceFolder("src/main/java");
-				createSourceFolder("src/main/resources");
-				createOutputFolder("target/classes");
-				projectsByName.put(name, this);
+				try {
+					this.root = Files.createTempDirectory(name).toFile();
+					createSourceFolder("src/main/java");
+					createSourceFolder("src/main/resources");
+					createOutputFolder("target/classes");
+					projectsByName.put(name, this);
+				} catch (IOException e) {
+					throw new IllegalStateException(e);
+				}
 			}
 			synchronized (observer.listeners) {
 				for (Listener l : observer.listeners) {

@@ -370,7 +370,7 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 					} else {
 						log.debug("deleted = false");
 						URI projectUri = new URI(uri);
-						ClasspathData classpath = new ClasspathData(event.name, event.classpath.getEntries(), event.classpath.getVM());
+						ClasspathData classpath = new ClasspathData(event.name, event.classpath.getEntries(), event.classpath.getJre());
 						IJavaProject oldProject, newProject;
 						synchronized(table) {
 							oldProject = table.get(uri);

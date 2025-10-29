@@ -53,7 +53,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserve
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle.Option;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
-import org.springframework.ide.vscode.commons.protocol.java.VM;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.protocol.spring.BeansParams;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -325,9 +325,9 @@ public class ModulithService {
 		return findRootPackages(project, delay).thenComposeAsync(packages -> {
 			if (!packages.isEmpty()) {
 				try {
-					VM vm = project.getClasspath().getVM();
-					String exec = vm == null ? ProcessHandle.current().info().command().orElseThrow()
-							: JavaUtils.findJavaExecutable(Paths.get(vm.installationPath()).toFile()).toString();
+					Jre jre = project.getClasspath().getJre();
+					String exec = jre == null ? ProcessHandle.current().info().command().orElseThrow()
+							: JavaUtils.findJavaExecutable(Paths.get(jre.installationPath()).toFile()).toString();
 					String classpathStr = project.getClasspath().getClasspathEntries().stream().map(cpe -> {
 						if (Classpath.ENTRY_KIND_SOURCE.equals(cpe.getKind())) {
 							return cpe.getOutputFolder();

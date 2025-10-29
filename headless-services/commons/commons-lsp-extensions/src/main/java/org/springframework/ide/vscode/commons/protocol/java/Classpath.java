@@ -31,11 +31,11 @@ public class Classpath {
 	public static final Classpath EMPTY = new Classpath(Collections.<CPE>emptyList(), null);
 
 	private List<CPE> entries;
-	private VM vm;
+	private Jre jre;
 
-	public Classpath(List<CPE> entries, VM vm) {
+	public Classpath(List<CPE> entries, Jre jre) {
 		this.entries = entries;
-		this.vm = vm;
+		this.jre = jre;
 	}
 
 	public List<CPE> getEntries() {
@@ -46,17 +46,17 @@ public class Classpath {
 		this.entries = entries;
 	}
 	
-	public VM getVM() {
-		return vm;
+	public Jre getJre() {
+		return jre;
 	}
 
-	public void setVM(VM vm) {
-		this.vm = vm;
+	public void setJre(Jre jre) {
+		this.jre = jre;
 	}
 
 	@Override
 	public String toString() {
-		return "Classpath [entries=" + entries + ", vm=" + vm + "]";
+		return "Classpath [entries=" + entries + ", jre=" + jre + "]";
 	}
 
 	public static class CPE {

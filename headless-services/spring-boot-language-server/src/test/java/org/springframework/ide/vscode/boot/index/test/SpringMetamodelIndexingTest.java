@@ -71,8 +71,8 @@ public class SpringMetamodelIndexingTest {
 	@Test
 	void testUpdateNotificationAfterProjectCreation() {
 		assertEquals(1, harness.getIndexUpdatedCount());
-		assertEquals(1, harness.getIndexUpdatedDetails(0).size());
-		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).get(0));
+		assertEquals(1, harness.getIndexUpdatedDetails(0).getAffectedProjects().size());
+		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).getAffectedProjects().get(0));
 	}
 	
     @Test
@@ -87,10 +87,10 @@ public class SpringMetamodelIndexingTest {
         assertEquals(0, noBeansAnymore.length);
         
 		assertEquals(2, harness.getIndexUpdatedCount()); // 1x project created, 1x project deleted
-		assertEquals(1, harness.getIndexUpdatedDetails(0).size());
-		assertEquals(1, harness.getIndexUpdatedDetails(1).size());
-		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).get(0));
-		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).get(0));
+		assertEquals(1, harness.getIndexUpdatedDetails(0).getAffectedProjects().size());
+		assertEquals(1, harness.getIndexUpdatedDetails(1).getAffectedProjects().size());
+		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).getAffectedProjects().get(0));
+		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).getAffectedProjects().get(0));
     }
     
     @Test
@@ -116,10 +116,10 @@ public class SpringMetamodelIndexingTest {
         assertEquals(allBeansOfProject.length - 1, lessBeansOfProject.length);
         
 		assertEquals(2, harness.getIndexUpdatedCount()); // 1x project created, 1x document deleted
-		assertEquals(1, harness.getIndexUpdatedDetails(0).size());
-		assertEquals(1, harness.getIndexUpdatedDetails(1).size());
-		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).get(0));
-		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).get(0));
+		assertEquals(1, harness.getIndexUpdatedDetails(0).getAffectedProjects().size());
+		assertEquals(1, harness.getIndexUpdatedDetails(1).getAffectedProjects().size());
+		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).getAffectedProjects().get(0));
+		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).getAffectedProjects().get(0));
     }
     
     @Test
@@ -149,10 +149,10 @@ public class SpringMetamodelIndexingTest {
         assertEquals("bean1", updatedInjectionPoints[0].getName());
 
 		assertEquals(2, harness.getIndexUpdatedCount()); // 1x project created, 1x document updated
-		assertEquals(1, harness.getIndexUpdatedDetails(0).size());
-		assertEquals(1, harness.getIndexUpdatedDetails(1).size());
-		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).get(0));
-		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).get(0));
+		assertEquals(1, harness.getIndexUpdatedDetails(0).getAffectedProjects().size());
+		assertEquals(1, harness.getIndexUpdatedDetails(1).getAffectedProjects().size());
+		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).getAffectedProjects().get(0));
+		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).getAffectedProjects().get(0));
     }
 
     @Test
@@ -212,10 +212,10 @@ public class SpringMetamodelIndexingTest {
             assertEquals("org.test.BeanClass1", newBeans[1].getType());
             
     		assertEquals(2, harness.getIndexUpdatedCount()); // 1x project created, 1x new document created
-    		assertEquals(1, harness.getIndexUpdatedDetails(0).size());
-    		assertEquals(1, harness.getIndexUpdatedDetails(1).size());
-    		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).get(0));
-    		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).get(0));
+    		assertEquals(1, harness.getIndexUpdatedDetails(0).getAffectedProjects().size());
+    		assertEquals(1, harness.getIndexUpdatedDetails(1).getAffectedProjects().size());
+    		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(0).getAffectedProjects().get(0));
+    		assertEquals("test-spring-indexing", harness.getIndexUpdatedDetails(1).getAffectedProjects().get(0));
         }
         finally {
             FileUtils.deleteQuietly(new File(new URI(createdDocURI)));

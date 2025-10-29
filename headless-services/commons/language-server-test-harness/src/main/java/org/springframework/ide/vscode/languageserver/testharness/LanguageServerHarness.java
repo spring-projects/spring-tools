@@ -137,6 +137,7 @@ import org.springframework.ide.vscode.commons.protocol.java.JavaTypeHierarchyPar
 import org.springframework.ide.vscode.commons.protocol.java.ProjectGavParams;
 import org.springframework.ide.vscode.commons.protocol.java.TypeData;
 import org.springframework.ide.vscode.commons.protocol.java.TypeDescriptorData;
+import org.springframework.ide.vscode.commons.protocol.spring.IndexUpdatedParams;
 import org.springframework.ide.vscode.commons.util.ExceptionUtil;
 import org.springframework.ide.vscode.commons.util.IOUtil;
 import org.springframework.ide.vscode.commons.util.UriUtil;
@@ -176,7 +177,7 @@ public class LanguageServerHarness {
 
 	private boolean enableHierarchicalDocumentSymbols = false;
 
-	private List<List<String>> indexUpdated = new ArrayList<>();
+	private List<IndexUpdatedParams> indexUpdated = new ArrayList<>();
 
 
 	public LanguageServerHarness(SimpleLanguageServer server, LanguageId defaultLanguageId) {
@@ -262,15 +263,15 @@ public class LanguageServerHarness {
 		}
 	}
 	
-	private void receiveIndexUpdated(List<String> affectedProjects) {
-		this.indexUpdated.add(affectedProjects);
+	private void receiveIndexUpdated(IndexUpdatedParams indexUpdatedParams) {
+		this.indexUpdated.add(indexUpdatedParams);
 	}
 	
 	public int getIndexUpdatedCount() {
 		return this.indexUpdated.size();
 	}
 
-	public List<String> getIndexUpdatedDetails(int updateNo) {
+	public IndexUpdatedParams getIndexUpdatedDetails(int updateNo) {
 		return this.indexUpdated.get(updateNo);
 	}
 
@@ -457,8 +458,8 @@ public class LanguageServerHarness {
 				}
 
 				@Override
-				public void indexUpdated(List<String> affectedProjects) {
-					receiveIndexUpdated(affectedProjects);
+				public void indexUpdated(IndexUpdatedParams indexUpdatedParams) {
+					receiveIndexUpdated(indexUpdatedParams);
 				}
 
 				@Override

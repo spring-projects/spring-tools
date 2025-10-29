@@ -85,6 +85,7 @@ import org.springframework.ide.vscode.commons.protocol.java.JavaTypeHierarchyPar
 import org.springframework.ide.vscode.commons.protocol.java.ProjectGavParams;
 import org.springframework.ide.vscode.commons.protocol.java.TypeData;
 import org.springframework.ide.vscode.commons.protocol.java.TypeDescriptorData;
+import org.springframework.ide.vscode.commons.protocol.spring.IndexUpdatedParams;
 import org.springframework.tooling.jdt.ls.commons.Logger;
 import org.springframework.tooling.jdt.ls.commons.classpath.ReusableClasspathListenerHandler;
 import org.springframework.tooling.jdt.ls.commons.java.BuildInfo;
@@ -633,7 +634,7 @@ public class STS4LanguageClientImpl extends LanguageClientImpl implements STS4La
 	}
 
 	@Override
-	public void indexUpdated(List<String> affectedProjects) {
+	public void indexUpdated(IndexUpdatedParams indexUpdateDetails) {
 	}
 
 	@Override

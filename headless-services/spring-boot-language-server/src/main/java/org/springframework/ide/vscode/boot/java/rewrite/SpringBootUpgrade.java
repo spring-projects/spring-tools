@@ -100,6 +100,18 @@ public class SpringBootUpgrade {
 		return ids;
 	}
 	
+	public boolean canUpgrade(Version version, Version targetVersion) {
+		if (version.compareTo(targetVersion) <= 0) {
+			return false;
+		}
+		if (version.getMajor() == targetVersion.getMajor() && version.getMinor() == targetVersion.getMinor()) {
+			return true;
+		} else {
+			//TODO: Major or minor version upgrades are NOT available for the time being via open rewrite
+			return false;
+		}
+	}
+	
 	private Recipe createUpgradeRecipe(Map<String, Recipe> recipes, Version version, Version targetVersion) {
 		Recipe recipe = new DeclarativeRecipe("upgrade-spring-boot", "Upgrade Spring Boot from " + version + " to " + targetVersion,
 				"", Collections.emptySet(), null, null, false, Collections.emptyList());

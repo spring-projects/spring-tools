@@ -232,12 +232,14 @@
             id="org.springsource.ide.eclipse.commons.preferencePage"
             name="Spring">
       </page>
+<!--
       <page
             category="org.springsource.ide.eclipse.commons.preferencePage"
             class="org.springframework.tooling.boot.ls.RewritePreferencePage"
             id="org.springframework.tooling.boot.ls.rewrite"
             name="OpenRewrite">
       </page>
+-->
       <page
             category="org.springframework.tooling.boot.ls.rewrite"
             class="org.springframework.tooling.boot.ls.RecipeFiltersPreferencePage"

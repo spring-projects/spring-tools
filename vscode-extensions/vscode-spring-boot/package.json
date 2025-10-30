@@ -584,12 +584,12 @@
         "properties": {
           "boot-java.ai.mcp-server-enabled": {
             "type": "boolean",
-            "default": true,
-            "description": "Enable embedded MCP server"
+            "default": false,
+            "description": "Enable embedded MCP server (experimental)"
           },
           "boot-java.ai.mcp-server-port": {
             "type": "integer",
-            "default": 0,
+            "default": 50627,
             "description": "Port used by the embedded MCP serverr"
           }
         }

@@ -217,25 +217,25 @@ public class LanguageServerRunner implements CommandLineRunner {
 	}
 
 	private static Connection connectToNode() throws IOException {
-		String port = System.getProperty("server.port");
-
-		if (port != null) {
-			Socket socket = new Socket("localhost", Integer.parseInt(port));
-
-			InputStream in = socket.getInputStream();
-			OutputStream out = socket.getOutputStream();
-
-			log.info("Connected to parent using socket on port {}", port);
-			return new Connection(in, out, socket);
-		}
-		else {
+//		String port = System.getProperty("server.port");
+//
+//		if (port != null) {
+//			Socket socket = new Socket("localhost", Integer.parseInt(port));
+//
+//			InputStream in = socket.getInputStream();
+//			OutputStream out = socket.getOutputStream();
+//
+//			log.info("Connected to parent using socket on port {}", port);
+//			return new Connection(in, out, socket);
+//		}
+//		else {
 			InputStream in = System.in;
 			PrintStream out = System.out;
 
 			log.info("Connected to parent using stdio");
 
 			return new Connection(in, out, null);
-		}
+//		}
 	}
 
 	private Future<Void> runAsync(Connection connection) throws Exception {

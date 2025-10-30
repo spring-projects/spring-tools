@@ -33,7 +33,7 @@ public class AiConfigPreferencePage extends FieldEditorPreferencePage implements
 	@Override
 	protected void createFieldEditors() {
 		Composite fieldEditorParent = getFieldEditorParent();
-		addField(new BooleanFieldEditor(Constants.PREF_AI_MCP_ENABLED, "Enable embedded MCP server", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_AI_MCP_ENABLED, "Enable embedded MCP server (experimental)", fieldEditorParent));
 		addField(new StringFieldEditor(Constants.PREF_AI_MCP_PORT, "Port used by the embedded MCP server", fieldEditorParent));
 	}
 

@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.springframework.tooling.boot.ls.prefs;
 
+import java.util.Objects;
+
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.StringFieldEditor;
@@ -17,6 +20,7 @@ import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.eclipse.ui.PlatformUI;
 import org.springframework.tooling.boot.ls.BootLanguageServerPlugin;
 import org.springframework.tooling.boot.ls.Constants;
 
@@ -25,6 +29,10 @@ public class AiConfigPreferencePage extends FieldEditorPreferencePage implements
 	private BooleanFieldEditor mcpEnabledEditor;
 	private StringFieldEditor mcpPortEditor;
 	
+	// Track stored values to detect changes
+	private boolean storedStateMcpEnabled;
+	private String storedStateMcpPort;
+	
 	public AiConfigPreferencePage() {
 		super(GRID);
 	}
@@ -32,6 +40,10 @@ public class AiConfigPreferencePage extends FieldEditorPreferencePage implements
 	@Override
 	public void init(IWorkbench workbench) {
 		setPreferenceStore(BootLanguageServerPlugin.getDefault().getPreferenceStore());
+		
+		// Store initial preference values
+		storedStateMcpEnabled = getPreferenceStore().getBoolean(Constants.PREF_AI_MCP_ENABLED);
+		storedStateMcpPort = getPreferenceStore().getString(Constants.PREF_AI_MCP_PORT);
 	}
 	
 	@Override
@@ -62,6 +74,40 @@ public class AiConfigPreferencePage extends FieldEditorPreferencePage implements
 		if (mcpEnabledEditor != null && mcpPortEditor != null) {
 			boolean mcpEnabled = mcpEnabledEditor.getBooleanValue();
 			mcpPortEditor.setEnabled(mcpEnabled, getFieldEditorParent());
+		}
+	}
+	
+	@Override
+	public boolean performOk() {
+		boolean result = super.performOk();
+		
+		if (result) {
+			// Check if any AI configuration preferences have changed
+			boolean currentMcpEnabled = getPreferenceStore().getBoolean(Constants.PREF_AI_MCP_ENABLED);
+			String currentMcpPort = getPreferenceStore().getString(Constants.PREF_AI_MCP_PORT);
+			
+			boolean hasChanges = (storedStateMcpEnabled != currentMcpEnabled) || 
+								!Objects.equals(storedStateMcpPort, currentMcpPort);
+			
+			if (hasChanges) {
+				showRestartDialog();
+			}
+			
+			storedStateMcpEnabled = currentMcpEnabled;
+			storedStateMcpPort = currentMcpPort;
+		}
+		
+		return result;
+	}
+	
+	private void showRestartDialog() {
+		boolean restart = MessageDialog.openQuestion(getShell(), 
+			"Restart Required", 
+			"The AI configuration changes will take effect after restarting the IDE.\n\n" +
+			"Do you want to restart now?");
+		
+		if (restart) {
+			PlatformUI.getWorkbench().restart();
 		}
 	}
 

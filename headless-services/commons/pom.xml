@@ -126,7 +126,6 @@
 
     <dependencyManagement>
         <dependencies>
-			<!-- https://mvnrepository.com/artifact/org.openrewrite/rewrite-bom -->
 			<dependency>
 			    <groupId>org.openrewrite</groupId>
 			    <artifactId>rewrite-bom</artifactId>

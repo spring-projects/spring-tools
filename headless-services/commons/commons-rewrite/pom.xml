@@ -29,16 +29,6 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>io.github.classgraph</groupId>
-			<artifactId>classgraph</artifactId>
-			<version>4.8.149</version>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.annotation</groupId>
-			<artifactId>jakarta.annotation-api</artifactId>
-		</dependency>
-		
-		<dependency>
 			<groupId>org.openrewrite</groupId>
 			<artifactId>rewrite-properties</artifactId>
 		</dependency>
@@ -95,16 +85,6 @@
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
 		</dependency>
-		<dependency>
-		    <groupId>javax.xml.bind</groupId>
-		    <artifactId>jaxb-api</artifactId>
-		    <version>2.3.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.opentest4j</groupId>
-			<artifactId>opentest4j</artifactId>
-			<version>1.3.0</version>
-		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.ide.vscode</groupId>
@@ -132,12 +112,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.openrewrite.recipe</groupId>
-			<artifactId>rewrite-java-dependencies</artifactId>
-			<version>1.43.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

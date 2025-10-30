@@ -22,7 +22,7 @@ import java.util.UUID;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.openrewrite.Recipe;
 import org.openrewrite.config.DeclarativeRecipe;
-import org.openrewrite.maven.UpgradeDependencyVersion;
+import org.openrewrite.gradle.plugins.UpgradePluginVersion;
 import org.openrewrite.maven.UpgradeParentVersion;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -76,12 +76,14 @@ public class SpringBootUpgrade {
 							+ version.toMajorMinorVersionStr() + "' is newer or same as the target version '"
 							+ targetVersion.toMajorMinorVersionStr() + "'");
 			
-			return recipeRepo.recipes().thenComposeAsync(recipes -> recipeRepo.apply(
-					createUpgradeRecipe(recipes, version, targetVersion),
-					uri,
-					UUID.randomUUID().toString(),
-					askForPreview
-			));
+//			return recipeRepo.recipes().thenComposeAsync(recipes -> recipeRepo.apply(
+//					createUpgradeRecipe(recipes, version, targetVersion),
+//					uri,
+//					UUID.randomUUID().toString(),
+//					askForPreview
+//			));
+			
+			return recipeRepo.apply(createUpgradeRecipe(version, targetVersion), uri, UUID.randomUUID().toString(), askForPreview);
 		});
 	}
 	
@@ -112,20 +114,22 @@ public class SpringBootUpgrade {
 		}
 	}
 	
-	private Recipe createUpgradeRecipe(Map<String, Recipe> recipes, Version version, Version targetVersion) {
+	private Recipe createUpgradeRecipe(/*Map<String, Recipe> recipes, */Version version, Version targetVersion) {
 		Recipe recipe = new DeclarativeRecipe("upgrade-spring-boot", "Upgrade Spring Boot from " + version + " to " + targetVersion,
 				"", Collections.emptySet(), null, null, false, Collections.emptyList());
 		
 		if (version.getMajor() == targetVersion.getMajor() && version.getMinor() == targetVersion.getMinor()) {
 			// patch version upgrade - treat as pom versions only upgrade
-			recipe.getRecipeList().add(new UpgradeDependencyVersion("org.springframework.boot", "*", version.getMajor() + "." + version.getMinor() + ".x", null, null, null));
+			recipe.getRecipeList().add(new org.openrewrite.maven.UpgradeDependencyVersion("org.springframework.boot", "*", version.getMajor() + "." + version.getMinor() + ".x", null, null, null));
 			recipe.getRecipeList().add(new UpgradeParentVersion("org.springframework.boot", "spring-boot-starter-parent", version.getMajor() + "." + version.getMinor() + ".x", null, null));
-		} else /*if (version.getMajor() == targetVersion.getMajor())*/ {
-			List<String> recipedIds = createRecipeIdsChain(version.getMajor(), version.getMinor() + 1, targetVersion.getMajor(), targetVersion.getMinor(), versionsToRecipeId);
-			if (!recipedIds.isEmpty()) {
-				String recipeId = recipedIds.get(recipedIds.size() - 1);
-				Optional.ofNullable(recipes.get(recipeId)).ifPresent(r -> recipe.getRecipeList().add(r));
-			}
+			recipe.getRecipeList().add(new org.openrewrite.gradle.UpgradeDependencyVersion("org.springframework.boot", "*", version.getMajor() + "." + version.getMinor() + ".x", null));
+			recipe.getRecipeList().add(new UpgradePluginVersion("org.springframework.boot", version.getMajor() + "." + version.getMinor() + ".x", null));
+//		} else /*if (version.getMajor() == targetVersion.getMajor())*/ {
+//			List<String> recipedIds = createRecipeIdsChain(version.getMajor(), version.getMinor() + 1, targetVersion.getMajor(), targetVersion.getMinor(), versionsToRecipeId);
+//			if (!recipedIds.isEmpty()) {
+//				String recipeId = recipedIds.get(recipedIds.size() - 1);
+//				Optional.ofNullable(recipes.get(recipeId)).ifPresent(r -> recipe.getRecipeList().add(r));
+//			}
 		}
 
 		if (recipe.getRecipeList().isEmpty()) {

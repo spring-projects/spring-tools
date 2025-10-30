@@ -43,20 +43,6 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		preferenceStore.setDefault(Constants.PREF_SCAN_JAVA_TEST_SOURCES, false);
 		
 		preferenceStore.setDefault(Constants.PREF_JAVA_RECONCILE, true);
-		preferenceStore.setDefault(Constants.PREF_REWRITE_PROJECT_REFACTORINGS, false);
-		
-		preferenceStore.setDefault(Constants.PREF_REWRITE_RECIPE_FILTERS, StringListEditor.encode(new String[] {
-				"org.openrewrite.java.spring.boot2.SpringBoot2JUnit4to5Migration",
-				"org.openrewrite.java.spring.boot3.SpringBoot3BestPractices",
-				"org.openrewrite.java.testing.junit5.JUnit5BestPractices",
-				"org.openrewrite.java.testing.junit5.JUnit4to5Migration",
-				"org.openrewrite.java.spring.boot2.UpgradeSpringBoot_2_7",
-				"org.springframework.ide.vscode.rewrite.boot3.UpgradeSpringBoot_3_4",
-				"org.springframework.ide.vscode.rewrite.boot3.UpgradeSpringBoot_3_5",
-				"org.rewrite.java.security.*",
-				"org.springframework.rewrite.test.*",
-				"rewrite.test.*"
-		}));
 		
 		preferenceStore.setDefault(Constants.PREF_MODULITH, true);
 		preferenceStore.setDefault(Constants.PREF_LIVE_INFORMATION_ALL_JVM_PROCESSES, false);

@@ -51,7 +51,6 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.rewrite.ORDocUtils;
-import org.springframework.ide.vscode.commons.rewrite.gradle.GradleIJavaProjectParser;
 import org.springframework.ide.vscode.commons.rewrite.java.ProjectParser;
 import org.springframework.ide.vscode.commons.rewrite.maven.MavenIJavaProjectParser;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -239,8 +238,6 @@ public class RewriteRecipeRepository {
     	case ProjectBuild.MAVEN_PROJECT_TYPE:
             MavenParser.Builder mavenParserBuilder = MavenParser.builder();
     		return new MavenIJavaProjectParser(jp, JavaParser.fromJavaVersion(), inputProvider, mavenParserBuilder);
-    	case ProjectBuild.GRADLE_PROJECT_TYPE:
-    		return new GradleIJavaProjectParser(jp, JavaParser.fromJavaVersion(), inputProvider);
     	default:
     		throw new IllegalStateException("The project is neither Maven nor Gradle!");
     	}

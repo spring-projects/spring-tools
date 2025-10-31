@@ -69,7 +69,7 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 
 			bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
 				Version upgradeVersion = Version.parse(targetVersion);
-				if (!bootUpgradeOpt.get().canUpgrade(javaProjectVersion, upgradeVersion) || javaProjectVersion.compareTo(upgradeVersion) >= 0) {
+				if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
 					return null;
 				}
 				CodeAction c = new CodeAction();
@@ -102,7 +102,7 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 
 			bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
 				Version upgradeVersion = Version.parse(targetVersion);
-				if (!bootUpgradeOpt.get().canUpgrade(javaProjectVersion, upgradeVersion) || javaProjectVersion.compareTo(upgradeVersion) >= 0) {
+				if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
 					return null;
 				}
 				CodeAction c = new CodeAction();

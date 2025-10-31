@@ -1066,7 +1066,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	}
 	
 	private static String extractComplianceVersion(String versionString) {
-        if (versionString.contains(".")) {
+        if (versionString != null && versionString.contains(".")) {
             String[] parts = versionString.split("\\.");
             if ("1".equals(parts[0])) {
     			if (parts.length > 1) {

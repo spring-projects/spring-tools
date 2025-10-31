@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.commons.rewrite.gradle;
 
 import static org.openrewrite.Tree.randomId;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -36,10 +37,14 @@ import org.openrewrite.java.marker.JavaProject;
 import org.openrewrite.java.marker.JavaVersion;
 import org.openrewrite.marker.BuildTool;
 import org.openrewrite.marker.Marker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.rewrite.java.AbstractJavaProjectParser;
 
 public class GradleIJavaProjectParser extends AbstractJavaProjectParser {
+
+	private static final Logger log = LoggerFactory.getLogger(GradleIJavaProjectParser.class);
 
 	public GradleIJavaProjectParser(IJavaProject jp, Builder<?, ?> javaParserBuilder,
 			Function<Path, Input> parserInputProvider) {
@@ -68,17 +73,22 @@ public class GradleIJavaProjectParser extends AbstractJavaProjectParser {
 
 	@Override
 	public List<G.CompilationUnit> parseBuildFiles(Path projectDir, ExecutionContext ctx) {
-		OpenRewriteModel openRewriteGradleModel = OpenRewriteModelBuilder.forProjectDirectory(projectDir.toFile(), Paths.get(jp.getProjectBuild().getBuildFile()).toFile());
-		GradleProject gradleProject = org.openrewrite.gradle.toolingapi.GradleProject.toMarker(openRewriteGradleModel.gradleProject());
-		GradleParser gradleParser = GradleParser.builder().groovyParser(GroovyParser.builder()).build();
-		
-		Path buildFilePath = Paths.get(jp.getProjectBuild().getBuildFile());
-		
-		List<G.CompilationUnit> gradleFiles = gradleParser.parseInputs(() -> 
-			getInputs(Stream.of(buildFilePath)).iterator(), null, ctx).map(G.CompilationUnit.class::cast).collect(Collectors.toList());
-		return ListUtils.map(
-			gradleFiles, (i, gb) -> gb.withMarkers(gb.getMarkers().addIfAbsent(gradleProject))
-		);
+		try {
+			OpenRewriteModel openRewriteGradleModel = OpenRewriteModelBuilder.forProjectDirectory(projectDir.toFile(), Paths.get(jp.getProjectBuild().getBuildFile()).toFile());
+			GradleProject gradleProject =openRewriteGradleModel.getGradleProject();
+			GradleParser gradleParser = GradleParser.builder().groovyParser(GroovyParser.builder()).build();
+			
+			Path buildFilePath = Paths.get(jp.getProjectBuild().getBuildFile());
+			
+			List<G.CompilationUnit> gradleFiles = gradleParser.parseInputs(() -> 
+				getInputs(Stream.of(buildFilePath)).iterator(), null, ctx).map(G.CompilationUnit.class::cast).collect(Collectors.toList());
+			return ListUtils.map(
+				gradleFiles, (i, gb) -> gb.withMarkers(gb.getMarkers().addIfAbsent(gradleProject))
+			);
+		} catch (IOException e) {
+			log.error("", e);
+			return List.of();
+		}
 	}
 
 }

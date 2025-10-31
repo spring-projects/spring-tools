@@ -17,13 +17,13 @@ import java.util.UUID;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.openrewrite.Recipe;
 import org.openrewrite.config.DeclarativeRecipe;
-import org.openrewrite.gradle.plugins.UpgradePluginVersion;
 import org.openrewrite.maven.UpgradeParentVersion;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.util.Assert;
 
 import com.google.gson.JsonElement;
@@ -42,6 +42,8 @@ public class SpringBootUpgrade {
 			
 			IJavaProject project = projectFinder.find(new TextDocumentIdentifier(uri)).orElse(null);
 			Assert.isLegal(project != null, "No Spring Boot project found for uri: " + uri);
+			
+			Assert.isLegal(project.getProjectBuild().getType() == ProjectBuild.MAVEN_PROJECT_TYPE, "Only Maven projects supported");
 			
 			Version version = SpringProjectUtil.getDependencyVersion(project, SpringProjectUtil.SPRING_BOOT);
 			
@@ -69,8 +71,6 @@ public class SpringBootUpgrade {
 			// patch version upgrade - treat as pom versions only upgrade
 			recipe.getRecipeList().add(new org.openrewrite.maven.UpgradeDependencyVersion("org.springframework.boot", "*", version.getMajor() + "." + version.getMinor() + ".x", null, null, null));
 			recipe.getRecipeList().add(new UpgradeParentVersion("org.springframework.boot", "spring-boot-starter-parent", version.getMajor() + "." + version.getMinor() + ".x", null, null));
-			recipe.getRecipeList().add(new org.openrewrite.gradle.UpgradeDependencyVersion("org.springframework.boot", "*", version.getMajor() + "." + version.getMinor() + ".x", null));
-			recipe.getRecipeList().add(new UpgradePluginVersion("org.springframework.boot", version.getMajor() + "." + version.getMinor() + ".x", null));
 		}
 
 		if (recipe.getRecipeList().isEmpty()) {

@@ -38,14 +38,6 @@
 		</dependency>
 		<dependency>
 			<groupId>org.openrewrite</groupId>
-			<artifactId>rewrite-groovy</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.openrewrite</groupId>
-			<artifactId>rewrite-gradle</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.openrewrite</groupId>
 			<artifactId>rewrite-yaml</artifactId>
 		</dependency>
 		<dependency>
@@ -70,15 +62,6 @@
 		<dependency>
 			<groupId>org.openrewrite</groupId>
 			<artifactId>rewrite-java-25</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-        <dependency>
-            <groupId>org.openrewrite.gradle.tooling</groupId>
-            <artifactId>model</artifactId>
-        </dependency>
-		<dependency>
-			<groupId>org.gradle</groupId>
-			<artifactId>gradle-tooling-api</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>

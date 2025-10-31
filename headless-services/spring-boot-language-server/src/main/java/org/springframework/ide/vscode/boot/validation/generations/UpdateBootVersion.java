@@ -28,6 +28,7 @@ import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.DiagnosticSeverityProvider;
+import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 
 import com.google.common.collect.ImmutableList;
 
@@ -67,19 +68,21 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 			
 			List<CodeAction> actions = new ArrayList<>(2);
 
-			bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
-				Version upgradeVersion = Version.parse(targetVersion);
-				if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
-					return null;
-				}
-				CodeAction c = new CodeAction();
-				c.setKind(CodeActionKind.QuickFix);
-				c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
-				String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
-				c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
-						ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
-				return c;
-			}).ifPresent(actions::add);
+			if (javaProject.getProjectBuild().getType() == ProjectBuild.MAVEN_PROJECT_TYPE) {
+				bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
+					Version upgradeVersion = Version.parse(targetVersion);
+					if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
+						return null;
+					}
+					CodeAction c = new CodeAction();
+					c.setKind(CodeActionKind.QuickFix);
+					c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
+					String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
+					c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
+							ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
+					return c;
+				}).ifPresent(actions::add);
+			}
 			
 			actions.add(openReleaseNotesCodeAction(latest));
 

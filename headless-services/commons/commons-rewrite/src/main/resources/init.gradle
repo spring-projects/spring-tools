@@ -29,7 +29,6 @@ initscript {
 
     dependencies {
         classpath 'org.openrewrite.gradle.tooling:plugin:8.65.0'
-        classpath 'org.openrewrite:rewrite-maven:8.65.0'
     }
 }
 

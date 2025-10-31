@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016-2017 Pivotal, Inc.
+ * Copyright (c) 2016-2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -240,11 +240,21 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 				parser.parse(value);
 			}
 		} catch (Exception e) {
-			ProblemType problemType = getProblemType(e);
-			DocumentRegion region = getRegion(e, ast.getDocument(), node);
-			String msg = getMessage(e);
-			valueParseError(type, region, msg, problemType, getValueReplacement(e));
+			// check for YTT
+			if (isYttUsed(node)) {
+				ProblemType problemType = getProblemType(e);
+				DocumentRegion region = getRegion(e, ast.getDocument(), node);
+				String msg = getMessage(e);
+				valueParseError(type, region, msg, problemType, getValueReplacement(e));
+			}
 		}
+	}
+	
+	private boolean isYttUsed(Node node) {
+		if (node.getBlockComments() != null) {
+			return node.getBlockComments().stream().anyMatch(cl -> cl.getValue().startsWith("@"));
+		}
+		return false;
 	}
 
 	protected ReplacementQuickfix getValueReplacement(Exception _e) {

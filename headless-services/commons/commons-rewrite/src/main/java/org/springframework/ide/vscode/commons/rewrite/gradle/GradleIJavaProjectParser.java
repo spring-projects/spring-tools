@@ -67,7 +67,7 @@ public class GradleIJavaProjectParser extends AbstractJavaProjectParser {
 	}
 
 	@Override
-	protected List<? extends SourceFile> parseBuildFiles(Path projectDir, ExecutionContext ctx) {
+	public List<G.CompilationUnit> parseBuildFiles(Path projectDir, ExecutionContext ctx) {
 		OpenRewriteModel openRewriteGradleModel = OpenRewriteModelBuilder.forProjectDirectory(projectDir.toFile(), Paths.get(jp.getProjectBuild().getBuildFile()).toFile());
 		GradleProject gradleProject = org.openrewrite.gradle.toolingapi.GradleProject.toMarker(openRewriteGradleModel.gradleProject());
 		GradleParser gradleParser = GradleParser.builder().groovyParser(GroovyParser.builder()).build();

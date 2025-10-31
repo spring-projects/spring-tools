@@ -119,16 +119,6 @@
       ],
       "editor/context": [
         {
-          "when": "resourceFilename == pom.xml || resourceFilename == build.gradle",
-          "command": "vscode-spring-boot.rewrite.list.refactorings",
-          "group": "SpringBoot"
-        },
-        {
-          "when": "resourceFilename == pom.xml || resourceFilename == build.gradle",
-          "command": "vscode-spring-boot.rewrite.list.boot-upgrades",
-          "group": "SpringBoot"
-        },
-        {
           "when": "editorLangId == spring-boot-properties",
           "command": "vscode-spring-boot.props-to-yaml",
           "group": "SpringBoot"
@@ -140,16 +130,6 @@
         }
       ],
       "explorer/context": [
-        {
-          "when": "(resourceFilename == pom.xml  || resourceFilename == build.gradle) && config.boot-java.rewrite.refactorings.on == true",
-          "command": "vscode-spring-boot.rewrite.list.refactorings",
-          "group": "SpringBoot"
-        },
-        {
-          "when": "(resourceFilename == pom.xml  || resourceFilename == build.gradle) && config.boot-java.rewrite.refactorings.on == true",
-          "command": "vscode-spring-boot.rewrite.list.boot-upgrades",
-          "group": "SpringBoot"
-        },
         {
           "when": "resourceExtname == .properties",
           "command": "vscode-spring-boot.props-to-yaml",
@@ -227,23 +207,6 @@
       {
         "command": "vscode-spring-boot.live-hover.connect",
         "title": "Show/Refresh/Hide Live Data from Spring Boot Processes",
-        "category": "Spring Boot"
-      },
-      {
-        "enablement": "config.boot-java.rewrite.refactorings.on == true",
-        "command": "vscode-spring-boot.rewrite.list.boot-upgrades",
-        "category": "Spring Boot",
-        "title": "Upgrade Spring Boot Version..."
-      },
-      {
-        "enablement": "config.boot-java.rewrite.refactorings.on == true",
-        "command": "vscode-spring-boot.rewrite.list.refactorings",
-        "category": "Spring Boot",
-        "title": "Refactor Spring Boot Project..."
-      },
-      {
-        "command": "vscode-spring-boot.rewrite.reload",
-        "title": "Reload OpenRewrite Recipes",
         "category": "Spring Boot"
       },
       {
@@ -493,45 +456,6 @@
             "type": "boolean",
             "default": false,
             "description": "Explain SpEL expressions, Spring Data queries, and AOP annotations using Copilot"
-          }
-        }
-      },
-      {
-        "id": "rewrite",
-        "title": "OpenRewrite",
-        "order": 400,
-        "properties": {
-          "boot-java.rewrite.refactorings.on": {
-            "type": "boolean",
-            "default": true,
-            "description": "Recipes refactoring entire Maven project via commands"
-          },
-          "boot-java.rewrite.recipe-filters": {
-            "type": "array",
-            "default": [
-              "org.openrewrite.java.spring.boot2.SpringBoot2JUnit4to5Migration",
-              "org.openrewrite.java.spring.boot3.SpringBoot3BestPractices",
-              "org.openrewrite.java.testing.junit5.JUnit5BestPractices",
-              "org.openrewrite.java.testing.junit5.JUnit4to5Migration",
-              "org.openrewrite.java.spring.boot2.UpgradeSpringBoot_2_7",
-              "org.springframework.ide.vscode.rewrite.boot3.UpgradeSpringBoot_3_4",
-              "org.springframework.ide.vscode.rewrite.boot3.UpgradeSpringBoot_3_5",
-              "org.rewrite.java.security.*",
-              "org.springframework.rewrite.test.*",
-              "rewrite.test.*"
-            ],
-            "items": {
-              "type": "string"
-            },
-            "description": "Recipe ID filter patterns. Either exact ids or patterns with '*' as the wild-card"
-          },
-          "boot-java.rewrite.scan-files": {
-            "type": "array",
-            "default": [],
-            "items": {
-              "type": "string"
-            },
-            "description": "JAR and YAML files to scan for recipes"
           }
         }
       },

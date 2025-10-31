@@ -21,7 +21,7 @@ public class AddAnnotationOverMethodTest implements RewriteTest {
 	@Test
 	void addAnnotationToMethod() {
 		rewriteRun(
-				spec -> spec.recipe(new AddAnnotationOverMethod("demo.A foo()", "java.lang.Deprecated", List.of(new AddAnnotationOverMethod.Attribute("value", "\"Expected Text\"")))),
+				spec -> spec.recipe(new AddAnnotationOverMethod("demo.A foo()", "java.lang.Deprecated", List.of(new AddAnnotationOverMethod.Attribute("value", "\"Expected-Text\"")))),
 				Assertions.java(
 					"""
 					package demo;
@@ -32,7 +32,7 @@ public class AddAnnotationOverMethodTest implements RewriteTest {
 					"""
 					package demo;
 					interface A {
-					    @Deprecated("Expected Text")
+					    @Deprecated("Expected-Text")
 					    void foo(); 
 					}
 					"""
@@ -43,7 +43,7 @@ public class AddAnnotationOverMethodTest implements RewriteTest {
 	@Test
 	void addAnnotationToMethodWithAnnotation() {
 		rewriteRun(
-				spec -> spec.recipe(new AddAnnotationOverMethod("demo.A foo()", "java.lang.Deprecated", List.of(new AddAnnotationOverMethod.Attribute("value", "\"Expected Text\"")))),
+				spec -> spec.recipe(new AddAnnotationOverMethod("demo.A foo()", "java.lang.Deprecated", List.of(new AddAnnotationOverMethod.Attribute("value", "\"Expected-Text\"")))),
 				Assertions.java(
 					"""
 					package demo;
@@ -58,7 +58,7 @@ public class AddAnnotationOverMethodTest implements RewriteTest {
 					package demo;
 					class A {
 					    @SuppressWarnings("null")
-					    @Deprecated("Expected Text")
+					    @Deprecated("Expected-Text")
 					    void foo() {
 							System.out.println("foo");
 						} 

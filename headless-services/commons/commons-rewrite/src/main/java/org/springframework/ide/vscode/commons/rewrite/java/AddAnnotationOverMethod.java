@@ -99,7 +99,7 @@ public class AddAnnotationOverMethod extends Recipe {
 					if (attributes != null) {
 						for (Attribute attr : attributes) {
 							m = (MethodDeclaration) new AddOrUpdateAnnotationAttribute(annotationType, attr.name(),
-									attr.value(), true, false).getVisitor().visit(m, ctx, getCursor().getParent());
+									attr.value(), (String) null, null, null).getVisitor().visit(m, ctx, getCursor().getParent());
 						}
 					}
 					

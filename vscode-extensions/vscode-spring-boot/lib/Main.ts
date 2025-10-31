@@ -14,7 +14,6 @@ import {
 
 import * as commons from '@pivotal-tools/commons-vscode';
 import * as liveHoverUi from './live-hover-connect-ui';
-import * as rewrite from './rewrite';
 
 import { startDebugSupport } from './debug-config-provider';
 import { ApiManager } from "./apiManager";
@@ -182,7 +181,6 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
         })));
         context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.stop', () => client.stop()));
         liveHoverUi.activate(client, options, context);
-        rewrite.activate(client, options, context);
         setLogLevelUi.activate(client, options, context);
         startPropertiesConversionSupport(context);
         if(isLlmApiReady)

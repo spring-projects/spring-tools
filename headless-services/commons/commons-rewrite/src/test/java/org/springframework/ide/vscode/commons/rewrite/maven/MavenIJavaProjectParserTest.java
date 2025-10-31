@@ -51,7 +51,7 @@ public class MavenIJavaProjectParserTest {
 		Path testProjectPath = Paths.get(jp.getLocationUri());
 
         MavenParser.Builder mavenParserBuilder = MavenParser.builder()
-                .mavenConfig(testProjectPath.resolve(".mvn/maven.config"));
+                /*.mavenConfig(testProjectPath.resolve(".mvn/maven.config"))*/;
         
         MavenIJavaProjectParser parser = new MavenIJavaProjectParser(jp, JavaParser.fromJavaVersion(), null, mavenParserBuilder);
 		

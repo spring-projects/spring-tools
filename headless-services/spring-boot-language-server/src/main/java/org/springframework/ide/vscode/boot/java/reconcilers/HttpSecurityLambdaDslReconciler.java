@@ -13,7 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.openrewrite.java.spring.boot2.HttpSecurityLambdaDsl;
+import org.openrewrite.java.spring.security5.HttpSecurityLambdaDsl;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;

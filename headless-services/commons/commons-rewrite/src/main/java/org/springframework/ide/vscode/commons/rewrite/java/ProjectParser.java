@@ -164,7 +164,7 @@ public abstract class ProjectParser {
 	
     abstract protected List<Marker> getJavaProvenance(SourceFile buildFileAst, Path projectDirectory);
 
-	abstract protected List<? extends SourceFile> parseBuildFiles(Path projectDir, ExecutionContext ctx);
+	abstract public List<? extends SourceFile> parseBuildFiles(Path projectDir, ExecutionContext ctx);
 	
 	abstract protected Collection<SourceSet> getSourceSets(Path projectDir, SourceFile buildFile);
 	

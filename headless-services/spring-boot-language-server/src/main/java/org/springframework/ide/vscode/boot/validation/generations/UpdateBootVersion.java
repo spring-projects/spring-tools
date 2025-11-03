@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2024 VMware, Inc.
+ * Copyright (c) 2023, 2025 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,6 +28,7 @@ import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.DiagnosticSeverityProvider;
+import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 
 import com.google.common.collect.ImmutableList;
 
@@ -55,6 +56,10 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 		return builder.build();
 	}
 	
+	private boolean canProvideQuickfix(IJavaProject jp) {
+		return ProjectBuild.MAVEN_PROJECT_TYPE.equals(jp.getProjectBuild().getType());
+	}
+	
 	private Optional<Diagnostic> validateMajorVersion(IJavaProject javaProject, Version javaProjectVersion, List<Version> sortedBootVersions) {
 		Version latest = VersionValidationUtils.getNewerLatestMajorRelease(sortedBootVersions, javaProjectVersion);
 
@@ -67,19 +72,21 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 			
 			List<CodeAction> actions = new ArrayList<>(2);
 
-			bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
-				Version upgradeVersion = Version.parse(targetVersion);
-				if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
-					return null;
-				}
-				CodeAction c = new CodeAction();
-				c.setKind(CodeActionKind.QuickFix);
-				c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
-				String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
-				c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
-						ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
-				return c;
-			}).ifPresent(actions::add);
+			if (canProvideQuickfix(javaProject)) {
+				bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
+					Version upgradeVersion = Version.parse(targetVersion);
+					if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
+						return null;
+					}
+					CodeAction c = new CodeAction();
+					c.setKind(CodeActionKind.QuickFix);
+					c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
+					String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
+					c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
+							ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
+					return c;
+				}).ifPresent(actions::add);
+			}
 			
 			actions.add(openReleaseNotesCodeAction(latest));
 
@@ -100,19 +107,21 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 			
 			List<CodeAction> actions = new ArrayList<>(2);
 
-			bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
-				Version upgradeVersion = Version.parse(targetVersion);
-				if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
-					return null;
-				}
-				CodeAction c = new CodeAction();
-				c.setKind(CodeActionKind.QuickFix);
-				c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
-				String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
-				c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
-						ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
-				return c;
-			}).ifPresent(actions::add);
+			if (canProvideQuickfix(javaProject)) {
+				bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
+					Version upgradeVersion = Version.parse(targetVersion);
+					if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
+						return null;
+					}
+					CodeAction c = new CodeAction();
+					c.setKind(CodeActionKind.QuickFix);
+					c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
+					String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
+					c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
+							ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
+					return c;
+				}).ifPresent(actions::add);
+			}
 						
 			actions.add(openReleaseNotesCodeAction(latest));
 			
@@ -133,15 +142,17 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 
 			List<CodeAction> actions = new ArrayList<>(2);
 			
-			bootUpgradeOpt.map(bu -> {
-				CodeAction c = new CodeAction();
-				c.setKind(CodeActionKind.QuickFix);
-				c.setTitle("Upgrade to Spring Boot " + latest.toString() + " (Maven dependency version changes only)");
-				String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
-				c.setCommand(new Command("Upgrade to Version " + latest.toString(), commandId,
-						ImmutableList.of(javaProject.getLocationUri().toASCIIString(), latest.toString(), false)));
-				return c;
-			}).ifPresent(actions::add);
+			if (canProvideQuickfix(javaProject)) {
+				bootUpgradeOpt.map(bu -> {
+					CodeAction c = new CodeAction();
+					c.setKind(CodeActionKind.QuickFix);
+					c.setTitle("Upgrade to Spring Boot " + latest.toString() + " (Maven dependency version changes only)");
+					String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
+					c.setCommand(new Command("Upgrade to Version " + latest.toString(), commandId,
+							ImmutableList.of(javaProject.getLocationUri().toASCIIString(), latest.toString(), false)));
+					return c;
+				}).ifPresent(actions::add);
+			}
 			
 			actions.add(openReleaseNotesCodeAction(latest));
 			

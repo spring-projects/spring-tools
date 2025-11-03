@@ -73,20 +73,11 @@ function signExecutableInsideNestedJar() {
   cd $pwd
 }
 
-# sign libjansi.jnilib inside kotlin-compiler-embeddable.jar
-signExecutableInsideJar ${dir}/${destination_folder_name}/SpringToolsForEclipse.app ".*/kotlin-compiler-embeddable.*\.jar$" "libjansi.jnilib" ".*/libjansi\.jnilib$"
-
-# sign libsnappyjava.jnilib and libsnappyjava.dylib inside snappy-java.jar
-signExecutableInsideJar ${dir}/${destination_folder_name}/SpringToolsForEclipse.app ".*/snappy-java.*\.jar$" "libsnappyjava.jnilib" ".*/libsnappyjava\.(jni|dy)lib$"
-
 # sign libjnidispatch.jnilib inside jna.jar
 signExecutableInsideJar ${dir}/${destination_folder_name}/SpringToolsForEclipse.app ".*/jna-\d+.*\.jar$" "libjnidispatch.jnilib.jnilib" ".*/libjnidispatch\.jnilib$"
 
 #sign libjnidispatch.jnilib inside jna.jar which is inside org.springframework.ide.eclipse.docker.client.jar bundle
 signExecutableInsideNestedJar ${dir}/${destination_folder_name}/SpringToolsForEclipse.app ".*/org.springframework.ide.eclipse.docker.client.*\.jar$" ".*/jna-\d+.*\.jar$" "libjnidispatch.jnilib" ".*/libjnidispatch\.jnilib$"
-
-#sign libjnidispatch.jnilib inside develocity-gradle-plugin.jar which is inside rewrite-gradle.jar bundle
-#signExecutableInsideNestedJar ${dir}/${destination_folder_name}/SpringToolsForEclipse.app ".*/rewrite-gradle-\d+.*\.jar$" ".*/develocity-gradle-plugin.*\.jar$" "libjnidispatch.jnilib" ".*/libjnidispatch\.jnilib$"
 
 # Sign the app
 ls -la ${dir}/${destination_folder_name}/SpringToolsForEclipse.app/

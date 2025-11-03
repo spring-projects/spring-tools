@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import org.springframework.tooling.ls.eclipse.commons.preferences.LanguageServer
 import org.springframework.tooling.ls.eclipse.commons.preferences.LsPreferencesUtil;
 import org.springsource.ide.eclipse.commons.core.util.IOUtil;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Supplier;
 
 public abstract class STS4LanguageServerProcessStreamConnector extends ProcessStreamConnectionProvider {
@@ -227,7 +227,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 				}
 				finally {
 					try {
-						os.write("==== Process Terminated====\n".getBytes(Charsets.UTF_8));
+						os.write("==== Process Terminated====\n".getBytes(StandardCharsets.UTF_8));
 						os.close();
 					} catch (IOException e) {
 					}

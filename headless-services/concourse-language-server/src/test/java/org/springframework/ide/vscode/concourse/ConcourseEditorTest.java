@@ -371,7 +371,7 @@ public class ConcourseEditorTest {
                         "  type: # <- bad\n"
         );
         editor.assertProblems(
-                "^ # <- bad|cannot be blank"
+                "# <- bad\n^^|cannot be blank"
         );
 
         editor = harness.newEditor(
@@ -393,7 +393,7 @@ public class ConcourseEditorTest {
         );
 
         editor.assertProblems(
-                "^ # <- bad|String should not be empty"
+                "# <- bad\n^^|String should not be empty"
         );
     }
 

@@ -43,7 +43,7 @@ public class SpringBootUpgrade {
 			IJavaProject project = projectFinder.find(new TextDocumentIdentifier(uri)).orElse(null);
 			Assert.isLegal(project != null, "No Spring Boot project found for uri: " + uri);
 			
-			Assert.isLegal(project.getProjectBuild().getType() == ProjectBuild.MAVEN_PROJECT_TYPE, "Only Maven projects supported");
+			Assert.isLegal(ProjectBuild.MAVEN_PROJECT_TYPE.equals(project.getProjectBuild().getType()), "Only Maven projects supported");
 			
 			Version version = SpringProjectUtil.getDependencyVersion(project, SpringProjectUtil.SPRING_BOOT);
 			

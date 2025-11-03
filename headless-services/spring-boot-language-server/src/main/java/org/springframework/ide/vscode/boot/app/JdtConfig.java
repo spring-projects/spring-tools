@@ -40,6 +40,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.BeanMethodNotPublicR
 import org.springframework.ide.vscode.boot.java.reconcilers.BeanPostProcessingIgnoreInAotReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.BeanRegistrarDeclarationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.Boot3NotSupportedTypeReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ClasspathResourceTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.EntityIdForRepoReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.FeignClientReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.HttpSecurityLambdaDslReconciler;
@@ -166,6 +167,10 @@ public class JdtConfig {
 	
 	@Bean EntityIdForRepoReconciler entityIdForRepoReconciler(SimpleLanguageServer server) {
 		return new EntityIdForRepoReconciler();
+	}
+	
+	@Bean ClasspathResourceTypeReconciler classpathResourceTypeReconciler() {
+		return new ClasspathResourceTypeReconciler();
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)

@@ -91,6 +91,12 @@
         "label": "Implicit web annotations names",
         "description": "Web annotation names are unnecessary when it is the same as method parameter name",
         "defaultSeverity": "HINT"
+      },
+      {
+        "code": "VALUE_CLASSPATH_RESOURCE_TYPE",
+        "label": "Invalid type for classpath resource in `@Value`",
+        "description": "Type is not compatible with classpath resource injection",
+        "defaultSeverity": "WARNING"
       }
     ]
   },

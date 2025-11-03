@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom
+ * Copyright (c) 2024, 2025 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,6 +26,7 @@ import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 public class CompositeASTVisitor extends ASTVisitor {
@@ -95,6 +96,18 @@ public class CompositeASTVisitor extends ASTVisitor {
 
 	@Override
 	public boolean visit(SingleMemberAnnotation node) {
+		boolean result = true;
+		if (!checkOffset(node)) {
+			return false;
+		}
+		for (ASTVisitor astVisitor : visitors) {
+			result |= astVisitor.visit(node);
+		}
+		return result;
+	}
+	
+	@Override
+	public boolean visit(SingleVariableDeclaration node) {
 		boolean result = true;
 		if (!checkOffset(node)) {
 			return false;

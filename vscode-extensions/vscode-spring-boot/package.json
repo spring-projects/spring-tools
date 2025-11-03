@@ -688,6 +688,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot2.VALUE_CLASSPATH_RESOURCE_TYPE": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Type is not compatible with classpath resource injection",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

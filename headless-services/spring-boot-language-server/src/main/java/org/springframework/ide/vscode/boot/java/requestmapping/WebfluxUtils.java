@@ -17,10 +17,13 @@ import java.util.Set;
 import java.util.function.Function;
 
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.Type;
 
 /**
  * @author Martin Lippert
@@ -31,6 +34,9 @@ public class WebfluxUtils {
 	public static final String ROUTER_FUNCTIONS_TYPE = "org.springframework.web.reactive.function.server.RouterFunctions";
 	public static final String REQUEST_PREDICATES_TYPE = "org.springframework.web.reactive.function.server.RequestPredicates";
 	
+	public static final String MVC_ROUTER_FUNCTION_TYPE = "org.springframework.web.servlet.function.RouterFunction";
+	public static final String MVC_REQUEST_PREDICATES_TYPE = "org.springframework.web.servlet.function.RequestPredicates";
+
 	public static final String REQUEST_PREDICATE_PATH_METHOD = "path";
 	public static final String REQUEST_PREDICATE_METHOD_METHOD = "method";
 	public static final String REQUEST_PREDICATE_ACCEPT_TYPE_METHOD = "accept";
@@ -41,6 +47,19 @@ public class WebfluxUtils {
 	public static final Set<String> REQUEST_PREDICATE_ALL_PATH_METHODS = new HashSet<>(Arrays.asList(REQUEST_PREDICATE_PATH_METHOD, "GET", "POST", "DELETE", "PUT", "PATCH", "HEAD", "OPTIONS"));
 
 
+	public static boolean isFunctionalWebRouterBean(MethodDeclaration method) {
+		Type returnType = method.getReturnType2();
+		if (returnType != null) {
+			ITypeBinding resolvedBinding = returnType.resolveBinding();
+			if (resolvedBinding != null && (
+					WebfluxUtils.ROUTER_FUNCTION_TYPE.equals(resolvedBinding.getBinaryName())
+					|| WebfluxUtils.MVC_ROUTER_FUNCTION_TYPE.equals(resolvedBinding.getBinaryName()))) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public static StringLiteral extractStringLiteralArgument(MethodInvocation node) {
 		List<?> arguments = node.arguments();
 		if (arguments != null && arguments.size() > 0) {

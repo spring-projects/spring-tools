@@ -20,13 +20,11 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.ExpressionMethodReference;
 import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
@@ -46,17 +44,6 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 public class WebfluxRouterSymbolProvider {
 	
 	private static final Logger log = LoggerFactory.getLogger(WebfluxRouterSymbolProvider.class);
-	
-	public static boolean isWebfluxRouterBean(MethodDeclaration method) {
-		Type returnType = method.getReturnType2();
-		if (returnType != null) {
-			ITypeBinding resolvedBinding = returnType.resolveBinding();
-			if (resolvedBinding != null && WebfluxUtils.ROUTER_FUNCTION_TYPE.equals(resolvedBinding.getBinaryName())) {
-				return true;
-			}
-		}
-		return false;
-	}
 	
 	public static void createWebfluxElements(Bean beanDefinition, MethodDeclaration methodDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
 		Block methodBody = methodDeclaration.getBody();

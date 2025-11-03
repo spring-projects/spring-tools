@@ -16,12 +16,16 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
+import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
@@ -30,6 +34,7 @@ import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxUtils;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
@@ -93,22 +98,76 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 						
 						Expression valueExpression = pair.getValue();
 						String versionValue = ASTUtils.getExpressionValueAsString(valueExpression, (d) -> {});
-						versionValue = updateVersion(versionValue);
 
-						SemanticApiVersionParser parser = new SemanticApiVersionParser();
-						try {
-							parser.parseVersion(versionValue);
-						}
-						catch (IllegalStateException e) {
-							ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
-									valueExpression.getStartPosition(), valueExpression.getLength());
-
-							context.getProblemCollector().accept(problem);
-						}
+						validateVersion(context, valueExpression, versionValue);
 					}
 				);
 				
 				return super.visit(annotation);
+			}
+
+			@Override
+			public boolean visit(MethodDeclaration method) {
+				boolean isWebfluxRouter = WebfluxUtils.isFunctionalWebRouterBean(method);
+				if (isWebfluxRouter) {
+					if (!context.isCompleteAst()) {
+						throw new RequiredCompleteAstException();
+					}
+				}
+					
+				return super.visit(method);
+			}
+
+			/**
+			 * this is the piece of the reconciler that validates version in functional endpoint definitions
+			 */
+			@Override
+			public boolean visit(MethodInvocation methodInvocation) {
+				IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
+				if (methodBinding == null) return super.visit(methodInvocation);
+				
+				// Check if this is a call to RequestPredicates.version() method
+				String methodName = methodBinding.getName();
+				if (!"version".equals(methodName)) {
+					return super.visit(methodInvocation);
+				}
+				
+				// Check if the declaring class is RequestPredicates (for both WebMVC and WebFlux)
+				ITypeBinding declaringClass = methodBinding.getDeclaringClass();
+				if (declaringClass == null) {
+					return super.visit(methodInvocation);
+				}
+				
+				String declaringClassName = declaringClass.getQualifiedName();
+				boolean isWebMvcVersion = WebfluxUtils.MVC_REQUEST_PREDICATES_TYPE.equals(declaringClassName);
+				boolean isWebFluxVersion = WebfluxUtils.REQUEST_PREDICATES_TYPE.equals(declaringClassName);
+				
+				if (!isWebMvcVersion && !isWebFluxVersion) {
+					return super.visit(methodInvocation);
+				}
+				
+				// Extract the version argument
+				@SuppressWarnings("unchecked")
+				List<Expression> arguments = methodInvocation.arguments();
+				if (arguments == null || arguments.isEmpty() || arguments.size() > 1) {
+					return super.visit(methodInvocation);
+				}
+				
+				if (!context.isIndexComplete()) {
+					throw new RequiredCompleteIndexException();
+				}
+				
+				if (!isApiVersioningConfiguredWithStanardVersionParser(project)) {
+					return super.visit(methodInvocation);
+				}
+				
+				Expression expression = arguments.get(0);
+				String versionValue = ASTUtils.getExpressionValueAsString(expression,  (d) -> {});
+				
+				// Validate the version
+				validateVersion(context, expression, versionValue);
+				
+				return super.visit(methodInvocation);
 			}
 			
 			/**
@@ -134,6 +193,21 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 	private String updateVersion(String version) {
 		boolean baselineVersion = version.endsWith("+");
 		return (baselineVersion ? version.substring(0, version.length() - 1) : version);
+	}
+	
+	private void validateVersion(ReconcilingContext context, ASTNode valueExpression, String versionValue) {
+		versionValue = updateVersion(versionValue);
+
+		SemanticApiVersionParser parser = new SemanticApiVersionParser();
+		try {
+			parser.parseVersion(versionValue);
+		}
+		catch (IllegalStateException e) {
+			ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
+					valueExpression.getStartPosition(), valueExpression.getLength());
+
+			context.getProblemCollector().accept(problem);
+		}
 	}
 	
 	private boolean isApiVersioningConfiguredWithStanardVersionParser(IJavaProject project) {

@@ -268,10 +268,19 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	}
 	
 	private static boolean isYttUsed(Node node) {
-		if (node.getBlockComments() != null) {
-			return node.getBlockComments().stream().anyMatch(cl -> cl.getValue().trim().startsWith("@"));
+		if (node.getBlockComments() != null 
+				&& node.getBlockComments().stream().anyMatch(cl -> isYttComment(cl.getValue()))) {
+			return true;
+		}
+		if (node.getInLineComments() != null
+				&& node.getInLineComments().stream().anyMatch(cl -> isYttComment(cl.getValue()))) {
+			return true;
 		}
 		return false;
+	}
+	
+	private static boolean isYttComment(String s) {
+		return s.startsWith("@ ");
 	}
 
 	protected ReplacementQuickfix getValueReplacement(Exception _e) {

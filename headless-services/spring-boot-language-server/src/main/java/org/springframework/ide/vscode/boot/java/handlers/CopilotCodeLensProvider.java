@@ -61,23 +61,23 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 	
 	protected static Logger logger = LoggerFactory.getLogger(CopilotCodeLensProvider.class);
 
+	public static final String CMD_SEND_TO_AI_ASSISTANT = "vscode-spring-boot.query.explain";
 	public static final String CMD_ENABLE_COPILOT_FEATURES = "sts/enable/copilot/features";
 
 	private static final String QUERY = "Query";
 	private static final String FQN_QUERY = "org.springframework.data.jpa.repository." + QUERY;
-	private static final String CMD = "vscode-spring-boot.query.explain";
+	
 
 	private final AnnotationParamSpelExtractor[] spelExtractors = AnnotationParamSpelExtractor.SPEL_EXTRACTORS;
-
 	private final JavaProjectFinder projectFinder;
-	
-	private SpelSemanticTokens spelSemanticTokens;
+	private final SpelSemanticTokens spelSemanticTokens;
 
 	private static boolean showCodeLenses;
 	
 	public CopilotCodeLensProvider(JavaProjectFinder projectFinder, SimpleLanguageServer server, SpelSemanticTokens spelSemanticTokens) {
 		this.projectFinder = projectFinder;
 		this.spelSemanticTokens = spelSemanticTokens;
+		
 		server.onCommand(CMD_ENABLE_COPILOT_FEATURES, params -> {
 			if (params.getArguments().get(0) instanceof JsonPrimitive) {
 				CopilotCodeLensProvider.showCodeLenses = ((JsonPrimitive) params.getArguments().get(0)).getAsBoolean();
@@ -174,7 +174,7 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 
 				Command cmd = new Command();
 				cmd.setTitle(QueryType.SPEL.getTitle());
-				cmd.setCommand(CMD);
+				cmd.setCommand(CMD_SEND_TO_AI_ASSISTANT);
 				cmd.setArguments(ImmutableList.of(QueryType.SPEL.getPrompt() + snippet.getText() + "\n\n" + context));
 				codeLens.setCommand(cmd);
 
@@ -203,7 +203,7 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 
 				Command cmd = new Command();
 				cmd.setTitle(queryType.getTitle());
-				cmd.setCommand(CMD);
+				cmd.setCommand(CMD_SEND_TO_AI_ASSISTANT);
 				cmd.setArguments(ImmutableList.of(queryType.getPrompt() + node.toString() + "\n\n" +context));
 				codeLens.setCommand(cmd);
 
@@ -320,6 +320,16 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 			return pointcuts.toString();
 		}
 		return null;
+	}
+	
+	/**
+	 * Returns whether copilot code lenses should be shown.
+	 * This is used by other code lens providers that depend on the same configuration.
+	 * 
+	 * @return true if code lenses should be shown, false otherwise
+	 */
+	public static boolean isShowCodeLenses() {
+		return showCodeLenses;
 	}
 
 }

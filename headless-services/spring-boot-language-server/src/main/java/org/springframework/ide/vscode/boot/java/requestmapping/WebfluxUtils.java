@@ -35,6 +35,8 @@ public class WebfluxUtils {
 	public static final String REQUEST_PREDICATES_TYPE = "org.springframework.web.reactive.function.server.RequestPredicates";
 	
 	public static final String MVC_ROUTER_FUNCTION_TYPE = "org.springframework.web.servlet.function.RouterFunction";
+	public static final String MVC_ROUTER_FUNCTIONS_TYPE = "org.springframework.web.servlet.function.RouterFunctions";
+
 	public static final String MVC_REQUEST_PREDICATES_TYPE = "org.springframework.web.servlet.function.RequestPredicates";
 
 	public static final String REQUEST_PREDICATE_PATH_METHOD = "path";

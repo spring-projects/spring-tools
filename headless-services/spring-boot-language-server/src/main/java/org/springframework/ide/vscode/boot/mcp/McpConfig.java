@@ -28,13 +28,17 @@ public class McpConfig {
     		SpringVersionsAndGenerations springVersionsAndGenerations,
     		SpringIndexAccess springIndexAccess,
     		ProjectInformation projectInformation,
-    		StereotypeInformation stereotypeInformation) {
+    		StereotypeInformation stereotypeInformation,
+    		RequestMappingMcpTools requestMappingMcpTools,
+    		ComponentAnalysisMcpTools componentAnalysisMcpTools) {
     	
         return List.of(ToolCallbacks.from(
         		springVersionsAndGenerations,
         		springIndexAccess,
         		projectInformation,
-        		stereotypeInformation));
+        		stereotypeInformation,
+        		requestMappingMcpTools,
+        		componentAnalysisMcpTools));
     }
     
 //    @Bean

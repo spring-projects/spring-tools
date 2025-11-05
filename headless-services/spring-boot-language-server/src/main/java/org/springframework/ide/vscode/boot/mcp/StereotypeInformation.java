@@ -81,6 +81,33 @@ public class StereotypeInformation {
 		
 	}
 
+	@Tool(description = """
+			Find all Spring components by stereotype (Controller, Service, Repository, Component, Entity, etc.).
+			Returns all components that have the specified stereotype.
+			""")
+	public List<ComponentWithStereotypes> findComponentsByStereotype(
+			@ToolParam(description = "the name of the project in the workspace of the user") String projectName,
+			@ToolParam(description = "the stereotype name to filter by (e.g., 'Controller', 'Service', 'Repository', 'Entity')") String stereotypeName)
+			throws Exception {
+
+		IJavaProject project = getProject(projectName);
+		
+		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
+		var cachedIndex = new CachedSpringMetamodelIndex(springIndex);
+		var factory = new IndexBasedStereotypeFactory(catalog, project, cachedIndex);
+
+		List<StereotypeClassElement> classNodes = this.springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class);
+		
+		// Filter by stereotype name (case-insensitive partial match)
+		String normalizedStereotypeName = stereotypeName.toLowerCase();
+		return classNodes.stream()
+			.map(classNode -> createComponent(classNode, factory))
+			.filter(component -> component != null)
+			.filter(component -> component.stereotypes.stream()
+					.anyMatch(stereotype -> stereotype.toLowerCase().contains(normalizedStereotypeName)))
+			.toList();
+	}
+
 	public static record ComponentWithStereotypes(String name, List<String> stereotypes) {
 	};
 	

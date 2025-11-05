@@ -121,6 +121,8 @@ public class LogicalStructureView extends ViewPart {
 	private void initActions(IActionBars actionBars) {
 		actionBars.getToolBarManager().add(new GroupingAction(this));
 		actionBars.getToolBarManager().add(new RefreshAction(this));
+		actionBars.getToolBarManager().add(new ExpandCollapseAction(this, true));
+		actionBars.getToolBarManager().add(new ExpandCollapseAction(this, false));
 	}
 
 	@Override
@@ -134,6 +136,14 @@ public class LogicalStructureView extends ViewPart {
 	
 	Map<String, List<String>> getGroupings() {
 		return groupingRepository.getWorkspaceGroupings();
+	}
+	
+	void expandAll() {
+		treeViewer.expandAll();
+	}
+	
+	void collapseAll() {
+		treeViewer.collapseAll();
 	}
 
 }

@@ -371,7 +371,7 @@ public class ConcourseEditorTest {
                         "  type: # <- bad\n"
         );
         editor.assertProblems(
-                "^ # <- bad|cannot be blank"
+                "# <- bad\n^^|cannot be blank"
         );
 
         editor = harness.newEditor(
@@ -385,6 +385,17 @@ public class ConcourseEditorTest {
     }
 
     @Test
+    void reconcileYttResourceType() throws Exception {
+        Editor editor;
+        editor = harness.newEditor(
+                "resource_types:\n" +
+                        "- name: s3-multi\n" +
+                        "  type: #@ resource.type\n"
+        );
+        editor.assertProblems();
+    }
+
+    @Test
     void reconcileDisplayType() throws Exception {
         Editor editor;
         editor = harness.newEditor(
@@ -393,7 +404,7 @@ public class ConcourseEditorTest {
         );
 
         editor.assertProblems(
-                "^ # <- bad|String should not be empty"
+                "# <- bad\n^^|String should not be empty"
         );
     }
 

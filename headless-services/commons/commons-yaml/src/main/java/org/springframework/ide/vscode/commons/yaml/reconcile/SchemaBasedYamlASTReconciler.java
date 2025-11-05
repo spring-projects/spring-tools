@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016-2017 Pivotal, Inc.
+ * Copyright (c) 2016-2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -100,21 +100,23 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 		slowDelayedConstraints.clear();
 		try {
 			List<Node> nodes = ast.getNodes();
+			boolean emptyDoc = isEmptyDoc(ast);
 			IntegerRange expectedDocs = schema.expectedNumberOfDocuments();
-			if (!expectedDocs.isInRange(nodes.size())) {
+			int numberOfDocs = emptyDoc ? 0 : nodes.size();
+			if (!expectedDocs.isInRange(numberOfDocs)) {
 				//wrong number of documents in the file. Figure out a good error message.
-				if (nodes.isEmpty()) {
+				if (emptyDoc) {
 					problem(allOf(ast.getDocument()), "'"+schema.getName()+"' must have at least some Yaml content");
-				} else if (expectedDocs.isTooLarge(nodes.size())) {
+				} else if (expectedDocs.isTooLarge(numberOfDocs)) {
 					int upperBound = expectedDocs.getUpperBound();
 					Node extraNode = nodes.get(upperBound);
 					problem(dashesAtStartOf(ast, extraNode), "'"+schema.getName()+"' should not have more than "+upperBound+" Yaml Documents");
-				} else if (expectedDocs.isTooSmall(nodes.size())) {
+				} else if (expectedDocs.isTooSmall(numberOfDocs)) {
 					int lowerBound = expectedDocs.getLowerBound();
 					problem(endOf(ast.getDocument()), "'"+schema.getName()+"' should have at least "+lowerBound+" Yaml Documents");
 				}
 			}
-			if (nodes!=null && !nodes.isEmpty()) {
+			if (!emptyDoc && nodes!=null && !nodes.isEmpty()) {
 				for (int i = 0; i < nodes.size(); i++) {
 					Node node = nodes.get(i);
 					reconcile(ast, new YamlPath(YamlPathSegment.valueAt(i)), /*parent*/null, node, schema.getTopLevelType());
@@ -126,6 +128,21 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 			}
 			verifyDelayedConstraints();
 		}
+	}
+	
+	private static boolean isEmptyDoc(YamlFileAST ast) {
+		List<Node> nodes = ast.getNodes();
+		if (nodes != null && !nodes.isEmpty()) {
+			if (nodes.size() == 1) {
+				Node n = nodes.get(0);
+				if (n instanceof MappingNode) {
+					MappingNode mn = (MappingNode) n;
+					return mn.getValue().isEmpty();
+				}
+			}
+			return false;
+		}
+		return true;
 	}
 
 	private DocumentRegion dashesAtStartOf(YamlFileAST ast, Node node) {
@@ -240,11 +257,30 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 				parser.parse(value);
 			}
 		} catch (Exception e) {
-			ProblemType problemType = getProblemType(e);
-			DocumentRegion region = getRegion(e, ast.getDocument(), node);
-			String msg = getMessage(e);
-			valueParseError(type, region, msg, problemType, getValueReplacement(e));
+			// check for YTT
+			if (!isYttUsed(node)) {
+				ProblemType problemType = getProblemType(e);
+				DocumentRegion region = getRegion(e, ast.getDocument(), node);
+				String msg = getMessage(e);
+				valueParseError(type, region, msg, problemType, getValueReplacement(e));
+			}
 		}
+	}
+	
+	private static boolean isYttUsed(Node node) {
+		if (node.getBlockComments() != null 
+				&& node.getBlockComments().stream().anyMatch(cl -> isYttComment(cl.getValue()))) {
+			return true;
+		}
+		if (node.getInLineComments() != null
+				&& node.getInLineComments().stream().anyMatch(cl -> isYttComment(cl.getValue()))) {
+			return true;
+		}
+		return false;
+	}
+	
+	private static boolean isYttComment(String s) {
+		return s.startsWith("@ ");
 	}
 
 	protected ReplacementQuickfix getValueReplacement(Exception _e) {

@@ -76,7 +76,8 @@ public class TypeBasedYamlHierarchicalSymbolHandler implements DocumentSymbolHan
 				IDocument doc = currentAst.getDocument();
 				if (namePath!=null) {
 					Node nameNode = namePath.traverseNode(node);
-					if (nameNode!=null) {
+					// VSCode throws for DocumentSymbols having null or empty name hence do not create the symbol
+					if (nameNode!=null && !NodeUtil.asScalar(nameNode).isEmpty()) {
 						DocumentRegion nodeRegion = NodeUtil.region(doc, node);
 						DocumentRegion nameRegion = NodeUtil.region(doc, nameNode);
 						if (!nodeRegion.contains(nameRegion)) {

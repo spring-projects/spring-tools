@@ -34,6 +34,8 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
+import com.google.common.collect.Streams;
+
 public class WebConfigCodeLensProvider implements CodeLensProvider {
 
 //	private static final Logger log = LoggerFactory.getLogger(WebConfigCodeLensProvider.class);
@@ -80,15 +82,11 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 
 		List<WebConfigIndexElement> webConfigs = springIndex.getNodesOfType(project.getElementName(), WebConfigIndexElement.class);
 		List<WebConfigIndexElement> webConfigFromProperties = new WebConfigPropertiesIndexer().findWebConfigFromProperties(project);
-		webConfigs.addAll(webConfigFromProperties);
 		
-		for (WebConfigIndexElement webConfig : webConfigs) {
-			CodeLens codeLens = createCodeLens(webConfig, node, doc);
-			if (codeLens != null) {
-				codeLenses.add(codeLens);
-			}
-		}
-		
+		Streams.concat(webConfigs.stream(), webConfigFromProperties.stream())
+			.map(webConfig -> createCodeLens(webConfig, node, doc))
+			.filter(codeLens -> codeLens != null)
+			.forEach(codeLens -> codeLenses.add(codeLens));
 	}
 
 	private CodeLens createCodeLens(WebConfigIndexElement webConfig, TypeDeclaration node, TextDocument doc) {

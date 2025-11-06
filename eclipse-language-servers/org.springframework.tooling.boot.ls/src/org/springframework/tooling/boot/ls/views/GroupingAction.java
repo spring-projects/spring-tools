@@ -30,7 +30,7 @@ class GroupingAction extends Action {
 		GroupingDialog dialog = new GroupingDialog(UI.getActiveShell(), structureView::fetchGroups, structureView::getGroupings);
 		if (dialog.open() == IDialogConstants.OK_ID) {
 			structureView.setGroupings(dialog.getResult());
-			structureView.fetchStructure(false);
+			structureView.fetchStructure(null, false);
 		}
 	}
 

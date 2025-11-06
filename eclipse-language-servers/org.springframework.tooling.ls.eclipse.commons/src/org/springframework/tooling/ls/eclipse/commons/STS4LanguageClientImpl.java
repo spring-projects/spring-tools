@@ -53,7 +53,7 @@ import org.eclipse.jface.text.source.IAnnotationModelExtension;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.text.source.ISourceViewerExtension5;
 import org.eclipse.lsp4e.LSPEclipseUtils;
-import org.eclipse.lsp4e.LanguageClientImpl;
+import org.eclipse.lsp4e.client.DefaultLanguageClient;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.MarkupContent;
@@ -102,7 +102,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 @SuppressWarnings("restriction")
-public class STS4LanguageClientImpl extends LanguageClientImpl implements STS4LanguageClient {
+public class STS4LanguageClientImpl extends DefaultLanguageClient implements STS4LanguageClient {
 
 	private final Executor executor;
 
@@ -635,6 +635,7 @@ public class STS4LanguageClientImpl extends LanguageClientImpl implements STS4La
 
 	@Override
 	public void indexUpdated(IndexUpdatedParams indexUpdateDetails) {
+		LanguageServerCommonsActivator.getInstance().getSpringIndexState().indexed(indexUpdateDetails.getAffectedProjects());
 	}
 
 	@Override

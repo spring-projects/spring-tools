@@ -61,8 +61,6 @@ public class BootLanguageServerPlugin extends AbstractUIPlugin {
 
 	public static final String BOOT_LS_DEFINITION_ID = "org.eclipse.languageserver.languages.springboot";
 	
-	private BootLsState lsState = new BootLsState(); 
-
 	public BootLanguageServerPlugin() {
 		// Empty
 	}
@@ -179,10 +177,6 @@ public class BootLanguageServerPlugin extends AbstractUIPlugin {
 			}
 		}
 		return ImageDescriptor.createFromURL(url);
-	}
-	
-	public BootLsState getLsState() {
-		return lsState;
 	}
 	
 	public Image getStereotypeImage(String name) {

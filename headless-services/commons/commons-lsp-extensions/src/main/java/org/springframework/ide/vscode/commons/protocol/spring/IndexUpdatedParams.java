@@ -10,21 +10,21 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.protocol.spring;
 
-import java.util.List;
+import java.util.Set;
 
 public class IndexUpdatedParams {
 	
-	private List<String> affectedProjects;
+	private Set<String> affectedProjects;
 	
-	public List<String> getAffectedProjects() {
+	public Set<String> getAffectedProjects() {
 		return affectedProjects;
 	}
 	
-	public void setAffectedProjects(List<String> affectedProjects) {
+	public void setAffectedProjects(Set<String> affectedProjects) {
 		this.affectedProjects = affectedProjects;
 	}
 	
-	public static IndexUpdatedParams of(List<String> affectedProjects) {
+	public static IndexUpdatedParams of(Set<String> affectedProjects) {
 		IndexUpdatedParams params = new IndexUpdatedParams();
 		params.setAffectedProjects(affectedProjects);
 		return params;
@@ -32,7 +32,7 @@ public class IndexUpdatedParams {
 
 	public static IndexUpdatedParams of(String affectedProject) {
 		IndexUpdatedParams params = new IndexUpdatedParams();
-		params.setAffectedProjects(List.of(affectedProject));
+		params.setAffectedProjects(Set.of(affectedProject));
 		return params;
 	}
 

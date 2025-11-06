@@ -24,6 +24,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -411,7 +412,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 						
 						CompletableFuture<Void> future = CompletableFuture.allOf(futures);
 						
-						future = future.thenAccept(v -> server.getClient().indexUpdated(IndexUpdatedParams.of(List.of(project.getElementName())))).thenAccept(v -> listeners.fire(v));
+						future = future.thenAccept(v -> server.getClient().indexUpdated(IndexUpdatedParams.of(Set.of(project.getElementName())))).thenAccept(v -> listeners.fire(v));
 
 						this.latestScheduledTaskByProject.put(project.getElementName(), future);
 						return future;
@@ -460,7 +461,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			
 			docURIs = unfold(docURIs);
 			
-			List<String> affectedProjects = new ArrayList<>();
+			Set<String> affectedProjects = new LinkedHashSet<>();
 
 			for (SpringIndexer indexer : this.indexers) {
 				String[] interestingDocs = getDocumentsInterestingForIndexer(indexer, docURIs);
@@ -523,7 +524,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		
 		synchronized(this) {
 			List<CompletableFuture<Void>> futures = new ArrayList<>();
-			List<String> affectedProjects = new ArrayList<>();
+			Set<String> affectedProjects = new LinkedHashSet<>();
 
 			for (SpringIndexer indexer : this.indexers) {
 				if (indexer.isInterestedIn(docURI)) {
@@ -553,7 +554,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		
 		synchronized(this) {
 			List<CompletableFuture<Void>> futures = new ArrayList<>();
-			List<String> affectedProjects = new ArrayList<>();
+			Set<String> affectedProjects = new LinkedHashSet<>();
 
 			for (SpringIndexer indexer : this.indexers) {
 				String[] interestingDocs = getDocumentsInterestingForIndexer(indexer, docURIs);
@@ -652,7 +653,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		synchronized(this) {
 			try {
 				List<CompletableFuture<Void>> futures = new ArrayList<>();
-				List<String> affectedProjects = new ArrayList<>();
+				Set<String> affectedProjects = new LinkedHashSet<>();
 				Map<IJavaProject, Set<String>> projectMapping = getDocsPerProjectFromPaths(deletedPathURIs);
 				
 				for (IJavaProject project : projectMapping.keySet()) {

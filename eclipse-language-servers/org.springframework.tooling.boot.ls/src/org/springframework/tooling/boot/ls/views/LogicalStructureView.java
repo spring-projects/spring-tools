@@ -10,12 +10,15 @@
  *******************************************************************************/
 package org.springframework.tooling.boot.ls.views;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -26,10 +29,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.part.ViewPart;
-import org.springframework.tooling.boot.ls.BootLanguageServerPlugin;
-import org.springframework.tooling.boot.ls.BootLsState;
 import org.springframework.tooling.boot.ls.views.StructureClient.Groups;
 import org.springframework.tooling.boot.ls.views.StructureClient.StructureParameter;
+import org.springframework.tooling.ls.eclipse.commons.LanguageServerCommonsActivator;
+import org.springframework.tooling.ls.eclipse.commons.SpringIndexState;
 
 
 /**
@@ -47,27 +50,35 @@ public class LogicalStructureView extends ViewPart {
 	
 	final private GroupingRepository groupingRepository = new GroupingRepository();
 	
-	private final AtomicBoolean fetching = new AtomicBoolean();
+	private Consumer<Set<String>> indexStateListener = projectNames -> fetchStructure(projectNames, false);
 	
-	private Consumer<BootLsState> lsStateListener = state -> {
-		if (state.isIndexed()) {
-			fetchStructure(false);
-		} else {
-			UI.getDisplay().asyncExec(() -> treeViewer.setInput(null));
-		}
-	};
-	
-	void fetchStructure(boolean updateMetadata) {
-		if (!fetching.compareAndExchange(false, true)) {
-			structureClient.fetchStructure(new StructureParameter(updateMetadata, getGroupings())).thenAccept(nodes -> {
-				fetching.set(false);
-				UI.getDisplay().asyncExec(() -> {
-					Object[] expanded = treeViewer.getExpandedElements();
-					treeViewer.setInput(nodes);
-					treeViewer.setExpandedElements(expanded);
+	void fetchStructure(Set<String> affectedProjects, boolean updateMetadata) {
+		structureClient.fetchStructure(new StructureParameter(updateMetadata, affectedProjects, getGroupings()))
+				.thenAccept(nodes -> {
+					UI.getDisplay().asyncExec(() -> {
+						Object[] expanded = treeViewer.getExpandedElements();
+						if (affectedProjects == null || affectedProjects.isEmpty()) {
+							treeViewer.setInput(nodes);
+						} else {
+							@SuppressWarnings("unchecked")
+							List<StereotypeNode> oldNodes = (List<StereotypeNode>) treeViewer.getInput();
+							List<StereotypeNode> newNodes = new ArrayList<>(oldNodes.size() + nodes.size());
+							Map<String, Optional<StereotypeNode>> nodesMap = affectedProjects.stream().collect(Collectors.toMap(e -> e, e -> nodes.stream().filter(n -> e.equals(n.getProjectId())).findFirst()));
+							for (StereotypeNode n : oldNodes) {
+								String projectName = n.getProjectId();
+								if (nodesMap.containsKey(projectName)) {
+									nodesMap.remove(projectName).ifPresent(newNodes::add);
+								} else {
+									newNodes.add(n);
+								}
+							}
+							nodesMap.values().stream().filter(opt -> opt.isPresent()).map(opt -> opt.get()).forEach(newNodes::add);
+							treeViewer.setInput(newNodes);
+						}
+						
+						treeViewer.setExpandedElements(expanded);
+					});
 				});
-			});
-		}
 	}
 	
 	CompletableFuture<List<Groups>> fetchGroups() {
@@ -88,15 +99,11 @@ public class LogicalStructureView extends ViewPart {
 		// Set initial input - placeholder data
 		treeViewer.setInput(Collections.emptyList());
 		
-		BootLsState lsState = BootLanguageServerPlugin.getDefault().getLsState();
+		final SpringIndexState springIndexState = LanguageServerCommonsActivator.getInstance().getSpringIndexState();
 		
-		if (lsState.isIndexed()) {
-			fetchStructure(false);
-		}
+		springIndexState.addStateChangedListener(indexStateListener);
 		
-		lsState.addStateChangedListener(lsStateListener);
-		
-		treeViewer.getControl().addDisposeListener(e -> lsState.removeStateChangedListener(lsStateListener));
+		treeViewer.getControl().addDisposeListener(e -> springIndexState.removeStateChangedListener(indexStateListener));
 		
 		treeViewer.addDoubleClickListener(e -> {
 			Object o = ((IStructuredSelection) e.getSelection()).getFirstElement();

@@ -182,9 +182,14 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 				.map(child -> ((SymbolElement) child))
 				.forEach(symbolElement -> {
 					DocumentSymbol symbol = symbolElement.getDocumentSymbol();
-					result.add(new Node(parent)
+					
+					Node childNode = new Node(parent)
 							.withAttribute(TEXT, symbol.getName())
-							.withAttribute(LOCATION, new Location(docUri, symbol.getRange())));
+							.withAttribute(LOCATION, new Location(docUri, symbol.getRange()));
+
+					assignNodeId(childNode, parent);
+
+					result.add(childNode);
 				});
 						
 		return result;

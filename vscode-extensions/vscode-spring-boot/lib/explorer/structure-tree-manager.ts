@@ -58,10 +58,10 @@ export class StructureManager {
         return this._rootElementsRequest;
     }
 
-    // Serves 2 purposes: non UI trigerred refresh as a result of the index update and a UI trigerred refresh
-    // The UI trigerred refresh needs to preceed with an event fired such that tree view would kick off a new promise getting all new root elements and would show progress while promise is being resolved.
+    // Serves 2 purposes: non UI triggered refresh as a result of the index update and a UI triggered refresh
+    // The UI triggered refresh needs to proceed with an event fired such that tree view would kick off a new promise getting all new root elements and would show progress while promise is being resolved.
     // The index update typically would have a list of projects for which index has changed then the refresh can be silent with letting the tree know about new data once it is computed
-    // If the index update event doesn't have a list of project then this is an edge case for which we'd show the preogress and treat it like UI trigerred refresh
+    // If the index update event doesn't have a list of project then this is an edge case for which we'd show the preogress and treat it like UI triggered refresh
     refresh(updateMetadata: boolean, affectedProjects?: string[]): void {
         const isPartialLoad = !!(affectedProjects && affectedProjects.length);
         // Notify the tree to get the children to trigger "loading" bar in the view???

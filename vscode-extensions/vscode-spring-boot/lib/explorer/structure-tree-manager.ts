@@ -1,22 +1,27 @@
-import { commands, EventEmitter, Event, ExtensionContext, window, Memento, Uri, QuickPickItem } from "vscode";
-import { SpringNode, StereotypedNode } from "./nodes";
+import { commands, EventEmitter, Event, ExtensionContext, window, Memento, QuickPickItem } from "vscode";
+import { StereotypedNode } from "./nodes";
 import { ExtensionAPI } from "../api";
-import * as ls from 'vscode-languageserver-protocol';
-
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 
+interface StructureCommandParams {
+    updateMetadata: boolean;
+    groups?: Record<string, string[]>;
+    affectedProjects?: string[];
+}
+
 export class StructureManager {
 
-    private _rootElements: Thenable<SpringNode[]>
-    private _onDidChange: EventEmitter<SpringNode | undefined> = new EventEmitter<SpringNode | undefined>();
+    private _rootElementsRequest: Thenable<StereotypedNode[]>
+    private _rootElements: StereotypedNode[] = [];
+    private _onDidChange = new EventEmitter<undefined | StereotypedNode | StereotypedNode[]>();
     private workspaceState: Memento;
 
     constructor(context: ExtensionContext, api: ExtensionAPI) {
         this.workspaceState = context.workspaceState;
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => this.refresh(true)));
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node) => {
-            const reference = node?.getReferenceValue() as ls.Location;;
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node: StereotypedNode) => {
+            const reference = node?.referenceValue;
             if (reference) {
                 const location = api.client.protocol2CodeConverter.asLocation(reference)
                 window.showTextDocument(location.uri, { selection: location.range });
@@ -24,7 +29,7 @@ export class StructureManager {
         }));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.grouping", async (node: StereotypedNode) => {
-            const projectName = node.getProjectId();
+            const projectName = node.projectId;
             const groups = await commands.executeCommand<Groups>("sts/spring-boot/structure/groups", projectName);
             const initialGroups: string[] | undefined = this.getVisibleGroups(projectName);
             const items = (groups?.groups || []).map(g => ({
@@ -45,38 +50,81 @@ export class StructureManager {
             }
         }));
 
-        context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(e => this.refresh(false)));
+        context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(indexUpdateDetails => this.refresh(false, indexUpdateDetails.affectedProjects)));
         
     }
 
-    get rootElements(): Thenable<SpringNode[]> {
-        return this._rootElements;
+    get rootElements(): Thenable<StereotypedNode[]> {
+        return this._rootElementsRequest;
     }
 
-    refresh(updateMetadata: boolean): void {
-        this._rootElements = commands.executeCommand(SPRING_STRUCTURE_CMD,
-                {
-                    "updateMetadata" : updateMetadata,
-                    "groups" : this.getGroupings()
-                }).then(json => {
+    // Serves 2 purposes: non UI triggered refresh as a result of the index update and a UI triggered refresh
+    // The UI triggered refresh needs to proceed with an event fired such that tree view would kick off a new promise getting all new root elements and would show progress while promise is being resolved.
+    // The index update typically would have a list of projects for which index has changed then the refresh can be silent with letting the tree know about new data once it is computed
+    // If the index update event doesn't have a list of project then this is an edge case for which we'd show the preogress and treat it like UI triggered refresh
+    refresh(updateMetadata: boolean, affectedProjects?: string[]): void {
+        const isPartialLoad = !!(affectedProjects && affectedProjects.length);
+        // Notify the tree to get the children to trigger "loading" bar in the view???
+        const params = {
+            updateMetadata,
+            affectedProjects,
+            groups: this.getGroupings(),
+        } as StructureCommandParams;
+        this._rootElementsRequest = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
             const nodes = this.parseArray(json);
-            this._onDidChange.fire(undefined);
-            return nodes;
+            if (isPartialLoad) {
+                const newNodes = [] as StereotypedNode[];
+                const nodesMap = {} as Record<string, StereotypedNode>;
+                affectedProjects.forEach(projectName => nodesMap[projectName] = nodes.find(n => n.projectId === projectName));
+                // merge old and newly fetched stereotype root nodes
+                let onlyMutations = true;
+                this._rootElements.forEach(n => {
+                    if (nodesMap.hasOwnProperty(n.projectId)) {
+                        const newN = nodesMap[n.projectId];
+                        delete nodesMap[n.projectId];
+                        if (newN) {
+                            newNodes.push(newN);
+                        } else {
+                            // element removed
+                            onlyMutations = false;
+                        }
+                    } else {
+                        newNodes.push(n);
+                    }
+                });
+                if (Object.values(nodesMap).length) {
+                    // elements added
+                    onlyMutations = false;
+                    Object.values(nodesMap).filter(n => !!n).forEach(n => newNodes.push(n));                       
+                }
+                this._rootElements = newNodes;
+                // TODO: Partial tree refresh didn't work for restbucks it remains either without children or without the full text label
+                // (test with `spring-restbucks` project in a workspace with other boot projects, i.e. demo, spring-petclinic)
+                this._onDidChange.fire(/*onlyMutations ? nodes : */undefined);
+            } else {
+                this._rootElements = nodes;
+                // No need to fire another event to update the UI since there is an event fired before refresh is triggered to reference the new promise
+            }
+            return this._rootElements;
         });
+        if (!isPartialLoad) {
+            // Fire an event for full reload to have a progress bar while the promise above is resolved
+            this._onDidChange.fire(undefined);
+        } 
     }
 
-    private parseNode(json: any, parent?: SpringNode): SpringNode | undefined {
+    private parseNode(json: any, parent?: StereotypedNode): StereotypedNode | undefined {
         const node = new StereotypedNode(json as LsStereoTypedNode, [], parent);
         // Parse children after creating the node so we can pass it as parent
         node.children.push(...this.parseArray(json.children, node));
         return node;
     }
 
-    private parseArray(json: any, parent?: SpringNode): SpringNode[] {
+    private parseArray(json: any, parent?: StereotypedNode): StereotypedNode[] {
         return Array.isArray(json) ? (json as []).map(j => this.parseNode(j, parent)).filter(e => !!e) : [];
     }
 
-    public get onDidChange(): Event<SpringNode | undefined> {
+    public get onDidChange(): Event<undefined | StereotypedNode | StereotypedNode[]> {
         return this._onDidChange.event;
     }
 

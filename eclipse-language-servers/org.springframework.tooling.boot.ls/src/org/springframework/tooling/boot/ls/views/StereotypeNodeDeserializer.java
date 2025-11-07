@@ -21,7 +21,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 
-@SuppressWarnings({ "restriction", "serial" })
+@SuppressWarnings({ "restriction" })
 public class StereotypeNodeDeserializer implements com.google.gson.JsonDeserializer<StereotypeNode> {
 
 	private static final String LOCATION = "location";
@@ -29,6 +29,8 @@ public class StereotypeNodeDeserializer implements com.google.gson.JsonDeseriali
 	private static final String TEXT = "text";
 	private static final String CHILDREN = "children";
 	private static final String REFERENCE = "reference";
+	
+	static final String PROJECT_ID = "projectId";
 	
 	private static final String NODE_ID = "nodeId";
 	

@@ -2,6 +2,7 @@ package org.springframework.tooling.boot.ls.views;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -22,12 +23,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 
-@SuppressWarnings({ "restriction", "serial" })
+@SuppressWarnings({ "restriction" })
 class StructureClient {
 	
 	record Groups (String projectName, List<Group> groups) {}
 	record Group (String identifier, String displayName) {}
-	record StructureParameter(boolean updateMetadata, Map<String, List<String>>  groups) {}
+	record StructureParameter(boolean updateMetadata, Collection<String> affectedProjects, Map<String, List<String>>  groups) {}
 
 	private static final String FETCH_SPRING_BOOT_STRUCTURE = "sts/spring-boot/structure";
 	private static final String FETCH_STRUCTURE_GROUPS = "sts/spring-boot/structure/groups";

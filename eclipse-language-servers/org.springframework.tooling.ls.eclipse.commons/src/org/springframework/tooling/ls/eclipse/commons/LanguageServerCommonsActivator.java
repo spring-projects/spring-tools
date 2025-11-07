@@ -64,6 +64,11 @@ public class LanguageServerCommonsActivator extends AbstractUIPlugin {
 
 	private AnnotationPreference bootHintAnnotationPreference;
 
+	/*
+	 * Singleton state. We assume there is going to be one server at most serving info about SpringIndex
+	 */
+	private SpringIndexState springIndexState = new SpringIndexState();
+
 	public LanguageServerCommonsActivator() {
 	}
 
@@ -129,6 +134,10 @@ public class LanguageServerCommonsActivator extends AbstractUIPlugin {
 
 	public static void logInfo(String message) {
 		instance.getLog().log(new Status(IStatus.INFO, instance.getBundle().getSymbolicName(), message));
+	}
+
+	public SpringIndexState getSpringIndexState() {
+		return springIndexState;
 	}
 
 }

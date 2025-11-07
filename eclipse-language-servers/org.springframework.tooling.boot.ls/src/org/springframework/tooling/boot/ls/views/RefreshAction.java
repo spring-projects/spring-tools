@@ -27,6 +27,6 @@ class RefreshAction extends Action {
 	
 	@Override
 	public void run() {
-		this.logicalStructureView.fetchStructure(true);
+		this.logicalStructureView.fetchStructure(null, true);
 	}
 }

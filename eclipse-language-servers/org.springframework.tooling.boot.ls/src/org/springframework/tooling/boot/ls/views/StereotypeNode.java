@@ -20,7 +20,14 @@ import org.eclipse.lsp4j.Location;
  * 
  * @author Alex Boyko
  */
-record StereotypeNode(String id, String text, String icon, Location location, Location reference, Map<String, Object> attributes, StereotypeNode[] children) {
+record StereotypeNode(
+		String id,
+		String text,
+		String icon,
+		Location location,
+		Location reference,
+		Map<String, Object> attributes,
+		StereotypeNode[] children) {
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -39,6 +46,11 @@ record StereotypeNode(String id, String text, String icon, Location location, Lo
 	public String toString() {
 		return text;
 	}
-
+	
+	public String getProjectId() {
+		return attributes.containsKey(StereotypeNodeDeserializer.PROJECT_ID)
+				? (String) attributes.get(StereotypeNodeDeserializer.PROJECT_ID)
+				: null;
+	}
 }
 

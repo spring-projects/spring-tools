@@ -15,7 +15,7 @@
 	<packaging>eclipse-repository</packaging>
 
 	<properties>
-		<justj.repository>https://download.eclipse.org/justj/jres/21/updates/release/latest/</justj.repository>
+		<justj.repository>https://download.eclipse.org/justj/jres/25/updates/release/latest/</justj.repository>
 	</properties>
 
 	<build>
@@ -106,9 +106,9 @@
 				<configuration>
 					<repositories>
 						<repository>
-							<id>2022-03</id>
+							<id>2025-09</id>
 							<layout>p2</layout>
-							<url>https://download.eclipse.org/releases/2022-03</url>
+							<url>https://download.eclipse.org/releases/2025-09</url>
 						</repository>
 					</repositories>
 					<jvmArgs>
@@ -139,10 +139,6 @@
 							<type>eclipse-plugin</type>
 						</dependency>
 						<dependency>
-							<artifactId>javax.annotation</artifactId>
-							<type>eclipse-plugin</type>
-						</dependency>
-						<dependency>
 							<artifactId>org.eclipse.equinox.p2.transport.ecf</artifactId>
 							<type>eclipse-plugin</type>
 						</dependency>
@@ -165,10 +161,6 @@
 						</dependency>
 						<dependency>
 							<artifactId>org.eclipse.equinox.p2.director.app</artifactId>
-							<type>eclipse-plugin</type>
-						</dependency>
-						<dependency>
-							<artifactId>org.eclipse.equinox.ds</artifactId>
 							<type>eclipse-plugin</type>
 						</dependency>
 						<dependency>

@@ -8,11 +8,16 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.equinox.p2.ui,
  org.eclipse.equinox.p2.ui.sdk,
  org.springsource.ide.eclipse.commons.core,
- org.eclipse.equinox.p2.engine
+ org.eclipse.equinox.p2.engine,
+ org.eclipse.equinox.app,
+ org.eclipse.ui.ide.application,
+ org.objectweb.asm
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-Localization: plugin
 Bundle-ActivationPolicy: lazy
 Import-Package: org.eclipse.core.runtime,
  org.eclipse.osgi.service.datalocation,
- org.osgi.framework
+ org.osgi.framework,
+ org.osgi.framework.hooks.weaving
 Eclipse-BundleShape: dir
+Export-Package: org.springframework.boot.ide.branding

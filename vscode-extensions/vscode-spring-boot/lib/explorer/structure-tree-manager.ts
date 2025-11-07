@@ -103,7 +103,7 @@ export class StructureManager {
                 this._onDidChange.fire(/*onlyMutations ? nodes : */undefined);
             } else {
                 this._rootElements = nodes;
-                // No need to fire another event to update the UI since there is an event fired before referesh is trigerred to reference the new promise
+                // No need to fire another event to update the UI since there is an event fired before refresh is triggered to reference the new promise
             }
             return this._rootElements;
         });

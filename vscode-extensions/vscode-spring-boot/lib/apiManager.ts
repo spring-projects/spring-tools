@@ -1,6 +1,6 @@
 import { commands } from "vscode";
 import { Emitter, LanguageClient } from "vscode-languageclient/node";
-import {Bean, BeansParams, ExtensionAPI} from "./api";
+import { Bean, BeansParams, ExtensionAPI } from "./api";
 import {
     LiveProcess,
     LiveProcessConnectedNotification,
@@ -9,6 +9,7 @@ import {
     LiveProcessGcPausesMetricsUpdatedNotification,
     LiveProcessMemoryMetricsUpdatedNotification,
     SpringIndexUpdatedNotification,
+    IndexUpdateDetails,
 } from "./notification";
 import {RequestType} from "vscode-languageclient";
 
@@ -19,7 +20,7 @@ export class ApiManager {
     private onDidLiveProcessUpdateEmitter: Emitter<LiveProcess> = new Emitter<LiveProcess>();
     private onDidLiveProcessGcPausesMetricsUpdateEmitter: Emitter<LiveProcess> = new Emitter<LiveProcess>();
     private onDidLiveProcessMemoryMetricsUpdateEmitter: Emitter<LiveProcess> = new Emitter<LiveProcess>();
-    private onSpringIndexUpdateEmitter: Emitter<void> = new Emitter<void>();
+    private onSpringIndexUpdateEmitter: Emitter<IndexUpdateDetails> = new Emitter<IndexUpdateDetails>();
 
     public constructor(client: LanguageClient) {
         const onDidLiveProcessConnect = this.onDidLiveProcessConnectEmitter.event;
@@ -61,7 +62,7 @@ export class ApiManager {
         client.onNotification(LiveProcessGcPausesMetricsUpdatedNotification.type, (process: LiveProcess) => this.onDidLiveProcessGcPausesMetricsUpdateEmitter.fire(process));
         client.onNotification(LiveProcessMemoryMetricsUpdatedNotification.type, (process: LiveProcess) => this.onDidLiveProcessMemoryMetricsUpdateEmitter.fire(process));
 
-        client.onNotification(SpringIndexUpdatedNotification.type, () => this.onSpringIndexUpdateEmitter.fire());
+        client.onNotification(SpringIndexUpdatedNotification.type, (details: IndexUpdateDetails) => this.onSpringIndexUpdateEmitter.fire(details));
 
         const beansRequestType = new RequestType<BeansParams, Bean[], void>('spring/index/beans');
         const beans = (params: BeansParams) => {

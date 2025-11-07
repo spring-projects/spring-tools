@@ -218,7 +218,8 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	}
 	
 	private static void assignNodeId(Node n, Node p) {
-		String textId = n.attributes.containsKey(TEXT) ? (String) n.attributes.get(TEXT) : "";
+		String textId = n.attributes.containsKey(PROJECT_ID) ? (String) n.attributes.get(PROJECT_ID)
+				: n.attributes.containsKey(TEXT) ? (String) n.attributes.get(TEXT) : "";
 		
 		Location location = (Location) n.attributes.get(LOCATION);
 		String locationId = location == null ? "" : "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter());

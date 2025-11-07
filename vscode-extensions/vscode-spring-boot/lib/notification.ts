@@ -30,6 +30,10 @@ export interface LocalLiveProcess extends LiveProcess {
 	pid: string
 }
 
+export interface IndexUpdateDetails {
+    affectedProjects?: string[]
+}
+
 export namespace LiveProcessConnectedNotification {
 	export const type = new NotificationType<LiveProcess>('sts/liveprocess/connected');
 }
@@ -51,7 +55,7 @@ export namespace LiveProcessMemoryMetricsUpdatedNotification {
 }
 
 export namespace SpringIndexUpdatedNotification {
-	export const type = new NotificationType<void>('spring/index/updated');
+	export const type = new NotificationType<IndexUpdateDetails>('spring/index/updated');
 }
 
 export namespace LiveProcessLogLevelUpdatedNotification {

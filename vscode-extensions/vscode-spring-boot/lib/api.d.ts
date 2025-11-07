@@ -1,6 +1,6 @@
 import { Event, Uri } from "vscode";
 import { LanguageClient } from "vscode-languageclient/node";
-import { LiveProcess } from "./notification";
+import { IndexUpdateDetails, LiveProcess } from "./notification";
 import {Location} from "vscode-languageclient";
 
 export interface ExtensionAPI {
@@ -109,7 +109,7 @@ interface InjectionPoint {
 
 interface SpringIndex {
    readonly beans: (params: BeansParams) =>  Promise<Bean[]>;
-   readonly onSpringIndexUpdated: Event<void>;
+   readonly onSpringIndexUpdated: Event<IndexUpdateDetails>;
 }
 
 interface BeansParams {

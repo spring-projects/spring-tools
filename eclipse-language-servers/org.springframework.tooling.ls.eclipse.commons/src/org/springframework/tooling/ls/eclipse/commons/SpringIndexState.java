@@ -29,7 +29,7 @@ public final class SpringIndexState {
 	}
 
 	/*
-	 * Ideally does not need to be synced but it should be error prone for for more than server notifying about index changes
+	 * Ideally, this does not need to be synchronized, but synchronization is necessary if more than one server may notify about index changes to avoid potential errors.
 	 */
 	synchronized void indexed(Set<String> projectNames) {
 		listeners.forEach(l -> l.accept(Collections.unmodifiableSet(projectNames)));

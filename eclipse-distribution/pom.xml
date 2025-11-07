@@ -229,8 +229,8 @@
 					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-12</url>
 				</repository>
 				
-				<repository> <!-- TEMPORARY to GRAB Java 25 support in early builds -->
-					<id>2025-09-i-builds</id>
+				<repository> <!-- TEMPORARY to GRAB Java 25 support in early builds and macos 26.1 highlight issue -->
+					<id>2025-12-i-builds</id>
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/eclipse/updates/4.38-I-builds/</url>
 				</repository>

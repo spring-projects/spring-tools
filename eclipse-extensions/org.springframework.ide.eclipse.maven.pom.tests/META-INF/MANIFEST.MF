@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Maven POM Compare Tests
 Bundle-SymbolicName: org.springframework.ide.eclipse.maven.pom.tests
-Bundle-Version: 4.32.1.qualifier
+Bundle-Version: 4.32.2.qualifier
 Automatic-Module-Name: org.springframework.ide.eclipse.maven.pom.tests
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.junit,

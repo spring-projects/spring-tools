@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Boot Dashboard integration with Xterm view
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.dash.xterm;singleton:=true
-Bundle-Version: 4.32.1.qualifier
+Bundle-Version: 4.32.2.qualifier
 Automatic-Module-Name: org.springframework.ide.eclipse.boot.dash.xterm
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.eclipse.core.runtime,

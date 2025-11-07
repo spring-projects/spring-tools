@@ -5,7 +5,7 @@
 	<packaging>eclipse-plugin</packaging>
 	<groupId>org.springframework.ide.vscode</groupId>
 	<artifactId>org.springframework.tooling.gradle</artifactId>
-	<version>4.32.1-SNAPSHOT</version>
+	<version>4.32.2-SNAPSHOT</version>
 	<name>org.springframework.tooling.gradle</name>
 
 	<parent>

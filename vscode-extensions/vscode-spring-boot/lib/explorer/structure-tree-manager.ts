@@ -98,7 +98,7 @@ export class StructureManager {
                     Object.values(nodesMap).filter(n => !!n).forEach(n => newNodes.push(n));                       
                 }
                 this._rootElements = newNodes;
-                // TODO: Partial tree refresh didn't wowrk for restbucks it remains either without children or without the full text label
+                // TODO: Partial tree refresh didn't work for restbucks it remains either without children or without the full text label
                 // (test with `spring-restbucks` project in a workspace with other boot projects, i.e. demo, spring-petclinic)
                 this._onDidChange.fire(/*onlyMutations ? nodes : */undefined);
             } else {

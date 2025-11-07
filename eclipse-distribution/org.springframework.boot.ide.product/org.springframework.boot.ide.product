@@ -8,23 +8,26 @@
    <launcherArgs>
       <programArgs>-product org.springframework.boot.ide.branding.springtools
 --launcher.defaultAction openFile
-</programArgs>
+      </programArgs>
       <vmArgs>-Dosgi.requiredJavaVersion=21
 -Dosgi.dataAreaRequiresExplicitInit=true
+-Declipse.e4.inject.javax.warning=false
 -Dorg.slf4j.simpleLogger.defaultLogLevel=off
 -Dsun.java.command=SpringToolsForEclipse
 -Dp2.trustedAuthorities=https://download.eclipse.org,https://archive.eclipse.org,https://cdn.spring.io
--Xms256m
--Xmx2048m
+-XX:+UseG1GC
+-XX:+UseStringDeduplication
 --illegal-access=permit
 --add-modules=ALL-SYSTEM
       </vmArgs>
       <vmArgsLin>
       </vmArgsLin>
       <vmArgsMac>-XstartOnFirstThread
--Dorg.eclipse.swt.internal.carbon.smallFonts -Xdock:icon=../Resources/springtools.icns
+-Dorg.eclipse.swt.internal.carbon.smallFonts
+-Xdock:icon=../Resources/springtools.icns
       </vmArgsMac>
-      <vmArgsWin>
+      <vmArgsWin>-Djavax.net.ssl.trustStoreType=Windows-ROOT
+-Djavax.net.ssl.trustStore=NONE
       </vmArgsWin>
    </launcherArgs>
 

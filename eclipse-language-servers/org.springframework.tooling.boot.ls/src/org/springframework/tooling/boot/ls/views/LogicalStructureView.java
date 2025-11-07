@@ -62,6 +62,9 @@ public class LogicalStructureView extends ViewPart {
 						} else {
 							@SuppressWarnings("unchecked")
 							List<StereotypeNode> oldNodes = (List<StereotypeNode>) treeViewer.getInput();
+							if (oldNodes == null) {
+								oldNodes = Collections.emptyList();
+							}
 							List<StereotypeNode> newNodes = new ArrayList<>(oldNodes.size() + nodes.size());
 							Map<String, Optional<StereotypeNode>> nodesMap = affectedProjects.stream().collect(Collectors.toMap(e -> e, e -> nodes.stream().filter(n -> e.equals(n.getProjectId())).findFirst()));
 							for (StereotypeNode n : oldNodes) {

@@ -99,6 +99,8 @@ public class LogicalStructureView extends ViewPart {
 		// Set initial input - placeholder data
 		treeViewer.setInput(Collections.emptyList());
 		
+		fetchStructure(null, false);
+		
 		final SpringIndexState springIndexState = LanguageServerCommonsActivator.getInstance().getSpringIndexState();
 		
 		springIndexState.addStateChangedListener(indexStateListener);

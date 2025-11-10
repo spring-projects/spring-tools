@@ -11,6 +11,11 @@ on:
         description: Last segments of an s3 path for p2 Repo for eclipse ls extensions
         required: true
         type: string
+      qualifier:
+        default: "RELEASE"
+        description: "The version qualifier, i.e. `RELEASE` (default), RC1, M2"
+        required: true
+        type: string
 
 jobs:
 
@@ -24,22 +29,22 @@ jobs:
 #      java_version: '21'
 #    secrets: inherit
 
-  e437-distro:
-    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
-    with:
-      eclipse_profile: 'e437'
-      build_type: 'release'
-      p2-qualifier: 'RELEASE'
-      sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
-      java_version: '21'
-    secrets: inherit
+#  e437-distro:
+#    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+#    with:
+#      eclipse_profile: 'e437'
+#      build_type: 'release'
+#      p2-qualifier: ${{ inputs.qualifier }}
+#      sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
+#      java_version: '21'
+#    secrets: inherit
 
   e438-distro:
     uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
     with:
       eclipse_profile: 'e438'
       build_type: 'release'
-      p2-qualifier: 'RELEASE'
+      p2-qualifier: ${{ inputs.qualifier }}
       sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
       java_version: '21'
     secrets: inherit

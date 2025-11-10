@@ -484,7 +484,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 		if (semanticTokensHandler != null) {
 			TextDocument doc = getLatestSnapshot(params.getTextDocument().getUri());
 			if (doc != null) {
-				return CompletableFutures.computeAsync(/*messageWorkerThreadPool,*/ cancelChecker -> semanticTokensHandler.semanticTokensFull(doc, cancelChecker)).thenApply(std -> {
+				return CompletableFutures.computeAsync(messageWorkerThreadPool, cancelChecker -> semanticTokensHandler.semanticTokensFull(doc, cancelChecker)).thenApply(std -> {
 					if (std != null && !std.isEmpty()) {
 						return new SemanticTokens(SemanticTokensUtils.mapTokensDataToLsp(doc, semanticTokensHandler.getCapability().getLegend(), std));
 					}
@@ -500,7 +500,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 		if (semanticTokensHandler != null) {
 			TextDocument doc = getLatestSnapshot(params.getTextDocument().getUri());
 			if (doc != null) {
-				return CompletableFutures.computeAsync(/*messageWorkerThreadPool,*/ cancelChecker -> semanticTokensHandler.semanticTokensRange(doc, params.getRange(), cancelChecker)).thenApply(std -> {
+				return CompletableFutures.computeAsync(messageWorkerThreadPool, cancelChecker -> semanticTokensHandler.semanticTokensRange(doc, params.getRange(), cancelChecker)).thenApply(std -> {
 					if (std != null && !std.isEmpty()) {
 						return new SemanticTokens(SemanticTokensUtils.mapTokensDataToLsp(doc, semanticTokensHandler.getCapability().getLegend(), std));
 					}

@@ -144,28 +144,11 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-09</url>
 				</repository>
-				<repository> <!-- temporary p2 repo to grab early snapshot builds for testing fixes -->
-					<id>buildship-snapshots</id>
-					<layout>p2</layout>
-					<!--					<url>https://download.eclipse.org/buildship/updates/latest-snapshot/</url>-->
-					<url>https://download.eclipse.org/buildship/updates/latest</url>
-				</repository>
-				<repository>
-					<id>m2e</id>
-					<layout>p2</layout>
-					<url>https://download.eclipse.org/technology/m2e/releases/latest/</url>
-					<!--					<url>https://download.eclipse.org/technology/m2e/snapshots/latest/</url>-->
-				</repository>
-				<repository>
-					<id>latest-m2e-wtp-release</id>
-					<layout>p2</layout>
-					<url>https://download.eclipse.org/m2e-wtp/releases/latest/</url>
-				</repository>
-				<repository>
+<!--				<repository>
 					<id>maven-extras-mirror</id>
 					<layout>p2</layout>
 					<url>https://cdn.spring.io/spring-tools/release/TOOLS/third-party/m2e-sts310-signed/</url>
-				</repository>
+				</repository> -->
 				<repository>
 					<id>maven-egit</id>
 					<layout>p2</layout>
@@ -176,16 +159,11 @@
 					<layout>p2</layout>
 					<url>https://github.com/jbosstools/m2e-wro4j/releases/download/1.2.1/</url>
 				</repository>
-				<repository>
+<!--				<repository>
 					<id>maven-dependency-support</id>
 					<layout>p2</layout>
 					<url>https://ianbrandt.github.io/m2e-maven-dependency-plugin/</url>
-				</repository>
-				<repository>
-					<id>wildwebdeveloper</id>
-					<layout>p2</layout>
-					<url>https://download.eclipse.org/wildwebdeveloper/releases/latest/</url>
-				</repository>
+				</repository> -->
 				<repository>
 					<id>cdt-updates</id>
 					<layout>p2</layout>

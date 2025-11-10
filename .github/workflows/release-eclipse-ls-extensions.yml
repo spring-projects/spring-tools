@@ -17,7 +17,7 @@ jobs:
   eclipse-ls-extension:
     uses: ./.github/workflows/eclipse-ls-extensions-build.yml
     with:
-      eclipse_profile: 'e435'
+      eclipse_profile: 'e437'
       build_type: 'release'
       skip_tests: true
       sts-language-servers-version: ${{ inputs.sts-language-servers-version }}

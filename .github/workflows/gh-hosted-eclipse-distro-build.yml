@@ -111,6 +111,7 @@ jobs:
             p2_path=${{ inputs.build_type }}/update/$eclipse_version          
           else
             p2_qualifier=${{ inputs.p2-qualifier }}
+            version_segment=${{ steps.project-version.outputs.version }}
             if ! [[ -z ${p2_qualifier} ]]; then
               version_segment=${{ steps.project-version.outputs.version }}.$p2_qualifier
             fi
@@ -377,9 +378,14 @@ jobs:
           rm -f ./$downloads_html
           
           build_type=${{ inputs.build_type }}
-          build_type=${build_type^}
           eclipse_profile=${{ inputs.eclipse_profile }}
           eclipse_version=${eclipse_profile:1:1}.${eclipse_profile:2}
+          p2_qualifier=${{ inputs.p2-qualifier }}
+          version_segment=${{ steps.project-version.outputs.version }}
+          if ! [[ -z ${p2_qualifier} ]]; then
+            version_segment=${{ steps.project-version.outputs.version }}.$p2_qualifier
+          fi
+
 
           curl --location --request POST '${{ secrets.TOOLS_TEAM_GCHAT_WEBHOOK_URL }}' \
           --header 'Content-Type: application/json' \
@@ -388,7 +394,7 @@ jobs:
                   {
                     \"card\": {
                       \"header\": {
-                        \"title\": \"STS ${{ needs.eclipse-distro-build.outputs.version }} ${build_type}\",
+                        \"title\": \"STS ${version_segment} ${build_type}\",
                         \"subtitle\": \"Eclipse ${eclipse_version}\",
                         \"imageUrl\": \"https://avatars.githubusercontent.com/u/317776?s=48&amp;v=4\",
                       },

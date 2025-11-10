@@ -7,7 +7,7 @@ concurrency:
 on:
   workflow_dispatch:
     inputs:
-      sts4-language-servers-version:
+      sts-language-servers-version:
         description: Last segments of an s3 path for p2 Repo for eclipse ls extensions
         required: true
         type: string
@@ -17,8 +17,8 @@ jobs:
   eclipse-ls-extension:
     uses: ./.github/workflows/eclipse-ls-extensions-build.yml
     with:
-      eclipse_profile: 'e435'
+      eclipse_profile: 'e437'
       build_type: 'release'
       skip_tests: true
-      sts4-language-servers-version: ${{ inputs.sts4-language-servers-version }}
+      sts-language-servers-version: ${{ inputs.sts-language-servers-version }}
     secrets: inherit

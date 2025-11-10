@@ -15,6 +15,11 @@ on:
         description: Release version (i.e. 4.20.1)
         required: true
         type: string
+      qualifier:
+        default: "RELEASE"
+        description: "The version qualifier, i.e. `RELEASE` (default), RC1, M2"
+        required: true
+        type: string
       eclipse_latest:
         description: Latest eclipse release version (i.e. e4.30)
         required: true
@@ -34,7 +39,7 @@ jobs:
   aggregate-distro-update-site:
     uses: ./.github/workflows/aggregate-distro-update-sites.yml
     with:
-      version: ${{ inputs.release_version }}.RELEASE
+      version: ${{ inputs.release_version }}.${{ inputs.qualifier }}
       latest: ${{ inputs.eclipse_latest }}
     secrets: inherit
 
@@ -42,13 +47,13 @@ jobs:
     uses: ./.github/workflows/backup-eclipse-releases-to-gcp.yml
     with:
       ls_version: ${{ inputs.ls_version }}
-      release_version: ${{ inputs.release_version }}.RELEASE
+      release_version: ${{ inputs.release_version }}.${{ inputs.qualifier }}
     secrets: inherit
 
   create-github-release:
     uses: ./.github/workflows/create-gh-release.yml
     with:
-      version: ${{ inputs.release_version }}.RELEASE
+      version: ${{ inputs.release_version }}.${{ inputs.qualifier }}
     secrets: inherit
 
 #  announce-release:

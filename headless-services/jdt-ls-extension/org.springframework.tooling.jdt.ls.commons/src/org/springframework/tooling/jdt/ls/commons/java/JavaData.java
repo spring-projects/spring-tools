@@ -238,7 +238,6 @@ public class JavaData {
 		data.setBindingKey(method.getKey());
 		ImmutableList.Builder<AnnotationData> annotationsBuilder = ImmutableList.builder();
 		ImmutableList.Builder<JavaTypeData> parametersBuilder = ImmutableList.builder();
-		ImmutableList.Builder<String> paramNamesBuilder = ImmutableList.builder();
 		try {
 			data.setConstructor(method.isConstructor());
 			data.setReturnType(createFromSignature(type, method.getReturnType()));
@@ -527,11 +526,15 @@ public class JavaData {
 
 	private String resolveFQName(IType type, String name) throws JavaModelException {
 		if (name!=null) {
-			String[][] resolution = type.resolveType(name);
-			if (resolution != null && resolution.length > 0 && resolution[0].length > 1) {
-				return resolution[0][0] + "." + resolution[0][1].replace('.', '$');
+			try {
+				String[][] resolution = type.resolveType(name);
+				if (resolution != null && resolution.length > 0 && resolution[0].length > 1) {
+					return resolution[0][0] + "." + resolution[0][1].replace('.', '$');
+				}
+				return name;
+			} catch (Throwable t) {
+				throw new IllegalStateException("Failed to resolve `%s` from resolved type `%s`".formatted(name, type.getElementName()), t);
 			}
-			return name;
 		}
 		return null;
 	}

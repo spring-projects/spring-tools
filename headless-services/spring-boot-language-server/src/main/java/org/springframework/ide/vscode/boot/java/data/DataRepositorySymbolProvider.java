@@ -213,8 +213,8 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 			return null;
 		}
 		
-		String queryStatement = repositoryMetadataService.getQueryStatement(repositoryMetadata, methodBinding);
-		return queryStatement;
+		IDataRepositoryAotMethodMetadata aotMethod = repositoryMetadata.findMethod(methodBinding);
+		return aotMethod == null ? null :  aotMethod.getQueryStatement();
 	}
 	
 	protected String beanLabel(boolean isFunctionBean, String beanName, String beanType, String markerString) {

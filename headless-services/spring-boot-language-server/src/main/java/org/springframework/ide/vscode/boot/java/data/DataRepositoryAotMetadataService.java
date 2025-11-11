@@ -13,18 +13,21 @@ package org.springframework.ide.vscode.boot.java.data;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.Optional;
 
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser;
-import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser.JLRMethod;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 
 /**
  * @author Martin Lippert
@@ -32,6 +35,30 @@ import com.google.gson.Gson;
 public class DataRepositoryAotMetadataService {
 	
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataService.class);
+	
+	final private Gson gson = new GsonBuilder().registerTypeAdapter(DataRepositoryAotMetadata.class, new JsonDeserializer<DataRepositoryAotMetadata>() {
+
+		@Override
+		public DataRepositoryAotMetadata deserialize(JsonElement json, Type typeOfT,
+				JsonDeserializationContext context) throws JsonParseException {
+			JsonObject o = json.getAsJsonObject();
+			JsonElement e = o.get("module");
+			if (e.isJsonPrimitive()) {
+				String module = e.getAsString();
+				String name = context.deserialize(o.get("name"), String.class);
+				String type = context.deserialize(o.get("type"), String.class);
+				DataRepositoryModule moduleType = DataRepositoryModule.valueOf(module.toUpperCase());
+				switch (moduleType) {
+				case MONGODB:
+					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get("methods"), MongoAotMethodMetadata[].class));
+				case JPA:
+					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get("methods"), JpaAotMethodMetadata[].class));
+				}
+			}
+			return null;
+		}
+		
+	}).create();
 
 	public DataRepositoryAotMetadata getRepositoryMetadata(IJavaProject project, String repositoryType) {
 		try {
@@ -56,60 +83,12 @@ public class DataRepositoryAotMetadataService {
 	private DataRepositoryAotMetadata readMetadataFile(File file) {
 		
 		try (FileReader reader = new FileReader(file)) {
-			Gson gson = new Gson();
 			DataRepositoryAotMetadata result = gson.fromJson(reader, DataRepositoryAotMetadata.class);
-			
 			return result;
 		}
 		catch (IOException e) {
 			return null;
 		}
 	}
-
-	public String getQueryStatement(DataRepositoryAotMetadata metadata, IMethodBinding method) {
-		DataRepositoryAotMetadataMethod methodMetadata = findMethod(metadata, method);
-		return methodMetadata.getQueryStatement(metadata);
-	}
 	
-	public DataRepositoryAotMetadataMethod findMethod(DataRepositoryAotMetadata metadata, IMethodBinding method) {
-		String name = method.getName();
-		
-		for (DataRepositoryAotMetadataMethod methodMetadata : metadata.methods()) {
-			
-			if (methodMetadata.name() != null && methodMetadata.name().equals(name)) {
-
-				String signature = methodMetadata.signature();
-				JLRMethod parsedMethodSignature = JLRMethodParser.parse(signature);
-				
-				if (parsedMethodSignature.getFQClassName().equals(metadata.name())
-						&& parsedMethodSignature.getMethodName().equals(method.getName())
-						&& parsedMethodSignature.getReturnType().equals(method.getReturnType().getQualifiedName())
-						&& parameterMatches(parsedMethodSignature, method)) {
-					return methodMetadata;
-				}
-			}
-		}
-		
-		return null;
-	}
-
-	private boolean parameterMatches(JLRMethod parsedMethodSignature, IMethodBinding method) {
-		String[] parsedParameeterTypes = parsedMethodSignature.getParameters();
-		ITypeBinding[] methodParameters = method.getParameterTypes();
-		
-		if (parsedParameeterTypes == null || methodParameters == null || parsedParameeterTypes.length != methodParameters.length) {
-			return false;
-		}
-		
-		for (int i = 0; i < parsedParameeterTypes.length; i++) {
-			String qualifiedName = methodParameters[i].getQualifiedName();
-			if (qualifiedName != null && !qualifiedName.equals(parsedParameeterTypes[i])) {
-				return false;
-			}
-		}
-		
-		return true;
-	}
-
-
 }

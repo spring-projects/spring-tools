@@ -74,7 +74,7 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 
 							Optional<DataRepositoryAotMetadata> metadata = DataRepositoryAotMetadataCodeLensProvider.getMetadata(repositoryMetadataService, project, binding);
 							if (metadata.isPresent()) {
-								Optional<DataRepositoryAotMetadataMethod> methodMetadata = DataRepositoryAotMetadataCodeLensProvider.getMethodMetadata(repositoryMetadataService, metadata.get(), binding);
+								Optional<IDataRepositoryAotMethodMetadata> methodMetadata = DataRepositoryAotMetadataCodeLensProvider.getMethodMetadata(repositoryMetadataService, metadata.get(), binding);
 								methodMetadata
 									.map(method -> createCodeAction(binding, docURI, metadata.get(), method))
 									.ifPresent(collector::accept);
@@ -89,7 +89,7 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 		};
 	}
 	
-	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, DataRepositoryAotMetadataMethod method) {
+	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata method) {
 		CodeAction ca = new CodeAction();
 		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata, method)));
 		ca.setTitle(TITLE);

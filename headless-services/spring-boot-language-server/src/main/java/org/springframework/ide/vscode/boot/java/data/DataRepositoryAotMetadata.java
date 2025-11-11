@@ -10,13 +10,51 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
-public record DataRepositoryAotMetadata (String name, String type, String module, DataRepositoryAotMetadataMethod[] methods) {
+import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser;
+import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser.JLRMethod;
+
+public record DataRepositoryAotMetadata (String name, String type, DataRepositoryModule module, IDataRepositoryAotMethodMetadata[] methods) {
 	
-	public boolean isJPA() {
-		return module != null && module.toLowerCase().equals("jpa");
+	public IDataRepositoryAotMethodMetadata findMethod(IMethodBinding method) {
+		String name = method.getName();
+		
+		for (IDataRepositoryAotMethodMetadata methodMetadata : methods()) {
+			
+			if (methodMetadata.getName() != null && methodMetadata.getName().equals(name)) {
+
+				String signature = methodMetadata.getSignature();
+				JLRMethod parsedMethodSignature = JLRMethodParser.parse(signature);
+				
+				if (parsedMethodSignature.getFQClassName().equals(name())
+						&& parsedMethodSignature.getMethodName().equals(method.getName())
+						&& parsedMethodSignature.getReturnType().equals(method.getReturnType().getQualifiedName())
+						&& parameterMatches(parsedMethodSignature, method)) {
+					return methodMetadata;
+				}
+			}
+		}
+		
+		return null;
 	}
-	
-	public boolean isMongoDb() {
-		return module != null && module.toLowerCase().equals("mongodb");
+
+	private boolean parameterMatches(JLRMethod parsedMethodSignature, IMethodBinding method) {
+		String[] parsedParameeterTypes = parsedMethodSignature.getParameters();
+		ITypeBinding[] methodParameters = method.getParameterTypes();
+		
+		if (parsedParameeterTypes == null || methodParameters == null || parsedParameeterTypes.length != methodParameters.length) {
+			return false;
+		}
+		
+		for (int i = 0; i < parsedParameeterTypes.length; i++) {
+			String qualifiedName = methodParameters[i].getQualifiedName();
+			if (qualifiedName != null && !qualifiedName.equals(parsedParameeterTypes[i])) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
+
 }

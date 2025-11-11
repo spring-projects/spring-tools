@@ -31,8 +31,9 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadata;
-import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataMethod;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
+import org.springframework.ide.vscode.boot.java.data.DataRepositoryModule;
+import org.springframework.ide.vscode.boot.java.data.IDataRepositoryAotMethodMetadata;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser;
@@ -69,13 +70,13 @@ public class DataRepositoryAotMetadataServiceTest {
 	}
 	
 	@Test
-	void testBasicRepositoryAotMetadataLookuo() throws Exception {
+	void testBasicRepositoryAotMetadataLookup() throws Exception {
 		DataRepositoryAotMetadataService service = new DataRepositoryAotMetadataService();
 
 		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository");
 		assertNotNull(metadata);
 		assertEquals("example.springdata.aot.UserRepository", metadata.name());
-		assertEquals("JPA", metadata.module());
+		assertEquals(DataRepositoryModule.JPA, metadata.module());
 	}
 
 	@Test
@@ -83,15 +84,15 @@ public class DataRepositoryAotMetadataServiceTest {
 		DataRepositoryAotMetadataService service = new DataRepositoryAotMetadataService();
 
 		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository");
-		DataRepositoryAotMetadataMethod[] methods = metadata.methods();
+		IDataRepositoryAotMethodMetadata[] methods = metadata.methods();
 		
 		assertEquals(32, methods.length);
 		
-		DataRepositoryAotMetadataMethod methodMetadata = Arrays.stream(methods).filter(method -> method.name().equals("countUsersByLastnameLike")).findFirst().get();
-		assertEquals("countUsersByLastnameLike", methodMetadata.name());
-		assertEquals("public abstract java.lang.Long example.springdata.aot.UserRepository.countUsersByLastnameLike(java.lang.String)", methodMetadata.signature());
+		IDataRepositoryAotMethodMetadata methodMetadata = Arrays.stream(methods).filter(method -> method.getName().equals("countUsersByLastnameLike")).findFirst().get();
+		assertEquals("countUsersByLastnameLike", methodMetadata.getName());
+		assertEquals("public abstract java.lang.Long example.springdata.aot.UserRepository.countUsersByLastnameLike(java.lang.String)", methodMetadata.getSignature());
 		
-		JLRMethod parsedMethodSignature = JLRMethodParser.parse(methodMetadata.signature());
+		JLRMethod parsedMethodSignature = JLRMethodParser.parse(methodMetadata.getSignature());
 		assertEquals("example.springdata.aot.UserRepository", parsedMethodSignature.getFQClassName());
 		assertEquals("java.lang.Long", parsedMethodSignature.getReturnType());
 		assertEquals("countUsersByLastnameLike", parsedMethodSignature.getMethodName());
@@ -112,14 +113,14 @@ public class DataRepositoryAotMetadataServiceTest {
 				public boolean visit(MethodDeclaration node) {
 					IMethodBinding binding = node.resolveBinding();
 					
-					DataRepositoryAotMetadataMethod method = service.findMethod(metadata, binding);
+					IDataRepositoryAotMethodMetadata method = metadata.findMethod(binding);
 					assertNotNull(method);
 					
-					if (method.name().equals("findUserByLastnameStartingWith") && binding.getParameterTypes().length == 1) {
-						assertEquals("public abstract java.util.List<example.springdata.aot.User> example.springdata.aot.UserRepository.findUserByLastnameStartingWith(java.lang.String)", method.signature());
+					if (method.getName().equals("findUserByLastnameStartingWith") && binding.getParameterTypes().length == 1) {
+						assertEquals("public abstract java.util.List<example.springdata.aot.User> example.springdata.aot.UserRepository.findUserByLastnameStartingWith(java.lang.String)", method.getSignature());
 					}
-					else if (method.name().equals("findUserByLastnameStartingWith") && binding.getParameterTypes().length == 2) {
-						assertEquals("public abstract org.springframework.data.domain.Page<example.springdata.aot.User> example.springdata.aot.UserRepository.findUserByLastnameStartingWith(java.lang.String,org.springframework.data.domain.Pageable)", method.signature());
+					else if (method.getName().equals("findUserByLastnameStartingWith") && binding.getParameterTypes().length == 2) {
+						assertEquals("public abstract org.springframework.data.domain.Page<example.springdata.aot.User> example.springdata.aot.UserRepository.findUserByLastnameStartingWith(java.lang.String,org.springframework.data.domain.Pageable)", method.getSignature());
 					}
 					
 					return true;

@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.file.Files;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -34,6 +35,14 @@ import com.google.gson.JsonParseException;
  */
 public class DataRepositoryAotMetadataService {
 	
+	private static final String MODULE_JSON_PROP = "module";
+
+	private static final String TYPE_JSON_PROP = "type";
+
+	private static final String NAME_JSON_PROP = "name";
+
+	private static final String METHODS = "methods";
+
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataService.class);
 	
 	final private Gson gson = new GsonBuilder().registerTypeAdapter(DataRepositoryAotMetadata.class, new JsonDeserializer<DataRepositoryAotMetadata>() {
@@ -42,17 +51,17 @@ public class DataRepositoryAotMetadataService {
 		public DataRepositoryAotMetadata deserialize(JsonElement json, Type typeOfT,
 				JsonDeserializationContext context) throws JsonParseException {
 			JsonObject o = json.getAsJsonObject();
-			JsonElement e = o.get("module");
+			JsonElement e = o.get(MODULE_JSON_PROP);
 			if (e.isJsonPrimitive()) {
 				String module = e.getAsString();
-				String name = context.deserialize(o.get("name"), String.class);
-				String type = context.deserialize(o.get("type"), String.class);
+				String name = context.deserialize(o.get(NAME_JSON_PROP), String.class);
+				String type = context.deserialize(o.get(TYPE_JSON_PROP), String.class);
 				DataRepositoryModule moduleType = DataRepositoryModule.valueOf(module.toUpperCase());
 				switch (moduleType) {
 				case MONGODB:
-					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get("methods"), MongoAotMethodMetadata[].class));
+					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get(METHODS), MongoAotMethodMetadata[].class));
 				case JPA:
-					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get("methods"), JpaAotMethodMetadata[].class));
+					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get(METHODS), JpaAotMethodMetadata[].class));
 				}
 			}
 			return null;
@@ -62,11 +71,12 @@ public class DataRepositoryAotMetadataService {
 
 	public DataRepositoryAotMetadata getRepositoryMetadata(IJavaProject project, String repositoryType) {
 		try {
-			String metadataFilePath = repositoryType.replace('.', File.separatorChar);
+			String metadataFilePath = repositoryType.replace('.', '/') + ".json";
 			
 			Optional<File> metadataFile = IClasspathUtil.getOutputFolders(project.getClasspath())
-				.map(outputFolder -> new File(outputFolder.getParentFile(), "spring-aot/main/resources/" + metadataFilePath + ".json"))
-				.filter(file -> file.exists())
+				.map(outputFolder -> outputFolder.getParentFile().toPath().resolve("spring-aot/main/resources/").resolve(metadataFilePath))
+				.filter(Files::isRegularFile)
+				.map(p -> p.toFile())
 				.findFirst();
 			
 			if (metadataFile.isPresent()) {

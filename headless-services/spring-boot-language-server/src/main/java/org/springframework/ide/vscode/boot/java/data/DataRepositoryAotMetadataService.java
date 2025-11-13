@@ -10,17 +10,29 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.OS;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
+import org.springframework.ide.vscode.commons.util.FileObserver;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,11 +41,19 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
 
 /**
+ * Service for loading and caching Spring Data repository AOT metadata.
+ * 
+ * Provides caching of metadata loaded from JSON files with automatic cache invalidation
+ * when files are created, modified, or deleted.
+ * 
  * @author Martin Lippert
  */
 public class DataRepositoryAotMetadataService {
+	
+	static final String CMD_REFESH_METADATA = "sts/boot/aot/refresh-metadata";
 	
 	private static final String MODULE_JSON_PROP = "module";
 
@@ -45,7 +65,12 @@ public class DataRepositoryAotMetadataService {
 
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataService.class);
 	
-	final private Gson gson = new GsonBuilder().registerTypeAdapter(DataRepositoryAotMetadata.class, new JsonDeserializer<DataRepositoryAotMetadata>() {
+	private static final Object MAVEN_LOCK = new Object(); 
+	
+	// Cache: file path -> parsed metadata (Optional.empty() if file doesn't exist or failed to parse)
+	private final ConcurrentMap<Path, Optional<DataRepositoryAotMetadata>> metadataCache = new ConcurrentHashMap<>();
+	
+	private final Gson gson = new GsonBuilder().registerTypeAdapter(DataRepositoryAotMetadata.class, new JsonDeserializer<DataRepositoryAotMetadata>() {
 
 		@Override
 		public DataRepositoryAotMetadata deserialize(JsonElement json, Type typeOfT,
@@ -69,36 +94,81 @@ public class DataRepositoryAotMetadataService {
 		
 	}).create();
 
-	public DataRepositoryAotMetadata getRepositoryMetadata(IJavaProject project, String repositoryType) {
-		try {
-			String metadataFilePath = repositoryType.replace('.', '/') + ".json";
-			
-			Optional<File> metadataFile = IClasspathUtil.getOutputFolders(project.getClasspath())
-				.map(outputFolder -> outputFolder.getParentFile().toPath().resolve("spring-aot/main/resources/").resolve(metadataFilePath))
-				.filter(Files::isRegularFile)
-				.map(p -> p.toFile())
-				.findFirst();
-			
-			if (metadataFile.isPresent()) {
-				return readMetadataFile(metadataFile.get());
+	public DataRepositoryAotMetadataService(SimpleLanguageServer server, FileObserver fileObserver, JavaProjectFinder projectFinder) {
+		server.onCommand(CMD_REFESH_METADATA, params -> {
+			Object o = params.getArguments().get(0);
+			String projectName = o instanceof JsonPrimitive ? ((JsonPrimitive) o).getAsString() : o.toString();
+			return projectFinder.all().stream().filter(jp -> projectName.equals(jp.getElementName())).findFirst()
+					.map(DataRepositoryAotMetadataService.this::regenerateAotMetadata)
+					.orElse(CompletableFuture.failedFuture(
+							new IllegalArgumentException("Cannot find project with name '%s'".formatted(projectName))));
+		});
+		if (fileObserver != null) {
+			fileObserver.onAnyChange(List.of("**/spring-aot/main/resources/**/*.json"), changedFiles -> {
+				List<Path> removedEntries = new ArrayList<>();
+				for (String filePath : changedFiles) {
+					Path path = Path.of(filePath);
+					Optional<DataRepositoryAotMetadata> removed = metadataCache.remove(path);
+					if (removed != null) {
+						removedEntries.add(path);
+					}
+				}
+				if (!removedEntries.isEmpty()) {
+					
+				}
+			});
+		}
+	}
+	
+	public Optional<DataRepositoryAotMetadata> getRepositoryMetadata(IJavaProject project, String repositoryType) {
+		String metadataFilePath = repositoryType.replace('.', '/') + ".json";
+		
+		return IClasspathUtil.getOutputFolders(project.getClasspath())
+			.map(outputFolder -> outputFolder.getParentFile().toPath().resolve("spring-aot/main/resources/").resolve(metadataFilePath))
+			.findFirst()
+			.flatMap(filePath -> metadataCache.computeIfAbsent(filePath, this::readMetadataFile));
+	}
+	
+	private Optional<DataRepositoryAotMetadata> readMetadataFile(Path filePath) {
+		if (Files.isRegularFile(filePath)) {
+			try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+				return Optional.ofNullable(gson.fromJson(reader, DataRepositoryAotMetadata.class));
+			} catch (IOException e) {
+				log.error("Failed to read metadata file: {}", filePath, e);
 			}
-			
-		} catch (Exception e) {
-			log.error("error finding spring data repository definition metadata file", e);
 		}
-		
-		return null;
+		return Optional.empty();
 	}
 	
-	private DataRepositoryAotMetadata readMetadataFile(File file) {
-		
-		try (FileReader reader = new FileReader(file)) {
-			DataRepositoryAotMetadata result = gson.fromJson(reader, DataRepositoryAotMetadata.class);
-			return result;
+	public CompletableFuture<Void> regenerateAotMetadata(IJavaProject jp) {
+		switch (jp.getProjectBuild().getType()) {
+			case ProjectBuild.MAVEN_PROJECT_TYPE:
+				return CompletableFuture.runAsync(() -> mavenRegenerateMetadata(jp));
 		}
-		catch (IOException e) {
-			return null;
-		}
+		return CompletableFuture.failedFuture(new IllegalStateException("Cannot generate AOT metadata"));
 	}
 	
+	private CompletableFuture<Void> mavenRegenerateMetadata(IJavaProject jp) {
+		synchronized(MAVEN_LOCK) {
+			List<String> cmd = new ArrayList<>();
+			Path projectPath = Paths.get(jp.getLocationUri());
+			String mvnw = OS.isWindows() ? "mvnw.bat" : "./mvnw";
+			cmd.add(Files.isRegularFile(projectPath.resolve(mvnw)) ? mvnw : "mvn");
+			if (!IClasspathUtil.getOutputFolders(jp.getClasspath()).map(f -> f.toPath()).allMatch(Files::isDirectory)) {
+				// Check if source is compiled by checking that all output folders exist
+				// If not compiled then add `compile` goal
+				cmd.add("compile");
+			}
+			cmd.add("org.springframework.boot:spring-boot-maven-plugin:process-aot");
+			try {
+				return Runtime.getRuntime().exec(cmd.toArray(new String[cmd.size()]), null, projectPath.toFile()).onExit().thenAccept(process -> {
+					if (process.exitValue() != 0) {
+						throw new CompletionException("Failed to generate AOT metadata", new IllegalStateException("Errors running maven command: %s".formatted(String.join(" ", cmd))));
+					}
+				});
+			} catch (IOException e) {
+				throw new CompletionException(e);
+			}
+		}
+	}
 }

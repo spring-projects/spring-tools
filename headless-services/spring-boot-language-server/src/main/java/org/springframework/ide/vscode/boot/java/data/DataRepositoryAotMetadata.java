@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
+import java.util.Optional;
+
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser;
@@ -17,7 +19,7 @@ import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser.JLRMet
 
 public record DataRepositoryAotMetadata (String name, String type, DataRepositoryModule module, IDataRepositoryAotMethodMetadata[] methods) {
 	
-	public IDataRepositoryAotMethodMetadata findMethod(IMethodBinding method) {
+	public Optional<IDataRepositoryAotMethodMetadata> findMethod(IMethodBinding method) {
 		String name = method.getName();
 		
 		for (IDataRepositoryAotMethodMetadata methodMetadata : methods()) {
@@ -31,12 +33,12 @@ public record DataRepositoryAotMetadata (String name, String type, DataRepositor
 						&& parsedMethodSignature.getMethodName().equals(method.getName())
 						&& parsedMethodSignature.getReturnType().equals(method.getReturnType().getQualifiedName())
 						&& parameterMatches(parsedMethodSignature, method)) {
-					return methodMetadata;
+					return Optional.of(methodMetadata);
 				}
 			}
 		}
 		
-		return null;
+		return Optional.empty();
 	}
 
 	private boolean parameterMatches(JLRMethod parsedMethodSignature, IMethodBinding method) {

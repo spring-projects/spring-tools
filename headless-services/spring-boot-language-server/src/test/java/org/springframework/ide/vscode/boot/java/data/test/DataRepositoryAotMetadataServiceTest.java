@@ -12,6 +12,8 @@ package org.springframework.ide.vscode.boot.java.data.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -52,6 +54,7 @@ public class DataRepositoryAotMetadataServiceTest {
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
 	@Autowired private CompilationUnitCache cuCache;
+	@Autowired private DataRepositoryAotMetadataService service;
 	
 	private IJavaProject testProject;
 
@@ -71,9 +74,7 @@ public class DataRepositoryAotMetadataServiceTest {
 	
 	@Test
 	void testBasicRepositoryAotMetadataLookup() throws Exception {
-		DataRepositoryAotMetadataService service = new DataRepositoryAotMetadataService();
-
-		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository");
+		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository").orElse(null);
 		assertNotNull(metadata);
 		assertEquals("example.springdata.aot.UserRepository", metadata.name());
 		assertEquals(DataRepositoryModule.JPA, metadata.module());
@@ -81,9 +82,8 @@ public class DataRepositoryAotMetadataServiceTest {
 
 	@Test
 	void testRepositoryMethodsIntMetadata() throws Exception {
-		DataRepositoryAotMetadataService service = new DataRepositoryAotMetadataService();
 
-		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository");
+		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository").orElse(null);
 		IDataRepositoryAotMethodMetadata[] methods = metadata.methods();
 		
 		assertEquals(32, methods.length);
@@ -104,8 +104,7 @@ public class DataRepositoryAotMetadataServiceTest {
 	
 	@Test
 	void testRepositoryMethodsMatching() throws Exception {
-		DataRepositoryAotMetadataService service = new DataRepositoryAotMetadataService();
-		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository");
+		DataRepositoryAotMetadata metadata = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository").orElse(null);
 		
 		URI docUri = testProject.getLocationUri().resolve("src/main/java/example/springdata/aot/UserRepository.java");
 		cuCache.withCompilationUnit(testProject, docUri, cu -> {
@@ -113,7 +112,7 @@ public class DataRepositoryAotMetadataServiceTest {
 				public boolean visit(MethodDeclaration node) {
 					IMethodBinding binding = node.resolveBinding();
 					
-					IDataRepositoryAotMethodMetadata method = metadata.findMethod(binding);
+					IDataRepositoryAotMethodMetadata method = metadata.findMethod(binding).orElse(null);
 					assertNotNull(method);
 					
 					if (method.getName().equals("findUserByLastnameStartingWith") && binding.getParameterTypes().length == 1) {
@@ -130,6 +129,28 @@ public class DataRepositoryAotMetadataServiceTest {
 			return null;
 		});
 		
+	}
+	
+	@Test
+	void testCachingFunctionality() throws Exception {
+		// First call should load and cache the metadata
+		DataRepositoryAotMetadata metadata1 = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository").orElse(null);
+		assertNotNull(metadata1);
+		
+		// Second call should return the same cached instance
+		DataRepositoryAotMetadata metadata2 = service.getRepositoryMetadata(testProject, "example.springdata.aot.UserRepository").orElse(null);
+		assertSame(metadata1, metadata2, "Should return the same cached instance");
+	}
+	
+	@Test
+	void testNegativeCaching() throws Exception {
+		// First call to non-existent repository should return null and cache the negative result
+		DataRepositoryAotMetadata metadata1 = service.getRepositoryMetadata(testProject, "nonexistent.Repository").orElse(null);
+		assertNull(metadata1);
+		
+		// Second call should also return null (from cache, not file system check)
+		DataRepositoryAotMetadata metadata2 = service.getRepositoryMetadata(testProject, "nonexistent.Repository").orElse(null);
+		assertNull(metadata2);
 	}
 
 }

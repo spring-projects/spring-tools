@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.data;
 
 import java.net.URI;
-import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -72,13 +71,11 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 								&& !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_JPA_QUERY)
 								&& !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_MONGODB_QUERY)) {
 
-							Optional<DataRepositoryAotMetadata> metadata = DataRepositoryAotMetadataCodeLensProvider.getMetadata(repositoryMetadataService, project, binding);
-							if (metadata.isPresent()) {
-								Optional<IDataRepositoryAotMethodMetadata> methodMetadata = DataRepositoryAotMetadataCodeLensProvider.getMethodMetadata(repositoryMetadataService, metadata.get(), binding);
-								methodMetadata
-									.map(method -> createCodeAction(binding, docURI, metadata.get(), method))
-									.ifPresent(collector::accept);
-							}
+							DataRepositoryAotMetadataCodeLensProvider
+									.getMetadata(repositoryMetadataService, project, binding)
+									.ifPresent(metadata -> metadata.findMethod(binding)
+											.map(method -> createCodeAction(binding, docURI, metadata, method))
+											.ifPresent(collector::accept));
 						}
 					}
 					return super.visit(node);
@@ -91,7 +88,7 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 	
 	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata method) {
 		CodeAction ca = new CodeAction();
-		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata, method)));
+		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata.module(), method)));
 		ca.setTitle(TITLE);
 		ca.setKind(CodeActionKind.Refactor);
 		return ca;

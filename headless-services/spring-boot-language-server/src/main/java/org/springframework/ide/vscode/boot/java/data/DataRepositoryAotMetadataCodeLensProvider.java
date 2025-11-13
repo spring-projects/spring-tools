@@ -35,7 +35,10 @@ import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
+import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
 import org.springframework.ide.vscode.commons.rewrite.java.AddAnnotationOverMethod;
@@ -85,7 +88,17 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				|| methodBinding.getDeclaringClass().getBinaryName() == null) {
 			return false;
 		}
+		
+		if (ASTUtils.findInTypeHierarchy(methodBinding.getDeclaringClass(), Set.of(Constants.REPOSITORY_TYPE)) == null) {
+			return false;
+		}
+		
 		return true;
+	}
+	
+	static boolean isValidProject(IJavaProject jp) {
+		Version version = SpringProjectUtil.getDependencyVersion(jp, "spring-data-commons");
+		return version != null && version.compareTo(new Version(4, 0, 0, null)) >= 0;
 	}
 	
 //	static Optional<String> getDataQuery(DataRepositoryAotMetadataService repositoryMetadataService, IJavaProject project, IMethodBinding methodBinding) {
@@ -104,21 +117,14 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 	
 	static Optional<DataRepositoryAotMetadata> getMetadata(DataRepositoryAotMetadataService dataRepositoryAotMetadataService, IJavaProject project, IMethodBinding methodBinding) {
 		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
-
-		return Optional.ofNullable(dataRepositoryAotMetadataService.getRepositoryMetadata(project, repositoryClass));
-	}
-
-	static Optional<IDataRepositoryAotMethodMetadata> getMethodMetadata(DataRepositoryAotMetadataService dataRepositoryAotMetadataService, DataRepositoryAotMetadata metadata, IMethodBinding methodBinding) {
-		final IMethodBinding method = methodBinding.getMethodDeclaration();
-
-		return Optional.ofNullable(metadata.findMethod(method));
+		return dataRepositoryAotMetadataService.getRepositoryMetadata(project, repositoryClass);
 	}
 
 	protected void provideCodeLens(CancelChecker cancelToken, MethodDeclaration node, TextDocument document, List<CodeLens> resultAccumulator) {
 		cancelToken.checkCanceled();
 		
 		IJavaProject project = projectFinder.find(document.getId()).get();
-		if (project == null) {
+		if (project == null || !isValidProject(project)) {
 			return;
 		}
 
@@ -127,13 +133,11 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		if (isValidMethodBinding(methodBinding)) {
 			cancelToken.checkCanceled();
 
-			getMetadata(repositoryMetadataService, project, methodBinding)
-				.map(metadata -> createCodeLenses(node, document, metadata))
-				.ifPresent(cls -> cls.forEach(resultAccumulator::add));
+			resultAccumulator.addAll(createCodeLenses(project, node, document));
 		}
 	}
 	
-	private List<CodeLens> createCodeLenses(MethodDeclaration node, TextDocument document, DataRepositoryAotMetadata metadata) {
+	private List<CodeLens> createCodeLenses(IJavaProject project, MethodDeclaration node, TextDocument document) {
 		List<CodeLens> codeLenses = new ArrayList<>(2);
 		
 		try {
@@ -143,35 +147,38 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			Range range = new Range(startPos, endPos);
 			AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
 
-			Optional<IDataRepositoryAotMethodMetadata> methodMetadata = getMethodMetadata(repositoryMetadataService, metadata, mb);
-
-			if (mb != null && hierarchyAnnot != null && methodMetadata.isPresent()) {
-
-				boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY)
-						|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY);
+			if (mb != null && hierarchyAnnot != null) {
 				
-
-				if (!isQueryAnnotated) {
-					codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata, methodMetadata.get())), null));
-				}
-				
-				Command impl = new Command("Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
-						document.getId(),
-						mb.getDeclaringClass().getQualifiedName(),
-						mb.getName(),
-						Arrays.stream(mb.getParameterTypes()).map(p -> p.getQualifiedName()).toArray(String[]::new),
-						null
-				)));
-				codeLenses.add(new CodeLens(range, impl, null));
-				
-				if (!isQueryAnnotated) {
-					String queryStatement = methodMetadata.get().getQueryStatement();
-					if (queryStatement != null) {
-						Command queryTitle = new Command();
-						queryTitle.setTitle(queryStatement);
-						codeLenses.add(new CodeLens(range, queryTitle, null));
+				getMetadata(repositoryMetadataService, project, mb).ifPresent(metadata -> metadata.findMethod(mb).ifPresent(methodMetadata -> {
+					boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY)
+							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY);
+					
+					if (!isQueryAnnotated) {
+						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata)), null));
 					}
-				}
+					
+					Command impl = new Command("Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
+							document.getId(),
+							mb.getDeclaringClass().getQualifiedName(),
+							mb.getName(),
+							Arrays.stream(mb.getParameterTypes()).map(p -> p.getQualifiedName()).toArray(String[]::new),
+							null
+					)));
+					codeLenses.add(new CodeLens(range, impl, null));
+					
+					if (!isQueryAnnotated && methodMetadata != null) {
+						String queryStatement = methodMetadata.getQueryStatement();
+						if (queryStatement != null) {
+							Command queryTitle = new Command();
+							queryTitle.setTitle(queryStatement);
+							codeLenses.add(new CodeLens(range, queryTitle, null));
+						}
+					}
+				}));
+				
+				Command refreshCmd = new Command("Refresh", DataRepositoryAotMetadataService.CMD_REFESH_METADATA, List.of(project.getElementName()));
+				codeLenses.add(new CodeLens(range, refreshCmd, null));
+
 			}
 		} catch (BadLocationException e) {
 			log.error("bad location while calculating code lens for data repository query method", e);
@@ -179,13 +186,13 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		return codeLenses;
 	}
 
-	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata methodMetadata) {
+	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata) {
 		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
 				
 				.withRecipeScope(RecipeScope.FILE)
 				
 				.withParameters(Map.of(
-						"annotationType", metadata.module() == DataRepositoryModule.JPA ? Annotations.DATA_JPA_QUERY : Annotations.DATA_MONGODB_QUERY,
+						"annotationType", module == DataRepositoryModule.JPA ? Annotations.DATA_JPA_QUERY : Annotations.DATA_MONGODB_QUERY,
 						"method", "%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
 								Arrays.stream(mb.getParameterTypes())
 									.map(pt -> pt.getQualifiedName())
@@ -203,7 +210,5 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 		return result;
 	}
-	
-	
 
 }

@@ -208,13 +208,12 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 		IMethodBinding methodBinding = method.resolveBinding();
 		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
 
-		DataRepositoryAotMetadata repositoryMetadata = this.repositoryMetadataService.getRepositoryMetadata(context.getProject(), repositoryClass);
+		DataRepositoryAotMetadata repositoryMetadata = this.repositoryMetadataService.getRepositoryMetadata(context.getProject(), repositoryClass).orElse(null);
 		if (repositoryMetadata == null) {
 			return null;
 		}
 		
-		IDataRepositoryAotMethodMetadata aotMethod = repositoryMetadata.findMethod(methodBinding);
-		return aotMethod == null ? null :  aotMethod.getQueryStatement();
+		return repositoryMetadata.findMethod(methodBinding).map(aotMethod -> aotMethod.getQueryStatement()).orElse(null);
 	}
 	
 	protected String beanLabel(boolean isFunctionBean, String beanName, String beanType, String markerString) {

@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.data;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,15 +108,15 @@ public class DataRepositoryAotMetadataService {
 		if (fileObserver != null) {
 			fileObserver.onAnyChange(List.of("**/spring-aot/main/resources/**/*.json"), changedFiles -> {
 				List<Path> removedEntries = new ArrayList<>();
-				for (String filePath : changedFiles) {
-					Path path = Path.of(filePath);
+				for (String fileUri : changedFiles) {
+					Path path = Paths.get(URI.create(fileUri));
 					Optional<DataRepositoryAotMetadata> removed = metadataCache.remove(path);
 					if (removed != null) {
 						removedEntries.add(path);
 					}
 				}
 				if (!removedEntries.isEmpty()) {
-					
+					log.info("Spring AOT Metadata refreshed: %s".formatted(removedEntries.stream().map(p -> p.toString()).collect(Collectors.joining(", "))));
 				}
 			});
 		}

@@ -71,7 +71,7 @@ public final class ParentProcessWatcher implements Runnable, Function<MessageCon
 			return true;
 		}
 		String command;
-		if (isWindows()) {
+		if (OS.isWindows()) {
 			command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid + "\"";
 		} else {
 			command = "kill -0 " + pid;
@@ -85,7 +85,7 @@ public final class ParentProcessWatcher implements Runnable, Function<MessageCon
 				process.destroy();
 				finished = process.waitFor(POLL_DELAY_SECS, TimeUnit.SECONDS); // wait for the process to stop
 			}
-			if (isWindows() && finished && process.exitValue() > 1) {
+			if (OS.isWindows() && finished && process.exitValue() > 1) {
 				// the tasklist command should return 0 (parent process exists) or 1 (parent process doesn't exist)
 				logger.info("The tasklist command: '{}' returns {}", command, process.exitValue());
 				return true;
@@ -103,7 +103,7 @@ public final class ParentProcessWatcher implements Runnable, Function<MessageCon
 				// It is only closed when the Process object is garbage collected (in its finalize() method).
 				// On Windows, when the Java LS is idle, we need to explicitly request a GC,
 				// to prevent an accumulation of zombie processes, as finalize() will be called.
-				if (isWindows()) {
+				if (OS.isWindows()) {
 					// Java >= 9 doesn't close the handle when the process is garbage collected
 					// We need to close the opened streams
 					if (!isJava1x) {
@@ -134,11 +134,4 @@ public final class ParentProcessWatcher implements Runnable, Function<MessageCon
 		};
 	}
 	
-	private static boolean isWindows() {
-		String os = System.getProperty("os.name");
-		if (os != null) {
-			return os.toLowerCase().indexOf("win") >= 0;
-		}
-		return false;
-	}
 }

@@ -27,7 +27,7 @@ import com.google.gson.JsonPrimitive;
 
 public class DefaultBuildCommandProvider implements BuildCommandProvider {
 	
-	private static final String CMD_EXEC_MAVEN_GOAL = "sts.maven.goal.custom";
+	private static final String CMD_EXEC_MAVEN_GOAL = "sts.maven.goal";
 	
 	private static final Object MAVEN_LOCK = new Object(); 
 	
@@ -62,7 +62,7 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		synchronized(MAVEN_LOCK) {
 			String[] cmd = new String[1 + goal.length];
 			Path projectPath = pom.getParent();
-			String mvnw = OS.isWindows() ? "mvnw.cmd" : "./mvnw";
+			String mvnw = OS.isWindows() ? "./mvnw.cmd" : "./mvnw";
 			cmd[0] = Files.isRegularFile(projectPath.resolve(mvnw)) ? mvnw : "mvn";
 			System.arraycopy(goal, 0, cmd, 1, goal.length);
 			try {

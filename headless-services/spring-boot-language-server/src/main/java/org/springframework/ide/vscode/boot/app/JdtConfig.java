@@ -18,6 +18,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
+import org.springframework.ide.vscode.boot.java.DefaultBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.VSCodeBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtCodeActionHandler;
@@ -230,8 +232,16 @@ public class JdtConfig {
 		return new JdtCodeActionHandler(cuCache, providers);
 	}
 	
-	@Bean VSCodeBuildCommandProvider vsCodeBuildCommandProvider() {
-		return new VSCodeBuildCommandProvider();
+	@Bean BuildCommandProvider buildCommandProvider(SimpleLanguageServer server) {
+		switch(LspClient.currentClient()) {
+		case VSCODE:
+		case THEIA:
+			return new VSCodeBuildCommandProvider();
+		case ECLIPSE:
+			return new VSCodeBuildCommandProvider();
+		default:
+			return new DefaultBuildCommandProvider(server);
+		}
 	}
 	
 }

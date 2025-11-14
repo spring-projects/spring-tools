@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.VSCodeBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtCodeActionHandler;
 import org.springframework.ide.vscode.boot.java.cron.CronExpressionsInlayHintsProvider;
@@ -228,4 +229,9 @@ public class JdtConfig {
 	@Bean JdtCodeActionHandler jdtCodeActionHandler(CompilationUnitCache cuCache, Collection<JdtAstCodeActionProvider> providers) {
 		return new JdtCodeActionHandler(cuCache, providers);
 	}
+	
+	@Bean VSCodeBuildCommandProvider vsCodeBuildCommandProvider() {
+		return new VSCodeBuildCommandProvider();
+	}
+	
 }

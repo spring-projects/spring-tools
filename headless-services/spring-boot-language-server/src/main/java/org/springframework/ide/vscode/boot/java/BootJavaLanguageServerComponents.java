@@ -327,7 +327,7 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 		codeLensProvider.add(new WebfluxHandlerCodeLensProvider(springIndex));
 		codeLensProvider.add(new CopilotCodeLensProvider(projectFinder, server, spelSemanticTokens));
 		codeLensProvider.add(new RouterFunctionCodeLensProvider());
-		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(projectFinder, repositoryAotMetadataService, refactorings, config));
+		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(server, projectFinder, repositoryAotMetadataService, refactorings, config));
 		codeLensProvider.add(new WebConfigCodeLensProvider(projectFinder, springIndex, config));
 
 		return new BootJavaCodeLensEngine(this, codeLensProvider);

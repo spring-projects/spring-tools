@@ -20,21 +20,21 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.eclipse.lsp4j.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-import org.springframework.ide.vscode.commons.languageserver.util.OS;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.util.FileObserver;
+import org.springframework.ide.vscode.commons.util.ListenerList;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,7 +43,6 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
 
 /**
  * Service for loading and caching Spring Data repository AOT metadata.
@@ -55,8 +54,6 @@ import com.google.gson.JsonPrimitive;
  */
 public class DataRepositoryAotMetadataService {
 	
-	static final String CMD_REFESH_METADATA = "sts/boot/aot/refresh-metadata";
-	
 	private static final String MODULE_JSON_PROP = "module";
 
 	private static final String TYPE_JSON_PROP = "type";
@@ -67,7 +64,9 @@ public class DataRepositoryAotMetadataService {
 
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataService.class);
 	
-	private static final Object MAVEN_LOCK = new Object(); 
+	private ListenerList<Consumer<List<URI>>> listeners;
+	
+	private BuildCommandProvider buildCmds;
 	
 	// Cache: file path -> parsed metadata (Optional.empty() if file doesn't exist or failed to parse)
 	private final ConcurrentMap<Path, Optional<DataRepositoryAotMetadata>> metadataCache = new ConcurrentHashMap<>();
@@ -96,27 +95,23 @@ public class DataRepositoryAotMetadataService {
 		
 	}).create();
 
-	public DataRepositoryAotMetadataService(SimpleLanguageServer server, FileObserver fileObserver, JavaProjectFinder projectFinder) {
-		server.onCommand(CMD_REFESH_METADATA, params -> {
-			Object o = params.getArguments().get(0);
-			String projectName = o instanceof JsonPrimitive ? ((JsonPrimitive) o).getAsString() : o.toString();
-			return projectFinder.all().stream().filter(jp -> projectName.equals(jp.getElementName())).findFirst()
-					.map(DataRepositoryAotMetadataService.this::regenerateAotMetadata)
-					.orElse(CompletableFuture.failedFuture(
-							new IllegalArgumentException("Cannot find project with name '%s'".formatted(projectName))));
-		});
+	public DataRepositoryAotMetadataService(FileObserver fileObserver, JavaProjectFinder projectFinder, BuildCommandProvider buildCmds) {
+		this.buildCmds = buildCmds;
+		this.listeners = new ListenerList<>();
 		if (fileObserver != null) {
 			fileObserver.onAnyChange(List.of("**/spring-aot/main/resources/**/*.json"), changedFiles -> {
-				List<Path> removedEntries = new ArrayList<>();
+				List<URI> removedEntries = new ArrayList<>();
 				for (String fileUri : changedFiles) {
-					Path path = Paths.get(URI.create(fileUri));
+					URI uri = URI.create(fileUri);
+					Path path = Paths.get(uri);
 					Optional<DataRepositoryAotMetadata> removed = metadataCache.remove(path);
 					if (removed != null) {
-						removedEntries.add(path);
+						removedEntries.add(uri);
 					}
 				}
 				if (!removedEntries.isEmpty()) {
 					log.info("Spring AOT Metadata refreshed: %s".formatted(removedEntries.stream().map(p -> p.toString()).collect(Collectors.joining(", "))));
+					notify(removedEntries);
 				}
 			});
 		}
@@ -142,35 +137,30 @@ public class DataRepositoryAotMetadataService {
 		return Optional.empty();
 	}
 	
-	public CompletableFuture<Void> regenerateAotMetadata(IJavaProject jp) {
+	public Command regenerateMetadataCommand(IJavaProject jp) {
 		switch (jp.getProjectBuild().getType()) {
-			case ProjectBuild.MAVEN_PROJECT_TYPE:
-				return CompletableFuture.runAsync(() -> mavenRegenerateMetadata(jp));
-		}
-		return CompletableFuture.failedFuture(new IllegalStateException("Cannot generate AOT metadata"));
-	}
-	
-	private CompletableFuture<Void> mavenRegenerateMetadata(IJavaProject jp) {
-		synchronized(MAVEN_LOCK) {
-			List<String> cmd = new ArrayList<>();
-			Path projectPath = Paths.get(jp.getLocationUri());
-			String mvnw = OS.isWindows() ? "mvnw.bat" : "./mvnw";
-			cmd.add(Files.isRegularFile(projectPath.resolve(mvnw)) ? mvnw : "mvn");
+		case ProjectBuild.MAVEN_PROJECT_TYPE:
+			List<String> goal = new ArrayList<>();
 			if (!IClasspathUtil.getOutputFolders(jp.getClasspath()).map(f -> f.toPath()).allMatch(Files::isDirectory)) {
 				// Check if source is compiled by checking that all output folders exist
 				// If not compiled then add `compile` goal
-				cmd.add("compile");
+				goal.add("compile");
 			}
-			cmd.add("org.springframework.boot:spring-boot-maven-plugin:process-aot");
-			try {
-				return Runtime.getRuntime().exec(cmd.toArray(new String[cmd.size()]), null, projectPath.toFile()).onExit().thenAccept(process -> {
-					if (process.exitValue() != 0) {
-						throw new CompletionException("Failed to generate AOT metadata", new IllegalStateException("Errors running maven command: %s".formatted(String.join(" ", cmd))));
-					}
-				});
-			} catch (IOException e) {
-				throw new CompletionException(e);
-			}
+			goal.add("org.springframework.boot:spring-boot-maven-plugin:process-aot");
+			return buildCmds.executeMavenGoal(jp, String.join(" ", goal));
 		}
+		return null;
+	}
+	
+	public void addListener(Consumer<List<URI>> listener) {
+		listeners.add(listener);
+	}
+	
+	public void removeListener(Consumer<List<URI>> listener) {
+		listeners.remove(listener);
+	}
+	
+	private void notify(List<URI> metadtaFiles) {
+		listeners.forEach(l -> l.accept(metadtaFiles));
 	}
 }

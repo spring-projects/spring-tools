@@ -40,6 +40,7 @@ import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
 import org.springframework.ide.vscode.commons.rewrite.java.AddAnnotationOverMethod;
 import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
@@ -60,12 +61,22 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 	private final RewriteRefactorings refactorings;
 	private final BootJavaConfig config;
 
-	public DataRepositoryAotMetadataCodeLensProvider(JavaProjectFinder projectFinder, DataRepositoryAotMetadataService repositoryMetadataService,
+	public DataRepositoryAotMetadataCodeLensProvider(SimpleLanguageServer server, JavaProjectFinder projectFinder, DataRepositoryAotMetadataService repositoryMetadataService,
 			RewriteRefactorings refactorings, BootJavaConfig config) {
 		this.projectFinder = projectFinder;
 		this.repositoryMetadataService = repositoryMetadataService;
 		this.refactorings = refactorings;
 		this.config = config;
+		
+		listenForAotMetadataChanges(server);
+	}
+	
+	private void listenForAotMetadataChanges(SimpleLanguageServer server) {
+		repositoryMetadataService.addListener(files -> {
+			if (config.isEnabledCodeLensOverDataQueryMethods()) {
+				server.getClient().refreshCodeLenses();
+			}
+		});
 	}
 
 	@Override
@@ -166,7 +177,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 					)));
 					codeLenses.add(new CodeLens(range, impl, null));
 					
-					if (!isQueryAnnotated && methodMetadata != null) {
+					if (!isQueryAnnotated) {
 						String queryStatement = methodMetadata.getQueryStatement();
 						if (queryStatement != null) {
 							Command queryTitle = new Command();
@@ -176,7 +187,9 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 					}
 				}));
 				
-				Command refreshCmd = new Command("Refresh", DataRepositoryAotMetadataService.CMD_REFESH_METADATA, List.of(project.getElementName()));
+				String refreshCmdTitle = codeLenses.isEmpty() ? "Show AOT-generated Implementation, Query, etc..." : "Refresh";
+				Command refreshCmd = repositoryMetadataService.regenerateMetadataCommand(project);
+				refreshCmd.setTitle(refreshCmdTitle);
 				codeLenses.add(new CodeLens(range, refreshCmd, null));
 
 			}

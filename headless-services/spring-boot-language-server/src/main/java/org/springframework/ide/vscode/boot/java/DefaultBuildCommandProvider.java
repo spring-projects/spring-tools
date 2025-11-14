@@ -62,7 +62,7 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		synchronized(MAVEN_LOCK) {
 			String[] cmd = new String[1 + goal.length];
 			Path projectPath = pom.getParent();
-			String mvnw = OS.isWindows() ? "mvnw.bat" : "./mvnw";
+			String mvnw = OS.isWindows() ? "mvnw.cmd" : "./mvnw";
 			cmd[0] = Files.isRegularFile(projectPath.resolve(mvnw)) ? mvnw : "mvn";
 			System.arraycopy(goal, 0, cmd, 1, goal.length);
 			try {

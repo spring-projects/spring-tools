@@ -44,6 +44,10 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 
 	@Override
 	public boolean isApplicable(IJavaProject project) {
+		return isValidProject(project);
+	}
+	
+	static boolean isValidProject(IJavaProject project) {
 		Version springDataJpaVersion = SpringProjectUtil.getDependencyVersion(project, "spring-data-jpa");
 		Version springDataMongoDbVersion = SpringProjectUtil.getDependencyVersion(project, "spring-data-mongodb");
 		return (springDataJpaVersion != null && springDataJpaVersion.getMajor() >= 4)

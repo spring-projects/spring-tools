@@ -36,11 +36,10 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
 import org.springframework.ide.vscode.commons.rewrite.java.AddAnnotationOverMethod;
 import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
@@ -100,32 +99,17 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			return false;
 		}
 		
+		if (!methodBinding.getDeclaringClass().isInterface()) {
+			return false;
+		}
+		
 		if (ASTUtils.findInTypeHierarchy(methodBinding.getDeclaringClass(), Set.of(Constants.REPOSITORY_TYPE)) == null) {
 			return false;
 		}
 		
 		return true;
 	}
-	
-	static boolean isValidProject(IJavaProject jp) {
-		Version version = SpringProjectUtil.getDependencyVersion(jp, "spring-data-commons");
-		return version != null && version.compareTo(new Version(4, 0, 0, null)) >= 0;
-	}
-	
-//	static Optional<String> getDataQuery(DataRepositoryAotMetadataService repositoryMetadataService, IJavaProject project, IMethodBinding methodBinding) {
-//		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
-//		final IMethodBinding method = methodBinding.getMethodDeclaration();
-//
-//		DataRepositoryAotMetadata metadata = repositoryMetadataService.getRepositoryMetadata(project, repositoryClass);
-//
-//		if (metadata != null) {
-//			return Optional.ofNullable(repositoryMetadataService.getQueryStatement(metadata, method));
-//		}
-//		
-//		return Optional.empty();
-//
-//	}
-	
+		
 	static Optional<DataRepositoryAotMetadata> getMetadata(DataRepositoryAotMetadataService dataRepositoryAotMetadataService, IJavaProject project, IMethodBinding methodBinding) {
 		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
 		return dataRepositoryAotMetadataService.getRepositoryMetadata(project, repositoryClass);
@@ -135,7 +119,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		cancelToken.checkCanceled();
 		
 		IJavaProject project = projectFinder.find(document.getId()).get();
-		if (project == null || !isValidProject(project)) {
+		if (project == null || !QueryMethodCodeActionProvider.isValidProject(project)) {
 			return;
 		}
 
@@ -187,10 +171,12 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 					}
 				}));
 				
-				String refreshCmdTitle = codeLenses.isEmpty() ? "Show AOT-generated Implementation, Query, etc..." : "Refresh";
-				Command refreshCmd = repositoryMetadataService.regenerateMetadataCommand(project);
-				refreshCmd.setTitle(refreshCmdTitle);
-				codeLenses.add(new CodeLens(range, refreshCmd, null));
+				if (ProjectBuild.MAVEN_PROJECT_TYPE.equals(project.getProjectBuild().getType())) {
+					String refreshCmdTitle = codeLenses.isEmpty() ? "Show AOT-generated Implementation, Query, etc..." : "Refresh";
+					Command refreshCmd = repositoryMetadataService.regenerateMetadataCommand(project);
+					refreshCmd.setTitle(refreshCmdTitle);
+					codeLenses.add(new CodeLens(range, refreshCmd, null));
+				}
 
 			}
 		} catch (BadLocationException e) {

@@ -15,7 +15,9 @@ import static org.springframework.ide.vscode.commons.protocol.java.Classpath.ENT
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -244,14 +246,14 @@ public class ClasspathUtil {
 //				if (facade != null) {
 //					return ProjectBuild.createMavenBuild(facade.getPom().getLocationURI().toASCIIString());
 //				} else {
-					return ProjectBuild.createMavenBuild(jp.getProject().getFile("pom.xml").getLocationURI().toASCIIString());
+					return ProjectBuild.createMavenBuild(fromIFile(jp.getProject().getFile("pom.xml")).toASCIIString());
 //				}
 			} else if (GradleProjectNature.isPresentOn(jp.getProject())) {
 				IFile g = jp.getProject().getFile("build.gradle");
 				if (!g.exists()) {
 					g = jp.getProject().getFile("build.gradle.kts");
 				}
-				return ProjectBuild.createGradleBuild(g.exists() ? g.getLocationURI().toASCIIString() : null);
+				return ProjectBuild.createGradleBuild(g.exists() ? fromIFile(g).toASCIIString() : null);
 			} else {
 				try {
 					for (IClasspathEntry e : jp.getRawClasspath()) {
@@ -271,7 +273,7 @@ public class ClasspathUtil {
 			if (likelyMaven) {
 				IFile f = jp.getProject().getFile("pom.xml");
 				if (f.exists()) {
-					return ProjectBuild.createMavenBuild(f.getLocationURI().toASCIIString());
+					return ProjectBuild.createMavenBuild(fromIFile(f).toASCIIString());
 				}
 			} else if (likelyGradle) {
 				IFile g = jp.getProject().getFile("build.gradle");
@@ -279,12 +281,16 @@ public class ClasspathUtil {
 					g = jp.getProject().getFile("build.gradle.kts");
 				}
 				if (g.exists()) {
-					return ProjectBuild.createGradleBuild(g.getLocationURI().toASCIIString());
+					return ProjectBuild.createGradleBuild(fromIFile(g).toASCIIString());
 				}
 			}
 //		} catch (JavaModelException e) {
 //			// ignore
 //		}
 		return new ProjectBuild(null, null);
+	}
+	
+	private static URI fromIFile(IFile f) {
+		return Paths.get(f.getLocationURI()).toUri();
 	}
 }

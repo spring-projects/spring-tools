@@ -107,6 +107,10 @@
             class="org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor"
             commandId="org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor">
       </handler>
+      <handler
+            class="org.springframework.tooling.ls.eclipse.commons.commands.ExecuteMavenGoalHandler"
+            commandId="maven.goal.custom">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
@@ -193,6 +197,22 @@
                id="projectName"
                name="projectName"
                optional="false">
+         </commandParameter>
+      </command>
+      <command
+            id="maven.goal.custom"
+            name="Explain with AI">
+         <commandParameter
+               id="org.eclipse.lsp4e.path.param"
+               name="Resource Path (unnecessary, only to make lsp4e happy)"
+               optional="true"
+               typeId="org.eclipse.lsp4e.pathParameterType">
+         </commandParameter>
+         <commandParameter
+               id="org.eclipse.lsp4e.command.param"
+               name="Command id (unnecessary, only to make lsp4e happy)"
+               optional="true"
+               typeId="org.eclipse.lsp4e.commandParameterType">
          </commandParameter>
       </command>
    </extension>

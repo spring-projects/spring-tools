@@ -100,8 +100,10 @@ public class DataRepositoryAotMetadataCodeLensProviderMongoDbTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		List<CodeLens> cls = editor.getCodeLenses("usersWithUsernamesStartingWith", 1);
-		assertEquals(1, cls.size());
+		assertEquals(2, cls.size());
 		assertEquals("Implementation", cls.get(0).getCommand().getTitle());
 		assertEquals(1, cls.get(0).getCommand().getArguments().size());
+		assertEquals("Refresh", cls.get(1).getCommand().getTitle());
+		assertEquals(2, cls.get(1).getCommand().getArguments().size());
 	}
 }

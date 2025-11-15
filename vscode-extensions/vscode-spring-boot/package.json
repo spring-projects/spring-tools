@@ -1501,6 +1501,7 @@
     "typescript": "^4.8.0"
   },
   "extensionDependencies": [
-    "redhat.java"
+    "redhat.java",
+    "vscjava.vscode-maven"
   ]
 }

@@ -87,7 +87,7 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 		
 		Path metadataFile = Paths.get(testProject.getLocationUri()).resolve("target/spring-aot/main/resources/example/springdata/aot/UserRepository.json");
 		
-		// Trigger file update and wait for the vene thandling to complete
+		// Trigger file update and wait for the event handling to complete
 		assertTrue(Files.isRegularFile(metadataFile), "AOT mtadata JSON file should be generated");
 		harness.createFile(metadataFile.toUri().toASCIIString());
 		harness.getServer().getAsync().waitForAll();

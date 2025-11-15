@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.Command;
 import org.slf4j.Logger;
@@ -114,6 +115,22 @@ public class DataRepositoryAotMetadataService {
 					notify(removedEntries);
 				}
 			});
+			fileObserver.onFilesDeleted(List.of("**/spring-aot", "**/spring-aot/main", "**/spring-aot/main/resources"), changedFiles -> {
+				// If `spring-aot` folder is deleted VSCode would only notify about the folder deletion, no events for each contained file
+				for (String fileUri : changedFiles) {
+					URI uri = URI.create(fileUri);
+					Path path = Paths.get(uri);
+					List<URI> removedEntries = metadataCache.keySet().stream()
+						.filter(p -> p.startsWith(path))
+						.filter(p -> metadataCache.remove(p).isPresent())
+						.map(p -> p.toUri())
+						.toList();
+					if (!removedEntries.isEmpty()) {
+						log.info("Spring AOT Metadata refreshed: %s".formatted(removedEntries.stream().map(p -> p.toString()).collect(Collectors.joining(", "))));
+						notify(removedEntries);
+					}
+				}
+			});
 		}
 	}
 	
@@ -141,7 +158,13 @@ public class DataRepositoryAotMetadataService {
 		switch (jp.getProjectBuild().getType()) {
 		case ProjectBuild.MAVEN_PROJECT_TYPE:
 			List<String> goal = new ArrayList<>();
-			if (!IClasspathUtil.getOutputFolders(jp.getClasspath()).map(f -> f.toPath()).allMatch(Files::isDirectory)) {
+			if (!IClasspathUtil.getOutputFolders(jp.getClasspath()).map(f -> f.toPath()).filter(Files::isDirectory).flatMap(d -> {
+				try {
+					return Files.walk(d);
+				} catch (IOException e) {
+					return Stream.empty();
+				}
+			}).anyMatch(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".class"))) {
 				// Check if source is compiled by checking that all output folders exist
 				// If not compiled then add `compile` goal
 				goal.add("compile");

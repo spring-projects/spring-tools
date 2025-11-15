@@ -78,7 +78,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJpaTest {
 		List<CodeLens> cls = editor.getCodeLenses("findUserByUsername", 1);
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
 		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
-		assertEquals("SELECT u FROM example.springdata.aot.User u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
+		assertEquals("SELECT u FROM users u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
 	}
 
 	@Test

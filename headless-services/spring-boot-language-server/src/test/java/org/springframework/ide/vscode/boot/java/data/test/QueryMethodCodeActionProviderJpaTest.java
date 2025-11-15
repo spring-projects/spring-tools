@@ -85,7 +85,7 @@ public class QueryMethodCodeActionProviderJpaTest {
 		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
 		assertEquals(
-				"@Query(\"SELECT u FROM example.springdata.aot.User u WHERE u.lastname LIKE :lastname ESCAPE '\\\\' ORDER BY u.firstname asc\")",
+				"@Query(\"SELECT u FROM users u WHERE u.lastname LIKE :lastname ESCAPE '\\\\' ORDER BY u.firstname asc\")",
 				docEdit.getEdits().get(0).getNewText().trim());
 		assertEquals(filePath.toUri().toASCIIString(), docEdit.getTextDocument().getUri());
 	}

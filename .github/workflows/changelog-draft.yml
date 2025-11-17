@@ -23,7 +23,7 @@ jobs:
           distribution: 'temurin'
       - name: Download Changelog Generator
         run: |
-          wget https://github.com/spring-io/github-changelog-generator/releases/download/v0.0.8/github-changelog-generator.jar
+          wget https://github.com/spring-io/github-changelog-generator/releases/download/v0.0.12/github-changelog-generator.jar
       - name: Push to wiki
         run: |
           changelog_filename=generated-changelog.md

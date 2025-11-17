@@ -27,7 +27,7 @@ jobs:
       - name: Push to wiki
         run: |
           changelog_filename=generated-changelog.md
-          java -jar github-changelog-generator.jar --changelog.repository=spring-projects/sts4 ${{ inputs.release }} ./${changelog_filename}
+          java -jar github-changelog-generator.jar --changelog.repository=spring-projects/spring-tools ${{ inputs.release }} ./${changelog_filename}
           cat $changelog_filename | cat - Changelog.md > new_Changelog.md
           mv new_Changelog.md Changelog.md
           cat Changelog.md

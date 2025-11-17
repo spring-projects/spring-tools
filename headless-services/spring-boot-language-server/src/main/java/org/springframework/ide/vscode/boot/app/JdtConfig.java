@@ -236,7 +236,8 @@ public class JdtConfig {
 		switch(LspClient.currentClient()) {
 		case VSCODE:
 		case THEIA:
-			return new VSCodeBuildCommandProvider();
+			return new DefaultBuildCommandProvider(server);
+//			return new VSCodeBuildCommandProvider();
 		case ECLIPSE:
 			return new VSCodeBuildCommandProvider();
 		default:

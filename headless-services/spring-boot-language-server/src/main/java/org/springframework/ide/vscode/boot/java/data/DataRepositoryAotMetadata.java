@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -20,23 +21,25 @@ import org.springframework.ide.vscode.commons.java.parser.JLRMethodParser.JLRMet
 public record DataRepositoryAotMetadata (String name, String type, DataRepositoryModule module, IDataRepositoryAotMethodMetadata[] methods) {
 	
 	public Optional<IDataRepositoryAotMethodMetadata> findMethod(IMethodBinding method) {
-		String name = method.getName();
+		String methodName = method.getName();
 		
-		for (IDataRepositoryAotMethodMetadata methodMetadata : methods()) {
-			
-			if (methodMetadata.getName() != null && methodMetadata.getName().equals(name)) {
-
-				String signature = methodMetadata.getSignature();
-				JLRMethod parsedMethodSignature = JLRMethodParser.parse(signature);
+		if (methodName != null) {
+			for (IDataRepositoryAotMethodMetadata methodMetadata : methods()) {
 				
-				if (parsedMethodSignature.getFQClassName().equals(name())
-						&& parsedMethodSignature.getMethodName().equals(method.getName())
-						&& parsedMethodSignature.getReturnType().equals(method.getReturnType().getQualifiedName())
-						&& parameterMatches(parsedMethodSignature, method)) {
-					return Optional.of(methodMetadata);
+				if (methodMetadata.getName() != null && methodMetadata.getName().equals(methodName)) {
+
+					String signature = methodMetadata.getSignature();
+					JLRMethod parsedMethodSignature = JLRMethodParser.parse(signature);
+									
+					if (Objects.equals(name(), parsedMethodSignature.getFQClassName())
+							&& methodName.equals(parsedMethodSignature.getMethodName())
+							&& Objects.equals(parsedMethodSignature.getReturnType(), method.getReturnType().getQualifiedName())
+							&& parameterMatches(parsedMethodSignature, method)) {
+						return Optional.of(methodMetadata);
+					}
 				}
 			}
-		}
+		}		
 		
 		return Optional.empty();
 	}

@@ -144,7 +144,8 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 			if (mb != null && hierarchyAnnot != null) {
 				
-				getMetadata(repositoryMetadataService, project, mb).ifPresent(metadata -> metadata.findMethod(mb).ifPresent(methodMetadata -> {
+				Optional<DataRepositoryAotMetadata> optMetadata = getMetadata(repositoryMetadataService, project, mb);
+				optMetadata.ifPresent(metadata -> metadata.findMethod(mb).ifPresent(methodMetadata -> {
 					boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY)
 							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY);
 					
@@ -172,7 +173,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				}));
 				
 				if (ProjectBuild.MAVEN_PROJECT_TYPE.equals(project.getProjectBuild().getType())) {
-					String refreshCmdTitle = codeLenses.isEmpty() ? "Show AOT-generated Implementation, Query, etc..." : "Refresh";
+					String refreshCmdTitle = optMetadata.map(m -> "Refresh").orElse("Show AOT-generated Implementation, Query, etc...");
 					Command refreshCmd = repositoryMetadataService.regenerateMetadataCommand(project);
 					refreshCmd.setTitle(refreshCmdTitle);
 					codeLenses.add(new CodeLens(range, refreshCmd, null));

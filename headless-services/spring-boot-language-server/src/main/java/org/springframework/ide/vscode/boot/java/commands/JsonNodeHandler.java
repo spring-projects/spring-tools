@@ -164,7 +164,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	}
 
 	private List<Node> createTypeSubnotes(Node parent, StereotypeClassElement type) {
-		if (System.getProperty("enable-structure-view-details") == null) {
+		if (System.getProperty("disable-structure-view-details") != null) {
 			return Collections.emptyList();
 		}
 		

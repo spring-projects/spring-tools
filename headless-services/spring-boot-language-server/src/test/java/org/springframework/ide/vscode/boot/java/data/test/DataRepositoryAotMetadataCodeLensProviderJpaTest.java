@@ -78,7 +78,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJpaTest {
 		List<CodeLens> cls = editor.getCodeLenses("findUserByUsername", 1);
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
 		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
-		assertEquals("SELECT u FROM example.springdata.aot.User u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
+		assertEquals("SELECT u FROM users u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
 	}
 
 	@Test
@@ -88,8 +88,10 @@ public class DataRepositoryAotMetadataCodeLensProviderJpaTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
 		
 		List<CodeLens> cls = editor.getCodeLenses("usersWithUsernamesStartingWith", 1);
-		assertEquals(1, cls.size());
+		assertEquals(2, cls.size());
 		assertEquals("Implementation", cls.get(0).getCommand().getTitle());
 		assertEquals(1, cls.get(0).getCommand().getArguments().size());
+		assertEquals("Refresh", cls.get(1).getCommand().getTitle());
+		assertEquals(2, cls.get(1).getCommand().getArguments().size());
 	}
 }

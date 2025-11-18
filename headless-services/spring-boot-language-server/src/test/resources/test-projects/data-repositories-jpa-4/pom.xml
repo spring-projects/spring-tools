@@ -11,7 +11,7 @@
 	</parent>
 
 	<groupId>org.example</groupId>
-	<artifactId>aot-data-repositories-jpa</artifactId>
+	<artifactId>data-repositories-jpa-4</artifactId>
 
 	<properties>
 		<java.version>21</java.version>
@@ -82,14 +82,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>process-aot</id>
-						<goals>
-							<goal>process-aot</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>

@@ -46,6 +46,7 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheVoid;
+import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.JavaDefinitionHandler;
 import org.springframework.ide.vscode.boot.java.beans.DependsOnDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.beans.NamedDefinitionProvider;
@@ -436,8 +437,8 @@ public class BootLanguageServerBootApp {
 	}
 	
 	@Bean
-	DataRepositoryAotMetadataService dataAotMetadataService() {
-		return new DataRepositoryAotMetadataService();
+	DataRepositoryAotMetadataService dataAotMetadataService(FileObserver fileObserver, JavaProjectFinder projectFinder, BuildCommandProvider buildCmds) {
+		return new DataRepositoryAotMetadataService(fileObserver, projectFinder, buildCmds);
 	}
 	
 	@Bean

@@ -11,19 +11,21 @@
 package org.springframework.ide.vscode.boot.java.data.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
-import org.eclipse.lsp4j.TextDocumentEdit;
+import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.eclipse.lsp4j.WorkspaceEdit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,35 +34,36 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
-import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import com.google.gson.JsonElement;
+import com.google.gson.Gson;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(SymbolProviderTestConf.class)
-public class QueryMethodCodeActionProviderJpaTest {
-
+public class DataRepositoryAotMetadataCodeLensProviderTest {
+	
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
-	@Autowired private RewriteRefactorings refactorings;
 	
 	private IJavaProject testProject;
 
 	@BeforeEach
 	public void setup() throws Exception {
-		testProject = ProjectsHarness.INSTANCE.mavenProject("aot-data-repositories-jpa");
+		testProject = ProjectsHarness.INSTANCE.mavenProject("data-repositories-jpa-4");
 		harness.useProject(testProject);
 		harness.intialize(null);
+		
+		harness.changeConfiguration(new Settings(new Gson()
+				.toJsonTree(Map.of("boot-java", Map.of("java", Map.of("codelens-over-query-methods", true))))));
 
 		// trigger project creation
 		projectFinder.find(new TextDocumentIdentifier(testProject.getLocationUri().toASCIIString())).get();
@@ -70,35 +73,31 @@ public class QueryMethodCodeActionProviderJpaTest {
 	}
 	
 	@Test
-	void convertToQueryCodeAction() throws Exception {
+	void generateMetadataCodeLens() throws Exception {		
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/example/springdata/aot/UserRepository.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA,
-				new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
-
-		List<CodeAction> codeActions = editor.getCodeActions("findUserByLastnameStartingWith", 1);
-		assertEquals(1, codeActions.size());
-		CodeAction ca = codeActions.get(0);
-		assertEquals("Add `@Query`", ca.getLabel());
-		Command cmd = ca.getCommand();
-		assertEquals(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX, cmd.getArguments().get(0));
-		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);
-		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
-		assertEquals(
-				"@Query(\"SELECT u FROM users u WHERE u.lastname LIKE :lastname ESCAPE '\\\\' ORDER BY u.firstname asc\")",
-				docEdit.getEdits().get(0).getNewText().trim());
-		assertEquals(filePath.toUri().toASCIIString(), docEdit.getTextDocument().getUri());
+		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
+		
+		List<CodeLens> cls = editor.getCodeLenses("findUserByUsername", 1);
+		assertEquals(1,  cls.size());
+		Command cmd = cls.get(0).getCommand();
+		assertEquals("Show AOT-generated Implementation, Query, etc...", cmd.getTitle());
+		
+		harness.getServer().getWorkspaceService().executeCommand(new ExecuteCommandParams(cmd.getCommand(), cmd.getArguments())).get();
+		
+		Path metadataFile = Paths.get(testProject.getLocationUri()).resolve("target/spring-aot/main/resources/example/springdata/aot/UserRepository.json");
+		
+		// Trigger file update and wait for the event handling to complete
+		assertTrue(Files.isRegularFile(metadataFile), "AOT mtadata JSON file should be generated");
+		harness.createFile(metadataFile.toUri().toASCIIString());
+		harness.getServer().getAsync().waitForAll();
+		
+		cls = editor.getCodeLenses("findUserByUsername", 1);
+		assertTrue(cls.size() > 1);
+		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
+		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
+		assertEquals("SELECT u FROM users u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
+		assertEquals("Refresh", cls.get(3).getCommand().getTitle());
 	}
 
-	@Test
-	void noConvertToQueryCodeAction() throws Exception {
-		Path filePath = Paths.get(testProject.getLocationUri())
-				.resolve("src/main/java/example/springdata/aot/UserRepository.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA,
-				new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
-
-		List<CodeAction> codeActions = editor.getCodeActions("usersWithUsernamesStartingWith", 1);
-		assertEquals(0, codeActions.size());
-	}
-	
 }

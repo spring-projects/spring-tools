@@ -54,4 +54,6 @@ public interface UserRepository extends CrudRepository<User, String>, QuerydslPr
     @Query("SELECT u FROM example.springdata.aot.User u WHERE u.username LIKE ?1%")
     List<User> usersWithUsernamesStartingWith(String username);
 
+    List<User> findAll();
+
 }

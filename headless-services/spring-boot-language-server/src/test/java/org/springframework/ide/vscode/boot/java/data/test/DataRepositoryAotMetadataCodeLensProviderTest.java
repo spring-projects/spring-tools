@@ -82,6 +82,10 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 		assertEquals(1,  cls.size());
 		Command cmd = cls.get(0).getCommand();
 		assertEquals("Show AOT-generated Implementation, Query, etc...", cmd.getTitle());
+		cls = editor.getCodeLenses("findAll", 1);
+		assertEquals(1,  cls.size());
+		cmd = cls.get(0).getCommand();
+		assertEquals("Show AOT-generated Implementation, Query, etc...", cmd.getTitle());
 		
 		harness.getServer().getWorkspaceService().executeCommand(new ExecuteCommandParams(cmd.getCommand(), cmd.getArguments())).get();
 		
@@ -97,7 +101,10 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
 		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
 		assertEquals("SELECT u FROM users u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
-		assertEquals("Refresh", cls.get(3).getCommand().getTitle());
+		assertEquals("Refresh AOT Metadata", cls.get(3).getCommand().getTitle());
+
+		cls = editor.getCodeLenses("findAll", 1);
+		assertTrue(cls.isEmpty(), "Node CodeLens expected. Not even `Refresh AOT Metadata'");
 	}
 
 }

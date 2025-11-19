@@ -145,7 +145,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			if (mb != null && hierarchyAnnot != null) {
 				
 				Optional<DataRepositoryAotMetadata> optMetadata = getMetadata(repositoryMetadataService, project, mb);
-				optMetadata.ifPresent(metadata -> metadata.findMethod(mb).ifPresent(methodMetadata -> {
+				optMetadata.ifPresentOrElse(metadata -> metadata.findMethod(mb).ifPresent(methodMetadata -> {
 					boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY)
 							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY);
 					
@@ -170,20 +170,27 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 							codeLenses.add(new CodeLens(range, queryTitle, null));
 						}
 					}
-				}));
+					
+					createRefreshCodeLens(project, "Refresh AOT Metadata", range).ifPresent(codeLenses::add);
+				}), () -> createRefreshCodeLens(project, "Show AOT-generated Implementation, Query, etc...", range)
+						.ifPresent(codeLenses::add)
+				);
 				
-				if (ProjectBuild.MAVEN_PROJECT_TYPE.equals(project.getProjectBuild().getType())) {
-					String refreshCmdTitle = optMetadata.map(m -> "Refresh").orElse("Show AOT-generated Implementation, Query, etc...");
-					Command refreshCmd = repositoryMetadataService.regenerateMetadataCommand(project);
-					refreshCmd.setTitle(refreshCmdTitle);
-					codeLenses.add(new CodeLens(range, refreshCmd, null));
-				}
 
 			}
 		} catch (BadLocationException e) {
 			log.error("bad location while calculating code lens for data repository query method", e);
 		}
 		return codeLenses;
+	}
+	
+	private Optional<CodeLens> createRefreshCodeLens(IJavaProject project, String title, Range range) {
+		if (ProjectBuild.MAVEN_PROJECT_TYPE.equals(project.getProjectBuild().getType())) {
+			Command refreshCmd = repositoryMetadataService.regenerateMetadataCommand(project);
+			refreshCmd.setTitle(title);
+			return Optional.of(new CodeLens(range, refreshCmd, null));
+		}
+		return Optional.empty();
 	}
 
 	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata) {

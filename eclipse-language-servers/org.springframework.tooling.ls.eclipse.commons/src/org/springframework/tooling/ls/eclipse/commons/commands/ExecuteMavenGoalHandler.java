@@ -52,7 +52,6 @@ public class ExecuteMavenGoalHandler extends AbstractHandler {
 			try {
 				String pomPath = (String) cmd.getArguments().get(0);
 				String goal = (String) cmd.getArguments().get(1);
-				System.out.println("Project: '%s', goal: '%s'".formatted(pomPath, goal));
 
 				IResource pomFile = LSPEclipseUtils.findResourceFor(Paths.get(pomPath).toUri());
 				ILaunchConfiguration launchConfig = createLaunchConfiguration(pomFile.getParent(), goal);

@@ -39,7 +39,6 @@ import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
-import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
 import org.springframework.ide.vscode.commons.rewrite.java.AddAnnotationOverMethod;
 import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
@@ -185,12 +184,10 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 	}
 	
 	private Optional<CodeLens> createRefreshCodeLens(IJavaProject project, String title, Range range) {
-		if (ProjectBuild.MAVEN_PROJECT_TYPE.equals(project.getProjectBuild().getType())) {
-			Command refreshCmd = repositoryMetadataService.regenerateMetadataCommand(project);
+		return repositoryMetadataService.regenerateMetadataCommand(project).map(refreshCmd -> {
 			refreshCmd.setTitle(title);
-			return Optional.of(new CodeLens(range, refreshCmd, null));
-		}
-		return Optional.empty();
+			return new CodeLens(range, refreshCmd, null);
+		});
 	}
 
 	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata) {

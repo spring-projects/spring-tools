@@ -137,10 +137,20 @@ public class DataRepositoryAotMetadataService {
 	public Optional<DataRepositoryAotMetadata> getRepositoryMetadata(IJavaProject project, String repositoryType) {
 		String metadataFilePath = repositoryType.replace('.', '/') + ".json";
 		
-		return IClasspathUtil.getOutputFolders(project.getClasspath())
-			.map(outputFolder -> outputFolder.getParentFile().toPath().resolve("spring-aot/main/resources/").resolve(metadataFilePath))
-			.findFirst()
-			.flatMap(filePath -> metadataCache.computeIfAbsent(filePath, this::readMetadataFile));
+		switch (project.getProjectBuild().getType()) {
+		case ProjectBuild.MAVEN_PROJECT_TYPE:
+			return IClasspathUtil.getOutputFolders(project.getClasspath())
+					.map(outputFolder -> outputFolder.getParentFile().toPath().resolve("spring-aot/main/resources/").resolve(metadataFilePath))
+					.findFirst()
+					.flatMap(filePath -> metadataCache.computeIfAbsent(filePath, this::readMetadataFile));
+		case ProjectBuild.GRADLE_PROJECT_TYPE:
+			return IClasspathUtil.getSourceFolders(project.getClasspath())
+				.filter(f -> f.isDirectory() && "aotResources".equals(f.getName()))
+				.findFirst()
+				.map(f -> f.toPath().resolve(metadataFilePath))
+				.flatMap(filePath -> metadataCache.computeIfAbsent(filePath, this::readMetadataFile));
+		}
+		return Optional.empty();
 	}
 	
 	private Optional<DataRepositoryAotMetadata> readMetadataFile(Path filePath) {
@@ -154,7 +164,7 @@ public class DataRepositoryAotMetadataService {
 		return Optional.empty();
 	}
 	
-	public Command regenerateMetadataCommand(IJavaProject jp) {
+	Optional<Command> regenerateMetadataCommand(IJavaProject jp) {
 		switch (jp.getProjectBuild().getType()) {
 		case ProjectBuild.MAVEN_PROJECT_TYPE:
 			List<String> goal = new ArrayList<>();
@@ -170,9 +180,24 @@ public class DataRepositoryAotMetadataService {
 				goal.add("compile");
 			}
 			goal.add("org.springframework.boot:spring-boot-maven-plugin:process-aot");
-			return buildCmds.executeMavenGoal(jp, String.join(" ", goal));
+			return Optional.ofNullable(buildCmds.executeMavenGoal(jp, String.join(" ", goal)));
+//		case ProjectBuild.GRADLE_PROJECT_TYPE:
+//			List<String> command = new ArrayList<>();
+//			if (!IClasspathUtil.getOutputFolders(jp.getClasspath()).map(f -> f.toPath()).filter(Files::isDirectory).flatMap(d -> {
+//				try {
+//					return Files.walk(d);
+//				} catch (IOException e) {
+//					return Stream.empty();
+//				}
+//			}).anyMatch(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".class"))) {
+//				// Check if source is compiled by checking that all output folders exist
+//				// If not compiled then add `build` task
+//				command.add("build");
+//			}
+//			command.add("processAot");
+//			return Optional.ofNullable(buildCmds.executeGradleBuild(jp, String.join(" ", command)));
 		}
-		return null;
+		return Optional.empty();
 	}
 	
 	public void addListener(Consumer<List<URI>> listener) {

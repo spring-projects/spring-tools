@@ -27,4 +27,13 @@ public class VSCodeBuildCommandProvider implements BuildCommandProvider {
 		return cmd;
 	}
 
+	@Override
+	public Command executeGradleBuild(IJavaProject project, String command) {
+		Command cmd = new Command();
+		cmd.setCommand("gradle.runBuild");
+		cmd.setTitle("Execute Gradle Build");
+		cmd.setArguments(List.of(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), command));
+		return cmd;
+	}
+
 }

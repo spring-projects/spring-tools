@@ -26,7 +26,9 @@ Require-Bundle: org.eclipse.jdt.launching;bundle-version="3.8.0",
  org.eclipse.swt,
  com.google.gson,
  org.eclipse.m2e.launching,
- org.eclipse.m2e.core
+ org.eclipse.m2e.core,
+ org.eclipse.buildship.core,
+ org.gradle.toolingapi
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-ActivationPolicy: lazy
 Export-Package: org.springframework.tooling.ls.eclipse.commons,

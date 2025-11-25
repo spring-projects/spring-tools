@@ -28,16 +28,32 @@ import com.google.gson.JsonPrimitive;
 public class DefaultBuildCommandProvider implements BuildCommandProvider {
 	
 	private static final String CMD_EXEC_MAVEN_GOAL = "sts.maven.goal";
+	private static final String CMD_EXEC_GRADLE_BUILD = "sts.gradle.build";
 	
 	private static final Object MAVEN_LOCK = new Object(); 
 	
 	public DefaultBuildCommandProvider(SimpleLanguageServer server) {
+		
+		// Execute Maven Goal
 		server.onCommand(CMD_EXEC_MAVEN_GOAL, params -> {
 			String pomPath = extractString(params.getArguments().get(0));
 			String goal = extractString(params.getArguments().get(1));
 			return CompletableFuture.runAsync(() -> {
 				try {
-					mavenRegenerateMetadata(Paths.get(pomPath), goal.trim().split("\\s+")).get();
+					executeMaven(Paths.get(pomPath), goal.trim().split("\\s+")).get();
+				} catch (Exception e) {
+					throw new CompletionException(e);
+				}
+			});
+		});
+		
+		// Execute Gradle Build
+		server.onCommand(CMD_EXEC_GRADLE_BUILD, params -> {
+			String gradleBuildPath = extractString(params.getArguments().get(0));
+			String command = extractString(params.getArguments().get(1));
+			return CompletableFuture.runAsync(() -> {
+				try {
+					executeGradle(Paths.get(gradleBuildPath), command.trim().split("\\s+")).get();
 				} catch (Exception e) {
 					throw new CompletionException(e);
 				}
@@ -54,11 +70,20 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		return cmd;
 	}
 	
+	@Override
+	public Command executeGradleBuild(IJavaProject project, String command) {
+		Command cmd = new Command();
+		cmd.setCommand(CMD_EXEC_GRADLE_BUILD);
+		cmd.setTitle("Execute Gradle Build");
+		cmd.setArguments(List.of(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), command));
+		return cmd;
+	}
+
 	private static String extractString(Object o) {
 		return o instanceof JsonPrimitive ? ((JsonPrimitive) o).getAsString() : o.toString();
 	}
 
-	private CompletableFuture<Void> mavenRegenerateMetadata(Path pom, String[] goal) {
+	private CompletableFuture<Void> executeMaven(Path pom, String[] goal) {
 		synchronized(MAVEN_LOCK) {
 			String[] cmd = new String[1 + goal.length];
 			Path projectPath = pom.getParent();
@@ -77,5 +102,20 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		}
 	}
 
-
+	private CompletableFuture<Void> executeGradle(Path gradleBuildPath, String[] command) {
+		String[] cmd = new String[1 + command.length];
+		Path projectPath = gradleBuildPath.getParent();
+		Path mvnw = projectPath.resolve(OS.isWindows() ? "gradlew.cmd" : "gradlew");
+		cmd[0] = Files.isRegularFile(mvnw) ? mvnw.toFile().toString() : "gradle";
+		System.arraycopy(command, 0, cmd, 1, command.length);
+		try {
+			return Runtime.getRuntime().exec(cmd, null, projectPath.toFile()).onExit().thenAccept(process -> {
+				if (process.exitValue() != 0) {
+					throw new CompletionException("Failed to execute Gradle build", new IllegalStateException("Errors running gradle command: %s".formatted(String.join(" ", cmd))));
+				}
+			});
+		} catch (IOException e) {
+			throw new CompletionException(e);
+		}
+	}
 }

@@ -17,4 +17,6 @@ public interface BuildCommandProvider {
 	
 	Command executeMavenGoal(IJavaProject project, String goal);
 	
+	Command executeGradleBuild(IJavaProject project, String command);
+	
 }

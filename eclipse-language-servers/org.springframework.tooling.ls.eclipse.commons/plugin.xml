@@ -111,6 +111,10 @@
             class="org.springframework.tooling.ls.eclipse.commons.commands.ExecuteMavenGoalHandler"
             commandId="maven.goal.custom">
       </handler>
+      <handler
+            class="org.springframework.tooling.ls.eclipse.commons.commands.ExecuteGradleTaskHandler"
+            commandId="gradle.runBuild">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
@@ -201,7 +205,23 @@
       </command>
       <command
             id="maven.goal.custom"
-            name="Explain with AI">
+            name="Execute Maven Goal">
+         <commandParameter
+               id="org.eclipse.lsp4e.path.param"
+               name="Resource Path (unnecessary, only to make lsp4e happy)"
+               optional="true"
+               typeId="org.eclipse.lsp4e.pathParameterType">
+         </commandParameter>
+         <commandParameter
+               id="org.eclipse.lsp4e.command.param"
+               name="Command id (unnecessary, only to make lsp4e happy)"
+               optional="true"
+               typeId="org.eclipse.lsp4e.commandParameterType">
+         </commandParameter>
+      </command>
+      <command
+            id="gradle.runBuild"
+            name="Execute Gradle Build">
          <commandParameter
                id="org.eclipse.lsp4e.path.param"
                name="Resource Path (unnecessary, only to make lsp4e happy)"

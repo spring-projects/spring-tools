@@ -13,6 +13,7 @@
 -Dosgi.dataAreaRequiresExplicitInit=true
 -Declipse.e4.inject.javax.warning=false
 -Dorg.slf4j.simpleLogger.defaultLogLevel=off
+-Declipse.platform.mergeTrust=true
 -Dsun.java.command=SpringToolsForEclipse
 -Dp2.trustedAuthorities=https://download.eclipse.org,https://archive.eclipse.org,https://cdn.spring.io
 -XX:+UseG1GC
@@ -26,8 +27,7 @@
 -Dorg.eclipse.swt.internal.carbon.smallFonts
 -Xdock:icon=../Resources/springtools.icns
       </vmArgsMac>
-      <vmArgsWin>-Djavax.net.ssl.trustStoreType=Windows-ROOT
--Djavax.net.ssl.trustStore=NONE
+      <vmArgsWin>
       </vmArgsWin>
    </launcherArgs>
 

@@ -1,3 +1,108 @@
+## 2025-12-02 (5.0.0 RC2, incl. language servers version 2.0.0 RC2)
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ [structure view] enable symbol-based child nodes by default [#1717](https://github.com/spring-projects/spring-tools/issues/1717)
+* _(Spring Boot)_ [aot repositories] improve generation of aot metadata [#1550](https://github.com/spring-projects/spring-tools/issues/1550)
+
+## 2025-11-18 (5.0.0 RC1, incl. language servers version 2.0.0 RC1)
+
+#### important highlights
+
+* _(Spring Boot)_ Logical Structure view supporting jMolecules stereotypes
+* _(Spring Boot)_ Spring Framework 7 and Boot 4 support: API versioning, `BeanRegistrar`, Spring Data AOT, JSpecify
+* _(Spring Boot)_ AI Support: Copilot, Cursor IDE, embedded MCP server (experimental)
+* _(Spring Boot)_ Leaner Spring Boot Language Server JAR
+
+#### updates to the Spring Tools for Eclipse distribution
+
+* updated to the latest Eclipse 2025-12 milestones (including support for JDK 25)
+
+#### all fixes and improvements in detail
+
+- _(Spring Boot)_ [structure view] add expand/collapse all actions [#1689](https://github.com/spring-projects/spring-tools/issues/1689)
+- _(Spring Boot)_ [structure view] icons for Eclipse variant don't work for dark mode [#1688](https://github.com/spring-projects/spring-tools/issues/1688)
+- _(Spring Boot)_ update core open-rewrite to the latest version [#1678](https://github.com/spring-projects/spring-tools/issues/1678)
+- _(Spring Boot)_ [structure view] main application package is not yet found for annotation declarations [#1675](https://github.com/spring-projects/spring-tools/issues/1675)
+- _(Spring Boot)_ [structure view] projects disappear from structure view [#1677](https://github.com/spring-projects/spring-tools/issues/1677)
+- _(Spring Boot)_ [structure view] create project structure view UI for Eclipse [#1493](https://github.com/spring-projects/spring-tools/issues/1493)
+- _(Spring Boot)_ [structure view] create project structure view UI for VSCode [#1492](https://github.com/spring-projects/spring-tools/issues/1492)
+- _(Spring Boot)_ [structure view] show details of types as sub-nodes [#1644](https://github.com/spring-projects/spring-tools/issues/1644)
+- _(Spring Boot)_ [structure view] keep expanded/collapsed state of tree nodes when updating the tree [#1643](https://github.com/spring-projects/spring-tools/issues/1643)
+- _(Spring Boot)_ [structure view] show catalog definition location when hovering over a stereotype node [#1642](https://github.com/spring-projects/spring-tools/issues/1642)
+- _(Spring Boot)_ [structure view] allow users to define stereotypes in source code [#1640](https://github.com/spring-projects/spring-tools/issues/1640)
+- _(Spring Boot)_ take BasePathAwareController into account as controller class [#1637](https://github.com/spring-projects/spring-tools/issues/1637)
+- _(Spring Boot)_ [structural-view] Polish Modulith support [#1636](https://github.com/spring-projects/spring-tools/pull/1636)
+- _(Spring Boot)_ take Lombok constructor annotations into account for `@Autowired` validation [#1635](https://github.com/spring-projects/spring-tools/issues/1635)
+- _(Spring Boot)_ [structure view] performance optimizations [#1633](https://github.com/spring-projects/spring-tools/issues/1633)
+- _(Spring Boot)_ [structural-view] UI polishing [#1632](https://github.com/spring-projects/spring-tools/pull/1632)
+- _(Spring Boot)_ [structure view] add fallback to standard Spring stereotypes [#1630](https://github.com/spring-projects/spring-tools/issues/1630)
+- _(Spring Boot)_ [structure view] allow users to select the groups to display [#1629](https://github.com/spring-projects/spring-tools/issues/1629)
+- _(Spring Boot)_ [structure view] show all groups by default [#1628](https://github.com/spring-projects/spring-tools/issues/1628)
+- _(Spring Boot)_ [structure view] fine-tune icons for tree nodes [#1627](https://github.com/spring-projects/spring-tools/issues/1627)
+- _(Spring Boot)_ [structure view] update catalog registry when classpath changes [#1626](https://github.com/spring-projects/spring-tools/issues/1626)
+- _(Spring Boot)_ Nesting in Spring symbols view [#1424](https://github.com/spring-projects/spring-tools/issues/1424)
+- _(Spring Boot)_ add Spring Modulith layer in structural view [#1425](https://github.com/spring-projects/spring-tools/issues/1425)
+- _(Spring Boot)_ [structure view] throws NPE when expanding node with non-stereotype subnode [#1708](https://github.com/spring-projects/spring-tools/issues/1708)
+- _(Spring Boot)_ [structure view] Eclipse WIP version throws exception [#1686](https://github.com/spring-projects/spring-tools/issues/1686)
+- _(Spring Boot)_ VSCode can't open files from Logical Structure [#1655](https://github.com/spring-projects/spring-tools/issues/1655)
+- _(Spring Boot)_ [framework 7] API versioning - trigger re-validation when web config in property files changes [#1666](https://github.com/spring-projects/spring-tools/issues/1666)
+- _(Spring Boot)_ [framework 7] API versioning - validation for version attribute (is versioning configured) - for property-based configs [#1658](https://github.com/spring-projects/spring-tools/issues/1658)
+- _(Spring Boot)_ [framework 7] API versioning - validation for path segment configuration collision [#1657](https://github.com/spring-projects/spring-tools/issues/1657)
+- _(Spring Boot)_ [framework 7] API versioning - add support for versioning when using WebFlux [#1654](https://github.com/spring-projects/spring-tools/issues/1654)
+- _(Spring Boot)_ [framework 7] API versioning - take path prefix into account [#1652](https://github.com/spring-projects/spring-tools/issues/1652)
+- _(Spring Boot)_ [framework 7] API versioning - take boot config via properties into account [#1650](https://github.com/spring-projects/spring-tools/issues/1650)
+- _(Spring Boot)_ [framework 7] API versioning - validation for version attribute (is versioning configured) [#1649](https://github.com/spring-projects/spring-tools/issues/1649)
+- _(Spring Boot)_ [framework 7] API versioning - validation for version attribute (parseable) [#1648](https://github.com/spring-projects/spring-tools/issues/1648)
+- _(Spring Boot)_ [framework 7] add support for API versioning [#1600](https://github.com/spring-projects/spring-tools/issues/1600)
+- _(Spring Boot)_ [framework 7] API versioning - version validation fails with non standard version values [#1665](https://github.com/spring-projects/spring-tools/issues/1665)
+- _(Spring Boot)_ [jspecify] configure JSpecify automatically in Eclipse and VSCode [#1624](https://github.com/spring-projects/spring-tools/issues/1624)
+- _(Spring Boot)_ [mcp] integrate a preference to enable/disable the embedded MCP server [#1621](https://github.com/spring-projects/spring-tools/issues/1621)
+- _(Spring Boot)_ [mcp] integrate dynamic port assignment to embedded MCP server [#1620](https://github.com/spring-projects/spring-tools/issues/1620)
+- _(Spring Boot)_ [aot repositories] adapt support to changed naming convention [#1617](https://github.com/spring-projects/spring-tools/issues/1617)
+- _(Spring Boot)_ unify `explain with...` across AI assistants [#1608](https://github.com/spring-projects/spring-tools/issues/1608)
+- _(Spring Boot)_ [mcp] automatically configure embedded mcp server (Windsurf) [#1597](https://github.com/spring-projects/spring-tools/issues/1597)
+- _(Spring Boot)_ [mcp] integrate tool calls into the embedded MCP server to deliver version and support range information [#1594](https://github.com/spring-projects/spring-tools/issues/1594)
+- _(Spring Boot)_ [mcp] integrate basic MCP server into the language server [#1593](https://github.com/spring-projects/spring-tools/issues/1593)
+- _(Spring Boot)_ update splash screen for new major version [#1592](https://github.com/spring-projects/spring-tools/issues/1592)
+- _(Spring Boot)_ [validation] detect path in controller annotation param [#1582](https://github.com/spring-projects/spring-tools/issues/1582)
+- _(Spring Boot)_ [validation] `@Value` annotations with classpath should be of type `Resource` or similar [#1581](https://github.com/spring-projects/spring-tools/issues/1581)
+- _(Spring Boot)_ Introduce dedicated Explorer pane for stable Spring outline [#1537](https://github.com/spring-projects/spring-tools/issues/1537)
+- _(Spring Boot)_ [validation] add quickfix to move detected path in controller annotation [#1656](https://github.com/spring-projects/spring-tools/issues/1656)
+- _(Spring Boot)_ [functional endpoints] code lens to convert static method usage to builder pattern [#1707](https://github.com/spring-projects/spring-tools/issues/1707)
+- _(Spring Boot)_ semantic token highlights cause broken highlighting in java editor [#1714](https://github.com/spring-projects/spring-tools/issues/1714)
+- _(Spring Boot)_ UnsupportedOperationException [#1703](https://github.com/spring-projects/spring-tools/issues/1703)
+- _(Spring Boot)_ modulith service breaks for projects using JDK25 [#1699](https://github.com/spring-projects/spring-tools/issues/1699)
+- _(Spring Boot)_ reading support ranges from spring.io API throws exception [#1692](https://github.com/spring-projects/spring-tools/issues/1692)
+- _(Spring Boot)_ [exception from inside jdt ls] Pending response rejected since connection got disposed [#1683](https://github.com/spring-projects/spring-tools/issues/1683)
+- _(Spring Boot)_ spring tools related exceptions thrown inside of the Java language server [#1680](https://github.com/spring-projects/spring-tools/issues/1680)
+- _(Spring Boot)_ NullPointerException: Cannot invoke "org.eclipse.core.resources.IResourceDelta.getResource()" because "resourceDelta" is null [#1679](https://github.com/spring-projects/spring-tools/issues/1679)
+- _(Spring Boot)_ YAML editor barfs on sequences [#1660](https://github.com/spring-projects/spring-tools/issues/1660)
+- _(Spring Boot)_ java.lang.NoClassDefFoundError: com/sun/tools/javac/code/Type$UnknownType while perform quickfix for "Unnecessary path variable definition" [#1641](https://github.com/spring-projects/spring-tools/issues/1641)
+- _(Spring Boot)_ language server throws NPE [#1639](https://github.com/spring-projects/spring-tools/issues/1639)
+- _(Spring Boot)_ language server throws NumberFormatException [#1638](https://github.com/spring-projects/spring-tools/issues/1638)
+- _(Spring Boot)_ PostgreSQL syntax highlighting doesn't recognize jsonb question mark (?) operator [#1614](https://github.com/spring-projects/spring-tools/issues/1614)
+- _(Spring Boot)_ correct property values from enums are sometimes flagged as error [#1605](https://github.com/spring-projects/spring-tools/issues/1605)
+- _(Spring Boot)_ Request workspace/executeCommand failed [#1018](https://github.com/spring-projects/spring-tools/issues/1018)
+
+#### known issues
+
+* _(Spring Boot)_: Support for Spring Boot major and minor version upgrades via OpenRewrite recipes got removed. We recommend
+  use the Maven or Gradle plugins on the command line instead.
+
+## 2025-10-29 (4.32.1 RELEASE, incl. language servers version 1.64.1)
+
+- _(Spring Boot)_ [backport] language server throws NumberFormatException [#1696](https://github.com/spring-projects/spring-tools/issues/1696)
+- _(Spring Boot)_ [backport] NullPointerException: Cannot invoke "org.eclipse.core.resources.IResourceDelta.getResource()" because "resourceDelta" is null [#1695](https://github.com/spring-projects/spring-tools/issues/1695)
+- _(Spring Boot)_ [backport] YAML editor barfs on sequences [#1694](https://github.com/spring-projects/spring-tools/issues/1694)
+- _(Spring Boot)_ [backport] reading support ranges from spring.io API throws exception [#1693](https://github.com/spring-projects/spring-tools/issues/1693)
+
+## 2025-09-10 (4.32.0 RELEASE, incl. language servers version 1.64.0)
+
+- _(Spring Boot)_ [backport to 4.x] [aot repositories] adapt support to changed naming convention [#1622](https://github.com/spring-projects/spring-tools/issues/1622)
+- _(Spring Boot)_ PostgreSQL syntax highlighting doesn't recognize jsonb question mark (?) operator [#1615](https://github.com/spring-projects/spring-tools/issues/1615)
+- _(Spring Boot)_ [backport into 4.x] correct property values from enums are sometimes flagged as error [#1606](https://github.com/spring-projects/spring-tools/issues/1606)
+
 # 2025-06-11 (4.31.0 RELEASE, incl. language servers version 1.63.0)
 
 #### important highlights

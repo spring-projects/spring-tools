@@ -381,9 +381,9 @@ jobs:
           eclipse_profile=${{ inputs.eclipse_profile }}
           eclipse_version=${eclipse_profile:1:1}.${eclipse_profile:2}
           p2_qualifier=${{ inputs.p2-qualifier }}
-          version_segment=${{ needs.eclipse-distro-build.steps.project-version.outputs.version }}
+          version_segment=${{ needs.eclipse-distro-build.outputs.version }}
           if ! [[ -z ${p2_qualifier} ]]; then
-            version_segment=${{ needs.eclipse-distro-build.steps.project-version.outputs.version }}.$p2_qualifier
+            version_segment=${{ needs.eclipse-distro-build.outputs.version }}.$p2_qualifier
           fi
 
 

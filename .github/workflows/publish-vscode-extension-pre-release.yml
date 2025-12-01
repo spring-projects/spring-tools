@@ -39,5 +39,12 @@ jobs:
         run: |
           npm install --global @vscode/vsce
           vsix_file=`ls ./vsix | head -n 1`
-          echo "VSIX pre-release file to publish ${vsix_file}"
+          echo "VSCode VSIX pre-release file to publish ${vsix_file}"
           vsce publish --pre-release -p ${{ secrets.VSCE_PUBLISH_TOKEN }} --packagePath ./vsix/$vsix_file
+      - name: Publish to Eclipse Open VSX
+        id: publish-pre-release-ovsx
+        run: |
+          npm install --global ovsx
+          vsix_file=`ls ./vsix | head -n 1`
+          echo "Open-VSX VSIX pre-release file to publish ${vsix_file}"
+          ovsx publish --pre-release -p ${{ secrets.OVSX_PUBLISH_TOKEN }} --packagePath ./vsix/$vsix_file

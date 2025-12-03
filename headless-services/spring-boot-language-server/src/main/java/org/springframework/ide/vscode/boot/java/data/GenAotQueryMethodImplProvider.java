@@ -149,7 +149,7 @@ public class GenAotQueryMethodImplProvider implements IJavaLocationLinksProvider
 	private List<LocationLink> findInSourceFolder(IJavaProject project, Path relativeGenSourcePath, String genRepoFqn, GoToImplParams params) {
 		for (File f : IClasspathUtil.getSourceFolders(project.getClasspath()).collect(Collectors.toSet())) {
 			Path genRepoSourcePath = f.toPath().resolve(relativeGenSourcePath);
-			if (Files.exists(relativeGenSourcePath)) {
+			if (Files.exists(genRepoSourcePath)) {
 				return getLocationInGenFile(project, genRepoSourcePath, genRepoFqn, params);
 			}
 		}

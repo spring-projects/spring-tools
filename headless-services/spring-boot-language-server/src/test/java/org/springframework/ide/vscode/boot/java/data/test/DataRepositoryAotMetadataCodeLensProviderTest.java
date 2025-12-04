@@ -99,7 +99,7 @@ public class DataRepositoryAotMetadataCodeLensProviderTest {
 		cls = editor.getCodeLenses("findUserByUsername", 1);
 		assertTrue(cls.size() > 1);
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
-		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
+		assertEquals("Go To Implementation", cls.get(1).getCommand().getTitle());
 		assertEquals("SELECT u FROM users u WHERE u.username = :username", cls.get(2).getCommand().getTitle());
 		assertEquals("Refresh AOT Metadata", cls.get(3).getCommand().getTitle());
 

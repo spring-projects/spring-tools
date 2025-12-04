@@ -77,7 +77,7 @@ public class DataRepositoryAotMetadataCodeLensProviderMongoDbTest {
 		
 		List<CodeLens> cls = editor.getCodeLenses("findUserByUsername", 1);
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
-		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
+		assertEquals("Go To Implementation", cls.get(1).getCommand().getTitle());
 		assertEquals("{\"username\": ?0}", cls.get(2).getCommand().getTitle());
 	}
 
@@ -89,7 +89,7 @@ public class DataRepositoryAotMetadataCodeLensProviderMongoDbTest {
 		
 		List<CodeLens> cls = editor.getCodeLenses("findUserByLastnameLikeOrderByFirstname", 1);
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
-		assertEquals("Implementation", cls.get(1).getCommand().getTitle());
+		assertEquals("Go To Implementation", cls.get(1).getCommand().getTitle());
 		assertEquals("filter = \"{\"lastname\": ?0}\", sort = \"{\"firstname\": 1}\"", cls.get(2).getCommand().getTitle());
 	}
 
@@ -101,7 +101,7 @@ public class DataRepositoryAotMetadataCodeLensProviderMongoDbTest {
 		
 		List<CodeLens> cls = editor.getCodeLenses("usersWithUsernamesStartingWith", 1);
 		assertEquals(2, cls.size());
-		assertEquals("Implementation", cls.get(0).getCommand().getTitle());
+		assertEquals("Go To Implementation", cls.get(0).getCommand().getTitle());
 		assertEquals(1, cls.get(0).getCommand().getArguments().size());
 		assertEquals("Refresh AOT Metadata", cls.get(1).getCommand().getTitle());
 		assertEquals(2, cls.get(1).getCommand().getArguments().size());

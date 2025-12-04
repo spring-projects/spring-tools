@@ -89,6 +89,8 @@ public class DataRepositoryAotMetadataService {
 					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get(METHODS), MongoAotMethodMetadata[].class));
 				case JPA:
 					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get(METHODS), JpaAotMethodMetadata[].class));
+				case JDBC:
+					return new DataRepositoryAotMetadata(name, type, moduleType, context.deserialize(o.get(METHODS), JdbcAotMethodMetadata[].class));
 				}
 			}
 			return null;
@@ -157,7 +159,7 @@ public class DataRepositoryAotMetadataService {
 		if (Files.isRegularFile(filePath)) {
 			try (BufferedReader reader = Files.newBufferedReader(filePath)) {
 				return Optional.ofNullable(gson.fromJson(reader, DataRepositoryAotMetadata.class));
-			} catch (IOException e) {
+			} catch (Exception e) {
 				log.error("Failed to read metadata file: {}", filePath, e);
 			}
 		}

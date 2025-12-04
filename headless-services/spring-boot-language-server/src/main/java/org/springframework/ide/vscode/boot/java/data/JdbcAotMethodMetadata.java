@@ -10,10 +10,27 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
-public enum DataRepositoryModule {
+import java.util.Map;
+
+class JdbcAotMethodMetadata extends AbstractDataRepositoryAotMethodMetadata {
 	
-	JPA,
-	MONGODB,
-	JDBC
+	record Query(String query) {}
+	
+	private Query query;
+
+	public JdbcAotMethodMetadata(String name, String signature, Query query) {
+		super(name, signature);
+		this.query = query;
+	}
+
+	@Override
+	public String getQueryStatement() {
+		return query == null ? null : query.query();
+	}
+
+	@Override
+	public Map<String, String> getAttributesMap() {
+		 return Map.of("value", getQueryStatement());
+	}
 
 }

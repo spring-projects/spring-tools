@@ -51,6 +51,12 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvider {
 
 	private static final String COVERT_TO_QUERY_LABEL = "Turn into @Query";
+	
+	private static final Map<DataRepositoryModule, String> moduleToQueryMapping = Map.of(
+			DataRepositoryModule.JPA, Annotations.DATA_JPA_QUERY,
+			DataRepositoryModule.JDBC, Annotations.DATA_JDBC_QUERY,
+			DataRepositoryModule.MONGODB, Annotations.DATA_MONGODB_QUERY
+	);
 
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataCodeLensProvider.class);
 
@@ -146,7 +152,8 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				Optional<DataRepositoryAotMetadata> optMetadata = getMetadata(repositoryMetadataService, project, mb);
 				optMetadata.ifPresentOrElse(metadata -> metadata.findMethod(mb).ifPresent(methodMetadata -> {
 					boolean isQueryAnnotated = hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JPA_QUERY)
-							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY);
+							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_MONGODB_QUERY)
+							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JDBC_QUERY);
 					
 					if (!isQueryAnnotated) {
 						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata)), null));
@@ -196,7 +203,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				.withRecipeScope(RecipeScope.FILE)
 				
 				.withParameters(Map.of(
-						"annotationType", module == DataRepositoryModule.JPA ? Annotations.DATA_JPA_QUERY : Annotations.DATA_MONGODB_QUERY,
+						"annotationType", moduleToQueryMapping.get(module),
 						"method", "%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
 								Arrays.stream(mb.getParameterTypes())
 									.map(pt -> pt.getQualifiedName())
@@ -214,5 +221,5 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 		return result;
 	}
-
+	
 }

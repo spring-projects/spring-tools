@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 Pivotal, Inc.
+ * Copyright (c) 2017, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -160,6 +160,10 @@ public class ValueCompletionProcessor implements CompletionProvider {
 	}
 
 	private void computeProposalsForStringLiteral(IJavaProject project, StringLiteral node, Collection<ICompletionProposal> completions, int offset, TextDocument doc) throws BadLocationException {
+		if (node.getStartPosition() + node.getLength() <= offset) {
+			return;
+		}
+		
 		String prefix = identifyPropertyPrefix(doc.get(node.getStartPosition() + 1, offset - (node.getStartPosition() + 1)), offset - (node.getStartPosition() + 1));
 
 		int startOffset = offset - prefix.length();

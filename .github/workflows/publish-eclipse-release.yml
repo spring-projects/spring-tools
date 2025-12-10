@@ -50,11 +50,11 @@ jobs:
       release_version: ${{ inputs.release_version }}.${{ inputs.qualifier }}
     secrets: inherit
 
-#  create-github-release:
-#    uses: ./.github/workflows/create-gh-release.yml
-#    with:
-#      version: ${{ inputs.release_version }}.${{ inputs.qualifier }}
-#    secrets: inherit
+  create-github-release:
+    uses: ./.github/workflows/create-gh-release.yml
+    with:
+      version: ${{ inputs.release_version }}.${{ inputs.qualifier }}
+    secrets: inherit
 
 #  announce-release:
 #    needs: [ aggregate-ls-extension-update-site, aggregate-distro-update-site, create-github-release ]

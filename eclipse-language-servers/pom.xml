@@ -138,26 +138,26 @@
 		</profile>
 
 		<profile>
-			<id>e437</id>
+			<id>e438</id>
 			<properties>
-				<dist.target>e4.37.0</dist.target>
-				<dist.target.major>e4.37</dist.target.major>
-				<dist.platform.name>2025-09</dist.platform.name>
-				<dist.platform.name.long>2025-09 (4.37)</dist.platform.name.long>
-				<dist.platform.id>2025-09</dist.platform.id>
-				<dist.platform.version>4.37</dist.platform.version>
-				<package.qualifierPrefix>e437</package.qualifierPrefix>
+				<dist.target>e4.38.0</dist.target>
+				<dist.target.major>e4.38</dist.target.major>
+				<dist.platform.name>2025-12</dist.platform.name>
+				<dist.platform.name.long>2025-12 (4.38)</dist.platform.name.long>
+				<dist.platform.id>2025-12</dist.platform.id>
+				<dist.platform.version>4.38</dist.platform.version>
+				<package.qualifierPrefix>e438</package.qualifierPrefix>
 			</properties>
 			<repositories>
 				<repository>
-					<id>2025-09</id>
+					<id>2025-12</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/releases/2025-09/</url>
+					<url>https://download.eclipse.org/staging/2025-12/</url>
 				</repository>
 				<repository>
 					<id>orbit</id>
 					<layout>p2</layout>
-					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-09</url>
+					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2025-12</url>
 				</repository>
 				<!--				<repository>
                                     <id>mylyn-markdown</id>

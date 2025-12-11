@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: STS Gradle Model
 Bundle-SymbolicName: org.springframework.tooling.gradle;singleton:=true
-Bundle-Version: 5.0.0.qualifier
+Bundle-Version: 5.1.0.qualifier
 Export-Package: org.springframework.tooling.gradle,
  sts.model.plugin
 Require-Bundle: org.eclipse.core.runtime,

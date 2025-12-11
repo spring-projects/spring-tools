@@ -2,7 +2,7 @@
 <feature
 	id="org.springframework.boot.ide.branding.feature"
 	label="Spring Tools for Eclipse Branding Feature"
-	version="5.0.0.qualifier"
+	version="5.1.0.qualifier"
 	provider-name="Broadcom">
 
 	<plugin

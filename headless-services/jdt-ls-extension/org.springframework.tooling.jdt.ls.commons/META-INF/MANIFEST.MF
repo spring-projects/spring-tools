@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Client-side JDT extension for language servers
 Bundle-SymbolicName: org.springframework.tooling.jdt.ls.commons
-Bundle-Version: 5.0.0.qualifier
+Bundle-Version: 5.1.0.qualifier
 Bundle-Vendor: Broadcom
 Automatic-Module-Name: org.springframework.tooling.jdt.ls.commons
 Bundle-RequiredExecutionEnvironment: JavaSE-21

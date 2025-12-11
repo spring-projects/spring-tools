@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: com.springsource.sts.frameworks.test.util
 Bundle-SymbolicName: org.springsource.ide.eclipse.commons.frameworks.test.util;singleton:=true
-Bundle-Version: 5.0.0.qualifier
+Bundle-Version: 5.1.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: Broadcom
 Bundle-RequiredExecutionEnvironment: JavaSE-21

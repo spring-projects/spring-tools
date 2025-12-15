@@ -97,6 +97,12 @@
         "label": "Invalid type for classpath resource in `@Value`",
         "description": "Type is not compatible with classpath resource injection",
         "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "WEB_CONFIGURER_CONFIGURATION",
+        "label": "Missing '@Configuration' on web configurer",
+        "description": "Class implementing a web configurer interface should be annotated with '@Configuration'",
+        "defaultSeverity": "WARNING"
       }
     ]
   },

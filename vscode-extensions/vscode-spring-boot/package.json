@@ -700,6 +700,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot2.WEB_CONFIGURER_CONFIGURATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Class implementing a web configurer interface should be annotated with '@Configuration'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

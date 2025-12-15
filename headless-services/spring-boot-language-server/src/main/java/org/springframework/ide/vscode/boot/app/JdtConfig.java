@@ -61,6 +61,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrateg
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrategyPathSegmentReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionSyntaxReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.WebConfigurerConfigurationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigurerAdapterReconciler;
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
 import org.springframework.ide.vscode.boot.java.semantictokens.JavaSemanticTokensProvider;
@@ -174,6 +175,10 @@ public class JdtConfig {
 	
 	@Bean ClasspathResourceTypeReconciler classpathResourceTypeReconciler() {
 		return new ClasspathResourceTypeReconciler();
+	}
+	
+	@Bean WebConfigurerConfigurationReconciler webConfigurerConfigurationReconciler(SimpleLanguageServer server) {
+		return new WebConfigurerConfigurationReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)

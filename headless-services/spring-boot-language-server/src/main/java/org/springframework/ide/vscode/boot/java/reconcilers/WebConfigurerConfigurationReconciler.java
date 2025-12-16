@@ -21,7 +21,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.openrewrite.java.spring.boot2.AddConfigurationAnnotationIfBeansPresent;
+import org.openrewrite.java.spring.boot2.AddConfigurationAnnotation;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
@@ -41,7 +41,7 @@ import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
  */
 public class WebConfigurerConfigurationReconciler implements JdtAstReconciler {
 
-	private static final String PROBLEM_LABEL = "'@Configuration' is missing on a class implementing 'WebMvcConfigurer' or 'WebFluxConfigurer'";
+	private static final String PROBLEM_LABEL = "'@Configuration' is missing on a class implementing web configurer interface";
 	private static final String FIX_LABEL = "Add missing '@Configuration' annotation";
 
 	private final QuickfixRegistry quickfixRegistry;
@@ -72,15 +72,14 @@ public class WebConfigurerConfigurationReconciler implements JdtAstReconciler {
 					ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
 							nameAst.getStartPosition(), nameAst.getLength());
 
-//					String id = AddConfigurationAnnotationIfBeansPresent.class.getName();
-//
-//					ReconcileUtils.setRewriteFixes(quickfixRegistry, problem,
-//							List.of(new FixDescriptor(id, List.of(docUri.toASCIIString()),
-//									ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.FILE))
-//									.withRecipeScope(RecipeScope.FILE),
-//									new FixDescriptor(id, List.of(docUri.toASCIIString()),
-//											ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.PROJECT))
-//											.withRecipeScope(RecipeScope.PROJECT)));
+					String id = AddConfigurationAnnotation.class.getName();
+
+					ReconcileUtils.setRewriteFixes(quickfixRegistry, problem,
+							List.of(new FixDescriptor(id, List.of(docUri.toASCIIString()),
+									ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.FILE))
+									.withRecipeScope(RecipeScope.FILE)
+									)
+							);
 
 					context.getProblemCollector().accept(problem);
 				}

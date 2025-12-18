@@ -254,6 +254,11 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 		consoleJob.schedule();
 	}
 
+	@Override
+	public InputStream getErrorStream() {
+		return null;
+	}
+
 	private InputStream getLanguageServerLog() {
 		return super.getErrorStream();
 	}

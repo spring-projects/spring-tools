@@ -1096,22 +1096,9 @@ public class Editor {
 		assertEquals(expected.toString(), actual.toString());
 	}
 	
-	public void assertSemanticTokensFull(ExpectedSemanticToken... expectedTokens) throws InterruptedException, ExecutionException {
+	public void assertSemanticTokensFull(ExpectedSemanticToken... expectedTokens) throws Exception {
 		List<SemanticTokenData> actualTokens = harness.getSemanticTokensFull(doc);
-		Iterator<SemanticTokenData> itr = actualTokens.iterator();
-		for (ExpectedSemanticToken expected : expectedTokens) {
-			if (!itr.hasNext()) {
-				fail("Number of expected tokens is larger than the actual number of tokens");
-			}
-			SemanticTokenData actual = itr.next();
-			String actualText = doc.textBetween(actual.getStart(), actual.getEnd());
-			assertEquals(expected.text(), actualText, String.format("Token text does not match %s", actual));
-			assertEquals(expected.type(), actual.type(), String.format("Token '%s' type does not match: %s", actualText, actual));
-			assertArrayEquals(expected.modifiers(), actual.modifiers(), String.format("Token '%s' modifiers do not match: %s", actualText, actual));
-		}
-		if (itr.hasNext()) {
-			fail("Number of expected tokens is less than the actual number of tokens");
-		}
+		SemanticTokensAssert.assertTokens(getRawText(), actualTokens, expectedTokens);
 	}
 
 	public void assertHierarchicalDocumentSymbols(String expectedSymbolDump) throws Exception {

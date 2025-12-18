@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
@@ -160,7 +161,6 @@ public class WebMvcConfigurerConfigurationReconcilerTest extends BaseReconcilerT
 	}
 
 	@Test
-	@Disabled // TODO: need to take another look to make this test work
 	void classImplementingWebMvcConfigurerIndirectly() throws Exception {
 		String source1 = """
 				package example;
@@ -178,8 +178,8 @@ public class WebMvcConfigurerConfigurationReconcilerTest extends BaseReconcilerT
 				}
 				""";
 
-		createFile("CustomConfigurer.java", source1);
-		List<ReconcileProblem> problems = reconcile("MyWebConfig.java", source2, false);
+		Path extraSource = createFile("CustomConfigurer.java", source1);
+		List<ReconcileProblem> problems = reconcile("MyWebConfig.java", source2, false, extraSource);
 		assertEquals(1, problems.size());
 		
 		ReconcileProblem problem = problems.get(0);

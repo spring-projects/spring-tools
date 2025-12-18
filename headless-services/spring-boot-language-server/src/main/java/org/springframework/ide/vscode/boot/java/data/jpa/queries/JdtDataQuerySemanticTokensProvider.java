@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2025 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -111,7 +111,8 @@ public class JdtDataQuerySemanticTokensProvider implements JdtSemanticTokensProv
 	
 	@Override
 	public boolean isApplicable(IJavaProject project) {
-		return supportState.isEnabled() && (SpringProjectUtil.hasDependencyStartingWith(project, "spring-data-jpa", null) 
+		return supportState.isEnabled() && (SpringProjectUtil.hasDependencyStartingWith(project, "spring-data-jpa", null)
+				|| SpringProjectUtil.hasDependencyStartingWith(project, "spring-data-jdbc", null)
 				|| SpringProjectUtil.hasDependencyStartingWith(project, "jakarta.persistence-api", null)
 				|| SpringProjectUtil.hasDependencyStartingWith(project, "javax.persistence-api", null));
 	}

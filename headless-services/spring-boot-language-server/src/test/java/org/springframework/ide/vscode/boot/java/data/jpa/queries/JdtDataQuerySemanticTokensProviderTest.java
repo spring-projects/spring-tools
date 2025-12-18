@@ -571,6 +571,194 @@ public class JdtDataQuerySemanticTokensProviderTest {
 	}
 	
 	@Test
+	void jdbcSqlQuerySimpleAnnotation() throws Exception {
+		String source = """
+		package my.package
+		
+		import org.springframework.data.jdbc.repository.query.Query;
+		import org.springframework.data.repository.query.Param;
+		
+		public interface EmployeeRepository {
+		
+			@Query("SELECT * FROM owner WHERE last_name LIKE concat(:lastName,'%')")
+			void findByLastName(@Param("lastName") String lastName);
+		}
+		""";
+        
+        String uri = Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/EmployeeRepository.java").toUri().toASCIIString();
+		CompilationUnit cu = CompilationUnitCache.parse2(source.toCharArray(), uri, "EmployeeRepository.java", jp);
+        
+        assertThat(cu).isNotNull();
+        
+        List<SemanticTokenData> tokens = computeTokens(cu);
+        
+        SemanticTokenData token = tokens.get(0);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("SELECT");
+        SemanticTokenData expected = SemanticTokenData.builder("keyword").withOffset(186).withText("SELECT").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(1);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("*");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).space().withText("*").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(2);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("FROM");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("FROM").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(3);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("owner");
+        expected = SemanticTokenData.builder("type").withPrevious(expected).space().withText("owner").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(4);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("WHERE");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("WHERE").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(5);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("last_name");
+        expected = SemanticTokenData.builder("variable").withPrevious(expected).space().withText("last_name").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(6);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("LIKE");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("LIKE").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(7);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("concat");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("concat").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(8);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("(");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText("(").build();
+        assertThat(token).isEqualTo(expected);
+
+        token = tokens.get(9);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo(":");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText(":").build();
+        assertThat(token).isEqualTo(expected);
+
+        token = tokens.get(10);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("lastName");
+        expected = SemanticTokenData.builder("parameter").withPrevious(expected).withText("lastName").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(11);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo(",");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText(",").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(12);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("'%'");
+        expected = SemanticTokenData.builder("string").withPrevious(expected).withText("'%'").build();
+        assertThat(token).isEqualTo(expected);
+
+
+        token = tokens.get(13);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo(")");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText(")").build();
+        assertThat(token).isEqualTo(expected);
+	}
+	
+	@Test
+	void jdbcSqlQueryNormalAnnotation() throws Exception {
+		String source = """
+		package my.package
+		
+		import org.springframework.data.jdbc.repository.query.Query;
+		import org.springframework.data.repository.query.Param;
+		
+		public interface EmployeeRepository {
+		
+			@Query(value = "SELECT * FROM owner WHERE last_name LIKE concat(:lastName,'%')")
+			void findByLastName(@Param("lastName") String lastName);
+		}
+		""";
+        
+        String uri = Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/EmployeeRepository.java").toUri().toASCIIString();
+		CompilationUnit cu = CompilationUnitCache.parse2(source.toCharArray(), uri, "EmployeeRepository.java", jp);
+        
+        assertThat(cu).isNotNull();
+        
+        List<SemanticTokenData> tokens = computeTokens(cu);
+        
+        SemanticTokenData token = tokens.get(0);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("SELECT");
+        SemanticTokenData expected = SemanticTokenData.builder("keyword").withOffset(194).withText("SELECT").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(1);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("*");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).space().withText("*").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(2);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("FROM");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("FROM").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(3);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("owner");
+        expected = SemanticTokenData.builder("type").withPrevious(expected).space().withText("owner").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(4);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("WHERE");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("WHERE").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(5);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("last_name");
+        expected = SemanticTokenData.builder("variable").withPrevious(expected).space().withText("last_name").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(6);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("LIKE");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("LIKE").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(7);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("concat");
+        expected = SemanticTokenData.builder("keyword").withPrevious(expected).space().withText("concat").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(8);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("(");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText("(").build();
+        assertThat(token).isEqualTo(expected);
+
+        token = tokens.get(9);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo(":");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText(":").build();
+        assertThat(token).isEqualTo(expected);
+
+        token = tokens.get(10);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("lastName");
+        expected = SemanticTokenData.builder("parameter").withPrevious(expected).withText("lastName").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(11);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo(",");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText(",").build();
+        assertThat(token).isEqualTo(expected);
+        
+        token = tokens.get(12);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("'%'");
+        expected = SemanticTokenData.builder("string").withPrevious(expected).withText("'%'").build();
+        assertThat(token).isEqualTo(expected);
+
+
+        token = tokens.get(13);
+        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo(")");
+        expected = SemanticTokenData.builder("operator").withPrevious(expected).withText(")").build();
+        assertThat(token).isEqualTo(expected);
+	}
+	
+	@Test
 	void namedQueryAnnotation() throws Exception {
 		String source = """
 		package my.package
@@ -671,7 +859,7 @@ public class JdtDataQuerySemanticTokensProviderTest {
 	}
 
 	@Test
-	void ConcatenatedStringWithConstantQuery() throws Exception {
+	void concatenatedStringWithConstantQuery() throws Exception {
 		String source = """
 		package my.package
 		
@@ -729,7 +917,7 @@ public class JdtDataQuerySemanticTokensProviderTest {
 	}
 
 	@Test
-	void ConcatenatedStringWithFieldAccessConstantQuery() throws Exception {
+	void concatenatedStringWithFieldAccessConstantQuery() throws Exception {
 		String source = """
 		package my.package
 		

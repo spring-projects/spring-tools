@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 202, 2025 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -83,8 +83,56 @@ public class DataQueryParameterDefinitionProviderTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/OwnerRepository.java").toUri().toASCIIString());
 		
 		Range expectedRange = editor.rangeOf("String lastName", "lastName");
-		Range highlightRange = editor.rangeOf(":1%", "1");
+		Range highlightRange = editor.rangeOf(":1", "1");
 		editor.assertGotoDefinition(highlightRange.getStart(), expectedRange, highlightRange);
 		
 	}
+	
+	@Test
+	void parameterNameDefinitionJdbc() throws Exception {
+		String source = """
+		package my.package
+		
+		import org.springframework.data.jdbc.repository.query.Query;
+		import org.springframework.data.repository.query.Param;
+		
+		public interface EmployeeRepository {
+		
+			@Query("SELECT * FROM owner WHERE last_name LIKE concat(:lastName,'%')")
+			void findByLastName(@Param("lastName") String lastName);
+		}
+		""";
+		
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/EmployeeRepository.java").toUri().toASCIIString());
+		
+		Range expectedRange = editor.rangeOf("String lastName", "lastName");
+		Range highlightRange = editor.rangeOf(":lastName", "lastName");
+		editor.assertGotoDefinition(highlightRange.getStart(), expectedRange, highlightRange);
+		
+	}
+	
+	@Test
+	void parameterOrdinalDefinitionJdbc() throws Exception {
+		String source = """
+		package my.package
+		
+		import org.springframework.data.jdbc.repository.query.Query;
+		import org.springframework.data.repository.query.Param;
+		
+		public interface EmployeeRepository {
+		
+			@Query("SELECT * FROM owner WHERE last_name LIKE concat(?1,'%')")
+			void findByLastName(@Param("lastName") String lastName);
+		}
+		""";
+		
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/EmployeeRepository.java").toUri().toASCIIString());
+		
+		Range expectedRange = editor.rangeOf("String lastName", "lastName");
+		Range highlightRange = editor.rangeOf("?1", "1");
+		editor.assertGotoDefinition(highlightRange.getStart(), expectedRange, highlightRange);
+		
+	}
+
+
 }

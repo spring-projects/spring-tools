@@ -26,10 +26,18 @@ import org.springframework.ide.vscode.boot.bootiful.HoverTestConf;
 import org.springframework.ide.vscode.boot.java.reconcilers.CompositeASTVisitor;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.SemanticTokenData;
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.commons.util.Collector;
+import org.springframework.ide.vscode.commons.util.text.LanguageId;
+import org.springframework.ide.vscode.languageserver.testharness.Editor;
+import org.springframework.ide.vscode.languageserver.testharness.ExpectedSemanticToken;
+import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -37,7 +45,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 public class JdtDataQuerySemanticTokensProviderTest {
 	
 	@Autowired JdtDataQuerySemanticTokensProvider provider;
-	
+	@Autowired BootLanguageServerHarness harness;
+
 	private ProjectsHarness projects = ProjectsHarness.INSTANCE;
 	
 	private MavenJavaProject jp;
@@ -45,6 +54,17 @@ public class JdtDataQuerySemanticTokensProviderTest {
 	@BeforeEach
 	public void setup() throws Exception {
 		jp =  projects.mavenProject("boot-mysql");
+		harness.useProject(jp);
+
+		String changedSettings = """
+		{
+			"boot-java": {
+				"jpql": true
+			}
+		}	
+		""";
+		JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
+		harness.changeConfiguration(new Settings(settingsAsJson));
 	}
 	
 	private List<SemanticTokenData> computeTokens(CompilationUnit cu) {
@@ -70,35 +90,16 @@ public class JdtDataQuerySemanticTokensProviderTest {
 		""";
         
         String uri = Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/OwnerRepository.java").toUri().toASCIIString();
-		CompilationUnit cu = CompilationUnitCache.parse2(source.toCharArray(), uri, "OwnerRepository.java", jp);
-        
-        assertThat(cu).isNotNull();
-        
-        List<SemanticTokenData> tokens = computeTokens(cu);
-        
-        SemanticTokenData token = tokens.get(0);
-        assertThat(token).isEqualTo(new SemanticTokenData(120, 126, "keyword", new String[0]));
-        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("SELECT");
-        
-        token = tokens.get(1);
-        assertThat(token).isEqualTo(new SemanticTokenData(127, 135, "keyword", new String[0]));
-        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("DISTINCT");
-        
-        token = tokens.get(2);
-        assertThat(token).isEqualTo(new SemanticTokenData(136, 141, "variable", new String[0]));
-        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("owner");
-        
-        token = tokens.get(3);
-        assertThat(token).isEqualTo(new SemanticTokenData(142, 146, "keyword", new String[0]));
-        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("FROM");
-
-        token = tokens.get(4);
-        assertThat(token).isEqualTo(new SemanticTokenData(147, 152, "class", new String[0]));
-        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("Owner");
-
-        token = tokens.get(5);
-        assertThat(token).isEqualTo(new SemanticTokenData(153, 158, "variable", new String[0]));
-        assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("owner");
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, uri);
+		
+		editor.assertSemanticTokensFull(
+				new ExpectedSemanticToken("SELECT", "keyword"),
+				new ExpectedSemanticToken("DISTINCT", "keyword"),
+				new ExpectedSemanticToken("owner", "variable"),
+				new ExpectedSemanticToken("FROM", "keyword"),
+				new ExpectedSemanticToken("Owner", "class"),
+				new ExpectedSemanticToken("owner", "variable")
+		);
 	}
 
 	@Test

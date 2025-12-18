@@ -78,10 +78,9 @@ async function updateConfigurationBasedOnCopilotAccess() {
         return;
     }
 
-    const model = (await lm.selectChatModels(DEFAULT_MODEL_SELECTOR))?.[0];
-    if (!model) {
-        const models = await lm.selectChatModels();
-        logger.error(`No suitable model, available models: [${models.map(m => m.name).join(', ')}]. Please make sure you have installed the latest "GitHub Copilot Chat" (v0.16.0 or later) and all \`lm\` API is enabled.`);
+    const models = await lm.selectChatModels();
+    if (!models || models.length === 0) {
+        logger.error(`No suitable model available. Please make sure you have installed the latest "GitHub Copilot Chat" (v0.16.0 or later) and all \`lm\` API is enabled.`);
         await updateConfiguration(false);
     } else {
         await updateConfiguration(true);

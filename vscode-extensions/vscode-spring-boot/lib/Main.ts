@@ -234,10 +234,9 @@ function registerMiscCommands(context: ExtensionContext) {
 }
 
 async function activateSpringBootParticipant(context: ExtensionContext) {
-    const model = (await lm.selectChatModels(CopilotRequest.DEFAULT_MODEL_SELECTOR))?.[0];
-    if (!model) {
-        const models = await lm.selectChatModels();
-        logger.error(`Not a suitable model. The available models are: [${models.map(m => m.name).join(', ')}]. Please make sure you have installed the latest "GitHub Copilot Chat" (v0.16.0 or later) and all \`lm\` API is enabled.`);
+    const models = await lm.selectChatModels();
+    if (!models || models.length === 0) {
+        logger.error(`No suitable model available. Please make sure you have installed the latest "GitHub Copilot Chat" (v0.16.0 or later) and all \`lm\` API is enabled.`);
         return;
     }
     springBootAgent.activate(context);

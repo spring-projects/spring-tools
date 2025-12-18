@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Boot Launch
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.launch;singleton:=true
 Bundle-Vendor: VMware, Inc
-Bundle-Version: 5.0.0.qualifier
+Bundle-Version: 5.0.1.qualifier
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.core.resources,

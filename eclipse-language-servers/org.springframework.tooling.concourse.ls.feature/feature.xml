@@ -2,7 +2,7 @@
 <feature
 	id="org.springframework.tooling.concourse.ls.feature"
 	label="Concourse Pipeline Language Server Feature"
-	version="5.0.0.qualifier"
+	version="5.0.1.qualifier"
 	provider-name="Broadcom">
 
     <description>

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-Vendor: %providerName
 Bundle-SymbolicName: org.springframework.ide.eclipse.editor.support
-Bundle-Version: 5.0.0.qualifier
+Bundle-Version: 5.0.1.qualifier
 Bundle-Activator: org.springframework.ide.eclipse.editor.support.EditorSupportActivator
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,

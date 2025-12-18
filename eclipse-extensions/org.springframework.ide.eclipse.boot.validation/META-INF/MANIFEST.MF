@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Validation
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.validation;singleton:=true
 Bundle-Vendor: VMware, Inc
-Bundle-Version: 5.0.0.qualifier
+Bundle-Version: 5.0.1.qualifier
 Bundle-Activator: org.springframework.ide.eclipse.boot.validation.BootValidationActivator
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,

@@ -2,7 +2,7 @@
 <feature
 	id="org.springframework.tooling.cloudfoundry.manifest.ls.integration.feature"
 	label="Cloud Foundry Manifest Language Server Generic Editor Integration Feature"
-	version="5.0.0.qualifier"
+	version="5.0.1.qualifier"
 	provider-name="Broadcom">
 
     <description>

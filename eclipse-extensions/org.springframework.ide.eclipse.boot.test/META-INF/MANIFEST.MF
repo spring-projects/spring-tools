@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Boot Tests
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.test
-Bundle-Version: 5.0.0.qualifier
+Bundle-Version: 5.0.1.qualifier
 Require-Bundle: org.eclipse.ui,
  org.junit,
  org.springsource.ide.eclipse.commons.livexp,

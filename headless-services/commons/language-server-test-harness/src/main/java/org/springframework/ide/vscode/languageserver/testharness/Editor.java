@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.languageserver.testharness;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -28,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -56,11 +58,13 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.SemanticTokenData;
 import org.springframework.ide.vscode.commons.protocol.HighlightParams;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 import org.springframework.ide.vscode.commons.util.Unicodes;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
+import org.springframework.ide.vscode.languageserver.testharness.SemanticTokensAssert.ExpectedSemanticToken;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -1090,6 +1094,11 @@ public class Editor {
 		}
 
 		assertEquals(expected.toString(), actual.toString());
+	}
+	
+	public void assertSemanticTokensFull(ExpectedSemanticToken... expectedTokens) throws Exception {
+		List<SemanticTokenData> actualTokens = harness.getSemanticTokensFull(doc);
+		SemanticTokensAssert.assertTokens(getRawText(), actualTokens, expectedTokens);
 	}
 
 	public void assertHierarchicalDocumentSymbols(String expectedSymbolDump) throws Exception {

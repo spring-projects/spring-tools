@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2025 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,6 +26,10 @@ public record SemanticTokenData(
 		this(new Region(start, end -start), type, modifiers);
 	}
 
+	public static Builder builder(String type) {
+		return new Builder().withType(type);
+	}
+	
 	@Override
 	public int compareTo(SemanticTokenData o) {
 		if (range.getOffset() == o.range().getOffset()) {
@@ -64,4 +68,54 @@ public record SemanticTokenData(
 		return range.getEnd();
 	}
 	
+	public static class Builder {
+		int offset = 0;
+		String text = "";
+		String[] modifiers = new String[0];
+		String type;
+		
+		public Builder withOffset(int offset) {
+			this.offset = offset;
+			return this;
+		}
+		
+		public Builder withText(String text) {
+			this.text = text;
+			return this;
+		}
+		
+		public Builder withType(String type) {
+			this.type = type;
+			return this;
+		}
+		
+		public Builder withModifiers(String[] modifiers) {
+			this.modifiers = modifiers;
+			return this;
+		}
+		
+		public Builder addOffset(int offset) {
+			this.offset += offset;
+			return this;
+		}
+		
+		public Builder addOffset(String space) {
+			this.offset += space.length();
+			return this;
+		}
+		
+		public Builder space() {
+			this.offset++;
+			return this;
+		}
+		
+		public Builder withPrevious(SemanticTokenData previous) {
+			return withOffset(previous.getEnd());
+		}
+		
+		public SemanticTokenData build() {
+			return new SemanticTokenData(new Region(offset, text.length()), type, modifiers);
+		}
+
+	}
 }

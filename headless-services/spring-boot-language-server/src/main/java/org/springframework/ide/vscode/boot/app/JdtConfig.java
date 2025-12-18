@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -182,6 +183,7 @@ public class JdtConfig {
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)
+	@ConditionalOnMissingClass("org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness")
 	@Bean JavaSemanticTokensProvider javaSemanticTokens() {
 		return new JavaSemanticTokensProvider();
 	}

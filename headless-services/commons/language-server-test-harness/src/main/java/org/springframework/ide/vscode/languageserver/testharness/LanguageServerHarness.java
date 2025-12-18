@@ -95,6 +95,9 @@ import org.eclipse.lsp4j.RegistrationParams;
 import org.eclipse.lsp4j.RenameFile;
 import org.eclipse.lsp4j.ResourceOperation;
 import org.eclipse.lsp4j.ResourceOperationKind;
+import org.eclipse.lsp4j.SemanticTokens;
+import org.eclipse.lsp4j.SemanticTokensLegend;
+import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.ShowDocumentParams;
 import org.eclipse.lsp4j.ShowDocumentResult;
 import org.eclipse.lsp4j.ShowMessageRequestParams;
@@ -119,6 +122,7 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
+import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.SemanticTokenData;
 import org.springframework.ide.vscode.commons.languageserver.util.LanguageServerTestListener;
 import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
@@ -1074,5 +1078,11 @@ public class LanguageServerHarness {
 	public void assertWorkspaceSymbols(String query, String... expectedSymbols) throws Exception {
 		Set<String> actualSymbols = getWorkspaceSymbols(query).stream().map(sym -> sym.getName()).collect(Collectors.toSet());
 		assertEquals(ImmutableSet.copyOf(expectedSymbols), actualSymbols);
+	}
+
+	public List<SemanticTokenData> getSemanticTokensFull(TextDocumentInfo doc) throws InterruptedException, ExecutionException {
+		SemanticTokens tokens = server.getTextDocumentService().semanticTokensFull(new SemanticTokensParams(doc.getId())).get();
+		SemanticTokensLegend legend = server.getTextDocumentService().getSemanticTokensWithRegistrationOptions().getLegend();
+		return new SemanticTokensStreamProcessor(doc::toOffset).getTokensData(tokens.getData(), legend);
 	}
 }

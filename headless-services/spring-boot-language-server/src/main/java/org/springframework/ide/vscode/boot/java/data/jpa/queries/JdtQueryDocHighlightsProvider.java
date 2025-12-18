@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2025 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -79,10 +79,12 @@ public class JdtQueryDocHighlightsProvider implements JdtAstDocHighlightsProvide
 	static Annotation findQueryAnnotation(AnnotationHierarchies annotationHierarchies, ASTNode node) {
 		if (node.getParent() instanceof MemberValuePair pair
 				&& node.getParent().getParent() instanceof NormalAnnotation na && "value".equals(pair.getName().getIdentifier())
-				&& JdtQueryVisitorUtils.isQueryAnnotation(annotationHierarchies, na)) {
+				&& (JdtQueryVisitorUtils.isQueryAnnotation(annotationHierarchies, na)
+						|| JdtQueryVisitorUtils.isQueryJdbcAnnotation(annotationHierarchies, na))) {
 			return na;
 		} else if (node.getParent() instanceof SingleMemberAnnotation sm
-				&& JdtQueryVisitorUtils.isQueryAnnotation(annotationHierarchies, sm)) {
+				&& (JdtQueryVisitorUtils.isQueryAnnotation(annotationHierarchies, sm)
+						|| JdtQueryVisitorUtils.isQueryJdbcAnnotation(annotationHierarchies, sm))) {
 			return sm;
 		}
 		return null;

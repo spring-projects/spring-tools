@@ -1,3 +1,9 @@
+## 2025-12-22 (5.0.1 RELEASE, incl. language servers version 2.0.1)
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ [5.0.x] ai-related code lenses around Copilot do not show up [#1746](https://github.com/spring-projects/spring-tools/issues/1746)
+
 ## 2025-12-09 (5.0.0 RELEASE, incl. language servers version 2.0.0)
 
 #### important highlights

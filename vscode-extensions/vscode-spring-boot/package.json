@@ -3,7 +3,7 @@
   "displayName": "Spring Boot Tools",
   "description": "Provides validation and content assist for Spring Boot `application.properties`, `application.yml` properties files. As well as Boot-specific support for `.java` files.",
   "icon": "spring-boot-logo.png",
-  "version": "2.1.0",
+  "version": "2.0.1",
   "publisher": "vmware",
   "repository": {
     "type": "git",

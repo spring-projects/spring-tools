@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.springframework.boot.ide</groupId>
 		<artifactId>org.springframework.boot.ide.servers</artifactId>
-		<version>5.0.1-SNAPSHOT</version>
+		<version>5.0.2-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	
 	<artifactId>org.springframework.tooling.bosh.ls.feature</artifactId>
 	<packaging>eclipse-feature</packaging>
-	<version>5.0.1-SNAPSHOT</version>
+	<version>5.0.2-SNAPSHOT</version>
 
 </project>

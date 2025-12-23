@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Spring Boot Dashboard View
 Bundle-SymbolicName: org.springframework.ide.eclipse.boot.dash;singleton:=true
-Bundle-Version: 5.0.1.qualifier
+Bundle-Version: 5.0.2.qualifier
 Bundle-Activator: org.springframework.ide.eclipse.boot.dash.BootDashActivator
 Bundle-Vendor: VMware, Inc
 Require-Bundle: org.eclipse.ui,

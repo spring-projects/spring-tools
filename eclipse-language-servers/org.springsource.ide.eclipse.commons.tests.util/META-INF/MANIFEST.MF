@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SpringSource Tool Suite Test Utilities
 Bundle-SymbolicName: org.springsource.ide.eclipse.commons.tests.util;singleton:=true
-Bundle-Version: 5.0.1.qualifier
+Bundle-Version: 5.0.2.qualifier
 Bundle-Vendor: Broadcom
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.core.resources,

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-SymbolicName: org.springsource.ide.eclipse.commons.frameworks.ui;singleton:=true
-Bundle-Version: 5.0.1.qualifier
+Bundle-Version: 5.0.2.qualifier
 Bundle-Activator: org.springsource.ide.eclipse.commons.frameworks.ui.FrameworkUIActivator
 Bundle-Vendor: %providerName
 Require-Bundle: org.eclipse.ui,

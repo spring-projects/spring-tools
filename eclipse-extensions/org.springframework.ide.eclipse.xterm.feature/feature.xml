@@ -2,7 +2,7 @@
 <feature
       id="org.springframework.ide.eclipse.xterm.feature"
       label="%featureName"
-      version="5.0.1.qualifier"
+      version="5.0.2.qualifier"
       provider-name="%providerName"
       plugin="org.springframework.ide.eclipse">
 

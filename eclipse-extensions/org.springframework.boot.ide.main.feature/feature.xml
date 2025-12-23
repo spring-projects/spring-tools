@@ -2,7 +2,7 @@
 <feature
 	id="org.springframework.boot.ide.main.feature"
 	label="Spring Tools for Eclipse Main Feature"
-	version="5.0.1.qualifier"
+	version="5.0.2.qualifier"
 	provider-name="Broadcom">
 
     <description>

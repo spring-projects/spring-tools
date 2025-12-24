@@ -28,8 +28,8 @@ public class PercentageProgressTask extends AbstractProgressTask {
 	
 	private int currentPercentage;
 	
-	public PercentageProgressTask(String taskId, ProgressService service, int total, String title) {
-		super(taskId, service);
+	public PercentageProgressTask(String taskId, ProgressClient client, int total, String title) {
+		super(taskId, client);
 		this.total = total;
 		this.current = 0;
 		begin(title);
@@ -40,7 +40,7 @@ public class PercentageProgressTask extends AbstractProgressTask {
 		progressBegin.setPercentage(0);
 		progressBegin.setCancellable(false);
 		progressBegin.setTitle(title);
-		service.progressBegin(taskId, progressBegin);
+		client.begin(taskId, progressBegin);
 	}
 	
 	public int getTotal() {
@@ -64,7 +64,7 @@ public class PercentageProgressTask extends AbstractProgressTask {
 			currentPercentage = percent;
 			WorkDoneProgressReport r = new WorkDoneProgressReport();
 			r.setPercentage(percent);
-			service.progressEvent(taskId, r);
+			client.report(taskId, r);
 		}
 	}
 	

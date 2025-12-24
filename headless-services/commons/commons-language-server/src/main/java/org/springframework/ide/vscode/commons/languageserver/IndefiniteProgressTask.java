@@ -15,8 +15,8 @@ import org.eclipse.lsp4j.WorkDoneProgressReport;
 
 public class IndefiniteProgressTask extends AbstractProgressTask {
 	
-	public IndefiniteProgressTask(String taskId, ProgressService service, String title, String message) {
-		super(taskId, service);
+	public IndefiniteProgressTask(String taskId, ProgressClient client, String title, String message) {
+		super(taskId, client);
 		progressBegin(title, message);
 	}
 
@@ -27,13 +27,13 @@ public class IndefiniteProgressTask extends AbstractProgressTask {
 		if (message != null && !message.isEmpty()) {
 			report.setMessage(message);
 		}		
-		service.progressBegin(taskId, report);
+		client.begin(taskId, report);
 	}
 
 	public void progressEvent(String statusMsg) {
 		WorkDoneProgressReport report = new WorkDoneProgressReport();
 		report.setMessage(statusMsg);
-		service.progressEvent(taskId, report);
+		client.report(taskId, report);
 	}
 	
 

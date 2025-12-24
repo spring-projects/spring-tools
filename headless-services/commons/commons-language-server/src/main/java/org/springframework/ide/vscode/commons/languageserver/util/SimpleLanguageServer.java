@@ -157,54 +157,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	
 	private Integer parentProcessId;
 
-	private ProgressService progressService = new ProgressService()  {
-		
-		private ConcurrentHashMap<String, Boolean> activeTaskIDs = new ConcurrentHashMap<>();
-		
-		public void progressBegin(String taskId, WorkDoneProgressBegin report) {
-			STS4LanguageClient client = SimpleLanguageServer.this.client;
-			if (client != null) {
-				boolean isNew = activeTaskIDs.put(taskId, true) == null;
-				if (!isNew) {
-					log.error("Progress for task id '{}' already exists", taskId);
-				}
-				WorkDoneProgressCreateParams params = new WorkDoneProgressCreateParams();
-				params.setToken(taskId);
-				client.createProgress(params).thenAcceptAsync((p) -> {
-					ProgressParams progressParams = new ProgressParams();
-					progressParams.setToken(taskId);
-					progressParams.setValue(Either.forLeft(report));
-					client.notifyProgress(progressParams);
-				});
-			}
-		}
-		
-		public void progressEvent(String taskId, WorkDoneProgressReport report) {
-			STS4LanguageClient client = SimpleLanguageServer.this.client;
-			if (client != null) {
-				if (!activeTaskIDs.containsKey(taskId)) {
-					log.error("Progress for task id '{}' does NOT exist!", taskId);
-					return;
-				}
-				ProgressParams progressParams = new ProgressParams();
-				progressParams.setToken(taskId);
-				progressParams.setValue(Either.forLeft(report));
-				client.notifyProgress(progressParams);
-			}
-		}
-
-		@Override
-		public void progressDone(String taskId) {
-			STS4LanguageClient client = SimpleLanguageServer.this.client;
-			if (client != null && activeTaskIDs.remove(taskId) != null) {
-				ProgressParams progressParams = new ProgressParams();
-				progressParams.setToken(taskId);
-				WorkDoneProgressEnd report = new WorkDoneProgressEnd();
-				progressParams.setValue(Either.forLeft(report));
-				client.notifyProgress(progressParams);
-			}
-		}
-	};
+	private ProgressService progressService = ProgressService.NO_PROGRESS;
 	
 	private MessageService messageService = new MessageService() {
 		
@@ -270,6 +223,8 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	@Override
 	public void connect(LanguageClient _client) {
 		this.client = (STS4LanguageClient) _client;
+		// Initialize progress service with the LSP client
+		this.progressService = ProgressService.create(this.client);
 	}
 
 	public VscodeCompletionEngineAdapter createCompletionEngineAdapter(ICompletionEngine engine) {

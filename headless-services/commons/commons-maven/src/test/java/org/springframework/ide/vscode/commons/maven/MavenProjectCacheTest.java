@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 Pivotal, Inc.
+ * Copyright (c) 2017, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -46,6 +46,7 @@ import org.springframework.ide.vscode.commons.java.ClasspathFileBasedCache;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.javadoc.JavaDocProviders;
 import org.springframework.ide.vscode.commons.languageserver.DiagnosticService;
+import org.springframework.ide.vscode.commons.languageserver.PercentageProgressTask;
 import org.springframework.ide.vscode.commons.languageserver.ProgressService;
 import org.springframework.ide.vscode.commons.languageserver.Sts4LanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver.Listener;
@@ -166,14 +167,19 @@ public class MavenProjectCacheTest {
 
 		AtomicBoolean progressDone = new AtomicBoolean();
 
-		ProgressService progressService = mock(ProgressService.class);
+		// Mock the progress task that gets returned
+		PercentageProgressTask mockTask = mock(PercentageProgressTask.class);
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
 				progressDone.set(true);
 				return null;
 			}
-		}).when(progressService).progressDone(any(String.class));
+		}).when(mockTask).done();
+
+		ProgressService progressService = mock(ProgressService.class);
+		when(progressService.createPercentageProgressTask(any(String.class), any(Integer.class), any(String.class)))
+			.thenReturn(mockTask);
 
 		when(server.getProgressService()).thenReturn(progressService);
 
@@ -215,14 +221,19 @@ public class MavenProjectCacheTest {
 
 		AtomicBoolean progressDone = new AtomicBoolean();
 
-		ProgressService progressService = mock(ProgressService.class);
+		// Mock the progress task that gets returned
+		PercentageProgressTask mockTask = mock(PercentageProgressTask.class);
 		doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
 				progressDone.set(true);
 				return null;
 			}
-		}).when(progressService).progressDone(any(String.class));
+		}).when(mockTask).done();
+
+		ProgressService progressService = mock(ProgressService.class);
+		when(progressService.createPercentageProgressTask(any(String.class), any(Integer.class), any(String.class)))
+			.thenReturn(mockTask);
 
 		when(server.getProgressService()).thenReturn(progressService);
 

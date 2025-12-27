@@ -10,10 +10,12 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.languageserver;
 
+import org.eclipse.lsp4j.WorkDoneProgressEnd;
+
 /**
- * Writes progress messages to the same progress task.
+ * Base class for progress tasks that report progress to the LSP client.
  * 
- * This handler can be used for long-running progress that requires message updates to the same task.
+ * <p>This handler can be used for long-running progress that requires message updates to the same task.</p>
  *
  */
 public abstract class AbstractProgressTask {
@@ -21,16 +23,17 @@ public abstract class AbstractProgressTask {
 	private static long progress_counter = 0; 
 	
 	protected final String taskId;
-	protected final ProgressService service;
+	protected final ProgressClient client;
 	
 	
-	public AbstractProgressTask(String taskId, ProgressService service) {
+	public AbstractProgressTask(String taskId, ProgressClient client) {
 		this.taskId = taskId + "-" + (progress_counter++);
-		this.service = service;
+		this.client = client;
 	}
 	
 	public void done() {
-		this.service.progressDone(taskId);
+		WorkDoneProgressEnd endReport = new WorkDoneProgressEnd();
+		this.client.end(taskId, endReport);
 	}
 
 }

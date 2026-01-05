@@ -473,9 +473,8 @@ public class ResourceCompareInput extends CompareEditorInput {
 		}
 
 		byte[] initialContent() throws CoreException {
-			InputStream in = createStream();
-			ByteArrayOutputStream bos= new ByteArrayOutputStream();
-			try {
+			try (InputStream in = createStream(); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+
 				while (true) {
 					int c= in.read();
 					if (c == -1)
@@ -483,19 +482,12 @@ public class ResourceCompareInput extends CompareEditorInput {
 					bos.write(c);
 				}
 
+				return bos.toByteArray();
+
 			} catch (IOException ex) {
 				return null;
-
-			} finally {
-				Utilities.close(in);
-				try {
-					bos.close();
-				} catch (IOException x) {
-					// silently ignored
-				}
 			}
 
-			return bos.toByteArray();
 		}
 
 		@Override

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.eclipse.jface.preference.BooleanFieldEditor;
+import org.eclipse.jface.preference.ComboFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.FileFieldEditor;
 import org.eclipse.jface.preference.IPreferenceStore;
@@ -55,7 +56,7 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 		fieldEditorParent.setLayout(layout);
 		for (ServerInfo s : installedServers) {
 			Group group = new Group(fieldEditorParent, SWT.None);
-			group.setText(s.label);
+			group.setText(s.label());
 			group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			layout = new GridLayout();
 			layout.numColumns = 1;
@@ -63,10 +64,10 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 			layout.marginHeight = 0;
 			group.setLayout(layout);
 
-			Composite c1 = new Composite(group, SWT.NONE);
-			c1.setLayout(new GridLayout());
-			c1.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			addField(new FileFieldEditor(s.preferenceKeyFileLog, "Logging to File", true, c1) {
+			Composite c = new Composite(group, SWT.NONE);
+			c.setLayout(new GridLayout());
+			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			addField(new FileFieldEditor(s.preferenceKeyFileLog(), "Logging to File", true, c) {
 
 				@Override
 				protected boolean checkState() {
@@ -113,10 +114,22 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 
 			});
 
-			Composite c2 = new Composite(group, SWT.NONE);
-			c2.setLayout(new GridLayout());
-			c2.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			addField(new BooleanFieldEditor(s.preferenceKeyConsoleLog, "Logging to Console", c2));
+			c = new Composite(group, SWT.NONE);
+			c.setLayout(new GridLayout());
+			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			addField(new BooleanFieldEditor(s.preferenceKeyConsoleLog(), "Logging to Console", c));
+
+			c = new Composite(group, SWT.NONE);
+			c.setLayout(new GridLayout());
+			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			addField(new ComboFieldEditor(s.preferenceKeyLogLevel(), "Logging Level", new String[][] {
+				{"Error", "error"},
+				{"Warn", "warn"},
+				{"Info", "info"},
+				{"Debug", "debug"},
+				{"Trace", "trace"},
+				{"Off", "off"},
+			}, c));
 
 		}
 	}

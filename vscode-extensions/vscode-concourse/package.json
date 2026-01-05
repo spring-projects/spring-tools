@@ -61,6 +61,19 @@
           },
           "description": "Additional 'user defined' VM args to pass to the language server process.",
           "scope": "machine-overridable"
+        },
+        "concourse.ls.logLevel": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace",
+            "off"
+          ],
+          "default": "error",
+          "description": "Log level for the Concourse Language Server"
         }
       }
     },

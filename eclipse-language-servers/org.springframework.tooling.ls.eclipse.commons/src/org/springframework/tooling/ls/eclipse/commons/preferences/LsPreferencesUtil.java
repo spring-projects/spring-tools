@@ -26,7 +26,7 @@ public class LsPreferencesUtil {
 	public static ServerInfo[] getInstalledLs() {
 		List<ServerInfo> serverInfos = new ArrayList<>();
 		for (ServerInfo info : ALL_SERVERS) {
-			Bundle bundle = Platform.getBundle(info.bundleId);
+			Bundle bundle = Platform.getBundle(info.bundleId());
 			if (bundle != null) {
 				serverInfos.add(info);
 			}
@@ -36,7 +36,7 @@ public class LsPreferencesUtil {
 
 	public static Optional<ServerInfo> getServerInfo(String bundleId) {
 		for (ServerInfo info : ALL_SERVERS) {
-			if (info.bundleId.equals(bundleId)) {
+			if (info.bundleId().equals(bundleId)) {
 				return Optional.of(info);
 			}
 		}

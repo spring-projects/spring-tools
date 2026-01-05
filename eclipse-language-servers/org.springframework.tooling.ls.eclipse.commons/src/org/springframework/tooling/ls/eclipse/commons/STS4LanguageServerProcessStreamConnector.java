@@ -49,7 +49,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 	private String connectorId;
 
 	public STS4LanguageServerProcessStreamConnector(ServerInfo server) {
-		this.connectorId = server.bundleId;
+		this.connectorId = server.bundleId();
 		this.consoles = LanguageServerConsoles.getConsoleFactory(server);
 	}
 
@@ -135,13 +135,14 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 		LsPreferencesUtil.getServerInfo(getPluginId()).ifPresent(info -> {
 			IPreferenceStore preferenceStore = LanguageServerCommonsActivator.getInstance().getPreferenceStore();
-			if (!preferenceStore.getBoolean(info.preferenceKeyConsoleLog)) {
-				String pathStr = preferenceStore.getString(info.preferenceKeyFileLog);
+			if (!preferenceStore.getBoolean(info.preferenceKeyConsoleLog())) {
+				String pathStr = preferenceStore.getString(info.preferenceKeyFileLog());
 				if (pathStr != null && !pathStr.isBlank()) {
 					command.add("-Dsts.log.file=" + pathStr);
 				}
 			}
-			command.add("-XX:ErrorFile=" + Platform.getStateLocation(Platform.getBundle(getPluginId())).append("fatal-error-" + info.label.replaceAll("\\s+", "-").toLowerCase() + "_" + System.currentTimeMillis()));
+			command.add("-Dlogging.level.root=" + preferenceStore.getString(info.preferenceKeyLogLevel()));
+			command.add("-XX:ErrorFile=" + Platform.getStateLocation(Platform.getBundle(getPluginId())).append("fatal-error-" + info.label().replaceAll("\\s+", "-").toLowerCase() + "_" + System.currentTimeMillis()));
 		});
 
 		command.add("-Dlanguageserver.hover-timeout=225");

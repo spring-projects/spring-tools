@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 Pivotal, Inc.
+ * Copyright (c) 2018, 2025 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,7 +22,8 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		IPreferenceStore store = LanguageServerPreferencesPage.getPrefsStoreFromPlugin();
 		ServerInfo[] installedServers = LsPreferencesUtil.getInstalledLs();
 		for (ServerInfo s : installedServers) {
-			store.setDefault(s.preferenceKeyConsoleLog, ENABLE_BY_DEFAULT);
+			store.setDefault(s.preferenceKeyConsoleLog(), ENABLE_BY_DEFAULT);
+			store.setDefault(s.preferenceKeyLogLevel(), "error");
 //			Bundle bundle = Platform.getBundle(s.bundleId);
 //			if (bundle != null) {
 //				IPath stateLocation = Platform.getStateLocation(bundle);

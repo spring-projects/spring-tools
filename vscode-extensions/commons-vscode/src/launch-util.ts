@@ -225,11 +225,13 @@ function prepareJvmArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
     }
 
     let logfile : string = options.workspaceOptions.get("logfile") || "/dev/null";
+    const rootLogLevel = options.workspaceOptions.get("logLevel") || "error";
     //The logfile = '/dev/null' is handled specifically by the language server process so it works on all OSs.
     options.clientOptions.outputChannel.appendLine('Redirecting server logs to ' + logfile);
     const args = [
         '-Dsts.lsp.client=vscode',
         '-Dsts.log.file=' + logfile,
+        `-Dlogging.level.root=${rootLogLevel}`,
         '-XX:TieredStopAtLevel=1'
     ];
     if (port && port > 0) {

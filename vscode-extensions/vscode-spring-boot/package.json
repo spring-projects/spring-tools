@@ -498,6 +498,19 @@
             "type": "boolean",
             "default": true,
             "description": "Enable/Disable Java VM validation"
+          },
+          "spring-boot.ls.logLevel": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warn",
+              "info",
+              "debug",
+              "trace",
+              "off"
+            ],
+            "default": "error",
+            "description": "Log level for the Spring Boot Language Server"
           }
         }
       },

@@ -27,7 +27,7 @@ public class LanguageServerConsoles {
 		if (managers==null) {
 			managers = new HashMap<>();
 		}
-		return managers.computeIfAbsent(server.label, label -> new Supplier<Console>() {
+		return managers.computeIfAbsent(server.label(), label -> new Supplier<Console>() {
 			ConsoleUtil consoleMgr = new ConsoleUtil(); //one console manager per language server type. This way each has their
 														// own history (which limits number of open consoles per type)
 			int consoleCounter = 0;
@@ -35,7 +35,7 @@ public class LanguageServerConsoles {
 			@Override
 			public Console get() {
 				if (isConsoleEnabled(server)) {
-					return consoleMgr.getConsole(server.label+" Language Server "+consoleCounter());
+					return consoleMgr.getConsole(server.label()+" Language Server "+consoleCounter());
 				}
 				return null;
 			}
@@ -47,7 +47,7 @@ public class LanguageServerConsoles {
 	}
 
 	private static boolean isConsoleEnabled(ServerInfo server) {
-		return LanguageServerCommonsActivator.getInstance().getPreferenceStore().getBoolean(server.preferenceKeyConsoleLog);
+		return LanguageServerCommonsActivator.getInstance().getPreferenceStore().getBoolean(server.preferenceKeyConsoleLog());
 	}
 
 }

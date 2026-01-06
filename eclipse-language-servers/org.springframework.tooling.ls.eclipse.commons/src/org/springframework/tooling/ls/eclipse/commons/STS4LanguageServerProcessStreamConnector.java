@@ -136,10 +136,10 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 		LsPreferencesUtil.getServerInfo(getPluginId()).ifPresent(info -> {
 			IPreferenceStore preferenceStore = LanguageServerCommonsActivator.getInstance().getPreferenceStore();
 			if (!preferenceStore.getBoolean(info.preferenceKeyConsoleLog())) {
-				String pathStr = preferenceStore.getString(info.preferenceKeyFileLog());
-				if (pathStr != null && !pathStr.isBlank()) {
-					command.add("-Dsts.log.file=" + pathStr);
-				}
+			}
+			String pathStr = preferenceStore.getString(info.preferenceKeyFileLog());
+			if (pathStr != null && !pathStr.isBlank()) {
+				command.add("-Dlogging.file.name=" + pathStr);
 			}
 			command.add("-Dlogging.level.root=" + preferenceStore.getString(info.preferenceKeyLogLevel()));
 			command.add("-XX:ErrorFile=" + Platform.getStateLocation(Platform.getBundle(getPluginId())).append("fatal-error-" + info.label().replaceAll("\\s+", "-").toLowerCase() + "_" + System.currentTimeMillis()));

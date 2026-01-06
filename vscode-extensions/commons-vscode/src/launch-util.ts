@@ -230,7 +230,7 @@ function prepareJvmArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
     options.clientOptions.outputChannel.appendLine('Redirecting server logs to ' + logfile);
     const args = [
         '-Dsts.lsp.client=vscode',
-        '-Dsts.log.file=' + logfile,
+        '-Dlogging.file.name=' + logfile,
         `-Dlogging.level.root=${rootLogLevel}`,
         '-XX:TieredStopAtLevel=1'
     ];

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,7 +17,6 @@ import org.springframework.ide.vscode.commons.languageserver.LanguageServerRunne
 import org.springframework.ide.vscode.commons.languageserver.util.DocumentSymbolHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleTextDocumentService;
-import org.springframework.ide.vscode.commons.util.LogRedirect;
 import org.springframework.ide.vscode.commons.yaml.reconcile.ASTTypeCache;
 import org.springframework.ide.vscode.commons.yaml.reconcile.TypeBasedYamlHierarchicalSymbolHandler;
 import org.springframework.ide.vscode.commons.yaml.reconcile.TypeBasedYamlSymbolHandler;
@@ -31,8 +30,6 @@ public class ConcourseLanguageServerBootApp {
 
 	public static void main(String[] args) throws Exception {
 		System.setProperty(LanguageServerRunner.SYSPROP_LANGUAGESERVER_NAME, SERVER_NAME); //makes it easy to recognize language server processes. Set this as early as possible.
-
-		LogRedirect.bootRedirectToFile(SERVER_NAME); //TODO: use boot (or logback realy) to configure logging instead.
 		SpringApplication.run(ConcourseLanguageServerBootApp.class, args);
 	}
 

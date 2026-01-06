@@ -37,20 +37,16 @@ import org.springframework.tooling.ls.eclipse.commons.preferences.LanguageServer
 import org.springframework.tooling.ls.eclipse.commons.preferences.LsPreferencesUtil;
 import org.springsource.ide.eclipse.commons.core.util.IOUtil;
 
-import com.google.common.base.Supplier;
-
 public abstract class STS4LanguageServerProcessStreamConnector extends ProcessStreamConnectionProvider {
 
 	private static LanguageServerProcessReaper processReaper = new LanguageServerProcessReaper();
 
 	private static final String LOG_RESOLVE_VM_ARG_PREFIX = "-Xlog:jni+resolve=";
 
-	private Supplier<Console> consoles = null;
-	private String connectorId;
+	private final ServerInfo serverInfo;
 
-	public STS4LanguageServerProcessStreamConnector(ServerInfo server) {
-		this.connectorId = server.bundleId();
-		this.consoles = LanguageServerConsoles.getConsoleFactory(server);
+	public STS4LanguageServerProcessStreamConnector(ServerInfo serverInfo) {
+		this.serverInfo = serverInfo;
 	}
 
 	@Override
@@ -58,24 +54,35 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 		super.start();
 
 		Process process = LanguageServerProcessReaper.getProcess(this);
-		processReaper.addProcess(connectorId, process);
+		processReaper.addProcess(serverInfo.bundleId(), process);
 
-		if (consoles!=null) {
-			Console console = consoles.get();
-			if (console!=null) {
+		streamLogging();
+	}
+
+	private void streamLogging() {
+		switch (getLoggingTarget()) {
+		case CONSOLE:
+			Console console = LanguageServerConsoles.getConsoleFactory(serverInfo.label()).get();
+			if (console != null) {
 				forwardTo(getLanguageServerLog(), console.out);
-			} else {
-				new Thread("Consume LS error stream") {
-					@Override
-					public void run() {
-						try {
-							IOUtil.consume(getLanguageServerLog());
-						} catch (IOException e) {
-							// ignore
-						}
-					}
-				}.start();
+				return;
 			}
+			// fall through to NONE case if there is no console created to simply consume the error log.
+		case OFF:
+			new Thread("Consume LS error stream") {
+				@Override
+				public void run() {
+					try {
+						IOUtil.consume(getLanguageServerLog());
+					} catch (IOException e) {
+						// ignore
+					}
+				}
+			}.start();
+			break;
+		case ERROR_LOG:
+			// Otherwise logging to ERROR LOG nothing to do see `getErrorStream()`
+			break;
 		}
 	}
 
@@ -135,10 +142,8 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 		LsPreferencesUtil.getServerInfo(getPluginId()).ifPresent(info -> {
 			IPreferenceStore preferenceStore = LanguageServerCommonsActivator.getInstance().getPreferenceStore();
-			if (!preferenceStore.getBoolean(info.preferenceKeyConsoleLog())) {
-			}
 			String pathStr = preferenceStore.getString(info.preferenceKeyFileLog());
-			if (pathStr != null && !pathStr.isBlank()) {
+  			if (pathStr != null && !pathStr.isBlank()) {
 				command.add("-Dlogging.file.name=" + pathStr);
 			}
 			command.add("-Dlogging.level.root=" + preferenceStore.getString(info.preferenceKeyLogLevel()));
@@ -208,9 +213,6 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 	@Override
 	protected ProcessBuilder createProcessBuilder() {
-		if (consoles==null) {
-			return super.createProcessBuilder();
-		}
 		ProcessBuilder builder = new ProcessBuilder(getCommands());
 		builder.directory(new File(getWorkingDirectory()));
 		//Super does this, but we do not:
@@ -223,7 +225,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 			@Override
 			protected IStatus run(IProgressMonitor arg0) {
 				try {
-					pipe(is, os);
+					is.transferTo(os);
 				} catch (IOException e) {
 				}
 				finally {
@@ -236,20 +238,6 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 				return Status.OK_STATUS;
 			}
 
-			void pipe(InputStream input, OutputStream output) throws IOException {
-				try {
-				    byte[] buf = new byte[1024*4];
-				    int n = input.read(buf);
-				    while (n >= 0) {
-				      output.write(buf, 0, n);
-				      n = input.read(buf);
-				    }
-				    output.flush();
-				} finally {
-					input.close();
-				}
-			}
-
 		};
 		consoleJob.setSystem(true);
 		consoleJob.schedule();
@@ -257,11 +245,21 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 	@Override
 	public InputStream getErrorStream() {
-		return null;
+		return getLoggingTarget() == LoggingTarget.ERROR_LOG ? getLanguageServerLog() : null;
 	}
 
 	private InputStream getLanguageServerLog() {
 		return super.getErrorStream();
+	}
+
+	private LoggingTarget getLoggingTarget() {
+		LanguageServerCommonsActivator plugin = LanguageServerCommonsActivator.getInstance();
+		try {
+			return LoggingTarget.valueOf(plugin.getPreferenceStore().getString(serverInfo.prefernceKeyLogTarget()));
+		} catch (Exception e) {
+			plugin.getLog().error("Cannot determine language srever logging target", e);
+			return LoggingTarget.OFF;
+		}
 	}
 
 	@Override

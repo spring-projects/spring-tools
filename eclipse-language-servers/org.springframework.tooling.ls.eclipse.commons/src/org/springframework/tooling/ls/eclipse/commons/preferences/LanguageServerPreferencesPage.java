@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,7 +14,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.ComboFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.FileFieldEditor;
@@ -28,6 +27,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.springframework.tooling.ls.eclipse.commons.LanguageServerCommonsActivator;
+import org.springframework.tooling.ls.eclipse.commons.LoggingTarget;
 import org.springframework.tooling.ls.eclipse.commons.preferences.LanguageServerConsolePreferenceConstants.ServerInfo;
 
 public class LanguageServerPreferencesPage extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
@@ -38,10 +38,7 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 
 	@Override
 	public void init(IWorkbench workbench) {
-		setDescription("Log settings for STS Language Servers. "
-				+ "Changes only take effect the next time a Language Server is started.\n"
-				+ "\n"
-				+ "Note: Enabling logging to console disables logging to file!\n");
+		setDescription("Log settings for STS Language Servers. Changes only take effect the next time a Language Server is started.");
 		setPreferenceStore(getPrefsStoreFromPlugin());
 	}
 
@@ -65,6 +62,27 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 			group.setLayout(layout);
 
 			Composite c = new Composite(group, SWT.NONE);
+			c.setLayout(new GridLayout());
+			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			addField(new ComboFieldEditor(s.preferenceKeyLogLevel(), "Logging Level", new String[][] {
+				{"Error", "error"},
+				{"Warn", "warn"},
+				{"Info", "info"},
+				{"Debug", "debug"},
+				{"Trace", "trace"},
+				{"Off", "off"},
+			}, c));
+
+			c = new Composite(group, SWT.NONE);
+			c.setLayout(new GridLayout());
+			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			addField(new ComboFieldEditor(s.prefernceKeyLogTarget(), "Logging to IDE", new String[][] {
+				{"Off", LoggingTarget.OFF.toString()},
+				{"Console", LoggingTarget.CONSOLE.toString()},
+				{"Error Log", LoggingTarget.ERROR_LOG.toString()},
+			}, c));
+
+			c = new Composite(group, SWT.NONE);
 			c.setLayout(new GridLayout());
 			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 			addField(new FileFieldEditor(s.preferenceKeyFileLog(), "Logging to File", true, c) {
@@ -113,23 +131,6 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 				}
 
 			});
-
-			c = new Composite(group, SWT.NONE);
-			c.setLayout(new GridLayout());
-			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			addField(new BooleanFieldEditor(s.preferenceKeyConsoleLog(), "Logging to Console", c));
-
-			c = new Composite(group, SWT.NONE);
-			c.setLayout(new GridLayout());
-			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-			addField(new ComboFieldEditor(s.preferenceKeyLogLevel(), "Logging Level", new String[][] {
-				{"Error", "error"},
-				{"Warn", "warn"},
-				{"Info", "info"},
-				{"Debug", "debug"},
-				{"Trace", "trace"},
-				{"Off", "off"},
-			}, c));
 
 		}
 	}

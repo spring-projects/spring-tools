@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,10 +10,9 @@
  *******************************************************************************/
 package org.springframework.tooling.ls.eclipse.commons.preferences;
 
-import static org.springframework.tooling.ls.eclipse.commons.preferences.LanguageServerConsolePreferenceConstants.ENABLE_BY_DEFAULT;
-
 import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.springframework.tooling.ls.eclipse.commons.LoggingTarget;
 import org.springframework.tooling.ls.eclipse.commons.preferences.LanguageServerConsolePreferenceConstants.ServerInfo;
 
 public class PrefsInitializer extends AbstractPreferenceInitializer {
@@ -22,8 +21,8 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		IPreferenceStore store = LanguageServerPreferencesPage.getPrefsStoreFromPlugin();
 		ServerInfo[] installedServers = LsPreferencesUtil.getInstalledLs();
 		for (ServerInfo s : installedServers) {
-			store.setDefault(s.preferenceKeyConsoleLog(), ENABLE_BY_DEFAULT);
 			store.setDefault(s.preferenceKeyLogLevel(), "error");
+			store.setDefault(s.prefernceKeyLogTarget(), LoggingTarget.OFF.toString());
 //			Bundle bundle = Platform.getBundle(s.bundleId);
 //			if (bundle != null) {
 //				IPath stateLocation = Platform.getStateLocation(bundle);

@@ -80,7 +80,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 				}
 			}.start();
 			break;
-		case ERROR_LOG:
+		case LSP4E:
 			// Otherwise logging to ERROR LOG nothing to do see `getErrorStream()`
 			break;
 		}
@@ -248,7 +248,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 	@Override
 	public InputStream getErrorStream() {
-		return getLoggingTarget() == LoggingTarget.ERROR_LOG ? getLanguageServerLog() : null;
+		return getLoggingTarget() == LoggingTarget.LSP4E ? getLanguageServerLog() : null;
 	}
 
 	private InputStream getLanguageServerLog() {

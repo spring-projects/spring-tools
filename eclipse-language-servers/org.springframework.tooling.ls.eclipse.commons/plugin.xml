@@ -29,10 +29,10 @@
    <extension
      point="org.eclipse.ui.preferencePages">
     <page
-          category="org.eclipse.lsp4e.preferences"
+          category="org.springsource.ide.eclipse.commons.preferencePage"
           class="org.springframework.tooling.ls.eclipse.commons.preferences.LanguageServerPreferencesPage"
           id="org.springframework.tooling.ls.eclipse.commons.console.preferences"
-          name="Spring Language Servers">
+          name="Logs">
       </page>
    </extension>
    <extension

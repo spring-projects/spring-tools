@@ -79,7 +79,7 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 			addField(new ComboFieldEditor(s.prefernceKeyLogTarget(), "Logging to IDE", new String[][] {
 				{"Off", LoggingTarget.OFF.toString()},
 				{"Console", LoggingTarget.CONSOLE.toString()},
-				{"Error Log", LoggingTarget.ERROR_LOG.toString()},
+				{"Error Log", LoggingTarget.LSP4E.toString()},
 			}, c));
 
 			c = new Composite(group, SWT.NONE);

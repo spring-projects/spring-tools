@@ -13,7 +13,7 @@ package org.springframework.tooling.ls.eclipse.commons;
 public enum LoggingTarget {
 
 	OFF,
-	ERROR_LOG,
+	LSP4E,
 	CONSOLE
 
 }

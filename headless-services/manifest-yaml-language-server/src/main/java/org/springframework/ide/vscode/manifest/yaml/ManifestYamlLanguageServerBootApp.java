@@ -15,7 +15,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.ide.vscode.commons.languageserver.LanguageServerRunner;
 import org.springframework.ide.vscode.commons.languageserver.completion.VscodeCompletionEngineAdapter.CompletionFilter;
-import org.springframework.ide.vscode.commons.util.LogRedirect;
 import org.springframework.ide.vscode.commons.util.Unicodes;
 import org.springframework.ide.vscode.commons.yaml.reconcile.ASTTypeCache;
 
@@ -26,8 +25,6 @@ public class ManifestYamlLanguageServerBootApp {
 
 	public static void main(String[] args) throws Exception {
 		System.setProperty(LanguageServerRunner.SYSPROP_LANGUAGESERVER_NAME, SERVER_NAME); //makes it easy to recognize language server processes - and set this as early as possible
-
-		LogRedirect.bootRedirectToFile(SERVER_NAME); //TODO: use boot (or logback realy) to configure logging instead.
 		SpringApplication.run(ManifestYamlLanguageServerBootApp.class, args);
 	}
 

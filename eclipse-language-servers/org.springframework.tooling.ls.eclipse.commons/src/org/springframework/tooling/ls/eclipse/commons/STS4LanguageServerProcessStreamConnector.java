@@ -147,6 +147,9 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 				command.add("-Dlogging.file.name=" + pathStr);
 			}
 			command.add("-Dlogging.level.root=" + preferenceStore.getString(info.preferenceKeyLogLevel()));
+			if (getLoggingTarget() == LoggingTarget.CONSOLE) {
+				command.add("-Dspring.output.ansi.enabled=ALWAYS");
+			}
 			command.add("-XX:ErrorFile=" + Platform.getStateLocation(Platform.getBundle(getPluginId())).append("fatal-error-" + info.label().replaceAll("\\s+", "-").toLowerCase() + "_" + System.currentTimeMillis()));
 		});
 
@@ -257,7 +260,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 		try {
 			return LoggingTarget.valueOf(plugin.getPreferenceStore().getString(serverInfo.prefernceKeyLogTarget()));
 		} catch (Exception e) {
-			plugin.getLog().error("Cannot determine language srever logging target", e);
+			plugin.getLog().error("Cannot determine language server logging target", e);
 			return LoggingTarget.OFF;
 		}
 	}

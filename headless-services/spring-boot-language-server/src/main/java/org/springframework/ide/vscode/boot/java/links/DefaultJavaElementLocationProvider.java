@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2024 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,11 +17,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.EnumConstantDeclaration;
 import org.eclipse.jdt.core.dom.EnumDeclaration;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -137,8 +140,20 @@ public class DefaultJavaElementLocationProvider implements JavaElementLocationPr
 									}
 									return true;
 								}
-								
-								
+
+								@Override
+								public boolean visit(FieldDeclaration node) {
+									for (Object o : node.fragments()) {
+										if (o instanceof VariableDeclarationFragment f) {
+											IVariableBinding binding = f.resolveBinding();
+											if (memberBindingKey.equals(binding.getKey())) {
+												range.set(nameRange(f.getName()));
+												return false;
+											}
+										}
+									}
+									return true;
+								}
 
 							});
 							return range.get();

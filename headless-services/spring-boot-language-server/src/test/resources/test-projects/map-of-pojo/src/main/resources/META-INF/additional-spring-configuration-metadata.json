@@ -1,0 +1,11 @@
+{
+  "groups": [],
+  "properties": [
+    {
+      "name": "com.example.serviceclient",
+      "type": "java.util.Map<String,com.example.demo.HttpClientProperties>",
+      "description": "HTTP Service Client definitions",
+      "sourceType": "com.example.demo.HttpServiceClientProperties"
+    }
+  ]
+}

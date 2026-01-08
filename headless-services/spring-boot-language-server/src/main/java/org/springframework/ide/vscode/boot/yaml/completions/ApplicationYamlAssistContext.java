@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2025 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -48,12 +48,11 @@ import org.springframework.ide.vscode.commons.java.IField;
 import org.springframework.ide.vscode.commons.java.IJavaElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.IMember;
-import org.springframework.ide.vscode.commons.java.IMethod;
 import org.springframework.ide.vscode.commons.java.IType;
+import org.springframework.ide.vscode.commons.languageserver.completion.AbstractScoreableProposal;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposal;
 import org.springframework.ide.vscode.commons.languageserver.completion.LazyProposalApplier;
-import org.springframework.ide.vscode.commons.languageserver.completion.AbstractScoreableProposal;
 import org.springframework.ide.vscode.commons.util.CollectionUtil;
 import org.springframework.ide.vscode.commons.util.FuzzyMap.Match;
 import org.springframework.ide.vscode.commons.util.FuzzyMatcher;
@@ -411,7 +410,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 					String keyValue = contextPath.getLastSegment().toPropString();
 					return PropertiesDefinitionCalculator.getValueDefinitionLocations(javaElementLocationProvider, typeUtil, keyType, keyValue);
 				} else {
-					IType javaType = javaProject.getIndex().findType(parentType.getErasure());
+					final IType javaType = javaProject.getIndex().findType(parentType.getErasure());
 					if (javaType != null) {
 						if (javaType.isRecord()) {
 							IField field = PropertiesDefinitionCalculator.getPropertyField(javaType, propName);
@@ -422,9 +421,11 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 								}
 							}
 						} else {
-							IMethod method = PropertiesDefinitionCalculator.getPropertyMethod(typeUtil, javaType, propName);
-							if (method != null) {
-								Location location = javaElementLocationProvider.findLocation(javaProject, method);
+							IMember m = typeUtil.getNameAnnotatedField(javaType, propName)
+									.map(IMember.class::cast)
+									.orElseGet(() -> (IMember) PropertiesDefinitionCalculator.getPropertyMethod(typeUtil, javaType, propName));
+							if (m != null) {
+								Location location = javaElementLocationProvider.findLocation(javaProject, m);
 								if (location != null) {
 									return ImmutableList.of(location);
 								}

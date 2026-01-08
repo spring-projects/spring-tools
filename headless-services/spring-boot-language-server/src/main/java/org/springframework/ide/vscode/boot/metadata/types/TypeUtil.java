@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -38,7 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.convert.DurationStyle;
 import org.springframework.ide.vscode.boot.configurationmetadata.Deprecation;
+import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
+import org.springframework.ide.vscode.boot.java.value.PropertyExtractor;
 import org.springframework.ide.vscode.boot.metadata.ResourceHintProvider;
 import org.springframework.ide.vscode.boot.metadata.ValueProviderRegistry.ValueProviderStrategy;
 import org.springframework.ide.vscode.boot.metadata.hints.StsValueHint;
@@ -46,6 +48,7 @@ import org.springframework.ide.vscode.boot.metadata.util.DeprecationUtil;
 import org.springframework.ide.vscode.boot.metadata.util.PropertyDocUtils;
 import org.springframework.ide.vscode.boot.properties.reconcile.BootEnumValueParser;
 import org.springframework.ide.vscode.commons.java.Flags;
+import org.springframework.ide.vscode.commons.java.IAnnotation;
 import org.springframework.ide.vscode.commons.java.IField;
 import org.springframework.ide.vscode.commons.java.IJavaElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -783,12 +786,13 @@ public class TypeUtil {
 						} catch (Exception e) {
 							log.error("", e);
 						}
+						String cameCasePropertyName = getCamelCasePropertyNameFromGetterOrSetter(m);
 						if (beanMode.includesHyphenated()) {
-							properties.add(new TypedProperty(getterOrSetterNameToProperty(m.getElementName()), propType,
+							properties.add(new TypedProperty(StringUtil.camelCaseToHyphens(cameCasePropertyName), propType,
 									Renderables.lazy(() -> PropertyDocUtils.documentJavaElement(sourceLinks, project, m)), deprecation));
 						}
 						if (beanMode.includesCamelCase()) {
-							properties.add(new TypedProperty(getterOrSetterNameToCamelName(m.getElementName()), propType,
+							properties.add(new TypedProperty(cameCasePropertyName, propType,
 									Renderables.lazy(() -> PropertyDocUtils.documentJavaElement(sourceLinks, project, m)), deprecation));
 						}
 					});
@@ -798,7 +802,7 @@ public class TypeUtil {
 		}
 		return null;
 	}
-
+	
 	private Optional<IMethod> findConstructorBinding(IType type) {
 		return type.getMethods()
 		.filter(m -> m.isConstructor())
@@ -836,13 +840,28 @@ public class TypeUtil {
 			}
 		});
 	}
-
-	private String getterOrSetterNameToProperty(String name) {
-		String camelName = getterOrSetterNameToCamelName(name);
-		return StringUtil.camelCaseToHyphens(camelName);
+	
+	private String getCamelCasePropertyNameFromGetterOrSetter(IMethod m) {
+		String fieldName = getterOrSetterNameToCamelName(m.getElementName());
+		if (m.getDeclaringType() != null) {
+			IField f = m.getDeclaringType().getField(fieldName);
+			if (f != null) {
+				Optional<String> optNameAnnotationValue = f.getAnnotations().filter(a -> Annotations.PROPERTY_NAME.equals(a.fqName()))
+						.flatMap(a -> a.getMemberValuePairs())
+						.filter(p -> PropertyExtractor.PARAM_VALUE.equals(p.getMemberName()))
+						.map(p -> p.getValue())
+						.filter(String.class::isInstance)
+						.map(String.class::cast)
+						.findFirst();
+				if (optNameAnnotationValue.isPresent()) {
+					return optNameAnnotationValue.get();
+				}
+			}
+		}
+		return fieldName;
 	}
-
-	public String getterOrSetterNameToCamelName(String name) {
+	
+	private String getterOrSetterNameToCamelName(String name) {
 		Assert.isLegal(name.startsWith("set") || name.startsWith("get") || name.startsWith("is"));
 		int prefixLen = name.startsWith("is") ? 2 : 3;
 		String camelName = Character.toLowerCase(name.charAt(prefixLen)) + name.substring(prefixLen+1);
@@ -945,7 +964,7 @@ public class TypeUtil {
 
 	public IField getField(Type beanType, String propName) {
 		IType type = findType(beanType);
-		return getExactField(type, propName);
+		return getNameAnnotatedField(type, propName).orElse(getExactField(type, propName));
 	}
 
 	protected IField getExactField(IType type, String fieldName) {
@@ -954,6 +973,17 @@ public class TypeUtil {
 			return f;
 		}
 		return null;
+	}
+	
+	public Optional<IField> getNameAnnotatedField(IType type, String propertyName) {
+		return type.getFields().filter(f -> f.getAnnotations().anyMatch(a -> isNameAnnotation(a, propertyName))).findFirst();
+	}
+	
+	private boolean isNameAnnotation(IAnnotation a, String propertyName) {
+		if (Annotations.PROPERTY_NAME.equals(a.fqName())) {
+			return a.getMemberValuePairs().anyMatch(pair -> PropertyExtractor.PARAM_VALUE.equals(pair.getMemberName()) && propertyName.equals(pair.getValue()));
+		}
+		return false;
 	}
 
 	public IField getEnumConstant(Type enumType, String propName) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -855,7 +855,28 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         //no other problems
         );
     }
-
+    
+    @Test
+    void nameAnnotationProperty_Reconciling() throws Exception {
+        useProject(createPredefinedMavenProject("map-of-pojo"));
+        
+        Editor editor = harness.newEditor("""
+        com.example.serviceclient.demo.apiversion.default: 1.0
+        """);
+        editor.assertProblems();
+        
+        editor = harness.newEditor("""
+        com.example.serviceclient.demo.apiversion.default-version: 1.0
+        """);
+        editor.assertProblem("default-version");
+    }
+    
+    @Test
+    void nameAnnotationProperty_Completions() throws Exception {
+        useProject(createPredefinedMavenProject("map-of-pojo"));
+        assertCompletion("com.example.serviceclient.demo.apiversion.", "com.example.serviceclient.demo.apiversion.default=<*>");
+    }
+    
     @Test
     void testRelaxedNameReconcilingErrors() throws Exception {
         //Tricky with relaxec names: the error positions have to be moved

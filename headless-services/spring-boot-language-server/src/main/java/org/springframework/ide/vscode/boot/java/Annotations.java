@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -142,6 +142,8 @@ public class Annotations {
 	public static final String DATA_MONGODB_QUERY = "org.springframework.data.mongodb.repository.Query";
 	public static final String DATA_REST_BASE_PATH_AWARE_CONTROLLER = "org.springframework.data.rest.webmvc.BasePathAwareController";
 	public static final String DATA_JDBC_QUERY = "org.springframework.data.jdbc.repository.query.Query";
+	
+	public static final String PROPERTY_NAME = "org.springframework.boot.context.properties.bind.Name";
 
 	// Cloud
 	

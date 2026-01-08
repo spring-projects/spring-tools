@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -159,9 +159,12 @@ public class PropertiesDefinitionCalculator {
 						elements.add(field);
 					}
 				} else {
-					IMethod method = getPropertyMethod(typeUtil, type, property.getSimpleName());
-					if (method!=null) {
-						elements.add(method);
+					final IType t = type;
+					IMember m = typeUtil.getNameAnnotatedField(type, property.getSimpleName())
+							.map(IMember.class::cast)
+							.orElseGet(() -> getPropertyMethod(typeUtil, t, property.getSimpleName()));
+					if (m != null) {
+						elements.add(m);
 					}
 				}
 			}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,7 +26,7 @@ import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 
 public class PropertyExtractor {
 	
-	private static final String PARAM_VALUE = "value";
+	public static final String PARAM_VALUE = "value";
 	private static final String PARAM_NAME = "name";
 	private static final String PARAM_PREFIX = "prefix";
 

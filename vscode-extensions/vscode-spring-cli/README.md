@@ -1,3 +1,7 @@
+# THIS EXTENSION IS NO LONGER ACTIVELY MAINTAINED
+
+(due to the [spring cli project](https://github.com/spring-attic/spring-cli/) not being maintained anymore, we don't maintain the corresponding VSCode extension anymore either)
+
 # Spring CLI Extension
 
 The extension integrates into Visual Studio Code UI [Spring CLI](https://docs.spring.io/spring-cli/reference/) which increases productivity when new Spring Boot projects are created or new functionality added to existing projects.

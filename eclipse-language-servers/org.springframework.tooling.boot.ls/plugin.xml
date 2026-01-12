@@ -747,6 +747,10 @@
             name="Logical Structure"
             restorable="true">
       </view>
+      <category
+            id="org.springframework.ide.eclipse.ui.views"
+            name="Spring">
+      </category>
    </extension>
 
 </plugin>

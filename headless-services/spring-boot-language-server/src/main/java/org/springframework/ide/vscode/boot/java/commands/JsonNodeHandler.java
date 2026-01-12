@@ -185,7 +185,8 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 					
 					Node childNode = new Node(parent)
 							.withAttribute(TEXT, symbol.getName())
-							.withAttribute(LOCATION, new Location(docUri, symbol.getRange()));
+							.withAttribute(LOCATION, new Location(docUri, symbol.getRange()))
+							.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY));
 
 					assignNodeId(childNode, parent);
 

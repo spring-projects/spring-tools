@@ -1,0 +1,28 @@
+{
+	"stereotypes" : {
+		"java.Exception" : {
+			"assignments": [
+				"java.lang.Exception"
+			],
+			"groups" : [ "java" ]
+		},
+		"java.jaxb.XmlModel" : {
+			"displayName" : "XML Model",
+			"assignments" : [
+				"jakarta.xml.bind.annotation.XmlRootElement"
+			],
+			"groups" : [ "java.jaxb" ]
+		}
+	},
+	"groups" : {
+		"java" : {
+			"displayName" : "Java",
+			"type" : "technology",
+			"priority" : 1000
+		},
+		"java.jaxb" : {
+			"displayName" : "JAXB",
+			"type" : "technology"
+		}
+	}
+}

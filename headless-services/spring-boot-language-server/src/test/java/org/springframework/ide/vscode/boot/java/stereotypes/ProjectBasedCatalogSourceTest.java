@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -18,6 +19,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
@@ -89,7 +91,7 @@ public class ProjectBasedCatalogSourceTest {
     }
     
     @Test
-    void testCatalogLookupFromLibraries() throws Exception {
+    void testCatalogGroupLookupFromLibraries() throws Exception {
     	var source = new ProjectBasedCatalogSource(regularProject);
 		var catalog = new JsonPathStereotypeCatalog(source);
 		
@@ -100,6 +102,26 @@ public class ProjectBasedCatalogSourceTest {
     }
     
     @Test
+    void testCatalogLookupFromLibraries() throws Exception {
+    	var source = new ProjectBasedCatalogSource(regularProject);
+    	Stream<URL> sources = source.getSources();
+    	List<URL> list = sources.toList();
+    	
+    	assertTrue(containsCatalog(list, name -> name.contains("jmolecules-spring")));
+    	assertFalse(containsCatalog(list, name -> name.contains("jmolecules-jpa")));
+    }
+    
+    @Test
+    void testDefaultCatalogIfLibrariesNotFound() throws Exception {
+    	var source = new ProjectBasedCatalogSource(regularProject);
+    	Stream<URL> sources = source.getSources();
+    	List<URL> list = sources.toList();
+    	
+    	assertFalse(containsCatalog(list, name -> name.endsWith("spring-jmolecules-stereotypes.json")));
+    	assertTrue(containsCatalog(list, name -> name.endsWith("jpa-jmolecules-stereotypes.json")));
+    }
+    
+	@Test
     void testCatalogDefaultLookupFromLanguageServer() throws Exception {
     	var source = new ProjectBasedCatalogSource(fallbackProject);
 		
@@ -107,8 +129,14 @@ public class ProjectBasedCatalogSourceTest {
 		List<URL> list = sources.toList();
 		
 		assertEquals(2, list.size());
-		assertTrue(list.get(0).toString().endsWith("spring-jmolecules-stereotypes.json"));
-		assertTrue(list.get(1).toString().endsWith("jpa-jmolecules-stereotypes.json"));
+    	assertTrue(containsCatalog(list, name -> name.endsWith("spring-jmolecules-stereotypes.json")));
+    	assertTrue(containsCatalog(list, name -> name.endsWith("jpa-jmolecules-stereotypes.json")));
     }
     
+    private boolean containsCatalog(List<URL> list, Predicate<? super String> predicate) {
+    	return list.stream()
+    		.map(url -> url.toString())
+    		.anyMatch(predicate);
+	}
+
 }

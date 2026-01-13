@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -31,10 +31,6 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 public class ProjectBasedCatalogSource implements CatalogSource {
 
 	private static final Logger log = LoggerFactory.getLogger(ProjectBasedCatalogSource.class);
-	
-	private static final String[] DEFAULT_STEREOTYPE_DEFINITIONS = {
-			"/stereotype-defaults/spring-jmolecules-stereotypes.json", 
-			"/stereotype-defaults/jpa-jmolecules-stereotypes.json"};
 
 	private final IJavaProject project;
 
@@ -84,22 +80,10 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 				}
 			}
 
-			if (result.size() == 0) {
-
-				// use default hard-coded stereotype definitions for projects that don't have jmolecules on the classpath
-
-				for (String defaultDefinition : DEFAULT_STEREOTYPE_DEFINITIONS) {
-					URL defaultStereotypes = this.getClass().getResource(defaultDefinition);
-
-					if (defaultStereotypes != null) {
-						log.info("using default stereotypes " + defaultDefinition + " for project: " + this.project.getElementName());
-						result.add(defaultStereotypes);
-					}
-					else {
-						log.error("error looking up default stereotypes " + defaultDefinition + " for project: " + this.project.getElementName());
-					}
-				}
-			}
+			// Add default stereotype definitions only if the corresponding jar file wasn't found
+			addDefaultStereotypeIfNeeded(result, "/stereotype-defaults/spring-jmolecules-stereotypes.json", "jmolecules-spring");
+			addDefaultStereotypeIfNeeded(result, "/stereotype-defaults/jpa-jmolecules-stereotypes.json", "jmolecules-jpa");
+			addDefaultStereotypeIfNeeded(result, "/stereotype-defaults/java-jmolecules-stereotypes.json", "jmolecules-stereotypes");
 
 		} catch (Exception e) {
 			log.error("error looking up stereotype metadata for project: " + this.project.getElementName(), e);
@@ -107,6 +91,25 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 		
 		log.info("project based stereotype catalogs lookup for project '" + project.getElementName() + "' found: " + result.toString());
 		return result.stream();
+	}
+	
+	private void addDefaultStereotypeIfNeeded(List<URL> result, String defaultDefinition, String jarNamePattern) {
+		// Check if any catalog URL from a jar file matching the pattern was found
+		boolean catalogFound = result.stream()
+				.map(URL::toString)
+				.anyMatch(url -> url.contains(jarNamePattern));
+		
+		if (!catalogFound) {
+			URL defaultStereotypes = this.getClass().getResource(defaultDefinition);
+			
+			if (defaultStereotypes != null) {
+				log.info("using default stereotypes " + defaultDefinition + " for project: " + this.project.getElementName());
+				result.add(defaultStereotypes);
+			}
+			else {
+				log.error("error looking up default stereotypes " + defaultDefinition + " for project: " + this.project.getElementName());
+			}
+		}
 	}
 
 }

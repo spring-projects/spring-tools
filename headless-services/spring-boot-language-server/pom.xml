@@ -17,7 +17,7 @@
 		<dependencies.version>${project.version}</dependencies.version>
 		<jdt.core.version>3.43.0</jdt.core.version>
 		<lsp4xml.version>0.24.0</lsp4xml.version>
-		<spring-ai.version>1.0.0</spring-ai.version>
+		<spring-ai.version>2.0.0-M1</spring-ai.version>
 		<jmolecules.version>2025.0.0-RC5</jmolecules.version>
 	</properties>
 

@@ -10,10 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
-import java.util.List;
-
 import org.springframework.ai.support.ToolCallbacks;
-import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,8 +21,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class McpConfig {
 	
-    @Bean
-    public List<ToolCallback> registerTools(
+	@Bean
+	ToolCallbackProvider registerTools(
     		SpringVersionsAndGenerations springVersionsAndGenerations,
     		SpringIndexAccess springIndexAccess,
     		ProjectInformation projectInformation,
@@ -32,15 +30,15 @@ public class McpConfig {
     		RequestMappingMcpTools requestMappingMcpTools,
     		ComponentAnalysisMcpTools componentAnalysisMcpTools) {
     	
-        return List.of(ToolCallbacks.from(
+        return ToolCallbackProvider.from(ToolCallbacks.from(
         		springVersionsAndGenerations,
         		springIndexAccess,
         		projectInformation,
         		stereotypeInformation,
         		requestMappingMcpTools,
         		componentAnalysisMcpTools));
-    }
-    
+	}
+	
 //    @Bean
 //    List<McpServerFeatures.SyncPromptSpecification> springToolsPrompts() {
 //    	return Prompts.PROMPTS;

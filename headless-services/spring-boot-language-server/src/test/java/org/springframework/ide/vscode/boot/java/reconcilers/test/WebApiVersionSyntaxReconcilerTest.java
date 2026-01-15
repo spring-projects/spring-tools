@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,9 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionSyntaxReconciler;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement.ConfigType;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
@@ -257,7 +259,7 @@ public class WebApiVersionSyntaxReconcilerTest extends BaseReconcilerTest {
 				import org.springframework.web.bind.annotation.RequestMapping;
 				
 				@RestController
-				@RequestMapping(path = "mypath", version = "1.2.3")
+				@RequestMapping(path = "mypath", version = "a.b.c")
 				public class A {
 				}
 				""";
@@ -342,6 +344,83 @@ public class WebApiVersionSyntaxReconcilerTest extends BaseReconcilerTest {
 		
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("\"a.b.c\"", markedStr);
+	}
+	
+	@Test
+	void parserShowsNoErrorForNotParseableVersionNumberWhenSpecificParserIsUsedViaProperties() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.web.bind.annotation.RestController;
+				import org.springframework.web.bind.annotation.RequestMapping;
+				
+				@RestController
+				@RequestMapping(path = "mypath", version = "a.b.c")
+				public class A {
+				}
+				""";
+
+		WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG)
+				.versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4)))
+				.versionParser("some.random.VersionParser")
+				.buildFor(null);
+
+		ReconcilingIndex reconcilingIndex = new ReconcilingIndex() {
+			@Override
+			public List<WebConfigIndexElement> getWebConfigProperties(IJavaProject project) {
+				return List.of(webConfig);
+			}
+		};
+		
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			return new WebApiVersionSyntaxReconciler(springIndex);
+		}, "A.java", source, false, reconcilingIndex);
+		
+		assertEquals(0, problems.size());
+	}
+	
+	@Test
+	void parserShowsErrorForNotParseableVersionNumberWhenNoSpecificParserIsDefinedViaProperties() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.web.bind.annotation.RestController;
+				import org.springframework.web.bind.annotation.RequestMapping;
+				
+				@RestController
+				@RequestMapping(path = "mypath", version = "a.b.c")
+				public class A {
+				}
+				""";
+
+		WebConfigIndexElement webConfig = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG)
+				.versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4)))
+				.versionParser(WebConfigIndexElement.DEFAULT_VERSION_PARSER)
+				.buildFor(null);
+
+		ReconcilingIndex reconcilingIndex = new ReconcilingIndex() {
+			@Override
+			public List<WebConfigIndexElement> getWebConfigProperties(IJavaProject project) {
+				return List.of(webConfig);
+			}
+		};
+		
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			return new WebApiVersionSyntaxReconciler(springIndex);
+		}, "A.java", source, false, reconcilingIndex);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		
+		assertEquals(Boot4JavaProblemType.API_VERSION_SYNTAX_ERROR, problem.getType());
+		
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("\"a.b.c\"", markedStr);
+
+		assertEquals(0, problem.getQuickfixes().size());
 	}
 
 }

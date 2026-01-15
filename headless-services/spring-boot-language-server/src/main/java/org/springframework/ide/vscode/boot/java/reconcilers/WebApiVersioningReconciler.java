@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,15 +28,12 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.UriUtil;
-
-import com.google.common.collect.Streams;
 
 public class WebApiVersioningReconciler implements JdtAstReconciler {
 
@@ -131,10 +128,7 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 	}
 	
 	private boolean isApiVersioningConfigured(IJavaProject project, ReconcilingContext context) {
-		List<WebConfigIndexElement> javaWebConfigs = springIndex.getNodesOfType(project.getElementName(), WebConfigIndexElement.class);
-		List<WebConfigIndexElement> propertiesWebConfigs = context.getReconcilingIndex().getWebConfigProperties(project);
-		
-		return Streams.concat(javaWebConfigs.stream(), propertiesWebConfigs.stream())
+		return WebApiReconcilerUtil.getWebConfigs(springIndex, project, context)
 			.filter(webConfig -> webConfig.getVersionSupportStrategies() != null && webConfig.getVersionSupportStrategies().size() > 0)
 			.findAny()
 			.isPresent();

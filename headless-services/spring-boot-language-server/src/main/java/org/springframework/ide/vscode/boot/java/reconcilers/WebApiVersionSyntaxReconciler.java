@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -92,7 +92,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 							throw new RequiredCompleteIndexException();
 						}
 						
-						if (!isApiVersioningConfiguredWithStanardVersionParser(project)) {
+						if (!isApiVersioningConfiguredWithStandardVersionParser(project, context)) {
 							return;
 						}
 						
@@ -157,7 +157,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 					throw new RequiredCompleteIndexException();
 				}
 				
-				if (!isApiVersioningConfiguredWithStanardVersionParser(project)) {
+				if (!isApiVersioningConfiguredWithStandardVersionParser(project, context)) {
 					return super.visit(methodInvocation);
 				}
 				
@@ -210,8 +210,9 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 		}
 	}
 	
-	private boolean isApiVersioningConfiguredWithStanardVersionParser(IJavaProject project) {
-		List<WebConfigIndexElement> webConfigs = springIndex.getNodesOfType(project.getElementName(), WebConfigIndexElement.class);
+	private boolean isApiVersioningConfiguredWithStandardVersionParser(IJavaProject project, ReconcilingContext context) {
+		List<WebConfigIndexElement> webConfigs = WebApiReconcilerUtil.getWebConfigs(springIndex, project, context).toList();
+
 		for (WebConfigIndexElement webConfig : webConfigs) {
 			if (!WebConfigIndexElement.DEFAULT_VERSION_PARSER.equals(webConfig.getVersionParser())) {
 				return false;

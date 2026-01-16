@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -39,6 +39,7 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaDependencyTracker;
 import org.springframework.ide.vscode.boot.java.utils.test.TestFileScanListener;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
@@ -65,6 +66,7 @@ public class RequestMappingSymbolProviderTest {
 	@Autowired private SpringMetamodelIndex springIndex;
 
 	private File directory;
+	private IJavaProject project;
 
 	@BeforeEach
 	public void setup() throws Exception {
@@ -73,8 +75,7 @@ public class RequestMappingSymbolProviderTest {
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-request-mapping-symbols/").toURI());
 		String projectDir = directory.toURI().toString();
 
-		// trigger project creation
-		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+		project = projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
 
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(5, TimeUnit.SECONDS);
@@ -121,7 +122,7 @@ public class RequestMappingSymbolProviderTest {
 
         //Verify whether dependency tracker logics works properly for this example.
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies().get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
 
         TestFileScanListener fileScanListener = new TestFileScanListener();
         indexer.getJavaIndexer().setFileScanListener(fileScanListener);
@@ -147,7 +148,7 @@ public class RequestMappingSymbolProviderTest {
 
         //Verify whether dependency tracker logics works properly for this example.
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies().get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
 
         TestFileScanListener fileScanListener = new TestFileScanListener();
         indexer.getJavaIndexer().setFileScanListener(fileScanListener);
@@ -155,7 +156,7 @@ public class RequestMappingSymbolProviderTest {
         CompletableFuture<Void> updateFuture = indexer.updateDocument(docUri, FileUtils.readFileToString(UriUtil.toFile(docUri), Charset.defaultCharset()), "test triggered");
         updateFuture.get(5, TimeUnit.SECONDS);
 
-        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies().get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
 
         fileScanListener.assertScannedUris(docUri);
         fileScanListener.assertScannedUri(constantsUri, 0);
@@ -201,7 +202,7 @@ public class RequestMappingSymbolProviderTest {
         assertTrue(containsSymbol(symbols, "@/request/mapping/path/from/same/class/constant", docUri, 10, 1, 10, 52));
 
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of(), dt.getAllDependencies().get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of(), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
     }
 
     @Test
@@ -212,7 +213,7 @@ public class RequestMappingSymbolProviderTest {
         assertTrue(containsSymbol(symbols, "@/(inferred)", docUri, 9, 1, 9, 53));
 
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of(), dt.getAllDependencies().get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of(), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
     }
 
     @Test

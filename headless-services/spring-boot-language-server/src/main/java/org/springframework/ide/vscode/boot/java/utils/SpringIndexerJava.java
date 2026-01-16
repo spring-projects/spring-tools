@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -173,6 +173,8 @@ public class SpringIndexerJava implements SpringIndexer {
 		this.cache.remove(symbolsCacheKey);
 		this.cache.remove(indexCacheKey);
 		this.cache.remove(diagnosticsCacheKey);
+		
+		this.dependencyTracker.removeProject(project);
 	}
 
 	@Override
@@ -539,7 +541,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void scanAffectedFiles(IJavaProject project, Set<String> changedTypes, Set<String> alreadyScannedFiles, Set<String> alreadyMarkedForAffectedFilesIndexing) throws Exception {
 		log.info("Start scanning affected files for types {}", changedTypes);
 		
-		Multimap<String, String> dependencies = dependencyTracker.getAllDependencies();
+		Multimap<String, String> dependencies = dependencyTracker.getAllDependencies(project);
 		Set<String> filesToScan = new HashSet<>();
 		
 		for (String affectedFile : alreadyMarkedForAffectedFilesIndexing) {
@@ -589,7 +591,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			// use cached data
 
 			result = new SpringIndexerJavaScanResult(project, javaFiles, symbolHandler, cachedSymbols.getLeft(), cachedIndexElements.getLeft(), cachedDiagnostics.getLeft());
-			this.dependencyTracker.restore(cachedSymbols.getRight());
+			this.dependencyTracker.restore(project, cachedSymbols.getRight());
 
 			log.info("scan java files used cached data: {} - no. of cached symbols retrieved: {}", project.getElementName(), result.getGeneratedSymbols().size());
 			log.info("scan java files restored cached dependency data: {} - no. of cached dependencies: {}", cachedSymbols.getRight().size());
@@ -624,9 +626,9 @@ public class SpringIndexerJava implements SpringIndexer {
 			
 			log.info("scan java files done, number of symbols created: " + result.getGeneratedSymbols().size());
 
-			this.cache.store(symbolsCacheKey, javaFiles, result.getGeneratedSymbols(), dependencyTracker.getAllDependencies(), CachedSymbol.class);
-			this.cache.store(indexCacheKey, javaFiles, result.getGeneratedIndexElements(), dependencyTracker.getAllDependencies(), CachedIndexElement.class);
-			this.cache.store(diagnosticsCacheKey, javaFiles, result.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(), CachedDiagnostics.class);
+			this.cache.store(symbolsCacheKey, javaFiles, result.getGeneratedSymbols(), dependencyTracker.getAllDependencies(project), CachedSymbol.class);
+			this.cache.store(indexCacheKey, javaFiles, result.getGeneratedIndexElements(), dependencyTracker.getAllDependencies(project), CachedIndexElement.class);
+			this.cache.store(diagnosticsCacheKey, javaFiles, result.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(project), CachedDiagnostics.class);
 		}
 		
 		result.publishResults(symbolHandler);
@@ -723,7 +725,7 @@ public class SpringIndexerJava implements SpringIndexer {
 					DocumentUtils.getTempTextDocument(docURI, docRef, null); // initialize the docRef with a real document before running validations
 					reconcile(context, reconcilingIndex);
 					
-					Collection<String> dependencies = dependencyTracker.get(context.getFile());
+					Collection<String> dependencies = dependencyTracker.get(project, context.getFile());
 					for (String dependency : context.getDependencies()) {
 						dependencies.add(dependency);
 					}
@@ -746,7 +748,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		
 		// cache update
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-		this.cache.update(diagnosticsCacheKey, javaFiles, modificationTimestamps, reconcilingResult.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(), CachedDiagnostics.class);
+		this.cache.update(diagnosticsCacheKey, javaFiles, modificationTimestamps, reconcilingResult.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(project), CachedDiagnostics.class);
 
 		// publish diagnostics
 		reconcilingResult.publishDiagnosticsOnly(symbolHandler);
@@ -876,7 +878,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			reconcile(context, reconcilingIndex);
 		}
 		
-		dependencyTracker.update(context.getFile(), context.getDependencies());;
+		dependencyTracker.update(context.getProject(), context.getFile(), context.getDependencies());;
 	}
 
 	private void reconcile(SpringIndexerJavaContext context, ReconcilingIndex reconcilingIndex) {

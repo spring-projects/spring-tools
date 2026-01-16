@@ -224,16 +224,19 @@ function prepareJvmArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
         jvmArgs.push(...options.vmArgs);
     }
 
-    let logfile : string = options.workspaceOptions.get("logfile") || "/dev/null";
-    const rootLogLevel = options.workspaceOptions.get("logLevel") || "error";
-    //The logfile = '/dev/null' is handled specifically by the language server process so it works on all OSs.
-    options.clientOptions.outputChannel.appendLine('Redirecting server logs to ' + logfile);
     const args = [
         '-Dsts.lsp.client=vscode',
-        '-Dlogging.file.name=' + logfile,
-        `-Dlogging.level.root=${rootLogLevel}`,
         '-XX:TieredStopAtLevel=1'
     ];
+    const logfile = options.workspaceOptions.get("logfile");
+    if (logfile) {
+        options.clientOptions.outputChannel.appendLine('Redirecting server logs to ' + logfile);
+        args.push('-Dlogging.file.name=' + logfile)
+    }
+    const rootLogLevel = options.workspaceOptions.get("logLevel");
+    if (rootLogLevel) {
+        args.push(`-Dlogging.level.root=${rootLogLevel}`);
+    }
     if (port && port > 0) {
         args.push('-Dspring.lsp.client-port='+port);
         args.push('-Dserver.port=' + port);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,6 +81,26 @@ public class ProjectGenerationsValidationTest {
 		List<Generation> generations = resolvedProject.getGenerations();
 		assertNotNull(generations);
 		assertTrue(generations.size() > 5);
+    }
+
+    @Test
+    void testLinkedGenerationsFromSpringIo() throws Exception {
+        SpringProjectsProvider cache = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+
+        ResolvedSpringProject project = cache.getProject("spring-integration");
+		List<Generation> generations = project.getGenerations();
+		assertNotNull(generations);
+		assertTrue(generations.size() > 5);
+		
+		Generation specificGeneration = generations.stream().filter(generation -> generation.getName().equals("5.5.x")).findAny().get();
+		Map<String, String[]> linkedGenerations = specificGeneration.getLinkedGenerations();
+		assertEquals(1, linkedGenerations.size());
+		
+		String[] linkedBootGenerations = linkedGenerations.get("spring-boot");
+		assertEquals(3, linkedBootGenerations.length);
+		assertEquals("2.5.x", linkedBootGenerations[0]);
+		assertEquals("2.6.x", linkedBootGenerations[1]);
+		assertEquals("2.7.x", linkedBootGenerations[2]);
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2024 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -32,7 +32,9 @@ public enum VersionValidationProblemType implements ProblemType {
 		
 	UPDATE_LATEST_MAJOR_VERSION(IGNORE, "Update to Latest Major Version", "Update to Latest Major Version"),
 	UPDATE_LATEST_MINOR_VERSION(INFO, "Update to Latest Minor Version", "Update to Latest Minor Version"),
-	UPDATE_LATEST_PATCH_VERSION(WARNING, "Update to Latest Patch Version", "Update to Latest Patch Version");
+	UPDATE_LATEST_PATCH_VERSION(WARNING, "Update to Latest Patch Version", "Update to Latest Patch Version"),
+	
+	SPRING_CLOUD_INCOMPATIBLE_BOOT_VERSION(WARNING, "Incompatible Spring Boot Version for Spring Cloud", "Incompatible Spring Boot Version for Spring Cloud");
 
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

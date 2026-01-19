@@ -1361,6 +1361,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.version-validation.SPRING_CLOUD_INCOMPATIBLE_BOOT_VERSION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Incompatible Spring Boot Version for Spring Cloud",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

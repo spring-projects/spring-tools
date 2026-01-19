@@ -469,6 +469,12 @@
         "label": "Update to Latest Patch Version",
         "description": "Update to Latest Patch Version",
         "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "SPRING_CLOUD_INCOMPATIBLE_BOOT_VERSION",
+        "label": "Incompatible Spring Boot Version for Spring Cloud",
+        "description": "Incompatible Spring Boot Version for Spring Cloud",
+        "defaultSeverity": "WARNING"
       }
     ]
   },

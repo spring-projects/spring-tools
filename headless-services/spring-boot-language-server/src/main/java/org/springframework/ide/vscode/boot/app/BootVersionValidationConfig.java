@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,6 +24,7 @@ import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
 import org.springframework.ide.vscode.boot.validation.BootVersionValidationEngine;
 import org.springframework.ide.vscode.boot.validation.generations.GenerationsValidator;
 import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider;
+import org.springframework.ide.vscode.boot.validation.generations.SpringCloudCompatibilityValidator;
 import org.springframework.ide.vscode.boot.validation.generations.SpringIoProjectsProvider;
 import org.springframework.ide.vscode.boot.validation.generations.SpringProjectsProvider;
 import org.springframework.ide.vscode.boot.validation.generations.UpdateBootVersion;
@@ -48,6 +49,10 @@ public class BootVersionValidationConfig {
 	
 	@Bean GenerationsValidator generationsValidator(SimpleLanguageServer server, SpringProjectsProvider projectsProvider) {
 		return new GenerationsValidator(server.getDiagnosticSeverityProvider(), projectsProvider);
+	}
+	
+	@Bean SpringCloudCompatibilityValidator springCloudCompatibilityValidator(SimpleLanguageServer server, SpringProjectsProvider projectsProvider) {
+		return new SpringCloudCompatibilityValidator(server.getDiagnosticSeverityProvider(), projectsProvider);
 	}
 	
 	@Bean ProjectVersionDiagnosticProvider projectVersionDiagnosticProvider(List<VersionValidator> validators) {

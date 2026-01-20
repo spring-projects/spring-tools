@@ -156,7 +156,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JDBC_QUERY);
 					
 					if (!isQueryAnnotated) {
-						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata)), null));
+						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata, project)), null));
 					}
 					
 					Command impl = new Command("Go To Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
@@ -197,28 +197,47 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		});
 	}
 
-	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata) {
+	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata, IJavaProject project) {
 		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
-				
 				.withRecipeScope(RecipeScope.FILE)
-				
 				.withParameters(Map.of(
 						"annotationType", moduleToQueryMapping.get(module),
 						"method", "%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
 								Arrays.stream(mb.getParameterTypes())
-									.map(pt -> pt.getQualifiedName())
-									.collect(Collectors.joining(", "))),
-						"attributes", createAttributeList(methodMetadata.getAttributesMap())));
+										.map(pt -> pt.getQualifiedName())
+										.collect(Collectors.joining(", "))),
+						"attributes", createAttributeList(methodMetadata.getAttributesMap(), project)));
 	}
-	
-	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes) {
-		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
-		
-		Set<String> keys = attributes.keySet();
-		for (String key : keys) {
-			result.add(new AddAnnotationOverMethod.Attribute(key, "\"%s\"".formatted(StringEscapeUtils.escapeJava(attributes.get(key)))));
-		}
 
+	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes, IJavaProject project) {
+		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
+		int javaVersion = 8;
+		try {
+			String versionStr = project.getClasspath().getJre().version();
+			if (versionStr != null) {
+				if (versionStr.startsWith("1.")) {
+					javaVersion = Integer.parseInt(versionStr.substring(2, 3));
+				} else {
+					javaVersion = Integer.parseInt(versionStr.split("\\.")[0]);
+				}
+			}
+		} catch (Exception e) {
+			// fallback to 8
+		}
+		for (Map.Entry<String, String> entry : attributes.entrySet()) {
+			String key = entry.getKey();
+			String value = entry.getValue();
+			if (value == null) continue;
+			String escaped = org.apache.commons.text.StringEscapeUtils.escapeJava(value);
+			boolean containsQuote = value.contains("\"");
+			if (javaVersion >= 15 && containsQuote) {
+				// Use text block
+				result.add(new AddAnnotationOverMethod.Attribute(key, "\"\"\"\n" + value + "\n\"\"\""));
+			} else {
+				// Use standard string
+				result.add(new AddAnnotationOverMethod.Attribute(key, "\"%s\"".formatted(escaped)));
+			}
+		}
 		return result;
 	}
 	

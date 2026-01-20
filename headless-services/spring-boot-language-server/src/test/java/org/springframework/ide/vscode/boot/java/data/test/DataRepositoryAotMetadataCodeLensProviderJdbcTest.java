@@ -10,8 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,6 +19,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +42,8 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.gson.Gson;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -93,5 +96,63 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		assertEquals(1, cls.get(0).getCommand().getArguments().size());
 		assertEquals("Refresh AOT Metadata", cls.get(1).getCommand().getTitle());
 		assertEquals(2, cls.get(1).getCommand().getArguments().size());
+	}
+
+	/**
+	 * Verify that text blocks are generated when the query string contains quotes on Java 15 or above.
+	 */
+	@Test
+	void turnIntoQueryUsesTextBlockWhenQuotesPresentAndJava15OrAbove() throws Exception {
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/example/springdata/aot/CategoryRepository.java");
+
+		Editor editor = harness.newEditor(
+				LanguageId.JAVA,
+				new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8),
+				filePath.toUri().toASCIIString()
+		);
+
+		List<CodeLens> cls = editor.getCodeLenses("findAllByNameContaining", 1);
+
+		String queryValue = extractValueFromAttributes(cls.get(0));
+		assertNotNull(queryValue, "Query value should not be null");
+
+		int javaVersion = 8;
+		String versionStr = testProject.getClasspath().getJre().version();
+		if (versionStr.startsWith("1.")) {
+			javaVersion = Integer.parseInt(versionStr.substring(2, 3));
+		} else {
+			javaVersion = Integer.parseInt(versionStr.split("\\.")[0]);
+		}
+
+		// JDBC query has quotes: SELECT "CATEGORY"."ID" ...
+		if (javaVersion >= 15) {
+			assertTrue(queryValue.startsWith("\"\"\""), "Text block must be used for Java >= 15 when quotes are present");
+		} else {
+			assertFalse(queryValue.startsWith("\"\"\""), "Text block must NOT be used for Java < 15");
+		}
+	}
+
+
+	private String extractValueFromAttributes(CodeLens codeLens) {
+		Object args = codeLens.getCommand().getArguments().get(1);
+		if (args instanceof JsonObject) {
+			JsonObject params = (JsonObject) args;
+			if (params.has("parameters") && params.get("parameters").isJsonObject()) {
+				JsonObject parameters = params.getAsJsonObject("parameters");
+				if (parameters.has("attributes") && parameters.get("attributes").isJsonArray()) {
+					JsonArray attributes = parameters.getAsJsonArray("attributes");
+					for (JsonElement element : attributes) {
+						if (element.isJsonObject()) {
+							JsonObject attr = element.getAsJsonObject();
+							if (attr.has("name") && "value".equals(attr.get("name").getAsString())) {
+								return attr.get("value").getAsString();
+							}
+						}
+					}
+				}
+			}
+		}
+		return null;
 	}
 }

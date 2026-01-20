@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -35,7 +35,6 @@ public class ProjectVersionDiagnosticProvider {
 		this.validators = validators;
 	}
 
-
 	public DiagnosticResult getDiagnostics(IJavaProject javaProject) throws Exception {
 
 		URI buildFileUri = javaProject.getProjectBuild() == null ? null : javaProject.getProjectBuild().getBuildFile();
@@ -48,16 +47,16 @@ public class ProjectVersionDiagnosticProvider {
 
 			
 			if (!applicableValidators.isEmpty()) {
-				Version javaProjectVersion = SpringProjectUtil.getSpringBootVersion(javaProject);
+				Version bootVersion = SpringProjectUtil.getSpringBootVersion(javaProject);
 
-				if (javaProjectVersion == null) {
+				if (bootVersion == null) {
 					log.warn("Unable to resolve version for project: " + javaProject.getLocationUri().toASCIIString());
 					return new DiagnosticResult(buildFileUri, Collections.emptyList());
 				}
 
 				for (VersionValidator validator : applicableValidators) {
 					try {
-						Collection<Diagnostic> batch = validator.validate(javaProject, javaProjectVersion);
+						Collection<Diagnostic> batch = validator.validate(javaProject, bootVersion);
 						if (batch != null) {
 							diagnostics.addAll(batch);
 						}
@@ -82,18 +81,15 @@ public class ProjectVersionDiagnosticProvider {
 		private final URI documentUri;
 		private final List<Diagnostic> diagnostics;
 		
-		
 		public DiagnosticResult(URI documentUri, List<Diagnostic> diagnostics) {
 			super();
 			this.documentUri = documentUri;
 			this.diagnostics = diagnostics;
 		}
 
-
 		public URI getDocumentUri() {
 			return documentUri;
 		}
-
 
 		public List<Diagnostic> getDiagnostics() {
 			return diagnostics;

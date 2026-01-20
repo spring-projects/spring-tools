@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.java;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -43,14 +42,29 @@ public interface IClasspath {
 	
 	/**
 	 * Finds a classpath entry among JAR libraries that start with a prefix. Prefix must typically contain the full lib name such that the match is only one.
+	 * 
 	 * @param prefix the library prefix
 	 * @return the classpath entry
 	 */
 	default Optional<CPE> findBinaryLibrary(String prefix) {
+		return findBinaryLibrary(prefix, false);
+	}
+
+	/**
+	 * Finds a classpath entry among JAR libraries that start with a prefix. Prefix must typically contain the full lib name such that the match is only one.
+	 * 
+	 * @param prefix the library prefix
+	 * @return the classpath entry
+	 */
+	default Optional<CPE> findBinaryLibrary(String prefix, boolean exactName) {
 		try {
 			for (CPE cpe : getClasspathEntries()) {
-				if (Classpath.isBinary(cpe) && !cpe.isSystem() && !cpe.isTest() && new File(cpe.getPath()).getName().startsWith(prefix)) {
-					return Optional.of(cpe);
+				if (Classpath.isBinary(cpe) && !cpe.isSystem() && !cpe.isTest()) {
+					if (exactName && cpe.getName().equals(prefix)) {
+						return Optional.of(cpe);
+					} else if (!exactName && cpe.getName().startsWith(prefix)) {
+						return Optional.of(cpe);
+					}
 				}
 			}
 		} catch (Exception e) {

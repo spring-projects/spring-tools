@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2019 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -82,6 +82,7 @@ public class Classpath {
 		private Map<String, String> extra;
 		
 		transient private Version version;
+		transient private String name;
 
 		public CPE() {}
 
@@ -233,6 +234,15 @@ public class Classpath {
 			return version;
 		}
 
+		public String getName() {
+			if (name == null) {
+				if (ENTRY_KIND_BINARY.equals(getKind()) && !isSystem) {
+					name = getDependencyName(new File(getPath()).getName());
+				}
+			}
+			return name;
+		}
+
 	}
 
 	public static boolean isSource(CPE e) {
@@ -269,6 +279,27 @@ public class Classpath {
 			return new Version(Integer.parseInt(major), Integer.parseInt(minor), Integer.parseInt(patch), qualifier);
 		}
 		return null;
+	}
+
+	static String getDependencyName(String fileName) {
+		Matcher matcher = VERSION_PATTERN.matcher(fileName);
+		if (matcher.find()) {
+			// Extract the name part before the version
+			int versionStart = matcher.start(1);
+			if (versionStart > 0) {
+				// Remove the trailing dash or dot before the version
+				String nameWithSeparator = fileName.substring(0, versionStart);
+				if (nameWithSeparator.endsWith("-") || nameWithSeparator.endsWith(".")) {
+					return nameWithSeparator.substring(0, nameWithSeparator.length() - 1);
+				}
+				return nameWithSeparator;
+			}
+		}
+		// If no version pattern found, return filename without .jar extension
+		if (fileName.endsWith(".jar")) {
+			return fileName.substring(0, fileName.length() - 4);
+		}
+		return fileName;
 	}
 
 }

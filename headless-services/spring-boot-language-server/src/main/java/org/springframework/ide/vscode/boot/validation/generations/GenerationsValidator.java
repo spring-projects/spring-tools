@@ -43,7 +43,8 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 	
 	public static Generation getGenerationForJavaProject(IJavaProject javaProject, ResolvedSpringProject springProject) throws Exception {
 		List<Generation> genList = springProject.getGenerations();
-		Version javaProjectVersion = SpringProjectUtil.getDependencyVersion(javaProject, springProject.getSlug());
+		Version javaProjectVersion = SpringProjectUtil.getDependencyVersion(javaProject, springProject.getSlug(), true);
+
 		if (javaProjectVersion == null) {
 			return null;
 		}

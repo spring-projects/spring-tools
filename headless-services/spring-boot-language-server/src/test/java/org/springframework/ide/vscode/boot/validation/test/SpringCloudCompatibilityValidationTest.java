@@ -48,6 +48,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Import(HoverTestConf.class)
 public class SpringCloudCompatibilityValidationTest {
 	
+	private static final String SPRING_CLOUD_COMMONS = "spring-cloud-commons";
+	private static final String SPRING_CLOUD_FUNCTION_CORE = "spring-cloud-function-core";
+	private static final String SPRING_CLOUD_TASK_CORE = "spring-cloud-task-core";
+	
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private RestTemplateFactory restTemplateFactory;
 	@Autowired private BootJavaConfig config;
@@ -56,7 +60,37 @@ public class SpringCloudCompatibilityValidationTest {
 	@Test
 	void testIncompatibleSpringBootVersionWithSpringCloud() throws Exception {
         SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
-		IJavaProject javaProject = createMockJavaProject("4.3.0");
+		IJavaProject javaProject = createMockJavaProject("4.3.0", SPRING_CLOUD_COMMONS);
+		
+		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
+		Collection<Diagnostic> diagnostics = validator.validate(javaProject, Version.parse("4.0.1"));
+		
+		assertNotNull(diagnostics);
+		assertEquals(1, diagnostics.size());
+		Diagnostic diagnostic = diagnostics.iterator().next();
+		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage());
+		assertEquals(DiagnosticSeverity.Warning, diagnostic.getSeverity());
+	}
+
+	@Test
+	void testIncompatibleSpringBootVersionWithSpringCloudTask() throws Exception {
+        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+		IJavaProject javaProject = createMockJavaProject("3.3.0", SPRING_CLOUD_TASK_CORE);
+		
+		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
+		Collection<Diagnostic> diagnostics = validator.validate(javaProject, Version.parse("4.0.1"));
+		
+		assertNotNull(diagnostics);
+		assertEquals(1, diagnostics.size());
+		Diagnostic diagnostic = diagnostics.iterator().next();
+		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage());
+		assertEquals(DiagnosticSeverity.Warning, diagnostic.getSeverity());
+	}
+
+	@Test
+	void testIncompatibleSpringBootVersionWithSpringCloudFunction() throws Exception {
+        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+		IJavaProject javaProject = createMockJavaProject("4.3.1", SPRING_CLOUD_FUNCTION_CORE);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
 		Collection<Diagnostic> diagnostics = validator.validate(javaProject, Version.parse("4.0.1"));
@@ -71,7 +105,7 @@ public class SpringCloudCompatibilityValidationTest {
 	@Test
 	void testCompatibleSpringBootVersionWithSpringCloud() throws Exception {
         SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
-		IJavaProject javaProject = createMockJavaProject("5.0.0");
+		IJavaProject javaProject = createMockJavaProject("5.0.0", SPRING_CLOUD_COMMONS);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
 		Collection<Diagnostic> diagnostics = validator.validate(javaProject, Version.parse("4.0.1"));
@@ -84,7 +118,7 @@ public class SpringCloudCompatibilityValidationTest {
 	@Test
 	void testNoSpringCloudDependency() throws Exception {
         SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
-		IJavaProject javaProject = createMockJavaProject(null);
+		IJavaProject javaProject = createMockJavaProject(null, SPRING_CLOUD_COMMONS);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
 		Collection<Diagnostic> diagnostics = validator.validate(javaProject, Version.parse("4.0.1"));
@@ -94,7 +128,7 @@ public class SpringCloudCompatibilityValidationTest {
 		assertEquals(0, diagnostics.size(), "No diagnostic should be created when Spring Cloud is not used");
 	}
 
-	private IJavaProject createMockJavaProject(String cloudCommonsVersion) throws Exception {
+	private IJavaProject createMockJavaProject(String artifactVersion, String artifactName) throws Exception {
 		IJavaProject project = mock(IJavaProject.class);
 		IClasspath classpath = mock(IClasspath.class);
 		when(project.getClasspath()).thenReturn(classpath);
@@ -103,13 +137,13 @@ public class SpringCloudCompatibilityValidationTest {
 		
 		// Mock finding Spring Cloud dependency
 		// Note: SpringProjectUtil.getDependencyVersion looks for "spring-cloud" in the path
-		if (cloudCommonsVersion != null) {
-			CPE cloudCpe = createCPE("binary", "spring-cloud-commons", "/path/to/.m2/repository/org/springframework/cloud/spring-cloud-commons/" + cloudCommonsVersion + "/spring-cloud-commons-" + cloudCommonsVersion + ".jar", cloudCommonsVersion);
+		if (artifactVersion != null) {
+			CPE cloudCpe = createCPE("binary", artifactName, "/path/to/.m2/repository/org/springframework/cloud/" + artifactName +"/" + artifactVersion + "/" + artifactName + "-" + artifactVersion + ".jar", artifactVersion);
 			classpathEntries.add(cloudCpe);
-			when(classpath.findBinaryLibraryByName("spring-cloud-commons")).thenReturn(Optional.of(cloudCpe));
+			when(classpath.findBinaryLibraryByName(artifactName)).thenReturn(Optional.of(cloudCpe));
 		}
 		else {
-			when(classpath.findBinaryLibraryByName("spring-cloud-commons")).thenReturn(Optional.empty());
+			when(classpath.findBinaryLibraryByName(artifactName)).thenReturn(Optional.empty());
 		}
 		
 		when(classpath.getClasspathEntries()).thenReturn(classpathEntries);

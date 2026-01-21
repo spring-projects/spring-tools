@@ -12,6 +12,8 @@ package org.springframework.ide.vscode.boot.validation.generations;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +35,16 @@ import com.google.common.collect.ImmutableList;
  * @author Martin Lippert
  */
 public class SpringCloudCompatibilityValidator extends AbstractDiagnosticValidator {
+
+	// use linked hash map to maintain a specific order of the entries, so that
+	// "spring-cloud-commons" is always used first
+	// since "spring-could-commons" is the most common case
+	private static final Map<String, String> PROJECTS_TO_IDENTIFICATION_ARTIFACT = Collections.unmodifiableMap(
+			new LinkedHashMap<>(Map.ofEntries(
+					Map.entry("spring-cloud-commons", "spring-cloud-commons"),
+					Map.entry("spring-cloud-function", "spring-cloud-function-core"),
+					Map.entry("spring-cloud-task", "spring-cloud-task-core")
+			)));
 	
 	private SpringProjectsProvider provider;
 
@@ -85,17 +97,12 @@ public class SpringCloudCompatibilityValidator extends AbstractDiagnosticValidat
 	}
 	
 	private Generation identifySpringCloudVersion(IJavaProject javaProject) throws Exception {
-		ResolvedSpringProject commonsProject = provider.getProject("spring-cloud-commons");
-		if (commonsProject == null) {
+		Generation generation = getSpringCloudGeneration(javaProject);
+		if (generation == null) {
 			return null;
 		}
 		
-		Generation commonsGeneration = GenerationsValidator.getGenerationForJavaProject(javaProject, commonsProject);
-		if (commonsGeneration == null) {
-			return null;
-		}
-		
-		String[] linkedCloudVersions = commonsGeneration.getLinkedGenerations().get("spring-cloud");
+		String[] linkedCloudVersions = generation.getLinkedGenerations().get("spring-cloud");
 		if (linkedCloudVersions == null || linkedCloudVersions.length > 1) {
 			return null;
 		}
@@ -106,6 +113,20 @@ public class SpringCloudCompatibilityValidator extends AbstractDiagnosticValidat
 		for (Generation cloudGeneration : cloudGenerations) {
 			if (cloudGeneration.getName().equals(springCloudGeneration)) {
 				return cloudGeneration;
+			}
+		}
+		
+		return null;
+	}
+
+	private Generation getSpringCloudGeneration(IJavaProject javaProject) throws Exception {
+		for (String cloudProject : PROJECTS_TO_IDENTIFICATION_ARTIFACT.keySet()) {
+			ResolvedSpringProject project = provider.getProject(cloudProject);
+			if (project != null) {
+				Generation generation = GenerationsValidator.getGenerationForJavaProject(javaProject, project, PROJECTS_TO_IDENTIFICATION_ARTIFACT.get(cloudProject));
+				if (generation != null) {
+					return generation;
+				}
 			}
 		}
 		

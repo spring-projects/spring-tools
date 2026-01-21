@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.java;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -62,7 +63,7 @@ public interface IClasspath {
 				if (Classpath.isBinary(cpe) && !cpe.isSystem() && !cpe.isTest()) {
 					if (exactName && cpe.getName().equals(prefix)) {
 						return Optional.of(cpe);
-					} else if (!exactName && cpe.getName().startsWith(prefix)) {
+					} else if (!exactName && new File(cpe.getPath()).getName().startsWith(prefix)) {
 						return Optional.of(cpe);
 					}
 				}

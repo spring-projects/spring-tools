@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -199,26 +198,25 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata) {
 		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
-				
 				.withRecipeScope(RecipeScope.FILE)
-				
 				.withParameters(Map.of(
 						"annotationType", moduleToQueryMapping.get(module),
 						"method", "%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
 								Arrays.stream(mb.getParameterTypes())
-									.map(pt -> pt.getQualifiedName())
-									.collect(Collectors.joining(", "))),
+										.map(pt -> pt.getQualifiedName())
+										.collect(Collectors.joining(", "))),
 						"attributes", createAttributeList(methodMetadata.getAttributesMap())));
 	}
-	
+
 	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes) {
 		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
-		
-		Set<String> keys = attributes.keySet();
-		for (String key : keys) {
-			result.add(new AddAnnotationOverMethod.Attribute(key, "\"%s\"".formatted(StringEscapeUtils.escapeJava(attributes.get(key)))));
-		}
+		for (Map.Entry<String, String> entry : attributes.entrySet()) {
+			String key = entry.getKey();
+			String value = entry.getValue();
+			if (value == null) continue;
 
+			result.add(new AddAnnotationOverMethod.Attribute(key, "\"\"\"\n" + value + "\n\"\"\""));
+		}
 		return result;
 	}
 	

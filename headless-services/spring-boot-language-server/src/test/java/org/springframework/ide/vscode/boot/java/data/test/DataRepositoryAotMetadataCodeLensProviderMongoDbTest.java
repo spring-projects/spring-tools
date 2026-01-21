@@ -106,4 +106,5 @@ public class DataRepositoryAotMetadataCodeLensProviderMongoDbTest {
 		assertEquals("Refresh AOT Metadata", cls.get(1).getCommand().getTitle());
 		assertEquals(2, cls.get(1).getCommand().getArguments().size());
 	}
+
 }

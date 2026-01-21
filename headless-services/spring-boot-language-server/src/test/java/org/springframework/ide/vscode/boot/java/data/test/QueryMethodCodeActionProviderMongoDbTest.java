@@ -84,9 +84,14 @@ public class QueryMethodCodeActionProviderMongoDbTest {
 		assertEquals(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX, cmd.getArguments().get(0));
 		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
+		String rawText = docEdit.getEdits().get(0).getNewText().trim();
+
 		assertEquals(
-				"@Query(\"{\\\"lastname\\\": /^\\\\Q?0\\\\E/}\")",
-				docEdit.getEdits().get(0).getNewText().trim());
+				"@Query(\"\"\"\n" +
+				"{\"lastname\": /^\\Q?0\\E/}\n" +
+				"\"\"\")\n"
+				+ "    Page<UserProjection> findUserByLastnameStartingWith(String lastname, Pageable page)",
+				rawText.replace("\r\n", "\n"));
 		assertEquals(filePath.toUri().toASCIIString(), docEdit.getTextDocument().getUri());
 	}
 

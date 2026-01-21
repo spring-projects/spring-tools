@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -156,7 +155,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JDBC_QUERY);
 					
 					if (!isQueryAnnotated) {
-						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata, project)), null));
+						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata)), null));
 					}
 					
 					Command impl = new Command("Go To Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
@@ -197,7 +196,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		});
 	}
 
-	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata, IJavaProject project) {
+	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata) {
 		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
 				.withRecipeScope(RecipeScope.FILE)
 				.withParameters(Map.of(
@@ -206,37 +205,17 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 								Arrays.stream(mb.getParameterTypes())
 										.map(pt -> pt.getQualifiedName())
 										.collect(Collectors.joining(", "))),
-						"attributes", createAttributeList(methodMetadata.getAttributesMap(), project)));
+						"attributes", createAttributeList(methodMetadata.getAttributesMap())));
 	}
 
-	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes, IJavaProject project) {
+	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes) {
 		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
-		int javaVersion = 8;
-		try {
-			String versionStr = project.getClasspath().getJre().version();
-			if (versionStr != null) {
-				if (versionStr.startsWith("1.")) {
-					javaVersion = Integer.parseInt(versionStr.substring(2, 3));
-				} else {
-					javaVersion = Integer.parseInt(versionStr.split("\\.")[0]);
-				}
-			}
-		} catch (Exception e) {
-			// fallback to 8
-		}
 		for (Map.Entry<String, String> entry : attributes.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
 			if (value == null) continue;
-			String escaped = org.apache.commons.text.StringEscapeUtils.escapeJava(value);
-			boolean containsQuote = value.contains("\"");
-			if (javaVersion >= 15 && containsQuote) {
-				// Use text block
-				result.add(new AddAnnotationOverMethod.Attribute(key, "\"\"\"\n" + value + "\n\"\"\""));
-			} else {
-				// Use standard string
-				result.add(new AddAnnotationOverMethod.Attribute(key, "\"%s\"".formatted(escaped)));
-			}
+
+			result.add(new AddAnnotationOverMethod.Attribute(key, "\"\"\"\n" + value + "\n\"\"\""));
 		}
 		return result;
 	}

@@ -98,11 +98,8 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		assertEquals(2, cls.get(1).getCommand().getArguments().size());
 	}
 
-	/**
-	 * Verify that text blocks are generated when the query string contains quotes on Java 15 or above.
-	 */
 	@Test
-	void turnIntoQueryUsesTextBlockWhenQuotesPresentAndJava15OrAbove() throws Exception {
+	void turnIntoQueryUsesTextBlock() throws Exception {
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/example/springdata/aot/CategoryRepository.java");
 
@@ -117,20 +114,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		String queryValue = extractValueFromAttributes(cls.get(0));
 		assertNotNull(queryValue, "Query value should not be null");
 
-		int javaVersion = 8;
-		String versionStr = testProject.getClasspath().getJre().version();
-		if (versionStr.startsWith("1.")) {
-			javaVersion = Integer.parseInt(versionStr.substring(2, 3));
-		} else {
-			javaVersion = Integer.parseInt(versionStr.split("\\.")[0]);
-		}
-
-		// JDBC query has quotes: SELECT "CATEGORY"."ID" ...
-		if (javaVersion >= 15) {
-			assertTrue(queryValue.startsWith("\"\"\""), "Text block must be used for Java >= 15 when quotes are present");
-		} else {
-			assertFalse(queryValue.startsWith("\"\"\""), "Text block must NOT be used for Java < 15");
-		}
+		assertTrue(queryValue.startsWith("\"\"\""), "Query should be generated as a text block");
 	}
 
 

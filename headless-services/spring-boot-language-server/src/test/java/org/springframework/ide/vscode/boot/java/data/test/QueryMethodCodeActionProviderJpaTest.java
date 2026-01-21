@@ -84,9 +84,11 @@ public class QueryMethodCodeActionProviderJpaTest {
 		assertEquals(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX, cmd.getArguments().get(0));
 		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
+		String rawText = docEdit.getEdits().get(0).getNewText();
+
 		assertEquals(
-				"@Query(\"SELECT u FROM users u WHERE u.lastname LIKE :lastname ESCAPE '\\\\' ORDER BY u.firstname asc\")",
-				docEdit.getEdits().get(0).getNewText().trim());
+				"@Query(\"\"\"\nSELECT u FROM users u WHERE u.lastname LIKE :lastname ESCAPE '\\' ORDER BY u.firstname asc\n\"\"\")",
+				rawText.trim());
 		assertEquals(filePath.toUri().toASCIIString(), docEdit.getTextDocument().getUri());
 	}
 

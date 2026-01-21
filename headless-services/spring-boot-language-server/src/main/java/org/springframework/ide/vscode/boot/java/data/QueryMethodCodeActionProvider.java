@@ -80,7 +80,7 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 							DataRepositoryAotMetadataCodeLensProvider
 									.getMetadata(repositoryMetadataService, project, binding)
 									.ifPresent(metadata -> metadata.findMethod(binding)
-											.map(method -> createCodeAction(binding, docURI, metadata, method, project))
+											.map(method -> createCodeAction(binding, docURI, metadata, method))
 											.ifPresent(collector::accept));
 						}
 					}
@@ -92,9 +92,9 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 		};
 	}
 	
-	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata method, IJavaProject project) {
+	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata method) {
 		CodeAction ca = new CodeAction();
-		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata.module(), method, project)));
+		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata.module(), method)));
 		ca.setTitle(TITLE);
 		ca.setKind(CodeActionKind.Refactor);
 		return ca;

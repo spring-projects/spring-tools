@@ -11,9 +11,6 @@
 package org.springframework.ide.vscode.boot.java.data.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -110,62 +107,4 @@ public class DataRepositoryAotMetadataCodeLensProviderMongoDbTest {
 		assertEquals(2, cls.get(1).getCommand().getArguments().size());
 	}
 
-	/**
-	 * Verify that text blocks are generated when the query string contains quotes on Java 15 or above.
-	 */
-	@Test
-	void turnIntoQueryUsesTextBlockWhenQuotesPresentAndJava15OrAbove() throws Exception {
-		Path filePath = Paths.get(testProject.getLocationUri())
-				.resolve("src/main/java/example/springdata/aot/UserRepository.java");
-
-		Editor editor = harness.newEditor(
-				LanguageId.JAVA,
-				new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8),
-				filePath.toUri().toASCIIString()
-		);
-
-		List<CodeLens> cls = editor.getCodeLenses("findUserByUsername", 1);
-		String queryValue = extractValueFromAttributes(cls.get(0));
-
-		System.out.println("Extracted query value: " + queryValue);
-
-		assertNotNull(queryValue, "Query value should not be null");
-		
-		int javaVersion = 8;
-		String versionStr = testProject.getClasspath().getJre().version();
-		if (versionStr.startsWith("1.")) {
-			javaVersion = Integer.parseInt(versionStr.substring(2, 3));
-		} else {
-			javaVersion = Integer.parseInt(versionStr.split("\\.")[0]);
-		}
-
-		// MongoDB findUserByUsername query {"username": ?0} contains quotes.
-		if (javaVersion >= 15) {
-			assertTrue(queryValue.startsWith("\"\"\""), "Text block must be used for Java >= 15 when quotes are present");
-		} else {
-			assertFalse(queryValue.startsWith("\"\"\""), "Text block must NOT be used if Java < 15");
-		}
-	}
-
-	private String extractValueFromAttributes(CodeLens codeLens) {
-		Object args = codeLens.getCommand().getArguments().get(1);
-		if (args instanceof com.google.gson.JsonObject) {
-			com.google.gson.JsonObject params = (com.google.gson.JsonObject) args;
-			if (params.has("parameters") && params.get("parameters").isJsonObject()) {
-				com.google.gson.JsonObject parameters = params.getAsJsonObject("parameters");
-				if (parameters.has("attributes") && parameters.get("attributes").isJsonArray()) {
-					com.google.gson.JsonArray attributes = parameters.getAsJsonArray("attributes");
-					for (com.google.gson.JsonElement element : attributes) {
-						if (element.isJsonObject()) {
-							com.google.gson.JsonObject attr = element.getAsJsonObject();
-							if (attr.has("name") && "value".equals(attr.get("name").getAsString())) {
-								return attr.get("value").getAsString();
-							}
-						}
-					}
-				}
-			}
-		}
-		return null;
-	}
 }

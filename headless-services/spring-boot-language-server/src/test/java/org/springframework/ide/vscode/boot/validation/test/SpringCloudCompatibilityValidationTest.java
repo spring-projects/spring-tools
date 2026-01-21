@@ -104,12 +104,12 @@ public class SpringCloudCompatibilityValidationTest {
 		// Mock finding Spring Cloud dependency
 		// Note: SpringProjectUtil.getDependencyVersion looks for "spring-cloud" in the path
 		if (cloudCommonsVersion != null) {
-			CPE cloudCpe = createCPE("binary", "/path/to/.m2/repository/org/springframework/cloud/spring-cloud-commons/" + cloudCommonsVersion + "/spring-cloud-commons-" + cloudCommonsVersion + ".pom", cloudCommonsVersion);
+			CPE cloudCpe = createCPE("binary", "spring-cloud-commons", "/path/to/.m2/repository/org/springframework/cloud/spring-cloud-commons/" + cloudCommonsVersion + "/spring-cloud-commons-" + cloudCommonsVersion + ".jar", cloudCommonsVersion);
 			classpathEntries.add(cloudCpe);
-			when(classpath.findBinaryLibrary("spring-cloud-commons")).thenReturn(Optional.of(cloudCpe));
+			when(classpath.findBinaryLibrary("spring-cloud-commons", true)).thenReturn(Optional.of(cloudCpe));
 		}
 		else {
-			when(classpath.findBinaryLibrary("spring-cloud-commons")).thenReturn(Optional.empty());
+			when(classpath.findBinaryLibrary("spring-cloud-commons", true)).thenReturn(Optional.empty());
 		}
 		
 		when(classpath.getClasspathEntries()).thenReturn(classpathEntries);
@@ -117,12 +117,13 @@ public class SpringCloudCompatibilityValidationTest {
 		return project;
 	}
 
-	private CPE createCPE(String kind, String path, String version) {
+	private CPE createCPE(String kind, String name, String path, String version) {
 		CPE cpe = mock(CPE.class);
 		when(cpe.getKind()).thenReturn(kind);
 		when(cpe.getPath()).thenReturn(path);
 		when(cpe.getVersion()).thenReturn(Version.parse(version));
 		when(cpe.isSystem()).thenReturn(false);
+		when(cpe.getName()).thenReturn(name);
 		return cpe;
 	}
 

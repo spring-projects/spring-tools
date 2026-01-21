@@ -73,7 +73,7 @@ public class ProjectVersionDiagnosticProvider {
 	}
 
 	protected File getSpringBootDependency(IJavaProject project) {
-		return project.getClasspath().findBinaryLibrary(SpringProjectUtil.SPRING_BOOT).map(cpe -> new File(cpe.getPath())).orElse(null);
+		return project.getClasspath().findBinaryLibraryByName(SpringProjectUtil.SPRING_BOOT).map(cpe -> new File(cpe.getPath())).orElse(null);
 	}
 
 	public static class DiagnosticResult {

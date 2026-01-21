@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.commons.java;
 import java.io.File;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,12 +44,17 @@ public interface IClasspath {
 	
 	/**
 	 * Finds a classpath entry among JAR libraries that start with a prefix. Prefix must typically contain the full lib name such that the match is only one.
-	 * 
-	 * @param prefix the library prefix
-	 * @return the classpath entry
 	 */
-	default Optional<CPE> findBinaryLibrary(String prefix) {
-		return findBinaryLibrary(prefix, false);
+	default Optional<CPE> findBinaryLibraryByPrefix(String prefix) {
+		return findBinaryLibrary(prefix, (cpe, namePrefix) -> new File(cpe.getPath()).getName().startsWith(namePrefix));
+	}
+
+	/**
+	 * Finds a classpath entry among JAR libraries with the given name. If the library contains version information,
+	 * this version information is not taken into account, but everything else must match to find the classpath entry.
+	 */
+	default Optional<CPE> findBinaryLibraryByName(String name) {
+		return findBinaryLibrary(name,  (cpe, libName) -> cpe.getName().equals(libName));
 	}
 
 	/**
@@ -57,15 +63,11 @@ public interface IClasspath {
 	 * @param prefix the library prefix
 	 * @return the classpath entry
 	 */
-	default Optional<CPE> findBinaryLibrary(String prefix, boolean exactName) {
+	default Optional<CPE> findBinaryLibrary(String name, BiFunction<CPE, String, Boolean> matcher) {
 		try {
 			for (CPE cpe : getClasspathEntries()) {
-				if (Classpath.isBinary(cpe) && !cpe.isSystem() && !cpe.isTest()) {
-					if (exactName && cpe.getName().equals(prefix)) {
-						return Optional.of(cpe);
-					} else if (!exactName && new File(cpe.getPath()).getName().startsWith(prefix)) {
-						return Optional.of(cpe);
-					}
+				if (Classpath.isBinary(cpe) && !cpe.isSystem() && !cpe.isTest() && matcher.apply(cpe, name)) {
+					return Optional.of(cpe);
 				}
 			}
 		} catch (Exception e) {

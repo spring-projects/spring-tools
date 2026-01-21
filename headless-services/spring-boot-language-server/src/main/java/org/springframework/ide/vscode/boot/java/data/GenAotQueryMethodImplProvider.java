@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -78,7 +78,7 @@ public class GenAotQueryMethodImplProvider implements IJavaLocationLinksProvider
 	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
 			TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 		if (n instanceof SimpleName && n.getParent() instanceof MethodDeclaration md) {
-			Version version = SpringProjectUtil.getDependencyVersion(project, "spring-data-jpa");
+			Version version = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-data-jpa");
 			if (version != null && version.getMajor() >= 4) {
 				IMethodBinding methodBinding = md.resolveBinding();
 				if (methodBinding != null && methodBinding.getDeclaringClass() != null

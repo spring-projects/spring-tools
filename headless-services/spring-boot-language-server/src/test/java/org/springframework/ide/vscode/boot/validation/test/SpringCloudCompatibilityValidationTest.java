@@ -106,10 +106,10 @@ public class SpringCloudCompatibilityValidationTest {
 		if (cloudCommonsVersion != null) {
 			CPE cloudCpe = createCPE("binary", "spring-cloud-commons", "/path/to/.m2/repository/org/springframework/cloud/spring-cloud-commons/" + cloudCommonsVersion + "/spring-cloud-commons-" + cloudCommonsVersion + ".jar", cloudCommonsVersion);
 			classpathEntries.add(cloudCpe);
-			when(classpath.findBinaryLibrary("spring-cloud-commons", true)).thenReturn(Optional.of(cloudCpe));
+			when(classpath.findBinaryLibraryByName("spring-cloud-commons")).thenReturn(Optional.of(cloudCpe));
 		}
 		else {
-			when(classpath.findBinaryLibrary("spring-cloud-commons", true)).thenReturn(Optional.empty());
+			when(classpath.findBinaryLibraryByName("spring-cloud-commons")).thenReturn(Optional.empty());
 		}
 		
 		when(classpath.getClasspathEntries()).thenReturn(classpathEntries);

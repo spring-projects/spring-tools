@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -74,7 +74,7 @@ public class EntityIdForRepoReconciler implements JdtAstReconciler {
 
 		return new ASTVisitor() {
 
-			final boolean considerIdField = project.getClasspath().findBinaryLibrary("spring-data-mongodb-").isPresent();
+			final boolean considerIdField = project.getClasspath().findBinaryLibraryByPrefix("spring-data-mongodb-").isPresent();
 
 			@Override
 			public boolean visit(TypeDeclaration typeDecl) {

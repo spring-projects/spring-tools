@@ -41,9 +41,10 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 		this.provider = provider;
 	}
 	
-	public static Generation getGenerationForJavaProject(IJavaProject javaProject, ResolvedSpringProject springProject) throws Exception {
+	public static Generation getGenerationForJavaProject(IJavaProject javaProject, ResolvedSpringProject springProject, String artifactName) throws Exception {
 		List<Generation> genList = springProject.getGenerations();
-		Version javaProjectVersion = SpringProjectUtil.getDependencyVersion(javaProject, springProject.getSlug());
+		Version javaProjectVersion = SpringProjectUtil.getDependencyVersionByName(javaProject, artifactName);
+
 		if (javaProjectVersion == null) {
 			return null;
 		}
@@ -62,7 +63,7 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 	@Override
 	public Collection<Diagnostic> validate(IJavaProject javaProject, Version javaProjectVersion) throws Exception {
 		ResolvedSpringProject springProject = provider.getProject(SpringProjectUtil.SPRING_BOOT);
-		Generation javaProjectGen = getGenerationForJavaProject(javaProject, springProject);
+		Generation javaProjectGen = getGenerationForJavaProject(javaProject, springProject, springProject.getSlug());
 		ImmutableList.Builder<Diagnostic> b = ImmutableList.builder();
 		
 		boolean validCommercialSupport = VersionValidationUtils.isCommercialValid(javaProjectGen);

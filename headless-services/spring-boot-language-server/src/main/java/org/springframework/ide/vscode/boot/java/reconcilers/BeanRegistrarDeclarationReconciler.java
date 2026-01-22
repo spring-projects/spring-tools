@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -61,7 +61,7 @@ public class BeanRegistrarDeclarationReconciler implements JdtAstReconciler {
 	
 	@Override
 	public boolean isApplicable(IJavaProject project) {
-		Version version = SpringProjectUtil.getDependencyVersion(project, "spring-context");
+		Version version = SpringProjectUtil.getDependencyVersionByName(project, "spring-context");
 		return version != null && version.compareTo(new Version(7, 0, 0, null)) >= 0;
 	}
 

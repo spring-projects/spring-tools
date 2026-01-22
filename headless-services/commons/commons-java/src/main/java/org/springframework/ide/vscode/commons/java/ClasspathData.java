@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -93,9 +93,9 @@ public class ClasspathData implements IClasspath {
 	}
 
 	@Override
-	public Optional<CPE> findBinaryLibrary(String prefix) {
+	public Optional<CPE> findBinaryLibraryByPrefix(String prefix) {
 		try {
-			return binaryLibLookupCache.get(prefix, () -> IClasspath.super.findBinaryLibrary(prefix));
+			return binaryLibLookupCache.get(prefix, () -> IClasspath.super.findBinaryLibraryByPrefix(prefix));
 		} catch (ExecutionException e) {
 			log.error("", e);
 			return Optional.empty();

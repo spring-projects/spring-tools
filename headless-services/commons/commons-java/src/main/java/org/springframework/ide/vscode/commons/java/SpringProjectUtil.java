@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -33,15 +33,15 @@ public class SpringProjectUtil {
 	private static final Pattern GENERATION_VERSION = Pattern.compile(GENERATION_VERSION_STR);
 	
 	public static boolean isSpringProject(IJavaProject jp) {
-		return jp.getClasspath().findBinaryLibrary("spring-core").isPresent();
+		return jp.getClasspath().findBinaryLibraryByPrefix("spring-core").isPresent();
 	}
 
 	public static boolean isBootProject(IJavaProject jp) {
-		return jp.getClasspath().findBinaryLibrary(SPRING_BOOT).isPresent();
+		return jp.getClasspath().findBinaryLibraryByPrefix(SPRING_BOOT).isPresent();
 	}
 
 	public static boolean hasBootActuators(IJavaProject jp) {
-		return jp.getClasspath().findBinaryLibrary("spring-boot-actuator-").isPresent();
+		return jp.getClasspath().findBinaryLibraryByPrefix("spring-boot-actuator-").isPresent();
 	}
 	
 	/**
@@ -79,13 +79,17 @@ public class SpringProjectUtil {
 		throw new IllegalArgumentException("Invalid semver. Unable to parse major and minor version from: " + name);
 	}
 
-	public static Version getDependencyVersion(IJavaProject jp, String dependency) {		
-		return jp.getClasspath().findBinaryLibrary(dependency).map(cpe -> cpe.getVersion()).orElse(null);
+	public static Version getDependencyVersionByPrefix(IJavaProject jp, String dependencyPrefix) {
+		return jp.getClasspath().findBinaryLibraryByPrefix(dependencyPrefix).map(cpe -> cpe.getVersion()).orElse(null);
+	}
+	
+	public static Version getDependencyVersionByName(IJavaProject jp, String name) {		
+		return jp.getClasspath().findBinaryLibraryByName(name).map(cpe -> cpe.getVersion()).orElse(null);
 	}
 	
 	public static boolean hasDependencyStartingWith(IJavaProject jp, String dependency, Predicate<CPE> filter) {
 		IClasspath classpath = jp.getClasspath();
-		return classpath.findBinaryLibrary(dependency).or(() -> {
+		return classpath.findBinaryLibraryByPrefix(dependency).or(() -> {
 			try {
 				for (CPE cpe : classpath.getClasspathEntries()) {
 					if (filter == null || filter.test(cpe)) {
@@ -109,14 +113,13 @@ public class SpringProjectUtil {
 		}).isPresent();
 	}
 
-	
 	public static Version getSpringBootVersion(IJavaProject jp) {
-		return getDependencyVersion(jp, SPRING_BOOT);
+		return getDependencyVersionByName(jp, SPRING_BOOT);
 	}
 	
 	public static Predicate<IJavaProject> springBootVersionGreaterOrEqual(int major, int minor, int patch) {
 		return project -> {
-			Version version = project.getClasspath().findBinaryLibrary(SPRING_BOOT).map(cpe -> cpe.getVersion()).orElse(null);
+			Version version = project.getClasspath().findBinaryLibraryByPrefix(SPRING_BOOT).map(cpe -> cpe.getVersion()).orElse(null);
 			if (version == null) {
 				return false;
 			}

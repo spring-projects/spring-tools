@@ -87,11 +87,8 @@ public class QueryMethodCodeActionProviderMongoDbTest {
 		String rawText = docEdit.getEdits().get(0).getNewText().trim();
 
 		assertEquals(
-				"@Query(\"\"\"\n" +
-				"{\"lastname\": /^\\Q?0\\E/}\n" +
-				"\"\"\")\n"
-				+ "    Page<UserProjection> findUserByLastnameStartingWith(String lastname, Pageable page)",
-				rawText.replace("\r\n", "\n"));
+				"@Query(\"{\\\"lastname\\\": /^\\\\Q?0\\\\E/}\")",
+				rawText);
 		assertEquals(filePath.toUri().toASCIIString(), docEdit.getTextDocument().getUri());
 	}
 

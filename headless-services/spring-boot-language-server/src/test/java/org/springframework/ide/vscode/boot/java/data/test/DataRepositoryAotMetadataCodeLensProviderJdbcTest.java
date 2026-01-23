@@ -100,6 +100,12 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 
 	@Test
 	void turnIntoQueryUsesTextBlock() throws Exception {
+		harness.changeConfiguration(new Settings(new Gson()
+				.toJsonTree(Map.of("boot-java", Map.of(
+						"java", Map.of("codelens-over-query-methods", true),
+						"code-action", Map.of("data-query-style", "multiline")
+				)))));
+
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/example/springdata/aot/CategoryRepository.java");
 
@@ -115,6 +121,34 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		assertNotNull(queryValue, "Query value should not be null");
 
 		assertTrue(queryValue.startsWith("\"\"\""), "Query should be generated as a text block");
+		assertTrue(queryValue.contains("\n"), "Query should be split into multiple lines");
+		assertTrue(queryValue.contains("\n        SELECT"), "Should have newline and 8 spaces before SELECT");
+		assertTrue(queryValue.contains("\n        FROM"), "Should have newline and 8 spaces before FROM");
+		assertTrue(queryValue.contains("\n        WHERE"), "Should have newline and 8 spaces before WHERE");
+		assertTrue(queryValue.endsWith("\n    \"\"\""), "Should end with newline and 4 spaces before closing triple quotes");
+	}
+
+	@Test
+	void turnIntoQueryUsesCompactStyleByDefault() throws Exception {
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/example/springdata/aot/CategoryRepository.java");
+
+		Editor editor = harness.newEditor(
+				LanguageId.JAVA,
+				new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8),
+				filePath.toUri().toASCIIString()
+		);
+
+		List<CodeLens> cls = editor.getCodeLenses("findAllByNameContaining", 1);
+
+		String queryValue = extractValueFromAttributes(cls.get(0));
+
+		System.out.println("Extracted query value: " + queryValue);
+		assertNotNull(queryValue, "Query value should not be null");
+
+		assertTrue(queryValue.startsWith("\""), "Query should be generated as a string literal");
+		assertFalse(queryValue.startsWith("\"\"\""), "Query should NOT be generated as a text block");
+		assertFalse(queryValue.contains("\n        SELECT"), "Should NOT have formatted newline before SELECT");
 	}
 
 

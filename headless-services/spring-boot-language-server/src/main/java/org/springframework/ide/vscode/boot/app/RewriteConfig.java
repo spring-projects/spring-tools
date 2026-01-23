@@ -46,8 +46,8 @@ public class RewriteConfig {
 	}
 	
 	@ConditionalOnBean(RewriteRefactorings.class)
-	@Bean QueryMethodCodeActionProvider queryMethodCodeActionProvider(DataRepositoryAotMetadataService dataRepoAotService, RewriteRefactorings refactorings) {
-		return new QueryMethodCodeActionProvider(dataRepoAotService, refactorings);
+	@Bean QueryMethodCodeActionProvider queryMethodCodeActionProvider(DataRepositoryAotMetadataService dataRepoAotService, RewriteRefactorings refactorings, BootJavaConfig config) {
+		return new QueryMethodCodeActionProvider(dataRepoAotService, refactorings, config);
 	}
 
 }

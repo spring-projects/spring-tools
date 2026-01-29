@@ -176,12 +176,17 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
         // Force classpath listener to be enabled. Boot LS can only be launched iff classpath is available and there Spring-Boot on the classpath somewhere.
         commands.executeCommand('sts.vscode-spring-boot.enableClasspathListening', true);
 
+        commands.executeCommand('setContext', 'vscode-spring-boot.ls.started', true);
+
         // Register TestJars launch support
         context.subscriptions.push(startTestJarSupport());
 
     })));
 
-    context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.stop', () => client.stop()));
+    context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.stop', () => {
+        commands.executeCommand('setContext', 'vscode-spring-boot.ls.started', false);
+        client.stop();
+    }));
     liveHoverUi.activate(client, options, context);
     setLogLevelUi.activate(client, options, context);
     startPropertiesConversionSupport(context);

@@ -110,30 +110,30 @@
       "view/title": [
         {
           "command": "vscode-spring-boot.structure.refresh",
-          "when": "view == explorer.spring",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring",
           "group": "navigation@5"
         }
       ],
       "editor/context": [
         {
-          "when": "editorLangId == spring-boot-properties",
+          "when": "vscode-spring-boot.ls.started && editorLangId == spring-boot-properties",
           "command": "vscode-spring-boot.props-to-yaml",
           "group": "SpringBoot"
         },
         {
-          "when": "editorLangId == spring-boot-properties-yaml",
+          "when": "vscode-spring-boot.ls.started && editorLangId == spring-boot-properties-yaml",
           "command": "vscode-spring-boot.yaml-to-props",
           "group": "SpringBoot"
         }
       ],
       "explorer/context": [
         {
-          "when": "resourceExtname == .properties",
+          "when": "vscode-spring-boot.ls.started && resourceExtname == .properties",
           "command": "vscode-spring-boot.props-to-yaml",
           "group": "SpringBoot"
         },
         {
-          "when": "resourceExtname == .yml || resourceExtname == .yaml",
+          "when": "vscode-spring-boot.ls.started && (resourceExtname == .yml || resourceExtname == .yaml)",
           "command": "vscode-spring-boot.yaml-to-props",
           "group": "SpringBoot"
         }
@@ -166,17 +166,17 @@
       ],
       "debug/toolBar": [
         {
-          "when": "inDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'disconnected' || vscode-spring-boot.active-app-state == 'connecting')",
+          "when": "ivscode-spring-boot.ls.started && nDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'disconnected' || vscode-spring-boot.active-app-state == 'connecting')",
           "command": "vscode-spring-boot.live.show.active",
           "group": "Spring Boot"
         },
         {
-          "when": "inDebugMode && debugType == 'java' && vscode-spring-boot.active-app-state == 'connected'",
+          "when": "vscode-spring-boot.ls.started && inDebugMode && debugType == 'java' && vscode-spring-boot.active-app-state == 'connected'",
           "command": "vscode-spring-boot.live.refresh.active",
           "group": "Spring Boot"
         },
         {
-          "when": "inDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'connected' || vscode-spring-boot.active-app-state == 'disconnecting')",
+          "when": "vscode-spring-boot.ls.started && inDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'connected' || vscode-spring-boot.active-app-state == 'disconnecting')",
           "command": "vscode-spring-boot.live.hide.active",
           "group": "Spring Boot"
         }
@@ -184,12 +184,12 @@
       "view/item/context": [
         {
           "command": "vscode-spring-boot.structure.openReference",
-          "when": "view == explorer.spring && viewItem == stereotypedNodeWithReference",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == stereotypedNodeWithReference",
           "group": "inline"
         },
         {
           "command": "vscode-spring-boot.structure.grouping",
-          "when": "view == explorer.spring && viewItem == project",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == project",
           "group": "inline"
         }
       ]
@@ -197,27 +197,32 @@
     "commands": [
       {
         "command": "vscode-spring-boot.structure.refresh",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Refresh",
         "category": "Spring Boot",
         "icon": "$(refresh)"
       },
       {
         "command": "vscode-spring-boot.live-hover.connect",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Show/Refresh/Hide Live Data from Spring Boot Processes",
         "category": "Spring Boot"
       },
       {
         "command": "sts/common-properties/reload",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Reload Shared Properties Metadata",
         "category": "Spring Boot"
       },
       {
         "command": "vscode-spring-boot.spring.modulith.metadata.refresh",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Refresh Modulith Metadata",
         "category": "Spring Boot"
       },
       {
         "command": "vscode-spring-boot.set.log-levels",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Set Log Levels",
         "category": "Spring Boot"
       },
@@ -229,37 +234,40 @@
       },
       {
         "command": "vscode-spring-boot.props-to-yaml",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Convert .properties to .yaml",
         "category": "Spring Boot"
       },
       {
         "command": "vscode-spring-boot.yaml-to-props",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Convert .yaml to .properties",
         "category": "Spring Boot"
       },
       {
         "command": "vscode-spring-boot.live.show.active",
         "title": "Show Live Data from launched Spring Boot App",
-        "enablement": "vscode-spring-boot.active-app-state == 'disconnected'",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'disconnected'",
         "icon": "./images/light-bulb-off.svg",
         "category": "Spring Boot"
       },
       {
         "command": "vscode-spring-boot.live.hide.active",
         "title": "Hide Live Data from launched Spring Boot App",
-        "enablement": "vscode-spring-boot.active-app-state == 'connected'",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'connected'",
         "icon": "./images/light-bulb-on.svg",
         "category": "Spring Boot"
       },
       {
         "command": "vscode-spring-boot.live.refresh.active",
         "title": "Refresh Live Data from launched Spring Boot App",
-        "enablement": "vscode-spring-boot.active-app-state == 'connected'",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'connected'",
         "icon": "$(refresh)",
         "category": "Spring Boot"
       },
       {
         "command": "vscode-spring-boot.query.explain",
+        "enablement": "vscode-spring-boot.ls.started",
         "title": "Explain Spel expressions, Spring Data queries, and AOP annotations (using Copilot)",
         "category": "Spring Boot"
       },
@@ -272,12 +280,14 @@
       {
         "command": "vscode-spring-boot.structure.openReference",
         "title": "Open Reference",
+        "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(link-external)"
       },
       {
         "command": "vscode-spring-boot.structure.grouping",
         "title": "Select Groups to Show/Hide",
+        "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(checklist)"
       },
@@ -285,7 +295,7 @@
         "command": "vscode-spring-boot.ls.start",
         "title": "Start Spring Boot Language Server",
         "category": "Spring Boot",
-        "enablement": "false"
+        "enablement": "!vscode-spring-boot.ls.started"
       }
     ],
     "configuration": [

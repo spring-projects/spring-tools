@@ -27,9 +27,6 @@
     "application-properties",
     "application-yaml"
   ],
-  "activationEvents": [
-    "onCommand:vscode-spring-boot.ls.start"
-  ],
   "contributes": {
     "//chatParticipants": [
       {
@@ -283,6 +280,12 @@
         "title": "Select Groups to Show/Hide",
         "category": "Spring Boot",
         "icon": "$(checklist)"
+      },
+      {
+        "command": "vscode-spring-boot.ls.start",
+        "title": "Start Spring Boot Language Server",
+        "category": "Spring Boot",
+        "enablement": "false"
       }
     ],
     "configuration": [

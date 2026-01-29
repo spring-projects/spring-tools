@@ -18,12 +18,10 @@ public class MongoQueryFormatter implements QueryFormatter {
 	public String format(String query) {
 		try {
 			// Try to format as JSON
-			String formattedJson = new JSONObject(query).toString(4);
-			// Indent the formatted JSON to align with Java code (8 spaces)
-			return "\n        " + formattedJson.replace("\n", "\n        ");
+			return new JSONObject(query).toString(4);
 		} catch (Exception e) {
-			// Fallback: just indent
-			return "\n        " + query;
+			// Fallback: just return the query as is
+			return query;
 		}
 	}
 

@@ -231,7 +231,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			if (isMultiline) {
 				QueryFormatter formatter = (module == DataRepositoryModule.MONGODB) ? MONGO_FORMATTER : JPQL_FORMATTER;
 				value = formatter.format(value);
-				value = "\"\"\"" + value + "\n    \"\"\"";
+				value = "\"\"\"" + value + "\n\"\"\"";
 			} else {
 				value = "\"" + StringEscapeUtils.escapeJava(value).trim() + "\"";
 			}

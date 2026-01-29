@@ -18,12 +18,14 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
@@ -97,7 +99,9 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 	
 	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata method) {
 		CodeAction ca = new CodeAction();
-		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata.module(), method, config)));
+		FixDescriptor fixDescriptor = DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata.module(), method, config);
+		ca.setData(refactorings.createFixData(fixDescriptor));
+		ca.setCommand(refactorings.createFixCommand(TITLE, fixDescriptor));
 		ca.setTitle(TITLE);
 		ca.setKind(CodeActionKind.Refactor);
 		return ca;

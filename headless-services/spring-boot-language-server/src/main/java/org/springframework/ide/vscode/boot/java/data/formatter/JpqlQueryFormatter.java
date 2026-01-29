@@ -30,14 +30,14 @@ public class JpqlQueryFormatter implements QueryFormatter {
 			for (Token token = lexer.nextToken(); token.getType() != Token.EOF; token = lexer.nextToken()) {
 				boolean newlineAdded = false;
 				if (isNewlineKeyword(token)) {
-					sb.append("\n        ");
+					sb.append("\n");
 					newlineAdded = true;
 				}
 
 				if (!newlineAdded && lastStopIndex != -1 && token.getStartIndex() > lastStopIndex + 1) {
 					sb.append(" ");
 				} else if (!newlineAdded && sb.length() == 0) {
-					sb.append("\n        ");
+					sb.append("\n");
 				}
 
 				sb.append(token.getText());
@@ -45,7 +45,7 @@ public class JpqlQueryFormatter implements QueryFormatter {
 			}
 			return sb.toString();
 		} catch (Exception e) {
-			return "\n        " + query;
+			return "\n" + query;
 		}
 	}
 

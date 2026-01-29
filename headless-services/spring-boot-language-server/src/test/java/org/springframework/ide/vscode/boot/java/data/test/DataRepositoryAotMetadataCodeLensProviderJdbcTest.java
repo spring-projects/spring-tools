@@ -122,10 +122,10 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 
 		assertTrue(queryValue.startsWith("\"\"\""), "Query should be generated as a text block");
 		assertTrue(queryValue.contains("\n"), "Query should be split into multiple lines");
-		assertTrue(queryValue.contains("\n        SELECT"), "Should have newline and 8 spaces before SELECT");
-		assertTrue(queryValue.contains("\n        FROM"), "Should have newline and 8 spaces before FROM");
-		assertTrue(queryValue.contains("\n        WHERE"), "Should have newline and 8 spaces before WHERE");
-		assertTrue(queryValue.endsWith("\n    \"\"\""), "Should end with newline and 4 spaces before closing triple quotes");
+		assertTrue(queryValue.contains("\nSELECT"), "Should have newline before SELECT");
+		assertTrue(queryValue.contains("\nFROM"), "Should have newline before FROM");
+		assertTrue(queryValue.contains("\nWHERE"), "Should have newline before WHERE");
+		assertTrue(queryValue.endsWith("\n\"\"\""), "Should end with newline before closing triple quotes");
 	}
 
 	@Test

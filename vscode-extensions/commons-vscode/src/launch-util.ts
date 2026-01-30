@@ -225,8 +225,7 @@ function prepareJvmArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
     }
 
     const args = [
-        '-Dsts.lsp.client=vscode',
-        '-XX:TieredStopAtLevel=1'
+        '-Dsts.lsp.client=vscode'
     ];
     const logfile = options.workspaceOptions.get("logfile");
     if (logfile) {

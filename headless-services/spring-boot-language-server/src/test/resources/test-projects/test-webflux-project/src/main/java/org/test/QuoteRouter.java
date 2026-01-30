@@ -24,7 +24,7 @@ public class QuoteRouter {
 				.route(GET("/hello").and(accept(TEXT_PLAIN)), quoteHandler::hello)
 				.andRoute(POST("/echo").and(accept(TEXT_PLAIN).and(contentType(TEXT_PLAIN))), quoteHandler::echo)
 				.andRoute(GET("/quotes").and(accept(APPLICATION_JSON)), quoteHandler::fetchQuotes)
-				.andRoute(RequestPredicates.GET("/quotes").and(accept(MediaType.APPLICATION_STREAM_JSON)), quoteHandler::streamQuotes);
+				.andRoute(RequestPredicates.GET("/quotes").and(accept(MediaType.APPLICATION_NDJSON)), quoteHandler::streamQuotes);
 	}
 	
 	@Bean

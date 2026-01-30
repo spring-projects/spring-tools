@@ -53,7 +53,7 @@ public class IndexCacheVoid implements IndexCache {
 
 	@Override
 	public long getModificationTimestamp(IndexCacheKey cacheKey, String docURI) {
-		return 0;
+		return -1;
 	}
 
 }

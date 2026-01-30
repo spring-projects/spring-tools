@@ -34,7 +34,7 @@ import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxUtils;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebFnUtils;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
@@ -108,7 +108,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 
 			@Override
 			public boolean visit(MethodDeclaration method) {
-				boolean isWebfluxRouter = WebfluxUtils.isFunctionalWebRouterBean(method);
+				boolean isWebfluxRouter = WebFnUtils.isFunctionalWebRouterBean(method);
 				if (isWebfluxRouter) {
 					if (!context.isCompleteAst()) {
 						throw new RequiredCompleteAstException();
@@ -139,8 +139,8 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 				}
 				
 				String declaringClassName = declaringClass.getQualifiedName();
-				boolean isWebMvcVersion = WebfluxUtils.MVC_REQUEST_PREDICATES_TYPE.equals(declaringClassName);
-				boolean isWebFluxVersion = WebfluxUtils.REQUEST_PREDICATES_TYPE.equals(declaringClassName);
+				boolean isWebMvcVersion = WebFnUtils.MVC_REQUEST_PREDICATES_TYPE.equals(declaringClassName);
+				boolean isWebFluxVersion = WebFnUtils.FLUX_REQUEST_PREDICATES_TYPE.equals(declaringClassName);
 				
 				if (!isWebMvcVersion && !isWebFluxVersion) {
 					return super.visit(methodInvocation);

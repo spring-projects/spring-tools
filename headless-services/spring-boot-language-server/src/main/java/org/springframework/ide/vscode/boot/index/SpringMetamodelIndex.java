@@ -111,6 +111,16 @@ public class SpringMetamodelIndex {
 		}
 	}
 	
+	public Bean[] getBeansOfDocument(String docURI, String name) {
+		DocumentElement document = getDocument(docURI);
+		if (document != null) {
+			return getNodesOfType(Bean.class, List.of(document), bean -> bean.getName().equals(name)).toArray(Bean[]::new);
+		}
+		else {
+			return new Bean[0];
+		}
+	}
+	
 	public Bean[] getBeansWithName(String projectName, String name) {
 		ProjectElement project = this.projectRootElements.get(projectName);
 		if (project != null) {

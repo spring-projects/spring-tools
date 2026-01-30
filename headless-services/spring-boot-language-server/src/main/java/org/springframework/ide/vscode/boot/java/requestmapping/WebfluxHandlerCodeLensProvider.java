@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -67,15 +67,15 @@ public class WebfluxHandlerCodeLensProvider implements CodeLensProvider {
 						CodeLens codeLens = new CodeLens();
 						codeLens.setRange(document.toRange(node.getName().getStartPosition(), node.getName().getLength()));
 
-						String httpMethod = WebfluxUtils.getStringRep(handlerInfo.getHttpMethods(), string -> string);
+						String httpMethod = WebFnUtils.getStringRep(handlerInfo.getHttpMethods(), string -> string);
 						String codeLensCommand = httpMethod != null ? httpMethod + " " : "";
 
 						codeLensCommand += handlerInfo.getPath();
 
-						String acceptType = WebfluxUtils.getStringRep(handlerInfo.getAcceptTypes(), WebfluxUtils::getMediaType);
+						String acceptType = WebFnUtils.getStringRep(handlerInfo.getAcceptTypes(), WebFnUtils::getMediaType);
 						codeLensCommand += acceptType != null ? " - Accept: " + acceptType : "";
 
-						String contentType = WebfluxUtils.getStringRep(handlerInfo.getContentTypes(), WebfluxUtils::getMediaType);
+						String contentType = WebFnUtils.getStringRep(handlerInfo.getContentTypes(), WebFnUtils::getMediaType);
 						codeLensCommand += contentType != null ? " - Content-Type: " + contentType : "";
 						
 						Command cmd = new Command();

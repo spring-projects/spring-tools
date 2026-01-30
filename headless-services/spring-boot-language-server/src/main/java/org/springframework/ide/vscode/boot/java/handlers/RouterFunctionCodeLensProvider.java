@@ -25,7 +25,7 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxUtils;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebFnUtils;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -55,7 +55,7 @@ public class RouterFunctionCodeLensProvider implements CodeLensProvider {
 				cancelToken.checkCanceled();
 				
 				// Check if this is a functional web router bean (WebFlux or WebMVC)
-				if (WebfluxUtils.isFunctionalWebRouterBean(node)) {
+				if (WebFnUtils.isFunctionalWebRouterBean(node)) {
 					// Check if the method uses static imports (old style) instead of builder pattern
 					if (usesStaticImports(node)) {
 						provideCodeLensForRouterMethod(cancelToken, node, document, resultAccumulator);
@@ -121,8 +121,8 @@ public class RouterFunctionCodeLensProvider implements CodeLensProvider {
 	 * - RouterFunction.andRoute() with parameters
 	 */
 	private boolean isStaticImportStyle(String declaringClassName, String methodName, MethodInvocation node) {
-		if ((WebfluxUtils.ROUTER_FUNCTIONS_TYPE.equals(declaringClassName) || 
-				WebfluxUtils.MVC_ROUTER_FUNCTIONS_TYPE.equals(declaringClassName))) {
+		if ((WebFnUtils.FLUX_ROUTER_FUNCTIONS_TYPE.equals(declaringClassName) || 
+				WebFnUtils.MVC_ROUTER_FUNCTIONS_TYPE.equals(declaringClassName))) {
 			if ("route".equals(methodName)) {
 				// route() with parameters = static style, route() with no parameters = builder style
 				List<?> arguments = node.arguments();
@@ -130,8 +130,8 @@ public class RouterFunctionCodeLensProvider implements CodeLensProvider {
 			}
 		}
 		
-		if ((WebfluxUtils.ROUTER_FUNCTION_TYPE.equals(declaringClassName) ||
-			 WebfluxUtils.MVC_ROUTER_FUNCTION_TYPE.equals(declaringClassName))) {
+		if ((WebFnUtils.FLUX_ROUTER_FUNCTION_TYPE.equals(declaringClassName) ||
+			 WebFnUtils.MVC_ROUTER_FUNCTION_TYPE.equals(declaringClassName))) {
 			if ("andRoute".equals(methodName)) {
 				// andRoute() is only available in static import style
 				return true;
@@ -150,8 +150,8 @@ public class RouterFunctionCodeLensProvider implements CodeLensProvider {
 	 */
 	private boolean isBuilderStyle(String declaringClassName, String methodName, MethodInvocation node) {
 		// Check for RouterFunctions.route() with no parameters
-		if ((WebfluxUtils.ROUTER_FUNCTIONS_TYPE.equals(declaringClassName) || 
-				WebfluxUtils.MVC_ROUTER_FUNCTIONS_TYPE.equals(declaringClassName))) {
+		if ((WebFnUtils.FLUX_ROUTER_FUNCTIONS_TYPE.equals(declaringClassName) || 
+				WebFnUtils.MVC_ROUTER_FUNCTIONS_TYPE.equals(declaringClassName))) {
 			if ("route".equals(methodName)) {
 				List<?> arguments = node.arguments();
 				return arguments == null || arguments.isEmpty();
@@ -159,8 +159,8 @@ public class RouterFunctionCodeLensProvider implements CodeLensProvider {
 		}
 		
 		// Check for builder-specific methods
-		String builderType = WebfluxUtils.ROUTER_FUNCTIONS_TYPE + "$Builder";
-		String mvcBuilderType = WebfluxUtils.MVC_ROUTER_FUNCTIONS_TYPE + "$Builder";
+		String builderType = WebFnUtils.FLUX_ROUTER_FUNCTIONS_TYPE + "$Builder";
+		String mvcBuilderType = WebFnUtils.MVC_ROUTER_FUNCTIONS_TYPE + "$Builder";
 		
 		if (builderType.equals(declaringClassName) || mvcBuilderType.equals(declaringClassName)) {
 			// Any method on the builder indicates builder pattern

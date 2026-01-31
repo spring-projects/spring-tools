@@ -119,7 +119,9 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 	public CompletableFuture<WorkspaceEdit> createEdit(JsonElement o) {
 		FixDescriptor data = gson.fromJson(o, FixDescriptor.class);
 		if (data != null && data.getRecipeId() != null) {
-			return perform(data).thenApply(we -> we.orElse(null));
+			return perform(data).thenApply(we -> {
+				return we.orElse(null);
+			});
 		}
 		return null;
 	}

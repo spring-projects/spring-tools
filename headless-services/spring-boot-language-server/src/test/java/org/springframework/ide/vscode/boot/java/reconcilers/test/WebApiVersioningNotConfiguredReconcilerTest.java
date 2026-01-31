@@ -27,6 +27,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReco
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement.ConfigType;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
@@ -44,7 +45,7 @@ public class WebApiVersioningNotConfiguredReconcilerTest extends BaseReconcilerT
 
 	@Override
 	protected JdtAstReconciler getReconciler() {
-		return new WebApiVersioningReconciler(null);
+		return new WebApiVersioningReconciler(null, new QuickfixRegistry());
 	}
 
 	@BeforeEach
@@ -72,7 +73,7 @@ public class WebApiVersioningNotConfiguredReconcilerTest extends BaseReconcilerT
 				""";
 		List<ReconcileProblem> problems = reconcile(() -> {
 			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
-			return new WebApiVersioningReconciler(springIndex);
+			return new WebApiVersioningReconciler(springIndex, new QuickfixRegistry());
 		}, "A.java", source, false);
 		
 		assertEquals(1, problems.size());
@@ -107,7 +108,7 @@ public class WebApiVersioningNotConfiguredReconcilerTest extends BaseReconcilerT
 					.versionStrategy("version-strategy-configured", new Range(new Position(1, 1), new Position(1, 4))).buildFor(null);
 			springIndex.updateElements(getProjectName(), "soneURI", new SpringIndexElement[] {webConfig});
 
-			return new WebApiVersioningReconciler(springIndex);
+			return new WebApiVersioningReconciler(springIndex, new QuickfixRegistry());
 		}, "A.java", source, false);
 		
 		assertEquals(0, problems.size());
@@ -139,7 +140,7 @@ public class WebApiVersioningNotConfiguredReconcilerTest extends BaseReconcilerT
 		
 		List<ReconcileProblem> problems = reconcile(() -> {
 			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
-			return new WebApiVersioningReconciler(springIndex);
+			return new WebApiVersioningReconciler(springIndex, new QuickfixRegistry());
 		}, "A.java", source, false, reconcilingIndex);
 		
 		assertEquals(0, problems.size());

@@ -30,6 +30,7 @@ import org.openrewrite.ExecutionContext;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.Parser;
 import org.openrewrite.Parser.Input;
+import org.openrewrite.internal.ListUtils;
 import org.openrewrite.Recipe;
 import org.openrewrite.SourceFile;
 import org.openrewrite.Tree;
@@ -47,8 +48,12 @@ import org.openrewrite.java.tree.J.CompilationUnit;
 import org.openrewrite.java.tree.JavaSourceFile;
 import org.openrewrite.java.tree.JavaType;
 import org.openrewrite.marker.Range;
+import org.openrewrite.properties.PropertiesParser;
+import org.openrewrite.text.PlainTextParser;
 import org.openrewrite.tree.ParsingEventListener;
 import org.openrewrite.tree.ParsingExecutionContextView;
+import org.openrewrite.xml.XmlParser;
+import org.openrewrite.yaml.YamlParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
@@ -310,7 +315,7 @@ public class ORAstUtils {
 		return finalCus;
 	}
 	
-	public static List<CompilationUnit> parseInputs(JavaParser parser, Iterable<Parser.Input> inputs, Consumer<SourceFile> parseCallback) {
+	public static List<SourceFile> parseInputs(JavaParser parser, List<Parser.Input> inputs, Consumer<SourceFile> parseCallback) {
 		ExecutionContext ctx = new InMemoryExecutionContext(ORAstUtils::logExceptionWhileParsing);
 		ctx.putMessage(JavaParser.SKIP_SOURCE_SET_TYPE_GENERATION, true);
 		ctx.putMessage(ExecutionContext.REQUIRE_PRINT_EQUALS_INPUT, false);
@@ -326,24 +331,53 @@ public class ORAstUtils {
 			});
 			ctx = parseContext;
 		}
-		List<CompilationUnit> cus = Collections.emptyList();
-//		long start = System.currentTimeMillis();
+		
+		List<SourceFile> sourceFiles = new ArrayList<>(inputs.size());
+		
 		synchronized (parser) {
-			cus = parser.parseInputs(inputs, null, ctx).map(CompilationUnit.class::cast).collect(Collectors.toList());
+			final ExecutionContext c = ctx;
+			List<CompilationUnit> cus = parser.parseInputs(inputs, null, ctx).map(CompilationUnit.class::cast).collect(Collectors.toList());
+			sourceFiles.addAll(ListUtils.map(cus, (i, cu) -> (CompilationUnit) new UpdateSourcePositions().getVisitor().visit(cu, c)));
 		}
-//		log.info("Rewrite parser: " + (System.currentTimeMillis() - start));
-		List<J.CompilationUnit> finalCus = new ArrayList<>(cus.size());
-//		start = System.currentTimeMillis();
-		for (CompilationUnit cu : cus) {
-			J.CompilationUnit newCu = (J.CompilationUnit) new UpdateSourcePositions().getVisitor().visit(cu, ctx);
-			if (newCu == null) {
-				finalCus.add(cu);
-			} else {
-				finalCus.add(newCu);
-			}
-		}
-//		log.info("Positions Update: " + (System.currentTimeMillis() - start));
-		return finalCus;
+		
+        sourceFiles.addAll(new XmlParser().parseInputs(
+        		inputs.stream()
+                        .filter(p -> p.getPath().getFileName().toString().endsWith(".xml") ||
+                                p.getPath().getFileName().toString().endsWith(".wsdl") ||
+                                p.getPath().getFileName().toString().endsWith(".xhtml") ||
+                                p.getPath().getFileName().toString().endsWith(".xsd") ||
+                                p.getPath().getFileName().toString().endsWith(".xsl") ||
+                                p.getPath().getFileName().toString().endsWith(".xslt"))
+                        .collect(Collectors.toList()),
+                null,
+                ctx
+        ).collect(Collectors.toList()));
+
+        sourceFiles.addAll(new YamlParser().parseInputs(
+                inputs.stream()
+                        .filter(p -> p.getPath().getFileName().toString().endsWith(".yml") || p.getPath().getFileName().toString().endsWith(".yaml"))
+                        .collect(Collectors.toList()),
+                null,
+                ctx
+        ).collect(Collectors.toList()));
+
+        sourceFiles.addAll(new PropertiesParser().parseInputs(
+                inputs.stream()
+                        .filter(p -> p.getPath().getFileName().toString().endsWith(".properties"))
+                        .collect(Collectors.toList()),
+                null,
+                ctx
+        ).collect(Collectors.toList()));
+        
+        sourceFiles.addAll(new PlainTextParser().parseInputs(
+                inputs.stream()
+                        .filter(p -> p.getPath().getFileName().toString().endsWith(".factories"))
+                        .collect(Collectors.toList()),
+                null,
+                ctx
+        ).collect(Collectors.toList()));
+
+		return sourceFiles;
 	}
 	
 	private static void logExceptionWhileParsing(Throwable t) {
@@ -459,7 +493,7 @@ public class ORAstUtils {
 	}
 	
 	public static JavaSourceSet addJavaSourceSet(List<? extends SourceFile> sourceFiles, String sourceSetName, Collection<Path> classpath) {
-		JavaSourceSet sourceSet = JavaSourceSet.build(sourceSetName, classpath, null, false);
+		JavaSourceSet sourceSet = JavaSourceSet.build(sourceSetName, classpath);
 		List<JavaType.FullyQualified> types = sourceSet.getClasspath();
 		for (SourceFile sourceFile : sourceFiles) {
 			if (!(sourceFile instanceof JavaSourceFile)) {

@@ -15,9 +15,11 @@ import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +32,6 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.openrewrite.Parser.Input;
 import org.openrewrite.Recipe;
 import org.openrewrite.SourceFile;
-import org.openrewrite.config.DeclarativeRecipe;
 import org.openrewrite.internal.RecipeIntrospectionUtils;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.marker.Range;
@@ -119,7 +120,9 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 	public CompletableFuture<WorkspaceEdit> createEdit(JsonElement o) {
 		FixDescriptor data = gson.fromJson(o, FixDescriptor.class);
 		if (data != null && data.getRecipeId() != null) {
-			return perform(data).thenApply(we -> we.orElse(null));
+			return perform(data).thenApply(we -> {
+				return we.orElse(null);
+			});
 		}
 		return null;
 	}
@@ -140,7 +143,7 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 					cus.addAll(ORAstUtils.parseInputs(jp, inputs, null));
 				} else {
 					JavaParser jp = ORAstUtils.createJavaParserBuilder(project.get()).dependsOn(data.getTypeStubs()).build();
-					List<Input> inputs = data.getDocUris().stream().map(URI::create).map(Paths::get).map(p -> ORAstUtils.getParserInput(server.getTextDocumentService(), p)).collect(Collectors.toList());
+					List<Input> inputs = data.getDocUris().stream().map(URI::create).map(Paths::get).map(p -> ORAstUtils.getParserInput(server.getTextDocumentService(), p)).filter(Objects::nonNull).collect(Collectors.toList());
 					cus.addAll(ORAstUtils.parseInputs(jp, inputs, null));
 				}
 				return recipeRepo.computeWorkspaceEditAwareOfPreview(r, cus, progress, projectWide).whenComplete((o, t) -> progress.done());
@@ -168,12 +171,9 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 	private CompletableFuture<Recipe> createRecipe(FixDescriptor d) {
 		return findRecipeClass(d.getRecipeId())
 		.thenCompose(optRecipeClass -> optRecipeClass
-				.map(recipeClass -> CompletableFuture.completedFuture(RecipeIntrospectionUtils.constructRecipe(recipeClass)))
+				.map(recipeClass -> CompletableFuture.completedFuture(RecipeIntrospectionUtils.constructRecipe(recipeClass, convertRecipeParameters(recipeClass, d.getParameters()))))
 				.orElseGet(() -> recipeRepo.getRecipe(d.getRecipeId()).thenApply(opt -> opt.orElseThrow())))
 		.thenApply(r -> {
-			if (d.getParameters() != null) {
-                setParameters(r, d.getParameters());
-            }
 			if (d.getRecipeScope() == RecipeScope.NODE) {
 				if (d.getRangeScope() == null) {
 					throw new IllegalArgumentException("Missing scope AST node!");
@@ -199,45 +199,29 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 	}
 	
 	/**
-	 * Sets the parameters for a given recipe. If the recipe is a DeclarativeRecipe,
-	 * it iterates over its sub-recipes and sets the parameters for each sub-recipe.
+	 * Naive de-serialization of recipe constructor parameters. If the value is a Map, i.e. non enum non-primitive
+	 * then we'd assume it is a json object requiring de-serialization based on the type of the same named field.
+	 * Ideally we should be looking for a constructor and its parameter types as field name might be different from the
+	 * constructor paremeter name
 	 */
-	private void setParameters(Recipe recipe, Map<String, Object> parameters) {
-	    if (recipe instanceof DeclarativeRecipe) {
-	        List<Recipe> subRecipes = ((DeclarativeRecipe) recipe).getRecipeList();
-	        for (Recipe subRecipe : subRecipes) {
-	            setParameters(subRecipe, parameters);
-	        }
-	    } else {
-	    	for (Entry<String, Object> entry : parameters.entrySet()) {
-				try {
-					Field field = findField(recipe, entry.getKey());
-	                if (field != null) {
-	                	field.setAccessible(true);
-	                	if (!field.getType().isAssignableFrom(entry.getValue().getClass())) {
-	                		field.set(recipe, gson.fromJson(gson.toJsonTree(entry.getValue()), field.getType()));
-	                	} else if (field.getGenericType() instanceof ParameterizedType pt) {
-	                		field.set(recipe, gson.fromJson(gson.toJsonTree(entry.getValue()), pt));
-	                	} else {
-	                		field.set(recipe, entry.getValue());
-	                	}
-	                }
-				} catch (Exception e) {
-					log.error("", e);;
+	private Map<String, Object> convertRecipeParameters(Class<?> recipeClass, Map<String, Object> parameters) {
+		if (parameters == null) {
+			return null;
+		}
+		Map<String, Object> convertedParameters = new LinkedHashMap<>();
+    	for (Entry<String, Object> entry : parameters.entrySet()) {
+    		convertedParameters.put(entry.getKey(), entry.getValue());
+			try {
+				Field field = recipeClass.getDeclaredField(entry.getKey());
+				if (field.getGenericType() instanceof ParameterizedType
+						|| !field.getType().isInstance(entry.getValue())) {
+					convertedParameters.put(entry.getKey(), gson.fromJson(gson.toJsonTree(entry.getValue()), field.getGenericType()));
 				}
+			} catch (Exception e) {
+				log.error("", e);;
 			}
-	    }
+		}
+    	return convertedParameters;
 	}
 
-	private Field findField(Object obj, String fieldName) {
-	    Class<?> clazz = obj.getClass();
-	    while (clazz != null) {
-	        try {
-	            return clazz.getDeclaredField(fieldName);
-	        } catch (NoSuchFieldException e) {
-	            clazz = clazz.getSuperclass();
-	        }
-	    }
-	    return null;
-	}
 }

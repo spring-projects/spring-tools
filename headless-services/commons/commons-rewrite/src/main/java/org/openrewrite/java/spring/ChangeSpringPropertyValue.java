@@ -18,10 +18,17 @@ package org.openrewrite.java.spring;
 import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
-import org.openrewrite.*;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
+import org.openrewrite.Recipe;
+import org.openrewrite.Tree;
+import org.openrewrite.TreeVisitor;
+import org.openrewrite.Validated;
 import org.openrewrite.internal.StringUtils;
 import org.openrewrite.properties.tree.Properties;
 import org.openrewrite.yaml.tree.Yaml;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 public class ChangeSpringPropertyValue extends Recipe {
 
@@ -65,6 +72,7 @@ public class ChangeSpringPropertyValue extends Recipe {
     @Nullable
     Boolean relaxedBinding;
     
+    @JsonCreator
 	public ChangeSpringPropertyValue(String propertyKey, String newValue, @Nullable String oldValue,
 			@Nullable Boolean regex, @Nullable Boolean relaxedBinding) {
 		this.propertyKey = propertyKey;

@@ -287,6 +287,18 @@ public class StringUtil {
 		return fullyQualifiedName;
 	}
 	
+	/**
+	 * Obtains the package name from a fully qualified class name.
+	 * Returns empty string if the name is not qualified (default package).
+	 */
+	public static String packageName(String fullyQualifiedName) {
+		int dot = fullyQualifiedName.lastIndexOf('.');
+		if (dot > 0) {
+			return fullyQualifiedName.substring(0, dot);
+		}
+		return "";
+	}
+	
 	public static boolean containsCharactersCaseInsensitive(String value, String query) {
 		return containsCharacters(value.toLowerCase().toCharArray(), query.toLowerCase().toCharArray());
 	}

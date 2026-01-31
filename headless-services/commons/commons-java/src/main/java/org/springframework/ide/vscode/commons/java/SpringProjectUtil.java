@@ -11,10 +11,16 @@
 package org.springframework.ide.vscode.commons.java;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,5 +148,60 @@ public class SpringProjectUtil {
 			return true;
 		};
 	}
+	
+	/**
+	 * Finds Spring Boot application.properties and application.yml files in the project's resource folders.
+	 * Prioritizes main application.properties/yml files over profile-specific files (application-*.properties/yml).
+	 * Excludes test resources.
+	 * 
+	 * @param project the Java project
+	 * @return list of Boot properties/YAML file paths, with main files prioritized over profile-specific files
+	 */
+	public static List<Path> findBootPropertiesFiles(IJavaProject project) {
+		List<Path> mainFiles = new ArrayList<>();
+		List<Path> profileFiles = new ArrayList<>();
+		
+		try {
+			project.getClasspath().getClasspathEntries().stream()
+				.filter(Classpath::isSource)
+				.filter(cpe -> !cpe.isTest())  // Exclude test resources
+				.filter(cpe -> !cpe.isJavaContent())  // Only resource folders
+				.map(cpe -> new File(cpe.getPath()).toPath())
+				.flatMap(folder -> {
+					try {
+						return Files.list(folder);
+					} catch (IOException e) {
+						return Stream.empty();
+					}
+				})
+				.forEach(path -> {
+					String fileName = path.getFileName().toString();
+					
+					// Main application files - highest priority
+					if ("application.properties".equals(fileName)) {
+						mainFiles.add(path);
+					} else if ("application.yml".equals(fileName) || "application.yaml".equals(fileName)) {
+						mainFiles.add(path);
+					}
+					// Profile-specific files - lower priority
+					else if (fileName.matches("application-.*\\.properties")) {
+						profileFiles.add(path);
+					} else if (fileName.matches("application-.*\\.ya?ml")) {
+						profileFiles.add(path);
+					}
+				});
+		} catch (Exception e) {
+			// ignore
+		}
+		
+		// Return main files first, then profile files if no main files exist
+		List<Path> result = new ArrayList<>();
+		result.addAll(mainFiles);
+		if (mainFiles.isEmpty()) {
+			result.addAll(profileFiles);
+		}
+		return result;
+	}
+	
 
 }

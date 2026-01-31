@@ -23,6 +23,8 @@ import org.openrewrite.properties.tree.Properties;
 import org.openrewrite.yaml.MergeYaml;
 import org.openrewrite.yaml.tree.Yaml;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -65,7 +67,7 @@ public class AddSpringProperty extends Recipe {
     @Nullable
     List<String> pathExpressions;
 
-    
+    @JsonCreator
     public AddSpringProperty(String property, String value, @Nullable String comment,
 			@Nullable List<String> pathExpressions) {
 		this.property = property;

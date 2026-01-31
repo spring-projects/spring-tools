@@ -17,6 +17,8 @@ import org.openrewrite.NlsRewrite.Description;
 import org.openrewrite.NlsRewrite.DisplayName;
 import org.openrewrite.Recipe;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 /**
  * @author Udayani V
  */
@@ -38,6 +40,7 @@ public class InjectBeanCompletionRecipe extends Recipe {
 
 	String classFqName;
 	
+	@JsonCreator
 	public InjectBeanCompletionRecipe(String fullyQualifiedName, String fieldName, String classFqName) {
 		this.fullyQualifiedName = fullyQualifiedName;
 		this.fieldName = fieldName;

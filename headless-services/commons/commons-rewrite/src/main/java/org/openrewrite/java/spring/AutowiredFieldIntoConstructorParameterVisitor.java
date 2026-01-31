@@ -15,25 +15,37 @@
  */
 package org.openrewrite.java.spring;
 
-import org.openrewrite.Cursor;
-import org.openrewrite.ExecutionContext;
-import org.openrewrite.Tree;
-import org.openrewrite.internal.ListUtils;
-import org.openrewrite.java.*;
-import org.openrewrite.java.tree.*;
-import org.openrewrite.java.tree.J.Block;
-import org.openrewrite.java.tree.J.ClassDeclaration;
-import org.openrewrite.java.tree.J.MethodDeclaration;
-import org.openrewrite.java.tree.J.VariableDeclarations;
-import org.openrewrite.java.tree.JavaType.FullyQualified;
-import org.openrewrite.marker.Markers;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.openrewrite.Cursor;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Tree;
+import org.openrewrite.internal.ListUtils;
+import org.openrewrite.java.AnnotationMatcher;
+import org.openrewrite.java.JavaIsoVisitor;
+import org.openrewrite.java.JavaTemplate;
+import org.openrewrite.java.JavaVisitor;
+import org.openrewrite.java.RemoveAnnotationVisitor;
+import org.openrewrite.java.tree.Expression;
+import org.openrewrite.java.tree.J;
+import org.openrewrite.java.tree.J.Block;
+import org.openrewrite.java.tree.J.ClassDeclaration;
+import org.openrewrite.java.tree.J.MethodDeclaration;
+import org.openrewrite.java.tree.J.VariableDeclarations;
+import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.JavaType.FullyQualified;
+import org.openrewrite.java.tree.Space;
+import org.openrewrite.java.tree.Statement;
+import org.openrewrite.java.tree.TypeTree;
+import org.openrewrite.java.tree.TypeUtils;
+import org.openrewrite.marker.Markers;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 
 public class AutowiredFieldIntoConstructorParameterVisitor extends JavaVisitor<ExecutionContext> {
@@ -43,7 +55,7 @@ public class AutowiredFieldIntoConstructorParameterVisitor extends JavaVisitor<E
     private final String fieldName;
     
     
-
+    @JsonCreator
     public AutowiredFieldIntoConstructorParameterVisitor(String classFqName, String fieldName) {
 		this.classFqName = classFqName;
 		this.fieldName = fieldName;

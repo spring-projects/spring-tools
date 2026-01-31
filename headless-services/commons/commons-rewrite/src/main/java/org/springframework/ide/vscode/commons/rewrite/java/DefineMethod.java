@@ -25,6 +25,8 @@ import org.openrewrite.java.MethodMatcher;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public class DefineMethod extends Recipe {
 
     private static final String MESSAGE = "methodPresent";
@@ -44,6 +46,7 @@ public class DefineMethod extends Recipe {
     public DefineMethod() {
     }
 
+    @JsonCreator
     public DefineMethod(String targetFqName, String signature, String template, List<String> imports, List<String> typeStubs, List<String> classpath) {
         this.targetFqName = targetFqName;
         this.signature = signature;

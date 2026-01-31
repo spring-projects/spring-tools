@@ -19,9 +19,15 @@ import java.util.Objects;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
-import org.openrewrite.*;
+import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
+import org.openrewrite.Recipe;
+import org.openrewrite.Tree;
+import org.openrewrite.TreeVisitor;
 import org.openrewrite.properties.tree.Properties;
 import org.openrewrite.yaml.tree.Yaml;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 public class CommentOutSpringPropertyKey extends Recipe {
 
@@ -45,9 +51,8 @@ public class CommentOutSpringPropertyKey extends Recipe {
             example = "This property is deprecated and no longer applicable starting from Spring Boot 3.0.x")
     String comment;
 
-    
+    @JsonCreator
     public CommentOutSpringPropertyKey(String propertyKey, String comment) {
-		super();
 		this.propertyKey = propertyKey;
 		this.comment = comment;
 	}

@@ -44,7 +44,7 @@ jobs:
             ]
           }"
       - name: Announce Release on `Spring-Releases` space
-        run: |
-          curl --location --request POST '${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}' \
-          --header 'Content-Type: application/json' \
-          --data-raw '{ text: "spring-tools-announcing `${{ inputs.version }}`"}'
+        uses: spring-io/spring-release-actions/announce-on-gchat@36699a377c2fbd64107472178d373ab043e5c9d5 # 0.0.1
+        with:
+          version: ${{ inputs.version }}
+          gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}

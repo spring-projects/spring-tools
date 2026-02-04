@@ -12,7 +12,9 @@ package org.springframework.ide.vscode.boot.java.requestmapping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -45,6 +47,12 @@ public class WebFnRouteExtractor {
 	private static final String METHOD_PATCH = "PATCH";
 	private static final String METHOD_OPTIONS = "OPTIONS";
 	private static final String METHOD_HEAD = "HEAD";
+	
+	// HTTP method set for fast lookup
+	private static final Set<String> HTTP_METHODS = new HashSet<>(Arrays.asList(
+		METHOD_GET, METHOD_POST, METHOD_PUT, METHOD_DELETE, 
+		METHOD_PATCH, METHOD_OPTIONS, METHOD_HEAD
+	));
 	
 	// Predicate method name constants
 	private static final String PREDICATE_PATH = "path";
@@ -258,7 +266,7 @@ public class WebFnRouteExtractor {
         // Set range for the builder pattern - covers the method invocation that includes the handler reference
         route.setRange(createRange(method, doc));
         
-        WebfluxRouteElement localPath = createRouteElement("", null, doc);
+        WebfluxRouteElement localPath = null;
         List<WebfluxRouteElement> localAcceptTypes = new ArrayList<>();
         List<WebfluxRouteElement> localContentTypes = new ArrayList<>();
         WebfluxRouteElement localVersion = null;
@@ -283,6 +291,10 @@ public class WebFnRouteExtractor {
             }
         }
         
+        // Only set path if we found one, otherwise use empty string
+        if (localPath == null) {
+            localPath = createRouteElement("", null, doc);
+        }
         route.setPath(localPath);
         
         // Collect all path elements individually
@@ -344,19 +356,27 @@ public class WebFnRouteExtractor {
         }
         
         // Merge nested predicates with route-specific ones
-        List<WebfluxRouteElement> allAcceptTypes = new ArrayList<>(context.getCurrentAcceptTypes());
-        allAcceptTypes.addAll(Arrays.asList(route.getAcceptTypes()));
-
+        // Store route-specific types before resetting
+        List<WebfluxRouteElement> routeAcceptTypes = new ArrayList<>(route.getAcceptTypes());
+        List<WebfluxRouteElement> routeContentTypes = new ArrayList<>(route.getContentTypes());
+        
         route.resetAcceptTypes();
-        for (WebfluxRouteElement acceptType : allAcceptTypes) {
+        // Add context types first
+        for (WebfluxRouteElement acceptType : context.getCurrentAcceptTypes()) {
+            route.addAcceptType(acceptType);
+        }
+        // Then add route-specific types
+        for (WebfluxRouteElement acceptType : routeAcceptTypes) {
             route.addAcceptType(acceptType);
         }
         
-        List<WebfluxRouteElement> allContentTypes = new ArrayList<>(context.getCurrentContentTypes());
-        allContentTypes.addAll(Arrays.asList(route.getContentTypes()));
-
         route.resetContentTypes();
-        for (WebfluxRouteElement contentType : allContentTypes) {
+        // Add context types first
+        for (WebfluxRouteElement contentType : context.getCurrentContentTypes()) {
+            route.addContentType(contentType);
+        }
+        // Then add route-specific types
+        for (WebfluxRouteElement contentType : routeContentTypes) {
             route.addContentType(contentType);
         }
         
@@ -596,13 +616,7 @@ public class WebFnRouteExtractor {
     }
     
     private boolean isHttpMethod(String methodName) {
-        return methodName.equals(METHOD_GET) || 
-               methodName.equals(METHOD_POST) || 
-               methodName.equals(METHOD_PUT) || 
-               methodName.equals(METHOD_DELETE) || 
-               methodName.equals(METHOD_PATCH) || 
-               methodName.equals(METHOD_OPTIONS) || 
-               methodName.equals(METHOD_HEAD);
+        return HTTP_METHODS.contains(methodName);
     }
     
     /**
@@ -676,17 +690,27 @@ public class WebFnRouteExtractor {
         }
         
         // Merge nested predicates with route-specific ones
-        List<WebfluxRouteElement> allAcceptTypes = new ArrayList<>(context.getCurrentAcceptTypes());
-        allAcceptTypes.addAll(Arrays.asList(route.getAcceptTypes()));
+        // Store route-specific types before resetting
+        List<WebfluxRouteElement> routeAcceptTypes = new ArrayList<>(route.getAcceptTypes());
+        List<WebfluxRouteElement> routeContentTypes = new ArrayList<>(route.getContentTypes());
+        
         route.resetAcceptTypes();
-        for (WebfluxRouteElement acceptType : allAcceptTypes) {
+        // Add context types first
+        for (WebfluxRouteElement acceptType : context.getCurrentAcceptTypes()) {
+            route.addAcceptType(acceptType);
+        }
+        // Then add route-specific types
+        for (WebfluxRouteElement acceptType : routeAcceptTypes) {
             route.addAcceptType(acceptType);
         }
         
-        List<WebfluxRouteElement> allContentTypes = new ArrayList<>(context.getCurrentContentTypes());
-        allContentTypes.addAll(Arrays.asList(route.getContentTypes()));
         route.resetContentTypes();
-        for (WebfluxRouteElement contentType : allContentTypes) {
+        // Add context types first
+        for (WebfluxRouteElement contentType : context.getCurrentContentTypes()) {
+            route.addContentType(contentType);
+        }
+        // Then add route-specific types
+        for (WebfluxRouteElement contentType : routeContentTypes) {
             route.addContentType(contentType);
         }
         
@@ -697,7 +721,7 @@ public class WebFnRouteExtractor {
         
         // Apply context methods if route has no methods specified
         List<String> contextMethods = context.getCurrentMethods();
-        if (!contextMethods.isEmpty() && route.getHttpMethods().length == 0) {
+        if (!contextMethods.isEmpty() && route.getHttpMethods().isEmpty()) {
             for (String methodName : contextMethods) {
                 route.addHttpMethod(createRouteElement(methodName, null, doc));
             }
@@ -832,26 +856,26 @@ public class WebFnRouteExtractor {
                           "-".repeat(17) + "|" + "-".repeat(17) + "|" + "-".repeat(12) + "|" + "-".repeat(32) + "|");
         
         for (WebFnRouteDefinition route : routes) {
-            String methodsStr = route.getHttpMethods().length > 0 ? 
-                              Arrays.stream(route.getHttpMethods())
+            String methodsStr = !route.getHttpMethods().isEmpty() ? 
+                              route.getHttpMethods().stream()
                                   .map(WebfluxRouteElement::getElement)
                                   .reduce((a, b) -> a + ", " + b)
                                   .orElse("N/A") : "N/A";
             
-            String fullPathStr = route.getPathElements().length > 0 ?
-                              Arrays.stream(route.getPathElements())
+            String fullPathStr = !route.getPathElements().isEmpty() ?
+                              route.getPathElements().stream()
                                   .map(WebfluxRouteElement::getElement)
                                   .reduce((a, b) -> a + b)
                                   .orElse("N/A") : "N/A";
             
-            String acceptStr = route.getAcceptTypes().length > 0 ? 
-                              Arrays.stream(route.getAcceptTypes())
+            String acceptStr = !route.getAcceptTypes().isEmpty() ? 
+                              route.getAcceptTypes().stream()
                                   .map(WebfluxRouteElement::getElement)
                                   .reduce((a, b) -> a + ", " + b)
                                   .orElse("N/A") : "N/A";
             
-            String contentStr = route.getContentTypes().length > 0 ? 
-                              Arrays.stream(route.getContentTypes())
+            String contentStr = !route.getContentTypes().isEmpty() ? 
+                              route.getContentTypes().stream()
                                   .map(WebfluxRouteElement::getElement)
                                   .reduce((a, b) -> a + ", " + b)
                                   .orElse("N/A") : "N/A";

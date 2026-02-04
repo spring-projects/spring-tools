@@ -43,26 +43,26 @@ public class WebFnRouteDefinition {
 		this.path = path;
 	}
 
-	public WebfluxRouteElement[] getPathElements() {
-		return pathElements.toArray(new WebfluxRouteElement[0]);
+	public List<WebfluxRouteElement> getPathElements() {
+		return pathElements;
 	}
 
 	public void addPathElement(WebfluxRouteElement pathElement) {
 		this.pathElements.add(pathElement);
 	}
 
-	public WebfluxRouteElement[] getHttpMethods() {
-		return httpMethods.toArray(new WebfluxRouteElement[0]);
+	public List<WebfluxRouteElement> getHttpMethods() {
+		return httpMethods;
 	}
 
 	public void addHttpMethod(WebfluxRouteElement httpMethod) {
 		this.httpMethods.add(httpMethod);
 	}
 
-	public WebfluxRouteElement[] getAcceptTypes() {
-		return acceptTypes.toArray(new WebfluxRouteElement[0]);
+	public List<WebfluxRouteElement> getAcceptTypes() {
+		return acceptTypes;
 	}
-
+	
 	public void addAcceptType(WebfluxRouteElement acceptType) {
 		this.acceptTypes.add(acceptType);
 	}
@@ -71,10 +71,10 @@ public class WebFnRouteDefinition {
 		this.acceptTypes.clear();
 	}
 
-	public WebfluxRouteElement[] getContentTypes() {
-		return contentTypes.toArray(new WebfluxRouteElement[0]);
+	public List<WebfluxRouteElement> getContentTypes() {
+		return contentTypes;
 	}
-
+	
 	public void addContentType(WebfluxRouteElement contentType) {
 		this.contentTypes.add(contentType);
 	}
@@ -142,7 +142,9 @@ public class WebFnRouteDefinition {
 		sb.append("Route:\n");
 
 		if (!httpMethods.isEmpty()) {
-			String methodsStr = httpMethods.stream().map(WebfluxRouteElement::getElement).reduce((a, b) -> a + ", " + b)
+			String methodsStr = httpMethods.stream()
+					.map(WebfluxRouteElement::getElement)
+					.reduce((a, b) -> a + ", " + b)
 					.orElse("N/A");
 			sb.append("  ".repeat(nestingLevel + 1)).append("Methods:  ").append(methodsStr).append("\n");
 		} else {
@@ -153,20 +155,26 @@ public class WebFnRouteDefinition {
 				.append("\n");
 
 		if (!pathElements.isEmpty()) {
-			String pathStr = pathElements.stream().map(WebfluxRouteElement::getElement).reduce((a, b) -> a + b)
+			String pathStr = pathElements.stream()
+					.map(WebfluxRouteElement::getElement)
+					.reduce((a, b) -> a + b)
 					.orElse("");
 			sb.append("  ".repeat(nestingLevel + 1)).append("FullPath: ").append(pathStr).append("\n");
 		}
 
 		if (!acceptTypes.isEmpty()) {
-			String acceptStr = acceptTypes.stream().map(WebfluxRouteElement::getElement).reduce((a, b) -> a + ", " + b)
+			String acceptStr = acceptTypes.stream()
+					.map(WebfluxRouteElement::getElement)
+					.reduce((a, b) -> a + ", " + b)
 					.orElse("");
 			sb.append("  ".repeat(nestingLevel + 1)).append("Accept:   ").append(acceptStr).append("\n");
 		}
 
 		if (!contentTypes.isEmpty()) {
-			String contentStr = contentTypes.stream().map(WebfluxRouteElement::getElement)
-					.reduce((a, b) -> a + ", " + b).orElse("");
+			String contentStr = contentTypes.stream()
+					.map(WebfluxRouteElement::getElement)
+					.reduce((a, b) -> a + ", " + b)
+					.orElse("");
 			sb.append("  ".repeat(nestingLevel + 1)).append("Content:  ").append(contentStr).append("\n");
 		}
 

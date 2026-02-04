@@ -105,10 +105,10 @@ public class WebfluxRouterSymbolProvider {
 		try {
 			for (WebFnRouteDefinition routeInfo : allRoutes) {
 
-				WebfluxRouteElement[] pathElements = routeInfo.getPathElements();
-				WebfluxRouteElement[] httpMethods = routeInfo.getHttpMethods();
-				WebfluxRouteElement[] contentTypes = routeInfo.getContentTypes();
-				WebfluxRouteElement[] acceptTypes = routeInfo.getAcceptTypes();
+				List<WebfluxRouteElement> pathElements = routeInfo.getPathElements();
+				List<WebfluxRouteElement> httpMethods = routeInfo.getHttpMethods();
+				List<WebfluxRouteElement> contentTypes = routeInfo.getContentTypes();
+				List<WebfluxRouteElement> acceptTypes = routeInfo.getAcceptTypes();
 				WebfluxRouteElement version = routeInfo.getVersion();
 				String handlerClass = routeInfo.getHandlerClass();
 				String handlerMethod = routeInfo.getHandlerMethod();
@@ -143,35 +143,40 @@ public class WebfluxRouterSymbolProvider {
 		}
 	}
 
-	private static WebfluxRouteElementRangesIndexElement extractElementsInformation(WebfluxRouteElement[] path, WebfluxRouteElement[] methods,
-			WebfluxRouteElement[] contentTypes, WebfluxRouteElement[] acceptTypes) {
+	private static WebfluxRouteElementRangesIndexElement extractElementsInformation(List<WebfluxRouteElement> path, List<WebfluxRouteElement> methods,
+			List<WebfluxRouteElement> contentTypes, List<WebfluxRouteElement> acceptTypes) {
 		List<Range> allRanges = new ArrayList<>();
 
-		WebfluxRouteElement[][] allElements = new WebfluxRouteElement[][] {path, methods, contentTypes, acceptTypes};
-		for (int i = 0; i < allElements.length; i++) {
-			for (int j = 0; j < allElements[i].length; j++) {
-				allRanges.add(allElements[i][j].getElementRange());
-			}
+		// Collect ranges from all element lists
+		for (WebfluxRouteElement element : path) {
+			allRanges.add(element.getElementRange());
+		}
+		for (WebfluxRouteElement element : methods) {
+			allRanges.add(element.getElementRange());
+		}
+		for (WebfluxRouteElement element : contentTypes) {
+			allRanges.add(element.getElementRange());
+		}
+		for (WebfluxRouteElement element : acceptTypes) {
+			allRanges.add(element.getElementRange());
 		}
 
-		return new WebfluxRouteElementRangesIndexElement((Range[]) allRanges.toArray(new Range[allRanges.size()]));
+		return new WebfluxRouteElementRangesIndexElement(allRanges.toArray(new Range[0]));
 	}
 
-	private static WebfluxHandlerMethodIndexElement extractHandlerInformation(String handlerClass, String handlerMethod, String path, WebfluxRouteElement[] httpMethods,
-			WebfluxRouteElement[] contentTypes, WebfluxRouteElement[] acceptTypes, WebfluxRouteElement version, Range range, String symbolLabel) {
+	private static WebfluxHandlerMethodIndexElement extractHandlerInformation(String handlerClass, String handlerMethod, String path, List<WebfluxRouteElement> httpMethods,
+			List<WebfluxRouteElement> contentTypes, List<WebfluxRouteElement> acceptTypes, WebfluxRouteElement version, Range range, String symbolLabel) {
 
 		return new WebfluxHandlerMethodIndexElement(handlerClass, handlerMethod, path, getElementStrings(httpMethods), getElementStrings(contentTypes),
 								getElementStrings(acceptTypes), version != null ? version.getElement() : null, range, symbolLabel);
 	}
 
-	private static String[] getElementStrings(WebfluxRouteElement[] routeElements) {
-		List<String> result = new ArrayList<>();
-
-		for (int i = 0; i < routeElements.length; i++) {
-			result.add(routeElements[i].getElement());
+	private static String[] getElementStrings(List<WebfluxRouteElement> routeElements) {
+		String[] result = new String[routeElements.size()];
+		for (int i = 0; i < routeElements.size(); i++) {
+			result[i] = routeElements.get(i).getElement();
 		}
-
-		return (String[]) result.toArray(new String[result.size()]);
+		return result;
 	}
 
 }

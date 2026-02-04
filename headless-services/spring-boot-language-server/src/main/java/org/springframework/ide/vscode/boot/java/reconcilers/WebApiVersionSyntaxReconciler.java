@@ -10,8 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
-import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.springBootVersionGreaterOrEqual;
-
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +35,7 @@ import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaInde
 import org.springframework.ide.vscode.boot.java.requestmapping.WebFnUtils;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -55,7 +54,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 
 	@Override
 	public boolean isApplicable(IJavaProject project) {
-		return springBootVersionGreaterOrEqual(4, 0, 0).test(project);
+		return SpringProjectUtil.libraryVersionGreaterOrEqual(SpringProjectUtil.SPRING_WEB, 7, 0, 0).test(project);
 	}
 
 	@Override

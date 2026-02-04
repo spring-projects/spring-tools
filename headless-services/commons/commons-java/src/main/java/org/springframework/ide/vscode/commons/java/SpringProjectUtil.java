@@ -25,6 +25,7 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 public class SpringProjectUtil {
 
 	public static final String SPRING_BOOT = "spring-boot";
+	public static final String SPRING_WEB = "spring-web";
 	
 	private static final String GENERATION_VERSION_STR = "([0-9]+)";
 
@@ -118,8 +119,12 @@ public class SpringProjectUtil {
 	}
 	
 	public static Predicate<IJavaProject> springBootVersionGreaterOrEqual(int major, int minor, int patch) {
+		return libraryVersionGreaterOrEqual(SPRING_BOOT, major, minor, patch);
+	}
+
+	public static Predicate<IJavaProject> libraryVersionGreaterOrEqual(String libraryName, int major, int minor, int patch) {
 		return project -> {
-			Version version = project.getClasspath().findBinaryLibraryByPrefix(SPRING_BOOT).map(cpe -> cpe.getVersion()).orElse(null);
+			Version version = getDependencyVersionByName(project, libraryName);
 			if (version == null) {
 				return false;
 			}

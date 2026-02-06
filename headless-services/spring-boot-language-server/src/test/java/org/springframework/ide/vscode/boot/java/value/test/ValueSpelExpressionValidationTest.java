@@ -60,7 +60,6 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleTextDocumentService;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
@@ -69,9 +68,6 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 /**
  * @author Martin Lippert
@@ -152,22 +148,20 @@ public class ValueSpelExpressionValidationTest {
 	@BeforeEach
 	public void setup() throws Exception {
 		harness.intialize(null);
-		String changedSettings = """
-		{
-			"boot-java": {
-				"validation": {
-					"java": {
-						"reconcilers": true
-					},
-					"spel": {
-						"on": "ON"
+		harness.changeConfiguration("""
+				{
+				"boot-java": {
+					"validation": {
+						"java": {
+							"reconcilers": true
+						},
+						"spel": {
+							"on": "ON"
+						}
 					}
 				}
-			}
-		}	
-		""";
-		JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-		harness.changeConfiguration(new Settings(settingsAsJson));
+			}	
+			""");
 		
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-annotations/").toURI());
 		docUri = directory.toPath().resolve("src/main/java/org/test/TestValueCompletion.java").toUri().toASCIIString();

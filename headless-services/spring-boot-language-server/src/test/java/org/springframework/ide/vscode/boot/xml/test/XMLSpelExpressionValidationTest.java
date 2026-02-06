@@ -41,7 +41,6 @@ import org.springframework.ide.vscode.boot.xml.SpringXMLReconcileEngine;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
@@ -51,8 +50,6 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-
-import com.google.gson.Gson;
 
 /**
  * @author Martin Lippert
@@ -91,7 +88,7 @@ public class XMLSpelExpressionValidationTest {
 		Map<String, Object> settings = new HashMap<>();
 		settings.put("boot-java", bootJavaObj);
 		
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 
 		project = projects.mavenProject("test-xml-validations");
 		harness.useProject(project);

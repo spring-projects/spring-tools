@@ -153,6 +153,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 
 import reactor.core.publisher.Mono;
 
@@ -1048,6 +1049,14 @@ public class LanguageServerHarness {
 		Path path = Paths.get(fileUri);
 		String content = new String(Files.readAllBytes(path));
 		return newEditor(languageId, content, docUri);
+	}
+
+	public void changeConfiguration(Map<String, Object> m) {
+		changeConfiguration(new Settings(getServer().getGson().toJsonTree(m)));
+	}
+
+	public void changeConfiguration(String s) {
+		changeConfiguration(new Settings(getServer().getGson().fromJson(s, JsonElement.class)));
 	}
 
 	public void changeConfiguration(Settings settings) {

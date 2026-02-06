@@ -30,16 +30,12 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -56,9 +52,7 @@ public class CodeActionViaReconcilerTest {
 	public void setup() throws Exception {
 		harness.intialize(null);
 		
-		String changedSettings = "{\"boot-java\": {\"validation\": {\"java\": { \"reconcilers\": true}}}}";
-		JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-		harness.changeConfiguration(new Settings(settingsAsJson));
+		harness.changeConfiguration("{\"boot-java\": {\"validation\": {\"java\": { \"reconcilers\": true}}}}");
 
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-spring-validations/").toURI());
 
@@ -106,9 +100,7 @@ public class CodeActionViaReconcilerTest {
         
         codeActions = editor.getCodeActions(problem);
         assertEquals(3, codeActions.size());
-		String changedSettings = "{\"spring-boot\": {\"ls\": {\"problem\": { \"boot2\": { \"JAVA_PUBLIC_BEAN_METHOD\": \"IGNORE\"}}}}}";
-		JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-		harness.changeConfiguration(new Settings(settingsAsJson));
+		harness.changeConfiguration("{\"spring-boot\": {\"ls\": {\"problem\": { \"boot2\": { \"JAVA_PUBLIC_BEAN_METHOD\": \"IGNORE\"}}}}}");
 
         editor.assertProblems();
         

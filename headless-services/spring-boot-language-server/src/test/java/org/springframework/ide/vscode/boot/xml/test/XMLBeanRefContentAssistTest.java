@@ -32,14 +32,11 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
 
 /**
  * @author Martin Lippert
@@ -72,7 +69,7 @@ public class XMLBeanRefContentAssistTest {
 		Map<String, Object> settings = new HashMap<>();
 		settings.put("boot-java", bootJavaObj);
 		
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 		// Configuration change updates indexer hence we need to wait until this occurs as well
 		indexer.waitOperation();
 

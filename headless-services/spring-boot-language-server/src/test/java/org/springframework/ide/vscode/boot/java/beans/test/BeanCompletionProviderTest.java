@@ -37,15 +37,12 @@ import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
 
 /**
  * @author Udayani V
@@ -79,8 +76,7 @@ public class BeanCompletionProviderTest {
 
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-spring-indexing/").toURI());
 		
-		Map<String, ?> settings = Map.of("boot-java", Map.of("java", Map.of("completions", Map.of("inject-bean", true))));
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(Map.of("boot-java", Map.of("java", Map.of("completions", Map.of("inject-bean", true)))));
 
 		String projectDir = directory.toURI().toString();
 		project = projectFinder.find(new TextDocumentIdentifier(projectDir)).get();

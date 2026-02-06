@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2026 Pivotal, Inc.
+ * Copyright (c) 2020 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,10 +15,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.jdt.ls.JavaProjectsService;
@@ -28,7 +26,6 @@ import org.springframework.ide.vscode.commons.gradle.GradleProjectFinder;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.IJavadocProvider;
 import org.springframework.ide.vscode.commons.javadoc.JavaDocProviders;
-import org.springframework.ide.vscode.commons.languageserver.LanguageServerRunner;
 import org.springframework.ide.vscode.commons.languageserver.java.CompositeJavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.java.CompositeProjectOvserver;
 import org.springframework.ide.vscode.commons.languageserver.java.JavadocService;
@@ -37,9 +34,6 @@ import org.springframework.ide.vscode.commons.maven.MavenCore;
 import org.springframework.ide.vscode.commons.maven.java.MavenProjectCache;
 import org.springframework.ide.vscode.commons.maven.java.MavenProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
-import org.springframework.ide.vscode.languageserver.testharness.HarnessLanguageServerRunner;
-
-import com.google.gson.GsonBuilder;
 
 @Configuration
 public class JavaTestConf {
@@ -85,12 +79,5 @@ public class JavaTestConf {
 			}
 		};
 	}
-	
-	@ConditionalOnMissingBean(LanguageServerRunner.class)
-	@Bean
-	HarnessLanguageServerRunner harnessLanguageServerRunner(Optional<Consumer<GsonBuilder>> configGsonOpt) {
-		return new HarnessLanguageServerRunner(configGsonOpt);
-	}
-
 
 }

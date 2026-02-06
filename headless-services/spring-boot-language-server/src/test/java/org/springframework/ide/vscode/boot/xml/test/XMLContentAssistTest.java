@@ -31,7 +31,6 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.XmlBeansTestConf;
 import org.springframework.ide.vscode.boot.java.utils.test.MockProjectObserver;
 import org.springframework.ide.vscode.boot.xml.completions.NamespaceCompletionProvider;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.starter.LanguageServerAutoConf;
@@ -40,8 +39,6 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-
-import com.google.gson.Gson;
 
 /**
  * @author Martin Lippert
@@ -77,7 +74,7 @@ public class XMLContentAssistTest {
 		Map<String, Object> settings = new HashMap<>();
 		settings.put("boot-java", bootJavaObj);
 		
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 		// Configuration change updates indexer hence we need to wait until this occurs as well
 		indexer.waitOperation();
 

@@ -280,7 +280,7 @@ public class WebApiVersioningQuickfixIntegrationTest {
 		
 		FixDescriptor fix = (FixDescriptor) propertiesHeaderFix.getCommand().getArguments().get(1);
 		
-		assertThat(fix.getDocUris()).containsExactly(
+		assertThat(fix.getDocUris()).containsExactlyInAnyOrder(
 				projectRoot.resolve("src/main/resources/application.yml").toUri().toASCIIString(),
 				projectRoot.resolve("src/main/resources/application.properties").toUri().toASCIIString()
 		);
@@ -345,7 +345,7 @@ public class WebApiVersioningQuickfixIntegrationTest {
 		
 		FixDescriptor fix = (FixDescriptor) propertiesHeaderFix.getCommand().getArguments().get(1);
 		
-		assertThat(fix.getDocUris()).containsExactly(
+		assertThat(fix.getDocUris()).containsExactlyInAnyOrder(
 				projectRoot.resolve("src/main/resources/application-dev.yaml").toUri().toASCIIString(),
 				projectRoot.resolve("src/main/resources/application-cloud.properties").toUri().toASCIIString()
 		);

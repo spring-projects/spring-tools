@@ -33,14 +33,11 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -59,8 +56,7 @@ public class WebConfigCodeLensProviderTest {
 		harness.useProject(testProject);
 		harness.intialize(null);
 		
-		harness.changeConfiguration(new Settings(new Gson()
-				.toJsonTree(Map.of("boot-java", Map.of("java", Map.of("codelens-web-configs-on-controller-classes", true))))));
+		harness.changeConfiguration(Map.of("boot-java", Map.of("java", Map.of("codelens-web-configs-on-controller-classes", true))));
 
 		// trigger project creation
 		projectFinder.find(new TextDocumentIdentifier(testProject.getLocationUri().toASCIIString())).get();

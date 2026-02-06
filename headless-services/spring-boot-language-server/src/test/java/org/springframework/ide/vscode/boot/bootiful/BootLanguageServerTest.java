@@ -27,7 +27,7 @@ import org.springframework.test.annotation.DirtiesContext.ClassMode;
 @Retention(RUNTIME)
 @Target(TYPE)
 @OverrideAutoConfiguration(enabled=false)
-@ImportAutoConfiguration(classes= {LanguageServerAutoConf.class, JavaTestConf.class})
+@ImportAutoConfiguration(classes= {LanguageServerAutoConf.class, JavaTestConf.class, LsGsonConfig.class})
 @SpringBootTest(classes={
 		BootLanguageServerBootApp.class
 })

@@ -109,7 +109,7 @@
 		<mockito-version>1.10.19</mockito-version>
 		<jackson-2-version>2.5.0</jackson-2-version>
 		<jersey-2-version>2.10</jersey-2-version>
-		<lsp4j-version>0.19.0</lsp4j-version>
+		<lsp4j-version>0.24.0</lsp4j-version>
 		<!-- NOTE: Reactor version must match version used by the CF client -->
 		<cloudfoundry-client-version>3.8.0.RELEASE</cloudfoundry-client-version>
 		<reactor-version>3.5.0</reactor-version>

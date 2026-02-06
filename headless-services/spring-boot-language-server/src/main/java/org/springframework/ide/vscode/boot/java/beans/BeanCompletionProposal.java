@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Broadcom, Inc.
+ * Copyright (c) 2017, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -184,7 +184,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		FixDescriptor f = new FixDescriptor(InjectBeanCompletionRecipe.class.getName(), List.of(this.doc.getUri()),
 				"Inject bean completions")
 				.withParameters(Map.of("fullyQualifiedName", beanType, "fieldName", fieldName, "classFqName", className))
-				.withRecipeScope(RecipeScope.NODE);
+				.withRecipeScope(RecipeScope.FILE);
 		return Optional.of(rewriteRefactorings.createFixCommand("Inject bean '%s'".formatted(beanId), f));
 	}
 

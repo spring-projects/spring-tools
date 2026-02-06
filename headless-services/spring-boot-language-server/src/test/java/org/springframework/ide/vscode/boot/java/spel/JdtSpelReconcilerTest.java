@@ -21,15 +21,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -54,21 +50,19 @@ public class JdtSpelReconcilerTest {
 		// trigger project creation
 		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
 		
-		String changedSettings = """
-		{
-			"spring-boot": {
-				"ls": {
-					"problem": {
-						"spel": {
-							"JAVA_SPEL_EXPRESSION_SYNTAX": "ERROR"
+		harness.changeConfiguration("""
+				{
+				"spring-boot": {
+					"ls": {
+						"problem": {
+							"spel": {
+								"JAVA_SPEL_EXPRESSION_SYNTAX": "ERROR"
+							}
 						}
 					}
 				}
-			}
-		}	
-		""";
-		JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-		harness.changeConfiguration(new Settings(settingsAsJson));
+			}	
+			""");
 
 	}
 

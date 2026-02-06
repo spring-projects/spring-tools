@@ -39,7 +39,6 @@ import org.springframework.ide.vscode.boot.bootiful.XmlBeansTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.utils.test.MockProjectObserver;
 import org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.UriUtil;
@@ -50,8 +49,6 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-
-import com.google.gson.Gson;
 
 /**
  * @author Alex Boyko
@@ -90,7 +87,7 @@ public class XMLBeansHyperlinkTest {
 		Map<String, Object> settings = new HashMap<>();
 		settings.put("boot-java", bootJavaObj);
 		
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 		// Configuration change updates indexer hence we need to wait until this occurs as well
 		indexer.waitOperation().get();
 
@@ -208,7 +205,7 @@ public class XMLBeansHyperlinkTest {
         Map<String, Object> settings = new HashMap<>();
         settings.put("boot-java", bootJavaObj);
 
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(DEFAULT_INDEX_WAIT_TIME, TimeUnit.SECONDS);
 
@@ -243,7 +240,7 @@ public class XMLBeansHyperlinkTest {
         Map<String, Object> settings = new HashMap<>();
         settings.put("boot-java", bootJavaObj);
 
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(DEFAULT_INDEX_WAIT_TIME, TimeUnit.SECONDS);
@@ -283,7 +280,7 @@ public class XMLBeansHyperlinkTest {
         Map<String, Object> settings = new HashMap<>();
         settings.put("boot-java", bootJavaObj);
 
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(DEFAULT_INDEX_WAIT_TIME, TimeUnit.SECONDS);
 
@@ -312,7 +309,7 @@ public class XMLBeansHyperlinkTest {
         Map<String, Object> settings = new HashMap<>();
         settings.put("boot-java", bootJavaObj);
 
-		harness.changeConfiguration(new Settings(new Gson().toJsonTree(settings)));
+		harness.changeConfiguration(settings);
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(DEFAULT_INDEX_WAIT_TIME, TimeUnit.SECONDS);
 

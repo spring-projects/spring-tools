@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 VMware Inc.
+ * Copyright (c) 2016, 2026 VMware Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -81,6 +81,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.ide.vscode.commons.languageserver.DiagnosticService;
+import org.springframework.ide.vscode.commons.languageserver.LanguageServerRunner;
 import org.springframework.ide.vscode.commons.languageserver.MessageService;
 import org.springframework.ide.vscode.commons.languageserver.ProgressService;
 import org.springframework.ide.vscode.commons.languageserver.Sts4LanguageServer;
@@ -261,6 +262,10 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 		this.CODE_ACTION_COMMAND_ID = "sts."+EXTENSION_ID+".codeAction";
 		this.COMMAND_LIST_COMMAND_ID = "sts." + EXTENSION_ID + ".commandList";
 	}
+	
+	public Gson getGson() {
+		return appContext.getBean(LanguageServerRunner.class).getGson();
+	}
 
 	protected CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
 		ExecuteCommandHandler handler = commands.get(params.getCommand());
@@ -286,7 +291,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 			})
 			.toFuture();
 		} else if (COMMAND_LIST_COMMAND_ID.equals(params.getCommand())) {
-			Gson gson = new Gson();
+			Gson gson = getGson();
 			CompletableFuture<Object> execution = CompletableFuture.completedFuture(null);
 			for (Object json : params.getArguments()) {
 				Command cmd = json instanceof Command ? (Command) json : gson.fromJson(json instanceof JsonElement ? (JsonElement) json : gson.toJsonTree(json), Command.class);

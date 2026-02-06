@@ -110,8 +110,8 @@ public class JdtConfig {
 		return new PathInControllerAnnotationReconciler(server.getQuickfixRegistry());
 	}
 	
-	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex) {
-		return new WebApiVersioningReconciler(springIndex);
+	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex, SimpleLanguageServer server) {
+		return new WebApiVersioningReconciler(springIndex, server.getQuickfixRegistry());
 	}
 	
 	@Bean WebApiVersionSyntaxReconciler webApiVersionSyntaxReconciler(SpringMetamodelIndex springIndex) {

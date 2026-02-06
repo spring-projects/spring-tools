@@ -27,20 +27,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
-import org.springframework.ide.vscode.boot.app.BootJavaConfig;
-import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 /**
  * @author Martin Lippert
@@ -51,8 +45,6 @@ import com.google.gson.JsonElement;
 public class SpringValidationBeanMethodNotPublicTest {
 
 	@Autowired private BootLanguageServerHarness harness;
-	@Autowired private BootJavaConfig config;
-	@Autowired private BootLanguageServerInitializer serverInit;
 	@Autowired private JavaProjectFinder projectFinder;
 
 	private File directory;
@@ -62,9 +54,7 @@ public class SpringValidationBeanMethodNotPublicTest {
 	public void setup() throws Exception {
 		harness.intialize(null);
 		
-		String changedSettings = "{\"boot-java\": {\"validation\": {\"java\": { \"reconcilers\": true}}}}";
-		JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-		harness.changeConfiguration(new Settings(settingsAsJson));
+		harness.changeConfiguration("{\"boot-java\": {\"validation\": {\"java\": { \"reconcilers\": true}}}}");
 
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-spring-validations/").toURI());
 
@@ -109,11 +99,7 @@ public class SpringValidationBeanMethodNotPublicTest {
         assertEquals(1, diagnostics.size());
         assertEquals(DiagnosticSeverity.Hint, diagnostic.getSeverity());
         
-        String changedSettings = "{\"spring-boot\": {\"ls\": {\"problem\": {\"boot2\": {\"JAVA_PUBLIC_BEAN_METHOD\": \"ERROR\"}}}}, \"boot-java\": {\"validation\": {\"java\": { \"reconcilers\": true}}}}";
-        JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-        Settings settings = new Settings(settingsAsJson);
-        
-        harness.changeConfiguration(settings);
+        harness.changeConfiguration("{\"spring-boot\": {\"ls\": {\"problem\": {\"boot2\": {\"JAVA_PUBLIC_BEAN_METHOD\": \"ERROR\"}}}}, \"boot-java\": {\"validation\": {\"java\": { \"reconcilers\": true}}}}");
 
         CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(5, TimeUnit.SECONDS);

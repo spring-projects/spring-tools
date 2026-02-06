@@ -17,6 +17,8 @@ import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.spring.AutowiredFieldIntoConstructorParameterVisitor;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public class ConvertAutowiredFieldIntoConstructorParameter extends Recipe {
 	
 	private static final String AUTOWIRED = "org.springframework.beans.factory.annotation.Autowired";
@@ -24,6 +26,7 @@ public class ConvertAutowiredFieldIntoConstructorParameter extends Recipe {
 	private String classFqName;
 	private String fieldName;
 	
+	@JsonCreator
 	public ConvertAutowiredFieldIntoConstructorParameter(String classFqName, String fieldName) {
 		this.classFqName = classFqName;
 		this.fieldName = fieldName;

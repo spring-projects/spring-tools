@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,6 +35,7 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
@@ -66,13 +68,16 @@ public class WebApiVersioningQuickfixIntegrationTest {
 				} catch (IOException e) {
 					// ignore
 				}
+			});		
+		Files.walk(projectRoot.resolve("src/main/resources"))
+			.filter(p -> p.getFileName().toString().matches("application.*\\.*"))
+			.forEach(f -> {
+				try {
+					Files.delete(f);
+				} catch (IOException e) {
+					// ignore
+				}
 			});
-		
-		// Reset property files to blank content
-		Path applicationProperties = projectRoot.resolve("src/main/resources/application.properties");
-		Path applicationYml = projectRoot.resolve("src/main/resources/application.yml");
-		Files.writeString(applicationProperties, "");
-		Files.writeString(applicationYml, "");
 		
 		harness.useProject(testProject);
 		harness.intialize(null);
@@ -231,8 +236,80 @@ public class WebApiVersioningQuickfixIntegrationTest {
 	}
 	
 	@Test
-	void applyPropertiesBasedHeaderQuickfixToYamlFile() throws Exception {
+	void quickfixToApplicationPropsFilePreferred() throws Exception {
 		Path projectRoot = Paths.get(testProject.getLocationUri());
+		Path applicationProperties = projectRoot.resolve("src/main/resources/application.properties");
+		Path applicationYml = projectRoot.resolve("src/main/resources/application.yml");
+		Files.writeString(applicationProperties, "");
+		Files.writeString(applicationYml, "");
+		Files.writeString(projectRoot.resolve("src/main/resources/application-cloud.properties"), "");
+		Files.writeString(projectRoot.resolve("src/main/resources/application-dev.yaml"), "");
+
+
+		// Create a controller with version annotation but no API versioning configured
+		String controllerSource = """
+				package com.example.demo;
+				
+				import org.springframework.web.bind.annotation.RestController;
+				import org.springframework.web.bind.annotation.RequestMapping;
+				
+				@RestController
+				@RequestMapping(path = "/api", version = "1")
+				public class VersionedController3 {
+				}
+				""";
+		
+		Path controllerFile = projectRoot.resolve("src/main/java/com/example/demo/VersionedController3.java");
+		
+		// Create the editor with the controller source
+		Editor editor = harness.newEditor(LanguageId.JAVA, controllerSource, controllerFile.toUri().toASCIIString());
+		
+		Diagnostic problem = editor.assertProblem("version = \"1\"");
+		assertTrue(problem.getMessage().contains("API versioning not configured"), 
+				"Diagnostic should be about API versioning not configured");
+		
+		// Get code actions for this diagnostic
+		List<CodeAction> codeActions = editor.getCodeActions(problem);
+		assertTrue(codeActions.size() >= 8, "Should have at least 8 quickfixes (4 property-based + 4 bean-based)");
+		
+		// Find the properties-based header quickfix
+		CodeAction propertiesHeaderFix = codeActions.stream()
+				.filter(ca -> ca.getLabel().equals("Add WebMVC versioning via request header using properties"))
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("Should have 'Add WebMVC versioning via request header using properties' quickfix"));
+		
+		FixDescriptor fix = (FixDescriptor) propertiesHeaderFix.getCommand().getArguments().get(1);
+		
+		assertThat(fix.getDocUris()).containsExactly(
+				projectRoot.resolve("src/main/resources/application.yml").toUri().toASCIIString(),
+				projectRoot.resolve("src/main/resources/application.properties").toUri().toASCIIString()
+		);
+
+		// Apply the quickfix
+		propertiesHeaderFix.perform();
+		
+		assertEquals("""
+				spring:
+				  mvc:
+				    apiversion:
+				      use:
+				        header: X-API-Version
+				""".trim(), Files.readString(applicationYml).trim());
+		
+		assertEquals("spring.mvc.apiversion.use.header=X-API-Version",
+				Files.readString(applicationProperties).trim());
+		
+		assertEquals("", Files.readString(projectRoot.resolve("src/main/resources/application-dev.yaml")).trim());		
+		assertEquals("", Files.readString(projectRoot.resolve("src/main/resources/application-cloud.properties")).trim());
+	}
+	
+	@Test
+	void quickfixForSpecialProfilesPropfiles() throws Exception {
+		Path projectRoot = Paths.get(testProject.getLocationUri());
+		
+		Files.writeString(projectRoot.resolve("src/main/resources/application-cloud.properties"), "");
+		Files.writeString(projectRoot.resolve("src/main/resources/application-dev.yaml"), "");
+
 		
 		// Create a controller with version annotation but no API versioning configured
 		String controllerSource = """
@@ -266,19 +343,29 @@ public class WebApiVersioningQuickfixIntegrationTest {
 				.findFirst()
 				.orElseThrow(() -> new AssertionError("Should have 'Add WebMVC versioning via request header using properties' quickfix"));
 		
+		FixDescriptor fix = (FixDescriptor) propertiesHeaderFix.getCommand().getArguments().get(1);
+		
+		assertThat(fix.getDocUris()).containsExactly(
+				projectRoot.resolve("src/main/resources/application-dev.yaml").toUri().toASCIIString(),
+				projectRoot.resolve("src/main/resources/application-cloud.properties").toUri().toASCIIString()
+		);
+		
 		// Apply the quickfix
 		propertiesHeaderFix.perform();
 		
-		assertEquals("""
+		String expectedYaml = """
 				spring:
 				  mvc:
 				    apiversion:
 				      use:
 				        header: X-API-Version
-				""".trim(), Files.readString(projectRoot.resolve("src/main/resources/application.yml")).trim());
+				""";
 		
-		assertEquals("spring.mvc.apiversion.use.header=X-API-Version",
-				Files.readString(projectRoot.resolve("src/main/resources/application.properties")).trim());
+		String expectedProperties = "spring.mvc.apiversion.use.header=X-API-Version";
+		
+		assertEquals(expectedYaml.trim(), Files.readString(projectRoot.resolve("src/main/resources/application-dev.yaml")).trim());		
+		assertEquals(expectedProperties, Files.readString(projectRoot.resolve("src/main/resources/application-cloud.properties")).trim());
 		
 	}
+
 }

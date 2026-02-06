@@ -14,7 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -158,11 +158,8 @@ public class SpringProjectUtil {
 	 * @return list of Boot properties/YAML file paths, with main files prioritized over profile-specific files
 	 */
 	public static List<Path> findBootPropertiesFiles(IJavaProject project) {
-		List<Path> mainFiles = new ArrayList<>();
-		List<Path> profileFiles = new ArrayList<>();
-		
 		try {
-			project.getClasspath().getClasspathEntries().stream()
+			return project.getClasspath().getClasspathEntries().stream()
 				.filter(Classpath::isSource)
 				.filter(cpe -> !cpe.isTest())  // Exclude test resources
 				.filter(cpe -> !cpe.isJavaContent())  // Only resource folders
@@ -174,33 +171,13 @@ public class SpringProjectUtil {
 						return Stream.empty();
 					}
 				})
-				.forEach(path -> {
-					String fileName = path.getFileName().toString();
-					
-					// Main application files - highest priority
-					if ("application.properties".equals(fileName)) {
-						mainFiles.add(path);
-					} else if ("application.yml".equals(fileName) || "application.yaml".equals(fileName)) {
-						mainFiles.add(path);
-					}
-					// Profile-specific files - lower priority
-					else if (fileName.matches("application-.*\\.properties")) {
-						profileFiles.add(path);
-					} else if (fileName.matches("application-.*\\.ya?ml")) {
-						profileFiles.add(path);
-					}
-				});
+				.filter(path -> path.getFileName().toString().matches("application(-.*)?\\.(properties|ya?ml)"))
+				.toList();
 		} catch (Exception e) {
 			// ignore
+			return Collections.emptyList();
 		}
 		
-		// Return main files first, then profile files if no main files exist
-		List<Path> result = new ArrayList<>();
-		result.addAll(mainFiles);
-		if (mainFiles.isEmpty()) {
-			result.addAll(profileFiles);
-		}
-		return result;
 	}
 	
 

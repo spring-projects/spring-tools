@@ -261,8 +261,10 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 	private List<String> findPropertyFiles(IJavaProject project) {
 		// Find all Boot properties files
 		List<Path> propFiles = SpringProjectUtil.findBootPropertiesFiles(project);
+		
+		List<Path> mainPropFiles = propFiles.stream().filter(p -> p.getFileName().toString().matches("application\\.(properties|ya?ml)")).toList();
 		// Convert paths to URIs
-		return propFiles.stream()
+		return (mainPropFiles.isEmpty() ? propFiles : mainPropFiles).stream()
 			.map(path -> path.toUri().toASCIIString())
 			.toList();
 	}
@@ -356,7 +358,8 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 			.withRecipeScope(RecipeScope.FILE)
 			.withParameters(Map.of(
 				"property", property,
-				"value", configType.defaultValue
+				"value", configType.defaultValue,
+				"pathExpressions", List.of("**") // any files - we have limited the scope to very specific properties files anyway.
 			))
 			.withPreferred(preferred);
 	}

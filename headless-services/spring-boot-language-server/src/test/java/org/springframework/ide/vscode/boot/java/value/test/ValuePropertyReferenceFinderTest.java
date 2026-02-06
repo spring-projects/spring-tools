@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -144,7 +144,7 @@ public class ValuePropertyReferenceFinderTest {
 
     @Test
     void testFindReferencesToPropertyFromValueAnnotationAtName() throws Exception {
-    	harness.getServer().getWorkspaceService().setWorkspaceFolders(List.of(new WorkspaceFolder(directory.toURI().toString())));
+    	harness.getServer().getWorkspaceService().setWorkspaceFolders(List.of(new WorkspaceFolder(directory.toURI().toString(), directory.getName())));
     	
     	String completionLine = "@Value(\"${my.<*>prop}\")";
     	
@@ -176,7 +176,7 @@ public class ValuePropertyReferenceFinderTest {
 
     @Test
     void testFindReferencesToPropertyFromValueAnnotationAtPrefix() throws Exception {
-    	harness.getServer().getWorkspaceService().setWorkspaceFolders(List.of(new WorkspaceFolder(directory.toURI().toString())));
+    	harness.getServer().getWorkspaceService().setWorkspaceFolders(List.of(new WorkspaceFolder(directory.toURI().toString(), directory.getName())));
     	
     	String completionLine = "@Value(\"${<*>my.prop}\")";
     	

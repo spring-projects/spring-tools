@@ -10,7 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.rewrite;
 
-import java.lang.reflect.Field;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.nio.file.Paths;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,6 +32,7 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 import org.openrewrite.Parser.Input;
 import org.openrewrite.Recipe;
 import org.openrewrite.SourceFile;
+import org.openrewrite.config.RecipeIntrospectionException;
 import org.openrewrite.internal.RecipeIntrospectionUtils;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.marker.Range;
@@ -50,8 +51,6 @@ import org.springframework.ide.vscode.commons.rewrite.java.ORAstUtils;
 import org.springframework.ide.vscode.commons.rewrite.java.RangeScopedRecipe;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 
 import reactor.core.publisher.Mono;
@@ -68,21 +67,10 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 
 	private JavaProjectFinder projectFinder;
 
-	private Gson gson;
-		
 	public RewriteRefactorings(SimpleLanguageServer server, JavaProjectFinder projectFinder, RewriteRecipeRepository recipeRepo) {
 		this.server = server;
 		this.projectFinder = projectFinder;
 		this.recipeRepo = recipeRepo;
-		this.gson = new GsonBuilder()
-				.registerTypeAdapter(RecipeScope.class, (JsonDeserializer<RecipeScope>) (json, type, context) -> {
-					try {
-						return RecipeScope.values()[json.getAsInt()];
-					} catch (Exception e) {
-						return null;
-					}
-				})
-				.create();
 	}
 
 	@Override
@@ -90,14 +78,14 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 		if (p instanceof JsonElement je) {
 			return Mono.fromFuture(createEdit(je).thenApply(we -> new QuickfixEdit(we, null)));
 		} else {
-			return Mono.fromFuture(createEdit(gson.toJsonTree(p)).thenApply(we -> new QuickfixEdit(we, null)));
+			return Mono.fromFuture(createEdit(server.getGson().toJsonTree(p)).thenApply(we -> new QuickfixEdit(we, null)));
 		}
 	}
 	
 	public Command createFixCommand(String title, FixDescriptor f) {
 		List<Object> args = new ArrayList<>(3);
 		args.add(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX);
-		args.add(gson.toJsonTree(f));
+		args.add(server.getGson().toJsonTree(f));
 		return new Command(
 				title,
 				server.CODE_ACTION_COMMAND_ID,
@@ -118,7 +106,7 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 	}
 	
 	public CompletableFuture<WorkspaceEdit> createEdit(JsonElement o) {
-		FixDescriptor data = gson.fromJson(o, FixDescriptor.class);
+		FixDescriptor data = server.getGson().fromJson(o, FixDescriptor.class);
 		if (data != null && data.getRecipeId() != null) {
 			return perform(data).thenApply(we -> {
 				return we.orElse(null);
@@ -198,30 +186,36 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 		});
 	}
 	
-	/**
-	 * Naive de-serialization of recipe constructor parameters. If the value is a Map, i.e. non enum non-primitive
-	 * then we'd assume it is a json object requiring de-serialization based on the type of the same named field.
-	 * Ideally we should be looking for a constructor and its parameter types as field name might be different from the
-	 * constructor paremeter name
-	 */
 	private Map<String, Object> convertRecipeParameters(Class<?> recipeClass, Map<String, Object> parameters) {
 		if (parameters == null) {
-			return null;
+			return parameters;
 		}
 		Map<String, Object> convertedParameters = new LinkedHashMap<>();
-    	for (Entry<String, Object> entry : parameters.entrySet()) {
-    		convertedParameters.put(entry.getKey(), entry.getValue());
-			try {
-				Field field = recipeClass.getDeclaredField(entry.getKey());
-				if (field.getGenericType() instanceof ParameterizedType
-						|| !field.getType().isInstance(entry.getValue())) {
-					convertedParameters.put(entry.getKey(), gson.fromJson(gson.toJsonTree(entry.getValue()), field.getGenericType()));
-				}
-			} catch (Exception e) {
-				log.error("", e);;
-			}
+		
+		try {
+			Constructor<?> constructor = RecipeIntrospectionUtils.getPrimaryConstructor(recipeClass);
+	        for (int i = 0; i < constructor.getParameters().length; i++) {
+	            Parameter param = constructor.getParameters()[i];
+	            if (parameters != null && parameters.containsKey(param.getName())) {
+	            	convertedParameters.put(param.getName(), convert(parameters.get(param.getName()), param));
+	            }
+	        }
+	        parameters.entrySet().forEach(e -> convertedParameters.putIfAbsent(e.getKey(), e.getValue()));
+		} catch (RecipeIntrospectionException e) {
+			log.error("", e);
 		}
+		
     	return convertedParameters;
 	}
+	
+    private Object convert(Object o, Parameter p) {
+		if (p.getParameterizedType() instanceof ParameterizedType
+				|| (!p.getType().isPrimitive() && !p.getType().isInstance(o))) {
+			Gson gson = server.getGson();
+			return gson.fromJson(gson.toJsonTree(o), p.getParameterizedType());
+		}
+		return o;
+    }
+
 
 }

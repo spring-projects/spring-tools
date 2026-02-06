@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -152,7 +152,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 
 import reactor.core.publisher.Mono;
@@ -177,7 +176,6 @@ public class LanguageServerHarness {
 	private Multimap<String, CompletableFuture<HighlightParams>> highlights = MultimapBuilder.hashKeys().linkedListValues().build();
 	private Map<String, PublishDiagnosticsParams> diagnostics = new HashMap<>();
 	private List<Editor> activeEditors = new ArrayList<>();
-	private Gson gson = new Gson();
 
 	private boolean enableHierarchicalDocumentSymbols = false;
 
@@ -879,7 +877,7 @@ public class LanguageServerHarness {
 		List<Object> args = command.getArguments();
 		//Note convert the params to a 'typeless' Object because that is more representative on how it will be
 		// received when we get it in a real client/server setting (i.e. parsed from json).
-		JsonArray jsonArray = gson.toJsonTree(args).getAsJsonArray();
+		JsonArray jsonArray = getServer().getGson().toJsonTree(args).getAsJsonArray();
 		List<Object> untypedParams = new ArrayList<>(jsonArray.size());
 		jsonArray.forEach(e -> untypedParams.add(e));
 		return getServer().getWorkspaceService()

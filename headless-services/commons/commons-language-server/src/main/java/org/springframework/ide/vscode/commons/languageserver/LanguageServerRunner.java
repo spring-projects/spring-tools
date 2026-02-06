@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2019 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,6 +21,7 @@ import java.net.SocketAddress;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.Channels;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -39,6 +40,7 @@ import org.springframework.ide.vscode.commons.languageserver.config.LanguageServ
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.STS4LanguageClient;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
@@ -101,14 +103,16 @@ public class LanguageServerRunner implements CommandLineRunner {
 
 	private Function<MessageConsumer, MessageConsumer> messageConsumer;
 
-	private Consumer<GsonBuilder> configureGson;
+	private Optional<Consumer<GsonBuilder>> configureGsonOpt;
+	
+	Launcher<STS4LanguageClient> launcher;
 
-	public LanguageServerRunner(LanguageServerProperties properties, SimpleLanguageServer languageServer, Function<MessageConsumer, MessageConsumer> messageConsumer, Consumer<GsonBuilder> configureGson) {
+	public LanguageServerRunner(LanguageServerProperties properties, SimpleLanguageServer languageServer, Function<MessageConsumer, MessageConsumer> messageConsumer, Optional<Consumer<GsonBuilder>> configureGsonOpt) {
 		super();
 		this.properties = properties;
 		this.languageServer = languageServer;
 		this.messageConsumer = messageConsumer;
-		this.configureGson = configureGson;
+		this.configureGsonOpt = configureGsonOpt;
 	}
 
 	public void start() throws Exception {
@@ -189,7 +193,7 @@ public class LanguageServerRunner implements CommandLineRunner {
 		int serverPort = properties.getStandalonePort();
 		log.info("Starting LS as standlone server port = {}", serverPort);
 
-		Launcher<STS4LanguageClient> launcher = createSocketLauncher(languageServer, STS4LanguageClient.class,
+		launcher = createSocketLauncher(languageServer, STS4LanguageClient.class,
 				new InetSocketAddress("localhost", serverPort), createServerThreads(), messageConsumer);
 
 		languageServer.connect(launcher.getRemoteProxy());
@@ -213,7 +217,7 @@ public class LanguageServerRunner implements CommandLineRunner {
 		AsynchronousSocketChannel socketChannel = serverSocket.accept().get();
 		log.info("Client connected via socket");
 		return Launcher.createIoLauncher(localService, remoteInterface, Channels.newInputStream(socketChannel),
-				Channels.newOutputStream(socketChannel), executorService, wrapper, configureGson);
+				Channels.newOutputStream(socketChannel), executorService, wrapper, configureGsonOpt.orElse(null));
 	}
 
 	private static Connection connectToNode() throws IOException {
@@ -241,13 +245,13 @@ public class LanguageServerRunner implements CommandLineRunner {
 	private Future<Void> runAsync(Connection connection) throws Exception {
 		LanguageServer server = this.languageServer;
 		ExecutorService executor = createServerThreads();
-		Launcher<STS4LanguageClient> launcher = Launcher.createIoLauncher(server,
+		launcher = Launcher.createIoLauncher(server,
 				STS4LanguageClient.class,
 				connection.in,
 				connection.out,
 				executor,
 				messageConsumer,
-				configureGson
+				configureGsonOpt.orElse(null)
 		);
 
 		if (server instanceof LanguageClientAware) {
@@ -258,4 +262,8 @@ public class LanguageServerRunner implements CommandLineRunner {
 		return launcher.startListening();
 	}
 
+	public Gson getGson() {
+		// Should only return successfully if connected to client
+		return launcher.getRemoteEndpoint().getJsonHandler().getGson();
+	}
 }

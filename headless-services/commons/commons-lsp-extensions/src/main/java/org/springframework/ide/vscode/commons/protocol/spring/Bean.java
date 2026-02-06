@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,7 +17,6 @@ import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.SymbolKind;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 
 public class Bean extends AbstractSpringIndexElement implements SymbolElement {
@@ -26,7 +25,7 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	private final String type;
 	private final Location location;
 	private final InjectionPoint[] injectionPoints;
-	private final Set<String> supertypes;
+	private final String[] supertypes;
 	private final AnnotationMetadata[] annotations;
 	private final boolean isConfiguration;
 	private final String symbolLabel;
@@ -61,7 +60,7 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 			this.supertypes = null;
 		}
 		else {
-			this.supertypes = sanitizedSuperTypes;
+			this.supertypes = sanitizedSuperTypes == null ? null : sanitizedSuperTypes.toArray(new String[sanitizedSuperTypes.size()]);
 		}
 
 		if (annotations != null && annotations.length == 0) {
@@ -89,7 +88,7 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	}
 
 	public boolean isTypeCompatibleWith(String type) {
-		return type != null && ((this.type != null && this.type.equals(type)) || (supertypes != null && supertypes.contains(type)) || (Object.class.getName().equals(type) && !isInterface));
+		return type != null && ((this.type != null && this.type.equals(type)) || (supertypes != null && Set.of(supertypes).contains(type)) || (Object.class.getName().equals(type) && !isInterface));
 	}
 	
 	public AnnotationMetadata[] getAnnotations() {
@@ -104,7 +103,14 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 		if (supertypes == null) {
 			return isInterface ? DefaultValues.EMPTY_SUPERTYPES : DefaultValues.OBJECT_SUPERTYPE;
 		} else {
-			return isInterface ? supertypes : ImmutableSet.<String>builder().addAll(supertypes).add(Object.class.getName()).build();
+			if (isInterface) {
+				return Set.of(supertypes);
+			} else {
+				String[] all = new String[supertypes.length + 1];
+				System.arraycopy(supertypes, 0, all, 0, supertypes.length);
+				all[all.length - 1] = Object.class.getName();
+				return Set.of(all);
+			}
 		}
 	}
 

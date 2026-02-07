@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -80,6 +80,7 @@ public class AddAnnotationOverMethod extends Recipe {
 			public MethodDeclaration visitMethodDeclaration(MethodDeclaration method, ExecutionContext ctx) {
 				MethodDeclaration m = super.visitMethodDeclaration(method, ctx);
 				if (matcher.matches(m.getMethodType())) {
+					boolean changed = false;
 					Optional<Annotation> optAnnotation = m.getLeadingAnnotations().stream().filter(a -> TypeUtils.isOfClassType(a.getType(), annotationType)).findFirst();
 					if (optAnnotation.isEmpty()) {
 						List<J.Annotation> annotations = new ArrayList<>(m.getLeadingAnnotations());
@@ -90,24 +91,28 @@ public class AddAnnotationOverMethod extends Recipe {
 								Markers.EMPTY,
 								new J.Identifier(Tree.randomId(), Space.EMPTY, Markers.EMPTY, List.of(), at.getClassName(), at, null),
 								null);
-						annotations.add(autoFormat(annotation, ctx));
+						annotations.add(annotation);
 						m = m.withLeadingAnnotations(annotations);
-						m = autoFormat(m, m.getName(), ctx, getCursor().getParent());
 						maybeAddImport(annotationType);
-						optAnnotation = Optional.of(annotation);
+						changed = true;
 					}
 					if (attributes != null) {
 						for (Attribute attr : attributes) {
-							m = (MethodDeclaration) new AddOrUpdateAnnotationAttribute(annotationType, attr.name(),
+							MethodDeclaration newM = (MethodDeclaration) new AddOrUpdateAnnotationAttribute(annotationType, attr.name(),
 									attr.value(), (String) null, null, null).getVisitor().visit(m, ctx, getCursor().getParent());
+							if (newM != m) {
+								m = newM;
+								changed = true;
+							}
 						}
 					}
-					
+					if (changed) {
+						m = autoFormat(m, m.getName(), ctx, getCursor().getParent());
+					}
 				}
 				return m;
 			}
 		});
 	}
-
 
 }

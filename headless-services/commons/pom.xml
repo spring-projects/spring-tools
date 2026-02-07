@@ -129,14 +129,14 @@
 			<dependency>
 			    <groupId>org.openrewrite</groupId>
 			    <artifactId>rewrite-bom</artifactId>
-			    <version>8.65.0</version>
+			    <version>8.72.6</version>
 			    <type>pom</type>
                 <scope>import</scope>
 			</dependency>
             <dependency>
                 <groupId>org.gradle</groupId>
                 <artifactId>gradle-tooling-api</artifactId>
-                <version>8.11</version>
+                <version>8.14</version>
             </dependency>
 			<dependency>
 				<groupId>org.eclipse.jgit</groupId>

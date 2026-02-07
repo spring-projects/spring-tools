@@ -86,7 +86,8 @@ class BeanMethodsNotPublicTest implements RewriteTest {
                       return new DataSource();
                   }
 
-                  @Bean // comments
+                  @Bean
+                  // comments
                   static DataSource dataSource3() {
                       return new DataSource();
                   }

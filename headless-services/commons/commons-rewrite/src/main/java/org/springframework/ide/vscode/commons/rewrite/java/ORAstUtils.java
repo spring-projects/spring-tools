@@ -305,16 +305,15 @@ public class ORAstUtils {
 		synchronized(parser) {
 			cus = parser.parse(sourceFiles, null, ctx).map(CompilationUnit.class::cast).collect(Collectors.toList());
 		}
-		List<J.CompilationUnit> finalCus = new ArrayList<>(cus.size());
-		for (CompilationUnit cu : cus) {
+		org.openrewrite.java.style.Autodetect.Detector javaDetector = org.openrewrite.java.style.Autodetect.detector();
+		cus.forEach(javaDetector::sampleJava);
+		org.openrewrite.java.style.Autodetect javaStyling = javaDetector.build();
+		
+		return ListUtils.map(cus, (i, cu) -> {
+			cu = cu.withMarkers(cu.getMarkers().addIfAbsent(javaStyling));
 			J.CompilationUnit newCu = (J.CompilationUnit) new UpdateSourcePositions().getVisitor().visit(cu, ctx);
-			if (newCu == null) {
-				finalCus.add(cu);
-			} else {
-				finalCus.add(newCu);
-			}
-		}
-		return finalCus;
+			return (newCu == null ? cu : newCu).withMarkers(null);
+		});
 	}
 	
 	public static List<SourceFile> parseInputs(JavaParser parser, List<Parser.Input> inputs, Consumer<SourceFile> parseCallback) {
@@ -339,10 +338,14 @@ public class ORAstUtils {
 		synchronized (parser) {
 			final ExecutionContext c = ctx;
 			List<CompilationUnit> cus = parser.parseInputs(inputs, null, ctx).map(CompilationUnit.class::cast).collect(Collectors.toList());
-			sourceFiles.addAll(ListUtils.map(cus, (i, cu) -> (CompilationUnit) new UpdateSourcePositions().getVisitor().visit(cu, c)));
+			// Collect java styling info
+			org.openrewrite.java.style.Autodetect.Detector javaDetector = org.openrewrite.java.style.Autodetect.detector();
+			cus.forEach(javaDetector::sampleJava);
+			org.openrewrite.java.style.Autodetect javaStyling = javaDetector.build();
+			sourceFiles.addAll(ListUtils.map(cus, (i, cu) -> (CompilationUnit) new UpdateSourcePositions().getVisitor().visit(cu.withMarkers(cu.getMarkers().add(javaStyling)), c)));
 		}
 		
-        sourceFiles.addAll(new XmlParser().parseInputs(
+        List<SourceFile> xmlSources = new XmlParser().parseInputs(
         		inputs.stream()
                         .filter(p -> p.getPath().getFileName().toString().endsWith(".xml") ||
                                 p.getPath().getFileName().toString().endsWith(".wsdl") ||
@@ -353,15 +356,20 @@ public class ORAstUtils {
                         .collect(Collectors.toList()),
                 null,
                 ctx
-        ).collect(Collectors.toList()));
+        ).collect(Collectors.toList());
+        org.openrewrite.xml.style.Autodetect.Detector xmlDetector = org.openrewrite.xml.style.Autodetect.detector();
+        xmlSources.forEach(xmlDetector::sample);
+        org.openrewrite.xml.style.Autodetect xmlStyling = xmlDetector.build();
+		sourceFiles.addAll(ListUtils.map(xmlSources, (i, s) -> s.withMarkers(s.getMarkers().addIfAbsent(xmlStyling))));
 
-        sourceFiles.addAll(new YamlParser().parseInputs(
+        List<SourceFile> yamlSources = new YamlParser().parseInputs(
                 inputs.stream()
                         .filter(p -> p.getPath().getFileName().toString().endsWith(".yml") || p.getPath().getFileName().toString().endsWith(".yaml"))
                         .collect(Collectors.toList()),
                 null,
                 ctx
-        ).collect(Collectors.toList()));
+        ).collect(Collectors.toList());
+		sourceFiles.addAll(yamlSources);
 
         sourceFiles.addAll(new PropertiesParser().parseInputs(
                 inputs.stream()

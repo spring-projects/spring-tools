@@ -86,8 +86,10 @@ public class QueryMethodCodeActionProviderJpaTest {
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
 		String rawText = docEdit.getEdits().get(0).getNewText();
 
-		assertEquals(
-				"@Query(\"\"\"\nSELECT u FROM users u WHERE u.lastname LIKE :lastname ESCAPE '\\' ORDER BY u.firstname asc\n\"\"\")",
+		assertEquals("""
+				@Query(\"""
+				      SELECT u FROM users u WHERE u.lastname LIKE :lastname ESCAPE '\\' ORDER BY u.firstname asc
+				      \""")""",
 				rawText.trim());
 		assertEquals(filePath.toUri().toASCIIString(), docEdit.getTextDocument().getUri());
 	}

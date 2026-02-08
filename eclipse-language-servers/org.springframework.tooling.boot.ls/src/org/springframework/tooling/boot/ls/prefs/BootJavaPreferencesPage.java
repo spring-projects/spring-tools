@@ -12,6 +12,7 @@ package org.springframework.tooling.boot.ls.prefs;
 
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.preference.BooleanFieldEditor;
+import org.eclipse.jface.preference.ComboFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.FileFieldEditor;
 import org.eclipse.swt.SWT;
@@ -58,6 +59,12 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		
 		// Show AOT generated query over Data Query methods
 		addField(new BooleanFieldEditor(Constants.PREF_CODELENS_QUERY_METHODS, "Show CodeLens with AOT generated query over Data Query methods", fieldEditorParent));
+
+		// Data Query Style
+		addField(new ComboFieldEditor(Constants.PREF_DATA_QUERY_STYLE, "Data Query Style", new String[][] {
+				{"Compact (single line)", "compact"},
+				{"Multiline (text block)", "multiline"}
+		}, fieldEditorParent));
 		
 		// Show Web Config code lens
 		addField(new BooleanFieldEditor(Constants.PREF_CODELENS_WEB_CONFIGS_ON_CONTROLLER_CLASSES, "Show CodeLens with Web Config Details for controllers", fieldEditorParent));

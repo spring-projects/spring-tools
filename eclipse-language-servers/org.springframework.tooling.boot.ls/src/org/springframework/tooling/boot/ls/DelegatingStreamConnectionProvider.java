@@ -237,6 +237,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		bootJavaObj.put("java", javaSettings);
 		bootJavaObj.put("remote-apps", getAllRemoteApps());
 		bootJavaObj.put("modulith-project-tracking", preferenceStore.getBoolean(Constants.PREF_MODULITH));
+		bootJavaObj.put("code-action", Map.of("data-query-multiline", preferenceStore.getBoolean(Constants.PREF_DATA_QUERY_MULTILINE)));
 		
 		bootJavaObj.put("rewrite", Map.of(
 				"recipe-filters", StringListEditor.decode(preferenceStore.getString(Constants.PREF_REWRITE_RECIPE_FILTERS)),

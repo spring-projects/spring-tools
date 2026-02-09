@@ -10,9 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -41,9 +40,12 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -99,6 +101,12 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 
 	@Test
 	void turnIntoQueryUsesTextBlock() throws Exception {
+		harness.changeConfiguration(new Settings(new Gson()
+				.toJsonTree(Map.of("boot-java", Map.of(
+						"java", Map.of("codelens-over-query-methods", true),
+						"code-action", Map.of("data-query-multiline", true)
+				)))));
+
 		Path filePath = Paths.get(testProject.getLocationUri())
 				.resolve("src/main/java/example/springdata/aot/CategoryRepository.java");
 
@@ -114,6 +122,34 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		assertNotNull(queryValue, "Query value should not be null");
 
 		assertTrue(queryValue.startsWith("\"\"\""), "Query should be generated as a text block");
+		assertTrue(queryValue.contains("\n"), "Query should be split into multiple lines");
+		assertTrue(queryValue.contains("\nSELECT"), "Should have newline before SELECT");
+		assertTrue(queryValue.contains("\nFROM"), "Should have newline before FROM");
+		assertTrue(queryValue.contains("\nWHERE"), "Should have newline before WHERE");
+		assertTrue(queryValue.endsWith("\n\"\"\""), "Should end with newline before closing triple quotes");
+	}
+
+	@Test
+	void turnIntoQueryUsesCompactStyleByDefault() throws Exception {
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/example/springdata/aot/CategoryRepository.java");
+
+		Editor editor = harness.newEditor(
+				LanguageId.JAVA,
+				new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8),
+				filePath.toUri().toASCIIString()
+		);
+
+		List<CodeLens> cls = editor.getCodeLenses("findAllByNameContaining", 1);
+
+		String queryValue = extractValueFromAttributes(cls.get(0));
+
+		System.out.println("Extracted query value: " + queryValue);
+		assertNotNull(queryValue, "Query value should not be null");
+
+		assertTrue(queryValue.startsWith("\""), "Query should be generated as a string literal");
+		assertFalse(queryValue.startsWith("\"\"\""), "Query should NOT be generated as a text block");
+		assertFalse(queryValue.contains("\n        SELECT"), "Should NOT have formatted newline before SELECT");
 	}
 
 

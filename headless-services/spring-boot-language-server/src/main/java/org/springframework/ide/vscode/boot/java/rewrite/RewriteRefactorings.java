@@ -92,7 +92,7 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 				args
 		);
 	}
-	
+
 	@Override
 	public CompletableFuture<WorkspaceEdit> resolve(CodeAction codeAction) {
 		if (codeAction.getData() instanceof JsonElement) {

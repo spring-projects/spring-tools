@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -27,12 +28,15 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
+import org.springframework.ide.vscode.parser.hql.HqlQueryFormatter;
+import org.springframework.ide.vscode.parser.postgresql.PostgreSqlQueryFormatter;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -56,7 +60,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			DataRepositoryModule.JDBC, Annotations.DATA_JDBC_QUERY,
 			DataRepositoryModule.MONGODB, Annotations.DATA_MONGODB_QUERY
 	);
-
+	
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataCodeLensProvider.class);
 
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
@@ -155,7 +159,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JDBC_QUERY);
 					
 					if (!isQueryAnnotated) {
-						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata)), null));
+						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata, config)), null));
 					}
 					
 					Command impl = new Command("Go To Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
@@ -196,7 +200,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		});
 	}
 
-	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata) {
+	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata, BootJavaConfig config) {
 		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
 				.withRecipeScope(RecipeScope.FILE)
 				.withParameters(Map.of(
@@ -205,19 +209,37 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 								Arrays.stream(mb.getParameterTypes())
 										.map(pt -> pt.getQualifiedName())
 										.collect(Collectors.joining(", "))),
-						"attributes", createAttributeList(methodMetadata.getAttributesMap())));
+						"attributes", createAttributeList(methodMetadata.getAttributesMap(), module, config)));
 	}
 
-	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes) {
+	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes, DataRepositoryModule module, BootJavaConfig config) {
 		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
+		boolean isMultiline = config.isDataQueryMultiline();
+
 		for (Map.Entry<String, String> entry : attributes.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
-			if (value == null) continue;
 
-			result.add(new AddAnnotationOverMethod.Attribute(key, "\"\"\"\n" + value + "\n\"\"\""));
+			if (isMultiline) {
+				String formattedValue = switch (module) {
+					case JPA -> new HqlQueryFormatter().format(value);
+					case JDBC -> new PostgreSqlQueryFormatter().format(value);
+					case MONGODB -> {
+						try {
+							yield new JSONObject(value).toString(4);
+						} catch (Exception e) {
+							yield value;
+						}
+					}
+				};
+				value = "\"\"\"\n" + formattedValue + "\n\"\"\"";
+			} else {
+				value = "\"" + StringEscapeUtils.escapeJava(value).trim() + "\"";
+			}
+
+			result.add(new AddAnnotationOverMethod.Attribute(key, value));
 		}
 		return result;
 	}
-	
 }
+

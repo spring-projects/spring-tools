@@ -58,6 +58,9 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		
 		// Show AOT generated query over Data Query methods
 		addField(new BooleanFieldEditor(Constants.PREF_CODELENS_QUERY_METHODS, "Show CodeLens with AOT generated query over Data Query methods", fieldEditorParent));
+
+		// Data Query Multiline
+		addField(new BooleanFieldEditor(Constants.PREF_DATA_QUERY_MULTILINE, "Generate @Query as multiline text block", fieldEditorParent));
 		
 		// Show Web Config code lens
 		addField(new BooleanFieldEditor(Constants.PREF_CODELENS_WEB_CONFIGS_ON_CONTROLLER_CLASSES, "Show CodeLens with Web Config Details for controllers", fieldEditorParent));

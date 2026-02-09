@@ -738,6 +738,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot2.MISSING_VALIDATED_ANNOTATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Component class using bean validation annotations should be annotated with '@Validated'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

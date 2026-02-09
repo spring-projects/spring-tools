@@ -213,6 +213,17 @@ public class JpqlQueryFormatter {
 				return;
 			}
 
+			// Handle commas in SELECT list - newline after comma
+			if (isSelectListComma(terminal)) {
+				sb.append(text);
+				sb.append('\n');
+				appendIndent(sb, baseIndent + 1);
+				state.needsSpace = false;
+				state.atLineStart = true;
+				state.lastTokenType = tokenType;
+				return;
+			}
+
 			// Determine spacing
 			boolean spaceNeeded = state.needsSpace
 					&& !state.atLineStart
@@ -267,6 +278,19 @@ public class JpqlQueryFormatter {
 				walkTree(ctx.getChild(i), sb, state, childIndent);
 			}
 		}
+	}
+
+	/**
+	 * Checks whether a terminal node is a comma inside the select_clause rule
+	 * (i.e., separating SELECT list items).
+	 */
+	private boolean isSelectListComma(TerminalNode terminal) {
+		if (terminal.getSymbol().getType() != JpqlParser.T__0) { // ','
+			return false;
+		}
+		ParseTree parent = terminal.getParent();
+		return parent instanceof ParserRuleContext
+				&& ((ParserRuleContext) parent).getRuleIndex() == JpqlParser.RULE_select_clause;
 	}
 
 	/**

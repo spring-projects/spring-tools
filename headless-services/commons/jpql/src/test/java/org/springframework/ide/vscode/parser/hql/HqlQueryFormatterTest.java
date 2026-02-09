@@ -87,7 +87,8 @@ public class HqlQueryFormatterTest {
 	@Test
 	void selectWithGroupByHavingOrderBy() {
 		assertEquals("""
-				SELECT d.name, COUNT(e)
+				SELECT d.name,
+				  COUNT(e)
 				FROM Employee e
 				  JOIN e.department d
 				GROUP BY d.name
@@ -132,7 +133,8 @@ public class HqlQueryFormatterTest {
 	@Test
 	void insertStatement() {
 		assertEquals("""
-				INSERT INTO Employee(name, salary) SELECT p.name, p.salary
+				INSERT INTO Employee(name, salary) SELECT p.name,
+				  p.salary
 				FROM Prospect p
 				WHERE p.approved = true""",
 				formatter.format("INSERT INTO Employee(name, salary) SELECT p.name, p.salary FROM Prospect p WHERE p.approved = true"));
@@ -239,7 +241,8 @@ public class HqlQueryFormatterTest {
 	@Test
 	void queryWithCrossJoin() {
 		assertEquals("""
-				SELECT e, d
+				SELECT e,
+				  d
 				FROM Employee e
 				  CROSS JOIN Department d
 				WHERE e.active = true""",

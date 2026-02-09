@@ -87,7 +87,8 @@ public class JpqlQueryFormatterTest {
 	@Test
 	void selectWithGroupByHavingOrderBy() {
 		assertEquals("""
-				SELECT d.name, COUNT(e)
+				SELECT d.name,
+				  COUNT(e)
 				FROM Employee e
 				  JOIN e.department d
 				GROUP BY d.name

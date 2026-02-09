@@ -35,7 +35,8 @@ public class PostgreSqlQueryFormatterTest {
 	@Test
 	void selectFromWhere() {
 		assertEquals("""
-				SELECT e.name, e.salary
+				SELECT e.name,
+				  e.salary
 				FROM employees e
 				WHERE e.active = true""",
 				formatter.format("SELECT e.name, e.salary FROM employees e WHERE e.active = true"));
@@ -55,7 +56,8 @@ public class PostgreSqlQueryFormatterTest {
 	@Test
 	void selectWithJoin() {
 		assertEquals("""
-				SELECT e.name, d.name
+				SELECT e.name,
+				  d.name
 				FROM employees e
 				  JOIN departments d ON e.dept_id = d.id
 				WHERE d.active = true""",
@@ -65,7 +67,9 @@ public class PostgreSqlQueryFormatterTest {
 	@Test
 	void selectWithMultipleJoins() {
 		assertEquals("""
-				SELECT o.id, c.name, i.product
+				SELECT o.id,
+				  c.name,
+				  i.product
 				FROM orders o
 				  JOIN customers c ON o.customer_id = c.id
 				  LEFT JOIN order_items i ON o.id = i.order_id
@@ -77,7 +81,8 @@ public class PostgreSqlQueryFormatterTest {
 	@Test
 	void selectWithGroupByHavingOrderBy() {
 		assertEquals("""
-				SELECT d.name, COUNT(*)
+				SELECT d.name,
+				  COUNT(*)
 				FROM employees e
 				  JOIN departments d ON e.dept_id = d.id
 				GROUP BY d.name

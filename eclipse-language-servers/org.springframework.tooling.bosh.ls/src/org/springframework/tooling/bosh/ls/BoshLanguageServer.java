@@ -30,7 +30,6 @@ public class BoshLanguageServer extends STS4LanguageServerProcessStreamConnector
 				"bosh-language-server",
 				Arrays.asList(
 						"-Dlsp.lazy.completions.disable=true",
-						"-XX:TieredStopAtLevel=1",
 						"-Dspring.config.location=classpath:/application.properties"
 				)
 		);

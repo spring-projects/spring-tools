@@ -31,7 +31,7 @@ import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 
 @Configuration
-@Import(AdHocPropertyHarnessTestConf.class)
+@Import({AdHocPropertyHarnessTestConf.class, LsGsonConfig.class})
 public class XmlBeansTestConf {
 	
 	@Bean public IndexCache symbolCache() {

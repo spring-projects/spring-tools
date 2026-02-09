@@ -103,6 +103,12 @@
         "label": "Missing '@Configuration' on web configurer",
         "description": "Class implementing a web configurer interface should be annotated with '@Configuration'",
         "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "MISSING_VALIDATED_ANNOTATION",
+        "label": "Missing '@Validated' on component",
+        "description": "Component class using bean validation annotations should be annotated with '@Validated'",
+        "defaultSeverity": "WARNING"
       }
     ]
   },

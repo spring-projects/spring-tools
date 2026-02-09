@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,8 +9,6 @@
  *     Broadcom - initial API and implementation
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.reconcilers;
-
-import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.springBootVersionGreaterOrEqual;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -28,6 +26,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
 
@@ -40,7 +39,7 @@ public class WebApiVersionStrategyDuplicatedReconciler implements JdtAstReconcil
 
 	@Override
 	public boolean isApplicable(IJavaProject project) {
-		return springBootVersionGreaterOrEqual(4, 0, 0).test(project);
+		return SpringProjectUtil.libraryVersionGreaterOrEqual(SpringProjectUtil.SPRING_WEB, 7, 0, 0).test(project);
 	}
 
 	@Override

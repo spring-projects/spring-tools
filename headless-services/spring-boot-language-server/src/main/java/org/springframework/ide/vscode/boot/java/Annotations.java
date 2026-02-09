@@ -51,6 +51,61 @@ public class Annotations {
 	public static final String BEAN_REGISTRAR_INTERFACE = "org.springframework.beans.factory.BeanRegistrar";
 	public static final String BEAN_REGISTRY_INTERFACE = "org.springframework.beans.factory.BeanRegistry";
 
+	// Validation
+	
+	public static final String VALIDATED = "org.springframework.validation.annotation.Validated";
+	public static final String VALID_JAKARTA = "jakarta.validation.Valid";
+	public static final String VALID_JAVAX = "javax.validation.Valid";
+	
+	public static final Set<String> BEAN_VALIDATION_ANNOTATIONS = Set.of(
+			VALID_JAKARTA,
+			VALID_JAVAX,
+			"jakarta.validation.constraints.NotNull",
+			"jakarta.validation.constraints.NotEmpty",
+			"jakarta.validation.constraints.NotBlank",
+			"jakarta.validation.constraints.Size",
+			"jakarta.validation.constraints.Min",
+			"jakarta.validation.constraints.Max",
+			"jakarta.validation.constraints.Email",
+			"jakarta.validation.constraints.Pattern",
+			"jakarta.validation.constraints.Positive",
+			"jakarta.validation.constraints.PositiveOrZero",
+			"jakarta.validation.constraints.Negative",
+			"jakarta.validation.constraints.NegativeOrZero",
+			"jakarta.validation.constraints.Past",
+			"jakarta.validation.constraints.PastOrPresent",
+			"jakarta.validation.constraints.Future",
+			"jakarta.validation.constraints.FutureOrPresent",
+			"jakarta.validation.constraints.Digits",
+			"jakarta.validation.constraints.DecimalMin",
+			"jakarta.validation.constraints.DecimalMax",
+			"jakarta.validation.constraints.AssertTrue",
+			"jakarta.validation.constraints.AssertFalse",
+			"jakarta.validation.constraints.Null",
+			"javax.validation.constraints.NotNull",
+			"javax.validation.constraints.NotEmpty",
+			"javax.validation.constraints.NotBlank",
+			"javax.validation.constraints.Size",
+			"javax.validation.constraints.Min",
+			"javax.validation.constraints.Max",
+			"javax.validation.constraints.Email",
+			"javax.validation.constraints.Pattern",
+			"javax.validation.constraints.Positive",
+			"javax.validation.constraints.PositiveOrZero",
+			"javax.validation.constraints.Negative",
+			"javax.validation.constraints.NegativeOrZero",
+			"javax.validation.constraints.Past",
+			"javax.validation.constraints.PastOrPresent",
+			"javax.validation.constraints.Future",
+			"javax.validation.constraints.FutureOrPresent",
+			"javax.validation.constraints.Digits",
+			"javax.validation.constraints.DecimalMin",
+			"javax.validation.constraints.DecimalMax",
+			"javax.validation.constraints.AssertTrue",
+			"javax.validation.constraints.AssertFalse",
+			"javax.validation.constraints.Null"
+	);
+
 	// Javax - Jakarta
 	
 	public static final String RESOURCE_JAVAX = "javax.annotation.Resource";

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,9 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.languageserver.json;
 
+import org.eclipse.lsp4j.jsonrpc.util.ToStringBuilder;
 import org.eclipse.lsp4j.jsonrpc.validation.NonNull;
-import org.eclipse.xtext.xbase.lib.Pure;
-import org.eclipse.xtext.xbase.lib.util.ToStringBuilder;
 
 /**
  * Model object to be used in <code>client/registerCapability</code> JSON message to register a file watcher
@@ -54,7 +53,6 @@ public class FileSystemWatcher {
 		this.kind = kind;
 	}
 
-	@Pure
 	@NonNull
 	public String getGlobPattern() {
 		return this.globPattern;
@@ -64,7 +62,6 @@ public class FileSystemWatcher {
 		this.globPattern = globPattern;
 	}
 
-	@Pure
 	@NonNull
 	public int getKind() {
 		return this.kind;
@@ -78,7 +75,6 @@ public class FileSystemWatcher {
 	}
 
 	@Override
-	@Pure
 	public String toString() {
 		ToStringBuilder b = new ToStringBuilder(this);
 		b.add("globPattern", this.globPattern);
@@ -87,7 +83,6 @@ public class FileSystemWatcher {
 	}
 
 	@Override
-	@Pure
 	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
@@ -107,7 +102,6 @@ public class FileSystemWatcher {
 	}
 
 	@Override
-	@Pure
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;

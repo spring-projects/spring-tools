@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -49,12 +49,14 @@ public class WebConfigJavaIndexer {
 	public static final String USE_QUERY_PARAM = "useQueryParam";
 	public static final String USE_PATH_SEGMENT = "usePathSegment";
 	public static final String USE_REQUEST_HEADER = "useRequestHeader";
+	public static final String USE_MEDIA_TYPE_PARAMETER = "useMediaTypeParameter";
 	public static final String ADD_SUPPORTED_VERSIONS = "addSupportedVersions";
 	
 	public static final Set<String> VERSIONING_CONFIG_METHODS = Set.of(
 			USE_PATH_SEGMENT,
 			USE_QUERY_PARAM,
-			USE_REQUEST_HEADER
+			USE_REQUEST_HEADER,
+			USE_MEDIA_TYPE_PARAMETER
 	);
 
 	
@@ -213,6 +215,19 @@ public class WebConfigJavaIndexer {
 					ASTNode parent = expression.getParent();
 					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
 					webconfigBuilder.versionStrategy("Query Param: " + value, range);
+				}
+			}
+			catch (BadLocationException e) {
+			}
+		}));
+
+		result.put(USE_MEDIA_TYPE_PARAMETER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+			try {
+				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				if (value != null) {
+					ASTNode parent = expression.getParent();
+					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
+					webconfigBuilder.versionStrategy("Media Type Parameter: " + value, range);
 				}
 			}
 			catch (BadLocationException e) {

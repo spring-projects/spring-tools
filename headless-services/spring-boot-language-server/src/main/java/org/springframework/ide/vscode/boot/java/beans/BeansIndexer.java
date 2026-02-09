@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouterSymbolProvider;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxUtils;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebFnUtils;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
@@ -56,8 +56,8 @@ public class BeansIndexer {
 		MethodDeclaration method = (MethodDeclaration) parent;
 		if (isMethodAbstract(method)) return;
 
-		boolean isWebfluxRouter = WebfluxUtils.isFunctionalWebRouterBean(method);
-		if (isWebfluxRouter) {
+		boolean isFunctionalWebRouter = WebFnUtils.isFunctionalWebRouterBean(method);
+		if (isFunctionalWebRouter) {
 			if (!context.isFullAst()) {
 				throw new RequiredCompleteAstException();
 			}
@@ -81,7 +81,7 @@ public class BeansIndexer {
 				
 				Bean beanDefinition = new Bean(nameAndRegion.getT1(), beanType.getQualifiedName(), location, injectionPoints, supertypes, annotations, false, beanLabel);
 				
-				if (isWebfluxRouter) {
+				if (isFunctionalWebRouter) {
 					WebfluxRouterSymbolProvider.createWebfluxElements(beanDefinition, method, context, doc);
 				}
 

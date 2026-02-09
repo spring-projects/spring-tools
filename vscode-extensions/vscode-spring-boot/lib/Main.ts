@@ -41,7 +41,7 @@ const JPA_QUERY_PROPERTIES_LANGUAGE_ID = "jpa-query-properties";
 const STOP_ASKING = "Stop Asking";
 
 /** Called when extension is activated */
-export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
+export async function activate(context: ExtensionContext): Promise<ExtensionAPI> {
 
     // registerPipelineGenerator(context);
 
@@ -163,50 +163,56 @@ export function activate(context: ExtensionContext): Thenable<ExtensionAPI> {
     // Register launch config contributior to java debug launch to be able to connect to JMX
     context.subscriptions.push(startDebugSupport());
 
-    return commons.activate(options, context).then(client => {
+    // Start Spring Boot Language Server
+    const client = await commons.activate(options, context)
 
-        context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
-            // Boot LS is fully started
-            registerClasspathService(client);
-            registerJavaDataService(client);
+    context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.start', () => client.start().then(() => {
+        // Boot LS is fully started
+        registerClasspathService(client);
+        registerJavaDataService(client);
 
-            activateCopilotFeatures(context);
+        activateCopilotFeatures(context);
 
-            // Force classpath listener to be enabled. Boot LS can only be launched iff classpath is available and there Spring-Boot on the classpath somewhere.
-            commands.executeCommand('sts.vscode-spring-boot.enableClasspathListening', true);
+        // Force classpath listener to be enabled. Boot LS can only be launched iff classpath is available and there Spring-Boot on the classpath somewhere.
+        commands.executeCommand('sts.vscode-spring-boot.enableClasspathListening', true);
 
-            // Register TestJars launch support
-            context.subscriptions.push(startTestJarSupport());
+        commands.executeCommand('setContext', 'vscode-spring-boot.ls.started', true);
 
-        })));
-        context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.stop', () => client.stop()));
-        liveHoverUi.activate(client, options, context);
-        setLogLevelUi.activate(client, options, context);
-        startPropertiesConversionSupport(context);
-        if(isLlmApiReady)
-            activateSpringBootParticipant(context);
-        else 
-            window.showInformationMessage("Spring Boot chat participant is not available. Please use the vscode insiders version 1.90.0 or above and make sure all `lm` API is enabled.");
+        // Register TestJars launch support
+        context.subscriptions.push(startTestJarSupport());
 
-        registerMiscCommands(context);
+    })));
 
-        context.subscriptions.push(commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit));
+    context.subscriptions.push(commands.registerCommand('vscode-spring-boot.ls.stop', () => {
+        commands.executeCommand('setContext', 'vscode-spring-boot.ls.started', false);
+        client.stop();
+    }));
+    liveHoverUi.activate(client, options, context);
+    setLogLevelUi.activate(client, options, context);
+    startPropertiesConversionSupport(context);
+    if(isLlmApiReady)
+        activateSpringBootParticipant(context);
+    else 
+        window.showInformationMessage("Spring Boot chat participant is not available. Please use the vscode insiders version 1.90.0 or above and make sure all `lm` API is enabled.");
 
-		// Register content loader for URIs of type `spring-boot-ls:...` (load JAR content via Boot LS)
-        context.subscriptions.push(workspace.registerTextDocumentContentProvider('spring-boot-ls', new (class implements TextDocumentContentProvider {
-            provideTextDocumentContent(uri: Uri) {
-                return commands.executeCommand<string>('sts/jar/fetch-content', uri.toString());
-            }
-        })()));
+    registerMiscCommands(context);
 
-        const api = new ApiManager(client).api
+    context.subscriptions.push(commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit));
 
-                // Activation of structure explorer
-        const structureManager = new StructureManager(context, api);
-        new ExplorerTreeProvider(structureManager).createTreeView(context, 'explorer.spring');
+	// Register content loader for URIs of type `spring-boot-ls:...` (load JAR content via Boot LS)
+    context.subscriptions.push(workspace.registerTextDocumentContentProvider('spring-boot-ls', new (class implements TextDocumentContentProvider {
+        provideTextDocumentContent(uri: Uri) {
+            return commands.executeCommand<string>('sts/jar/fetch-content', uri.toString());
+        }
+    })()));
 
-        return api;
-    });
+    const api = new ApiManager(client).api
+
+            // Activation of structure explorer
+    const structureManager = new StructureManager(context, api);
+    new ExplorerTreeProvider(structureManager).createTreeView(context, 'explorer.spring');
+
+    return api;
 }
 
 function registerMiscCommands(context: ExtensionContext) {

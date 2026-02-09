@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -28,16 +27,19 @@ import org.eclipse.jdt.core.dom.Type;
 /**
  * @author Martin Lippert
  */
-public class WebfluxUtils {
+public class WebFnUtils {
 
-	public static final String ROUTER_FUNCTION_TYPE = "org.springframework.web.reactive.function.server.RouterFunction";
-	public static final String ROUTER_FUNCTIONS_TYPE = "org.springframework.web.reactive.function.server.RouterFunctions";
-	public static final String REQUEST_PREDICATES_TYPE = "org.springframework.web.reactive.function.server.RequestPredicates";
+	public static final String FLUX_ROUTER_FUNCTION_TYPE = "org.springframework.web.reactive.function.server.RouterFunction";
+	public static final String FLUX_ROUTER_FUNCTIONS_TYPE = "org.springframework.web.reactive.function.server.RouterFunctions";
+	public static final String FLUX_REQUEST_PREDICATES_TYPE = "org.springframework.web.reactive.function.server.RequestPredicates";
+
+	public static final String FLUX_ROUTER_BUILDER_FUNCTIONS_TYPE = "org.springframework.web.reactive.function.server.RouterFunctions$Builder";
 	
 	public static final String MVC_ROUTER_FUNCTION_TYPE = "org.springframework.web.servlet.function.RouterFunction";
 	public static final String MVC_ROUTER_FUNCTIONS_TYPE = "org.springframework.web.servlet.function.RouterFunctions";
-
 	public static final String MVC_REQUEST_PREDICATES_TYPE = "org.springframework.web.servlet.function.RequestPredicates";
+
+	public static final String MVC_ROUTER_BUILDER_FUNCTIONS_TYPE = "org.springframework.web.servlet.function.RouterFunctions$Builder";
 
 	public static final String REQUEST_PREDICATE_PATH_METHOD = "path";
 	public static final String REQUEST_PREDICATE_METHOD_METHOD = "method";
@@ -54,8 +56,8 @@ public class WebfluxUtils {
 		if (returnType != null) {
 			ITypeBinding resolvedBinding = returnType.resolveBinding();
 			if (resolvedBinding != null && (
-					WebfluxUtils.ROUTER_FUNCTION_TYPE.equals(resolvedBinding.getBinaryName())
-					|| WebfluxUtils.MVC_ROUTER_FUNCTION_TYPE.equals(resolvedBinding.getBinaryName()))) {
+					WebFnUtils.FLUX_ROUTER_FUNCTION_TYPE.equals(resolvedBinding.getBinaryName())
+					|| WebFnUtils.MVC_ROUTER_FUNCTION_TYPE.equals(resolvedBinding.getBinaryName()))) {
 				return true;
 			}
 		}
@@ -98,23 +100,6 @@ public class WebfluxUtils {
 		return null;
 	}
 
-	public static boolean isRouteMethodInvocation(IMethodBinding methodBinding) {
-		if (ROUTER_FUNCTIONS_TYPE.equals(methodBinding.getDeclaringClass().getBinaryName())) {
-			String name = methodBinding.getName();
-			if ("route".equals(name)) {
-				return true;
-			}
-		}
-		else if (ROUTER_FUNCTION_TYPE.equals(methodBinding.getDeclaringClass().getBinaryName())) {
-			String name = methodBinding.getName();
-			if ("andRoute".equals(name)) {
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
 	public static String getMediaType(String constantRep) {
 		if (constantRep == null) {
 			return null;

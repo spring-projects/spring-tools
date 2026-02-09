@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -60,11 +60,13 @@ public class WebConfigPropertiesIndexer {
 		converters.put("spring.mvc.apiversion.use.header", (value, configBuilder) -> configBuilder.versionStrategy("Request Header: " + value, null));
 		converters.put("spring.mvc.apiversion.use.path-segment", (value, configBuilder) -> configBuilder.versionStrategy("Path Segment: " + value, null));
 		converters.put("spring.mvc.apiversion.use.query-parameter", (value, configBuilder) -> configBuilder.versionStrategy("Query Param: " + value, null));
+		converters.put("spring.mvc.apiversion.use.media-type-parameter", (value, configBuilder) -> configBuilder.versionStrategy("Media Type Parameter: " + value, null));
 		converters.put("spring.mvc.apiversion.supported", (value, configBuilder) -> configBuilder.supportedVersion(value));
 		
 		converters.put("spring.webflux.apiversion.use.header", (value, configBuilder) -> configBuilder.versionStrategy("Request Header: " + value, null));
 		converters.put("spring.webflux.apiversion.use.path-segment", (value, configBuilder) -> configBuilder.versionStrategy("Path Segment: " + value, null));
 		converters.put("spring.webflux.apiversion.use.query-parameter", (value, configBuilder) -> configBuilder.versionStrategy("Query Param: " + value, null));
+		converters.put("spring.webflux.apiversion.use.media-type-parameter", (value, configBuilder) -> configBuilder.versionStrategy("Media Type Parameter: " + value, null));
 		converters.put("spring.webflux.apiversion.supported", (value, configBuilder) -> configBuilder.supportedVersion(value));
 	}
 

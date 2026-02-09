@@ -62,6 +62,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrateg
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrategyPathSegmentReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionSyntaxReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.BeanValidationComponentReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebConfigurerConfigurationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigurerAdapterReconciler;
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
@@ -110,8 +111,8 @@ public class JdtConfig {
 		return new PathInControllerAnnotationReconciler(server.getQuickfixRegistry());
 	}
 	
-	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex) {
-		return new WebApiVersioningReconciler(springIndex);
+	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex, SimpleLanguageServer server) {
+		return new WebApiVersioningReconciler(springIndex, server.getQuickfixRegistry());
 	}
 	
 	@Bean WebApiVersionSyntaxReconciler webApiVersionSyntaxReconciler(SpringMetamodelIndex springIndex) {
@@ -180,6 +181,10 @@ public class JdtConfig {
 	
 	@Bean WebConfigurerConfigurationReconciler webConfigurerConfigurationReconciler(SimpleLanguageServer server) {
 		return new WebConfigurerConfigurationReconciler(server.getQuickfixRegistry());
+	}
+	
+	@Bean BeanValidationComponentReconciler beanValidationComponentReconciler(SimpleLanguageServer server) {
+		return new BeanValidationComponentReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)

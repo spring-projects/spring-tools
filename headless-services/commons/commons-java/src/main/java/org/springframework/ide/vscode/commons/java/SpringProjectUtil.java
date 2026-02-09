@@ -11,10 +11,16 @@
 package org.springframework.ide.vscode.commons.java;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +31,7 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 public class SpringProjectUtil {
 
 	public static final String SPRING_BOOT = "spring-boot";
+	public static final String SPRING_WEB = "spring-web";
 	
 	private static final String GENERATION_VERSION_STR = "([0-9]+)";
 
@@ -118,8 +125,12 @@ public class SpringProjectUtil {
 	}
 	
 	public static Predicate<IJavaProject> springBootVersionGreaterOrEqual(int major, int minor, int patch) {
+		return libraryVersionGreaterOrEqual(SPRING_BOOT, major, minor, patch);
+	}
+
+	public static Predicate<IJavaProject> libraryVersionGreaterOrEqual(String libraryName, int major, int minor, int patch) {
 		return project -> {
-			Version version = project.getClasspath().findBinaryLibraryByPrefix(SPRING_BOOT).map(cpe -> cpe.getVersion()).orElse(null);
+			Version version = getDependencyVersionByName(project, libraryName);
 			if (version == null) {
 				return false;
 			}
@@ -137,5 +148,37 @@ public class SpringProjectUtil {
 			return true;
 		};
 	}
+	
+	/**
+	 * Finds Spring Boot application.properties and application.yml files in the project's resource folders.
+	 * Prioritizes main application.properties/yml files over profile-specific files (application-*.properties/yml).
+	 * Excludes test resources.
+	 * 
+	 * @param project the Java project
+	 * @return list of Boot properties/YAML file paths, with main files prioritized over profile-specific files
+	 */
+	public static List<Path> findBootPropertiesFiles(IJavaProject project) {
+		try {
+			return project.getClasspath().getClasspathEntries().stream()
+				.filter(Classpath::isSource)
+				.filter(cpe -> !cpe.isTest())  // Exclude test resources
+				.filter(cpe -> !cpe.isJavaContent())  // Only resource folders
+				.map(cpe -> new File(cpe.getPath()).toPath())
+				.flatMap(folder -> {
+					try {
+						return Files.list(folder);
+					} catch (IOException e) {
+						return Stream.empty();
+					}
+				})
+				.filter(path -> path.getFileName().toString().matches("application(-.*)?\\.(properties|ya?ml)"))
+				.toList();
+		} catch (Exception e) {
+			// ignore
+			return Collections.emptyList();
+		}
+		
+	}
+	
 
 }

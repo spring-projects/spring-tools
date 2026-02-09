@@ -30,7 +30,6 @@ public class ConcourseLanguageServer extends STS4LanguageServerProcessStreamConn
 				"concourse-language-server",
 				Arrays.asList(
 						"-Dlsp.lazy.completions.disable=true",
-						"-XX:TieredStopAtLevel=1",
 						"-Dspring.config.location=classpath:/application.properties"
 				)
 		);

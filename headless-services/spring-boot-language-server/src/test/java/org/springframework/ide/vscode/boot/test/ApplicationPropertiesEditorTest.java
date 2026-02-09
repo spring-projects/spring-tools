@@ -42,7 +42,6 @@ import org.springframework.ide.vscode.boot.metadata.CachingValueProvider;
 import org.springframework.ide.vscode.boot.metadata.PropertiesLoader;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.IType;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
@@ -52,8 +51,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 /**
  * Boot App Properties Editor tests
@@ -296,11 +293,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
     @Test
     void abbreviateLongPrefixCompletions() throws Exception {
     	
-        String changedSettings = "{\"boot-java\": {\"properties\": {\"completions\": {\"elide-prefix\": true}}}}";
-        JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-        Settings settings = new Settings(settingsAsJson);
-        
-        harness.changeConfiguration(settings);
+        harness.changeConfiguration("{\"boot-java\": {\"properties\": {\"completions\": {\"elide-prefix\": true}}}}");
     	
         //See: https://github.com/spring-projects/sts4/issues/361
         Editor editor;

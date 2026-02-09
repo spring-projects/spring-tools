@@ -46,7 +46,6 @@ public class CloudFoundryManifestLanguageServer extends STS4LanguageServerProces
 				"manifest-yaml-language-server",
 				Arrays.asList(
 						"-Dlsp.lazy.completions.disable=true",
-						"-XX:TieredStopAtLevel=1",
 						"-Dspring.config.location=classpath:/application.properties"
 				)
 		);

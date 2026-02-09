@@ -101,9 +101,6 @@ public class ClasspathUtil {
 			}
 		}
 		IVMInstall vmInstall = JavaRuntime.getVMInstall(javaProject);
-		if (vmInstall == null) {
-			vmInstall = JavaRuntime.getVMInstall(jreContainer.getPath());
-		}
 		String javaVersion = vmInstall instanceof IVMInstall2 ? ((IVMInstall2) vmInstall).getJavaVersion() : null;
 		String installationPath = vmInstall == null ? null : vmInstall.getInstallLocation().toPath().toString();
 		Classpath classpath = new Classpath(cpEntries, vmInstall == null ? null : new Jre(javaVersion, installationPath));

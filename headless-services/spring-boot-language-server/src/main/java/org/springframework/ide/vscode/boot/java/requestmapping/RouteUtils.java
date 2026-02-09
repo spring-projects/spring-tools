@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,14 +25,14 @@ public class RouteUtils {
 		
 		if (path != null && path.length() > 0) {
 			String label = "@" + (path.startsWith("/") ? path : ("/" + path));
-			label += (httpMethods == null || httpMethods.length == 0 ? "" : " -- " + WebfluxUtils.getStringRep(httpMethods, string -> string));
+			label += (httpMethods == null || httpMethods.length == 0 ? "" : " -- " + WebFnUtils.getStringRep(httpMethods, string -> string));
 			
 			label += version != null ? " - Version: " + version : "";
 			
-			String acceptType = WebfluxUtils.getStringRep(acceptTypes, WebfluxUtils::getMediaType);
+			String acceptType = WebFnUtils.getStringRep(acceptTypes, WebFnUtils::getMediaType);
 			label += acceptType != null ? " - Accept: " + acceptType : "";
 			
-			String contentType = WebfluxUtils.getStringRep(contentTypes, WebfluxUtils::getMediaType);
+			String contentType = WebFnUtils.getStringRep(contentTypes, WebFnUtils::getMediaType);
 			label += contentType != null ? " - Content-Type: " + contentType : "";
 
 			return new WorkspaceSymbol(label, SymbolKind.Interface, Either.forLeft(location));

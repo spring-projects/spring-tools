@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.HoverTestConf;
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
@@ -27,9 +26,6 @@ import org.springframework.ide.vscode.languageserver.testharness.SemanticTokensA
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -47,15 +43,13 @@ public class JdtDataQuerySemanticTokensProviderTest {
 		jp =  projects.mavenProject("boot-mysql");
 		harness.useProject(jp);
 
-		String changedSettings = """
-		{
-			"boot-java": {
-				"jpql": true
-			}
-		}	
-		""";
-		JsonElement settingsAsJson = new Gson().fromJson(changedSettings, JsonElement.class);
-		harness.changeConfiguration(new Settings(settingsAsJson));
+		harness.changeConfiguration("""
+				{
+				"boot-java": {
+					"jpql": true
+				}
+			}	
+			""");
 	}
 	
 	@Test

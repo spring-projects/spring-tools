@@ -102,6 +102,7 @@ public class AddAnnotationOverMethod extends Recipe {
 									attr.value(), (String) null, null, null).getVisitor().visit(m, ctx, getCursor().getParent());
 							if (newM != m) {
 								m = newM;
+								updateCursor(m);
 								changed = true;
 							}
 						}

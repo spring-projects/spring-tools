@@ -406,18 +406,10 @@
             "default": true,
             "description": "Show CodeLens with AOT generated query over Data Query methods"
           },
-          "boot-java.code-action.data-query-style": {
-            "type": "string",
-            "default": "compact",
-            "enum": [
-              "compact",
-              "multiline"
-            ],
-            "enumDescriptions": [
-              "Generate queries as compact single-line strings",
-              "Generate queries as Java 15+ text blocks with formatted multi-line layout"
-            ],
-            "description": "Style for generating @Query annotations from Spring Data repository methods"
+          "boot-java.code-action.data-query-multiline": {
+            "type": "boolean",
+            "default": false,
+            "description": "Generate @Query annotations as Java text blocks with formatted multi-line layout"
           },
           "boot-java.java.codelens-web-configs-on-controller-classes": {
             "type": "boolean",

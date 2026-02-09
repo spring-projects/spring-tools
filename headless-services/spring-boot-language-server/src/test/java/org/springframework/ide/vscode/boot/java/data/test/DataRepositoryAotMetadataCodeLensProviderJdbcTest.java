@@ -10,9 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -41,9 +40,12 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -102,7 +104,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		harness.changeConfiguration(new Settings(new Gson()
 				.toJsonTree(Map.of("boot-java", Map.of(
 						"java", Map.of("codelens-over-query-methods", true),
-						"code-action", Map.of("data-query-style", "multiline")
+						"code-action", Map.of("data-query-multiline", true)
 				)))));
 
 		Path filePath = Paths.get(testProject.getLocationUri())

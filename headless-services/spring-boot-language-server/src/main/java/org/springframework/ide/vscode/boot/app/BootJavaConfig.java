@@ -229,9 +229,9 @@ public class BootJavaConfig implements InitializingBean {
 		return Boolean.TRUE.equals(b);
 	}
 	
-	public String getDataQueryStyle() {
-		String style = settings.getString("boot-java", "code-action", "data-query-style");
-		return style == null ? "compact" : style;
+	public boolean isDataQueryMultiline() {
+		Boolean b = settings.getBoolean("boot-java", "code-action", "data-query-multiline");
+		return Boolean.TRUE.equals(b);
 	}
 
 	public boolean isEnabledCodeLensForWebConfigs() {

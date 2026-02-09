@@ -93,10 +93,6 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 		);
 	}
 
-	public JsonElement createFixData(FixDescriptor f) {
-		return gson.toJsonTree(f);
-	}
-
 	@Override
 	public CompletableFuture<WorkspaceEdit> resolve(CodeAction codeAction) {
 		if (codeAction.getData() instanceof JsonElement) {

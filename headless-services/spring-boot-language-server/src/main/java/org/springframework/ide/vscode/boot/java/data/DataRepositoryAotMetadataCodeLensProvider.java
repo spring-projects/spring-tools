@@ -28,15 +28,15 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
-import org.springframework.ide.vscode.boot.java.data.formatter.JpqlQueryFormatter;
-import org.springframework.ide.vscode.boot.java.data.formatter.MongoQueryFormatter;
-import org.springframework.ide.vscode.boot.java.data.formatter.QueryFormatter;
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
+import org.springframework.ide.vscode.parser.hql.HqlQueryFormatter;
+import org.springframework.ide.vscode.parser.postgresql.PostgreSqlQueryFormatter;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -61,9 +61,6 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			DataRepositoryModule.MONGODB, Annotations.DATA_MONGODB_QUERY
 	);
 	
-	private static final QueryFormatter JPQL_FORMATTER = new JpqlQueryFormatter();
-	private static final QueryFormatter MONGO_FORMATTER = new MongoQueryFormatter();
-
 	private static final Logger log = LoggerFactory.getLogger(DataRepositoryAotMetadataCodeLensProvider.class);
 
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
@@ -217,21 +214,25 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes, DataRepositoryModule module, BootJavaConfig config) {
 		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
-		String style = config.getDataQueryStyle();
-		boolean isMultiline = "multiline".equalsIgnoreCase(style);
-
-		if (style != null && !"compact".equalsIgnoreCase(style) && !isMultiline) {
-			log.warn("Unknown data-query-style: '{}'. Falling back to 'compact'.", style);
-		}
+		boolean isMultiline = config.isDataQueryMultiline();
 
 		for (Map.Entry<String, String> entry : attributes.entrySet()) {
 			String key = entry.getKey();
 			String value = entry.getValue();
 
 			if (isMultiline) {
-				QueryFormatter formatter = (module == DataRepositoryModule.MONGODB) ? MONGO_FORMATTER : JPQL_FORMATTER;
-				value = formatter.format(value);
-				value = "\"\"\"" + value + "\n\"\"\"";
+				String formattedValue = switch (module) {
+					case JPA -> new HqlQueryFormatter().format(value);
+					case JDBC -> new PostgreSqlQueryFormatter().format(value);
+					case MONGODB -> {
+						try {
+							yield new JSONObject(value).toString(4);
+						} catch (Exception e) {
+							yield value;
+						}
+					}
+				};
+				value = "\"\"\"\n" + formattedValue + "\n\"\"\"";
 			} else {
 				value = "\"" + StringEscapeUtils.escapeJava(value).trim() + "\"";
 			}

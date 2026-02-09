@@ -60,7 +60,7 @@ public class Constants {
 	
 	public static final String PREF_CODELENS_WEB_CONFIGS_ON_CONTROLLER_CLASSES = "boot-java.java.codelens-web-configs-on-controller-classes";
 
-	public static final String PREF_DATA_QUERY_STYLE = "boot-java.code-action.data-query-style";
+	public static final String PREF_DATA_QUERY_MULTILINE = "boot-java.code-action.data-query-multiline";
 
 	public static final String PREF_AI_MCP_ENABLED = "boot-java.ai.mcp-server-enabled";
 	public static final String PREF_AI_MCP_PORT = "boot-java.ai.mcp-server-port";

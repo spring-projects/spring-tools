@@ -403,11 +403,11 @@ public class BeanCompletionProviderTest {
 					public class Inner {
 				
 						private final OwnerRepository ownerRepository;
-					
+				
 						Inner(OwnerRepository ownerRepository) {
 							this.ownerRepository = ownerRepository;
 						}
-					
+				
 						public void test() {
 							ownerRepository<*>
 						}
@@ -471,7 +471,6 @@ public class BeanCompletionProviderTest {
 				
 				@Controller
 				public class TestBeanCompletionSecondClass {
-				
 					private final OwnerRepository ownerRepository;
 					private final TestBeanCompletionClass testBeanCompletionClass;
 				
@@ -520,12 +519,12 @@ public class BeanCompletionProviderTest {
 				
 				@Controller
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
 				
 					TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						this.ownerRepository = ownerRepository;
 					}
+				
 					public void test() {
 						this.ownerRepository<*>
 					}
@@ -638,12 +637,12 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
 				
 					TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						this.ownerRepository = ownerRepository;
 					}
+				
 					public void test() {
 						ownerRepository<*>
 					}
@@ -677,12 +676,12 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
 				
 					TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						this.ownerRepository = ownerRepository;
 					}
+				
 					public void test() {
 						ownerRepository<*>
 						System.out.println();
@@ -717,12 +716,12 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
 				
 					TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						this.ownerRepository = ownerRepository;
 					}
+				
 					public void test() {
 						this.ownerRepository<*>
 						System.out.println();
@@ -758,7 +757,6 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository_1;
 					String ownerRepository;
 					public TestBeanCompletionClass(String ownerRepository, OwnerRepository ownerRepository_1) {
@@ -795,10 +793,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository_1;
 					String ownerRepository;
-					
 					TestBeanCompletionClass(OwnerRepository ownerRepository_1) {
 						this.ownerRepository_1 = ownerRepository_1;
 					}
@@ -835,12 +831,12 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
 				
 					TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						this.ownerRepository = ownerRepository;
 					}
+				
 					public void test() {
 						this.ownerRepository<*>
 						System.out.println();
@@ -875,8 +871,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>
@@ -912,8 +908,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>
@@ -949,8 +945,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>
@@ -986,8 +982,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>
@@ -1023,8 +1019,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>
@@ -1060,8 +1056,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>
@@ -1097,12 +1093,12 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
-					
+				
 					TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						this.ownerRepository = ownerRepository;
 					}
+				
 					String TestBeanCompletionClass() {
 						this.ownerRepository<*>
 						return new String("oo");
@@ -1138,8 +1134,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>
@@ -1175,8 +1171,8 @@ public class BeanCompletionProviderTest {
 				
 				@RestController
 				public class TestBeanCompletionClass {
-				
 					private final OwnerRepository ownerRepository;
+				
 					public TestBeanCompletionClass(OwnerRepository ownerRepository) {
 						super();
 						this.ownerRepository = ownerRepository;<*>

@@ -30,7 +30,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -55,7 +54,6 @@ import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.MessageType;
-import org.eclipse.lsp4j.ProgressParams;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.Registration;
 import org.eclipse.lsp4j.RegistrationParams;
@@ -65,15 +63,10 @@ import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.SetTraceParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
-import org.eclipse.lsp4j.WorkDoneProgressBegin;
 import org.eclipse.lsp4j.WorkDoneProgressCancelParams;
-import org.eclipse.lsp4j.WorkDoneProgressCreateParams;
-import org.eclipse.lsp4j.WorkDoneProgressEnd;
-import org.eclipse.lsp4j.WorkDoneProgressReport;
 import org.eclipse.lsp4j.WorkspaceFolder;
 import org.eclipse.lsp4j.WorkspaceFoldersOptions;
 import org.eclipse.lsp4j.WorkspaceServerCapabilities;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.NotebookDocumentService;
@@ -743,7 +736,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 				testListener.reconcileStarted(docId.getUri(), doc.getVersion());
 			}
 
-			IProblemCollector problems = createProblemCollector(new AtomicReference<TextDocument>(doc), null);
+			IProblemCollector problems = createProblemCollector(doc, null);
 
 			engine.reconcile(doc, problems);
 		})
@@ -786,7 +779,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 		}
 	}
 	
-	public IProblemCollector createProblemCollector(AtomicReference<TextDocument> docRef, BiConsumer<String, Diagnostic> diagnosticsCollector) {
+	public IProblemCollector createProblemCollector(TextDocument doc, BiConsumer<String, Diagnostic> diagnosticsCollector) {
 
 		SimpleTextDocumentService documentsService = getTextDocumentService();
 		
@@ -797,8 +790,8 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 
 			@Override
 			public void endCollecting() {
-				documentsService.setQuickfixes(docRef.get().getId(), quickfixes);
-				documentsService.publishDiagnostics(docRef.get().getId(), diagnostics);
+				documentsService.setQuickfixes(doc.getId(), quickfixes);
+				documentsService.publishDiagnostics(doc.getId(), diagnostics);
 				log.debug("Reconcile done sent {} diagnostics", diagnostics.size());
 			}
 
@@ -810,8 +803,8 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 			@Override
 			public void checkPointCollecting() {
 				// publish what has been collected so far
-				documentsService.setQuickfixes(docRef.get().getId(), quickfixes);
-				documentsService.publishDiagnostics(docRef.get().getId(), diagnostics);
+				documentsService.setQuickfixes(doc.getId(), quickfixes);
+				documentsService.publishDiagnostics(doc.getId(), diagnostics);
 				log.debug("Reconcile checkpoint sent {} diagnostics", diagnostics.size());
 			}
 
@@ -826,7 +819,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 						d.setCode(problem.getCode());
 						d.setMessage(problem.getMessage());
 
-						Range rng = docRef.get().toRange(problem.getOffset(), problem.getLength());
+						Range rng = doc.toRange(problem.getOffset(), problem.getLength());
 						d.setRange(rng);
 
 						d.setSeverity(severity);
@@ -855,12 +848,12 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 						diagnostics.add(d);
 						
 						if (diagnosticsCollector != null) {
-							diagnosticsCollector.accept(docRef.get().getId().getUri(), d);
+							diagnosticsCollector.accept(doc.getId().getUri(), d);
 						}
 						
 					}
 				} catch (BadLocationException e) {
-					log.warn("Invalid reconcile problem ignored: " + docRef.get().getId().getUri() + " - problem position: " + problem.getOffset() + "/" + problem.getLength(), e);
+					log.warn("Invalid reconcile problem ignored: " + doc.getId().getUri() + " - problem position: " + problem.getOffset() + "/" + problem.getLength(), e);
 				}
 			}
 		};

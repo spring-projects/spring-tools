@@ -146,7 +146,7 @@ public class AddConfigurationIfBeansPresentAdvancedReconcilingTest {
     }
     
     @Test
-    void testErrorAppearsWhenFeignClientAnnotationDoesAwayEntirely() throws Exception {
+    void testErrorAppearsWhenFeignClientAnnotationGoesAwayEntirely() throws Exception {
 		String feignClientDocUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java").toUri().toString();
 		String feignConfigRegisterd = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignConfigExample.java").toUri().toString();
 

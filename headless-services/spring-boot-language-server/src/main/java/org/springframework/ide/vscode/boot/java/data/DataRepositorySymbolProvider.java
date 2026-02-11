@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -66,15 +66,15 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 	}
 
 	@Override
-	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
 		// this checks spring data repository beans that are defined as extensions of the repository interface
-		Tuple4<String, ITypeBinding, String, DocumentRegion> repositoryBean = getRepositoryBean(typeDeclaration, doc);
+		Tuple4<String, ITypeBinding, String, DocumentRegion> repositoryBean = getRepositoryBean(typeDeclaration, context.getDoc());
 
 		if (repositoryBean != null) {
 			try {
 				String beanName = repositoryBean.getT1();
 				ITypeBinding beanType = repositoryBean.getT2();
-				Location location = new Location(doc.getUri(), doc.toRange(repositoryBean.getT4()));
+				Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(repositoryBean.getT4()));
 				
 				WorkspaceSymbol symbol = new WorkspaceSymbol(
 						beanLabel(true, beanName, beanType.getName(), repositoryBean.getT3()),
@@ -84,7 +84,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 
 				// index elements
-				InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(typeDeclaration, doc);
+				InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(typeDeclaration, context.getDoc());
 				
 				ITypeBinding concreteBeanTypeBindung = typeDeclaration.resolveBinding();
 
@@ -93,10 +93,10 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				String concreteRepoType = concreteBeanTypeBindung.getQualifiedName();
 				
 				Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(typeDeclaration);
-				AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, doc);
+				AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, context.getDoc());
 				
 				Bean beanDefinition = new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, symbol.getName());
-				indexQueryMethods(beanDefinition, typeDeclaration, context, doc);
+				indexQueryMethods(beanDefinition, typeDeclaration, context, context.getDoc());
 				
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 

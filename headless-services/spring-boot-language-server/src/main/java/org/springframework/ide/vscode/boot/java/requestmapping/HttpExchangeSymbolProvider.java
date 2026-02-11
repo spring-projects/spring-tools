@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -27,17 +27,16 @@ import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
-import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 public class HttpExchangeSymbolProvider implements SymbolProvider {
 	
 	private static final Logger log = LoggerFactory.getLogger(HttpExchangeSymbolProvider.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 		if (node.getParent() instanceof MethodDeclaration) {
 			try {
-				Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
+				Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(node.getStartPosition(), node.getLength()));
 				
 				String[] path = HttpExchangeIndexer.getPath(node, context);
 				String[] parentPath = HttpExchangeIndexer.getParentPath(node, context);
@@ -61,11 +60,11 @@ public class HttpExchangeSymbolProvider implements SymbolProvider {
 							HttpExchangeIndexElement requestMappingIndexElement =
 									new HttpExchangeIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), symbol.getName());
 
-							context.getGeneratedIndexElements().add(new CachedIndexElement(doc.getUri(), requestMappingIndexElement));
+							context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDoc().getUri(), requestMappingIndexElement));
 						});
 
 			} catch (BadLocationException e) {
-				log.error("problem occured while scanning for request mapping symbols from " + doc.getUri(), e);
+				log.error("problem occured while scanning for request mapping symbols from " + context.getDoc().getUri(), e);
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -27,7 +27,6 @@ import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
-import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 import reactor.util.function.Tuple2;
 
@@ -40,7 +39,7 @@ public class BeansSymbolProvider implements SymbolProvider {
 	private static final Logger log = LoggerFactory.getLogger(BeansSymbolProvider.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 		if (node == null) return;
 		
 		ASTNode parent = node.getParent();
@@ -52,9 +51,9 @@ public class BeansSymbolProvider implements SymbolProvider {
 		ITypeBinding beanType = BeansIndexer.getBeanType(method);
 		String markerString = BeansIndexer.getAnnotations(method);
 		
-		for (Tuple2<String, DocumentRegion> nameAndRegion : BeanUtils.getBeanNamesFromBeanAnnotationWithRegions(node, doc)) {
+		for (Tuple2<String, DocumentRegion> nameAndRegion : BeanUtils.getBeanNamesFromBeanAnnotationWithRegions(node, context.getDoc())) {
 			try {
-				Location location = new Location(doc.getUri(), doc.toRange(nameAndRegion.getT2()));
+				Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(nameAndRegion.getT2()));
 
 				WorkspaceSymbol symbol = new WorkspaceSymbol(
 								BeansIndexer.beanLabel(nameAndRegion.getT1(), beanType.getName(), "@Bean" + markerString),

@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -117,12 +116,12 @@ public class SpringIndexerJava implements SpringIndexer {
 	private FileScanListener fileScanListener = null; //used by test code only
 
 	private final SpringIndexerJavaDependencyTracker dependencyTracker = new SpringIndexerJavaDependencyTracker();
-	private final BiFunction<AtomicReference<TextDocument>, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator;
+	private final BiFunction<TextDocument, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator;
 
 	
 	public SpringIndexerJava(SymbolHandler symbolHandler, AnnotationHierarchyAwareLookup<SymbolProvider> symbolProviders, IndexCache cache,
 			JavaProjectFinder projectFimder, ProgressService progressService, JdtReconciler jdtReconciler,
-			BiFunction<AtomicReference<TextDocument>, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator,
+			BiFunction<TextDocument, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator,
 			JsonObject validationSeveritySettings, CompilationUnitCache cuCache) {
 		this.symbolHandler = symbolHandler;
 		this.symbolProviders = symbolProviders;
@@ -283,9 +282,9 @@ public class SpringIndexerJava implements SpringIndexer {
 					}
 				};
 
-				AtomicReference<TextDocument> docRef = new AtomicReference<>();
+				TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-						0, docRef, content, voidProblemCollector, new ArrayList<>(), true, true, result);
+						0, doc, content, voidProblemCollector, new ArrayList<>(), true, true, result);
 
 				scanAST(context, false, new ReconcilingIndex());
 
@@ -326,9 +325,9 @@ public class SpringIndexerJava implements SpringIndexer {
 					}
 				};
 
-				AtomicReference<TextDocument> docRef = new AtomicReference<>();
+				TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-						0, docRef, content, voidProblemCollector, new ArrayList<>(), true, true, result);
+						0, doc, content, voidProblemCollector, new ArrayList<>(), true, true, result);
 
 				scanAST(context, false, new ReconcilingIndex());
 
@@ -418,7 +417,6 @@ public class SpringIndexerJava implements SpringIndexer {
 			SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, new String[] {file});
 			ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 			
-			AtomicReference<TextDocument> docRef = new AtomicReference<>();
 			BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
 				@Override
 				public void accept(String docURI, Diagnostic diagnostic) {
@@ -426,10 +424,11 @@ public class SpringIndexerJava implements SpringIndexer {
 				}
 			};
 			
-			IProblemCollector problemCollector = problemCollectorCreator.apply(docRef, diagnosticsAggregator);
+			TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
 
+			IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
 			SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-					lastModified, docRef, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
+					lastModified, doc, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
 
 			scanAST(context, true, reconcilingIndex);
 
@@ -493,12 +492,12 @@ public class SpringIndexerJava implements SpringIndexer {
 				DocumentDescriptor updatedDoc = updatedDocs.get(docURI);
 				long lastModified = updatedDoc.getLastModified();
 				
-				AtomicReference<TextDocument> docRef = new AtomicReference<>();
+				TextDocument doc = DocumentUtils.createTempTextDocument(docURI);
 
-				IProblemCollector problemCollector = problemCollectorCreator.apply(docRef, diagnosticsAggregator);
+				IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
 
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
-						lastModified, docRef, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
+						lastModified, doc, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
 				
 				scanAST(context, true, reconcilingIndex);
 				
@@ -653,12 +652,13 @@ public class SpringIndexerJava implements SpringIndexer {
 				File file = new File(sourceFilePath);
 				String docURI = UriUtil.toUri(file).toASCIIString();
 				long lastModified = file.lastModified();
-				AtomicReference<TextDocument> docRef = new AtomicReference<>();
 
-				IProblemCollector problemCollector = problemCollectorCreator.apply(docRef, diagnosticsAggregator);
+				TextDocument doc = DocumentUtils.createTempTextDocument(docURI);
+
+				IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
 
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
-						lastModified, docRef, null, problemCollector, nextPassFiles, !ignoreMethodBodies, false, result);
+						lastModified, doc, null, problemCollector, nextPassFiles, !ignoreMethodBodies, false, result);
 
 				scanAST(context, true, reconcilingIndex);
 				progressTask.increment();
@@ -714,15 +714,15 @@ public class SpringIndexerJava implements SpringIndexer {
 				File file = new File(sourceFilePath);
 				String docURI = UriUtil.toUri(file).toASCIIString();
 				long lastModified = file.lastModified();
-				AtomicReference<TextDocument> docRef = new AtomicReference<>();
+				
+				TextDocument doc = DocumentUtils.createTempTextDocument(docURI);
 
-				IProblemCollector problemCollector = problemCollectorCreator.apply(docRef, diagnosticsAggregator);
+				IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
 
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
-						lastModified, docRef, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, true, reconcilingResult);
+						lastModified, doc, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, true, reconcilingResult);
 
 				try {
-					DocumentUtils.getTempTextDocument(docURI, docRef, null); // initialize the docRef with a real document before running validations
 					reconcile(context, reconcilingIndex);
 					
 					Collection<String> dependencies = dependencyTracker.get(project, context.getFile());
@@ -944,9 +944,8 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void extractSymbolInformation(TypeDeclaration typeDeclaration, final SpringIndexerJavaContext context) throws Exception {
 		Collection<SymbolProvider> providers = symbolProviders.getAll();
 		if (!providers.isEmpty()) {
-			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
 			for (SymbolProvider provider : providers) {
-				provider.addSymbols(typeDeclaration, context, doc);
+				provider.addSymbols(typeDeclaration, context);
 			}
 		}
 	}
@@ -954,9 +953,8 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void extractSymbolInformation(RecordDeclaration typeDeclaration, final SpringIndexerJavaContext context) throws Exception {
 		Collection<SymbolProvider> providers = symbolProviders.getAll();
 		if (!providers.isEmpty()) {
-			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
 			for (SymbolProvider provider : providers) {
-				provider.addSymbols(typeDeclaration, context, doc);
+				provider.addSymbols(typeDeclaration, context);
 			}
 		}
 	}
@@ -964,9 +962,8 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void extractSymbolInformation(MethodDeclaration methodDeclaration, final SpringIndexerJavaContext context) throws Exception {
 		Collection<SymbolProvider> providers = symbolProviders.getAll();
 		if (!providers.isEmpty()) {
-			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
 			for (SymbolProvider provider : providers) {
-				provider.addSymbols(methodDeclaration, context, doc);
+				provider.addSymbols(methodDeclaration, context);
 			}
 		}
 	}
@@ -974,9 +971,8 @@ public class SpringIndexerJava implements SpringIndexer {
 	private void extractSymbolInformation(PackageDeclaration packageDeclaration, final SpringIndexerJavaContext context) throws Exception {
 		Collection<SymbolProvider> providers = symbolProviders.getAll();
 		if (!providers.isEmpty()) {
-			TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
 			for (SymbolProvider provider : providers) {
-				provider.addSymbols(packageDeclaration, context, doc);
+				provider.addSymbols(packageDeclaration, context);
 			}
 		}
 	}
@@ -1003,9 +999,8 @@ public class SpringIndexerJava implements SpringIndexer {
 			
 			Collection<SymbolProvider> providers = symbolProviders.get(annotationHierarchies, annotationBinding);
 			if (!providers.isEmpty()) {
-				TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
 				for (SymbolProvider provider : providers) {
-					provider.addSymbols(node, typeBinding, metaAnnotations, context, doc);
+					provider.addSymbols(node, typeBinding, metaAnnotations, context);
 				}
 			} else {
 				WorkspaceSymbol symbol = provideDefaultSymbol(node, context);
@@ -1038,7 +1033,8 @@ public class SpringIndexerJava implements SpringIndexer {
 				if (qualifiedName != null
 						&& ((qualifiedName.startsWith("org.springframework") && !qualifiedName.startsWith("org.springframework.lang"))
 							|| Annotations.JAKARTA_ANNOTATIONS.contains(qualifiedName))) {
-					TextDocument doc = DocumentUtils.getTempTextDocument(context.getDocURI(), context.getDocRef(), context.getContent());
+
+					TextDocument doc = context.getDoc();
 					return DefaultSymbolProvider.provideDefaultSymbol(node, doc);
 				}
 			}

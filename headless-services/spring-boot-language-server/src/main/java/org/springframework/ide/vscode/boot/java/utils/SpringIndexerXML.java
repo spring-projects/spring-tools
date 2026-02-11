@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2025 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -253,11 +252,11 @@ public class SpringIndexerXML implements SpringIndexer {
 		DOMParser parser = DOMParser.getInstance();
 		DOMDocument document = parser.parse(fileContent, "", null);
 
-		AtomicReference<TextDocument> docRef = new AtomicReference<>();
-		scanNode(document, project, docURI, lastModified, docRef, fileContent, generatedSymbols, generatedIndexElements);
+		TextDocument doc = DocumentUtils.createTempTextDocument(docURI, fileContent);
+		scanNode(document, project, docURI, lastModified, doc, fileContent, generatedSymbols, generatedIndexElements);
 	}
 
-	private void scanNode(DOMNode node, IJavaProject project, String docURI, long lastModified, AtomicReference<TextDocument> docRef, String content,
+	private void scanNode(DOMNode node, IJavaProject project, String docURI, long lastModified, TextDocument doc, String content,
 			List<CachedSymbol> generatedSymbols, List<CachedIndexElement> generatedIndexElements) throws Exception {
 
 		String namespaceURI = node.getNamespaceURI();
@@ -265,8 +264,7 @@ public class SpringIndexerXML implements SpringIndexer {
 		if (namespaceURI != null && this.namespaceHandler.containsKey(namespaceURI)) {
 			SpringIndexerXMLNamespaceHandler namespaceHandler = this.namespaceHandler.get(namespaceURI);
 
-			TextDocument document = DocumentUtils.getTempTextDocument(docURI, docRef, content);
-			namespaceHandler.processNode(node, project, docURI, lastModified, document, generatedSymbols, generatedIndexElements);
+			namespaceHandler.processNode(node, project, docURI, lastModified, doc, generatedSymbols, generatedIndexElements);
 		}
 
 
@@ -280,7 +278,7 @@ public class SpringIndexerXML implements SpringIndexer {
 
 		List<DOMNode> children = node.getChildren();
 		for (DOMNode child : children) {
-			scanNode(child, project, docURI, lastModified, docRef, content, generatedSymbols, generatedIndexElements);
+			scanNode(child, project, docURI, lastModified, doc, content, generatedSymbols, generatedIndexElements);
 		}
 
 

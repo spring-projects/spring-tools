@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -57,11 +57,11 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 	private static final Logger log = LoggerFactory.getLogger(ConfigurationPropertiesSymbolProvider.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 		try {
 			if (node != null && node.getParent() != null) {
 				if (node.getParent() instanceof AbstractTypeDeclaration abstractType) {
-					createSymbolForType(abstractType, node, annotationType, metaAnnotations, context, doc);
+					createSymbolForType(abstractType, node, annotationType, metaAnnotations, context, context.getDoc());
 				}
 			}
 		}

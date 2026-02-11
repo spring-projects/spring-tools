@@ -144,14 +144,7 @@ public class SendClasspathNotificationsJob extends Job {
 								logger.log(e);
 							}
 						}
-						Map<String, String> javaCoreOptions = Collections.emptyMap();
-					if (!deleted) {
-						try {
-							javaCoreOptions = jp.getOptions(true);
-						} catch (Exception e) {
-							logger.log(e);
-						}
-					}
+						Map<String, String> javaCoreOptions = deleted ? Collections.emptyMap() : getJavaCoreOptions(jp);
 					bufferMessage(projectLoc, deleted, projectName, classpath, ClasspathUtil.createProjectBuild(jp, logger), javaCoreOptions);
 					}
 				}
@@ -160,6 +153,18 @@ public class SendClasspathNotificationsJob extends Job {
 				logger.log(e);
 			}
 			return Status.OK_STATUS;
+		}
+	}
+
+	private Map<String, String> getJavaCoreOptions(IJavaProject jp) {
+		try {
+			Map<String, String> options = new HashMap<>(jp.getOptions(true));
+			// Remove entries that are not relevant for the Boot LS side
+			options.remove(JavaCore.JAVA_FORMATTER);
+			return options;
+		} catch (Exception e) {
+			logger.log(e);
+			return Collections.emptyMap();
 		}
 	}
 

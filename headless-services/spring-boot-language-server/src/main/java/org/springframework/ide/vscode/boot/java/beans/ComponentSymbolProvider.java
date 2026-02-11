@@ -76,19 +76,19 @@ public class ComponentSymbolProvider implements SymbolProvider {
 	private static final Logger log = LoggerFactory.getLogger(ComponentSymbolProvider.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 		try {
 			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration type) {
 //				createSymbol(type, node, annotationType, metaAnnotations, context, doc);
 			}
 			else if (node != null && node.getParent() != null && node.getParent() instanceof RecordDeclaration record) {
-				createSymbol(record, node, annotationType, metaAnnotations, context, doc);
+				createSymbol(record, node, annotationType, metaAnnotations, context, context.getDoc());
 			}
 			else if (node != null && node.getParent() != null && node.getParent() instanceof AnnotationTypeDeclaration annotationDeclaration) {
-				createSymbol(annotationDeclaration, node, annotationType, metaAnnotations, context, doc);
+				createSymbol(annotationDeclaration, node, annotationType, metaAnnotations, context, context.getDoc());
 			}
 			else if (Annotations.NAMED_ANNOTATIONS.contains(annotationType.getQualifiedName())) {
-				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, doc);
+				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, context.getDoc());
 				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), new SimpleSymbolElement(symbol)));
 			}
@@ -99,7 +99,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 	}
 
 	@Override
-	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
 		
 		boolean isComponment = annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.COMPONENT)
@@ -108,12 +108,12 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		
 		// check for event listener implementations on classes that are not annotated with component, but created via bean methods (for example)
 		if (isComponment) {
-			indexComponent(typeDeclaration, context, doc);
+			indexComponent(typeDeclaration, context, context.getDoc());
 		}
 		else {
-			indexEventListenerInterfaceImplementation(null, typeDeclaration, context, doc);
-			indexBeanRegistrarImplementation(null, typeDeclaration, context, doc);
-			indexBeanMethods(null, typeDeclaration, null, null, context, doc);
+			indexEventListenerInterfaceImplementation(null, typeDeclaration, context, context.getDoc());
+			indexBeanRegistrarImplementation(null, typeDeclaration, context, context.getDoc());
+			indexBeanMethods(null, typeDeclaration, null, null, context, context.getDoc());
 			indexAotProcessors(typeDeclaration, context);
 		}
 	}

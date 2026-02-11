@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -33,7 +32,7 @@ public class SpringIndexerJavaContext {
 	private final String docURI;
 	private final String file;
 	private final long lastModified;
-	private final AtomicReference<TextDocument> docRef;
+	private final TextDocument doc;
 	private final String content;
 	private final IProblemCollector getProblemCollector;
 	private final List<String> nextPassFiles;
@@ -50,7 +49,7 @@ public class SpringIndexerJavaContext {
 			String docURI, 
 			String file, 
 			long lastModified,
-			AtomicReference<TextDocument> docRef, 
+			TextDocument doc, 
 			String content, 
 			IProblemCollector problemCollector,
 			List<String> nextPassFiles,
@@ -64,7 +63,7 @@ public class SpringIndexerJavaContext {
 		this.docURI = docURI;
 		this.file = file;
 		this.lastModified = lastModified;
-		this.docRef = docRef;
+		this.doc = doc;
 		this.content = content;
 		this.getProblemCollector = problemCollector;
 		this.nextPassFiles = nextPassFiles;
@@ -93,8 +92,8 @@ public class SpringIndexerJavaContext {
 		return lastModified;
 	}
 
-	public AtomicReference<TextDocument> getDocRef() {
-		return docRef;
+	public TextDocument getDoc() {
+		return doc;
 	}
 
 	public String getContent() {

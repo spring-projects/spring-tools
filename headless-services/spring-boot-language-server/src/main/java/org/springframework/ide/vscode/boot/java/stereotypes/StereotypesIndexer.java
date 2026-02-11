@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -59,7 +59,7 @@ public class StereotypesIndexer implements SymbolProvider {
 	private static final Logger log = LoggerFactory.getLogger(StereotypesIndexer.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 		ASTNode parent = node.getParent();
 		
 		try {
@@ -68,7 +68,7 @@ public class StereotypesIndexer implements SymbolProvider {
 				ITypeBinding annotationBinding = annotationType.resolveBinding();
 				
 				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
-						annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, doc);
+						annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, context.getDoc());
 	
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
 			}
@@ -76,7 +76,7 @@ public class StereotypesIndexer implements SymbolProvider {
 				ITypeBinding interfaceType = ((TypeDeclaration) parent).resolveBinding();
 	
 				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
-						interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, doc);
+						interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, context.getDoc());
 	
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
 			}
@@ -90,9 +90,9 @@ public class StereotypesIndexer implements SymbolProvider {
 	}
 	
 	@Override
-	public void addSymbols(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) {
 		try {
-			createStereotypeElementForType(recordDeclaration, context, doc);
+			createStereotypeElementForType(recordDeclaration, context, context.getDoc());
 		}
 		catch (BadLocationException e) {
 			log.error("error identifying location of type declaration", e);
@@ -100,9 +100,9 @@ public class StereotypesIndexer implements SymbolProvider {
 	}
 	
 	@Override
-	public void addSymbols(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context) {
 		try {
-			createStereotypeElementForPackage(packageDeclaration, context, doc);
+			createStereotypeElementForPackage(packageDeclaration, context, context.getDoc());
 		}
 		catch (BadLocationException e) {
 			log.error("error identifying location of type declaration", e);
@@ -138,9 +138,9 @@ public class StereotypesIndexer implements SymbolProvider {
 	}
 
 	@Override
-	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
 		try {
-			createStereotypeElementForType(typeDeclaration, context, doc);
+			createStereotypeElementForType(typeDeclaration, context, context.getDoc());
 		}
 		catch (BadLocationException e) {
 			log.error("error identifying location of type declaration", e);

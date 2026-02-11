@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,7 +26,6 @@ import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
-import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 /**
  * @author Martin Lippert
@@ -36,11 +35,11 @@ public class RequestMappingSymbolProvider implements SymbolProvider {
 	private static final Logger log = LoggerFactory.getLogger(RequestMappingSymbolProvider.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 
 		if (node.getParent() instanceof MethodDeclaration) {
 			try {
-				Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
+				Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(node.getStartPosition(), node.getLength()));
 				String[] path = RequestMappingIndexer.getPath(node, context);
 				String[] parentPath = RequestMappingIndexer.getParentPath(node, context);
 				String[] methods = RequestMappingIndexer.getMethod(node, context);
@@ -61,7 +60,7 @@ public class RequestMappingSymbolProvider implements SymbolProvider {
 						});
 
 			} catch (BadLocationException e) {
-				log.error("problem occured while scanning for request mapping symbols from " + doc.getUri(), e);
+				log.error("problem occured while scanning for request mapping symbols from " + context.getDoc().getUri(), e);
 			}
 		}
 	}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -46,10 +46,10 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 	private static final Logger log = LoggerFactory.getLogger(FeignClientSymbolProvider.class);
 
 	@Override
-	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
+	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 		try {
 			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration) {
-				Two<WorkspaceSymbol, Bean> result = createSymbol(node, annotationType, metaAnnotations, context, doc);
+				Two<WorkspaceSymbol, Bean> result = createSymbol(node, annotationType, metaAnnotations, context, context.getDoc());
 
 				WorkspaceSymbol symbol = result.getFirst();
 				Bean beanDefinition = result.getSecond();

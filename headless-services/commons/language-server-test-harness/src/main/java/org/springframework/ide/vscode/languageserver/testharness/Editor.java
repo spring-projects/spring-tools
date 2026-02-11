@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.languageserver.testharness;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -29,7 +28,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -109,6 +107,10 @@ public class Editor {
 
 	private static final String CURSOR = "<*>"; // used by our test harness
 	private static final String VS_CODE_CURSOR_MARKER = "{{}}"; //vscode uses this in edits to mark cursor position
+	
+	public static String markupEitherToString(Either<String, MarkupContent> content) {
+		return content.isLeft() ? content.getLeft() : content.getRight().getValue();
+	}
 
 	private static final Comparator<Diagnostic> PROBLEM_COMPARATOR = new Comparator<Diagnostic>() {
 		@Override
@@ -117,7 +119,7 @@ public class Editor {
 			if (diff != 0) return diff;
 			diff = compare(o1.getRange().getEnd(), o2.getRange().getEnd());
 			if (diff != 0) return diff;
-			return o1.getMessage().compareTo(o2.getMessage());
+			return markupEitherToString(o1.getMessage()).compareTo(markupEitherToString(o2.getMessage()));
 		}
 
 		private int compare(Position p1, Position p2) {
@@ -337,7 +339,7 @@ public class Editor {
 		return actualBadSnippet.equals(badSnippet)
 				&& snippetBefore.equals(doc.textBetween(start - snippetBefore.length(), start))
 				&& snippetAfter.equals(doc.textBetween(end, end+snippetAfter.length()))
-				&& problem.getMessage().contains(messageSnippet);
+				&& markupEitherToString(problem.getMessage()).contains(messageSnippet);
 	}
 
 	private String getText(Position start, int length) {

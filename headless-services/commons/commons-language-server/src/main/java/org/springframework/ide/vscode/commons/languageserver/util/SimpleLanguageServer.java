@@ -828,8 +828,8 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 						
 						List<QuickfixData<?>> fixes = problem.getQuickfixes();
 
-						// Copy original diagnsotic without the data field to avoid stackoverflow is hashCode() method call
-						Diagnostic refDiagnostic = new Diagnostic(d.getRange(), d.getMessage(), d.getSeverity(), d.getSource()); 
+						// Copy original diagnostic without the data field to avoid stackoverflow is hashCode() method call
+						Diagnostic refDiagnostic = new Diagnostic(d.getRange(), d.getMessage().getLeft(), d.getSeverity(), d.getSource()); 
 						if (CollectionUtil.hasElements(fixes)) {
 							d.setData(fixes.stream().map(fix -> {
 								CodeAction ca = new CodeAction();

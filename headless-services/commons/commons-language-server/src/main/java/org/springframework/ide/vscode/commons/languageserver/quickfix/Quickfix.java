@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,7 +18,9 @@ import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.CodeActionKind;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.springframework.ide.vscode.commons.util.text.DocumentUtil;
 
 import com.google.common.collect.ImmutableList;
@@ -49,7 +51,7 @@ public class Quickfix<T> {
 	private final String CODE_ACTION_CMD_ID;
 
 	private final Range range;
-	private final String diagMsg;
+	private final Either<String, MarkupContent> diagMsg;
 	private final QuickfixData<T> data;
 
 	public Quickfix(String CODE_ACTION_CMD_ID, Diagnostic diag, QuickfixData<T> data) {

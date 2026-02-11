@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 VMware Inc.
+ * Copyright (c) 2016, 2026 VMware Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -96,7 +96,6 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
@@ -518,7 +517,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 			params.getContext().getDiagnostics().forEach(d -> {
 				if (d.getData() instanceof JsonElement) {
 					Type type = new TypeToken<List<CodeAction>>(){}.getType();
-					List<CodeAction> codeActions = new GsonBuilder().create().fromJson((JsonElement)d.getData(), type);
+					List<CodeAction> codeActions = server.getGson().fromJson((JsonElement)d.getData(), type);
 					for (CodeAction ca : codeActions) {
 						listBuilder.add(Either.forRight(ca));
 					}

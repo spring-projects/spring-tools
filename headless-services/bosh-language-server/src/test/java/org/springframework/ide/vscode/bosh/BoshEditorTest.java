@@ -338,7 +338,7 @@ public class BoshEditorTest {
                 "x|are required"
         );
         Diagnostic missingSha1Problem = editor.assertProblem("url");
-        assertContains("'sha1' is recommended", missingSha1Problem.getMessage());
+        assertContains("'sha1' is recommended", missingSha1Problem.getMessage().getLeft());
         assertEquals(DiagnosticSeverity.Warning, missingSha1Problem.getSeverity());
     }
 

@@ -101,6 +101,7 @@ import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.ShowDocumentParams;
 import org.eclipse.lsp4j.ShowDocumentResult;
 import org.eclipse.lsp4j.ShowMessageRequestParams;
+import org.eclipse.lsp4j.SnippetTextEdit;
 import org.eclipse.lsp4j.TextDocumentClientCapabilities;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
 import org.eclipse.lsp4j.TextDocumentEdit;
@@ -919,9 +920,14 @@ public class LanguageServerHarness {
 					String content = docInfo == null ? IOUtil.toString(Files.newInputStream(path)) : docInfo.getText();
 					TextDocument workingDocument = new TextDocument(uri, docInfo == null ? (LanguageId) null : docInfo.getLanguageId(), 0, content);
 					DocumentEdits edits = new DocumentEdits(workingDocument, false);
-					for (TextEdit textEdit : docEdit.getEdits()) {
-						Range range = textEdit.getRange();
-						edits.replace(workingDocument.toOffset(range.getStart()), workingDocument.toOffset(range.getEnd()), textEdit.getNewText());
+					for (Either<TextEdit, SnippetTextEdit> e : docEdit.getEdits()) {
+						if (e.isLeft()) {
+							TextEdit textEdit = e.getLeft();
+							Range range = textEdit.getRange();
+							edits.replace(workingDocument.toOffset(range.getStart()), workingDocument.toOffset(range.getEnd()), textEdit.getNewText());
+						} else {
+							throw new UnsupportedOperationException("SnippetEdit not supported on the test harness yet");
+						}
 					}
 					edits.apply(workingDocument);
 					Editor editor = getOpenEditor(uri);

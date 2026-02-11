@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2024 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,6 +22,7 @@ import org.eclipse.lsp4j.DeleteFile;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ResourceOperation;
+import org.eclipse.lsp4j.SnippetTextEdit;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
@@ -80,26 +81,29 @@ public class ORDocUtils {
 			for (Either<TextDocumentEdit, ResourceOperation> change : changes) {
 				if (change.isLeft()) {
 					TextDocumentEdit textDocumentEdit = change.getLeft();
-					List<TextEdit> textEdits = textDocumentEdit.getEdits();
-					for (TextEdit textEdit : textEdits) {
-						Range range = textEdit.getRange();
-						Position start = range.getStart();
-						Position end = range.getEnd();
-						String newText = textEdit.getNewText();
+					List<Either<TextEdit,SnippetTextEdit>> lspEdits = textDocumentEdit.getEdits();
+					for (Either<TextEdit,SnippetTextEdit> edit : lspEdits) {
+						if (edit.isLeft()) {
+							TextEdit textEdit = edit.getLeft();
+							Range range = textEdit.getRange();
+							Position start = range.getStart();
+							Position end = range.getEnd();
+							String newText = textEdit.getNewText();
 
-						try {
-							int startOffset = doc.getLineOffset(start.getLine()) + start.getCharacter();
-							int endOffset = doc.getLineOffset(end.getLine()) + end.getCharacter();
+							try {
+								int startOffset = doc.getLineOffset(start.getLine()) + start.getCharacter();
+								int endOffset = doc.getLineOffset(end.getLine()) + end.getCharacter();
 
-							if (startOffset == endOffset) {
-								edits.insert(startOffset, newText);
-							} else if (newText.isEmpty()) {
-								edits.delete(startOffset, endOffset);
-							} else {
-								edits.replace(startOffset, endOffset, newText);
+								if (startOffset == endOffset) {
+									edits.insert(startOffset, newText);
+								} else if (newText.isEmpty()) {
+									edits.delete(startOffset, endOffset);
+								} else {
+									edits.replace(startOffset, endOffset, newText);
+								}
+							} catch (BadLocationException ex) {
+								log.error("Failed to apply text edit", ex);
 							}
-						} catch (BadLocationException ex) {
-							log.error("Failed to apply text edit", ex);
 						}
 					}
 				}
@@ -118,7 +122,7 @@ public class ORDocUtils {
 		if (!diff.isEmpty()) {
 			TextDocumentEdit edit = new TextDocumentEdit();
 			edit.setTextDocument(new VersionedTextDocumentIdentifier(doc.getUri(), doc.getVersion()));
-			List<TextEdit> textEdits = new ArrayList<>();
+			List<Either<TextEdit, SnippetTextEdit>> textEdits = new ArrayList<>();
 			edit.setEdits(textEdits);
 			for (Edit e : diff) {
 				try {
@@ -130,7 +134,7 @@ public class ORDocUtils {
 						textEdit.setRange(new Range(doc.toPosition(start), doc.toPosition(end)));
 						textEdit.setNewText("");
 						textEdit.setAnnotationId(changeAnnotationId);
-						textEdits.add(textEdit);
+						textEdits.add(Either.forLeft(textEdit));
 						break;
 					case INSERT:
 						textEdit = new AnnotatedTextEdit();
@@ -138,7 +142,7 @@ public class ORDocUtils {
 						textEdit.setRange(new Range(position, position));
 						textEdit.setNewText(newDoc.textBetween(newDoc.getLineOffset(e.getBeginB()), getStartOfLine(newDoc, e.getEndB())));
 						textEdit.setAnnotationId(changeAnnotationId);
-						textEdits.add(textEdit);
+						textEdits.add(Either.forLeft(textEdit));
 						break;
 					case REPLACE:
 						textEdit = new AnnotatedTextEdit();
@@ -147,7 +151,7 @@ public class ORDocUtils {
 						textEdit.setRange(new Range(doc.toPosition(start), doc.toPosition(end)));
 						textEdit.setNewText(newDoc.textBetween(newDoc.getLineOffset(e.getBeginB()), getStartOfLine(newDoc, e.getEndB())));
 						textEdit.setAnnotationId(changeAnnotationId);
-						textEdits.add(textEdit);
+						textEdits.add(Either.forLeft(textEdit));
 						break;
 					case EMPTY:
 						break;
@@ -175,7 +179,7 @@ public class ORDocUtils {
 			} catch (BadLocationException e) {
 				// ignore
 			}
-			edit.setEdits(List.of(te));
+			edit.setEdits(List.of(Either.forLeft(te)));
 			return Optional.of(edit);
 		}
 		return Optional.empty();
@@ -232,7 +236,7 @@ public class ORDocUtils {
 		TextDocumentEdit te = new TextDocumentEdit();
 		te.setTextDocument(new VersionedTextDocumentIdentifier(docUri, 0));
 		Position cursor = new Position(0,0);
-		te.setEdits(List.of(new AnnotatedTextEdit(new Range(cursor, cursor), newContent, changeAnnotationId)));
+		te.setEdits(List.of(Either.forLeft(new AnnotatedTextEdit(new Range(cursor, cursor), newContent, changeAnnotationId))));
 		we.getDocumentChanges().add(Either.forLeft(te));
 	}
 	

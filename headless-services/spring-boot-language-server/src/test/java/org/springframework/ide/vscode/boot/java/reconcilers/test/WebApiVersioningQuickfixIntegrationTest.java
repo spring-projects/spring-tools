@@ -33,6 +33,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
+import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
@@ -113,7 +114,7 @@ public class WebApiVersioningQuickfixIntegrationTest {
 		
 		Diagnostic problem = editor.assertProblem("version = \"1\"");
 				
-		assertTrue(problem.getMessage().contains("API versioning not configured"), 
+		assertTrue(Editor.markupEitherToString(problem.getMessage()).contains("API versioning not configured"), 
 				"Diagnostic should be about API versioning not configured");
 		
 		// Get code actions for this diagnostic
@@ -195,7 +196,7 @@ public class WebApiVersioningQuickfixIntegrationTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, controllerSource, controllerFile.toUri().toASCIIString());
 		
 		Diagnostic problem = editor.assertProblem("version = \"1\"");
-		assertTrue(problem.getMessage().contains("API versioning not configured"), 
+		assertTrue(Editor.markupEitherToString(problem.getMessage()).contains("API versioning not configured"), 
 				"Diagnostic should be about API versioning not configured");
 		
 		// Get code actions for this diagnostic
@@ -265,7 +266,7 @@ public class WebApiVersioningQuickfixIntegrationTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, controllerSource, controllerFile.toUri().toASCIIString());
 		
 		Diagnostic problem = editor.assertProblem("version = \"1\"");
-		assertTrue(problem.getMessage().contains("API versioning not configured"), 
+		assertEquals(Boot4JavaProblemType.API_VERSIONING_NOT_CONFIGURED, Boot4JavaProblemType.valueOf(problem.getCode().getLeft()),
 				"Diagnostic should be about API versioning not configured");
 		
 		// Get code actions for this diagnostic
@@ -330,7 +331,7 @@ public class WebApiVersioningQuickfixIntegrationTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, controllerSource, controllerFile.toUri().toASCIIString());
 		
 		Diagnostic problem = editor.assertProblem("version = \"1\"");
-		assertTrue(problem.getMessage().contains("API versioning not configured"), 
+		assertEquals(Boot4JavaProblemType.API_VERSIONING_NOT_CONFIGURED, Boot4JavaProblemType.valueOf(problem.getCode().getLeft()),
 				"Diagnostic should be about API versioning not configured");
 		
 		// Get code actions for this diagnostic

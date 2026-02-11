@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.beans;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -77,7 +79,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) {
 		try {
 			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration type) {
-				createSymbol(type, node, annotationType, metaAnnotations, context, doc);
+//				createSymbol(type, node, annotationType, metaAnnotations, context, doc);
 			}
 			else if (node != null && node.getParent() != null && node.getParent() instanceof RecordDeclaration record) {
 				createSymbol(record, node, annotationType, metaAnnotations, context, doc);
@@ -93,6 +95,77 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		}
 		catch (BadLocationException e) {
 			log.error("", e);
+		}
+	}
+
+	@Override
+	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
+		
+		boolean isComponment = annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.COMPONENT)
+				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAKARTA)
+				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAVAX);
+		
+		// check for event listener implementations on classes that are not annotated with component, but created via bean methods (for example)
+		if (isComponment) {
+			indexComponent(typeDeclaration, context, doc);
+		}
+		else {
+			indexEventListenerInterfaceImplementation(null, typeDeclaration, context, doc);
+			indexBeanRegistrarImplementation(null, typeDeclaration, context, doc);
+			indexBeanMethods(null, typeDeclaration, null, null, context, doc);
+			indexAotProcessors(typeDeclaration, context);
+		}
+	}
+	
+	private void indexComponent(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+		Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
+		
+		Annotation annotationToIndex = null;
+		ITypeBinding annotationToIndexType = null;
+		AnnotationHierarchies annotationHierarchies = null;
+		
+		for (Annotation annotation : annotations) {
+			IAnnotationBinding binding = annotation.resolveAnnotationBinding();
+			if (binding != null) {
+				annotationHierarchies = AnnotationHierarchies.get(annotation);
+				ITypeBinding annotationType = binding.getAnnotationType();
+				
+				if (annotationType != null &&
+						(Annotations.COMPONENT.equals(annotationType.getQualifiedName())
+								|| Annotations.NAMED_JAKARTA.equals(annotationType.getQualifiedName())
+								|| Annotations.NAMED_JAVAX.equals(annotationType.getQualifiedName()))) {
+					annotationToIndex = annotation;
+					annotationToIndexType = annotationType;
+					break;
+				}
+				else if (annotationHierarchies.isAnnotatedWith(binding, Annotations.COMPONENT)
+							|| annotationHierarchies.isAnnotatedWith(binding, Annotations.NAMED_JAKARTA)
+							|| annotationHierarchies.isAnnotatedWith(binding, Annotations.NAMED_JAVAX)) {
+						annotationToIndex = annotation;
+						annotationToIndexType = annotationType;
+				}
+			}
+		}
+		
+		if (annotationToIndex != null) {
+			Collection<ITypeBinding> metaAnnotations = new ArrayList<>();
+			for (Iterator<IAnnotationBinding> itr = annotationHierarchies.iterator(annotationToIndexType); itr.hasNext();) {
+				IAnnotationBinding ab = itr.next();
+				
+				if (annotationHierarchies.isAnnotatedWith(ab, Annotations.COMPONENT)
+						|| annotationHierarchies.isAnnotatedWith(ab, Annotations.NAMED_JAKARTA)
+						|| annotationHierarchies.isAnnotatedWith(ab, Annotations.NAMED_JAVAX)) {
+					metaAnnotations.add(ab.getAnnotationType());
+				}
+			}
+			
+			try {
+				createSymbol(typeDeclaration, annotationToIndex, annotationToIndexType, metaAnnotations, context, doc);
+			}
+			catch (BadLocationException e) {
+				log.error("", e);
+			}
 		}
 	}
 
@@ -330,21 +403,6 @@ public class ComponentSymbolProvider implements SymbolProvider {
 				return super.visit(methodInvocation);
 			}
 		});
-	}
-	
-	@Override
-	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
-		boolean isComponment = annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.COMPONENT);
-		
-		// check for event listener implementations on classes that are not annotated with component, but created via bean methods (for example)
-		if (!isComponment) {
-			indexEventListenerInterfaceImplementation(null, typeDeclaration, context, doc);
-			indexBeanRegistrarImplementation(null, typeDeclaration, context, doc);
-			indexBeanMethods(null, typeDeclaration, null, null, context, doc);
-			indexAotProcessors(typeDeclaration, context);
-		}
-		
 	}
 	
 	private void indexAotProcessors(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {

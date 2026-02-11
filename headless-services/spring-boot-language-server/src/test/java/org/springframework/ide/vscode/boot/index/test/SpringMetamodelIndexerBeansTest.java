@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -609,6 +609,19 @@ public class SpringMetamodelIndexerBeansTest {
 		assertEquals("MainAnnotation", mainElement.getTypeName());
 		assertFalse(mainElement.isClassDeclaration());
 		assertTrue(mainElement.isAnnotationDeclaration());
+	}
+	
+	@Test
+	void testDuplicatedAnnotationsOnClass() {
+		String docUri = directory.toPath().resolve("src/main/java/org/test/DuplicatedAnnotationClass.java").toUri().toString();
+		Bean[] beans = springIndex.getBeansOfDocument(docUri);
+		
+		assertEquals(1, beans.length);
+		Bean bean = beans[0];
+		
+		List<AnnotationMetadata> annotations = List.of(bean.getAnnotations());
+		assertTrue(annotations.stream().filter(annotation -> annotation.getAnnotationType().equals("org.springframework.stereotype.Controller")).findAny().isPresent());
+		assertTrue(annotations.stream().filter(annotation -> annotation.getAnnotationType().equals("org.springframework.stereotype.Component")).findAny().isPresent());
 	}
 	
 }

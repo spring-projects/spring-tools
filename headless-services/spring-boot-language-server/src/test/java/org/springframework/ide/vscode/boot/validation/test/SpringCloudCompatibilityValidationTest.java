@@ -68,7 +68,7 @@ public class SpringCloudCompatibilityValidationTest {
 		assertNotNull(diagnostics);
 		assertEquals(1, diagnostics.size());
 		Diagnostic diagnostic = diagnostics.iterator().next();
-		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage());
+		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage().getLeft());
 		assertEquals(DiagnosticSeverity.Warning, diagnostic.getSeverity());
 	}
 
@@ -83,7 +83,7 @@ public class SpringCloudCompatibilityValidationTest {
 		assertNotNull(diagnostics);
 		assertEquals(1, diagnostics.size());
 		Diagnostic diagnostic = diagnostics.iterator().next();
-		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage());
+		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage().getLeft());
 		assertEquals(DiagnosticSeverity.Warning, diagnostic.getSeverity());
 	}
 
@@ -98,7 +98,7 @@ public class SpringCloudCompatibilityValidationTest {
 		assertNotNull(diagnostics);
 		assertEquals(1, diagnostics.size());
 		Diagnostic diagnostic = diagnostics.iterator().next();
-		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage());
+		assertEquals("Spring Cloud 2025.0.x is not compatible with Spring Boot 4.0.1. Supported Spring Boot versions: 3.5.x", diagnostic.getMessage().getLeft());
 		assertEquals(DiagnosticSeverity.Warning, diagnostic.getSeverity());
 	}
 

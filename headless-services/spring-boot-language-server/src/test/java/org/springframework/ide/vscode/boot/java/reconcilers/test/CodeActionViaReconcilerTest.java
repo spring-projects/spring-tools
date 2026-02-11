@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -96,7 +96,7 @@ public class CodeActionViaReconcilerTest {
         Diagnostic problem = editor.assertProblem("public");
         assertNotNull(problem);
         assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getCode(), problem.getCode().getLeft());
-        assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getLabel(), problem.getMessage());
+        assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getLabel(), problem.getMessage().getLeft());
         
         codeActions = editor.getCodeActions(problem);
         assertEquals(3, codeActions.size());

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-	<include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
 
 	<!-- Custom console appender using System.err -->
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -13,7 +12,14 @@
 	</appender>
 
 	<root level="INFO">
-		<appender-ref ref="CONSOLE"/>
-		<appender-ref ref="FILE"/>
+		<appender-ref ref="CONSOLE" />
 	</root>
+
+	<!-- File appender is only created and attached when the file-logging profile is active -->
+	<springProfile name="file-logging">
+		<include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
+		<root level="INFO">
+			<appender-ref ref="FILE" />
+		</root>
+	</springProfile>
 </configuration>

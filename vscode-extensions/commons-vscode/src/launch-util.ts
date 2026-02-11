@@ -229,16 +229,21 @@ function prepareJvmArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
     ];
     const logfile = options.workspaceOptions.get("logfile");
     if (logfile) {
-        options.clientOptions.outputChannel.appendLine('Redirecting server logs to ' + logfile);
-        args.push('-Dlogging.file.name=' + logfile)
+        options.clientOptions.outputChannel.appendLine(`Redirecting server logs to ${logfile}`);
+        args.push(
+            '-Dspring.profiles.active=file-logging',
+            `-Dlogging.file.name=${logfile}`
+        );
     }
     const rootLogLevel = options.workspaceOptions.get("logLevel");
     if (rootLogLevel) {
         args.push(`-Dlogging.level.root=${rootLogLevel}`);
     }
     if (port && port > 0) {
-        args.push('-Dspring.lsp.client-port='+port);
-        args.push('-Dserver.port=' + port);
+        args.push(
+            `-Dspring.lsp.client-port=${port}`,
+            `-Dserver.port=${port}`
+        );
     }
     if (isCheckingJVM(options.workspaceOptions) && options.checkjvm) {
         options.checkjvm(context, jvm);

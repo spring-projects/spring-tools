@@ -144,6 +144,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 			IPreferenceStore preferenceStore = LanguageServerCommonsActivator.getInstance().getPreferenceStore();
 			String pathStr = preferenceStore.getString(info.preferenceKeyFileLog());
   			if (pathStr != null && !pathStr.isBlank()) {
+  				command.add("-Dspring.profiles.active=file-logging");
 				command.add("-Dlogging.file.name=" + pathStr);
 			}
 			command.add("-Dlogging.level.root=" + preferenceStore.getString(info.preferenceKeyLogLevel()));

@@ -47,6 +47,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.Boot3NotSupportedTyp
 import org.springframework.ide.vscode.boot.java.reconcilers.ClasspathResourceTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.EntityIdForRepoReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.FeignClientReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.FinalAutowiredFieldReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.HttpSecurityLambdaDslReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ImplicitWebAnnotationNamesReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ModulithTypeReferenceViolationReconciler;
@@ -97,6 +98,10 @@ public class JdtConfig {
 	
 	@Bean AutowiredFieldIntoConstructorParameterReconciler autowiredFieldIntoConstructorParameterReconciler(SimpleLanguageServer server) {
 		return new AutowiredFieldIntoConstructorParameterReconciler(server.getQuickfixRegistry());
+	}
+	
+	@Bean FinalAutowiredFieldReconciler finalAutowiredFieldReconciler() {
+		return new FinalAutowiredFieldReconciler();
 	}
 	
 	@Bean Boot3NotSupportedTypeReconciler boot3NotSupportedTypeReconciler() {

@@ -109,6 +109,12 @@
         "label": "Missing '@Validated' on component",
         "description": "Component class using bean validation annotations should be annotated with '@Validated'",
         "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "JAVA_FINAL_AUTOWIRED_FIELD",
+        "label": "`final` `@Autowired` field",
+        "description": "`@Autowired` field should not be `final`",
+        "defaultSeverity": "WARNING"
       }
     ]
   },

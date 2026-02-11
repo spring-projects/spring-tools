@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -77,7 +77,7 @@ public class SpringValidationBeanMethodNotPublicTest {
         Diagnostic diagnostic = diagnostics.get(0);
 
         assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getCode(), diagnostic.getCode().getLeft());
-        assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getLabel(), diagnostic.getMessage());
+        assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getLabel(), diagnostic.getMessage().getLeft());
 
         assertEquals(9, diagnostic.getRange().getStart().getLine());
         assertEquals(1, diagnostic.getRange().getStart().getCharacter());

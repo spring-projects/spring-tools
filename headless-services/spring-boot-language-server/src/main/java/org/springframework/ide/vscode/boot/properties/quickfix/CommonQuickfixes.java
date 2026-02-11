@@ -128,7 +128,7 @@ public class CommonQuickfixes {
 									TextDocument doc = new TextDocument(metadataFilePath.toUri().toASCIIString(), null);
 									doc.setText(content);
 									textEdit.setRange(doc.toRange(new Region(0, content.length())));
-									edit.setEdits(ImmutableList.of(textEdit));
+									edit.setEdits(ImmutableList.of(Either.forLeft(textEdit)));
 									we.getDocumentChanges().add(Either.forLeft(edit));
 								}
 
@@ -154,11 +154,6 @@ public class CommonQuickfixes {
 			}
 		}
 		return sourceFolders.get(0);
-	}
-
-	private void selectMetadataSourceFolder(List<File> sourceFolders) {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

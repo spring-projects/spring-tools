@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -58,7 +58,7 @@ abstract public class AbstractDiagnosticValidator implements VersionValidator {
 		
 		if (actions != null) {
 			for (CodeAction action : actions) {
-				Diagnostic refDiagnostic = new Diagnostic(diagnostic.getRange(), diagnostic.getMessage(),
+				Diagnostic refDiagnostic = new Diagnostic(diagnostic.getRange(), diagnostic.getMessage().getLeft(),
 						diagnostic.getSeverity(), diagnostic.getSource());
 				action.setDiagnostics(List.of(refDiagnostic));
 			}

@@ -152,7 +152,7 @@ class YamlToPropertiesCommand {
 		WorkspaceEdit we = new WorkspaceEdit(List.of(
 				Either.forLeft(new TextDocumentEdit(
 						new VersionedTextDocumentIdentifier(sourceUri, oldDoc.getVersion()),
-						List.of(new AnnotatedTextEdit(oldDoc.toRange(0, oldDoc.getLength()), newContent, changeAnnotationId))
+						List.of(Either.forLeft(new AnnotatedTextEdit(oldDoc.toRange(0, oldDoc.getLength()), newContent, changeAnnotationId)))
 				)),
 				Either.forRight(renameFile)
 		));
@@ -171,7 +171,7 @@ class YamlToPropertiesCommand {
 				Either.forRight(createFile),
 				Either.forLeft(new TextDocumentEdit(
 						new VersionedTextDocumentIdentifier(uri, null),
-						List.of(new AnnotatedTextEdit(new Range(new Position(0,0), new Position(0,0)), content, changeAnnotationId))
+						List.of(Either.forLeft(new AnnotatedTextEdit(new Range(new Position(0,0), new Position(0,0)), content, changeAnnotationId)))
 				))
 		));
 		we.setChangeAnnotations(Map.of(changeAnnotationId, changeAnnotation));

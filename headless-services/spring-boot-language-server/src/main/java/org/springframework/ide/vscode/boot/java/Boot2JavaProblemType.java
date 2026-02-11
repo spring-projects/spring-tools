@@ -37,7 +37,8 @@ public enum Boot2JavaProblemType implements ProblemType {
 	WEB_ANNOTATION_NAMES(HINT, "Web annotation names are unnecessary when it is the same as method parameter name", "Implicit web annotations names", List.of(DiagnosticTag.Unnecessary)),
 	VALUE_CLASSPATH_RESOURCE_TYPE(WARNING, "Type is not compatible with classpath resource injection", "Invalid type for classpath resource in `@Value`"),
 	WEB_CONFIGURER_CONFIGURATION(WARNING, "Class implementing a web configurer interface should be annotated with '@Configuration'", "Missing '@Configuration' on web configurer"),
-	MISSING_VALIDATED_ANNOTATION(WARNING, "Component class using bean validation annotations should be annotated with '@Validated'", "Missing '@Validated' on component");
+	MISSING_VALIDATED_ANNOTATION(WARNING, "Component class using bean validation annotations should be annotated with '@Validated'", "Missing '@Validated' on component"),
+	JAVA_FINAL_AUTOWIRED_FIELD(WARNING, "`@Autowired` field should not be `final`", "`final` `@Autowired` field");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

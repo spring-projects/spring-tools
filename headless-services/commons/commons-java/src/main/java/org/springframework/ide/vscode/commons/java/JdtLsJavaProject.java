@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.commons.java;
 
 import java.net.URI;
+import java.util.Map;
 
 import org.springframework.ide.vscode.commons.jdtls.JdtLsIndex;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
@@ -22,7 +23,11 @@ public class JdtLsJavaProject extends AbstractJavaProject {
 	final private ProjectObserver projectObserver;
 
 	public JdtLsJavaProject(STS4LanguageClient client, URI uri, IClasspath classpath, ProjectObserver projectObserver, IProjectBuild projectBuild) {
-		super(uri, classpath, projectBuild);
+		this(client, uri, classpath, projectObserver, projectBuild, null);
+	}
+
+	public JdtLsJavaProject(STS4LanguageClient client, URI uri, IClasspath classpath, ProjectObserver projectObserver, IProjectBuild projectBuild, Map<String, String> javaCoreOptions) {
+		super(uri, classpath, projectBuild, javaCoreOptions);
 		this.client = client;
 		this.projectObserver = projectObserver;
 	}

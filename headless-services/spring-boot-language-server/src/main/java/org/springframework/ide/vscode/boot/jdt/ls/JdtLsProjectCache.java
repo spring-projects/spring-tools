@@ -381,8 +381,8 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 							IProjectBuild projectBuild = from(event.projectBuild);
 							newProject = IS_JANDEX_INDEX
 									? new JavaProject(getFileObserver(), projectUri, classpath,
-											JdtLsProjectCache.this, projectBuild)
-									: new JdtLsJavaProject(server.getClient(), projectUri, classpath, JdtLsProjectCache.this, projectBuild);
+											JdtLsProjectCache.this, projectBuild, event.javaCoreOptions)
+									: new JdtLsJavaProject(server.getClient(), projectUri, classpath, JdtLsProjectCache.this, projectBuild, event.javaCoreOptions);
 							table.put(uri, newProject);
 						}
 						// Notify outside of the lock 

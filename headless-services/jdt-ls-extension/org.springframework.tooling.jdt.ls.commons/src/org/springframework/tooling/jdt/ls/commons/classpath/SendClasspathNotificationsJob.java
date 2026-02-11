@@ -13,6 +13,7 @@ package org.springframework.tooling.jdt.ls.commons.classpath;
 import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +144,15 @@ public class SendClasspathNotificationsJob extends Job {
 								logger.log(e);
 							}
 						}
-						bufferMessage(projectLoc, deleted, projectName, classpath, ClasspathUtil.createProjectBuild(jp, logger));
+						Map<String, String> javaCoreOptions = Collections.emptyMap();
+					if (!deleted) {
+						try {
+							javaCoreOptions = jp.getOptions(true);
+						} catch (Exception e) {
+							logger.log(e);
+						}
+					}
+					bufferMessage(projectLoc, deleted, projectName, classpath, ClasspathUtil.createProjectBuild(jp, logger), javaCoreOptions);
 					}
 				}
 				flush();
@@ -154,14 +163,14 @@ public class SendClasspathNotificationsJob extends Job {
 		}
 	}
 
-	protected void bufferMessage(URI projectLoc, boolean deleted, String projectName, Classpath classpath, ProjectBuild projectBuild) {
+	protected void bufferMessage(URI projectLoc, boolean deleted, String projectName, Classpath classpath, ProjectBuild projectBuild, Map<String, String> javaCoreOptions) {
 		if (buffer!=null) {
 			logger.debug("buffering callback "+callbackCommandId+" "+projectName+" "+deleted+" "+ classpath.getEntries().size());
-			buffer.add(ImmutableList.of(projectLoc.toASCIIString(), projectName, deleted, classpath, projectBuild));
+			buffer.add(ImmutableList.of(projectLoc.toASCIIString(), projectName, deleted, classpath, projectBuild, javaCoreOptions));
 		} else {
 			try {
 				logger.debug("executing callback "+callbackCommandId+" "+projectName+" "+deleted+" "+ classpath.getEntries().size());
-				Object r = conn.executeClientCommand(callbackCommandId, projectLoc.toASCIIString(), projectName, deleted, classpath, projectBuild);
+				Object r = conn.executeClientCommand(callbackCommandId, projectLoc.toASCIIString(), projectName, deleted, classpath, projectBuild, javaCoreOptions);
 				notificationsSentForProjects = ImmutableList.of(projectName);
 				logger.debug("executing callback "+callbackCommandId+" SUCCESS ["+r+"]");
 			} catch (Exception e) {

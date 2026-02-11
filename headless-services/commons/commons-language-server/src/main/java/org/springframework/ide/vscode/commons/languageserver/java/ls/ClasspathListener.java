@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.languageserver.java.ls;
 
+import java.util.Map;
+
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 
@@ -24,14 +26,20 @@ public interface ClasspathListener {
 		public final boolean deleted;
 		public final Classpath classpath;
 		public final ProjectBuild projectBuild;
+		public final Map<String, String> javaCoreOptions;
 
 		public Event(String projectUri, String name, boolean deleted, Classpath classpath, ProjectBuild projectBuild) {
+			this(projectUri, name, deleted, classpath, projectBuild, null);
+		}
+
+		public Event(String projectUri, String name, boolean deleted, Classpath classpath, ProjectBuild projectBuild, Map<String, String> javaCoreOptions) {
 			super();
 			this.projectUri = projectUri;
 			this.name = name;
 			this.deleted = deleted;
 			this.classpath = classpath;
 			this.projectBuild = projectBuild;
+			this.javaCoreOptions = javaCoreOptions;
 		}
 
 		@Override

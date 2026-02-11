@@ -131,7 +131,7 @@ public class BeanCompletionProvider implements CompletionProvider {
 						for (int i = 0; i < Integer.MAX_VALUE && fieldNames.contains(fieldName); i++, fieldName = "%s_%d".formatted(bean.getName(), i)) {
 							// nothing
 						}
-						BeanCompletionProposal proposal = new BeanCompletionProposal(node, offset, doc, bean.getName(),
+						BeanCompletionProposal proposal = new BeanCompletionProposal(node, offset, doc, project, bean.getName(),
 								bean.getType(), fieldName, className);
 
 						if (proposal.getScore() > 0) {

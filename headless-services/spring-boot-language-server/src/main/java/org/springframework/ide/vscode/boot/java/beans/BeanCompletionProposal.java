@@ -25,7 +25,6 @@ import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.ThisExpression;
-import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionItemLabelDetails;
 import org.eclipse.text.edits.DeleteEdit;
@@ -36,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCompletionEngine;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.InjectBeanConstructorRefactoring;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposalWithScore;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
@@ -54,6 +54,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	private static final String SHORT_DESCRIPTION = " - inject bean";
 
 	private IDocument doc;
+	private IJavaProject project;
 	private String beanId;
 	private String beanType;
 	private String fieldName;
@@ -65,11 +66,12 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	private String prefix;
 	private DocumentEdits edits;
 
-	public BeanCompletionProposal(ASTNode node, int offset, IDocument doc, String beanId, String beanType,
+	public BeanCompletionProposal(ASTNode node, int offset, IDocument doc, IJavaProject project, String beanId, String beanType,
 			String fieldName, String className) {
 		this.node = node;
 		this.offset = offset;
 		this.doc = doc;
+		this.project = project;
 		this.beanId = beanId;
 		this.beanType = beanType;
 		this.fieldName = fieldName;
@@ -230,9 +232,8 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		// the assignment statement, so we tell the refactoring to skip it.
 		boolean cursorInsideConstructor = isInsideConstructor(node);
 
-		Map<String, String> formatterOptions = JavaCore.getOptions();
-		formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.TAB);
-		formatterOptions.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, "4");
+		Map<String, String> javaCoreOptions = project.getJavaCoreOptions();
+		Map<String, String> formatterOptions = javaCoreOptions.isEmpty() ? JavaCore.getOptions() : javaCoreOptions;
 
 		CompilationUnit cu = (CompilationUnit) node.getRoot();
 

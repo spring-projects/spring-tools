@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.commons.languageserver.java.ls;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -32,6 +33,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
@@ -52,7 +54,7 @@ public class ClasspathListenerManager {
 	}
 
 	public Mono<Disposable> addClasspathListener(ClasspathListener classpathListener) {
-		String callbackCommandId = "sts4.classpath." + RandomStringUtils.randomAlphabetic(8);
+		String callbackCommandId = "sts4.classpath." + RandomStringUtils.secure().nextAlphabetic(8);
 
 		// 1. register callback command handler in SimpleLanguageServer
 		Disposable unregisterCommand = server.onCommand(callbackCommandId, (ExecuteCommandParams callbackParams) -> async.invoke(() -> {
@@ -81,7 +83,13 @@ public class ClasspathListenerManager {
 						log.debug("projectBuild = {}", projectBuild);
 					}
 
-					classpathListener.changed(new ClasspathListener.Event(projectUri, name, deleted, classpath, projectBuild));
+					Map<String, String> javaCoreOptions = null;
+					if (event.size() > 5) {
+						javaCoreOptions = gson.fromJson((JsonElement)event.get(5), new TypeToken<Map<String, String>>(){}.getType());
+						log.debug("javaCoreOptions size = {}", javaCoreOptions != null ? javaCoreOptions.size() : 0);
+					}
+
+					classpathListener.changed(new ClasspathListener.Event(projectUri, name, deleted, classpath, projectBuild, javaCoreOptions));
 				}
 			} else {
 				//Still support non-batched events for backwards compatibility with clients
@@ -102,8 +110,14 @@ public class ClasspathListenerManager {
 					projectBuild = gson.fromJson((JsonElement)args.get(4), ProjectBuild.class);
 					log.debug("projectBuild = {}", projectBuild);
 				}
+
+				Map<String, String> javaCoreOptions = null;
+				if (args.size() > 5) {
+					javaCoreOptions = gson.fromJson((JsonElement)args.get(5), new TypeToken<Map<String, String>>(){}.getType());
+					log.debug("javaCoreOptions size = {}", javaCoreOptions != null ? javaCoreOptions.size() : 0);
+				}
 				
-				classpathListener.changed(new ClasspathListener.Event(projectUri, name, deleted, classpath, projectBuild));
+				classpathListener.changed(new ClasspathListener.Event(projectUri, name, deleted, classpath, projectBuild, javaCoreOptions));
 			}
 			return "done";
 		}));

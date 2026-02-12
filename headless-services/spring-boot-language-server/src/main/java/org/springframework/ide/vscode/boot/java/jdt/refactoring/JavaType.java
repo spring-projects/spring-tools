@@ -30,9 +30,11 @@ import org.eclipse.jdt.core.dom.Type;
  *   <li>{@link ArrayTypeName} — an array type ({@code String[]}, {@code int[][]}, etc.)</li>
  * </ul>
  * <p>
- * Instances are created via the {@link #parse(String)} factory method, which accepts
- * fully qualified type strings using {@code $} for inner classes
- * (as returned by {@code Class.getName()}).
+	 * Instances are created via the {@link #parse(String)} factory method, which accepts
+	 * fully qualified type strings using either {@code $} or {@code .} for inner classes.
+	 * When {@code .} is used, the parser applies a heuristic based on Java naming conventions
+	 * (package segments are lowercase, class names start with uppercase) to detect inner class
+	 * boundaries.
  *
  * @author Alex Boyko
  */
@@ -76,7 +78,12 @@ public interface JavaType {
 	/**
 	 * Parse a type string into a {@link JavaType} instance.
 	 * <p>
-	 * Inner classes are denoted with {@code $} (e.g. {@code "java.util.Map$Entry"}).
+	 * Inner classes may be denoted with {@code $} (e.g. {@code "java.util.Map$Entry"})
+	 * or with {@code .} (e.g. {@code "java.util.Map.Entry"}). When {@code .} is used,
+	 * the parser applies a heuristic based on Java naming conventions to detect inner
+	 * class boundaries: consecutive {@code .}-separated segments that both start with
+	 * an uppercase letter are treated as an inner class boundary.
+	 * <p>
 	 * Supports simple types, inner classes, parameterized types, wildcards,
 	 * primitive types, and array types.
 	 * <p>
@@ -86,7 +93,7 @@ public interface JavaType {
 	 * Examples of accepted input:
 	 * <ul>
 	 *   <li>{@code "java.util.Map"}</li>
-	 *   <li>{@code "java.util.Map$Entry"}</li>
+	 *   <li>{@code "java.util.Map$Entry"} or {@code "java.util.Map.Entry"}</li>
 	 *   <li>{@code "java.util.Map<java.lang.String, java.util.List<java.lang.Integer>>"}</li>
 	 *   <li>{@code "java.util.List<? extends com.example.Foo>"}</li>
 	 *   <li>{@code "int"}, {@code "boolean"}</li>
@@ -94,11 +101,12 @@ public interface JavaType {
 	 *   <li>{@code "java.util.List<java.lang.String>[]"}</li>
 	 * </ul>
 	 *
-	 * @param typeString the type string (using {@code $} for inner classes)
+	 * @param typeString the type string
 	 * @return the parsed {@link JavaType}
 	 */
 	static JavaType parse(String typeString) {
-		String sig = Signature.createTypeSignature(typeString.trim(), true);
+		String normalized = NormalizeUtils.normalizeInnerClasses(typeString.trim());
+		String sig = Signature.createTypeSignature(normalized, true);
 		return parseFromSignature(sig);
 	}
 

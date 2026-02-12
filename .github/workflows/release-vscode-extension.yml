@@ -59,7 +59,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238   # 6.2.0
         with:
           node-version: 22
       - name: Build .VSIX file

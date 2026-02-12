@@ -26,6 +26,12 @@ https://github.com/spring-projects/spring-tools4/wiki
 Please ask general questions on StackOverflow and tag them with `spring-tools`:
 https://stackoverflow.com/questions/ask?tags=spring-tools
 
+## News and updates
+
+You can also find the project here (for everything related to the Spring Toos):
+- on X: https://x.com/springtools4
+- on Bluesky: https://bsky.app/profile/springtools.bsky.social
+
 ## Raise an issue
 
 Please raise issues by creating a new GitHub issue at:

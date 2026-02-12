@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
@@ -40,6 +41,7 @@ import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -682,8 +684,39 @@ public class ASTUtils {
 	
 	public static AnnotationMetadata[] getAnnotationsMetadata(Collection<Annotation> annotations, TextDocument doc) {
 		return annotations.stream()
+				.flatMap(annotation -> collectAllEmbeddedAnnotations(annotation))
 				.map(annotation -> createAnnotationMetadataFrom(annotation, doc))
 				.toArray(AnnotationMetadata[]::new);
+	}
+	
+	/**
+	 * finds and collects all embedded annotations, so that they are all analyzed individually, e.g.
+	 * @LoadBalancerClients({@LoadBalancerClient(value = "stores", configuration = StoresLoadBalancerClientConfiguration.class)})
+	 */
+	private static Stream<Annotation> collectAllEmbeddedAnnotations(Annotation annotation) {
+		List<Annotation> allAnnotations = new ArrayList<>();
+		
+		annotation.accept(new ASTVisitor() {
+			@Override
+			public boolean visit(SingleMemberAnnotation node) {
+				allAnnotations.add(node);
+				return super.visit(node);
+			}
+			
+			@Override
+			public boolean visit(MarkerAnnotation node) {
+				allAnnotations.add(node);
+				return super.visit(node);
+			}
+			
+			@Override
+			public boolean visit(NormalAnnotation node) {
+				allAnnotations.add(node);
+				return super.visit(node);
+			}
+		});
+		
+		return allAnnotations.stream();
 	}
 	
 	private static AnnotationMetadata createAnnotationMetadataFrom(Annotation annotation, TextDocument doc) {

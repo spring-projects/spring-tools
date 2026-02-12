@@ -41,7 +41,7 @@ jobs:
           echo "package_name=$package_name" >> $GITHUB_OUTPUT
       - name: Create tag
         if: ${{ inputs.tag }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             github.rest.git.createRef({

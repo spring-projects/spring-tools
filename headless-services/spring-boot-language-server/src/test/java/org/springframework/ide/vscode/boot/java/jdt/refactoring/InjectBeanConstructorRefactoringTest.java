@@ -318,6 +318,82 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
+	@Test
+	void noImportWhenWildcardImportCoversPackage() throws Exception {
+		String source = """
+				package com.example;
+				
+				import java.util.*;
+				
+				public class MyService {
+				
+					public void doWork() {
+					}
+				}
+				""";
+
+		String result = applyRefactoring(source,
+				"java.util.List<java.lang.String>", "names",
+				"com.example.MyService", true);
+
+		assertEquals("""
+				package com.example;
+				
+				import java.util.*;
+				
+				public class MyService {
+				
+					private final List<String> names;
+				
+					MyService(List<String> names) {
+						this.names = names;
+					}
+				
+					public void doWork() {
+					}
+				}
+				""", result);
+	}
+
+	@Test
+	void wildcardImportDoesNotCoverDifferentPackage() throws Exception {
+		String source = """
+				package com.example;
+				
+				import java.util.*;
+				
+				public class MyService {
+				
+					public void doWork() {
+					}
+				}
+				""";
+
+		String result = applyRefactoring(source,
+				"java.util.concurrent.ConcurrentMap<java.lang.String, java.lang.Integer>",
+				"cache",
+				"com.example.MyService", true);
+
+		assertEquals("""
+				package com.example;
+				
+				import java.util.*;
+				import java.util.concurrent.ConcurrentMap;
+				
+				public class MyService {
+				
+					private final ConcurrentMap<String, Integer> cache;
+				
+					MyService(ConcurrentMap<String, Integer> cache) {
+						this.cache = cache;
+					}
+				
+					public void doWork() {
+					}
+				}
+				""", result);
+	}
+
 	// ========== Inner classes ==========
 
 	@Test

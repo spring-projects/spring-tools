@@ -22,7 +22,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
@@ -167,11 +166,11 @@ public class InjectBeanConstructorRefactoring {
 			}
 		}
 
-		// Step 3: Add imports for all referenced class types (sorted for correct insertion order)
+		// Step 3: Add imports for all referenced class types (sorted so insertions are in order)
 		List<ClassName> classNames = new ArrayList<>(beanType.getAllClassNames());
 		classNames.sort((a, b) -> a.getFullyQualifiedName().compareTo(b.getFullyQualifiedName()));
 		for (ClassName cn : classNames) {
-			addImport(rewrite, ast, cu, cn);
+			JdtRefactorUtils.addImport(rewrite, ast, cu, cn);
 		}
 
 		// Generate Eclipse TextEdit
@@ -349,61 +348,6 @@ public class InjectBeanConstructorRefactoring {
 
 		ListRewrite bodyRewrite = rewrite.getListRewrite(constructor.getBody(), Block.STATEMENTS_PROPERTY);
 		bodyRewrite.insertLast(assignStmt, null);
-	}
-
-	// ========== Import ==========
-
-	private static void addImport(ASTRewrite rewrite, AST ast, CompilationUnit cu, ClassName className) {
-		String packageName = className.getPackageName();
-
-		// Don't add import for java.lang types
-		if ("java.lang".equals(packageName)) {
-			return;
-		}
-
-		// Don't add import for default package types
-		if (packageName.isEmpty()) {
-			return;
-		}
-
-		// Don't add import if type is in the same package
-		if (cu.getPackage() != null) {
-			String cuPackage = cu.getPackage().getName().getFullyQualifiedName();
-			if (cuPackage.equals(packageName)) {
-				return;
-			}
-		}
-
-		String fullyQualifiedName = className.getFullyQualifiedName();
-
-		// Check if import already exists
-		for (Object importObj : cu.imports()) {
-			ImportDeclaration imp = (ImportDeclaration) importObj;
-			if (imp.getName().getFullyQualifiedName().equals(fullyQualifiedName)) {
-				return;
-			}
-		}
-
-		ImportDeclaration importDecl = ast.newImportDeclaration();
-		importDecl.setName(ast.newName(fullyQualifiedName));
-
-		ListRewrite importsRewrite = rewrite.getListRewrite(cu, CompilationUnit.IMPORTS_PROPERTY);
-
-		// Insert in sorted order
-		ImportDeclaration insertBefore = null;
-		for (Object importObj : cu.imports()) {
-			ImportDeclaration existing = (ImportDeclaration) importObj;
-			if (existing.getName().getFullyQualifiedName().compareTo(fullyQualifiedName) > 0) {
-				insertBefore = existing;
-				break;
-			}
-		}
-
-		if (insertBefore != null) {
-			importsRewrite.insertBefore(importDecl, insertBefore, null);
-		} else {
-			importsRewrite.insertLast(importDecl, null);
-		}
 	}
 
 }

@@ -24,7 +24,7 @@ import org.eclipse.jdt.core.dom.Type;
  *
  * @author Alex Boyko
  */
-class ArrayTypeName implements JavaType {
+class ArrayType implements JavaType {
 
 	private final JavaType componentType;
 	private final int dimensions;
@@ -35,7 +35,7 @@ class ArrayTypeName implements JavaType {
 	 * @param componentType the component (element) type
 	 * @param dimensions    the number of array dimensions (must be &gt;= 1)
 	 */
-	public ArrayTypeName(JavaType componentType, int dimensions) {
+	public ArrayType(JavaType componentType, int dimensions) {
 		this.componentType = componentType;
 		this.dimensions = dimensions;
 	}
@@ -60,7 +60,7 @@ class ArrayTypeName implements JavaType {
 	}
 
 	@Override
-	public List<ClassName> getAllClassNames() {
+	public List<ClassType> getAllClassNames() {
 		return componentType.getAllClassNames();
 	}
 
@@ -78,7 +78,7 @@ class ArrayTypeName implements JavaType {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		ArrayTypeName that = (ArrayTypeName) o;
+		ArrayType that = (ArrayType) o;
 		return dimensions == that.dimensions && componentType.equals(that.componentType);
 	}
 

@@ -16,16 +16,15 @@ import java.util.Objects;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.Type;
-import org.eclipse.jdt.core.dom.WildcardType;
 
 /**
  * Represents a wildcard type: {@code ?}, {@code ? extends Foo}, or {@code ? super Bar}.
  * <p>
- * Wildcards only appear as type arguments inside a {@link ParameterizedClassName}.
+ * Wildcards only appear as type arguments inside a {@link ParameterizedClassType}.
  *
  * @author Alex Boyko
  */
-class WildcardName implements JavaType {
+class WildcardType implements JavaType {
 
 	private final JavaType bound;
 	private final boolean upperBound;
@@ -37,7 +36,7 @@ class WildcardName implements JavaType {
 	 * @param upperBound {@code true} for {@code ? extends X}, {@code false} for {@code ? super X}.
 	 *                   Ignored if {@code bound} is {@code null}.
 	 */
-	public WildcardName(JavaType bound, boolean upperBound) {
+	public WildcardType(JavaType bound, boolean upperBound) {
 		this.bound = bound;
 		this.upperBound = upperBound;
 	}
@@ -66,7 +65,7 @@ class WildcardName implements JavaType {
 	}
 
 	@Override
-	public List<ClassName> getAllClassNames() {
+	public List<ClassType> getAllClassNames() {
 		if (bound != null) {
 			return bound.getAllClassNames();
 		}
@@ -75,7 +74,7 @@ class WildcardName implements JavaType {
 
 	@Override
 	public Type toType(AST ast) {
-		WildcardType wildcard = ast.newWildcardType();
+		org.eclipse.jdt.core.dom.WildcardType wildcard = ast.newWildcardType();
 		if (bound != null) {
 			wildcard.setBound(bound.toType(ast), upperBound);
 		}
@@ -94,7 +93,7 @@ class WildcardName implements JavaType {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		WildcardName that = (WildcardName) o;
+		WildcardType that = (WildcardType) o;
 		return upperBound == that.upperBound && Objects.equals(bound, that.bound);
 	}
 

@@ -28,7 +28,7 @@ public final class JdtRefactorUtils {
 	}
 
 	/**
-	 * Add an import for the given {@link ClassName} to the compilation unit, unless
+	 * Add an import for the given {@link ClassType} to the compilation unit, unless
 	 * the import is unnecessary.
 	 * <p>
 	 * An import is considered unnecessary when any of the following is true:
@@ -48,7 +48,7 @@ public final class JdtRefactorUtils {
 	 * @param cu        the compilation unit
 	 * @param className the class name to import
 	 */
-	public static void addImport(ASTRewrite rewrite, AST ast, CompilationUnit cu, ClassName className) {
+	public static void addImport(ASTRewrite rewrite, AST ast, CompilationUnit cu, ClassType className) {
 		String packageName = className.getPackageName();
 
 		// Don't add import for java.lang types

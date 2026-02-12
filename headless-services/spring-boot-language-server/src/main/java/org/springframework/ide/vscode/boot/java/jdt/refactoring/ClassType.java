@@ -28,16 +28,16 @@ import org.eclipse.jdt.core.dom.Type;
  * Two constructor forms:
  * <ul>
  *   <li>{@link #ClassName(String, String)} — top-level class with explicit package</li>
- *   <li>{@link #ClassName(ClassName, String)} — inner class whose package is implied by the declaring class</li>
+ *   <li>{@link #ClassName(ClassType, String)} — inner class whose package is implied by the declaring class</li>
  * </ul>
  *
  * @author Alex Boyko
  */
-class ClassName implements FullyQualifiedName {
+class ClassType implements FullyQualifiedType {
 
 	private final String packageName;
 	private final String simpleName;
-	private final ClassName declaringClass;
+	private final ClassType declaringClass;
 
 	/**
 	 * Create a top-level class name with an explicit package.
@@ -45,7 +45,7 @@ class ClassName implements FullyQualifiedName {
 	 * @param packageName the package name (e.g. {@code "java.util"}), empty string for default package
 	 * @param simpleName  the simple class name (e.g. {@code "Map"})
 	 */
-	public ClassName(String packageName, String simpleName) {
+	public ClassType(String packageName, String simpleName) {
 		this.packageName = packageName != null ? packageName : "";
 		this.simpleName = simpleName;
 		this.declaringClass = null;
@@ -57,7 +57,7 @@ class ClassName implements FullyQualifiedName {
 	 * @param declaringClass the declaring (outer) class (must not be {@code null})
 	 * @param simpleName     the simple class name (e.g. {@code "Entry"})
 	 */
-	public ClassName(ClassName declaringClass, String simpleName) {
+	public ClassType(ClassType declaringClass, String simpleName) {
 		this.declaringClass = declaringClass;
 		this.simpleName = simpleName;
 		this.packageName = declaringClass.getPackageName();
@@ -79,7 +79,7 @@ class ClassName implements FullyQualifiedName {
 	/**
 	 * Returns the declaring (outer) class, or {@code null} for top-level types.
 	 */
-	public ClassName getDeclaringClass() {
+	public ClassType getDeclaringClass() {
 		return declaringClass;
 	}
 
@@ -112,7 +112,7 @@ class ClassName implements FullyQualifiedName {
 	}
 
 	@Override
-	public List<ClassName> getAllClassNames() {
+	public List<ClassType> getAllClassNames() {
 		return List.of(this);
 	}
 
@@ -133,7 +133,7 @@ class ClassName implements FullyQualifiedName {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		ClassName that = (ClassName) o;
+		ClassType that = (ClassType) o;
 		return simpleName.equals(that.simpleName)
 				&& packageName.equals(that.packageName)
 				&& Objects.equals(declaringClass, that.declaringClass);

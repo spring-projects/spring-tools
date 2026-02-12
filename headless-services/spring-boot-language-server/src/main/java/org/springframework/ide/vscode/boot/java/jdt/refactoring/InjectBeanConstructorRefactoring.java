@@ -167,9 +167,9 @@ public class InjectBeanConstructorRefactoring {
 		}
 
 		// Step 3: Add imports for all referenced class types (sorted so insertions are in order)
-		List<ClassName> classNames = new ArrayList<>(beanType.getAllClassNames());
+		List<ClassType> classNames = new ArrayList<>(beanType.getAllClassNames());
 		classNames.sort((a, b) -> a.getFullyQualifiedName().compareTo(b.getFullyQualifiedName()));
-		for (ClassName cn : classNames) {
+		for (ClassType cn : classNames) {
 			JdtRefactorUtils.addImport(rewrite, ast, cu, cn);
 		}
 

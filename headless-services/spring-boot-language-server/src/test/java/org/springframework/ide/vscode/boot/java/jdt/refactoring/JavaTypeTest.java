@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for the {@link FullyQualifiedName} type model:
- * {@link ClassName}, {@link ParameterizedClassName}, and {@link WildcardName}.
+ * Unit tests for the {@link FullyQualifiedType} type model:
+ * {@link ClassType}, {@link ParameterizedClassType}, and {@link WildcardType}.
  * <p>
  * These tests verify parsing from source-style type strings, structural decomposition,
  * field type name generation, and import collection.
@@ -36,8 +36,8 @@ class JavaTypeTest {
 	void parseSimpleTopLevelClass() {
 		JavaType jt = JavaType.parse("com.example.MyService");
 
-		assertInstanceOf(ClassName.class, jt);
-		ClassName cn = (ClassName) jt;
+		assertInstanceOf(ClassType.class, jt);
+		ClassType cn = (ClassType) jt;
 
 		assertEquals("com.example", cn.getPackageName());
 		assertEquals("MyService", cn.getSimpleName());
@@ -51,8 +51,8 @@ class JavaTypeTest {
 	void parseJavaLangType() {
 		JavaType jt = JavaType.parse("java.lang.String");
 
-		assertInstanceOf(ClassName.class, jt);
-		ClassName cn = (ClassName) jt;
+		assertInstanceOf(ClassType.class, jt);
+		ClassType cn = (ClassType) jt;
 
 		assertEquals("java.lang", cn.getPackageName());
 		assertEquals("String", cn.getSimpleName());
@@ -66,8 +66,8 @@ class JavaTypeTest {
 	void parseUnqualifiedName() {
 		JavaType jt = JavaType.parse("MyService");
 
-		assertInstanceOf(ClassName.class, jt);
-		ClassName cn = (ClassName) jt;
+		assertInstanceOf(ClassType.class, jt);
+		ClassType cn = (ClassType) jt;
 
 		assertEquals("MyService", cn.getSimpleName());
 		assertEquals("MyService", cn.getFieldTypeName());
@@ -81,8 +81,8 @@ class JavaTypeTest {
 	void parseInnerClassType() {
 		JavaType jt = JavaType.parse("java.util.Map$Entry");
 
-		assertInstanceOf(ClassName.class, jt);
-		ClassName cn = (ClassName) jt;
+		assertInstanceOf(ClassType.class, jt);
+		ClassType cn = (ClassType) jt;
 
 		assertEquals("java.util", cn.getPackageName());
 		assertEquals("Entry", cn.getSimpleName());
@@ -97,8 +97,8 @@ class JavaTypeTest {
 	void parseDeepInnerClassType() {
 		JavaType jt = JavaType.parse("com.example.Outer$Middle$Inner");
 
-		assertInstanceOf(ClassName.class, jt);
-		ClassName cn = (ClassName) jt;
+		assertInstanceOf(ClassType.class, jt);
+		ClassType cn = (ClassType) jt;
 
 		assertEquals("com.example", cn.getPackageName());
 		assertEquals("Inner", cn.getSimpleName());
@@ -106,11 +106,11 @@ class JavaTypeTest {
 		assertEquals("Outer.Middle.Inner", jt.getDisplayName());
 
 		// Check declaring class chain
-		ClassName middle = cn.getDeclaringClass();
+		ClassType middle = cn.getDeclaringClass();
 		assertNotNull(middle);
 		assertEquals("Middle", middle.getSimpleName());
 
-		ClassName outer = middle.getDeclaringClass();
+		ClassType outer = middle.getDeclaringClass();
 		assertNotNull(outer);
 		assertEquals("Outer", outer.getSimpleName());
 		assertNull(outer.getDeclaringClass());
@@ -121,7 +121,7 @@ class JavaTypeTest {
 	@Test
 	void allClassNamesForSimpleType() {
 		JavaType jt = JavaType.parse("com.example.MyService");
-		List<ClassName> names = jt.getAllClassNames();
+		List<ClassType> names = jt.getAllClassNames();
 
 		assertEquals(1, names.size());
 		assertEquals("com.example.MyService", names.get(0).getFullyQualifiedName());
@@ -130,7 +130,7 @@ class JavaTypeTest {
 	@Test
 	void allClassNamesForInnerType() {
 		JavaType jt = JavaType.parse("java.util.Map$Entry");
-		List<ClassName> names = jt.getAllClassNames();
+		List<ClassType> names = jt.getAllClassNames();
 
 		assertEquals(1, names.size());
 		assertEquals("java.util.Map.Entry", names.get(0).getFullyQualifiedName());
@@ -142,8 +142,8 @@ class JavaTypeTest {
 	void parseSimpleParameterizedType() {
 		JavaType jt = JavaType.parse("java.util.List<java.lang.String>");
 
-		assertInstanceOf(ParameterizedClassName.class, jt);
-		ParameterizedClassName pcn = (ParameterizedClassName) jt;
+		assertInstanceOf(ParameterizedClassType.class, jt);
+		ParameterizedClassType pcn = (ParameterizedClassType) jt;
 
 		assertEquals("java.util", pcn.getErasure().getPackageName());
 		assertEquals("List", pcn.getSimpleName());
@@ -151,8 +151,8 @@ class JavaTypeTest {
 
 		assertEquals(1, pcn.getTypeArguments().size());
 		JavaType arg = pcn.getTypeArguments().get(0);
-		assertInstanceOf(ClassName.class, arg);
-		assertEquals("java.lang.String", ((FullyQualifiedName) arg).getFullyQualifiedName());
+		assertInstanceOf(ClassType.class, arg);
+		assertEquals("java.lang.String", ((FullyQualifiedType) arg).getFullyQualifiedName());
 		assertEquals("List<String>", jt.getDisplayName());
 	}
 
@@ -160,21 +160,21 @@ class JavaTypeTest {
 	void parseMapType() {
 		JavaType jt = JavaType.parse("java.util.Map<java.lang.String, java.lang.Integer>");
 
-		assertInstanceOf(ParameterizedClassName.class, jt);
-		ParameterizedClassName pcn = (ParameterizedClassName) jt;
+		assertInstanceOf(ParameterizedClassType.class, jt);
+		ParameterizedClassType pcn = (ParameterizedClassType) jt;
 
 		assertEquals("java.util", pcn.getErasure().getPackageName());
 		assertEquals("Map", pcn.getSimpleName());
 		assertEquals(2, pcn.getTypeArguments().size());
-		assertEquals("java.lang.String", ((FullyQualifiedName) pcn.getTypeArguments().get(0)).getFullyQualifiedName());
-		assertEquals("java.lang.Integer", ((FullyQualifiedName) pcn.getTypeArguments().get(1)).getFullyQualifiedName());
+		assertEquals("java.lang.String", ((FullyQualifiedType) pcn.getTypeArguments().get(0)).getFullyQualifiedName());
+		assertEquals("java.lang.Integer", ((FullyQualifiedType) pcn.getTypeArguments().get(1)).getFullyQualifiedName());
 		assertEquals("Map<String, Integer>", jt.getDisplayName());
 	}
 
 	@Test
 	void parameterizedTypeFullyQualifiedNameIncludesArgs() {
 		JavaType jt = JavaType.parse("java.util.Map<java.lang.String, java.lang.Integer>");
-		assertEquals("java.util.Map<java.lang.String, java.lang.Integer>", ((FullyQualifiedName) jt).getFullyQualifiedName());
+		assertEquals("java.util.Map<java.lang.String, java.lang.Integer>", ((FullyQualifiedType) jt).getFullyQualifiedName());
 	}
 
 	// ========== Nested parameterized types ==========
@@ -184,22 +184,22 @@ class JavaTypeTest {
 		JavaType jt = JavaType.parse(
 				"java.util.Map<java.lang.String, java.util.List<java.lang.Integer>>");
 
-		assertInstanceOf(ParameterizedClassName.class, jt);
-		ParameterizedClassName pcn = (ParameterizedClassName) jt;
+		assertInstanceOf(ParameterizedClassType.class, jt);
+		ParameterizedClassType pcn = (ParameterizedClassType) jt;
 
 		assertEquals("Map", pcn.getSimpleName());
 		assertEquals(2, pcn.getTypeArguments().size());
 
 		// First arg: String
-		assertInstanceOf(ClassName.class, pcn.getTypeArguments().get(0));
-		assertEquals("String", ((FullyQualifiedName) pcn.getTypeArguments().get(0)).getSimpleName());
+		assertInstanceOf(ClassType.class, pcn.getTypeArguments().get(0));
+		assertEquals("String", ((FullyQualifiedType) pcn.getTypeArguments().get(0)).getSimpleName());
 
 		// Second arg: List<Integer>
-		assertInstanceOf(ParameterizedClassName.class, pcn.getTypeArguments().get(1));
-		ParameterizedClassName listArg = (ParameterizedClassName) pcn.getTypeArguments().get(1);
+		assertInstanceOf(ParameterizedClassType.class, pcn.getTypeArguments().get(1));
+		ParameterizedClassType listArg = (ParameterizedClassType) pcn.getTypeArguments().get(1);
 		assertEquals("List", listArg.getSimpleName());
 		assertEquals(1, listArg.getTypeArguments().size());
-		assertEquals("java.lang.Integer", ((FullyQualifiedName) listArg.getTypeArguments().get(0)).getFullyQualifiedName());
+		assertEquals("java.lang.Integer", ((FullyQualifiedType) listArg.getTypeArguments().get(0)).getFullyQualifiedName());
 		assertEquals("Map<String, List<Integer>>", jt.getDisplayName());
 	}
 
@@ -208,17 +208,17 @@ class JavaTypeTest {
 		String input = "java.util.Map<java.lang.String, java.util.List<java.util.Map$Entry<java.lang.String, ?>>>";
 		JavaType jt = JavaType.parse(input);
 
-		assertInstanceOf(ParameterizedClassName.class, jt);
-		ParameterizedClassName map = (ParameterizedClassName) jt;
+		assertInstanceOf(ParameterizedClassType.class, jt);
+		ParameterizedClassType map = (ParameterizedClassType) jt;
 		assertEquals("Map", map.getSimpleName());
 		assertEquals(2, map.getTypeArguments().size());
 
 		// Second arg: List<Map.Entry<String, ?>>
-		ParameterizedClassName list = assertInstanceOf(ParameterizedClassName.class, map.getTypeArguments().get(1));
+		ParameterizedClassType list = assertInstanceOf(ParameterizedClassType.class, map.getTypeArguments().get(1));
 		assertEquals("List", list.getSimpleName());
 
 		// List's arg: Map.Entry<String, ?>
-		ParameterizedClassName entry = assertInstanceOf(ParameterizedClassName.class, list.getTypeArguments().get(0));
+		ParameterizedClassType entry = assertInstanceOf(ParameterizedClassType.class, list.getTypeArguments().get(0));
 		assertEquals("Entry", entry.getSimpleName());
 		assertNotNull(entry.getErasure().getDeclaringClass());
 		assertEquals("Map", entry.getErasure().getDeclaringClass().getSimpleName());
@@ -226,8 +226,8 @@ class JavaTypeTest {
 
 		// Entry's args: String, ?
 		assertEquals(2, entry.getTypeArguments().size());
-		assertEquals("java.lang.String", ((FullyQualifiedName) entry.getTypeArguments().get(0)).getFullyQualifiedName());
-		assertInstanceOf(WildcardName.class, entry.getTypeArguments().get(1));
+		assertEquals("java.lang.String", ((FullyQualifiedType) entry.getTypeArguments().get(0)).getFullyQualifiedName());
+		assertInstanceOf(WildcardType.class, entry.getTypeArguments().get(1));
 		assertEquals("Map<String, List<Map.Entry<String, ?>>>", jt.getDisplayName());
 	}
 
@@ -238,7 +238,7 @@ class JavaTypeTest {
 		JavaType jt = JavaType.parse("java.util.List<com.example.dto.MyDto>");
 
 		List<String> fqNames = jt.getAllClassNames().stream()
-				.map(ClassName::getFullyQualifiedName)
+				.map(ClassType::getFullyQualifiedName)
 				.collect(Collectors.toList());
 
 		assertEquals(2, fqNames.size());
@@ -252,7 +252,7 @@ class JavaTypeTest {
 		JavaType jt = JavaType.parse(input);
 
 		List<String> fqNames = jt.getAllClassNames().stream()
-				.map(ClassName::getFullyQualifiedName)
+				.map(ClassType::getFullyQualifiedName)
 				.collect(Collectors.toList());
 
 		// Map, String, List, Map.Entry, String (again) — wildcards contribute nothing
@@ -267,7 +267,7 @@ class JavaTypeTest {
 		JavaType jt = JavaType.parse("java.util.List<?>");
 
 		List<String> fqNames = jt.getAllClassNames().stream()
-				.map(ClassName::getFullyQualifiedName)
+				.map(ClassType::getFullyQualifiedName)
 				.collect(Collectors.toList());
 
 		assertEquals(1, fqNames.size());
@@ -280,8 +280,8 @@ class JavaTypeTest {
 	void parseUnboundedWildcard() {
 		JavaType jt = JavaType.parse("?");
 
-		assertInstanceOf(WildcardName.class, jt);
-		WildcardName wn = (WildcardName) jt;
+		assertInstanceOf(WildcardType.class, jt);
+		WildcardType wn = (WildcardType) jt;
 
 		assertNull(wn.getBound());
 		assertEquals("?", wn.toString());
@@ -293,12 +293,12 @@ class JavaTypeTest {
 	void parseUpperBoundedWildcard() {
 		JavaType jt = JavaType.parse("? extends java.lang.Number");
 
-		assertInstanceOf(WildcardName.class, jt);
-		WildcardName wn = (WildcardName) jt;
+		assertInstanceOf(WildcardType.class, jt);
+		WildcardType wn = (WildcardType) jt;
 
 		assertNotNull(wn.getBound());
 		assertTrue(wn.isUpperBound());
-		assertEquals("java.lang.Number", ((FullyQualifiedName) wn.getBound()).getFullyQualifiedName());
+		assertEquals("java.lang.Number", ((FullyQualifiedType) wn.getBound()).getFullyQualifiedName());
 		assertEquals("? extends java.lang.Number", wn.toString());
 		assertEquals("? extends Number", jt.getDisplayName());
 	}
@@ -307,12 +307,12 @@ class JavaTypeTest {
 	void parseLowerBoundedWildcard() {
 		JavaType jt = JavaType.parse("? super java.lang.Integer");
 
-		assertInstanceOf(WildcardName.class, jt);
-		WildcardName wn = (WildcardName) jt;
+		assertInstanceOf(WildcardType.class, jt);
+		WildcardType wn = (WildcardType) jt;
 
 		assertNotNull(wn.getBound());
 		assertTrue(!wn.isUpperBound());
-		assertEquals("java.lang.Integer", ((FullyQualifiedName) wn.getBound()).getFullyQualifiedName());
+		assertEquals("java.lang.Integer", ((FullyQualifiedType) wn.getBound()).getFullyQualifiedName());
 		assertEquals("? super java.lang.Integer", wn.toString());
 		assertEquals("? super Integer", jt.getDisplayName());
 	}
@@ -322,7 +322,7 @@ class JavaTypeTest {
 		JavaType jt = JavaType.parse("? extends com.example.BaseDto");
 
 		List<String> fqNames = jt.getAllClassNames().stream()
-				.map(ClassName::getFullyQualifiedName)
+				.map(ClassType::getFullyQualifiedName)
 				.collect(Collectors.toList());
 
 		assertEquals(1, fqNames.size());
@@ -335,13 +335,13 @@ class JavaTypeTest {
 	void parseParameterizedWithWildcardExtends() {
 		JavaType jt = JavaType.parse("java.util.List<? extends com.example.dto.BaseDto>");
 
-		assertInstanceOf(ParameterizedClassName.class, jt);
-		ParameterizedClassName pcn = (ParameterizedClassName) jt;
+		assertInstanceOf(ParameterizedClassType.class, jt);
+		ParameterizedClassType pcn = (ParameterizedClassType) jt;
 
 		assertEquals(1, pcn.getTypeArguments().size());
-		WildcardName wn = assertInstanceOf(WildcardName.class, pcn.getTypeArguments().get(0));
+		WildcardType wn = assertInstanceOf(WildcardType.class, pcn.getTypeArguments().get(0));
 		assertTrue(wn.isUpperBound());
-		assertEquals("com.example.dto.BaseDto", ((FullyQualifiedName) wn.getBound()).getFullyQualifiedName());
+		assertEquals("com.example.dto.BaseDto", ((FullyQualifiedType) wn.getBound()).getFullyQualifiedName());
 		assertEquals("List<? extends BaseDto>", jt.getDisplayName());
 	}
 
@@ -349,24 +349,24 @@ class JavaTypeTest {
 	void parseParameterizedWithWildcardSuper() {
 		JavaType jt = JavaType.parse("java.util.Comparator<? super java.lang.String>");
 
-		assertInstanceOf(ParameterizedClassName.class, jt);
-		ParameterizedClassName pcn = (ParameterizedClassName) jt;
+		assertInstanceOf(ParameterizedClassType.class, jt);
+		ParameterizedClassType pcn = (ParameterizedClassType) jt;
 
 		assertEquals(1, pcn.getTypeArguments().size());
-		WildcardName wn = assertInstanceOf(WildcardName.class, pcn.getTypeArguments().get(0));
+		WildcardType wn = assertInstanceOf(WildcardType.class, pcn.getTypeArguments().get(0));
 		assertTrue(!wn.isUpperBound());
-		assertEquals("java.lang.String", ((FullyQualifiedName) wn.getBound()).getFullyQualifiedName());
+		assertEquals("java.lang.String", ((FullyQualifiedType) wn.getBound()).getFullyQualifiedName());
 	}
 
 	@Test
 	void parseParameterizedWithUnboundedWildcard() {
 		JavaType jt = JavaType.parse("java.util.List<?>");
 
-		assertInstanceOf(ParameterizedClassName.class, jt);
-		ParameterizedClassName pcn = (ParameterizedClassName) jt;
+		assertInstanceOf(ParameterizedClassType.class, jt);
+		ParameterizedClassType pcn = (ParameterizedClassType) jt;
 
 		assertEquals(1, pcn.getTypeArguments().size());
-		WildcardName wn = assertInstanceOf(WildcardName.class, pcn.getTypeArguments().get(0));
+		WildcardType wn = assertInstanceOf(WildcardType.class, pcn.getTypeArguments().get(0));
 		assertNull(wn.getBound());
 	}
 
@@ -374,22 +374,22 @@ class JavaTypeTest {
 
 	@Test
 	void fieldTypeNameForTopLevelClass() {
-		ClassName cn = new ClassName("com.example", "MyService");
+		ClassType cn = new ClassType("com.example", "MyService");
 		assertEquals("MyService", cn.getFieldTypeName());
 	}
 
 	@Test
 	void fieldTypeNameForInnerClass() {
-		ClassName outer = new ClassName("java.util", "Map");
-		ClassName inner = new ClassName(outer, "Entry");
+		ClassType outer = new ClassType("java.util", "Map");
+		ClassType inner = new ClassType(outer, "Entry");
 		assertEquals("Map.Entry", inner.getFieldTypeName());
 	}
 
 	@Test
 	void fieldTypeNameForDeepInnerClass() {
-		ClassName outer = new ClassName("com.example", "Outer");
-		ClassName middle = new ClassName(outer, "Middle");
-		ClassName inner = new ClassName(middle, "Inner");
+		ClassType outer = new ClassType("com.example", "Outer");
+		ClassType middle = new ClassType(outer, "Middle");
+		ClassType inner = new ClassType(middle, "Inner");
 		assertEquals("Outer.Middle.Inner", inner.getFieldTypeName());
 	}
 
@@ -454,8 +454,8 @@ class JavaTypeTest {
 	void parsePrimitiveInt() {
 		JavaType jt = JavaType.parse("int");
 
-		assertInstanceOf(PrimitiveTypeName.class, jt);
-		PrimitiveTypeName ptn = (PrimitiveTypeName) jt;
+		assertInstanceOf(PrimitiveType.class, jt);
+		PrimitiveType ptn = (PrimitiveType) jt;
 
 		assertEquals("int", ptn.getKeyword());
 		assertEquals("int", ptn.toString());
@@ -467,8 +467,8 @@ class JavaTypeTest {
 	void parsePrimitiveBoolean() {
 		JavaType jt = JavaType.parse("boolean");
 
-		assertInstanceOf(PrimitiveTypeName.class, jt);
-		PrimitiveTypeName ptn = (PrimitiveTypeName) jt;
+		assertInstanceOf(PrimitiveType.class, jt);
+		PrimitiveType ptn = (PrimitiveType) jt;
 		assertEquals("boolean", ptn.getKeyword());
 		assertEquals("boolean", ptn.toString());
 	}
@@ -477,8 +477,8 @@ class JavaTypeTest {
 	void parsePrimitiveDouble() {
 		JavaType jt = JavaType.parse("double");
 
-		assertInstanceOf(PrimitiveTypeName.class, jt);
-		PrimitiveTypeName ptn = (PrimitiveTypeName) jt;
+		assertInstanceOf(PrimitiveType.class, jt);
+		PrimitiveType ptn = (PrimitiveType) jt;
 		assertEquals("double", ptn.getKeyword());
 		assertEquals("double", ptn.toString());
 	}
@@ -487,8 +487,8 @@ class JavaTypeTest {
 	void parsePrimitiveVoid() {
 		JavaType jt = JavaType.parse("void");
 
-		assertInstanceOf(PrimitiveTypeName.class, jt);
-		PrimitiveTypeName ptn = (PrimitiveTypeName) jt;
+		assertInstanceOf(PrimitiveType.class, jt);
+		PrimitiveType ptn = (PrimitiveType) jt;
 		assertEquals("void", ptn.getKeyword());
 	}
 
@@ -498,11 +498,11 @@ class JavaTypeTest {
 	void parsePrimitiveArray() {
 		JavaType jt = JavaType.parse("int[]");
 
-		assertInstanceOf(ArrayTypeName.class, jt);
-		ArrayTypeName atn = (ArrayTypeName) jt;
+		assertInstanceOf(ArrayType.class, jt);
+		ArrayType atn = (ArrayType) jt;
 
 		assertEquals(1, atn.getDimensions());
-		assertInstanceOf(PrimitiveTypeName.class, atn.getComponentType());
+		assertInstanceOf(PrimitiveType.class, atn.getComponentType());
 		assertEquals("int", atn.getComponentType().toString());
 		assertEquals("int[]", atn.toString());
 		assertEquals("int[]", jt.getDisplayName());
@@ -513,11 +513,11 @@ class JavaTypeTest {
 	void parseMultiDimensionalPrimitiveArray() {
 		JavaType jt = JavaType.parse("byte[][]");
 
-		assertInstanceOf(ArrayTypeName.class, jt);
-		ArrayTypeName atn = (ArrayTypeName) jt;
+		assertInstanceOf(ArrayType.class, jt);
+		ArrayType atn = (ArrayType) jt;
 
 		assertEquals(2, atn.getDimensions());
-		assertInstanceOf(PrimitiveTypeName.class, atn.getComponentType());
+		assertInstanceOf(PrimitiveType.class, atn.getComponentType());
 		assertEquals("byte", atn.getComponentType().toString());
 		assertEquals("byte[][]", atn.toString());
 	}
@@ -526,16 +526,16 @@ class JavaTypeTest {
 	void parseReferenceArray() {
 		JavaType jt = JavaType.parse("java.lang.String[]");
 
-		assertInstanceOf(ArrayTypeName.class, jt);
-		ArrayTypeName atn = (ArrayTypeName) jt;
+		assertInstanceOf(ArrayType.class, jt);
+		ArrayType atn = (ArrayType) jt;
 
 		assertEquals(1, atn.getDimensions());
-		assertInstanceOf(ClassName.class, atn.getComponentType());
-		assertEquals("String", ((ClassName) atn.getComponentType()).getSimpleName());
+		assertInstanceOf(ClassType.class, atn.getComponentType());
+		assertEquals("String", ((ClassType) atn.getComponentType()).getSimpleName());
 		assertEquals("java.lang.String[]", atn.toString());
 		assertEquals("String[]", jt.getDisplayName());
 
-		List<ClassName> classNames = atn.getAllClassNames();
+		List<ClassType> classNames = atn.getAllClassNames();
 		assertEquals(1, classNames.size());
 		assertEquals("java.lang.String", classNames.get(0).getFullyQualifiedName());
 	}
@@ -544,11 +544,11 @@ class JavaTypeTest {
 	void parseMultiDimensionalReferenceArray() {
 		JavaType jt = JavaType.parse("com.example.Foo[][]");
 
-		assertInstanceOf(ArrayTypeName.class, jt);
-		ArrayTypeName atn = (ArrayTypeName) jt;
+		assertInstanceOf(ArrayType.class, jt);
+		ArrayType atn = (ArrayType) jt;
 
 		assertEquals(2, atn.getDimensions());
-		assertInstanceOf(ClassName.class, atn.getComponentType());
+		assertInstanceOf(ClassType.class, atn.getComponentType());
 		assertEquals("com.example.Foo[][]", atn.toString());
 		assertEquals("Foo[][]", jt.getDisplayName());
 	}
@@ -557,16 +557,16 @@ class JavaTypeTest {
 	void parseParameterizedArray() {
 		JavaType jt = JavaType.parse("java.util.List<java.lang.String>[]");
 
-		assertInstanceOf(ArrayTypeName.class, jt);
-		ArrayTypeName atn = (ArrayTypeName) jt;
+		assertInstanceOf(ArrayType.class, jt);
+		ArrayType atn = (ArrayType) jt;
 
 		assertEquals(1, atn.getDimensions());
-		assertInstanceOf(ParameterizedClassName.class, atn.getComponentType());
-		assertEquals("List", ((ParameterizedClassName) atn.getComponentType()).getSimpleName());
+		assertInstanceOf(ParameterizedClassType.class, atn.getComponentType());
+		assertEquals("List", ((ParameterizedClassType) atn.getComponentType()).getSimpleName());
 		assertEquals("java.util.List<java.lang.String>[]", atn.toString());
 		assertEquals("List<String>[]", jt.getDisplayName());
 
-		List<ClassName> classNames = atn.getAllClassNames();
+		List<ClassType> classNames = atn.getAllClassNames();
 		assertEquals(2, classNames.size());
 		assertTrue(classNames.stream().anyMatch(cn -> cn.getFullyQualifiedName().equals("java.util.List")));
 		assertTrue(classNames.stream().anyMatch(cn -> cn.getFullyQualifiedName().equals("java.lang.String")));
@@ -576,12 +576,12 @@ class JavaTypeTest {
 	void parseInnerClassArray() {
 		JavaType jt = JavaType.parse("java.util.Map$Entry[]");
 
-		assertInstanceOf(ArrayTypeName.class, jt);
-		ArrayTypeName atn = (ArrayTypeName) jt;
+		assertInstanceOf(ArrayType.class, jt);
+		ArrayType atn = (ArrayType) jt;
 
 		assertEquals(1, atn.getDimensions());
-		assertInstanceOf(ClassName.class, atn.getComponentType());
-		ClassName cn = (ClassName) atn.getComponentType();
+		assertInstanceOf(ClassType.class, atn.getComponentType());
+		ClassType cn = (ClassType) atn.getComponentType();
 		assertEquals("Entry", cn.getSimpleName());
 		assertNotNull(cn.getDeclaringClass());
 		assertEquals("java.util.Map.Entry[]", atn.toString());

@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.Type;
 
 /**
@@ -25,7 +24,7 @@ import org.eclipse.jdt.core.dom.Type;
  *
  * @author Alex Boyko
  */
-class PrimitiveTypeName implements JavaType {
+class PrimitiveType implements JavaType {
 
 	private static final Set<String> PRIMITIVE_KEYWORDS = Set.of(
 			"boolean", "byte", "char", "short", "int", "long", "float", "double", "void");
@@ -37,7 +36,7 @@ class PrimitiveTypeName implements JavaType {
 	 *
 	 * @param keyword the primitive keyword (e.g. {@code "int"}, {@code "boolean"})
 	 */
-	public PrimitiveTypeName(String keyword) {
+	public PrimitiveType(String keyword) {
 		this.keyword = keyword;
 	}
 
@@ -54,13 +53,13 @@ class PrimitiveTypeName implements JavaType {
 	}
 
 	@Override
-	public List<ClassName> getAllClassNames() {
+	public List<ClassType> getAllClassNames() {
 		return Collections.emptyList();
 	}
 
 	@Override
 	public Type toType(AST ast) {
-		return ast.newPrimitiveType(PrimitiveType.toCode(keyword));
+		return ast.newPrimitiveType(org.eclipse.jdt.core.dom.PrimitiveType.toCode(keyword));
 	}
 
 	@Override
@@ -72,7 +71,7 @@ class PrimitiveTypeName implements JavaType {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		PrimitiveTypeName that = (PrimitiveTypeName) o;
+		PrimitiveType that = (PrimitiveType) o;
 		return keyword.equals(that.keyword);
 	}
 

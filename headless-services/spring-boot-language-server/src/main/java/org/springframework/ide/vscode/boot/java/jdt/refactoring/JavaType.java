@@ -22,12 +22,12 @@ import org.eclipse.jdt.core.dom.Type;
  * <p>
  * Implementations include:
  * <ul>
- *   <li>{@link FullyQualifiedName} — sub-interface for class-like types with a fully qualified name</li>
- *   <li>{@link ClassName} — a non-parameterized class/interface type</li>
- *   <li>{@link ParameterizedClassName} — a parameterized type with type arguments</li>
- *   <li>{@link WildcardName} — a wildcard type ({@code ?}, {@code ? extends X}, {@code ? super X})</li>
- *   <li>{@link PrimitiveTypeName} — a primitive type ({@code int}, {@code boolean}, etc.)</li>
- *   <li>{@link ArrayTypeName} — an array type ({@code String[]}, {@code int[][]}, etc.)</li>
+ *   <li>{@link FullyQualifiedType} — sub-interface for class-like types with a fully qualified name</li>
+ *   <li>{@link ClassType} — a non-parameterized class/interface type</li>
+ *   <li>{@link ParameterizedClassType} — a parameterized type with type arguments</li>
+ *   <li>{@link WildcardType} — a wildcard type ({@code ?}, {@code ? extends X}, {@code ? super X})</li>
+ *   <li>{@link PrimitiveType} — a primitive type ({@code int}, {@code boolean}, etc.)</li>
+ *   <li>{@link ArrayType} — an array type ({@code String[]}, {@code int[][]}, etc.)</li>
  * </ul>
  * <p>
 	 * Instances are created via the {@link #parse(String)} factory method, which accepts
@@ -56,14 +56,14 @@ public interface JavaType {
 	String getDisplayName();
 
 	/**
-	 * Returns a flat list of all concrete {@link ClassName} instances referenced in this
+	 * Returns a flat list of all concrete {@link ClassType} instances referenced in this
 	 * type tree. This is used for import management — each class name in the list may
 	 * need an import statement.
 	 * <p>
 	 * Wildcards contribute nothing directly; parameterized types contribute their base
 	 * class plus recurse into type arguments. Primitives return an empty list.
 	 */
-	List<ClassName> getAllClassNames();
+	List<ClassType> getAllClassNames();
 
 	/**
 	 * Builds a JDT AST {@link Type} node from this type model.
@@ -121,13 +121,13 @@ public interface JavaType {
 
 		switch (kind) {
 			case Signature.BASE_TYPE_SIGNATURE:
-				return new PrimitiveTypeName(Signature.toString(sig));
+				return new PrimitiveType(Signature.toString(sig));
 
 			case Signature.ARRAY_TYPE_SIGNATURE:
 				int dimensions = Signature.getArrayCount(sig);
 				String elementSig = Signature.getElementType(sig);
 				JavaType componentType = parseFromSignature(elementSig);
-				return new ArrayTypeName(componentType, dimensions);
+				return new ArrayType(componentType, dimensions);
 
 			case Signature.CLASS_TYPE_SIGNATURE:
 				return parseClassSignature(sig);
@@ -141,7 +141,7 @@ public interface JavaType {
 	}
 
 	/**
-	 * Parse a class type signature into a {@link ClassName} or {@link ParameterizedClassName}.
+	 * Parse a class type signature into a {@link ClassType} or {@link ParameterizedClassType}.
 	 * <p>
 	 * Uses {@link Signature#getTypeErasure(String)} to extract the raw class signature,
 	 * then {@link Signature#getSignatureQualifier(String)} and
@@ -158,7 +158,7 @@ public interface JavaType {
 		String classChain = Signature.getSignatureSimpleName(erasureSig);
 
 		// Build the ClassName chain by splitting on '.' (inner classes)
-		ClassName className = buildClassNameFromChain(packageName, classChain);
+		ClassType className = buildClassNameFromChain(packageName, classChain);
 
 		// Extract type arguments
 		String[] typeArgSigs = Signature.getTypeArguments(sig);
@@ -167,33 +167,33 @@ public interface JavaType {
 			for (String argSig : typeArgSigs) {
 				parsedArgs.add(parseFromSignature(argSig));
 			}
-			return new ParameterizedClassName(className, parsedArgs);
+			return new ParameterizedClassType(className, parsedArgs);
 		}
 
 		return className;
 	}
 
 	/**
-	 * Build a {@link ClassName} from a package name and a class chain string.
+	 * Build a {@link ClassType} from a package name and a class chain string.
 	 * <p>
 	 * The class chain may contain {@code .} separators for inner classes
 	 * (e.g. {@code "Map.Entry"} or {@code "Outer.Middle.Inner"}).
 	 *
 	 * @param packageName the package name (e.g. {@code "java.util"}), or empty string
 	 * @param classChain  the class name chain (e.g. {@code "Map"}, {@code "Map.Entry"})
-	 * @return the constructed {@link ClassName}
+	 * @return the constructed {@link ClassType}
 	 */
-	private static ClassName buildClassNameFromChain(String packageName, String classChain) {
+	private static ClassType buildClassNameFromChain(String packageName, String classChain) {
 		String[] parts = classChain.split("\\.");
-		ClassName current = new ClassName(packageName, parts[0]);
+		ClassType current = new ClassType(packageName, parts[0]);
 		for (int i = 1; i < parts.length; i++) {
-			current = new ClassName(current, parts[i]);
+			current = new ClassType(current, parts[i]);
 		}
 		return current;
 	}
 
 	/**
-	 * Parse a wildcard type signature into a {@link WildcardName}.
+	 * Parse a wildcard type signature into a {@link WildcardType}.
 	 * <p>
 	 * Wildcard signatures use:
 	 * <ul>
@@ -202,21 +202,21 @@ public interface JavaType {
 	 *   <li>{@code -<sig>} — lower-bounded wildcard ({@code ? super X})</li>
 	 * </ul>
 	 */
-	private static WildcardName parseWildcardSignature(String sig) {
+	private static WildcardType parseWildcardSignature(String sig) {
 		char first = sig.charAt(0);
 		if (first == Signature.C_STAR) {
 			// Unbounded wildcard: ?
-			return new WildcardName(null, true);
+			return new WildcardType(null, true);
 		} else if (first == Signature.C_EXTENDS) {
 			// Upper-bounded: ? extends X
 			String boundSig = sig.substring(1);
 			JavaType bound = parseFromSignature(boundSig);
-			return new WildcardName(bound, true);
+			return new WildcardType(bound, true);
 		} else if (first == Signature.C_SUPER) {
 			// Lower-bounded: ? super X
 			String boundSig = sig.substring(1);
 			JavaType bound = parseFromSignature(boundSig);
-			return new WildcardName(bound, false);
+			return new WildcardType(bound, false);
 		}
 		throw new IllegalArgumentException("Invalid wildcard signature: " + sig);
 	}

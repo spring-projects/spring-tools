@@ -15,13 +15,13 @@ package org.springframework.ide.vscode.boot.java.jdt.refactoring;
  * <p>
  * Implementations include:
  * <ul>
- *   <li>{@link ClassName} — a non-parameterized class/interface type</li>
- *   <li>{@link ParameterizedClassName} — a parameterized type with type arguments</li>
+ *   <li>{@link ClassType} — a non-parameterized class/interface type</li>
+ *   <li>{@link ParameterizedClassType} — a parameterized type with type arguments</li>
  * </ul>
  *
  * @author Alex Boyko
  */
-interface FullyQualifiedName extends JavaType {
+interface FullyQualifiedType extends JavaType {
 
 	/**
 	 * Returns the full source-style type string using {@code .} for inner classes.

@@ -23,15 +23,15 @@ import org.eclipse.jdt.core.dom.Type;
 /**
  * Represents a parameterized class type like {@code Map<String, List<Integer>>}.
  * <p>
- * Holds a {@link ClassName} (the type erasure) and a list of type arguments,
- * each of which is a {@link JavaType} (and can itself be a {@link ClassName},
- * {@link ParameterizedClassName}, or {@link WildcardName}).
+ * Holds a {@link ClassType} (the type erasure) and a list of type arguments,
+ * each of which is a {@link JavaType} (and can itself be a {@link ClassType},
+ * {@link ParameterizedClassType}, or {@link WildcardType}).
  *
  * @author Alex Boyko
  */
-class ParameterizedClassName implements FullyQualifiedName {
+class ParameterizedClassType implements FullyQualifiedType {
 
-	private final ClassName erasure;
+	private final ClassType erasure;
 	private final List<JavaType> typeArguments;
 
 	/**
@@ -40,7 +40,7 @@ class ParameterizedClassName implements FullyQualifiedName {
 	 * @param erasure       the type erasure (e.g. {@code ClassName("java.util", "Map")})
 	 * @param typeArguments the type arguments (must not be empty)
 	 */
-	public ParameterizedClassName(ClassName erasure, List<JavaType> typeArguments) {
+	public ParameterizedClassType(ClassType erasure, List<JavaType> typeArguments) {
 		this.erasure = erasure;
 		this.typeArguments = typeArguments != null ? Collections.unmodifiableList(typeArguments) : Collections.emptyList();
 	}
@@ -48,7 +48,7 @@ class ParameterizedClassName implements FullyQualifiedName {
 	/**
 	 * Returns the type erasure (the class name without type arguments).
 	 */
-	public ClassName getErasure() {
+	public ClassType getErasure() {
 		return erasure;
 	}
 
@@ -89,8 +89,8 @@ class ParameterizedClassName implements FullyQualifiedName {
 	}
 
 	@Override
-	public List<ClassName> getAllClassNames() {
-		List<ClassName> result = new ArrayList<>();
+	public List<ClassType> getAllClassNames() {
+		List<ClassType> result = new ArrayList<>();
 		// Add the erasure itself
 		result.add(erasure);
 		// Recurse into type arguments
@@ -120,7 +120,7 @@ class ParameterizedClassName implements FullyQualifiedName {
 	public boolean equals(Object o) {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
-		ParameterizedClassName that = (ParameterizedClassName) o;
+		ParameterizedClassType that = (ParameterizedClassType) o;
 		return erasure.equals(that.erasure) && typeArguments.equals(that.typeArguments);
 	}
 

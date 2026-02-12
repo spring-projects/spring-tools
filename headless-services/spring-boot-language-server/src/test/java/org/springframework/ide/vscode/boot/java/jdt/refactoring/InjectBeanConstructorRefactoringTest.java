@@ -718,30 +718,30 @@ class InjectBeanConstructorRefactoringTest {
 
 	@Test
 	void getFieldTypeName_simpleClass() {
-		ClassName cn = (ClassName) JavaType.parse("com.example.MyRepository");
+		ClassType cn = (ClassType) JavaType.parse("com.example.MyRepository");
 		assertEquals("MyRepository", cn.getFieldTypeName());
 	}
 
 	@Test
 	void getFieldTypeName_innerClass() {
-		ClassName cn = (ClassName) JavaType.parse("com.example.pet.Inner$PetService");
+		ClassType cn = (ClassType) JavaType.parse("com.example.pet.Inner$PetService");
 		assertEquals("Inner.PetService", cn.getFieldTypeName());
 	}
 
 	@Test
 	void getFieldTypeName_noPackage() {
-		ClassName cn = (ClassName) JavaType.parse("MyRepository");
+		ClassType cn = (ClassType) JavaType.parse("MyRepository");
 		assertEquals("MyRepository", cn.getFieldTypeName());
 	}
 
 	@Test
 	void getSimpleTypeName_fqn() {
-		assertEquals("MyRepository", ((FullyQualifiedName) JavaType.parse("com.example.MyRepository")).getSimpleName());
+		assertEquals("MyRepository", ((FullyQualifiedType) JavaType.parse("com.example.MyRepository")).getSimpleName());
 	}
 
 	@Test
 	void getSimpleTypeName_simple() {
-		assertEquals("MyRepository", ((FullyQualifiedName) JavaType.parse("MyRepository")).getSimpleName());
+		assertEquals("MyRepository", ((FullyQualifiedType) JavaType.parse("MyRepository")).getSimpleName());
 	}
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,8 @@
  *******************************************************************************/
 
 package org.springframework.ide.vscode.commons.languageserver;
+
+import java.util.function.Supplier;
 
 import org.springframework.ide.vscode.commons.protocol.STS4LanguageClient;
 
@@ -22,7 +24,7 @@ import org.springframework.ide.vscode.commons.protocol.STS4LanguageClient;
  * 
  * <p>Example usage:</p>
  * <pre>
- * ProgressService progress = ProgressService.create(lspClient);
+ * ProgressService progress = ProgressService.create(() -&gt; lspClient);
  * IndefiniteProgressTask task = progress.createIndefiniteProgressTask(
  *     "indexing", "Indexing Project", "Starting...");
  * task.progressEvent("Processing files...");
@@ -40,18 +42,19 @@ public final class ProgressService {
 	private final ProgressClient client;
 	
 	/**
-	 * Factory method to create a ProgressService with an LSP client.
-	 * This is the recommended way to create a ProgressService for production use.
+	 * Factory method to create a ProgressService with a lazily-supplied LSP client.
+	 * The supplier may return null before the client is connected; in that case
+	 * progress notifications are silently discarded.
 	 * 
-	 * @param lspClient the LSP client to use for sending progress notifications
+	 * @param clientSupplier supplier for the LSP client
 	 * @return a new ProgressService instance
-	 * @throws IllegalArgumentException if lspClient is null
+	 * @throws IllegalArgumentException if clientSupplier is null
 	 */
-	public static ProgressService create(STS4LanguageClient lspClient) {
-		if (lspClient == null) {
-			throw new IllegalArgumentException("STS4LanguageClient cannot be null");
+	public static ProgressService create(Supplier<STS4LanguageClient> clientSupplier) {
+		if (clientSupplier == null) {
+			throw new IllegalArgumentException("STS4LanguageClient supplier cannot be null");
 		}
-		return new ProgressService(new LspProgressClient(lspClient));
+		return new ProgressService(new LspProgressClient(clientSupplier));
 	}
 	
 	/**

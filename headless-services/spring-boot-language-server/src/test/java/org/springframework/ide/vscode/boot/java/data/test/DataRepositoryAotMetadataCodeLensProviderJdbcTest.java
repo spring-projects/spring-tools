@@ -144,7 +144,6 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 
 		String queryValue = extractValueFromAttributes(cls.get(0));
 
-		System.out.println("Extracted query value: " + queryValue);
 		assertNotNull(queryValue, "Query value should not be null");
 
 		assertTrue(queryValue.startsWith("\""), "Query should be generated as a string literal");

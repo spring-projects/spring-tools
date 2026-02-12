@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,11 @@ public class SpringCloudCompatibilityValidationTest {
 	@Autowired private RestTemplateFactory restTemplateFactory;
 	@Autowired private BootJavaConfig config;
 	@Autowired private DiagnosticSeverityProvider severityProvider;
+	
+	@BeforeEach
+	void setup() throws Exception {
+		harness.intialize(null);
+	}
 
 	@Test
 	void testIncompatibleSpringBootVersionWithSpringCloud() throws Exception {

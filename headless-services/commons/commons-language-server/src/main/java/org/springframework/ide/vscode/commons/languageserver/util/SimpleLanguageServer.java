@@ -151,9 +151,9 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	
 	private Integer parentProcessId;
 
-	private ProgressService progressService = ProgressService.NO_PROGRESS;
+	private final ProgressService progressService = ProgressService.create(() -> this.client);
 	
-	private MessageService messageService = new MessageService() {
+	private final MessageService messageService = new MessageService() {
 		
 		@Override
 		public void warning(String message) {
@@ -217,8 +217,6 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	@Override
 	public void connect(LanguageClient _client) {
 		this.client = (STS4LanguageClient) _client;
-		// Initialize progress service with the LSP client
-		this.progressService = ProgressService.create(this.client);
 	}
 
 	public VscodeCompletionEngineAdapter createCompletionEngineAdapter(ICompletionEngine engine) {

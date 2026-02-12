@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -52,7 +52,7 @@ class ProgressServiceTest {
 	void testFactoryMethodRejectsNull() {
 		assertThatThrownBy(() -> ProgressService.create(null))
 			.isInstanceOf(IllegalArgumentException.class)
-			.hasMessageContaining("STS4LanguageClient cannot be null");
+			.hasMessageContaining("STS4LanguageClient supplier cannot be null");
 	}
 
 	@Test
@@ -60,7 +60,7 @@ class ProgressServiceTest {
 		STS4LanguageClient mockLspClient = mock(STS4LanguageClient.class);
 		when(mockLspClient.createProgress(any())).thenReturn(CompletableFuture.completedFuture(null));
 		
-		ProgressService service = ProgressService.create(mockLspClient);
+		ProgressService service = ProgressService.create(() -> mockLspClient);
 		
 		assertThat(service).isNotNull();
 		

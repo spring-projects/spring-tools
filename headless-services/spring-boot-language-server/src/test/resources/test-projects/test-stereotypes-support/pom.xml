@@ -11,7 +11,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.4</version>
+		<version>4.0.2</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 
@@ -20,8 +20,8 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>17</java.version>
 
-		<jmolecules.version>2.1.0-SNAPSHOT</jmolecules.version>
-		<jmolecules.integrations.version>0.31.0-SNAPSHOT</jmolecules.integrations.version>
+		<jmolecules.version>2.0.1</jmolecules.version>
+		<jmolecules.integrations.version>0.33.0</jmolecules.integrations.version>
 
 	</properties>
 

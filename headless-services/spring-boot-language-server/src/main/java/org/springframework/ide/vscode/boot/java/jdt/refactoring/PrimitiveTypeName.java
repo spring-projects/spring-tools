@@ -49,6 +49,11 @@ class PrimitiveTypeName implements JavaType {
 	}
 
 	@Override
+	public String getDisplayName() {
+		return keyword;
+	}
+
+	@Override
 	public List<ClassName> getAllClassNames() {
 		return Collections.emptyList();
 	}

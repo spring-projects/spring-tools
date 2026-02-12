@@ -44,6 +44,7 @@ class JavaTypeTest {
 		assertNull(cn.getDeclaringClass());
 		assertEquals("MyService", cn.getFieldTypeName());
 		assertEquals("com.example.MyService", cn.getFullyQualifiedName());
+		assertEquals("MyService", jt.getDisplayName());
 	}
 
 	@Test
@@ -58,6 +59,7 @@ class JavaTypeTest {
 		assertNull(cn.getDeclaringClass());
 		assertEquals("String", cn.getFieldTypeName());
 		assertEquals("java.lang.String", cn.getFullyQualifiedName());
+		assertEquals("String", jt.getDisplayName());
 	}
 
 	@Test
@@ -70,6 +72,7 @@ class JavaTypeTest {
 		assertEquals("MyService", cn.getSimpleName());
 		assertEquals("MyService", cn.getFieldTypeName());
 		assertEquals("MyService", cn.getFullyQualifiedName());
+		assertEquals("MyService", jt.getDisplayName());
 	}
 
 	// ========== Inner class types ==========
@@ -87,6 +90,7 @@ class JavaTypeTest {
 		assertEquals("Map", cn.getDeclaringClass().getSimpleName());
 		assertEquals("Map.Entry", cn.getFieldTypeName());
 		assertEquals("java.util.Map.Entry", cn.getFullyQualifiedName());
+		assertEquals("Map.Entry", jt.getDisplayName());
 	}
 
 	@Test
@@ -99,6 +103,7 @@ class JavaTypeTest {
 		assertEquals("com.example", cn.getPackageName());
 		assertEquals("Inner", cn.getSimpleName());
 		assertEquals("Outer.Middle.Inner", cn.getFieldTypeName());
+		assertEquals("Outer.Middle.Inner", jt.getDisplayName());
 
 		// Check declaring class chain
 		ClassName middle = cn.getDeclaringClass();
@@ -148,6 +153,7 @@ class JavaTypeTest {
 		JavaType arg = pcn.getTypeArguments().get(0);
 		assertInstanceOf(ClassName.class, arg);
 		assertEquals("java.lang.String", ((FullyQualifiedName) arg).getFullyQualifiedName());
+		assertEquals("List<String>", jt.getDisplayName());
 	}
 
 	@Test
@@ -162,6 +168,7 @@ class JavaTypeTest {
 		assertEquals(2, pcn.getTypeArguments().size());
 		assertEquals("java.lang.String", ((FullyQualifiedName) pcn.getTypeArguments().get(0)).getFullyQualifiedName());
 		assertEquals("java.lang.Integer", ((FullyQualifiedName) pcn.getTypeArguments().get(1)).getFullyQualifiedName());
+		assertEquals("Map<String, Integer>", jt.getDisplayName());
 	}
 
 	@Test
@@ -193,6 +200,7 @@ class JavaTypeTest {
 		assertEquals("List", listArg.getSimpleName());
 		assertEquals(1, listArg.getTypeArguments().size());
 		assertEquals("java.lang.Integer", ((FullyQualifiedName) listArg.getTypeArguments().get(0)).getFullyQualifiedName());
+		assertEquals("Map<String, List<Integer>>", jt.getDisplayName());
 	}
 
 	@Test
@@ -220,6 +228,7 @@ class JavaTypeTest {
 		assertEquals(2, entry.getTypeArguments().size());
 		assertEquals("java.lang.String", ((FullyQualifiedName) entry.getTypeArguments().get(0)).getFullyQualifiedName());
 		assertInstanceOf(WildcardName.class, entry.getTypeArguments().get(1));
+		assertEquals("Map<String, List<Map.Entry<String, ?>>>", jt.getDisplayName());
 	}
 
 	// ========== getAllClassNames for parameterized types ==========
@@ -276,6 +285,7 @@ class JavaTypeTest {
 
 		assertNull(wn.getBound());
 		assertEquals("?", wn.toString());
+		assertEquals("?", jt.getDisplayName());
 		assertTrue(wn.getAllClassNames().isEmpty());
 	}
 
@@ -290,6 +300,7 @@ class JavaTypeTest {
 		assertTrue(wn.isUpperBound());
 		assertEquals("java.lang.Number", ((FullyQualifiedName) wn.getBound()).getFullyQualifiedName());
 		assertEquals("? extends java.lang.Number", wn.toString());
+		assertEquals("? extends Number", jt.getDisplayName());
 	}
 
 	@Test
@@ -303,6 +314,7 @@ class JavaTypeTest {
 		assertTrue(!wn.isUpperBound());
 		assertEquals("java.lang.Integer", ((FullyQualifiedName) wn.getBound()).getFullyQualifiedName());
 		assertEquals("? super java.lang.Integer", wn.toString());
+		assertEquals("? super Integer", jt.getDisplayName());
 	}
 
 	@Test
@@ -330,6 +342,7 @@ class JavaTypeTest {
 		WildcardName wn = assertInstanceOf(WildcardName.class, pcn.getTypeArguments().get(0));
 		assertTrue(wn.isUpperBound());
 		assertEquals("com.example.dto.BaseDto", ((FullyQualifiedName) wn.getBound()).getFullyQualifiedName());
+		assertEquals("List<? extends BaseDto>", jt.getDisplayName());
 	}
 
 	@Test
@@ -446,6 +459,7 @@ class JavaTypeTest {
 
 		assertEquals("int", ptn.getKeyword());
 		assertEquals("int", ptn.toString());
+		assertEquals("int", jt.getDisplayName());
 		assertTrue(ptn.getAllClassNames().isEmpty());
 	}
 
@@ -491,6 +505,7 @@ class JavaTypeTest {
 		assertInstanceOf(PrimitiveTypeName.class, atn.getComponentType());
 		assertEquals("int", atn.getComponentType().toString());
 		assertEquals("int[]", atn.toString());
+		assertEquals("int[]", jt.getDisplayName());
 		assertTrue(atn.getAllClassNames().isEmpty());
 	}
 
@@ -518,6 +533,7 @@ class JavaTypeTest {
 		assertInstanceOf(ClassName.class, atn.getComponentType());
 		assertEquals("String", ((ClassName) atn.getComponentType()).getSimpleName());
 		assertEquals("java.lang.String[]", atn.toString());
+		assertEquals("String[]", jt.getDisplayName());
 
 		List<ClassName> classNames = atn.getAllClassNames();
 		assertEquals(1, classNames.size());
@@ -534,6 +550,7 @@ class JavaTypeTest {
 		assertEquals(2, atn.getDimensions());
 		assertInstanceOf(ClassName.class, atn.getComponentType());
 		assertEquals("com.example.Foo[][]", atn.toString());
+		assertEquals("Foo[][]", jt.getDisplayName());
 	}
 
 	@Test
@@ -547,6 +564,7 @@ class JavaTypeTest {
 		assertInstanceOf(ParameterizedClassName.class, atn.getComponentType());
 		assertEquals("List", ((ParameterizedClassName) atn.getComponentType()).getSimpleName());
 		assertEquals("java.util.List<java.lang.String>[]", atn.toString());
+		assertEquals("List<String>[]", jt.getDisplayName());
 
 		List<ClassName> classNames = atn.getAllClassNames();
 		assertEquals(2, classNames.size());
@@ -567,6 +585,7 @@ class JavaTypeTest {
 		assertEquals("Entry", cn.getSimpleName());
 		assertNotNull(cn.getDeclaringClass());
 		assertEquals("java.util.Map.Entry[]", atn.toString());
+		assertEquals("Map.Entry[]", jt.getDisplayName());
 	}
 
 	// ========== Round-trip for arrays and primitives ==========

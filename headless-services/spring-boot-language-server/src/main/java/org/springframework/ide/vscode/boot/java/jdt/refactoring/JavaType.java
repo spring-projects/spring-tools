@@ -39,6 +39,21 @@ import org.eclipse.jdt.core.dom.Type;
 interface JavaType {
 
 	/**
+	 * Returns a human-readable display name for this type using short (simple) names.
+	 * <p>
+	 * Examples:
+	 * <ul>
+	 *   <li>{@code "int"} for a primitive</li>
+	 *   <li>{@code "String"} for a simple class</li>
+	 *   <li>{@code "Map.Entry"} for an inner class</li>
+	 *   <li>{@code "Map<String, Integer>"} for a parameterized type</li>
+	 *   <li>{@code "String[]"} for an array</li>
+	 *   <li>{@code "? extends Number"} for a wildcard</li>
+	 * </ul>
+	 */
+	String getDisplayName();
+
+	/**
 	 * Returns a flat list of all concrete {@link ClassName} instances referenced in this
 	 * type tree. This is used for import management — each class name in the list may
 	 * need an import statement.

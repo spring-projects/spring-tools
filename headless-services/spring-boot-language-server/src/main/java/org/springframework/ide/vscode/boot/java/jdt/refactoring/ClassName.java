@@ -97,6 +97,11 @@ class ClassName implements FullyQualifiedName {
 	}
 
 	@Override
+	public String getDisplayName() {
+		return getFieldTypeName();
+	}
+
+	@Override
 	public String getFullyQualifiedName() {
 		String fieldTypeName = getFieldTypeName();
 		if (packageName.isEmpty()) {

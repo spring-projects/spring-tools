@@ -64,6 +64,18 @@ class ParameterizedClassName implements FullyQualifiedName {
 	}
 
 	@Override
+	public String getDisplayName() {
+		String base = erasure.getDisplayName();
+		if (typeArguments.isEmpty()) {
+			return base;
+		}
+		String args = typeArguments.stream()
+				.map(JavaType::getDisplayName)
+				.collect(Collectors.joining(", "));
+		return base + "<" + args + ">";
+	}
+
+	@Override
 	public String getFullyQualifiedName() {
 		String base = erasure.getFullyQualifiedName();
 		if (typeArguments.isEmpty()) {

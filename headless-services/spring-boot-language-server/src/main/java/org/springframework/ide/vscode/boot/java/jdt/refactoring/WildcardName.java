@@ -57,6 +57,14 @@ class WildcardName implements JavaType {
 	}
 
 	@Override
+	public String getDisplayName() {
+		if (bound == null) {
+			return "?";
+		}
+		return "? " + (upperBound ? "extends" : "super") + " " + bound.getDisplayName();
+	}
+
+	@Override
 	public List<ClassName> getAllClassNames() {
 		if (bound != null) {
 			return bound.getAllClassNames();

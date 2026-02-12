@@ -54,6 +54,11 @@ class ArrayTypeName implements JavaType {
 	}
 
 	@Override
+	public String getDisplayName() {
+		return componentType.getDisplayName() + "[]".repeat(dimensions);
+	}
+
+	@Override
 	public List<ClassName> getAllClassNames() {
 		return componentType.getAllClassNames();
 	}

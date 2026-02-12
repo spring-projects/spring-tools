@@ -1,0 +1,106 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Broadcom, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Broadcom, Inc. - initial API and implementation
+ *******************************************************************************/
+package org.springframework.ide.vscode.boot.java.jdt.refactoring;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.Type;
+
+/**
+ * Represents a parameterized class type like {@code Map<String, List<Integer>>}.
+ * <p>
+ * Holds a {@link ClassName} (the type erasure) and a list of type arguments,
+ * each of which is a {@link JavaType} (and can itself be a {@link ClassName},
+ * {@link ParameterizedClassName}, or {@link WildcardName}).
+ *
+ * @author Alex Boyko
+ */
+class ParameterizedClassName implements FullyQualifiedName {
+
+	private final ClassName erasure;
+	private final List<JavaType> typeArguments;
+
+	/**
+	 * Create a new parameterized class name.
+	 *
+	 * @param erasure       the type erasure (e.g. {@code ClassName("java.util", "Map")})
+	 * @param typeArguments the type arguments (must not be empty)
+	 */
+	public ParameterizedClassName(ClassName erasure, List<JavaType> typeArguments) {
+		this.erasure = erasure;
+		this.typeArguments = typeArguments != null ? Collections.unmodifiableList(typeArguments) : Collections.emptyList();
+	}
+
+	/**
+	 * Returns the type erasure (the class name without type arguments).
+	 */
+	public ClassName getErasure() {
+		return erasure;
+	}
+
+	/**
+	 * Returns the type arguments.
+	 */
+	public List<JavaType> getTypeArguments() {
+		return typeArguments;
+	}
+
+	@Override
+	public String getSimpleName() {
+		return erasure.getSimpleName();
+	}
+
+	@Override
+	public String getFullyQualifiedName() {
+		String base = erasure.getFullyQualifiedName();
+		if (typeArguments.isEmpty()) {
+			return base;
+		}
+		String args = typeArguments.stream()
+				.map(Object::toString)
+				.collect(Collectors.joining(", "));
+		return base + "<" + args + ">";
+	}
+
+	@Override
+	public List<ClassName> getAllClassNames() {
+		List<ClassName> result = new ArrayList<>();
+		// Add the erasure itself
+		result.add(erasure);
+		// Recurse into type arguments
+		for (JavaType arg : typeArguments) {
+			result.addAll(arg.getAllClassNames());
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public Type toType(AST ast) {
+		Type baseType = erasure.toType(ast);
+		ParameterizedType paramType = ast.newParameterizedType(baseType);
+		for (JavaType arg : typeArguments) {
+			paramType.typeArguments().add(arg.toType(ast));
+		}
+		return paramType;
+	}
+
+	@Override
+	public String toString() {
+		return getFullyQualifiedName();
+	}
+
+}

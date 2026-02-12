@@ -333,7 +333,7 @@ class InjectBeanConstructorRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				"com.example.pet.Inner.PetService", "petService",
+				"com.example.pet.Inner$PetService", "petService",
 				"com.example.MyService", true);
 
 		assertEquals("""
@@ -486,31 +486,186 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
-	// ========== Type name utilities ==========
+	// ========== Parameterized types ==========
+
+	@Test
+	void injectParameterizedType() throws Exception {
+		String source = """
+				package com.example;
+				
+				public class MyService {
+				
+					public void doWork() {
+					}
+				}
+				""";
+
+		String result = applyRefactoring(source,
+				"java.util.Map<java.lang.String, java.util.List<java.util.Map$Entry<java.lang.String, ?>>>",
+				"lookupMap",
+				"com.example.MyService", true);
+
+		assertEquals("""
+				package com.example;
+				
+				import java.util.List;
+				import java.util.Map;
+				import java.util.Map.Entry;
+				
+				public class MyService {
+				
+					private final Map<String, List<Map.Entry<String, ?>>> lookupMap;
+				
+					MyService(Map<String, List<Map.Entry<String, ?>>> lookupMap) {
+						this.lookupMap = lookupMap;
+					}
+				
+					public void doWork() {
+					}
+				}
+				""", result);
+	}
+
+	@Test
+	void injectSimpleParameterizedType() throws Exception {
+		String source = """
+				package com.example;
+				
+				public class MyService {
+				
+					public void doWork() {
+					}
+				}
+				""";
+
+		String result = applyRefactoring(source,
+				"java.util.List<com.example.dto.MyDto>",
+				"items",
+				"com.example.MyService", true);
+
+		assertEquals("""
+				package com.example;
+				
+				import com.example.dto.MyDto;
+				import java.util.List;
+				
+				public class MyService {
+				
+					private final List<MyDto> items;
+				
+					MyService(List<MyDto> items) {
+						this.items = items;
+					}
+				
+					public void doWork() {
+					}
+				}
+				""", result);
+	}
+
+	@Test
+	void injectParameterizedTypeWithExistingImports() throws Exception {
+		String source = """
+				package com.example;
+				
+				import java.util.Map;
+				
+				public class MyService {
+				
+					public void doWork() {
+					}
+				}
+				""";
+
+		String result = applyRefactoring(source,
+				"java.util.Map<java.lang.String, java.lang.Integer>",
+				"counts",
+				"com.example.MyService", true);
+
+		assertEquals("""
+				package com.example;
+				
+				import java.util.Map;
+				
+				public class MyService {
+				
+					private final Map<String, Integer> counts;
+				
+					MyService(Map<String, Integer> counts) {
+						this.counts = counts;
+					}
+				
+					public void doWork() {
+					}
+				}
+				""", result);
+	}
+
+	@Test
+	void injectWildcardType() throws Exception {
+		String source = """
+				package com.example;
+				
+				public class MyService {
+				
+					public void doWork() {
+					}
+				}
+				""";
+
+		String result = applyRefactoring(source,
+				"java.util.List<? extends com.example.dto.BaseDto>",
+				"items",
+				"com.example.MyService", true);
+
+		assertEquals("""
+				package com.example;
+				
+				import com.example.dto.BaseDto;
+				import java.util.List;
+				
+				public class MyService {
+				
+					private final List<? extends BaseDto> items;
+				
+					MyService(List<? extends BaseDto> items) {
+						this.items = items;
+					}
+				
+					public void doWork() {
+					}
+				}
+				""", result);
+	}
+
+	// ========== Type name utilities (via FullyQualifiedName) ==========
 
 	@Test
 	void getFieldTypeName_simpleClass() {
-		assertEquals("MyRepository", InjectBeanConstructorRefactoring.getFieldTypeName("com.example.MyRepository"));
+		ClassName cn = (ClassName) JavaType.parse("com.example.MyRepository");
+		assertEquals("MyRepository", cn.getFieldTypeName());
 	}
 
 	@Test
 	void getFieldTypeName_innerClass() {
-		assertEquals("Inner.PetService", InjectBeanConstructorRefactoring.getFieldTypeName("com.example.pet.Inner.PetService"));
+		ClassName cn = (ClassName) JavaType.parse("com.example.pet.Inner$PetService");
+		assertEquals("Inner.PetService", cn.getFieldTypeName());
 	}
 
 	@Test
 	void getFieldTypeName_noPackage() {
-		assertEquals("MyRepository", InjectBeanConstructorRefactoring.getFieldTypeName("MyRepository"));
+		ClassName cn = (ClassName) JavaType.parse("MyRepository");
+		assertEquals("MyRepository", cn.getFieldTypeName());
 	}
 
 	@Test
 	void getSimpleTypeName_fqn() {
-		assertEquals("MyRepository", InjectBeanConstructorRefactoring.getSimpleTypeName("com.example.MyRepository"));
+		assertEquals("MyRepository", ((FullyQualifiedName) JavaType.parse("com.example.MyRepository")).getSimpleName());
 	}
 
 	@Test
 	void getSimpleTypeName_simple() {
-		assertEquals("MyRepository", InjectBeanConstructorRefactoring.getSimpleTypeName("MyRepository"));
+		assertEquals("MyRepository", ((FullyQualifiedName) JavaType.parse("MyRepository")).getSimpleName());
 	}
 
 }

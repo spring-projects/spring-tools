@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.JavaCore;
@@ -26,6 +28,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.ThisExpression;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -126,24 +129,36 @@ public class InjectBeanConstructorRefactoring {
 			return null;
 		}
 
-		String simpleTypeName = getFieldTypeName(fullyQualifiedBeanType);
+		// Parse the (possibly parameterized) type string using the type model
+		JavaType javaType = JavaType.parse(fullyQualifiedBeanType);
 
 		// Step 1: Add private final field
-		FieldDeclaration newField = addField(rewrite, ast, targetClass, simpleTypeName);
+		Type fieldType = javaType.toType(ast);
+		FieldDeclaration newField = addField(rewrite, ast, targetClass, fieldType);
 
 		// Step 2: Find or create constructor and add parameter + assignment
 		MethodDeclaration constructor = findConstructor(targetClass);
 		if (constructor == null) {
-			createConstructor(rewrite, ast, targetClass, simpleTypeName, newField);
+			Type ctorParamType = javaType.toType(ast);
+			createConstructor(rewrite, ast, targetClass, ctorParamType, newField);
 		} else {
-			addParameterToConstructor(rewrite, ast, constructor, simpleTypeName);
+			Type ctorParamType = javaType.toType(ast);
+			addParameterToConstructor(rewrite, ast, constructor, ctorParamType);
 			if (addFieldAssignment) {
 				addFieldAssignment(rewrite, ast, constructor);
 			}
 		}
 
-		// Step 3: Add import if needed
-		addImport(rewrite, ast, cu, fullyQualifiedBeanType);
+		// Step 3: Add imports for all referenced class types (sorted for correct insertion order)
+		List<ClassName> classNames = javaType.getAllClassNames();
+		List<String> sortedImports = new ArrayList<>();
+		for (ClassName cn : classNames) {
+			sortedImports.add(cn.getFullyQualifiedName());
+		}
+		sortedImports.sort(String::compareTo);
+		for (String fqName : sortedImports) {
+			addImport(rewrite, ast, cu, fqName);
+		}
 
 		// Generate Eclipse TextEdit
 		Document jdtDoc = new Document(source);
@@ -189,7 +204,7 @@ public class InjectBeanConstructorRefactoring {
 	 * @return the new (or existing) field AST node, used as an insertion anchor for the constructor
 	 */
 	@SuppressWarnings("unchecked")
-	private FieldDeclaration addField(ASTRewrite rewrite, AST ast, TypeDeclaration typeDecl, String simpleTypeName) {
+	private FieldDeclaration addField(ASTRewrite rewrite, AST ast, TypeDeclaration typeDecl, Type type) {
 		// Check if field already exists
 		for (FieldDeclaration field : typeDecl.getFields()) {
 			for (Object fragObj : field.fragments()) {
@@ -204,7 +219,7 @@ public class InjectBeanConstructorRefactoring {
 		fragment.setName(ast.newSimpleName(fieldName));
 
 		FieldDeclaration fieldDecl = ast.newFieldDeclaration(fragment);
-		fieldDecl.setType(ast.newSimpleType(ast.newName(simpleTypeName)));
+		fieldDecl.setType(type);
 		fieldDecl.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.PRIVATE_KEYWORD));
 		fieldDecl.modifiers().add(ast.newModifier(Modifier.ModifierKeyword.FINAL_KEYWORD));
 
@@ -233,14 +248,14 @@ public class InjectBeanConstructorRefactoring {
 
 	@SuppressWarnings("unchecked")
 	private void createConstructor(ASTRewrite rewrite, AST ast, TypeDeclaration typeDecl,
-			String simpleTypeName, FieldDeclaration newField) {
+			Type paramType, FieldDeclaration newField) {
 		MethodDeclaration constructor = ast.newMethodDeclaration();
 		constructor.setConstructor(true);
 		constructor.setName(ast.newSimpleName(typeDecl.getName().getIdentifier()));
 
 		// Add parameter
 		SingleVariableDeclaration param = ast.newSingleVariableDeclaration();
-		param.setType(ast.newSimpleType(ast.newName(simpleTypeName)));
+		param.setType(paramType);
 		param.setName(ast.newSimpleName(fieldName));
 		constructor.parameters().add(param);
 
@@ -277,7 +292,7 @@ public class InjectBeanConstructorRefactoring {
 	}
 
 	private void addParameterToConstructor(ASTRewrite rewrite, AST ast, MethodDeclaration constructor,
-			String simpleTypeName) {
+			Type paramType) {
 		// Check if parameter already exists
 		for (Object paramObj : constructor.parameters()) {
 			if (paramObj instanceof SingleVariableDeclaration svd) {
@@ -288,7 +303,7 @@ public class InjectBeanConstructorRefactoring {
 		}
 
 		SingleVariableDeclaration param = ast.newSingleVariableDeclaration();
-		param.setType(ast.newSimpleType(ast.newName(simpleTypeName)));
+		param.setType(paramType);
 		param.setName(ast.newSimpleName(fieldName));
 
 		ListRewrite paramsRewrite = rewrite.getListRewrite(constructor, MethodDeclaration.PARAMETERS_PROPERTY);
@@ -369,48 +384,6 @@ public class InjectBeanConstructorRefactoring {
 		} else {
 			importsRewrite.insertLast(importDecl, null);
 		}
-	}
-
-	// ========== Type name utilities ==========
-
-	/**
-	 * Get the type name for use in field declarations and constructor parameters.
-	 * Handles inner classes (e.g. {@code "com.example.Outer.Inner"} becomes {@code "Outer.Inner"}).
-	 */
-	public static String getFieldTypeName(String fullyQualifiedName) {
-		if (fullyQualifiedName == null || fullyQualifiedName.isEmpty()) {
-			return fullyQualifiedName;
-		}
-		String[] parts = fullyQualifiedName.split("\\.");
-		int classStart = -1;
-		for (int i = 0; i < parts.length; i++) {
-			if (!parts[i].isEmpty() && Character.isUpperCase(parts[i].charAt(0))) {
-				classStart = i;
-				break;
-			}
-		}
-		if (classStart == -1) {
-			return parts[parts.length - 1];
-		}
-		if (classStart == parts.length - 1) {
-			return parts[parts.length - 1];
-		}
-		StringBuilder sb = new StringBuilder();
-		for (int i = classStart; i < parts.length; i++) {
-			if (sb.length() > 0) {
-				sb.append('.');
-			}
-			sb.append(parts[i]);
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Get the simple class name (last segment) from a fully qualified name.
-	 */
-	public static String getSimpleTypeName(String fullyQualifiedName) {
-		int lastDot = fullyQualifiedName.lastIndexOf('.');
-		return lastDot >= 0 ? fullyQualifiedName.substring(lastDot + 1) : fullyQualifiedName;
 	}
 
 }

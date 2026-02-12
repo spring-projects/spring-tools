@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.checkerframework.checker.signature.qual.FullyQualifiedName;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Assignment;
@@ -31,6 +32,7 @@ import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.text.edits.TextEdit;
+import org.openrewrite.java.tree.JavaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCompletionEngine;
@@ -170,7 +172,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	public CompletionItemLabelDetails getLabelDetails() {
 		CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
 		labelDetails.setDetail(SHORT_DESCRIPTION);
-		labelDetails.setDescription(InjectBeanConstructorRefactoring.getSimpleTypeName(beanType));
+//		labelDetails.setDescription(((FullyQualifiedName) JavaType.parse(beanType)).getSimpleName());
 		return labelDetails;
 	}
 

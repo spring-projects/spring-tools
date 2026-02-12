@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.Type;
@@ -87,6 +88,19 @@ class WildcardName implements JavaType {
 			return "?";
 		}
 		return "? " + (upperBound ? "extends" : "super") + " " + bound;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		WildcardName that = (WildcardName) o;
+		return upperBound == that.upperBound && Objects.equals(bound, that.bound);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(bound, upperBound);
 	}
 
 }

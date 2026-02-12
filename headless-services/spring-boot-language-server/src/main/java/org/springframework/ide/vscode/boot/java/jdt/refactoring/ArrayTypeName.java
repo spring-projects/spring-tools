@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.Type;
@@ -71,6 +72,19 @@ class ArrayTypeName implements JavaType {
 	@Override
 	public String toString() {
 		return componentType + "[]".repeat(dimensions);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ArrayTypeName that = (ArrayTypeName) o;
+		return dimensions == that.dimensions && componentType.equals(that.componentType);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(componentType, dimensions);
 	}
 
 }

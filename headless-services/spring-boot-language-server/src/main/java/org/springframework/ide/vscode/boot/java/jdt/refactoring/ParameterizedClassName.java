@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.dom.AST;
@@ -113,6 +114,19 @@ class ParameterizedClassName implements FullyQualifiedName {
 	@Override
 	public String toString() {
 		return getFullyQualifiedName();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		ParameterizedClassName that = (ParameterizedClassName) o;
+		return erasure.equals(that.erasure) && typeArguments.equals(that.typeArguments);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(erasure, typeArguments);
 	}
 
 }

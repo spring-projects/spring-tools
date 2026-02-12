@@ -36,7 +36,7 @@ import org.eclipse.jdt.core.dom.Type;
  *
  * @author Alex Boyko
  */
-interface JavaType {
+public interface JavaType {
 
 	/**
 	 * Returns a human-readable display name for this type using short (simple) names.

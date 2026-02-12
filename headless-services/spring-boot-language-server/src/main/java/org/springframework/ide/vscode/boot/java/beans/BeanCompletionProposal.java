@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
-import org.checkerframework.checker.signature.qual.FullyQualifiedName;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Assignment;
@@ -32,11 +31,11 @@ import org.eclipse.text.edits.DeleteEdit;
 import org.eclipse.text.edits.InsertEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.text.edits.TextEdit;
-import org.openrewrite.java.tree.JavaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCompletionEngine;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.InjectBeanConstructorRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JavaType;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposalWithScore;
@@ -58,7 +57,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	private IDocument doc;
 	private IJavaProject project;
 	private String beanId;
-	private String beanType;
+	private JavaType beanType;
 	private String fieldName;
 	private String className;
 	private double score;
@@ -75,7 +74,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		this.doc = doc;
 		this.project = project;
 		this.beanId = beanId;
-		this.beanType = beanType;
+		this.beanType = JavaType.parse(beanType);
 		this.fieldName = fieldName;
 		this.className = className;
 		this.prefix = computePrefix();
@@ -172,7 +171,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	public CompletionItemLabelDetails getLabelDetails() {
 		CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
 		labelDetails.setDetail(SHORT_DESCRIPTION);
-//		labelDetails.setDescription(((FullyQualifiedName) JavaType.parse(beanType)).getSimpleName());
+		labelDetails.setDescription(beanType.getDisplayName());
 		return labelDetails;
 	}
 

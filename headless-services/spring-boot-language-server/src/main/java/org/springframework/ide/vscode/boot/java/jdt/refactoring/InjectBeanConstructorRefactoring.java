@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Assignment;
@@ -67,34 +66,61 @@ public class InjectBeanConstructorRefactoring {
 
 	private final CompilationUnit cu;
 	private final String source;
-	private final String fullyQualifiedBeanType;
+	private final JavaType beanType;
 	private final String fieldName;
 	private final String targetClassFqName;
 	private final boolean addFieldAssignment;
 	private final Map<String, String> formatterOptions;
 
 	/**
-	 * Create a new bean constructor injection refactoring.
+	 * Create a new bean constructor injection refactoring from a pre-parsed {@link JavaType}.
+	 * <p>
+	 * Use this constructor when the caller already has a parsed {@link JavaType} instance
+	 * to avoid redundant parsing.
 	 *
-	 * @param cu                   the already-parsed {@link CompilationUnit}. The caller provides
-	 *                             it — in the completion flow it comes from the CU cache; in tests
-	 *                             it can be a simple {@code ASTParser}-created CU.
-	 * @param source               the full Java source text of the compilation unit. Required because
-	 *                             the DOM {@link CompilationUnit} does not retain the original source
-	 *                             text, and {@link ASTRewrite#rewriteAST(org.eclipse.jface.text.IDocument, Map)}
-	 *                             needs it to compute correct text edits.
-	 * @param fullyQualifiedBeanType the fully qualified type name of the bean to inject
-	 *                               (e.g. {@code "org.springframework.samples.petclinic.owner.OwnerRepository"})
+	 * @param cu                   the already-parsed {@link CompilationUnit}
+	 * @param source               the full Java source text of the compilation unit
+	 * @param beanType             the parsed type of the bean to inject
 	 * @param fieldName            the desired field name for the injected bean
 	 * @param targetClassFqName    the fully qualified name of the class to inject the bean into
 	 * @param addFieldAssignment   whether to add the {@code this.field = field} assignment
-	 *                             in the constructor body. Pass {@code false} when the caller
-	 *                             handles the assignment separately (e.g. as the primary text edit
-	 *                             in a completion proposal when the cursor is inside a constructor)
+	 *                             in the constructor body
 	 * @param formatterOptions     JavaCore formatter options controlling indentation, tab/space
-	 *                             settings, etc. These are passed directly to
-	 *                             {@link ASTRewrite#rewriteAST(org.eclipse.jface.text.IDocument, Map)}.
-	 *                             A sensible default can be obtained via {@link JavaCore#getOptions()}.
+	 *                             settings, etc.
+	 */
+	public InjectBeanConstructorRefactoring(
+			CompilationUnit cu,
+			String source,
+			JavaType beanType,
+			String fieldName,
+			String targetClassFqName,
+			boolean addFieldAssignment,
+			Map<String, String> formatterOptions) {
+		this.cu = cu;
+		this.source = source;
+		this.beanType = beanType;
+		this.fieldName = fieldName;
+		this.targetClassFqName = targetClassFqName;
+		this.addFieldAssignment = addFieldAssignment;
+		this.formatterOptions = formatterOptions;
+	}
+
+	/**
+	 * Create a new bean constructor injection refactoring from a type name string.
+	 * <p>
+	 * Convenience constructor that parses the type string into a {@link JavaType}.
+	 * Use {@code $} for inner classes (e.g. {@code "java.util.Map$Entry"}).
+	 *
+	 * @param cu                       the already-parsed {@link CompilationUnit}
+	 * @param source                   the full Java source text of the compilation unit
+	 * @param fullyQualifiedBeanType   the fully qualified type name of the bean to inject
+	 *                                 (e.g. {@code "org.springframework.samples.petclinic.owner.OwnerRepository"})
+	 * @param fieldName                the desired field name for the injected bean
+	 * @param targetClassFqName        the fully qualified name of the class to inject the bean into
+	 * @param addFieldAssignment       whether to add the {@code this.field = field} assignment
+	 *                                 in the constructor body
+	 * @param formatterOptions         JavaCore formatter options controlling indentation, tab/space
+	 *                                 settings, etc.
 	 */
 	public InjectBeanConstructorRefactoring(
 			CompilationUnit cu,
@@ -104,13 +130,8 @@ public class InjectBeanConstructorRefactoring {
 			String targetClassFqName,
 			boolean addFieldAssignment,
 			Map<String, String> formatterOptions) {
-		this.cu = cu;
-		this.source = source;
-		this.fullyQualifiedBeanType = fullyQualifiedBeanType;
-		this.fieldName = fieldName;
-		this.targetClassFqName = targetClassFqName;
-		this.addFieldAssignment = addFieldAssignment;
-		this.formatterOptions = formatterOptions;
+		this(cu, source, JavaType.parse(fullyQualifiedBeanType), fieldName, targetClassFqName,
+				addFieldAssignment, formatterOptions);
 	}
 
 	/**
@@ -129,20 +150,17 @@ public class InjectBeanConstructorRefactoring {
 			return null;
 		}
 
-		// Parse the (possibly parameterized) type string using the type model
-		JavaType javaType = JavaType.parse(fullyQualifiedBeanType);
-
 		// Step 1: Add private final field
-		Type fieldType = javaType.toType(ast);
+		Type fieldType = beanType.toType(ast);
 		FieldDeclaration newField = addField(rewrite, ast, targetClass, fieldType);
 
 		// Step 2: Find or create constructor and add parameter + assignment
 		MethodDeclaration constructor = findConstructor(targetClass);
 		if (constructor == null) {
-			Type ctorParamType = javaType.toType(ast);
+			Type ctorParamType = beanType.toType(ast);
 			createConstructor(rewrite, ast, targetClass, ctorParamType, newField);
 		} else {
-			Type ctorParamType = javaType.toType(ast);
+			Type ctorParamType = beanType.toType(ast);
 			addParameterToConstructor(rewrite, ast, constructor, ctorParamType);
 			if (addFieldAssignment) {
 				addFieldAssignment(rewrite, ast, constructor);
@@ -150,14 +168,10 @@ public class InjectBeanConstructorRefactoring {
 		}
 
 		// Step 3: Add imports for all referenced class types (sorted for correct insertion order)
-		List<ClassName> classNames = javaType.getAllClassNames();
-		List<String> sortedImports = new ArrayList<>();
+		List<ClassName> classNames = new ArrayList<>(beanType.getAllClassNames());
+		classNames.sort((a, b) -> a.getFullyQualifiedName().compareTo(b.getFullyQualifiedName()));
 		for (ClassName cn : classNames) {
-			sortedImports.add(cn.getFullyQualifiedName());
-		}
-		sortedImports.sort(String::compareTo);
-		for (String fqName : sortedImports) {
-			addImport(rewrite, ast, cu, fqName);
+			addImport(rewrite, ast, cu, cn);
 		}
 
 		// Generate Eclipse TextEdit
@@ -339,22 +353,28 @@ public class InjectBeanConstructorRefactoring {
 
 	// ========== Import ==========
 
-	private static void addImport(ASTRewrite rewrite, AST ast, CompilationUnit cu, String fullyQualifiedName) {
+	private static void addImport(ASTRewrite rewrite, AST ast, CompilationUnit cu, ClassName className) {
+		String packageName = className.getPackageName();
+
 		// Don't add import for java.lang types
-		if (fullyQualifiedName.startsWith("java.lang.") && fullyQualifiedName.indexOf('.', 10) == -1) {
+		if ("java.lang".equals(packageName)) {
+			return;
+		}
+
+		// Don't add import for default package types
+		if (packageName.isEmpty()) {
 			return;
 		}
 
 		// Don't add import if type is in the same package
 		if (cu.getPackage() != null) {
-			String packageName = cu.getPackage().getName().getFullyQualifiedName();
-			String typePackage = fullyQualifiedName.contains(".")
-					? fullyQualifiedName.substring(0, fullyQualifiedName.lastIndexOf('.'))
-					: "";
-			if (packageName.equals(typePackage)) {
+			String cuPackage = cu.getPackage().getName().getFullyQualifiedName();
+			if (cuPackage.equals(packageName)) {
 				return;
 			}
 		}
+
+		String fullyQualifiedName = className.getFullyQualifiedName();
 
 		// Check if import already exists
 		for (Object importObj : cu.imports()) {

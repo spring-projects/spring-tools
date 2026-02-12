@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.Type;
@@ -133,12 +134,14 @@ class ClassName implements FullyQualifiedName {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		ClassName that = (ClassName) o;
-		return getFullyQualifiedName().equals(that.getFullyQualifiedName());
+		return simpleName.equals(that.simpleName)
+				&& packageName.equals(that.packageName)
+				&& Objects.equals(declaringClass, that.declaringClass);
 	}
 
 	@Override
 	public int hashCode() {
-		return getFullyQualifiedName().hashCode();
+		return Objects.hash(packageName, simpleName, declaringClass);
 	}
 
 }

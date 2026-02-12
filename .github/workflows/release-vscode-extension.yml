@@ -33,7 +33,7 @@ jobs:
     name: Release Build and Upload VSCode Extension '${{ inputs.extension-name }}'
     steps:
       - name: Checkout vscode-extension '${{ inputs.extension-name }}'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
       - name: Record Extension Version
         id: version
         run: |

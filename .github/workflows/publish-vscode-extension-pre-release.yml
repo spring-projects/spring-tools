@@ -20,7 +20,7 @@ jobs:
     name: Publish Pre-Release for VSCode Extension '${{ inputs.extension-name }}'
     steps:
       - name: Checkout vscode-extensions code and workflow scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:

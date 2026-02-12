@@ -10,8 +10,10 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.Type;
 
@@ -63,6 +65,9 @@ interface JavaType {
 	 * Supports simple types, inner classes, parameterized types, wildcards,
 	 * primitive types, and array types.
 	 * <p>
+	 * Uses JDT's {@link Signature} utility for parsing the type string into its
+	 * structural components.
+	 * <p>
 	 * Examples of accepted input:
 	 * <ul>
 	 *   <li>{@code "java.util.Map"}</li>
@@ -78,43 +83,66 @@ interface JavaType {
 	 * @return the parsed {@link JavaType}
 	 */
 	static JavaType parse(String typeString) {
-		typeString = typeString.trim();
+		String sig = Signature.createTypeSignature(typeString.trim(), true);
+		return parseFromSignature(sig);
+	}
 
-		// Handle wildcards: ?, ? extends X, ? super X
-		if (typeString.startsWith("?")) {
-			return parseWildcard(typeString);
+	/**
+	 * Recursively parse a JDT type signature string into a {@link JavaType}.
+	 *
+	 * @param sig a JDT type signature (e.g. {@code "Ljava.util.Map;"}, {@code "I"}, {@code "[Ljava.lang.String;"})
+	 * @return the parsed {@link JavaType}
+	 */
+	private static JavaType parseFromSignature(String sig) {
+		int kind = Signature.getTypeSignatureKind(sig);
+
+		switch (kind) {
+			case Signature.BASE_TYPE_SIGNATURE:
+				return new PrimitiveTypeName(Signature.toString(sig));
+
+			case Signature.ARRAY_TYPE_SIGNATURE:
+				int dimensions = Signature.getArrayCount(sig);
+				String elementSig = Signature.getElementType(sig);
+				JavaType componentType = parseFromSignature(elementSig);
+				return new ArrayTypeName(componentType, dimensions);
+
+			case Signature.CLASS_TYPE_SIGNATURE:
+				return parseClassSignature(sig);
+
+			case Signature.WILDCARD_TYPE_SIGNATURE:
+				return parseWildcardSignature(sig);
+
+			default:
+				throw new IllegalArgumentException("Unsupported type signature kind: " + kind + " for signature: " + sig);
 		}
+	}
 
-		// Handle array types: strip trailing [] pairs, count dimensions
-		int dimensions = 0;
-		String remaining = typeString;
-		while (remaining.endsWith("[]")) {
-			dimensions++;
-			remaining = remaining.substring(0, remaining.length() - 2);
-		}
-		if (dimensions > 0) {
-			JavaType componentType = parse(remaining);
-			return new ArrayTypeName(componentType, dimensions);
-		}
+	/**
+	 * Parse a class type signature into a {@link ClassName} or {@link ParameterizedClassName}.
+	 * <p>
+	 * Uses {@link Signature#getTypeErasure(String)} to extract the raw class signature,
+	 * then {@link Signature#getSignatureQualifier(String)} and
+	 * {@link Signature#getSignatureSimpleName(String)} to decompose it into package and
+	 * class name chain. For {@code $}-separated inner class input, the simple name is
+	 * returned as a {@code .}-separated chain (e.g. {@code "Map.Entry"}).
+	 */
+	private static JavaType parseClassSignature(String sig) {
+		// Extract the erasure (raw class without type arguments)
+		String erasureSig = Signature.getTypeErasure(sig);
 
-		// Handle primitive types
-		if (PrimitiveTypeName.isPrimitive(typeString)) {
-			return new PrimitiveTypeName(typeString);
-		}
+		// Decompose into package and class chain
+		String packageName = Signature.getSignatureQualifier(erasureSig);
+		String classChain = Signature.getSignatureSimpleName(erasureSig);
 
-		// Extract the erased class name (before any '<')
-		int angleBracket = typeString.indexOf('<');
-		String erasedFqn = angleBracket >= 0 ? typeString.substring(0, angleBracket) : typeString;
+		// Build the ClassName chain by splitting on '.' (inner classes)
+		ClassName className = buildClassNameFromChain(packageName, classChain);
 
-		// Build the ClassName using $ for inner class detection
-		ClassName className = buildClassName(erasedFqn);
-
-		// Parse type arguments if present
-		if (angleBracket >= 0) {
-			List<String> argStrings = splitTypeArguments(typeString, angleBracket);
-			List<JavaType> parsedArgs = new java.util.ArrayList<>(argStrings.size());
-			for (String arg : argStrings) {
-				parsedArgs.add(parse(arg));
+		// Extract type arguments
+		String[] typeArgSigs = Signature.getTypeArguments(sig);
+		if (typeArgSigs.length > 0) {
+			List<JavaType> parsedArgs = new ArrayList<>(typeArgSigs.length);
+			for (String argSig : typeArgSigs) {
+				parsedArgs.add(parseFromSignature(argSig));
 			}
 			return new ParameterizedClassName(className, parsedArgs);
 		}
@@ -123,58 +151,17 @@ interface JavaType {
 	}
 
 	/**
-	 * Split the top-level type arguments from a type string.
+	 * Build a {@link ClassName} from a package name and a class chain string.
 	 * <p>
-	 * Given {@code "Map<String, List<Integer>>"} with {@code angleBracketIdx} pointing
-	 * to the first {@code <}, returns {@code ["String", "List<Integer>"]}.
+	 * The class chain may contain {@code .} separators for inner classes
+	 * (e.g. {@code "Map.Entry"} or {@code "Outer.Middle.Inner"}).
+	 *
+	 * @param packageName the package name (e.g. {@code "java.util"}), or empty string
+	 * @param classChain  the class name chain (e.g. {@code "Map"}, {@code "Map.Entry"})
+	 * @return the constructed {@link ClassName}
 	 */
-	private static List<String> splitTypeArguments(String typeString, int angleBracketIdx) {
-		// Content between the outermost < and >
-		String argsContent = typeString.substring(angleBracketIdx + 1, typeString.length() - 1);
-
-		List<String> args = new java.util.ArrayList<>();
-		int depth = 0;
-		int start = 0;
-		for (int i = 0; i < argsContent.length(); i++) {
-			char c = argsContent.charAt(i);
-			if (c == '<') {
-				depth++;
-			} else if (c == '>') {
-				depth--;
-			} else if (c == ',' && depth == 0) {
-				args.add(argsContent.substring(start, i).trim());
-				start = i + 1;
-			}
-		}
-		args.add(argsContent.substring(start).trim());
-		return args;
-	}
-
-	/**
-	 * Build a ClassName from a fully qualified name string that uses {@code $} for inner classes.
-	 * <p>
-	 * E.g. {@code "java.util.Map$Entry"} builds
-	 * {@code ClassName("java.util", "Map")} as the declaring class,
-	 * then {@code ClassName(declaringMap, "Entry")}.
-	 */
-	private static ClassName buildClassName(String fqn) {
-		// Find the last dot before any $ to separate package from class
-		int dollarIdx = fqn.indexOf('$');
-		String beforeDollar = dollarIdx >= 0 ? fqn.substring(0, dollarIdx) : fqn;
-
-		int lastDot = beforeDollar.lastIndexOf('.');
-		String packageName;
-		String classPart;
-		if (lastDot >= 0) {
-			packageName = fqn.substring(0, lastDot);
-			classPart = fqn.substring(lastDot + 1);
-		} else {
-			packageName = "";
-			classPart = fqn;
-		}
-
-		// Split class part on $ for inner classes
-		String[] parts = classPart.split("\\$");
+	private static ClassName buildClassNameFromChain(String packageName, String classChain) {
+		String[] parts = classChain.split("\\.");
 		ClassName current = new ClassName(packageName, parts[0]);
 		for (int i = 1; i < parts.length; i++) {
 			current = new ClassName(current, parts[i]);
@@ -183,18 +170,32 @@ interface JavaType {
 	}
 
 	/**
-	 * Parse a wildcard from a source-style string like "?", "? extends Foo", "? super Bar".
+	 * Parse a wildcard type signature into a {@link WildcardName}.
+	 * <p>
+	 * Wildcard signatures use:
+	 * <ul>
+	 *   <li>{@code *} — unbounded wildcard ({@code ?})</li>
+	 *   <li>{@code +<sig>} — upper-bounded wildcard ({@code ? extends X})</li>
+	 *   <li>{@code -<sig>} — lower-bounded wildcard ({@code ? super X})</li>
+	 * </ul>
 	 */
-	private static WildcardName parseWildcard(String typeString) {
-		String rest = typeString.substring(1).trim();
-		if (rest.startsWith("extends ")) {
-			JavaType bound = parse(rest.substring("extends ".length()).trim());
+	private static WildcardName parseWildcardSignature(String sig) {
+		char first = sig.charAt(0);
+		if (first == Signature.C_STAR) {
+			// Unbounded wildcard: ?
+			return new WildcardName(null, true);
+		} else if (first == Signature.C_EXTENDS) {
+			// Upper-bounded: ? extends X
+			String boundSig = sig.substring(1);
+			JavaType bound = parseFromSignature(boundSig);
 			return new WildcardName(bound, true);
-		} else if (rest.startsWith("super ")) {
-			JavaType bound = parse(rest.substring("super ".length()).trim());
+		} else if (first == Signature.C_SUPER) {
+			// Lower-bounded: ? super X
+			String boundSig = sig.substring(1);
+			JavaType bound = parseFromSignature(boundSig);
 			return new WildcardName(bound, false);
 		}
-		return new WildcardName(null, true);
+		throw new IllegalArgumentException("Invalid wildcard signature: " + sig);
 	}
 
 }

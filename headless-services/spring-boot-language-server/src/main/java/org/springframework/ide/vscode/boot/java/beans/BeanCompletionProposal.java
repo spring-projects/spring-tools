@@ -10,13 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.Block;
@@ -233,14 +231,11 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		// the assignment statement, so we tell the refactoring to skip it.
 		boolean cursorInsideConstructor = isInsideConstructor(node);
 
-		Map<String, String> javaCoreOptions = project.getJavaCoreOptions();
-		Map<String, String> formatterOptions = javaCoreOptions.isEmpty() ? JavaCore.getOptions() : javaCoreOptions;
-
 		CompilationUnit cu = (CompilationUnit) node.getRoot();
 
 		InjectBeanConstructorRefactoring refactoring = new InjectBeanConstructorRefactoring(
 				cu, source, beanType, fieldName, className,
-				!cursorInsideConstructor, formatterOptions);
+				!cursorInsideConstructor, project.getJavaCoreOptions());
 
 		TextEdit jdtEdit = refactoring.computeEdit();
 		if (jdtEdit == null) {

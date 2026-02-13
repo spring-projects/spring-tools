@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.commons.java;
 
 import java.net.URI;
-import java.util.Map;
 
 import org.springframework.ide.vscode.commons.jandex.JandexClasspath;
 import org.springframework.ide.vscode.commons.jandex.JandexIndex.JavadocProviderFactory;
@@ -25,11 +24,7 @@ public class JavaProject extends AbstractJavaProject {
 	private final JavadocProviderFactory javadocProviderFactory;
 
 	public JavaProject(FileObserver fileObserver, URI uri, IClasspath classpath, JavadocService javadocService, IProjectBuild projectBuild) {
-		this(fileObserver, uri, classpath, javadocService, projectBuild, null);
-	}
-
-	public JavaProject(FileObserver fileObserver, URI uri, IClasspath classpath, JavadocService javadocService, IProjectBuild projectBuild, Map<String, String> javaCoreOptions) {
-		super(uri, classpath, projectBuild, javaCoreOptions);
+		super(uri, classpath, projectBuild);
 		this.fileObserver = fileObserver;
 		this.javadocProviderFactory = (classpathResource) -> {
 			CPE cpe = IClasspathUtil.findEntryForBinaryRoot(classpath, classpathResource);

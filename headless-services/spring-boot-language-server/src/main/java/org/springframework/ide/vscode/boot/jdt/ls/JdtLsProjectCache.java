@@ -31,6 +31,7 @@ import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.commons.java.AbstractJavaProject;
 import org.springframework.ide.vscode.commons.java.ClasspathData;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.IJavadocProvider;
@@ -371,19 +372,21 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 						log.debug("deleted = false");
 						URI projectUri = new URI(uri);
 						ClasspathData classpath = new ClasspathData(event.name, event.classpath.getEntries(), event.classpath.getJre());
-						IJavaProject oldProject, newProject;
+						IJavaProject oldProject;
+						AbstractJavaProject newProject;
 						synchronized(table) {
 							oldProject = table.get(uri);
 							if (oldProject != null && classpath.equals(oldProject.getClasspath())) {
 								// nothing has changed
 								return;
 							}
-							IProjectBuild projectBuild = from(event.projectBuild);
-							newProject = IS_JANDEX_INDEX
-									? new JavaProject(getFileObserver(), projectUri, classpath,
-											JdtLsProjectCache.this, projectBuild, event.javaCoreOptions)
-									: new JdtLsJavaProject(server.getClient(), projectUri, classpath, JdtLsProjectCache.this, projectBuild, event.javaCoreOptions);
-							table.put(uri, newProject);
+						IProjectBuild projectBuild = from(event.projectBuild);
+						newProject = IS_JANDEX_INDEX
+								? new JavaProject(getFileObserver(), projectUri, classpath,
+										JdtLsProjectCache.this, projectBuild)
+								: new JdtLsJavaProject(server.getClient(), projectUri, classpath, JdtLsProjectCache.this, projectBuild);
+						newProject.setJavaCoreOptions(event.javaCoreOptions);
+						table.put(uri, newProject);
 						}
 						// Notify outside of the lock 
 						if (oldProject != null) {

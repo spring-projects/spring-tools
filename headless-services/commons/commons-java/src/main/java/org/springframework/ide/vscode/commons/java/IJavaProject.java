@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2022 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.commons.java;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.Map;
 
 public interface IJavaProject {
@@ -32,18 +31,15 @@ public interface IJavaProject {
 	 * Returns the JavaCore options for this project. These control compiler compliance,
 	 * formatter settings (indentation, tab/space), and other JDT core behaviors.
 	 * <p>
-	 * When project-specific options are available (received from the JDT LS extension
-	 * via the classpath notification), they are returned. Otherwise, returns an empty map.
-	 * <p>
-	 * Consumers in modules that have JDT core on the classpath should fall back to
-	 * {@code JavaCore.getOptions()} when this returns an empty map.
+	 * In production, these options are received from the JDT LS extension via the
+	 * classpath notification and are always populated. The default implementation
+	 * returns an empty map for use by test doubles and legacy implementations that
+	 * don't go through the classpath event pipeline.
 	 * <p>
 	 * This method never returns {@code null}.
 	 *
-	 * @return a non-null map of JavaCore option keys to values, or empty if not available
+	 * @return a non-null map of JavaCore option keys to values
 	 */
-	default Map<String, String> getJavaCoreOptions() {
-		return Collections.emptyMap();
-	}
+	Map<String, String> getJavaCoreOptions();
 
 }

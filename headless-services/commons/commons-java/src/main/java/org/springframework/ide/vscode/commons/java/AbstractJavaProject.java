@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2022 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ import java.io.File;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 import reactor.core.Disposable;
 
@@ -22,19 +23,14 @@ public abstract class AbstractJavaProject implements IJavaProject, Disposable {
 	private final IClasspath classpath;
 	private final URI uri;
 	private final IProjectBuild projectBuild;
-	private final Map<String, String> javaCoreOptions;
+	private Map<String, String> javaCoreOptions = Collections.emptyMap();
 
 	private ClasspathIndex index;
 
 	public AbstractJavaProject(URI uri, IClasspath classpath, IProjectBuild projectBuild) {
-		this(uri, classpath, projectBuild, null);
-	}
-
-	public AbstractJavaProject(URI uri, IClasspath classpath, IProjectBuild projectBuild, Map<String, String> javaCoreOptions) {
 		this.uri = uri;
 		this.classpath = classpath;
 		this.projectBuild = projectBuild;
-		this.javaCoreOptions = javaCoreOptions;
 	}
 	@Override
 	public IClasspath getClasspath() {
@@ -84,8 +80,12 @@ public abstract class AbstractJavaProject implements IJavaProject, Disposable {
 	}
 
 	@Override
-	public Map<String, String> getJavaCoreOptions() {
-		return javaCoreOptions != null ? javaCoreOptions : Collections.emptyMap();
+	public synchronized Map<String, String> getJavaCoreOptions() {
+		return javaCoreOptions;
+	}
+
+	public synchronized void setJavaCoreOptions(Map<String, String> javaCoreOptions) {
+		this.javaCoreOptions = Objects.requireNonNull(javaCoreOptions, "javaCoreOptions must not be null");
 	}
 
 }

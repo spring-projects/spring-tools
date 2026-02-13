@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2022 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -67,6 +67,10 @@ public class ClasspathListenerManager {
 				for (Object arg : args) {
 					JsonArray event = (JsonArray) arg;
 
+					if (event.size() < 6) {
+						throw new IllegalStateException("Classpath event must have 6 elements but has " + event.size() + ". JDT LS extension version mismatch?");
+					}
+
 					String projectUri = event.get(0).getAsString();
 					log.debug("projectUri = {}", projectUri);
 					String name = event.get(1).getAsString();
@@ -77,17 +81,11 @@ public class ClasspathListenerManager {
 					Classpath classpath = gson.fromJson((JsonElement)event.get(3), Classpath.class);
 					log.debug("classpath = {}", classpath);
 					
-					ProjectBuild projectBuild = null;
-					if (event.size() > 4) {
-						projectBuild = gson.fromJson((JsonElement)event.get(4), ProjectBuild.class);
-						log.debug("projectBuild = {}", projectBuild);
-					}
+					ProjectBuild projectBuild = gson.fromJson((JsonElement)event.get(4), ProjectBuild.class);
+					log.debug("projectBuild = {}", projectBuild);
 
-					Map<String, String> javaCoreOptions = null;
-					if (event.size() > 5) {
-						javaCoreOptions = gson.fromJson((JsonElement)event.get(5), new TypeToken<Map<String, String>>(){}.getType());
-						log.debug("javaCoreOptions size = {}", javaCoreOptions != null ? javaCoreOptions.size() : 0);
-					}
+					Map<String, String> javaCoreOptions = gson.fromJson((JsonElement)event.get(5), new TypeToken<Map<String, String>>(){}.getType());
+					log.debug("javaCoreOptions size = {}", javaCoreOptions != null ? javaCoreOptions.size() : 0);
 
 					classpathListener.changed(new ClasspathListener.Event(projectUri, name, deleted, classpath, projectBuild, javaCoreOptions));
 				}
@@ -95,6 +93,10 @@ public class ClasspathListenerManager {
 				//Still support non-batched events for backwards compatibility with clients
 				// that don't provide batched event support (e.g. IDEA client may only adopt this
 				// later, or not adopt it at all).
+				if (args.size() < 6) {
+					throw new IllegalStateException("Classpath event must have 6 arguments but has " + args.size() + ". JDT LS extension version mismatch?");
+				}
+
 				String projectUri = ((JsonElement) args.get(0)).getAsString();
 				log.debug("projectUri = {}", projectUri);
 				String name = ((JsonElement) args.get(1)).getAsString();
@@ -105,17 +107,11 @@ public class ClasspathListenerManager {
 				Classpath classpath = gson.fromJson((JsonElement)args.get(3), Classpath.class);
 				log.debug("classpath = {}", classpath);
 				
-				ProjectBuild projectBuild = null;
-				if (args.size() > 4) {
-					projectBuild = gson.fromJson((JsonElement)args.get(4), ProjectBuild.class);
-					log.debug("projectBuild = {}", projectBuild);
-				}
+				ProjectBuild projectBuild = gson.fromJson((JsonElement)args.get(4), ProjectBuild.class);
+				log.debug("projectBuild = {}", projectBuild);
 
-				Map<String, String> javaCoreOptions = null;
-				if (args.size() > 5) {
-					javaCoreOptions = gson.fromJson((JsonElement)args.get(5), new TypeToken<Map<String, String>>(){}.getType());
-					log.debug("javaCoreOptions size = {}", javaCoreOptions != null ? javaCoreOptions.size() : 0);
-				}
+				Map<String, String> javaCoreOptions = gson.fromJson((JsonElement)args.get(5), new TypeToken<Map<String, String>>(){}.getType());
+				log.debug("javaCoreOptions size = {}", javaCoreOptions != null ? javaCoreOptions.size() : 0);
 				
 				classpathListener.changed(new ClasspathListener.Event(projectUri, name, deleted, classpath, projectBuild, javaCoreOptions));
 			}

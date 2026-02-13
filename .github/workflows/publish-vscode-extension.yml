@@ -28,7 +28,7 @@ jobs:
     name: Publish '${{ inputs.extension-name }}-${{ inputs.version }}-${{ inputs.postfix }}.vsix'
     steps:
       - name: Use Node.js 22.x
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # 6.2.0
         with:
           node-version: 22.x
       - name: Download Release VSIX

@@ -13,6 +13,8 @@ package org.springframework.ide.vscode.commons.java;
 import java.net.URI;
 import java.util.Map;
 
+import org.jspecify.annotations.NonNull;
+
 public interface IJavaProject {
 
 	final static String PROJECT_CACHE_FOLDER = ".sts4-cache";
@@ -40,6 +42,6 @@ public interface IJavaProject {
 	 *
 	 * @return a non-null map of JavaCore option keys to values
 	 */
-	Map<String, String> getJavaCoreOptions();
+	@NonNull Map<String, String> getJavaCoreOptions();
 
 }

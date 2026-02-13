@@ -30,9 +30,9 @@ jobs:
     name: Build VSCode Extension '${{ inputs.extension-name }}'
     steps:
       - name: Checkout vscode-extensions code and workflow scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # 5.2.0
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -59,23 +59,3 @@ jobs:
           aws s3 cp ./vsix/$vsix_file s3://$AWS_S3_BUCKET/$s3_path/$vsix_file --no-progress
           echo "version=$base_version" >> $GITHUB_OUTPUT
           echo "s3_url=${DOWNLOAD_URL_ROOT}/$s3_path/$vsix_file" >> $GITHUB_OUTPUT
-#      - id: tools-team-slack
-#        if: ${{ inputs.dist == 'release' }}
-#        uses: slackapi/slack-github-action@v1.26
-#        env:
-#          SLACK_BOT_TOKEN: ${{ secrets.VMWARE_SLACK_BOT_TOKEN }}
-#        with:
-#          channel-id: "C0188MENU2J"
-#          payload: |
-#            {
-#              "text": "Release build `${{ inputs.extension-name }}-${{ steps.upload-release.outputs.version }}`",
-#              "blocks": [
-#                {
-#                  "type": "section",
-#                  "text": {
-#                    "type": "mrkdwn",
-#                    "text": "Release build for `${{ inputs.extension-name }}-${{ steps.upload-release.outputs.version }}` is available: ${{ steps.upload-release.outputs.s3_url }}"
-#                  }
-#                }
-#              ]
-#            }

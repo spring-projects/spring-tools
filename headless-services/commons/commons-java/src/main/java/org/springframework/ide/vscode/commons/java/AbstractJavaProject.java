@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2022 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,9 @@ package org.springframework.ide.vscode.commons.java;
 
 import java.io.File;
 import java.net.URI;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
 
 import reactor.core.Disposable;
 
@@ -20,6 +23,7 @@ public abstract class AbstractJavaProject implements IJavaProject, Disposable {
 	private final IClasspath classpath;
 	private final URI uri;
 	private final IProjectBuild projectBuild;
+	private Map<String, String> javaCoreOptions = Collections.emptyMap();
 
 	private ClasspathIndex index;
 
@@ -73,6 +77,15 @@ public abstract class AbstractJavaProject implements IJavaProject, Disposable {
 	@Override
 	public IProjectBuild getProjectBuild() {
 		return projectBuild;
+	}
+
+	@Override
+	public synchronized Map<String, String> getJavaCoreOptions() {
+		return javaCoreOptions;
+	}
+
+	public synchronized void setJavaCoreOptions(Map<String, String> javaCoreOptions) {
+		this.javaCoreOptions = Objects.requireNonNull(javaCoreOptions, "javaCoreOptions must not be null");
 	}
 
 }

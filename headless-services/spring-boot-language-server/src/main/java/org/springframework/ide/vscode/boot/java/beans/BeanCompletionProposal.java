@@ -10,10 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -24,19 +23,20 @@ import org.eclipse.jdt.core.dom.FieldAccess;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.ThisExpression;
-import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionItemLabelDetails;
-import org.openrewrite.java.tree.JavaType;
+import org.eclipse.text.edits.DeleteEdit;
+import org.eclipse.text.edits.InsertEdit;
+import org.eclipse.text.edits.ReplaceEdit;
+import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCompletionEngine;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.InjectBeanConstructorRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JavaType;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposalWithScore;
-import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
-import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
-import org.springframework.ide.vscode.commons.rewrite.java.InjectBeanCompletionRecipe;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.Renderable;
 import org.springframework.ide.vscode.commons.util.Renderables;
@@ -53,11 +53,11 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	private static final String SHORT_DESCRIPTION = " - inject bean";
 
 	private IDocument doc;
+	private IJavaProject project;
 	private String beanId;
-	private String beanType;
+	private JavaType beanType;
 	private String fieldName;
 	private String className;
-	private RewriteRefactorings rewriteRefactorings;
 	private double score;
 	private ASTNode node;
 	private int offset;
@@ -65,19 +65,19 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	private String prefix;
 	private DocumentEdits edits;
 
-	public BeanCompletionProposal(ASTNode node, int offset, IDocument doc, String beanId, String beanType,
-			String fieldName, String className, RewriteRefactorings rewriteRefactorings) {
+	public BeanCompletionProposal(ASTNode node, int offset, IDocument doc, IJavaProject project, String beanId, String beanType,
+			String fieldName, String className) {
 		this.node = node;
 		this.offset = offset;
 		this.doc = doc;
+		this.project = project;
 		this.beanId = beanId;
-		this.beanType = beanType;
+		this.beanType = JavaType.parse(beanType);
 		this.fieldName = fieldName;
 		this.className = className;
-		this.rewriteRefactorings = rewriteRefactorings;
 		this.prefix = computePrefix();
 		this.edits = computeEdit();
-		this.score = /*FuzzyMatcher.matchScore*/computeJaroWinklerScore(prefix, beanId);
+		this.score = computeJaroWinklerScore(prefix, beanId);
 	}
 
 	@Override
@@ -169,7 +169,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	public CompletionItemLabelDetails getLabelDetails() {
 		CompletionItemLabelDetails labelDetails = new CompletionItemLabelDetails();
 		labelDetails.setDetail(SHORT_DESCRIPTION);
-		labelDetails.setDescription(JavaType.ShallowClass.build(beanType).getClassName());
+		labelDetails.setDescription(beanType.getDisplayName());
 		return labelDetails;
 	}
 
@@ -180,12 +180,15 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 	}
 
 	@Override
-	public Optional<Command> getCommand() {
-		FixDescriptor f = new FixDescriptor(InjectBeanCompletionRecipe.class.getName(), List.of(this.doc.getUri()),
-				"Inject bean completions")
-				.withParameters(Map.of("fullyQualifiedName", beanType, "fieldName", fieldName, "classFqName", className))
-				.withRecipeScope(RecipeScope.FILE);
-		return Optional.of(rewriteRefactorings.createFixCommand("Inject bean '%s'".formatted(beanId), f));
+	public Optional<Supplier<DocumentEdits>> getAdditionalEdit() {
+		return Optional.of(() -> {
+			try {
+				return computeAdditionalEdits();
+			} catch (Exception e) {
+				log.error("Failed to compute additional edits for bean injection", e);
+				return null;
+			}
+		});
 	}
 
 	@Override
@@ -218,7 +221,56 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		BeanCompletionProposal other = (BeanCompletionProposal) obj;
 		return Objects.equals(beanId, other.beanId) && Objects.equals(beanType, other.beanType);
 	}
-	
-	
+
+	// ========== Additional edits via InjectBeanConstructorRefactoring ==========
+
+	private DocumentEdits computeAdditionalEdits() throws Exception {
+		String source = doc.get();
+
+		// When the cursor is inside a constructor, the main textEdit already inserts
+		// the assignment statement, so we tell the refactoring to skip it.
+		boolean cursorInsideConstructor = isInsideConstructor(node);
+
+		CompilationUnit cu = (CompilationUnit) node.getRoot();
+
+		InjectBeanConstructorRefactoring refactoring = new InjectBeanConstructorRefactoring(
+				cu, source, beanType, fieldName, className,
+				!cursorInsideConstructor, project.getJavaCoreOptions());
+
+		TextEdit jdtEdit = refactoring.computeEdit();
+		if (jdtEdit == null) {
+			return null;
+		}
+
+		return convertToDocumentEdits(jdtEdit);
+	}
+
+	/**
+	 * Convert JDT TextEdit tree into DocumentEdits
+	 */
+	private DocumentEdits convertToDocumentEdits(TextEdit jdtEdit) {
+		DocumentEdits docEdits = new DocumentEdits(doc, false);
+		convertToDocumentEditsRecursive(jdtEdit, docEdits);
+		return docEdits;
+	}
+
+	private void convertToDocumentEditsRecursive(TextEdit edit, DocumentEdits docEdits) {
+		if (edit.getChildrenSize() == 0) {
+			if (edit instanceof ReplaceEdit re) {
+				if (re.getLength() == 0) {
+					docEdits.insert(re.getOffset(), re.getText());
+				} else {
+					docEdits.replace(re.getOffset(), re.getOffset() + re.getLength(), re.getText());
+				}
+			} else if (edit instanceof InsertEdit ie) {
+				docEdits.insert(ie.getOffset(), ie.getText());
+			} else if (edit instanceof DeleteEdit de) {
+				docEdits.delete(de.getOffset(), de.getOffset() + de.getLength());
+			}
+		}
+		for (TextEdit child : edit.getChildren()) {
+			convertToDocumentEditsRecursive(child, docEdits);
+		}
+	}
 
 }

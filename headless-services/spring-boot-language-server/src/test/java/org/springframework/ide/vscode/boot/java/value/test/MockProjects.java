@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -31,11 +31,12 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.springframework.ide.vscode.commons.java.AbstractJavaProject;
 import org.springframework.ide.vscode.commons.java.ClasspathIndex;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.java.IProjectBuild;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver.Listener;
@@ -76,51 +77,24 @@ public class MockProjects {
 
 	public MockFileObserver fileObserver = new MockFileObserver();
 
-	public class MockProject implements IJavaProject {
+	public class MockProject extends AbstractJavaProject {
 
-		final private File root;
 		final private String name;
-//		final private String javaVersion;
 		final private List<File> sourceFolders = new ArrayList<File>();
 		private File defaultOutputFolder;
 
-		final private IClasspath classpath = new IClasspath() {
-
-			@Override
-			public String getName() {
-				return name;
-			}
-
-			@Override
-			public Collection<CPE> getClasspathEntries() throws Exception {
-				List<CPE> cp = new ArrayList<>();
-				for (File sf : sourceFolders) {
-					CPE cpe = new CPE(Classpath.ENTRY_KIND_SOURCE, sf.getAbsolutePath());
-					cpe.setOutputFolder(defaultOutputFolder.getAbsolutePath());
-					cp.add(cpe);
-				}
-				return cp;
-			}
-
-			@Override
-			public Jre getJre() {
-//				return javaVersion;
-				return null;
-			}
-		};
-
 		public MockProject(String name) {
+			super(createRoot(name).toURI(), null, null);
+			this.name = name;
+			setJavaCoreOptions(JavaCore.getOptions());
 			synchronized (projectsByName) {
 				assertFalse(projectsByName.containsKey(name));
-				this.name = name;
-//				this.javaVersion = "";
 				try {
-					this.root = Files.createTempDirectory(name).toFile();
 					createSourceFolder("src/main/java");
 					createSourceFolder("src/main/resources");
 					createOutputFolder("target/classes");
 					projectsByName.put(name, this);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					throw new IllegalStateException(e);
 				}
 			}
@@ -131,19 +105,64 @@ public class MockProjects {
 			}
 		}
 
+		private static File createRoot(String name) {
+			try {
+				return Files.createTempDirectory(name).toFile();
+			} catch (IOException e) {
+				throw new IllegalStateException(e);
+			}
+		}
+
+		@Override
+		public IClasspath getClasspath() {
+			return new IClasspath() {
+
+				@Override
+				public String getName() {
+					return name;
+				}
+
+				@Override
+				public Collection<CPE> getClasspathEntries() throws Exception {
+					List<CPE> cp = new ArrayList<>();
+					for (File sf : sourceFolders) {
+						CPE cpe = new CPE(Classpath.ENTRY_KIND_SOURCE, sf.getAbsolutePath());
+						cpe.setOutputFolder(defaultOutputFolder.getAbsolutePath());
+						cp.add(cpe);
+					}
+					return cp;
+				}
+
+				@Override
+				public Jre getJre() {
+					return null;
+				}
+			};
+		}
+
+		@Override
+		protected ClasspathIndex createIndex() {
+			throw new IllegalStateException("Not implemented");
+		}
+
+		@Override
+		public boolean exists() {
+			return new File(getLocationUri()).isDirectory();
+		}
+
 		public boolean contains(File file) {
-			return file.toPath().startsWith(root.toPath());
+			return file.toPath().startsWith(new File(getLocationUri()).toPath());
 		}
 
 		private void createOutputFolder(String projectRelativePath) {
 			assertNull(this.defaultOutputFolder, "Output folder already created");
-			File outFolder = new File(root, projectRelativePath);
+			File outFolder = new File(new File(getLocationUri()), projectRelativePath);
 			outFolder.mkdirs();
 			this.defaultOutputFolder = outFolder;
 		}
 
 		public void createSourceFolder(String projectRelativePath) {
-			File sourceFolder = new File(root, projectRelativePath);
+			File sourceFolder = new File(new File(getLocationUri()), projectRelativePath);
 			sourceFolder.mkdirs();
 			sourceFolders.add(sourceFolder);
 			synchronized (observer.listeners) {
@@ -153,35 +172,12 @@ public class MockProjects {
 			}
 		}
 
-		@Override
-		public IClasspath getClasspath() {
-			return classpath;
-		}
-
-		@Override
-		public ClasspathIndex getIndex() {
-			//TODO: the fact we have to implement this probably means something is a bit off with the
-			// framework api, because this info should not really depend on anything but a project's classpath.
-			// So why should every type of project need to implement its own mechanic for indexing classpath?
-			throw new IllegalStateException("Not implemented");
-		}
-
-		@Override
-		public URI getLocationUri() {
-			return root.toURI();
-		}
-
-		@Override
-		public boolean exists() {
-			return root.isDirectory();
-		}
-
 		public File ensureFileNoEvents(String projectRelativePath, String contents) throws Exception {
 			return ensureFile(false, projectRelativePath, contents);
 		}
 
 		private File ensureFile(boolean fireEvents, String projectRelativePath, String contents) throws Exception {
-			File target = new File(root, projectRelativePath);
+			File target = new File(new File(getLocationUri()), projectRelativePath);
 			boolean existed = target.exists();
 			IOUtil.pipe(new ByteArrayInputStream(contents.getBytes("UTF8")), target);
 			if (fireEvents) {
@@ -199,12 +195,7 @@ public class MockProjects {
 		}
 
 		public String uri(String projectRelativePath) {
-			return new File(root, projectRelativePath).toURI().toASCIIString();
-		}
-
-		@Override
-		public IProjectBuild getProjectBuild() {
-			return null;
+			return new File(new File(getLocationUri()), projectRelativePath).toURI().toASCIIString();
 		}
 	}
 

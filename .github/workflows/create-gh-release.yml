@@ -48,7 +48,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: changelog-${{ inputs.version }}-${{ github.run_id }}.md
           path: ${{ github.workspace }}

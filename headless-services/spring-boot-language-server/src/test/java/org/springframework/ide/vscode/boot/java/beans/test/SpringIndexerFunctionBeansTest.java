@@ -67,7 +67,7 @@ public class SpringIndexerFunctionBeansTest {
     void testScanSimpleFunctionBean() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/FunctionClass.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Configuration", "@+ 'functionClass' (@Configuration <: @Component) FunctionClass"),
+                SpringIndexerHarness.symbol("FunctionClass", "@+ 'functionClass' (@Configuration <: @Component) FunctionClass"),
                 SpringIndexerHarness.symbol("@Bean", "@+ 'uppercase' (@Bean) Function<String,String>")
         );
 
@@ -94,7 +94,7 @@ public class SpringIndexerFunctionBeansTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/ScannedFunctionClassWithAnnotation.java").toUri().toString();
 
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component", "@+ 'scannedFunctionClassWithAnnotation' (@Component) ScannedFunctionClassWithAnnotation")
+                SpringIndexerHarness.symbol("ScannedFunctionClassWithAnnotation", "@+ 'scannedFunctionClassWithAnnotation' (@Component) ScannedFunctionClassWithAnnotation")
         );
         
         Bean[] beans = springIndex.getBeansOfDocument(docUri);

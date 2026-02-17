@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.utils;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,6 +62,7 @@ import org.eclipse.lsp4j.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.jdt.imports.ImportRewrite;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
@@ -338,7 +340,20 @@ public class ASTUtils {
 		}
 		return ImmutableList.of();
 	}
-
+	
+	public static Collection<Annotation> addEmbeddedAnnotations(Collection<Annotation> annotations) {
+		List<Annotation> all = new ArrayList<>();
+		
+		for (Annotation annotation : annotations) {
+			annotation.accept(new ASTVisitor() {
+				public boolean visit(MarkerAnnotation node) {return all.add(node);};
+				public boolean visit(SingleMemberAnnotation node) {return all.add(node);};
+				public boolean visit(NormalAnnotation node) {return all.add(node);};
+			});
+		}
+		
+		return all;
+	}
 
 	public static String getAnnotationType(Annotation annotation) {
 		ITypeBinding binding = annotation.resolveTypeBinding();
@@ -689,6 +704,36 @@ public class ASTUtils {
 				.toArray(AnnotationMetadata[]::new);
 	}
 	
+	public static AnnotationMetadata getAnnotationsMetadata(IAnnotationBinding metaAnnotationBinding, TextDocument doc) {
+		return new AnnotationMetadata(metaAnnotationBinding.getName(), metaAnnotationBinding.getAnnotationType().getQualifiedName(), true, null, getAttributes(metaAnnotationBinding));
+	}
+	
+	public static List<AnnotationMetadata> extractAnnotationMetadata(Collection<Annotation> annotationsOnType, TextDocument doc, AnnotationHierarchies annotationHierarchies) {
+		List<AnnotationMetadata> result = new ArrayList<>();
+
+		// direct annotations
+		result.addAll(Arrays.asList(ASTUtils.getAnnotationsMetadata(annotationsOnType, doc)));
+		
+		// meta annotations
+		annotationsOnType.stream()
+			.flatMap(annotation -> collectAllEmbeddedAnnotations(annotation))
+			.map(annotation -> annotation.resolveAnnotationBinding())
+			.forEach(annotationBinding -> {
+				Iterator<IAnnotationBinding> iterator = annotationHierarchies.iterator(annotationBinding.getAnnotationType());
+				while (iterator.hasNext()) {
+					IAnnotationBinding metaAnnotationBinding = iterator.next();
+					AnnotationMetadata annotationsMetadata = ASTUtils.getAnnotationsMetadata(metaAnnotationBinding, doc);
+					if (annotationsMetadata != null) {
+						result.add(annotationsMetadata);
+					}
+				}
+			});
+		
+		return result;
+	}
+
+
+
 	/**
 	 * finds and collects all embedded annotations, so that they are all analyzed individually, e.g.
 	 * @LoadBalancerClients({@LoadBalancerClient(value = "stores", configuration = StoresLoadBalancerClientConfiguration.class)})
@@ -726,7 +771,7 @@ public class ASTUtils {
 			Location location = new Location(doc.getUri(), range);
 
 			IAnnotationBinding binding = annotation.resolveAnnotationBinding();
-			return new AnnotationMetadata(binding.getAnnotationType().getQualifiedName(), false, location, getAttributes(annotation, doc));
+			return new AnnotationMetadata(binding.getName(), binding.getAnnotationType().getQualifiedName(), false, location, getAttributes(annotation, doc));
 		}
 		catch (BadLocationException e) {
 			log.error("problem when identifying location of annotation", e);
@@ -734,20 +779,6 @@ public class ASTUtils {
 		
 		return null;
 	}
-	
-//	public static Map<String, String[]> getAttributes(IAnnotationBinding t) {
-//		Map<String, String[]> result = new LinkedHashMap<>();
-//
-//		IMemberValuePairBinding[] pairs = t.getDeclaredMemberValuePairs();
-//		for (IMemberValuePairBinding pair : pairs) {
-//			MemberValuePairAndType values = ASTUtils.getValuesFromValuePair(pair);
-//			if (values != null) {
-//				result.put(pair.getName(), values.values);
-//			}
-//		}
-//		
-//		return result;
-//	}
 	
 	public static Map<String, AnnotationAttributeValue[]> getAttributes(Annotation annotation, TextDocument doc) throws BadLocationException {
 		Map<String, AnnotationAttributeValue[]> result = new LinkedHashMap<>();
@@ -785,6 +816,22 @@ public class ASTUtils {
 			}
 		}
 
+		return result;
+	}
+	
+	private static Map<String, AnnotationAttributeValue[]> getAttributes(IAnnotationBinding metaAnnotationBinding) {
+		Map<String, AnnotationAttributeValue[]> result = new LinkedHashMap<>();
+
+		IMemberValuePairBinding[] pairs = metaAnnotationBinding.getDeclaredMemberValuePairs();
+		if (pairs != null) {
+			for (IMemberValuePairBinding pair : pairs) {
+				MemberValuePairAndType values = ASTUtils.getValuesFromValuePair(pair);
+				if (values != null) {
+					result.put(pair.getName(), Arrays.stream(values.values).map(value -> new AnnotationAttributeValue(value, (Location)null)).toArray(AnnotationAttributeValue[]::new));
+				}
+			}
+		}
+		
 		return result;
 	}
 	
@@ -930,7 +977,5 @@ public class ASTUtils {
 		
 		return result.toString();
 	}
-
-
 
 }

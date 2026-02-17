@@ -10,32 +10,23 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans;
 
-import java.util.Collection;
-
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 
 public class SpringBootApplicationIndexer {
 	
-	private static boolean isSpringBootApplicationType(ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations) {
-		if (Annotations.BOOT_APP.equals(annotationType.getQualifiedName())) {
-			return true;
-		}
-		else {
-			return metaAnnotations.stream()
-					.map(type -> type.getQualifiedName())
-					.filter(typeName -> Annotations.BOOT_APP.equals(typeName))
-					.findAny().isPresent();
-		}
+	private static boolean isSpringBootApplicationType(AbstractTypeDeclaration typeDeclaration, ITypeBinding typeBinding) {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
+		return annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.BOOT_APP);
 	}
 
-	public static void createIndexElement(AbstractTypeDeclaration type, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
-		
-		if (isSpringBootApplicationType(annotationType, metaAnnotations)) {
+	public static void createIndexElement(AbstractTypeDeclaration type, ITypeBinding typeBinding, SpringIndexerJavaContext context) {
+		if (isSpringBootApplicationType(type, typeBinding)) {
 			ITypeBinding binding = type.resolveBinding();
 			String packageName = binding.getPackage().getName();
 			String typeName = binding.getName();

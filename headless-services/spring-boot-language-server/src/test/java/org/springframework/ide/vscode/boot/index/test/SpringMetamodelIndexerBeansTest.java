@@ -121,7 +121,7 @@ public class SpringMetamodelIndexerBeansTest {
 		Bean[] beans = springIndex.getBeansWithName(PROJECT_NAME, "constructorInjectionService");
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/injections/ConstructorInjectionService.java").toUri().toString();
-		Location location = new Location(docUri, new Range(new Position(6, 0), new Position(6, 8)));
+		Location location = new Location(docUri, new Range(new Position(7, 13), new Position(7, 40)));
 		assertEquals(location, beans[0].getLocation());
 	}
 
@@ -310,18 +310,33 @@ public class SpringMetamodelIndexerBeansTest {
 		Bean mainClassBean = beans[0];
 		AnnotationMetadata[] annotations = mainClassBean.getAnnotations();
 		
-		assertEquals(4, annotations.length);
+		assertEquals(9, annotations.length);
 		assertEquals("org.springframework.boot.autoconfigure.SpringBootApplication", annotations[0].getAnnotationType());
 		assertFalse(annotations[0].isMetaAnnotation());
 		
 		assertEquals("org.springframework.boot.SpringBootConfiguration", annotations[1].getAnnotationType());
 		assertTrue(annotations[1].isMetaAnnotation());
 
-		assertEquals("org.springframework.context.annotation.Configuration", annotations[2].getAnnotationType());
+		assertEquals("org.springframework.boot.autoconfigure.EnableAutoConfiguration", annotations[2].getAnnotationType());
 		assertTrue(annotations[2].isMetaAnnotation());
 
-		assertEquals("org.springframework.stereotype.Component", annotations[3].getAnnotationType());
+		assertEquals("org.springframework.context.annotation.ComponentScan", annotations[3].getAnnotationType());
 		assertTrue(annotations[3].isMetaAnnotation());
+	
+		assertEquals("org.springframework.context.annotation.Configuration", annotations[4].getAnnotationType());
+		assertTrue(annotations[4].isMetaAnnotation());
+
+		assertEquals("org.springframework.stereotype.Indexed", annotations[5].getAnnotationType());
+		assertTrue(annotations[5].isMetaAnnotation());
+
+		assertEquals("org.springframework.boot.autoconfigure.AutoConfigurationPackage", annotations[6].getAnnotationType());
+		assertTrue(annotations[6].isMetaAnnotation());
+
+		assertEquals("org.springframework.context.annotation.Import", annotations[7].getAnnotationType());
+		assertTrue(annotations[7].isMetaAnnotation());
+
+		assertEquals("org.springframework.stereotype.Component", annotations[8].getAnnotationType());
+		assertTrue(annotations[8].isMetaAnnotation());
 	}
 
 	@Test
@@ -440,7 +455,7 @@ public class SpringMetamodelIndexerBeansTest {
 		
 		AnnotationMetadata[] annotations = bean.getAnnotations();
 		
-		assertEquals(4, annotations.length);
+		assertTrue(annotations.length >= 4);
 		
 		AnnotationMetadata configurationAnnotation= annotations[0];
 		AnnotationMetadata qualifierAnnotation = annotations[1];

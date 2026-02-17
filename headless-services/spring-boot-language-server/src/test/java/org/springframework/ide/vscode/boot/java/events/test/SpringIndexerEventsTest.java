@@ -84,7 +84,7 @@ public class SpringIndexerEventsTest {
         String docUri = directory.toPath().resolve("src/main/java/com/example/events/demo/EventListenerPerAnnotation.java").toUri().toString();
 
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component", "@+ 'eventListenerPerAnnotation' (@Component) EventListenerPerAnnotation"),
+                SpringIndexerHarness.symbol("EventListenerPerAnnotation", "@+ 'eventListenerPerAnnotation' (@Component) EventListenerPerAnnotation"),
                 SpringIndexerHarness.symbol("@EventListener", "@EventListener (ApplicationEvent)"));
     }
 
@@ -93,7 +93,7 @@ public class SpringIndexerEventsTest {
         String docUri = directory.toPath().resolve("src/main/java/com/example/events/demo/EventListenerPerInterface.java").toUri().toString();
 
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component", "@+ 'eventListenerPerInterface' (@Component) EventListenerPerInterface"));
+                SpringIndexerHarness.symbol("EventListenerPerInterface", "@+ 'eventListenerPerInterface' (@Component) EventListenerPerInterface"));
     }
     
     @Test
@@ -101,7 +101,7 @@ public class SpringIndexerEventsTest {
         String docUri = directory.toPath().resolve("src/main/java/com/example/events/demo/CustomEventPublisher.java").toUri().toString();
 
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component", "@+ 'customEventPublisher' (@Component) CustomEventPublisher"),
+                SpringIndexerHarness.symbol("CustomEventPublisher", "@+ 'customEventPublisher' (@Component) CustomEventPublisher"),
                 SpringIndexerHarness.symbol("this.publisher.publishEvent(new CustomEvent())", "@EventPublisher (CustomEvent)"));
     }
 
@@ -237,7 +237,7 @@ public class SpringIndexerEventsTest {
 
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
         		SpringIndexerHarness.symbol("@Qualifier(\"qualifier\")", "@Qualifier(\"qualifier\")"),
-        		SpringIndexerHarness.symbol("@Component", "@+ 'customEventPublisherWithAdditionalElements' (@Component) CustomEventPublisherWithAdditionalElements"),
+        		SpringIndexerHarness.symbol("CustomEventPublisherWithAdditionalElements", "@+ 'customEventPublisherWithAdditionalElements' (@Component) CustomEventPublisherWithAdditionalElements"),
                 SpringIndexerHarness.symbol("this.publisher.publishEvent(new CustomEvent())", "@EventPublisher (CustomEvent)")
         		);
     }

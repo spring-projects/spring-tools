@@ -115,6 +115,7 @@ public class AddConfigurationIfBeansPresentReconciler implements JdtAstReconcile
 
 		// check if '@Configuration' is already over the class
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
+
 		for (Iterator<?> itr = classDecl.modifiers().iterator(); itr.hasNext();) {
 			Object mod = itr.next();
 			if (mod instanceof Annotation) {
@@ -128,7 +129,7 @@ public class AddConfigurationIfBeansPresentReconciler implements JdtAstReconcile
 		
 		// No '@Configuration' present. Check if any methods have '@Bean' annotation
 		for (MethodDeclaration m : classDecl.getMethods()) {
-			if (isBeanMethod(m)) {
+			if (isBeanMethod(m, annotationHierarchies)) {
 				if (context.isIndexComplete()) {
 					if (!isException(project, classDecl, context)) {
 						return true;
@@ -161,44 +162,57 @@ public class AddConfigurationIfBeansPresentReconciler implements JdtAstReconcile
 			return true;
 		}
 
-		List<Bean> feignClients = Arrays.stream(beans)
-				.filter(bean -> isConfiguredAsFeignConfigClass(bean, beanClassName))
-				.toList();
+		// Check if the class is referenced as a configuration class in client annotations
+		// (e.g., @FeignClient, @LoadBalancerClient)
+		return checkClientConfigurationReferences(beans, beanClassName, context, 
+				Annotations.FEIGN_CLIENT, Annotations.LOAD_BALANCER_CLIENT);
+	}
+	
+	/**
+	 * Checks if the given bean class is referenced as a configuration class in any of the specified client annotations.
+	 * 
+	 * @param beans all beans in the project
+	 * @param beanClassName the fully qualified name of the bean class to check
+	 * @param context the reconciling context to register dependencies
+	 * @param clientAnnotationTypes the client annotation types to check (e.g., FeignClient, LoadBalancerClient)
+	 * @return true if the bean class is referenced in any client annotation's configuration attribute
+	 */
+	private boolean checkClientConfigurationReferences(Bean[] beans, String beanClassName, ReconcilingContext context, 
+			String... clientAnnotationTypes) {
+		for (String clientAnnotationType : clientAnnotationTypes) {
+			List<Bean> clientBeans = Arrays.stream(beans)
+					.filter(bean -> isConfiguredAsClientConfigClass(bean, beanClassName, clientAnnotationType))
+					.toList();
 
-		if (!feignClients.isEmpty()) {
-
-			// record dependency for feign clients that have this type configured as feign configuration
-			for (Bean feignClient : feignClients) {
-				context.addDependency(feignClient.getType());
+			if (!clientBeans.isEmpty()) {
+				// record dependencies for clients that have this type configured as their configuration
+				for (Bean clientBean : clientBeans) {
+					context.addDependency(clientBean.getType());
+				}
+				return true;
 			}
-			
-			return true;
 		}
-
 		return false;
 	}
 	
-	private boolean isConfiguredAsFeignConfigClass(Bean bean, String beanClassName) {
+	/**
+	 * Checks if a bean is configured as a configuration class for a specific client annotation type.
+	 * 
+	 * @param bean the bean to check
+	 * @param beanClassName the configuration class name to look for
+	 * @param clientAnnotationType the client annotation type (e.g., FeignClient, LoadBalancerClient)
+	 * @return true if the bean has the client annotation with the given class in its configuration attribute
+	 */
+	private boolean isConfiguredAsClientConfigClass(Bean bean, String beanClassName, String clientAnnotationType) {
 		return Arrays.stream(bean.getAnnotations())
-			.filter(annotation -> annotation.getAnnotationType().equals(Annotations.FEIGN_CLIENT))
+			.filter(annotation -> annotation.getAnnotationType().equals(clientAnnotationType))
 			.map(annotation -> annotation.getAttributes().get("configuration"))
 			.flatMap(attributeValues -> attributeValues != null ? Arrays.stream(attributeValues) : Stream.empty())
 			.anyMatch(attributeValue -> attributeValue.getName().equals(beanClassName));
 	}
 
-	private static boolean isBeanMethod(MethodDeclaration m) {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(m);
-		for (Iterator<?> itr = m.modifiers().iterator(); itr.hasNext();) {
-			Object mod = itr.next();
-			if (mod instanceof Annotation) {
-				Annotation a = (Annotation) mod;
-				if (annotationHierarchies.isAnnotatedWith(a.resolveAnnotationBinding(), Annotations.BEAN)) {
-					// Found '@Bean' annotation
-					return true;
-				}
-			}
-		}
-		return false;
+	private static boolean isBeanMethod(MethodDeclaration m, AnnotationHierarchies annotationHierarchies) {
+		return annotationHierarchies.isAnnotatedWith(m.resolveBinding(), Annotations.BEAN);
 	}
 
 }

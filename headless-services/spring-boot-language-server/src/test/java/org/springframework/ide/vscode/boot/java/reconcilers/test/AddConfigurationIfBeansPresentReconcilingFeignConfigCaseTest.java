@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -44,7 +44,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(SymbolProviderTestConf.class)
-public class AddConfigurationIfBeansPresentAdvancedReconcilingTest {
+public class AddConfigurationIfBeansPresentReconcilingFeignConfigCaseTest {
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -66,7 +66,7 @@ public class AddConfigurationIfBeansPresentAdvancedReconcilingTest {
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(5, TimeUnit.SECONDS);
 	}
-
+	
 	@Test
 	void testNoErrorOnReferencedFeignConfigClass() throws Exception {
 		String docUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignConfigExample.java").toUri().toString();
@@ -105,7 +105,6 @@ public class AddConfigurationIfBeansPresentAdvancedReconcilingTest {
         CompletableFuture<Void> updateFuture = indexer.updateDocument(feignClientDocUri, updatedFeignClientSource, "test triggered");
         updateFuture.get(5, TimeUnit.SECONDS);
 
-        // check if the bean registrar files have been re-scanned
         fileScanListener.assertScannedUri(feignClientDocUri, 1);
         fileScanListener.assertScannedUri(feignConfigNotRegisterd, 1);
         fileScanListener.assertScannedUri(feignConfigRegisterd, 1);
@@ -133,7 +132,6 @@ public class AddConfigurationIfBeansPresentAdvancedReconcilingTest {
         CompletableFuture<Void> updateFuture = indexer.updateDocument(feignClientDocUri, updatedFeignClientSource, "test triggered");
         updateFuture.get(5, TimeUnit.SECONDS);
 
-        // check if the bean registrar files have been re-scanned
         fileScanListener.assertScannedUri(feignClientDocUri, 1);
         fileScanListener.assertScannedUri(feignConfigRegisterd, 1);
         fileScanListener.assertFileScanCount(2);
@@ -161,7 +159,6 @@ public class AddConfigurationIfBeansPresentAdvancedReconcilingTest {
         CompletableFuture<Void> updateFuture = indexer.updateDocument(feignClientDocUri, updatedFeignClientSource, "test triggered");
         updateFuture.get(5, TimeUnit.SECONDS);
 
-        // check if the bean registrar files have been re-scanned
         fileScanListener.assertScannedUri(feignClientDocUri, 1);
         fileScanListener.assertScannedUri(feignConfigRegisterd, 1);
         fileScanListener.assertFileScanCount(2);

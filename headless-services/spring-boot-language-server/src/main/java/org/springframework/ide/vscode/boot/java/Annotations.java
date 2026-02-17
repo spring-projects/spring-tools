@@ -153,6 +153,8 @@ public class Annotations {
 	// Boot
 
 	public static final String BOOT_APP = "org.springframework.boot.autoconfigure.SpringBootApplication";
+	public static final String BOOT_APP_CONFIGURATION = "org.springframework.boot.SpringBootConfiguration";
+	
 	public static final String CONDITIONAL_ON_BEAN = "org.springframework.boot.autoconfigure.condition.ConditionalOnBean";
 	public static final String CONDITIONAL_ON_MISSING_BEAN = "org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean";
 	public static final String CONDITIONAL_ON_PROPERTY = "org.springframework.boot.autoconfigure.condition.ConditionalOnProperty";
@@ -203,6 +205,8 @@ public class Annotations {
 	// Cloud
 	
 	public static final String FEIGN_CLIENT = "org.springframework.cloud.openfeign.FeignClient";
+	public static final String LOAD_BALANCER_CLIENT = "org.springframework.cloud.loadbalancer.annotation.LoadBalancerClient";
+	public static final String LOAD_BALANCER_CLIENTS = "org.springframework.cloud.loadbalancer.annotation.LoadBalancerClients";
 	
 	// AOP
 	

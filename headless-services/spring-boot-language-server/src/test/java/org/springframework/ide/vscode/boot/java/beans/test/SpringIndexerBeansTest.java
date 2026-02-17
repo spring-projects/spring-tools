@@ -71,7 +71,7 @@ public class SpringIndexerBeansTest {
     void testScanSimpleConfigurationClass() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SimpleConfiguration.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Configuration", "@+ 'simpleConfiguration' (@Configuration <: @Component) SimpleConfiguration"),
+                SpringIndexerHarness.symbol("SimpleConfiguration", "@+ 'simpleConfiguration' (@Configuration <: @Component) SimpleConfiguration"),
                 SpringIndexerHarness.symbol("@Bean", "@+ 'simpleBean' (@Bean) BeanClass")
         );
         
@@ -95,7 +95,7 @@ public class SpringIndexerBeansTest {
     void testScanSpecialConfigurationClass() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SpecialConfiguration.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Configuration", "@+ 'specialConfiguration' (@Configuration <: @Component) SpecialConfiguration"),
+                SpringIndexerHarness.symbol("SpecialConfiguration", "@+ 'specialConfiguration' (@Configuration <: @Component) SpecialConfiguration"),
 
                 // @Bean("implicitNamedBean")
                 SpringIndexerHarness.symbol("implicitNamedBean", "@+ 'implicitNamedBean' (@Bean) BeanClass"),
@@ -135,7 +135,7 @@ public class SpringIndexerBeansTest {
     void testScanConfigurationClassWithConditionals() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/ConfigurationWithConditionals.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Configuration", "@+ 'configurationWithConditionals' (@Configuration <: @Component) ConfigurationWithConditionals"),
+                SpringIndexerHarness.symbol("ConfigurationWithConditionals", "@+ 'configurationWithConditionals' (@Configuration <: @Component) ConfigurationWithConditionals"),
                 SpringIndexerHarness.symbol("@Bean", "@+ 'conditionalBean' (@Bean @ConditionalOnJava(JavaVersion.EIGHT)) BeanClass"),
                 SpringIndexerHarness.symbol("@Bean", "@+ 'conditionalBeanDifferentSequence' (@Bean @ConditionalOnJava(JavaVersion.EIGHT)) BeanClass"),
                 SpringIndexerHarness.symbol("@Bean", "@+ 'conditionalBeanWithJavaAndCloud' (@Bean @ConditionalOnJava(JavaVersion.EIGHT) @Profile(\"cloud\")) BeanClass")
@@ -146,7 +146,7 @@ public class SpringIndexerBeansTest {
     void testScanConfigurationClassWithConditionalsDefaultSymbol() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/ConfigurationWithConditionalsDefaultSymbols.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Configuration", "@+ 'configurationWithConditionalsDefaultSymbols' (@Configuration <: @Component) ConfigurationWithConditionalsDefaultSymbols"),
+                SpringIndexerHarness.symbol("ConfigurationWithConditionalsDefaultSymbols", "@+ 'configurationWithConditionalsDefaultSymbols' (@Configuration <: @Component) ConfigurationWithConditionalsDefaultSymbols"),
                 SpringIndexerHarness.symbol("@ConditionalOnJava(JavaVersion.EIGHT)", "@ConditionalOnJava(JavaVersion.EIGHT)"),
                 SpringIndexerHarness.symbol("@Profile(\"cloud\")", "@Profile(\"cloud\")"),
                 SpringIndexerHarness.symbol("@ConditionalOnJava(JavaVersion.EIGHT)", "@ConditionalOnJava(JavaVersion.EIGHT)"),
@@ -158,7 +158,7 @@ public class SpringIndexerBeansTest {
     void testScanAbstractBeanConfiguration() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/AbstractBeanConfiguration.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Configuration", "@+ 'abstractBeanConfiguration' (@Configuration <: @Component) AbstractBeanConfiguration")
+                SpringIndexerHarness.symbol("AbstractBeanConfiguration", "@+ 'abstractBeanConfiguration' (@Configuration <: @Component) AbstractBeanConfiguration")
         );
     }
 
@@ -166,7 +166,7 @@ public class SpringIndexerBeansTest {
     void testScanSimpleComponentClass() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SimpleComponent.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component", "@+ 'simpleComponent' (@Component) SimpleComponent")
+                SpringIndexerHarness.symbol("SimpleComponent", "@+ 'simpleComponent' (@Component) SimpleComponent")
         );
     }
 
@@ -174,7 +174,7 @@ public class SpringIndexerBeansTest {
     void testScanComponentClassWithName() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SpecialNameComponent.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component(\"specialName\")", "@+ 'specialName' (@Component) SpecialNameComponent")
+                SpringIndexerHarness.symbol("SpecialNameComponent", "@+ 'specialName' (@Component) SpecialNameComponent")
         );
     }
 
@@ -182,7 +182,7 @@ public class SpringIndexerBeansTest {
     void testScanComponentClassWithNameAndStringConcatenation() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SpecialNameComponentWithStringConcatenation.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component(\"special\" + \"Name\")", "@+ 'specialName' (@Component) SpecialNameComponentWithStringConcatenation")
+                SpringIndexerHarness.symbol("SpecialNameComponentWithStringConcatenation", "@+ 'specialName' (@Component) SpecialNameComponentWithStringConcatenation")
         );
     }
 
@@ -190,7 +190,7 @@ public class SpringIndexerBeansTest {
     void testScanComponentClassWithNameAndAttributeName() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SpecialNameComponentWithAttributeName.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component(value = \"specialNameWithAttributeName\")", "@+ 'specialNameWithAttributeName' (@Component) SpecialNameComponentWithAttributeName")
+                SpringIndexerHarness.symbol("SpecialNameComponentWithAttributeName", "@+ 'specialNameWithAttributeName' (@Component) SpecialNameComponentWithAttributeName")
         );
     }
 
@@ -198,7 +198,7 @@ public class SpringIndexerBeansTest {
     void testScanComponentClassWithNameAndAttributeNameWithStringConcatenation() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SpecialNameComponentWithAttributeNameWithStringConcatenation.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component(value = \"specialName\" + \"WithAttributeName\")", "@+ 'specialNameWithAttributeName' (@Component) SpecialNameComponentWithAttributeNameWithStringConcatenation")
+                SpringIndexerHarness.symbol("SpecialNameComponentWithAttributeNameWithStringConcatenation", "@+ 'specialNameWithAttributeName' (@Component) SpecialNameComponentWithAttributeNameWithStringConcatenation")
         );
     }
 
@@ -206,7 +206,7 @@ public class SpringIndexerBeansTest {
     void testScanComponentClassWithNameWithStringConcatenationAndConstant() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SpecialNameComponentWithStringConcatenationAndConstant.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Component(\"special\" + \"Name\" + Constants.SAMPLE_CONSTANT)", "@+ 'specialNameSampleConstant' (@Component) SpecialNameComponentWithStringConcatenationAndConstant")
+                SpringIndexerHarness.symbol("SpecialNameComponentWithStringConcatenationAndConstant", "@+ 'specialNameSampleConstant' (@Component) SpecialNameComponentWithStringConcatenationAndConstant")
         );
     }
 
@@ -214,7 +214,7 @@ public class SpringIndexerBeansTest {
     void testScanSimpleControllerClass() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SimpleController.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Controller", "@+ 'simpleController' (@Controller <: @Component) SimpleController")
+                SpringIndexerHarness.symbol("SimpleController", "@+ 'simpleController' (@Controller <: @Component) SimpleController")
         );
     }
 
@@ -222,7 +222,7 @@ public class SpringIndexerBeansTest {
     void testScanRestControllerClass() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SimpleRestController.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@RestController", "@+ 'simpleRestController' (@RestController <: @Controller, @Component) SimpleRestController")
+                SpringIndexerHarness.symbol("SimpleRestController", "@+ 'simpleRestController' (@RestController <: @Controller, @Component) SimpleRestController")
         );
     }
 

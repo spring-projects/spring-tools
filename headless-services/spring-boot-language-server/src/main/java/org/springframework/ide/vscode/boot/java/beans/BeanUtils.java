@@ -11,7 +11,10 @@
 package org.springframework.ide.vscode.boot.java.beans;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
@@ -24,6 +27,8 @@ import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
+import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
+import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -36,6 +41,89 @@ import reactor.util.function.Tuples;
 public class BeanUtils {
 	
 	private static final String[] NAME_ATTRIBUTES = {"value", "name"};
+	
+	private static final Set<String> ANNOTATIONS_TO_INCLUDE_IN_LABEL = Set.of(
+			Annotations.COMPONENT,
+			Annotations.CONFIGURATION,
+			Annotations.CONTROLLER,
+			Annotations.REST_CONTROLLER,
+			Annotations.NAMED_JAKARTA,
+			Annotations.NAMED_JAVAX,
+			Annotations.BOOT_APP,
+			Annotations.BOOT_APP_CONFIGURATION);
+	
+	private static final Set<String> ANNOTATIONS_THAT_DEFINE_NAME_OF_BEAN_AS_VALUE = Set.of(
+			Annotations.COMPONENT,
+			Annotations.CONFIGURATION,
+			Annotations.CONTROLLER,
+			Annotations.REST_CONTROLLER,
+			Annotations.NAMED_JAKARTA,
+			Annotations.NAMED_JAVAX);
+
+	public static String createBeanLabel(List<AnnotationMetadata> annotations, String beanName, String beanType) {
+		StringBuilder symbolLabel = new StringBuilder();
+		
+		symbolLabel.append('@');
+		symbolLabel.append('+');
+		symbolLabel.append(' ');
+		symbolLabel.append('\'');
+		symbolLabel.append(beanName);
+		symbolLabel.append('\'');
+		
+		if (annotations != null) {
+			List<AnnotationMetadata> directAnnotations = annotations.stream()
+					.filter(annotation -> ANNOTATIONS_TO_INCLUDE_IN_LABEL.contains(annotation.getAnnotationType()))
+					.filter(annotation -> !annotation.isMetaAnnotation()).toList();
+			
+			List<AnnotationMetadata> metaAnnotations = annotations.stream()
+					.filter(annotation -> ANNOTATIONS_TO_INCLUDE_IN_LABEL.contains(annotation.getAnnotationType()))
+					.filter(annotation -> annotation.isMetaAnnotation()).toList();
+			
+			if (directAnnotations.size() > 0) {
+				symbolLabel.append(' ');
+				symbolLabel.append('(');
+				symbolLabel.append(String.join(", ", directAnnotations.stream()
+						.map(annotation -> "@" + annotation.getAnnotationName())
+						.toList()));
+				
+				if (metaAnnotations.size() > 0) {
+					symbolLabel.append(" <: ");
+					symbolLabel.append(String.join(", ", metaAnnotations.stream()
+						.map(annotation -> "@" + annotation.getAnnotationName())
+						.toList()));
+				}
+				
+				symbolLabel.append(')');
+			}
+		}
+
+		symbolLabel.append(' ');
+		symbolLabel.append(beanType);
+		return symbolLabel.toString();
+	}
+	
+	public static String getBeanNameFromType(AbstractTypeDeclaration type, List<AnnotationMetadata> annotationMetadata) {
+		
+		// annotation-defined names
+		if (annotationMetadata != null) {
+			for (AnnotationMetadata annotation : annotationMetadata) {
+
+				if (ANNOTATIONS_THAT_DEFINE_NAME_OF_BEAN_AS_VALUE.contains(annotation.getAnnotationType())) {
+					Map<String, AnnotationAttributeValue[]> attributes = annotation.getAttributes();
+					if (attributes != null) {
+						AnnotationAttributeValue[] values = attributes.get("value");
+						if (values != null && values.length > 0) {
+							return values[0].getName();
+						}
+					}
+				}
+			}
+		}
+		
+		// otherwise fall back to type name;
+		String beanType = type.getName().toString();
+		return BeanUtils.getBeanNameFromType(beanType);
+	}
 
 	public static String getBeanNameFromComponentAnnotation(Annotation annotation, AbstractTypeDeclaration type) {
 		

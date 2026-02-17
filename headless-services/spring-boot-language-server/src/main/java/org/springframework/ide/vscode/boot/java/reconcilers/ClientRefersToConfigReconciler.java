@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -29,17 +30,32 @@ import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContaine
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 
-public class FeignClientReconciler implements JdtAstReconciler {
+public class ClientRefersToConfigReconciler implements JdtAstReconciler {
 	
-	private final SpringMetamodelIndex springIndex;
+	private static final Set<String> PROJECT_DEPENDENCIES = Set.of(
+			"spring-cloud-openfeign-core",
+			"spring-cloud-loadbalancer"
+	);
+	
+	private static final Set<String> CLIENT_ANNOTATIONS = Set.of(
+			Annotations.FEIGN_CLIENT,
+			Annotations.LOAD_BALANCER_CLIENT,
+			Annotations.LOAD_BALANCER_CLIENTS
+	);
 
-	public FeignClientReconciler(SpringMetamodelIndex springIndex) {
+
+	private final SpringMetamodelIndex springIndex;
+	
+	public ClientRefersToConfigReconciler(SpringMetamodelIndex springIndex) {
 			this.springIndex = springIndex;
 		}
 
 	@Override
 	public boolean isApplicable(IJavaProject project) {
-		return SpringProjectUtil.hasDependencyStartingWith(project, "spring-cloud-openfeign-core", null);
+		return PROJECT_DEPENDENCIES.stream()
+				.filter(dependency -> SpringProjectUtil.hasDependencyStartingWith(project, dependency, null))
+				.findAny()
+				.isPresent();
 	}
 
 	@Override
@@ -55,7 +71,12 @@ public class FeignClientReconciler implements JdtAstReconciler {
 			public boolean visit(TypeDeclaration node) {
 				AnnotationHierarchies annotationHierarchy = AnnotationHierarchies.get(node);
 
-				if (!annotationHierarchy.isAnnotatedWith(node.resolveBinding(), Annotations.FEIGN_CLIENT)) {
+				boolean isClientAnnotationPresent = CLIENT_ANNOTATIONS.stream()
+					.filter(annotation -> annotationHierarchy.isAnnotatedWith(node.resolveBinding(), annotation))
+					.findAny()
+					.isPresent();
+				
+				if (!isClientAnnotationPresent) {
 					return true;
 				}
 				
@@ -65,7 +86,7 @@ public class FeignClientReconciler implements JdtAstReconciler {
 					.filter(element -> element instanceof Bean)
 					.map(element -> (Bean) element)
 					.flatMap(bean -> Arrays.stream(bean.getAnnotations()))
-					.filter(annotation -> annotation.getAnnotationType().equals(Annotations.FEIGN_CLIENT))
+					.filter(annotation -> CLIENT_ANNOTATIONS.contains(annotation.getAnnotationType()))
 					.map(annotation -> annotation.getAttributes())
 					.filter(attributes -> attributes.containsKey("configuration"))
 					.flatMap(attributes -> Arrays.stream(attributes.get("configuration")))

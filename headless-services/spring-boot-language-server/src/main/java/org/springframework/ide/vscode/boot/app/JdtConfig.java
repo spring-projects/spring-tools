@@ -46,7 +46,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.BeanRegistrarDeclara
 import org.springframework.ide.vscode.boot.java.reconcilers.Boot3NotSupportedTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ClasspathResourceTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.EntityIdForRepoReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.FeignClientReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ClientRefersToConfigReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.FinalAutowiredFieldReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.HttpSecurityLambdaDslReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ImplicitWebAnnotationNamesReconciler;
@@ -92,8 +92,8 @@ public class JdtConfig {
 		return new BeanRegistrarDeclarationReconciler(server.getQuickfixRegistry(), springIndex);
 	}
 	
-	@Bean FeignClientReconciler feignClientReconciler(SpringMetamodelIndex springIndex) {
-		return new FeignClientReconciler(springIndex);
+	@Bean ClientRefersToConfigReconciler feignClientReconciler(SpringMetamodelIndex springIndex) {
+		return new ClientRefersToConfigReconciler(springIndex);
 	}
 	
 	@Bean AutowiredFieldIntoConstructorParameterReconciler autowiredFieldIntoConstructorParameterReconciler(SimpleLanguageServer server) {

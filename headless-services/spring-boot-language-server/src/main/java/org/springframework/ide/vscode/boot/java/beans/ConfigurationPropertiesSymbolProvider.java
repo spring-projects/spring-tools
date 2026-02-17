@@ -15,8 +15,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -71,15 +69,9 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 	}
 
 	protected void createSymbolForType(AbstractTypeDeclaration type, Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
-		String annotationTypeName = annotationType.getName();
-		
-		Collection<String> metaAnnotationNames = metaAnnotations.stream()
-				.map(ITypeBinding::getName)
-				.collect(Collectors.toList());
-		
-		ITypeBinding typeBinding = type.resolveBinding();
-		
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
+
+		ITypeBinding typeBinding = type.resolveBinding();
 		boolean isComponentAnnotated = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.COMPONENT);
 		
 		if (!isComponentAnnotated) {
@@ -87,26 +79,21 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 
 			Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
-			WorkspaceSymbol symbol = new WorkspaceSymbol(
-					ComponentSymbolProvider.beanLabel(annotationTypeName, metaAnnotationNames, beanName, typeBinding.getName()), SymbolKind.Interface,
-					Either.forLeft(location));
-		
 			boolean isConfiguration = false; // otherwise, the ComponentSymbolProvider takes care of the bean definiton for this type
 
 			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
 
 			Set<String> supertypes = ASTUtils.findSupertypes(typeBinding);
-
+			
 			Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
+			List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
+			AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
 
-			AnnotationMetadata[] annotations = Stream.concat(
-					Arrays.stream(ASTUtils.getAnnotationsMetadata(annotationsOnType, doc))
-					,
-					metaAnnotations.stream()
-					.map(an -> new AnnotationMetadata(an.getQualifiedName(), true, null, null)))
-					.toArray(AnnotationMetadata[]::new);
+			WorkspaceSymbol symbol = new WorkspaceSymbol(
+					BeanUtils.createBeanLabel(annotationMetadata, beanName, typeBinding.getName()), SymbolKind.Interface,
+					Either.forLeft(location));
 		
-			Bean beanDefinition = new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotations, isConfiguration, symbol.getName());
+			Bean beanDefinition = new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, symbol.getName());
 			
 			indexConfigurationProperties(beanDefinition, type, context, doc);
 

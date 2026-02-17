@@ -67,7 +67,7 @@ public class SpringIndexerJakartaJavaxAnnotationsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/jakarta/SimpleMovieLister.java").toUri().toString();
 
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-        		SpringIndexerHarness.symbol("@Component", "@+ 'simpleMovieLister' (@Component) SimpleMovieLister"),
+        		SpringIndexerHarness.symbol("SimpleMovieLister", "@+ 'simpleMovieLister' (@Component) SimpleMovieLister"),
         		SpringIndexerHarness.symbol("@Resource", "@Resource"),
                 SpringIndexerHarness.symbol("@Resource", "@Resource"),
                 SpringIndexerHarness.symbol("@Resource(name=\"myMovieFinder\")", "@Resource(name=\"myMovieFinder\")"),
@@ -81,7 +81,7 @@ public class SpringIndexerJakartaJavaxAnnotationsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/jakarta/NamedComponentWithSpecificName.java").toUri().toString();
         
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Named(\"specificallyNamedComponent\")", "@+ 'specificallyNamedComponent' (@Named) NamedComponentWithSpecificName")
+                SpringIndexerHarness.symbol("NamedComponentWithSpecificName", "@+ 'specificallyNamedComponent' (@Named) NamedComponentWithSpecificName")
         );
 
         Bean[] beans = springIndex.getBeansOfDocument(docUri);
@@ -96,7 +96,7 @@ public class SpringIndexerJakartaJavaxAnnotationsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/javax/NamedComponentWithSpecificName.java").toUri().toString();
         
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@Named(\"specificallyNamedComponent\")", "@+ 'specificallyNamedComponent' (@Named) NamedComponentWithSpecificName")
+                SpringIndexerHarness.symbol("NamedComponentWithSpecificName", "@+ 'specificallyNamedComponent' (@Named) NamedComponentWithSpecificName")
         );
 
         Bean[] beans = springIndex.getBeansOfDocument(docUri);

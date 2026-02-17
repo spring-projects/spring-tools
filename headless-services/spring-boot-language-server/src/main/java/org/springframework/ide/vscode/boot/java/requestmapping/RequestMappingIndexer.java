@@ -56,12 +56,13 @@ public class RequestMappingIndexer {
 
 	
 
-	public static void indexRequestMappings(Bean controller, TypeDeclaration type, ITypeBinding annotationType, SpringIndexerJavaContext context, TextDocument doc) {
+	public static void indexRequestMappings(Bean controller, TypeDeclaration type, ITypeBinding typeBinding, SpringIndexerJavaContext context, TextDocument doc) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);		
+		type.resolveBinding();
 
-		boolean isWebController = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.CONTROLLER);
-		boolean isDataRestWebController = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.DATA_REST_BASE_PATH_AWARE_CONTROLLER);
-		boolean isFeignClient = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.FEIGN_CLIENT);
+		boolean isWebController = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.CONTROLLER);
+		boolean isDataRestWebController = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.DATA_REST_BASE_PATH_AWARE_CONTROLLER);
+		boolean isFeignClient = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.FEIGN_CLIENT);
 		
 		if (isWebController || isDataRestWebController || isFeignClient) {
 			MethodDeclaration[] methods = type.getMethods();
@@ -74,9 +75,9 @@ public class RequestMappingIndexer {
 				Collection<Annotation> annotations = ASTUtils.getAnnotations(methodDecl);
 				
 				for (Annotation annotation : annotations) {
-					ITypeBinding typeBinding = annotation.resolveTypeBinding();
+					ITypeBinding annotationType = annotation.resolveTypeBinding();
 					
-					boolean isRequestMappingAnnotation = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.SPRING_REQUEST_MAPPING);
+					boolean isRequestMappingAnnotation = annotationHierarchies.isAnnotatedWith(annotationType, Annotations.SPRING_REQUEST_MAPPING);
 					if (isRequestMappingAnnotation) {
 						RequestMappingIndexer.indexRequestMapping(controller, annotation, context, doc);
 					}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,16 +19,27 @@ import org.eclipse.lsp4j.Location;
  */
 public class AnnotationMetadata {
 	
+	private final String annotationName;
 	private final String annotationType;
+
 	private final boolean isMetaAnnotation;
 	private final Location location;
 	private final Map<String, AnnotationAttributeValue[]> attributes;
 	
 	public AnnotationMetadata(String annotationType, boolean isMetaAnnotation, Location location, Map<String, AnnotationAttributeValue[]> attributes) {
+		this(annotationType, annotationType, isMetaAnnotation, location, attributes);
+	}
+	
+	public AnnotationMetadata(String annotationName, String annotationType, boolean isMetaAnnotation, Location location, Map<String, AnnotationAttributeValue[]> attributes) {
+		this.annotationName = annotationName;
 		this.annotationType = annotationType;
 		this.isMetaAnnotation = isMetaAnnotation;
 		this.location = location;
 		this.attributes = attributes;
+	}
+	
+	public String getAnnotationName() {
+		return annotationName;
 	}
 	
 	public String getAnnotationType() {

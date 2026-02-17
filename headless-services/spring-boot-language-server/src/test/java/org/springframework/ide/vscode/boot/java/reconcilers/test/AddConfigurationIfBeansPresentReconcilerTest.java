@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -65,6 +65,10 @@ public class AddConfigurationIfBeansPresentReconcilerTest extends BaseReconciler
 				
 				class A {
 				
+					public String sayHello() {
+						System.out.println("hello");
+					}
+					
 					@Bean
 					String myBean() {
 						return "my-bean";
@@ -155,4 +159,38 @@ public class AddConfigurationIfBeansPresentReconcilerTest extends BaseReconciler
 		
 		assertEquals(0, problems.size());
 	}
+	
+	@Test
+	void loadBalancerConfigCase() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.context.annotation.Bean;
+				
+				class A {
+				
+					@Bean
+					String myBean() {
+						return "my-bean";
+					}
+					
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			AnnotationMetadata annotationMetadata = new AnnotationMetadata(Annotations.LOAD_BALANCER_CLIENT, false, null, Map.of("configuration", new AnnotationAttributeValue[] {new AnnotationAttributeValue("example.demo.A", null)}));
+			AnnotationMetadata[] annotations = new AnnotationMetadata[] {annotationMetadata};
+			Bean configBean = new Bean("loadBalancerClient", "example.demo.LoadBalancerExample", null, null, null, annotations, false, "symbolLabel");
+			Bean[] beans = new Bean[] {configBean};
+			springIndex.updateBeans(getProjectName(), beans);
+			
+			AddConfigurationIfBeansPresentReconciler r = new AddConfigurationIfBeansPresentReconciler(new QuickfixRegistry(), springIndex);
+			
+			return r;
+		}, "A.java", source, false);
+		
+		assertEquals(0, problems.size());
+	}
+
 }

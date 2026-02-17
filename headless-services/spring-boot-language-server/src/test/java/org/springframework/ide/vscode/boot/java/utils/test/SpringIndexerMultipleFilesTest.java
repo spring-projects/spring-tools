@@ -160,7 +160,7 @@ public class SpringIndexerMultipleFilesTest {
             assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping2", doc1URI, 11, 1, 11, 28));
 
             List<? extends WorkspaceSymbol> symbols2 = indexer.getSymbols(doc2URI);
-            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@+ 'mainClass' (@SpringBootApplication <: @SpringBootConfiguration, @Configuration, @Component) MainClass", doc2URI, 6, 0, 6, 22));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@+ 'mainClass' (@SpringBootApplication <: @SpringBootConfiguration, @Configuration, @Component) MainClass", doc2URI, 7, 13, 7, 22));
             assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@/embedded-foo-mapping-CHANGED", doc2URI, 17, 1, 17, 49));
             assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@/foo-root-mapping/embedded-foo-mapping-with-root", doc2URI, 27, 1, 27, 51));
 

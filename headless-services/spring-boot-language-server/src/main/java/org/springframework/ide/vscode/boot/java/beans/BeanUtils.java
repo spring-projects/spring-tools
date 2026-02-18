@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -71,26 +72,27 @@ public class BeanUtils {
 		symbolLabel.append('\'');
 		
 		if (annotations != null) {
-			List<AnnotationMetadata> directAnnotations = annotations.stream()
+			List<String> directAnnotations = annotations.stream()
 					.filter(annotation -> ANNOTATIONS_TO_INCLUDE_IN_LABEL.contains(annotation.getAnnotationType()))
-					.filter(annotation -> !annotation.isMetaAnnotation()).toList();
+					.filter(annotation -> !annotation.isMetaAnnotation())
+					.map(annotation -> "@" + annotation.getAnnotationName())
+					.toList();
 			
-			List<AnnotationMetadata> metaAnnotations = annotations.stream()
+			List<String> metaAnnotationNames = annotations.stream()
 					.filter(annotation -> ANNOTATIONS_TO_INCLUDE_IN_LABEL.contains(annotation.getAnnotationType()))
-					.filter(annotation -> annotation.isMetaAnnotation()).toList();
+					.filter(annotation -> annotation.isMetaAnnotation())
+					.map(annotation -> "@" + annotation.getAnnotationName())
+					.distinct()
+					.toList();
 			
 			if (directAnnotations.size() > 0) {
 				symbolLabel.append(' ');
 				symbolLabel.append('(');
-				symbolLabel.append(String.join(", ", directAnnotations.stream()
-						.map(annotation -> "@" + annotation.getAnnotationName())
-						.toList()));
+				symbolLabel.append(String.join(", ", directAnnotations));
 				
-				if (metaAnnotations.size() > 0) {
+				if (metaAnnotationNames.size() > 0) {
 					symbolLabel.append(" <: ");
-					symbolLabel.append(String.join(", ", metaAnnotations.stream()
-						.map(annotation -> "@" + annotation.getAnnotationName())
-						.toList()));
+					symbolLabel.append(String.join(", ", metaAnnotationNames));
 				}
 				
 				symbolLabel.append(')');
@@ -102,7 +104,8 @@ public class BeanUtils {
 		return symbolLabel.toString();
 	}
 	
-	public static String getBeanNameFromType(AbstractTypeDeclaration type, List<AnnotationMetadata> annotationMetadata) {
+	public static List<String> getBeanNamesFromType(AbstractTypeDeclaration type, List<AnnotationMetadata> annotationMetadata) {
+		List<String> result = new ArrayList<>();
 		
 		// annotation-defined names
 		if (annotationMetadata != null) {
@@ -112,8 +115,10 @@ public class BeanUtils {
 					Map<String, AnnotationAttributeValue[]> attributes = annotation.getAttributes();
 					if (attributes != null) {
 						AnnotationAttributeValue[] values = attributes.get("value");
-						if (values != null && values.length > 0) {
-							return values[0].getName();
+						if (values != null) {
+							for (int i = 0; i < values.length; i++) {
+								result.add(values[i].getName());
+							}
 						}
 					}
 				}
@@ -121,8 +126,22 @@ public class BeanUtils {
 		}
 		
 		// otherwise fall back to type name;
-		String beanType = type.getName().toString();
-		return BeanUtils.getBeanNameFromType(beanType);
+		if (result.size() == 0 && type.getName() != null) {
+			String beanType = type.getName().toString();
+			result.add(BeanUtils.getBeanNameFromType(beanType));
+		}
+		
+		return result;
+	}
+
+	public static String getBeanNameFromType(AbstractTypeDeclaration type, List<AnnotationMetadata> annotationMetadata) {
+		List<String> beanNames = getBeanNamesFromType(type, annotationMetadata);
+		if (beanNames.size() == 1) {
+			return beanNames.get(0);
+		}
+		else {
+			return "(" + String.join(", ", beanNames) + ")";
+		}
 	}
 
 	public static String getBeanNameFromComponentAnnotation(Annotation annotation, AbstractTypeDeclaration type) {

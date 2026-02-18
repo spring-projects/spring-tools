@@ -233,5 +233,13 @@ public class SpringIndexerBeansTest {
                 SpringIndexerHarness.symbol("@AliasFor(annotation = Component.class)", "@AliasFor(annotation=Component.class)")
         );
     }
+    
+    @Test
+    void testScanControllerWithTwoNames() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/ControllerWithTwoNames.java").toUri().toString();
+        SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
+                SpringIndexerHarness.symbol("ControllerWithTwoNames", "@+ '(controllerName, configName)' (@Controller, @Configuration <: @Component) ControllerWithTwoNames")
+        );
+    }
 
 }

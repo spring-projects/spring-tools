@@ -39,7 +39,6 @@ import org.springframework.ide.vscode.boot.java.cron.CronExpressionCompletionPro
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryCompletionProcessor;
 import org.springframework.ide.vscode.boot.java.handlers.BootJavaCompletionEngine;
 import org.springframework.ide.vscode.boot.java.handlers.CompletionProvider;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.scope.ScopeCompletionProcessor;
 import org.springframework.ide.vscode.boot.java.snippets.JavaSnippet;
 import org.springframework.ide.vscode.boot.java.snippets.JavaSnippetContext;
@@ -116,7 +115,6 @@ public class BootJavaCompletionEngineConfigurer {
 			JavaSnippetManager snippetManager, 
 			CompilationUnitCache cuCache,
 			SpringMetamodelIndex springIndex,
-			RewriteRefactorings rewriteRefactorings,
 			BootJavaConfig config) {
 		
 		SpringPropertyIndexProvider indexProvider = params.indexProvider;
@@ -172,7 +170,7 @@ public class BootJavaCompletionEngineConfigurer {
 		providers.put(Annotations.SCHEDULED, new AnnotationAttributeCompletionProcessor(javaProjectFinder, Map.of(
 				"cron", new CronExpressionCompletionProvider())));
 
-		providers.put(Annotations.BEAN, new BeanCompletionProvider(javaProjectFinder, springIndex, rewriteRefactorings, config));
+		providers.put(Annotations.BEAN, new BeanCompletionProvider(javaProjectFinder, springIndex, config));
 
 		return new BootJavaCompletionEngine(cuCache, providers, snippetManager);
 	}

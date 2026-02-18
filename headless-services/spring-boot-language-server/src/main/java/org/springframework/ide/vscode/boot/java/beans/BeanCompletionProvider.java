@@ -34,7 +34,6 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.handlers.CompletionProvider;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.completion.ICompletionProposal;
@@ -51,15 +50,13 @@ public class BeanCompletionProvider implements CompletionProvider {
 
 	private final JavaProjectFinder javaProjectFinder;
 	private final SpringMetamodelIndex springIndex;
-	private final RewriteRefactorings rewriteRefactorings;
 
 	private final BootJavaConfig config;
 
 	public BeanCompletionProvider(JavaProjectFinder javaProjectFinder, SpringMetamodelIndex springIndex,
-			RewriteRefactorings rewriteRefactorings, BootJavaConfig config) {
+			BootJavaConfig config) {
 		this.javaProjectFinder = javaProjectFinder;
 		this.springIndex = springIndex;
-		this.rewriteRefactorings = rewriteRefactorings;
 		this.config = config;
 	}
 
@@ -134,8 +131,8 @@ public class BeanCompletionProvider implements CompletionProvider {
 						for (int i = 0; i < Integer.MAX_VALUE && fieldNames.contains(fieldName); i++, fieldName = "%s_%d".formatted(bean.getName(), i)) {
 							// nothing
 						}
-						BeanCompletionProposal proposal = new BeanCompletionProposal(node, offset, doc, bean.getName(),
-								bean.getType(), fieldName, className, rewriteRefactorings);
+						BeanCompletionProposal proposal = new BeanCompletionProposal(node, offset, doc, project, bean.getName(),
+								bean.getType(), fieldName, className);
 
 						if (proposal.getScore() > 0) {
 							beanCompletions.add(proposal);

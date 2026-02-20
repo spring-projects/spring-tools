@@ -202,7 +202,7 @@ public class AddConfigurationIfBeansPresentReconcilingLoadBalancerConfigCaseTest
 					\t}
 					
 					}
-					""", Files.readString(targetFile));
+					""", Files.readString(targetFile).replace("\r", ""));
 		} finally {
 			Files.writeString(targetFile, originalContent);
 		}

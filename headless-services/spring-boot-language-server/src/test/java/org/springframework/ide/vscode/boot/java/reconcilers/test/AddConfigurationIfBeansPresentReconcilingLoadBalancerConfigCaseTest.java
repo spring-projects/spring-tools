@@ -209,6 +209,67 @@ public class AddConfigurationIfBeansPresentReconcilingLoadBalancerConfigCaseTest
     }
 
     @Test
+    void testApplyQuickFixAddToLoadBalancerClientConfigurationWithImport() throws Exception {
+		String source = """
+				package com.example.cloud.other;
+				
+				import org.springframework.context.annotation.Bean;
+				
+				public class OtherPackageConfig {
+				
+					@Bean
+					BeanType someBean() {
+						return new BeanType();
+					}
+				
+				}
+				""";
+
+		Path javaFile = directory.toPath().resolve("src/main/java/com/example/cloud/other/OtherPackageConfig.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, javaFile.toUri().toASCIIString());
+		Diagnostic problem = editor.assertProblem("OtherPackageConfig");
+		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION.getCode(), problem.getCode().getLeft());
+
+		List<CodeAction> codeActions = editor.getCodeActions(problem);
+		CodeAction addToLbClientFix = codeActions.stream()
+				.filter(ca -> ca.getLabel().contains("@LoadBalancerClient"))
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("Should have '@LoadBalancerClient' quickfix"));
+
+		Path targetFile = directory.toPath().resolve("src/main/java/com/example/cloud/loadbalancer/LoadBalancerClientExample.java");
+		String originalContent = Files.readString(targetFile);
+		try {
+			addToLbClientFix.perform();
+
+			assertEquals("""
+					package com.example.cloud.loadbalancer;
+					
+					import com.example.cloud.other.OtherPackageConfig;
+					import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+					import org.springframework.cloud.loadbalancer.annotation.LoadBalancerClient;
+					import org.springframework.cloud.loadbalancer.annotation.LoadBalancerClients;
+					import org.springframework.context.annotation.Bean;
+					import org.springframework.context.annotation.Configuration;
+					import org.springframework.web.reactive.function.client.WebClient;
+					
+					@Configuration
+					@LoadBalancerClients({@LoadBalancerClient(name = "first", configuration = {LoadBalancerConfigExample.class, OtherPackageConfig.class})})
+					public class LoadBalancerClientExample {
+					
+					\t@Bean
+					\t@LoadBalanced
+					\tWebClient.Builder loadBalancedWebClientBuilder() {
+					\t\treturn WebClient.builder();
+					\t}
+					
+					}
+					""", Files.readString(targetFile));
+		} finally {
+			Files.writeString(targetFile, originalContent);
+		}
+    }
+
+    @Test
     void testErrorAppearsWhenFeignClientAnnotationGoesAwayEntirely() throws Exception {
 		String loadBalancerClientDocUri = directory.toPath().resolve("src/main/java/com/example/cloud/loadbalancer/LoadBalancerClientExample.java").toUri().toString();
 		String loadBalancerConfigRegisterd = directory.toPath().resolve("src/main/java/com/example/cloud/loadbalancer/LoadBalancerConfigExample.java").toUri().toString();

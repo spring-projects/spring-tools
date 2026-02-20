@@ -204,6 +204,62 @@ public class AddConfigurationIfBeansPresentReconcilingFeignConfigCaseTest {
     }
 
     @Test
+    void testApplyQuickFixAddToFeignClientConfigurationWithImport() throws Exception {
+		String source = """
+				package com.example.feign.other;
+				
+				import org.springframework.context.annotation.Bean;
+				
+				public class OtherPackageConfig {
+				
+					@Bean
+					BeanType someBean() {
+						return new BeanType();
+					}
+				
+				}
+				""";
+
+		Path javaFile = directory.toPath().resolve("src/main/java/com/example/feign/other/OtherPackageConfig.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, javaFile.toUri().toASCIIString());
+		Diagnostic problem = editor.assertProblem("OtherPackageConfig");
+		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION.getCode(), problem.getCode().getLeft());
+
+		List<CodeAction> codeActions = editor.getCodeActions(problem);
+		CodeAction addToFeignClientFix = codeActions.stream()
+				.filter(ca -> ca.getLabel().contains("@FeignClient"))
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("Should have '@FeignClient' quickfix"));
+
+		Path targetFile = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java");
+		String originalContent = Files.readString(targetFile);
+		try {
+			addToFeignClientFix.perform();
+
+			assertEquals("""
+					package com.example.feign.demo;
+					
+					import com.example.feign.other.OtherPackageConfig;
+					import java.util.List;
+					
+					import org.springframework.cloud.openfeign.FeignClient;
+					import org.springframework.web.bind.annotation.RequestMapping;
+					import org.springframework.web.bind.annotation.RequestMethod;
+					
+					@FeignClient(name = "stores", configuration = {FeignConfigExample.class, OtherPackageConfig.class})
+					public interface FeignClientExample {
+					
+					\t@RequestMapping(method = RequestMethod.GET, value = "/stores")
+					\tList<String> getStores();
+					
+					}
+					""", Files.readString(targetFile));
+		} finally {
+			Files.writeString(targetFile, originalContent);
+		}
+    }
+
+    @Test
     void testErrorAppearsWhenFeignClientAnnotationGoesAwayEntirely() throws Exception {
 		String feignClientDocUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java").toUri().toString();
 		String feignConfigRegisterd = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignConfigExample.java").toUri().toString();

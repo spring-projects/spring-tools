@@ -290,4 +290,92 @@ public class QueryReconcilerTest {
 		editor.assertProblems("SELECTX|HQL: mismatched input 'SELECTX'");
 	}
 
+	@Test
+	void jdbcQueryNoErrors() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query("SELECT * FROM owner WHERE last_name = :lastName")
+					List<Object> findByLastName(String lastName);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems();
+	}
+
+	@Test
+	void jdbcQueryErrorReported() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query("SELECTX * FROM owner WHERE last_name = :lastName")
+					List<Object> findByLastName(String lastName);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems("SELECTX|MySQL: mismatched input 'SELECTX' expecting {'ALTER',");
+	}
+
+	@Test
+	void jdbcQueryNormalAnnotationErrorReported() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = "SELECTX * FROM owner WHERE last_name = :lastName")
+					List<Object> findByLastName(String lastName);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems("SELECTX|MySQL: mismatched input 'SELECTX' expecting {'ALTER',");
+	}
+
+	@Test
+	void jdbcOnlyProjectNoReconcilingWithoutDbConnector() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/aot-data-repositories-jdbc/").toURI());
+		String projectDir = directory.toURI().toString();
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query("SELECTX * FROM owner")
+					List<Object> findAll();
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems();
+	}
+
 }

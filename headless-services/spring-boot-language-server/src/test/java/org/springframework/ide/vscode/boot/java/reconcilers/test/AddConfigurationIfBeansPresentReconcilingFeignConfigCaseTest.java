@@ -253,7 +253,7 @@ public class AddConfigurationIfBeansPresentReconcilingFeignConfigCaseTest {
 					\tList<String> getStores();
 					
 					}
-					""", Files.readString(targetFile));
+					""", Files.readString(targetFile).replace("\r", ""));
 		} finally {
 			Files.writeString(targetFile, originalContent);
 		}

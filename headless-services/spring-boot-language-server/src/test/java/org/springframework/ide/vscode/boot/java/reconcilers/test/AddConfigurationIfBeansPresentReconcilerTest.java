@@ -11,10 +11,14 @@
 package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.Range;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -191,6 +195,157 @@ public class AddConfigurationIfBeansPresentReconcilerTest extends BaseReconciler
 		}, "A.java", source, false);
 		
 		assertEquals(0, problems.size());
+	}
+
+	@Test
+	void quickFixAddToFeignClientConfiguration() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.context.annotation.Bean;
+				
+				class A {
+				
+					@Bean
+					String myBean() {
+						return "my-bean";
+					}
+					
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			Location feignClientLocation = new Location("file:///some/path/FeignClientExample.java", new Range(new Position(0, 0), new Position(10, 0)));
+			AnnotationMetadata feignAnnotation = new AnnotationMetadata(Annotations.FEIGN_CLIENT, false, null, Map.of("name", new AnnotationAttributeValue[] {new AnnotationAttributeValue("stores", null)}));
+			Bean feignBean = new Bean("feignClient", "example.demo.FeignClientExample", feignClientLocation, null, null, new AnnotationMetadata[] {feignAnnotation}, false, "symbolLabel");
+			springIndex.updateBeans(getProjectName(), new Bean[] {feignBean});
+			
+			return new AddConfigurationIfBeansPresentReconciler(new QuickfixRegistry(), springIndex);
+		}, "A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION, problem.getType());
+		
+		// 2 standard @Configuration fixes + 1 FeignClient fix
+		assertEquals(3, problem.getQuickfixes().size());
+		assertTrue(problem.getQuickfixes().stream().anyMatch(qf -> qf.title.contains("@FeignClient")));
+	}
+
+	@Test
+	void quickFixAddToLoadBalancerClientConfiguration() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.context.annotation.Bean;
+				
+				class A {
+				
+					@Bean
+					String myBean() {
+						return "my-bean";
+					}
+					
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			Location lbClientLocation = new Location("file:///some/path/LoadBalancerClientExample.java", new Range(new Position(0, 0), new Position(10, 0)));
+			AnnotationMetadata lbAnnotation = new AnnotationMetadata(Annotations.LOAD_BALANCER_CLIENT, false, null, Map.of("name", new AnnotationAttributeValue[] {new AnnotationAttributeValue("first", null)}));
+			Bean lbBean = new Bean("loadBalancerClient", "example.demo.LoadBalancerClientExample", lbClientLocation, null, null, new AnnotationMetadata[] {lbAnnotation}, false, "symbolLabel");
+			springIndex.updateBeans(getProjectName(), new Bean[] {lbBean});
+			
+			return new AddConfigurationIfBeansPresentReconciler(new QuickfixRegistry(), springIndex);
+		}, "A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION, problem.getType());
+		
+		// 2 standard @Configuration fixes + 1 LoadBalancerClient fix
+		assertEquals(3, problem.getQuickfixes().size());
+		assertTrue(problem.getQuickfixes().stream().anyMatch(qf -> qf.title.contains("@LoadBalancerClient")));
+	}
+
+	@Test
+	void quickFixAddToBothFeignAndLoadBalancerClientConfiguration() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.context.annotation.Bean;
+				
+				class A {
+				
+					@Bean
+					String myBean() {
+						return "my-bean";
+					}
+					
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			Location feignClientLocation = new Location("file:///some/path/FeignClientExample.java", new Range(new Position(0, 0), new Position(10, 0)));
+			AnnotationMetadata feignAnnotation = new AnnotationMetadata(Annotations.FEIGN_CLIENT, false, null, Map.of("name", new AnnotationAttributeValue[] {new AnnotationAttributeValue("stores", null)}));
+			Bean feignBean = new Bean("feignClient", "example.demo.FeignClientExample", feignClientLocation, null, null, new AnnotationMetadata[] {feignAnnotation}, false, "symbolLabel");
+			
+			Location lbClientLocation = new Location("file:///some/path/LoadBalancerClientExample.java", new Range(new Position(0, 0), new Position(10, 0)));
+			AnnotationMetadata lbAnnotation = new AnnotationMetadata(Annotations.LOAD_BALANCER_CLIENT, false, null, Map.of("name", new AnnotationAttributeValue[] {new AnnotationAttributeValue("first", null)}));
+			Bean lbBean = new Bean("loadBalancerClient", "example.demo.LoadBalancerClientExample", lbClientLocation, null, null, new AnnotationMetadata[] {lbAnnotation}, false, "symbolLabel");
+			
+			springIndex.updateBeans(getProjectName(), new Bean[] {feignBean, lbBean});
+			
+			return new AddConfigurationIfBeansPresentReconciler(new QuickfixRegistry(), springIndex);
+		}, "A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION, problem.getType());
+		
+		// 2 standard @Configuration fixes + 1 FeignClient fix + 1 LoadBalancerClient fix
+		assertEquals(4, problem.getQuickfixes().size());
+		assertTrue(problem.getQuickfixes().stream().anyMatch(qf -> qf.title.contains("@FeignClient")));
+		assertTrue(problem.getQuickfixes().stream().anyMatch(qf -> qf.title.contains("@LoadBalancerClient")));
+	}
+
+	@Test
+	void noClientConfigQuickFixWhenNoClientBeansInIndex() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.context.annotation.Bean;
+				
+				class A {
+				
+					@Bean
+					String myBean() {
+						return "my-bean";
+					}
+					
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			SpringMetamodelIndex springIndex = new SpringMetamodelIndex();
+			
+			// Only a regular bean in the index, no @FeignClient or @LoadBalancerClient
+			AnnotationMetadata configAnnotation = new AnnotationMetadata(Annotations.CONFIGURATION, false, null, Map.of());
+			Bean regularBean = new Bean("otherBean", "example.demo.OtherBean", null, null, null, new AnnotationMetadata[] {configAnnotation}, true, "symbolLabel");
+			springIndex.updateBeans(getProjectName(), new Bean[] {regularBean});
+			
+			return new AddConfigurationIfBeansPresentReconciler(new QuickfixRegistry(), springIndex);
+		}, "A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		// Only 2 standard @Configuration fixes, no client config fixes
+		assertEquals(2, problem.getQuickfixes().size());
 	}
 
 }

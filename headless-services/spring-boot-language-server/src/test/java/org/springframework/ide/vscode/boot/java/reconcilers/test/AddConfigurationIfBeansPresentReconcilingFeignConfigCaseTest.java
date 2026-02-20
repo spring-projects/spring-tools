@@ -11,9 +11,12 @@
 package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +37,9 @@ import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.utils.test.TestFileScanListener;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.util.UriUtil;
+import org.springframework.ide.vscode.commons.util.text.LanguageId;
+import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
+import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -143,6 +149,60 @@ public class AddConfigurationIfBeansPresentReconcilingFeignConfigCaseTest {
 		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION.getCode(), diagnostics.get(0).getCode().getLeft());
     }
     
+    @Test
+    void testQuickFixAddToFeignClientConfigurationOffered() throws Exception {
+		String docUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignConfigNotRegistered.java").toUri().toString();
+
+		Editor editor = harness.newEditorFromFileUri(docUri, LanguageId.JAVA);
+		Diagnostic problem = editor.assertProblem("FeignConfigNotRegistered");
+		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION.getCode(), problem.getCode().getLeft());
+
+		List<CodeAction> codeActions = editor.getCodeActions(problem);
+		assertTrue(codeActions.size() >= 3);
+		assertTrue(codeActions.stream().anyMatch(ca -> ca.getLabel().contains("@FeignClient")));
+    }
+
+    @Test
+    void testApplyQuickFixAddToFeignClientConfiguration() throws Exception {
+		String docUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignConfigNotRegistered.java").toUri().toString();
+
+		Editor editor = harness.newEditorFromFileUri(docUri, LanguageId.JAVA);
+		Diagnostic problem = editor.assertProblem("FeignConfigNotRegistered");
+		assertEquals(Boot2JavaProblemType.MISSING_CONFIGURATION_ANNOTATION.getCode(), problem.getCode().getLeft());
+
+		List<CodeAction> codeActions = editor.getCodeActions(problem);
+		CodeAction addToFeignClientFix = codeActions.stream()
+				.filter(ca -> ca.getLabel().contains("@FeignClient"))
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("Should have '@FeignClient' quickfix"));
+
+		Path targetFile = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java");
+		String originalContent = Files.readString(targetFile);
+		try {
+			addToFeignClientFix.perform();
+
+			assertEquals("""
+					package com.example.feign.demo;
+					
+					import java.util.List;
+					
+					import org.springframework.cloud.openfeign.FeignClient;
+					import org.springframework.web.bind.annotation.RequestMapping;
+					import org.springframework.web.bind.annotation.RequestMethod;
+					
+					@FeignClient(name = "stores", configuration = {FeignConfigExample.class, FeignConfigNotRegistered.class})
+					public interface FeignClientExample {
+					
+					\t@RequestMapping(method = RequestMethod.GET, value = "/stores")
+					\tList<String> getStores();
+					
+					}
+					""", Files.readString(targetFile));
+		} finally {
+			Files.writeString(targetFile, originalContent);
+		}
+    }
+
     @Test
     void testErrorAppearsWhenFeignClientAnnotationGoesAwayEntirely() throws Exception {
 		String feignClientDocUri = directory.toPath().resolve("src/main/java/com/example/feign/demo/FeignClientExample.java").toUri().toString();

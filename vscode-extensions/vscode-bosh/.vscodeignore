@@ -21,9 +21,12 @@ repo/**
 scripts/**
 build.sh
 
-# Compiler output
-out/test/**
-target/**
+# Build tooling
+node_modules
+webpack.config.js
+
+# Compiler output (old tsc output)
+out/**
 
 # Extensions
 .gitignore

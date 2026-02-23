@@ -23,8 +23,12 @@ readme-imgs/**
 developer-notes.md
 build.sh
 
-# Compiler output
-out/test/**
+# Build tooling
+node_modules
+webpack.config.js
+
+# Compiler output (old tsc output)
+out/**
 
 # Extensions
 .gitignore

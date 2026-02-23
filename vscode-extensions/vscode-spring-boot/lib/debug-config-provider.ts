@@ -38,7 +38,7 @@ interface ProcessEvent {
 
 class SpringBootDebugConfigProvider implements DebugConfigurationProvider {
 
-    async resolveDebugConfigurationWithSubstitutedVariables(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken) {
+    async resolveDebugConfigurationWithSubstitutedVariables(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, _token?: CancellationToken) {
         // Running app live hovers support
         if (!TEST_RUNNER_MAIN_CLASSES.includes(debugConfiguration.mainClass) && isActuatorOnClasspath(debugConfiguration)) {
             if (typeof debugConfiguration.vmArgs === 'string') {
@@ -140,7 +140,7 @@ async function handleCustomDebugEvent(e: DebugSessionCustomEvent): Promise<void>
     }
 }
 
-function handleTerminateDebugSession(session: DebugSession) {
+function handleTerminateDebugSession(_session: DebugSession) {
     commands.executeCommand('vscode-spring-boot.live.deactivate');
 }
 
@@ -168,10 +168,7 @@ function isActuatorOnClasspath(debugConfiguration: DebugConfiguration): boolean 
 
 function isActuatorJarFile(f: string): boolean {
     const fileName = path.basename(f || "");
-    if (/^spring-boot-actuator-\d+\.\d+\.\d+(.*)?.jar$/.test(fileName)) {
-        return true;
-    }
-    return false;
+    return /^spring-boot-actuator-\d+\.\d+\.\d+(.*)?.jar$/.test(fileName);
 }
 
 function canConnect(debugConfiguration: DebugConfiguration): boolean {

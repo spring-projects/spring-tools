@@ -43,7 +43,7 @@ async function setLogLevelHandler() {
         try {
             const loggers: ProcessLoggersData = await getLoggers(processInfo);
             await displayLoggers(loggers, processInfo.processKey);
-        } catch (error) {
+        } catch (_error) {
             window.showErrorMessage("Failed to fetch loggers for the process " + processInfo.processKey);
         }
     }
@@ -73,7 +73,7 @@ async function selectRunningProcess(): Promise<ProcessCommandInfo | undefined> {
         return;
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
         quickPick.onDidChangeSelection(() => quickPick.hide());
         quickPick.onDidHide(async () => resolve(Array.isArray(quickPick.selectedItems) ? quickPick.selectedItems[0]?.commandInfo : undefined))
     });
@@ -140,7 +140,7 @@ export function activate(
         options: ActivatorOptions,
         context: ExtensionContext
 ) {
-    client.onNotification(LiveProcessLogLevelUpdatedNotification.type, logLevelUpdated)
+    client.onNotification(LiveProcessLogLevelUpdatedNotification, logLevelUpdated)
     context.subscriptions.push(
         commands.registerCommand('vscode-spring-boot.set.log-levels', () => {
             if (client.isRunning()) {

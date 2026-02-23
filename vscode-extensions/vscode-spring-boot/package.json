@@ -1558,11 +1558,12 @@
   },
   "main": "./dist/extension",
   "scripts": {
-    "vscode:prepublish": "npm run check-types && npm run package",
+    "vscode:prepublish": "npm run check-types && npm run lint && npm run package",
     "package": "node esbuild.js --production",
     "check-types": "tsc --noEmit",
     "compile": "node esbuild.js",
     "watch": "node esbuild.js --watch",
+    "lint": "eslint lib",
     "clean": "rm -fr node_modules out dist *.vsix package-lock.json",
     "vsce-package": "vsce package",
     "vsce-pre-release-package": "vsce package --pre-release"
@@ -1580,7 +1581,9 @@
     "@types/vscode": "1.92.0",
     "@vscode/vsce": "^2.22.0",
     "esbuild": "^0.25.0",
-    "typescript": "^4.8.0"
+    "eslint": "^9.0.0",
+    "typescript": "^4.8.0",
+    "typescript-eslint": "^8.0.0"
   },
   "extensionDependencies": [
     "redhat.java",

@@ -77,7 +77,7 @@ export class StructureManager {
                 const nodesMap = {} as Record<string, StereotypedNode>;
                 affectedProjects.forEach(projectName => nodesMap[projectName] = nodes.find(n => n.projectId === projectName));
                 // merge old and newly fetched stereotype root nodes
-                let onlyMutations = true;
+                let _onlyMutations = true;
                 this._rootElements.forEach(n => {
                     if (nodesMap.hasOwnProperty(n.projectId)) {
                         const newN = nodesMap[n.projectId];
@@ -86,7 +86,7 @@ export class StructureManager {
                             newNodes.push(newN);
                         } else {
                             // element removed
-                            onlyMutations = false;
+                            _onlyMutations = false;
                         }
                     } else {
                         newNodes.push(n);
@@ -94,7 +94,7 @@ export class StructureManager {
                 });
                 if (Object.values(nodesMap).length) {
                     // elements added
-                    onlyMutations = false;
+                    _onlyMutations = false;
                     Object.values(nodesMap).filter(n => !!n).forEach(n => newNodes.push(n));                       
                 }
                 this._rootElements = newNodes;

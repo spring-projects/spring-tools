@@ -7,6 +7,7 @@
         ],
         "noImplicitAny": false,
         "sourceMap": true,
+        "esModuleInterop": true,
         "moduleResolution": "node",
         "declaration": true,
         "outDir": "lib"

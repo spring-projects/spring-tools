@@ -1,11 +1,9 @@
-import { commands, ExtensionContext, extensions, lm, LanguageModelChatSelector, window, workspace, LogOutputChannel, version, env } from "vscode";
-import { SemVer } from "semver";
+import { commands, extensions, lm, window, workspace, LogOutputChannel, env } from "vscode";
 
 export const REQUIRED_EXTENSION = 'github.copilot-chat';
-const DEFAULT_MODEL_SELECTOR: LanguageModelChatSelector = { vendor: 'copilot', family: 'gpt-4' };
 export const logger: LogOutputChannel = window.createOutputChannel("Spring tools copilot", { log: true });
 
-export async function activateCopilotFeatures(context: ExtensionContext): Promise<void> {
+export async function activateCopilotFeatures(): Promise<void> {
     workspace.onDidChangeConfiguration(event => {
         if (event.affectsConfiguration('boot-java.highlight-copilot-codelens.on')) {
             promptReloadWindow();

@@ -24,6 +24,7 @@ build.sh
 # Build tooling
 node_modules
 esbuild.js
+eslint.config.mjs
 
 # Compiler output (old tsc output)
 out/**

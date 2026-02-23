@@ -3,7 +3,7 @@
 import * as VSCode from 'vscode';
 import * as Path from 'path';
 import * as FS from 'fs';
-import PortFinder = require('portfinder');
+import PortFinder from 'portfinder';
 import * as Net from 'net';
 import * as CommonsCommands from './commands';
 import { RequestType, LanguageClientOptions, Position } from 'vscode-languageclient';
@@ -58,7 +58,7 @@ function getUserDefinedJvmHeap(wsOpts : VSCode.WorkspaceConfiguration,  dflt : s
     if (!wsOpts) {
         return dflt;
     }
-    let javaOptions : JavaOptions = wsOpts.get("java");
+    const javaOptions : JavaOptions = wsOpts.get("java");
     return (javaOptions && javaOptions.heap) || dflt;
 }
 
@@ -74,14 +74,14 @@ function getUserDefinedJvmArgs(wsOpts : VSCode.WorkspaceConfiguration) : string[
     if (!wsOpts) {
         return dflt;
     }
-    let javaOptions : JavaOptions = wsOpts.get("java");
+    const javaOptions : JavaOptions = wsOpts.get("java");
     return javaOptions && javaOptions.vmargs || dflt;
 }
 
 function getSpringUserDefinedJavaHome(wsOpts : VSCode.WorkspaceConfiguration, log: VSCode.OutputChannel) : string {
     let javaHome: string = null;
     if (wsOpts) {
-        let javaOptions: JavaOptions = wsOpts.get("java");
+        const javaOptions: JavaOptions = wsOpts.get("java");
         javaHome = javaOptions && javaOptions.home;
     }
     if (!javaHome) {
@@ -135,7 +135,7 @@ export function activate(options: ActivatorOptions, context: VSCode.ExtensionCon
         clientOptions.outputChannelName = outChennalName;
         clientOptions.outputChannel.appendLine("Activating '" + options.extensionId + "' extension");
 
-        let findJRE = options.preferJdk ? findJdk : findJvm;
+        const findJRE = options.preferJdk ? findJdk : findJvm;
 
         return findJRE(getSpringUserDefinedJavaHome(options.workspaceOptions, clientOptions.outputChannel)
             || findJdtEmbeddedJRE()
@@ -150,7 +150,7 @@ export function activate(options: ActivatorOptions, context: VSCode.ExtensionCon
                 VSCode.window.showErrorMessage("Couldn't locate java in $JAVA_HOME or $PATH");
                 return;
             }
-            let javaExecutablePath = jvm.getJavaExecutable();
+            const javaExecutablePath = jvm.getJavaExecutable();
             clientOptions.outputChannel.appendLine("Found java executable: " + javaExecutablePath);
 
             clientOptions.outputChannel.appendLine("isJavaEightOrHigher => true");
@@ -191,7 +191,7 @@ function createServerOptionsForPortComm(options: ActivatorOptions, context: VSCo
                     });
                 })
                     .listen(port, () => {
-                        let processLaunchoptions = {
+                        const processLaunchoptions = {
                             cwd: context.extensionPath
                         };
                         const args = prepareJvmArgs(options, context, jvm, port);
@@ -295,7 +295,7 @@ function addCpAndLauncherToJvmArgs(args: string[], options: ActivatorOptions, co
    }
 }
 
-function hasHeapArg(vmargs?: string[]) : boolean {
+function hasHeapArg(_vmargs?: string[]) : boolean {
     return hasVmArg('-Xmx');
 }
 
@@ -308,7 +308,7 @@ function hasVmArg(argPrefix: string, vmargs?: string[]): boolean {
 }
 
 function findServerJar(jarsDir) : string {
-    let serverJars = FS.readdirSync(jarsDir).filter(jar =>
+    const serverJars = FS.readdirSync(jarsDir).filter(jar =>
         jar.indexOf('language-server')>=0 &&
         jar.endsWith(".jar")
     );
@@ -322,13 +322,13 @@ function findServerJar(jarsDir) : string {
 }
 
 function connectToLS(context: VSCode.ExtensionContext, options: ActivatorOptions): Promise<LanguageClient> {
-    let connectionInfo = {
+    const connectionInfo = {
         port: 5007
     };
 
-    let serverOptions = () => {
-        let socket = Net.connect(connectionInfo);
-        let result: StreamInfo = {
+    const serverOptions = () => {
+        const socket = Net.connect(connectionInfo);
+        const result: StreamInfo = {
             writer: socket,
             reader: socket
         };
@@ -340,7 +340,7 @@ function connectToLS(context: VSCode.ExtensionContext, options: ActivatorOptions
 
 function setupLanguageClient(context: VSCode.ExtensionContext, createServer: ServerOptions, options: ActivatorOptions): Promise<LanguageClient> {
     // Create the language client and start the client.
-    let client = new LanguageClient(options.extensionId, options.extensionId,
+    const client = new LanguageClient(options.extensionId, options.extensionId,
         createServer, options.clientOptions
     );
     client.registerProposedFeatures();
@@ -349,12 +349,12 @@ function setupLanguageClient(context: VSCode.ExtensionContext, createServer: Ser
         client.setTrace(Trace.Verbose);
     }
 
-    let highlightNotification = new NotificationType<HighlightParams>("sts/highlight");
-    let moveCursorRequest = new RequestType<MoveCursorParams,MoveCursorResponse,void>("sts/moveCursor");
+    const highlightNotification = new NotificationType<HighlightParams>("sts/highlight");
+    const moveCursorRequest = new RequestType<MoveCursorParams,MoveCursorResponse,void>("sts/moveCursor");
 
     const codeLensListanableSetting = options.highlightCodeLensSettingKey ? new ListenablePreferenceSetting<boolean>(options.highlightCodeLensSettingKey) : undefined;
 
-    let highlightService = new HighlightService();
+    const highlightService = new HighlightService();
     const codelensService = new HighlightCodeLensProvider();
     let codeLensProviderSubscription: Disposable;
 
@@ -389,10 +389,10 @@ function setupLanguageClient(context: VSCode.ExtensionContext, createServer: Ser
         }
     });
     client.onRequest(moveCursorRequest, (params: MoveCursorParams) => {
-        for (let editor of VSCode.window.visibleTextEditors) {
+        for (const editor of VSCode.window.visibleTextEditors) {
             if (editor.document.uri.toString() == params.uri) {
-                let cursor = p2c.asPosition(params.position);
-                let selection: VSCode.Selection = new VSCode.Selection(cursor, cursor);
+                const cursor = p2c.asPosition(params.position);
+                const selection: VSCode.Selection = new VSCode.Selection(cursor, cursor);
                 editor.selections = [selection];
             }
         }

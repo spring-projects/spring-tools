@@ -1556,20 +1556,23 @@
       }
     }
   },
-  "main": "./out/lib/Main",
+  "main": "./dist/extension",
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node ./node_modules/vscode/bin/test",
+    "vscode:prepublish": "npm run check-types && npm run lint && npm run package",
+    "package": "node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "lint": "eslint lib",
+    "clean": "rm -fr node_modules out dist *.vsix package-lock.json",
     "vsce-package": "vsce package",
     "vsce-pre-release-package": "vsce package --pre-release"
   },
   "dependencies": {
     "@pivotal-tools/commons-vscode": "file:../commons-vscode/pivotal-tools-commons-vscode-0.2.4.tgz",
-    "portfinder": "1.0.32",
+    "portfinder": "~1.0.38",
     "ps-list": "^7.2.0",
-    "semver": "^7.6.2",
+    "semver": "^7.7.4",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
@@ -1577,7 +1580,10 @@
     "@types/semver": "^7.5.8",
     "@types/vscode": "1.92.0",
     "@vscode/vsce": "^2.22.0",
-    "typescript": "^4.8.0"
+    "esbuild": "^0.27.3",
+    "eslint": "^10.0.1",
+    "typescript": "^4.8.0",
+    "typescript-eslint": "^8.56.0"
   },
   "extensionDependencies": [
     "redhat.java",

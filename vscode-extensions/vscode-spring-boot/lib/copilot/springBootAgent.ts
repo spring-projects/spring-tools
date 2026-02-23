@@ -1,12 +1,10 @@
 import CopilotRequest from "./copilotRequest";
-import { CancellationToken, chat, ChatContext, ChatRequest, ChatResponseStream, ChatResult, commands, ExtensionContext, l10n, LanguageModelChatMessage, LanguageModelChatMessageRole, Uri, workspace } from "vscode";
+import { CancellationToken, chat, ChatContext, ChatRequest, ChatResponseStream, ChatResult, commands, ExtensionContext, l10n, LanguageModelChatMessage, LanguageModelChatMessageRole, Uri } from "vscode";
 import { systemBoot2Prompt, systemBoot3Prompt, systemPrompt } from "./system-ai-prompt";
-import { userPrompt } from "./user-ai-prompt";
 import { getWorkspaceRoot, writeResponseToFile } from "./util";
 
 const PARTICIPANT_ID = 'springboot.agent';
 const SYSTEM_PROMPT = systemPrompt;
-const USER_PROMPT = userPrompt;
 
 interface BootProjectInfo {
     name: string;

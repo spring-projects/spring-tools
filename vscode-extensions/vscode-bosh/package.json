@@ -132,12 +132,15 @@
       }
     }
   },
-  "main": "./out/lib/Main",
+  "main": "./dist/extension",
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "clean": "rm -fr node_modules out *.vsix package-lock.json",
+    "vscode:prepublish": "npm run check-types && npm run lint && npm run package",
+    "package": "node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "lint": "eslint lib",
+    "clean": "rm -fr node_modules out dist *.vsix package-lock.json",
     "vsce-package": "vsce package",
     "vsce-pre-release-package": "vsce package --pre-release"
   },
@@ -149,6 +152,9 @@
     "@types/node": "^18.8.0",
     "@types/vscode": "1.75.0",
     "@vscode/vsce": "^2.22.0",
-    "typescript": "^4.8.0"
+    "esbuild": "^0.27.3",
+    "eslint": "^10.0.1",
+    "typescript": "^4.8.0",
+    "typescript-eslint": "^8.56.0"
   }
 }

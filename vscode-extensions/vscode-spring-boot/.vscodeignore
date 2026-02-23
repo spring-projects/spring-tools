@@ -14,17 +14,19 @@ tsd.json
 # Sources
 typings/**
 src/**
-test/**
 lib/**
 !lib/javaconfig.schema.json
 repo/**
 scripts/**
 build.sh
 
-# Compiler output
-out/test/**
-target/**
-!target/vscode-boot-properties-*.jar
+# Build tooling
+node_modules
+esbuild.js
+eslint.config.mjs
+
+# Compiler output (old tsc output)
+out/**
 
 # Extensions
 .gitignore

@@ -8,7 +8,6 @@ import {
     ExtensionContext,
     Uri,
     lm,
-    TreeItemCollapsibleState,
     TextDocumentContentProvider
 } from 'vscode';
 
@@ -27,7 +26,7 @@ import { activateCopilotFeatures } from "./copilot";
 import * as springBootAgent from './copilot/springBootAgent';
 import { applyLspEdit } from "./copilot/guideApply";
 import { isLlmApiReady } from "./copilot/util";
-import CopilotRequest, { logger } from "./copilot/copilotRequest";
+import { logger } from "./copilot/copilotRequest";
 import { StructureManager } from "./explorer/structure-tree-manager";
 import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
 
@@ -58,7 +57,7 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
         specificVmArgs.push("-Dspring.main.web-application-type=NONE");
     }
 
-    let options : commons.ActivatorOptions = {
+    const options : commons.ActivatorOptions = {
         DEBUG: false,
         CONNECT_TO_LS: false,
         extensionId: 'vscode-spring-boot',
@@ -66,7 +65,7 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
         jvmHeap: '1024m',
         vmArgs: specificVmArgs,
         checkjvm: (context: ExtensionContext, jvm: commons.JVM) => {
-            let version = jvm.getMajorVersion();
+            const version = jvm.getMajorVersion();
             if (version < 21) {
                 throw Error(`Spring Tools Language Server requires Java 21 or higher to be launched. Current Java version is ${version}`);
             }
@@ -171,7 +170,7 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
         registerClasspathService(client);
         registerJavaDataService(client);
 
-        activateCopilotFeatures(context);
+        activateCopilotFeatures();
 
         // Force classpath listener to be enabled. Boot LS can only be launched iff classpath is available and there Spring-Boot on the classpath somewhere.
         commands.executeCommand('sts.vscode-spring-boot.enableClasspathListening', true);

@@ -29,15 +29,14 @@ export class HighlightCodeLensProvider implements CodeLensProvider {
     }
 
     static toVSCodeLens(cl: Lsp.CodeLens): CodeLens {
-        const codeLens: CodeLens = {
+        return {
             range: toVSRange(cl.range),
             isResolved: true,
             command: cl.command
-        };
-        return codeLens;
+        } as CodeLens;
     }
 
-    provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]> {
+    provideCodeLenses(document: TextDocument, _token: CancellationToken): ProviderResult<CodeLens[]> {
         const activeUri = document.uri.toString();
         const activeVersion = document.version;
         const highlightParams = this.highlights.get(activeUri);

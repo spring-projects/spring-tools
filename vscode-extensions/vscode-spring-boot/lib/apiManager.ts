@@ -56,13 +56,13 @@ export class ApiManager {
             return await commands.executeCommand(COMMAND_LIVEDATA_REFRESH_METRICS, query);
         }
 
-        client.onNotification(LiveProcessConnectedNotification.type, (process: LiveProcess) => this.onDidLiveProcessConnectEmitter.fire(process));
-        client.onNotification(LiveProcessDisconnectedNotification.type, (process: LiveProcess) => this.onDidLiveProcessDisconnectEmitter.fire(process));
-        client.onNotification(LiveProcessUpdatedNotification.type, (process: LiveProcess) => this.onDidLiveProcessUpdateEmitter.fire(process));
-        client.onNotification(LiveProcessGcPausesMetricsUpdatedNotification.type, (process: LiveProcess) => this.onDidLiveProcessGcPausesMetricsUpdateEmitter.fire(process));
-        client.onNotification(LiveProcessMemoryMetricsUpdatedNotification.type, (process: LiveProcess) => this.onDidLiveProcessMemoryMetricsUpdateEmitter.fire(process));
+        client.onNotification(LiveProcessConnectedNotification, (process: LiveProcess) => this.onDidLiveProcessConnectEmitter.fire(process));
+        client.onNotification(LiveProcessDisconnectedNotification, (process: LiveProcess) => this.onDidLiveProcessDisconnectEmitter.fire(process));
+        client.onNotification(LiveProcessUpdatedNotification, (process: LiveProcess) => this.onDidLiveProcessUpdateEmitter.fire(process));
+        client.onNotification(LiveProcessGcPausesMetricsUpdatedNotification, (process: LiveProcess) => this.onDidLiveProcessGcPausesMetricsUpdateEmitter.fire(process));
+        client.onNotification(LiveProcessMemoryMetricsUpdatedNotification, (process: LiveProcess) => this.onDidLiveProcessMemoryMetricsUpdateEmitter.fire(process));
 
-        client.onNotification(SpringIndexUpdatedNotification.type, (details: IndexUpdateDetails) => this.onSpringIndexUpdateEmitter.fire(details));
+        client.onNotification(SpringIndexUpdatedNotification, (details: IndexUpdateDetails) => this.onSpringIndexUpdateEmitter.fire(details));
 
         const beansRequestType = new RequestType<BeansParams, Bean[], void>('spring/index/beans');
         const beans = (params: BeansParams) => {

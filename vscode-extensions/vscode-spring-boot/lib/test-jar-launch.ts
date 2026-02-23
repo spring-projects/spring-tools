@@ -17,7 +17,7 @@ interface ExecutableBootProject {
 
 class TestJarDebugConfigProvider implements DebugConfigurationProvider {
 
-    async resolveDebugConfigurationWithSubstitutedVariables(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): Promise<DebugConfiguration> {
+    async resolveDebugConfigurationWithSubstitutedVariables(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, _token?: CancellationToken): Promise<DebugConfiguration> {
         // TestJar launch support
         if (TEST_RUNNER_MAIN_CLASSES.includes(debugConfiguration.mainClass) && isTestJarsOnClasspath(debugConfiguration)) {
             const projects = await commands.executeCommand("sts/spring-boot/executableBootProjects") as ExecutableBootProject[];
@@ -33,7 +33,7 @@ class TestJarDebugConfigProvider implements DebugConfigurationProvider {
                 if (!env[envName]) {
                     try {
                         env[envName] = await this.createFile(p);
-                    } catch (error) {
+                    } catch (_error) {
                         projectsWithErrors.push(p);
                     }
                 }
@@ -90,10 +90,7 @@ function isTestJarsOnClasspath(debugConfiguration: DebugConfiguration): boolean 
 
 function isTestJarFile(f: string): boolean {
     const fileName = path.basename(f || "");
-    if (/^spring-boot-testjars-\d+\.\d+\.\d+(.*)?.jar$/.test(fileName)) {
-        return true;
-    }
-    return false;
+    return /^spring-boot-testjars-\d+\.\d+\.\d+(.*)?.jar$/.test(fileName);
 }
 
 

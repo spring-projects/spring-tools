@@ -4,25 +4,10 @@
 
 import * as VSCode from 'vscode';
 import * as commons from '@pivotal-tools/commons-vscode';
-import {OutputChannel} from 'vscode';
-
-var log_output : OutputChannel = null;
-
-function log(msg : string) {
-    if (log_output) {
-        log_output.append(msg +"\n");
-    }
-}
-
-function error(msg : string) {
-    if (log_output) {
-        log_output.append("ERR: "+msg+"\n");
-    }
-}
 
 /** Called when extension is activated */
 export function activate(context: VSCode.ExtensionContext) {
-    let options : commons.ActivatorOptions = {
+    const options : commons.ActivatorOptions = {
         DEBUG : false,
         CONNECT_TO_LS: false,
         extensionId: 'vscode-manifest-yaml',
@@ -40,7 +25,7 @@ export function activate(context: VSCode.ExtensionContext) {
             ]
         },
         checkjvm: (context: VSCode.ExtensionContext, jvm: commons.JVM) => {
-            let version = jvm.getMajorVersion();
+            const version = jvm.getMajorVersion();
             if (version < 17) {
                 throw Error(`Cloudfoundry Manifest YAML Language Server requires Java 17 or higher to be launched. Current Java version is ${version}`);
             }

@@ -21,17 +21,20 @@
     "clean": "rm -rf lib node_modules package-lock.json",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "prepack": "tsc -p ./"
+    "lint": "eslint src",
+    "prepack": "tsc -p ./ && npm run lint"
   },
   "dependencies": {
     "@pivotal-tools/jvm-launch-utils": "0.0.20",
-    "deep-equal": "^2.0.5",
-    "portfinder": "^1.0.28"
+    "deep-equal": "^2.2.3",
+    "portfinder": "^1.0.38"
   },
   "devDependencies": {
     "@types/node": "^18.8.0",
     "@types/vscode": "1.75.0",
+    "eslint": "^10.0.1",
     "typescript": "^4.8.0",
+    "typescript-eslint": "^8.56.0",
     "vscode-languageclient": "^9.0.1"
   }
 }

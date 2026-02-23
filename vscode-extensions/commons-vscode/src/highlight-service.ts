@@ -1,4 +1,4 @@
-import {VersionedTextDocumentIdentifier, MarkupContent, Position, Range, CodeLens} from 'vscode-languageclient'
+import {VersionedTextDocumentIdentifier, Position, Range, CodeLens} from 'vscode-languageclient'
 import * as VSCode from 'vscode';
 import { TextEditor } from 'vscode';
 
@@ -19,7 +19,7 @@ export class HighlightService {
 
     DECORATION : VSCode.TextEditorDecorationType;
 
-    highlights : Map<String, HighlightParams>;
+    highlights : Map<string, HighlightParams>;
 
     dispose() {
         this.DECORATION.dispose();
@@ -48,8 +48,7 @@ export class HighlightService {
     }
 
     refresh(docId: VersionedTextDocumentIdentifier) {
-        let editors = VSCode.window.visibleTextEditors;
-        for (let editor of editors) {
+        for (const editor of VSCode.window.visibleTextEditors) {
             const activeUri = editor.document.uri.toString();
             const activeVersion = editor.document.version;
             if (VSCode.Uri.parse(docId.uri).toString() === activeUri && docId.version === activeVersion) {
@@ -63,7 +62,7 @@ export class HighlightService {
         if (editor) {
             const highlightParams: HighlightParams = this.highlights.get(editor.document.uri.toString());
             const highlights: CodeLens[] = highlightParams?.codeLenses || [];
-            let decorations = highlights.map(hl => toVSRange(hl.range));
+            const decorations = highlights.map(hl => toVSRange(hl.range));
             editor.setDecorations(this.DECORATION, decorations);
         }
     }

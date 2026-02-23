@@ -23,8 +23,13 @@ readme-imgs/**
 developer-notes.md
 build.sh
 
-# Compiler output
-out/test/**
+# Build tooling
+node_modules
+esbuild.js
+eslint.config.mjs
+
+# Compiler output (old tsc output)
+out/**
 
 # Extensions
 .gitignore

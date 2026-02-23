@@ -1,5 +1,3 @@
-// See https://go.microsoft.com/fwlink/?LinkId=733558
-// for the documentation about the tasks.json format
 {
     "version": "2.0.0",
     "tasks": [
@@ -8,18 +6,14 @@
             "script": "watch",
             "problemMatcher": {
                 "owner": "typescript",
-                "pattern":[
-                    {
-                        "regexp": "\\[tsl\\] ERROR",
-                        "file": 1,
-                        "location": 2,
-                        "message": 3
-                    }
-                ],
+                "pattern": {
+                    "regexp": "✘ \\[ERROR\\] (.+)",
+                    "message": 1
+                },
                 "background": {
                     "activeOnStart": true,
-                    "beginsPattern": "\\w+",
-                    "endsPattern": "webpack .* compiled"
+                    "beginsPattern": "\\[watch\\] build started",
+                    "endsPattern": "\\[watch\\] build finished"
                 }
             },
             "isBackground": true,

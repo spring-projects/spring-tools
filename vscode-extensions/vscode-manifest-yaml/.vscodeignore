@@ -25,7 +25,7 @@ build.sh
 
 # Build tooling
 node_modules
-webpack.config.js
+esbuild.js
 
 # Compiler output (old tsc output)
 out/**

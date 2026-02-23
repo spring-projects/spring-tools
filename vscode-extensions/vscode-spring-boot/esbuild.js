@@ -7,6 +7,10 @@ async function main() {
     const ctx = await esbuild.context({
         entryPoints: ['lib/Main.ts'],
         bundle: true,
+        // VS Code's extension host requires CommonJS. ESM-only dependencies that use
+        // import.meta.url (e.g. ps-list v8+) will break at runtime because esbuild
+        // cannot polyfill import.meta in CJS output. Pin such packages to their last
+        // CJS-compatible version.
         format: 'cjs',
         minify: production,
         sourcemap: !production,

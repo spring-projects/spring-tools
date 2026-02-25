@@ -198,6 +198,12 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2026-03</url>
 				</repository>
+				<repository>
+					<id>2026-03-i-builds</id>
+					<layout>p2</layout>
+					<url>https://download.eclipse.org/eclipse/updates/4.39-I-builds</url>
+				</repository>
+			
 <!--				<repository>
 					<id>maven-extras-mirror</id>
 					<layout>p2</layout>

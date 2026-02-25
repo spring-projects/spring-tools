@@ -82,7 +82,7 @@ public class QueryMethodCodeActionProviderJpaTest {
 		assertEquals("Add `@Query`", ca.getLabel());
 		Command cmd = ca.getCommand();
 		assertEquals(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX, cmd.getArguments().get(0));
-		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(10, TimeUnit.SECONDS);
+		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
 		String rawText = docEdit.getEdits().get(0).getLeft().getNewText();
 

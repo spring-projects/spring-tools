@@ -12,9 +12,11 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.lang.reflect.Modifier;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -24,6 +26,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.openrewrite.java.AddOrUpdateAnnotationAttribute;
 import org.openrewrite.java.spring.boot2.AddConfigurationAnnotationIfBeansPresent;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -74,15 +77,24 @@ public class AddConfigurationIfBeansPresentReconciler implements JdtAstReconcile
 					ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
 							nameAst.getStartPosition(), nameAst.getLength());
 					
-					String id = AddConfigurationAnnotationIfBeansPresent.class.getName();
+					String configId = AddConfigurationAnnotationIfBeansPresent.class.getName();
 
-					ReconcileUtils.setRewriteFixes(quickfixRegistry, problem,
-							List.of(new FixDescriptor(id, List.of(docUri.toASCIIString()),
-									ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.FILE))
-									.withRecipeScope(RecipeScope.FILE),
-									new FixDescriptor(id, List.of(docUri.toASCIIString()),
-											ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.PROJECT))
-											.withRecipeScope(RecipeScope.PROJECT)));
+					List<FixDescriptor> fixes = new ArrayList<>();
+					fixes.add(new FixDescriptor(configId, List.of(docUri.toASCIIString()),
+							ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.FILE))
+							.withRecipeScope(RecipeScope.FILE));
+					fixes.add(new FixDescriptor(configId, List.of(docUri.toASCIIString()),
+							ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.PROJECT))
+							.withRecipeScope(RecipeScope.PROJECT));
+
+					String beanClassName = ReconcileUtils.getDeepErasureType(classDecl.resolveBinding()).getQualifiedName();
+					Bean[] beans = springIndex != null ? springIndex.getBeansOfProject(project.getElementName()) : null;
+					if (beans != null && beans.length > 0) {
+						createFixesForClientAnnotation(fixes, beans, beanClassName, Annotations.FEIGN_CLIENT);
+						createFixesForClientAnnotation(fixes, beans, beanClassName, Annotations.LOAD_BALANCER_CLIENT);
+					}
+
+					ReconcileUtils.setRewriteFixes(quickfixRegistry, problem, fixes);
 
 					context.getProblemCollector().accept(problem);
 				}
@@ -209,6 +221,32 @@ public class AddConfigurationIfBeansPresentReconciler implements JdtAstReconcile
 			.map(annotation -> annotation.getAttributes().get("configuration"))
 			.flatMap(attributeValues -> attributeValues != null ? Arrays.stream(attributeValues) : Stream.empty())
 			.anyMatch(attributeValue -> attributeValue.getName().equals(beanClassName));
+	}
+
+	private void createFixesForClientAnnotation(List<FixDescriptor> fixes, Bean[] beans, String beanClassName,
+			String clientAnnotationType) {
+		List<Bean> clientBeans = Arrays.stream(beans)
+				.filter(bean -> hasAnnotation(bean, clientAnnotationType))
+				.filter(bean -> bean.getLocation() != null && bean.getLocation().getUri() != null)
+				.toList();
+
+		String clientAnnotationSimpleName = ReconcileUtils.getSimpleName(clientAnnotationType);
+		for (Bean clientBean : clientBeans) {
+			fixes.add(new FixDescriptor(AddOrUpdateAnnotationAttribute.class.getName(), List.of(clientBean.getLocation().getUri()),
+					"Add to '@%s' configuration in '%s'".formatted(clientAnnotationSimpleName, clientBean.getName()))
+					.withRecipeScope(RecipeScope.FILE)
+					.withParameters(Map.of(
+							"annotationType", clientAnnotationType,
+							"attributeName", "configuration",
+							"attributeValue", beanClassName + ".class",
+							"appendArray", true
+					)));
+		}
+	}
+
+	private static boolean hasAnnotation(Bean bean, String annotationType) {
+		return Arrays.stream(bean.getAnnotations())
+				.anyMatch(a -> a.getAnnotationType().equals(annotationType));
 	}
 
 	private static boolean isBeanMethod(MethodDeclaration m, AnnotationHierarchies annotationHierarchies) {

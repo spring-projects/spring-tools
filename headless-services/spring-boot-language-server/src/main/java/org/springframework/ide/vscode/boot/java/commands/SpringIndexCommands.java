@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,47 +52,55 @@ public class SpringIndexCommands {
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
 	private final SourceLinks sourceLinks;
 	
+	private final Executor messageWorkerThreadPool;
+	
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex, ModulithService modulithService,
 			JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks) {
 
 		this.modulithService = modulithService;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		this.sourceLinks = sourceLinks;
+		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
+	
+		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
+			return CompletableFuture.supplyAsync(() -> {
+				StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
+
+				CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
+				
+				Stream<? extends IJavaProject> projects = projectFinder.all().stream();
+				if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
+					projects = projects.filter(project -> args.affectedProjects.contains(project.getElementName()));
+				}
+
+				return projects
+						.sorted(Comparator.comparing(IJavaProject::getElementName))
+						.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata,
+								args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))
+						.filter(Objects::nonNull)
+						.collect(Collectors.toList());
+			}, messageWorkerThreadPool);
+		});
 		
-		server.onCommand(SPRING_STRUCTURE_CMD, params -> server.getAsync().invoke(() -> {
-			StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
-
-			CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
-			
-			Stream<? extends IJavaProject> projects = projectFinder.all().stream();
-			if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
-				projects = projects.filter(project -> args.affectedProjects.contains(project.getElementName()));
-			}
-
-			return projects
-					.sorted(Comparator.comparing(IJavaProject::getElementName))
-					.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata,
-							args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))
-					.filter(Objects::nonNull)
-					.collect(Collectors.toList());
-		}));
-
-		server.onCommand(SPRING_STRUCTURE_GROUPS_CMD, params -> server.getAsync().invoke(() -> {
-			if (params.getArguments().size() == 1) {
-				Object o = params.getArguments().get(0);
-				String name = null;
-				if (o instanceof JsonElement) {
-					name = ((JsonElement) o).getAsString();
-				} else if (o instanceof String) {
-					name = (String) o;
+		server.onCommand(SPRING_STRUCTURE_GROUPS_CMD, params -> {
+			return CompletableFuture.supplyAsync(() -> {
+				if (params.getArguments().size() == 1) {
+					Object o = params.getArguments().get(0);
+					String name = null;
+					if (o instanceof JsonElement) {
+						name = ((JsonElement) o).getAsString();
+					} else if (o instanceof String) {
+						name = (String) o;
+					}
+					if (name != null) {
+						final String projectName = name;
+						return projectFinder.all().stream().filter(p -> projectName.equals(p.getElementName())).findFirst().map(this::getGroups).orElseThrow();
+					}
 				}
-				if (name != null) {
-					final String projectName = name;
-					return projectFinder.all().stream().filter(p -> projectName.equals(p.getElementName())).findFirst().map(this::getGroups).orElseThrow();
-				}
-			}
-			return projectFinder.all().stream().map(this::getGroups).toList();
-		}));
+				return projectFinder.all().stream().map(this::getGroups).toList();
+
+			}, messageWorkerThreadPool);
+		});
 	}
 	
 	private Groups getGroups(IJavaProject project) {

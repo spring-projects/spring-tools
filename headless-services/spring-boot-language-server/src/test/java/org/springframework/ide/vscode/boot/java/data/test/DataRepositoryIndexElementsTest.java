@@ -84,8 +84,24 @@ public class DataRepositoryIndexElementsTest {
         assertEquals("org.test.CustomerRepository", repoBean[0].getType());
         
         Bean[] matchingBeans = springIndex.getMatchingBeans("test-spring-data-symbols", "org.springframework.data.repository.CrudRepository");
-        assertEquals(5, matchingBeans.length);
+        assertEquals(6, matchingBeans.length);
         ArrayUtils.contains(matchingBeans, repoBean[0]);
+    }
+    
+    @Test
+    void testRepositoryWithAdditionalRepositoryAnnotation() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithAdditionalRepositoryAnnotation.java").toUri().toString();
+        
+        DocumentElement document = springIndex.getDocument(docUri);
+        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        assertEquals(1, children.size());
+        
+        Bean repositoryElement = children.get(0);
+        assertEquals("customerRepositoryWithAdditionalRepositoryAnnotation", repositoryElement.getName());
+        assertEquals(1, children.size());
+        
+        Bean[] repoBean = this.springIndex.getBeansWithName("test-spring-data-symbols", "customerRepositoryWithAdditionalRepositoryAnnotation");
+        assertEquals(1, repoBean.length);
     }
 
     @Test

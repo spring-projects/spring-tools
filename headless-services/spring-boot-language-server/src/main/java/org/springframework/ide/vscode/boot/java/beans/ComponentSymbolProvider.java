@@ -101,11 +101,12 @@ public class ComponentSymbolProvider implements SymbolProvider {
 				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAKARTA)
 				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAVAX);
 		
-		// check for event listener implementations on classes that are not annotated with component, but created via bean methods (for example)
 		if (isComponment) {
 			indexComponent(typeDeclaration, context, context.getDoc());
 		}
 		else {
+			// check for event listener implementations on classes that are not annotated with component, but created via bean methods (for example)
+
 			indexEventListenerInterfaceImplementation(null, typeDeclaration, context, context.getDoc());
 			indexBeanRegistrarImplementation(null, typeDeclaration, context, context.getDoc());
 			indexBeanMethods(null, typeDeclaration, context, context.getDoc());
@@ -130,6 +131,12 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
 		
 		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
+		boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
+		
+		// defer repository indexing to repository symbol provider
+		if (isRepository) {
+			return;
+		}
 
 		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
 		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
@@ -212,7 +219,6 @@ public class ComponentSymbolProvider implements SymbolProvider {
 	}
 	
 	private void createSymbol(AnnotationTypeDeclaration annotationDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		
 		SpringBootApplicationIndexer.createIndexElement(annotationDeclaration, annotationDeclaration.resolveBinding(), context);
 	}
 	

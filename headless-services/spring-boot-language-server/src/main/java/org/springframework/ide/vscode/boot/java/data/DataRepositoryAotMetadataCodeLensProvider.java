@@ -207,8 +207,8 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 						"annotationType", moduleToQueryMapping.get(module),
 						"method", "%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
 								Arrays.stream(mb.getParameterTypes())
-										.map(pt -> pt.getQualifiedName())
-										.collect(Collectors.joining(", "))),
+										.map(pt -> pt.getName())
+										.collect(Collectors.joining(","))),
 						"attributes", createAttributeList(methodMetadata.getAttributesMap(), module, config)));
 	}
 

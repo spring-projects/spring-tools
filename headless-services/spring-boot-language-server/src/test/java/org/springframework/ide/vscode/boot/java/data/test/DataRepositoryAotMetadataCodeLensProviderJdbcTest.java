@@ -130,7 +130,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		
 		harness.perform(cls.get(0).getCommand());
 		
-		assertEquals(editor.getRawText(), """
+		assertEquals(editor.getRawText().replace("\r", ""), """
 				package example.springdata.aot;
 				
 				import java.util.List;
@@ -186,7 +186,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		
 		harness.perform(cls.get(0).getCommand());
 		
-		assertEquals(editor.getRawText(), """
+		assertEquals(editor.getRawText().replace("\r", ""), """
 				package example.springdata.aot;
 
 				import java.util.List;

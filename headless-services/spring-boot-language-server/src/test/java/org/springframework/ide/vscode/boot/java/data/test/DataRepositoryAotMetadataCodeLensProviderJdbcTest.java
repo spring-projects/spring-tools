@@ -82,7 +82,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		List<CodeLens> cls = editor.getCodeLenses("findAllByNameContaining", 1);
 		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
 		assertEquals("Go To Implementation", cls.get(1).getCommand().getTitle());
-		assertEquals("SELECT \"CATEGORY\".\"ID\" AS \"ID\", \"CATEGORY\".\"NAME\" AS \"NAME\", \"CATEGORY\".\"CREATED\" AS \"CREATED\", \"CATEGORY\".\"INSERTED\" AS \"INSERTED\", \"CATEGORY\".\"DESCRIPTION\" AS \"DESCRIPTION\" FROM \"CATEGORY\" WHERE \"CATEGORY\".\"NAME\" LIKE :name", cls.get(2).getCommand().getTitle());
+		assertEquals("SELECT \"CATEGORY\".\"ID\" AS \"ID\", \"CATEGORY\".\"NAME\" AS \"NAME\", \"CATEGORY\".\"CREATED\" AS \"CREATED\", \"CATEGORY\".\"INSERTED\" AS \"INSERTED\", \"CATEGORY\".\"DESCRIPTION\" AS \"DESCRIPTION\", \"CATEGORY\".\"PRIORITY_LEVEL\" AS \"PRIORITY_LEVEL\" FROM \"CATEGORY\" WHERE \"CATEGORY\".\"NAME\" LIKE :name", cls.get(2).getCommand().getTitle());
 	}
 
 	@Test
@@ -127,8 +127,98 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 		assertTrue(queryValue.contains("\nFROM"), "Should have newline before FROM");
 		assertTrue(queryValue.contains("\nWHERE"), "Should have newline before WHERE");
 		assertTrue(queryValue.endsWith("\n\"\"\""), "Should end with newline before closing triple quotes");
+		
+		harness.perform(cls.get(0).getCommand());
+		
+		assertEquals(editor.getRawText().replace("\r", ""), """
+				package example.springdata.aot;
+				
+				import java.util.List;
+				
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+				
+				interface CategoryRepository extends CrudRepository<Category, Long> {
+				
+					@Query(""\"
+							SELECT "CATEGORY"."ID" AS "ID",
+							  "CATEGORY"."NAME" AS "NAME",
+							  "CATEGORY"."CREATED" AS "CREATED",
+							  "CATEGORY"."INSERTED" AS "INSERTED",
+							  "CATEGORY"."DESCRIPTION" AS "DESCRIPTION",
+							  "CATEGORY"."PRIORITY_LEVEL" AS "PRIORITY_LEVEL"
+							FROM "CATEGORY"
+							WHERE "CATEGORY"."NAME" LIKE :name
+							""\")
+					List<Category> findAllByNameContaining(String name);
+				
+					List<CategoryProjection> findProjectedByNameContaining(String name);
+				
+					@Query("SELECT * FROM category WHERE name = :name")
+					List<Category> findWithDeclaredQuery(String name);
+				
+					List<Category> findByPriorityLevel(PriorityLevel priorityLevel);
+				}
+				"""
+		);
 	}
 
+	@Test
+	void turnIntoQueryWithImportedType() throws Exception {
+		harness.changeConfiguration(new Settings(new Gson()
+				.toJsonTree(Map.of("boot-java", Map.of(
+						"java", Map.of("codelens-over-query-methods", true),
+						"code-action", Map.of("data-query-multiline", true)
+				)))));
+
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/example/springdata/aot/CategoryRepository.java");
+
+		Editor editor = harness.newEditor(
+				LanguageId.JAVA,
+				new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8),
+				filePath.toUri().toASCIIString()
+		);
+
+		List<CodeLens> cls = editor.getCodeLenses("findByPriorityLevel", 1);
+
+		assertEquals("Turn into @Query", cls.get(0).getCommand().getTitle());
+		
+		harness.perform(cls.get(0).getCommand());
+		
+		assertEquals(editor.getRawText().replace("\r", ""), """
+				package example.springdata.aot;
+
+				import java.util.List;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				interface CategoryRepository extends CrudRepository<Category, Long> {
+
+					List<Category> findAllByNameContaining(String name);
+
+					List<CategoryProjection> findProjectedByNameContaining(String name);
+
+					@Query("SELECT * FROM category WHERE name = :name")
+					List<Category> findWithDeclaredQuery(String name);
+
+					@Query(""\"
+							SELECT "CATEGORY"."ID" AS "ID",
+							  "CATEGORY"."NAME" AS "NAME",
+							  "CATEGORY"."CREATED" AS "CREATED",
+							  "CATEGORY"."INSERTED" AS "INSERTED",
+							  "CATEGORY"."DESCRIPTION" AS "DESCRIPTION",
+							  "CATEGORY"."PRIORITY_LEVEL" AS "PRIORITY_LEVEL"
+							FROM "CATEGORY"
+							WHERE "CATEGORY"."PRIORITY_LEVEL" = :priority_level
+							""\")
+					List<Category> findByPriorityLevel(PriorityLevel priorityLevel);
+				}
+				"""
+		);
+	}
+	
 	@Test
 	void turnIntoQueryUsesCompactStyleByDefault() throws Exception {
 		Path filePath = Paths.get(testProject.getLocationUri())

@@ -13,24 +13,25 @@ package org.springframework.ide.vscode.commons.rewrite.java;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
 import org.openrewrite.NlsRewrite.Description;
 import org.openrewrite.NlsRewrite.DisplayName;
 import org.openrewrite.Option;
-import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.Tree;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.AddOrUpdateAnnotationAttribute;
 import org.openrewrite.java.JavaIsoVisitor;
 import org.openrewrite.java.MethodMatcher;
-import org.openrewrite.java.search.DeclaresMethod;
 import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.J.Annotation;
 import org.openrewrite.java.tree.J.MethodDeclaration;
+import org.openrewrite.java.tree.J.VariableDeclarations;
 import org.openrewrite.java.tree.JavaType;
+import org.openrewrite.java.tree.NameTree;
 import org.openrewrite.java.tree.Space;
 import org.openrewrite.java.tree.TypeUtils;
 import org.openrewrite.marker.Markers;
@@ -75,11 +76,11 @@ public class AddAnnotationOverMethod extends Recipe {
 	@Override
 	public TreeVisitor<?, ExecutionContext> getVisitor() {
 		final MethodMatcher matcher = new MethodMatcher(method);
-		return Preconditions.check(new DeclaresMethod<>(matcher), new JavaIsoVisitor<>() {
+		return new JavaIsoVisitor<>() {
 			@Override
 			public MethodDeclaration visitMethodDeclaration(MethodDeclaration method, ExecutionContext ctx) {
 				MethodDeclaration m = super.visitMethodDeclaration(method, ctx);
-				if (matcher.matches(m.getMethodType())) {
+				if (matcher.matches(m.getMethodType()) || matchesParameterTypeNames(m)) {
 					boolean changed = false;
 					Optional<Annotation> optAnnotation = m.getLeadingAnnotations().stream().filter(a -> TypeUtils.isOfClassType(a.getType(), annotationType)).findFirst();
 					if (optAnnotation.isEmpty()) {
@@ -113,7 +114,33 @@ public class AddAnnotationOverMethod extends Recipe {
 				}
 				return m;
 			}
-		});
+
+			private boolean matchesParameterTypeNames(MethodDeclaration md) {
+				String currentMethod = "%s %s(%s)".formatted(md.getMethodType().getDeclaringType().getFullyQualifiedName(),
+						md.getName().getSimpleName(), md.getParameters().stream()
+								.map(s -> {
+									if (s instanceof VariableDeclarations vd) {
+										return getStr(vd.getTypeExpression());
+									}
+									return s.print(getCursor());
+								}).collect(Collectors.joining(",")));
+				return method.equals(currentMethod);
+			}
+			
+			private String getStr(NameTree tt) {
+				if (tt instanceof J.Identifier id) {
+					return id.getSimpleName();
+				} else if (tt instanceof J.FieldAccess fa) {
+					return getStr(fa.getName());
+				} else if (tt instanceof J.ArrayType at) {
+					return getStr(at.getElementType());
+				} else if (tt instanceof J.ParameterizedType pt) {
+					return getStr(pt.getClazz());
+				} else {
+					return tt.print(getCursor());
+				}
+			}
+		};
 	}
 
 }

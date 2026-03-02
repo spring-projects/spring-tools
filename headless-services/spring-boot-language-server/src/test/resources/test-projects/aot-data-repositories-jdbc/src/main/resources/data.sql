@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 INSERT INTO category(name, description, created, inserted)
-VALUES ('Cars', 'Anything that has approximately 4 wheels.', now(), 1);
+VALUES ('Cars', 'Anything that has approximately 4 wheels.', now(), 1. 'high');
 INSERT INTO category(name, description, created, inserted)
 VALUES ('Buildings', 'Walls, anyone?', now(), 2);
 INSERT INTO category(name, description, created, inserted)

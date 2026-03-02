@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+CREATE TYPE priority_level AS ENUM ('low', 'medium', 'high');
 CREATE TABLE IF NOT EXISTS category
 (
     id          INTEGER IDENTITY PRIMARY KEY,
     name        VARCHAR(100),
     description VARCHAR(2000),
     created     DATETIME,
-    inserted    BIGINT
+    inserted    BIGINT,
+    priority priority_level NOT NULL DEFAULT 'medium'
 );

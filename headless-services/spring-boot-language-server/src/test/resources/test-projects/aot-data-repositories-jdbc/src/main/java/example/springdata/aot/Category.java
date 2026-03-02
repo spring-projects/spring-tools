@@ -31,6 +31,15 @@ public class Category {
 	private String name, description;
 	private LocalDateTime created;
 	private Long inserted;
+	private PriorityLevel priorityLevel;
+
+	public PriorityLevel getPriorityLevel() {
+		return priorityLevel;
+	}
+
+	public void setPriorityLevel(PriorityLevel priorityLevel) {
+		this.priorityLevel = priorityLevel;
+	}
 
 	public Category(String name, String description) {
 
@@ -38,15 +47,17 @@ public class Category {
 		this.name = name;
 		this.description = description;
 		this.created = LocalDateTime.now();
+		this.priorityLevel = PriorityLevel.Medium;
 	}
 
 	@PersistenceCreator
-	Category(Long id, String name, String description, LocalDateTime created, Long inserted) {
+	Category(Long id, String name, String description, LocalDateTime created, Long inserted, PriorityLevel priorityLevel) {
 		this.id = id;
 		this.name = name;
 		this.description = description;
 		this.created = created;
 		this.inserted = inserted;
+		this.priorityLevel = priorityLevel;
 	}
 
 	public void timeStamp() {
@@ -93,7 +104,7 @@ public class Category {
 	}
 
 	public Category withId(Long id) {
-		return this.id == id ? this : new Category(id, this.name, this.description, this.created, this.inserted);
+		return this.id == id ? this : new Category(id, this.name, this.description, this.created, this.inserted, this.priorityLevel);
 	}
 
 	@Override

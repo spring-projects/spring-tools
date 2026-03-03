@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 the original author or authors.
+ * Copyright 2025 - 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -241,12 +241,33 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 
 		var node = new Node(this.current);
 		consumer.accept(node);
-		
 		assignNodeId(node, current);
+		
+		// check whether a node with the same ID already exists
+		// (this can happen if there are methods as well as types found for the same stereotype, for example)
+		// in this case, do not add the new node, but use the existing one
+		Node alreadyExistingNode = getNodeById(this.current.children, node);
 
-		this.current.children.add(node);
+		if (alreadyExistingNode != null) {
+			return alreadyExistingNode;
+		}
+		else {
+			this.current.children.add(node);
+			return node;
+		}
 
-		return node;
+	}
+
+	private Node getNodeById(List<Node> children, Node node) {
+		Object id = node.attributes.get(NODE_ID);
+		if (id == null) return null;
+		
+		for (Node child : children) {
+			if (child.attributes.containsKey(NODE_ID) && child.attributes.get(NODE_ID).equals(id)) {
+				return child;
+			}
+		}
+		return null;
 	}
 
 	@Override

@@ -131,6 +131,8 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 			return Optional.of(sqlReconcilers.get(SqlType.MYSQL));
 		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "postgresql", null)) {
 			return Optional.of(sqlReconcilers.get(SqlType.POSTGRESQL));
+		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "h2", null)) {
+			return Optional.of(sqlReconcilers.get(SqlType.POSTGRESQL));
 		}
 		return Optional.empty();
 	}

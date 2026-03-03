@@ -519,4 +519,35 @@ public class JdtDataQuerySemanticTokensProviderTest {
 				new ExpectedSemanticToken("st", "variable")
 		);
 	}
+	
+	@Test
+	void jdbcSqlQueryNormalAnnotationH2() throws Exception {
+		jp = projects.mavenProject("boot-h2/");
+		harness.useProject(jp);
+		
+		String source = """
+		package my.package
+		
+		import org.springframework.data.jdbc.repository.query.Query;
+		import org.springframework.data.repository.query.Param;
+		
+		public interface EmployeeRepository {
+		
+			@Query(value = "SELECT * from fn_module_candidates")
+			void findByLastName(@Param("lastName") String lastName);
+		}
+		""";
+        
+        String uri = Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/EmployeeRepository.java").toUri().toASCIIString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, uri);
+		
+		editor.assertSemanticTokensFull(
+				new ExpectedSemanticToken("SELECT", "keyword"),
+				new ExpectedSemanticToken("*", "operator"),
+				new ExpectedSemanticToken("from", "keyword"),
+				new ExpectedSemanticToken("fn_module_candidates", "variable")
+		);
+	}
+	
+
 }

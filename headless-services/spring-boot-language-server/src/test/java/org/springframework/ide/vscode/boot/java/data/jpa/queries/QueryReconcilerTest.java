@@ -354,6 +354,32 @@ public class QueryReconcilerTest {
 	}
 
 	@Test
+	void jdbcQueryNormalAnnotationErrorReportedH2() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-h2/").toURI());
+		String projectDir = directory.toURI().toString();
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = "SELECTX * FROM owner WHERE last_name = :lastName")
+					List<Object> findByLastName(String lastName);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems("SELECTX|PostgreSQL: mismatched input 'SELECTX' expecting {");
+	}
+	
+	@Test
 	void jdbcOnlyProjectNoReconcilingWithoutDbConnector() throws Exception {
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/aot-data-repositories-jdbc/").toURI());
 		String projectDir = directory.toURI().toString();

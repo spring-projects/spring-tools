@@ -122,6 +122,8 @@ public class JdtDataQuerySemanticTokensProvider implements JdtSemanticTokensProv
 			return sqlTokenProviders.get(SqlType.MYSQL);
 		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "postgresql", null)) {
 			return sqlTokenProviders.get(SqlType.POSTGRESQL);
+		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "h2", null)) {
+			return sqlTokenProviders.get(SqlType.POSTGRESQL);
 		}
 		return sqlTokenProviders.get(SqlType.MYSQL);
 	}

@@ -3,6 +3,7 @@
 import * as VSCode from 'vscode';
 import * as Path from 'path';
 import * as FS from 'fs';
+import * as Crypto from 'crypto';
 import PortFinder from 'portfinder';
 import * as Net from 'net';
 import * as CommonsCommands from './commands';
@@ -25,6 +26,7 @@ const p2c = P2C.createConverter(undefined, false, false);
 PortFinder.basePort = 45556;
 
 const LOG_RESOLVE_VM_ARG_PREFIX = '-Xlog:jni+resolve=';
+const LOG_AOT_VM_ARG_PREFIX = '-Xlog:aot';
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y';
 
 export interface ActivatorOptions {
@@ -123,6 +125,62 @@ function findJdtEmbeddedJRE(): string | undefined{
     }
 }
 
+const JAVA_25_VERSION = 25;
+
+function hashString(value: string): string {
+    return Crypto.createHash('sha256').update(value).digest('hex').substring(0, 12);
+}
+
+function getAotCachePath(extensionPath: string, jvm: JVM): string {
+    const javaHomeHash = hashString(jvm.getJavaHome());
+    return Path.join(extensionPath, 'language-server', `spring-boot-ls_${javaHomeHash}.aot`);
+}
+
+function prepareCdsArgs(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM): CdsResult {
+    if (!options.workspaceOptions.get("cds.enabled")) {
+        return { cdsArgs: [] };
+    }
+
+    if (jvm.getMajorVersion() < JAVA_25_VERSION) {
+        VSCode.window.showInformationMessage(
+            'Spring Boot Language Server: CDS is enabled but requires Java 25 or later. ' +
+            `Current Java version is ${jvm.getMajorVersion()}. Starting without CDS.`
+        );
+        return { cdsArgs: [] };
+    }
+
+    const aotCachePath = getAotCachePath(context.extensionPath, jvm);
+    const cdsArgs: string[] = [];
+
+    if (FS.existsSync(aotCachePath)) {
+        options.clientOptions.outputChannel.appendLine(`CDS: Using existing AOT cache: ${aotCachePath}`);
+        cdsArgs.push(`-XX:AOTCache=${aotCachePath}`);
+    } else {
+        options.clientOptions.outputChannel.appendLine(`CDS: No AOT cache found, will record cache on this run: ${aotCachePath}`);
+        cdsArgs.push(`-XX:AOTCacheOutput=${aotCachePath}`);
+    }
+
+    cdsArgs.push(`${LOG_AOT_VM_ARG_PREFIX}=off`);
+
+    return { cdsArgs };
+}
+
+interface CdsResult {
+    cdsArgs: string[];
+}
+
+function addCdsArgs(vmArgs: string[], cdsResult?: CdsResult): void {
+    if (!cdsResult?.cdsArgs.length) {
+        return;
+    }
+    for (const arg of cdsResult.cdsArgs) {
+        if (arg.startsWith(LOG_AOT_VM_ARG_PREFIX) && hasVmArg(LOG_AOT_VM_ARG_PREFIX, vmArgs)) {
+            continue;
+        }
+        vmArgs.push(arg);
+    }
+}
+
 export function activate(options: ActivatorOptions, context: VSCode.ExtensionContext): Thenable<LanguageClient> {
     if (options.CONNECT_TO_LS) {
         return VSCode.window.showInformationMessage("Start language server")
@@ -155,16 +213,18 @@ export function activate(options: ActivatorOptions, context: VSCode.ExtensionCon
 
             clientOptions.outputChannel.appendLine("isJavaEightOrHigher => true");
 
+            const cdsResult = prepareCdsArgs(options, context, jvm);
+
             if (process.env['SPRING_LS_USE_SOCKET']) {
-                return setupLanguageClient(context, createServerOptionsForPortComm(options, context, jvm), options);
+                return setupLanguageClient(context, createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
             } else {
-                return setupLanguageClient(context, createServerOptions(options, context, jvm), options);
+                return setupLanguageClient(context, createServerOptions(options, context, jvm, undefined, cdsResult), options);
             }
         });
     }
 }
 
-function createServerOptions(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, port? : number): Executable {
+function createServerOptions(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, port?: number, cdsResult?: CdsResult): Executable {
     const executable: Executable = Object.create(null);
     const execOptions: ExecutableOptions = Object.create(null);
     execOptions.env = Object.assign(process.env);
@@ -172,13 +232,14 @@ function createServerOptions(options: ActivatorOptions, context: VSCode.Extensio
     executable.options = execOptions;
     executable.command = jvm.getJavaExecutable();
     const vmArgs = prepareJvmArgs(options, context, jvm, port);
+    addCdsArgs(vmArgs, cdsResult);
     addCpAndLauncherToJvmArgs(vmArgs, options, context);
     executable.args = vmArgs;
     return executable;
 
 }
 
-function createServerOptionsForPortComm(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM): ServerOptions {
+function createServerOptionsForPortComm(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, cdsResult?: CdsResult): ServerOptions {
     return () =>
         new Promise((resolve) => {
             PortFinder.getPort((err, port) => {
@@ -195,6 +256,7 @@ function createServerOptionsForPortComm(options: ActivatorOptions, context: VSCo
                             cwd: context.extensionPath
                         };
                         const args = prepareJvmArgs(options, context, jvm, port);
+                        addCdsArgs(args, cdsResult);
                         if (options.explodedLsJarData) {
                             const explodedLsJarData = options.explodedLsJarData;
                             const lsRoot = Path.resolve(context.extensionPath, explodedLsJarData.lsLocation);

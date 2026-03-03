@@ -136,7 +136,7 @@ function getAotCachePath(extensionPath: string, jvm: JVM): string {
     return Path.join(extensionPath, 'language-server', `spring-boot-ls_${javaHomeHash}.aot`);
 }
 
-function prepareCdsArgs(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM): CdsResult {
+function prepareCdsArgs(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, useSocket: boolean): CdsResult {
     if (!options.workspaceOptions.get("cds.enabled")) {
         return { cdsArgs: [] };
     }
@@ -160,7 +160,9 @@ function prepareCdsArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
         cdsArgs.push(`-XX:AOTCacheOutput=${aotCachePath}`);
     }
 
-    cdsArgs.push(`${LOG_AOT_VM_ARG_PREFIX}=off`);
+    if (!useSocket) {
+        cdsArgs.push(`${LOG_AOT_VM_ARG_PREFIX}*=off`);
+    }
 
     return { cdsArgs };
 }
@@ -213,9 +215,10 @@ export function activate(options: ActivatorOptions, context: VSCode.ExtensionCon
 
             clientOptions.outputChannel.appendLine("isJavaEightOrHigher => true");
 
-            const cdsResult = prepareCdsArgs(options, context, jvm);
+            const useSocket = !!process.env['SPRING_LS_USE_SOCKET'];
+            const cdsResult = prepareCdsArgs(options, context, jvm, useSocket);
 
-            if (process.env['SPRING_LS_USE_SOCKET']) {
+            if (useSocket) {
                 return setupLanguageClient(context, createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
             } else {
                 return setupLanguageClient(context, createServerOptions(options, context, jvm, undefined, cdsResult), options);

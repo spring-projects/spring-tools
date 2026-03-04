@@ -20,6 +20,7 @@ public class LanguageServerConsolePreferenceConstants {
 	public static final String SUFFIX_LOG_TARGET = ".log.target";
 	public static final String SUFFIX_LOG_FILE = ".log.file";
 	public static final String SUFFIX_LOG_LEVEL = ".log.level";
+	public static final String SUFFIX_CDS_ENABLED = ".cds.enabled";
 
 
 	public static final ServerInfo SPRING_BOOT_SERVER = new ServerInfo(PREFIX_SPRING_BOOT, "Spring Boot", "org.springframework.tooling.boot.ls");
@@ -46,6 +47,10 @@ public class LanguageServerConsolePreferenceConstants {
 
 		public String prefernceKeyLogTarget() {
 			return lsPrefix + SUFFIX_LOG_TARGET;
+		}
+
+		public String preferenceKeyCdsEnabled() {
+			return lsPrefix + SUFFIX_CDS_ENABLED;
 		}
 	}
 }

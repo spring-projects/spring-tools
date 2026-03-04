@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,8 +17,11 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.Assert;
@@ -42,6 +45,10 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 	private static LanguageServerProcessReaper processReaper = new LanguageServerProcessReaper();
 
 	private static final String LOG_RESOLVE_VM_ARG_PREFIX = "-Xlog:jni+resolve=";
+	private static final String LOG_AOT_VM_ARG_PREFIX = "-Xlog:aot";
+	private static final int JAVA_25_VERSION = 25;
+	private static final int STOP_GRACEFUL_TIMEOUT_SECONDS = 3;
+
 
 	private final ServerInfo serverInfo;
 
@@ -118,7 +125,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 			command.add(runtime.getJavaExecutable());
 
-			fillCommand(command, extraVmArgs);
+			fillCommand(command, extraVmArgs, languageServerRoot, jarPrefix);
 
 			command.add("-jar");
 
@@ -131,7 +138,7 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 	}
 
-	private void fillCommand(List<String> command, List<String> extraVmArgs) {
+	private void fillCommand(List<String> command, List<String> extraVmArgs, Path languageServerRoot, String cachePrefix) {
 		command.add("-Dsts.lsp.client=eclipse");
 
 		command.addAll(extraVmArgs);
@@ -152,10 +159,54 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 				command.add("-Dspring.output.ansi.enabled=ALWAYS");
 			}
 			command.add("-XX:ErrorFile=" + Platform.getStateLocation(Platform.getBundle(getPluginId())).append("fatal-error-" + info.label().replaceAll("\\s+", "-").toLowerCase() + "_" + System.currentTimeMillis()));
+
+			addCdsArgs(command, preferenceStore, info, languageServerRoot, cachePrefix);
 		});
 
 		command.add("-Dlanguageserver.hover-timeout=225");
 
+	}
+
+	private void addCdsArgs(List<String> command, IPreferenceStore preferenceStore, ServerInfo info, Path languageServerRoot, String cachePrefix) {
+		if (!preferenceStore.getBoolean(info.preferenceKeyCdsEnabled())) {
+			return;
+		}
+
+		JRE runtime = getJRE();
+		if (runtime.getMajorVersion() < JAVA_25_VERSION) {
+			return;
+		}
+
+		Path aotCachePath = computeAotCachePath(languageServerRoot, cachePrefix);
+		if (Files.exists(aotCachePath)) {
+			command.add("-XX:AOTCache=" + aotCachePath.toFile().getAbsolutePath());
+		} else {
+			command.add("-XX:AOTCacheOutput=" + aotCachePath.toFile().getAbsolutePath());
+		}
+
+		if (!hasVmArgStartingWith(command, LOG_AOT_VM_ARG_PREFIX)) {
+			command.add("-Xlog:aot*=off");
+		}
+	}
+
+	private static Path computeAotCachePath(Path languageServerRoot, String cachePrefix) {
+		String javaHome = System.getProperty("java.home");
+		String hash = hashString(javaHome);
+		return languageServerRoot.resolve(cachePrefix + "_" + hash + ".aot");
+	}
+
+	private static String hashString(String value) {
+		try {
+			MessageDigest digest = MessageDigest.getInstance("SHA-256");
+			byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+			StringBuilder hex = new StringBuilder();
+			for (int i = 0; i < 6; i++) {
+				hex.append(String.format("%02x", hash[i]));
+			}
+			return hex.toString();
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	protected final void initExplodedJarCommand(Path lsFolder, String mainClass, String configFileName, List<String> extraVmArgs) {
@@ -184,18 +235,14 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 			classpath.append(File.separator);
 			classpath.append('*');
 
-			if (runtime.toolsJar != null) {
-				classpath.append(File.pathSeparator);
-				classpath.append(runtime.toolsJar);
-			}
-
 			command.add(classpath.toString());
 
 			if (configFileName != null) {
 				command.add("-Dspring.config.location=file:" + languageServerRoot.resolve("BOOT-INF/classes").resolve(configFileName).toFile());
 			}
 
-			fillCommand(command, extraVmArgs);
+			String cachePrefix = lsFolder.getFileName().toString();
+			fillCommand(command, extraVmArgs, languageServerRoot, cachePrefix);
 
 			command.add(mainClass);
 
@@ -268,8 +315,16 @@ public abstract class STS4LanguageServerProcessStreamConnector extends ProcessSt
 
 	@Override
 	public void stop() {
-		super.stop();
 		Process process = LanguageServerProcessReaper.getProcess(this);
+		if (process != null && process.isAlive()) {
+			try {
+				if (!process.waitFor(STOP_GRACEFUL_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+					super.stop();
+				}
+			} catch (InterruptedException e) {
+				super.stop();
+			}
+		}
 		processReaper.removeProcess(process);
 	}
 

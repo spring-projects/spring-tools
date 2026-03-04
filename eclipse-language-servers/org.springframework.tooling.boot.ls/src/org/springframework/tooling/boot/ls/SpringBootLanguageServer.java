@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,8 +16,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.tooling.ls.eclipse.commons.JRE;
-import org.springframework.tooling.ls.eclipse.commons.JRE.MissingJDKException;
 import org.springframework.tooling.ls.eclipse.commons.STS4LanguageServerProcessStreamConnector;
 
 /**
@@ -71,15 +69,6 @@ public class SpringBootLanguageServer extends STS4LanguageServerProcessStreamCon
 				args.add(prefix + arg);
 				prefix = "-";
 			}
-		}
-	}
-
-	protected JRE getJRE() {
-		try {
-			return JRE.findJRE(true);
-		} catch (MissingJDKException e) {
-			MissingJdkWarning.show(e);
-			return new JRE(e.javaHome, null); //Not everything will work without tools jar. But some of it will. So fallback on JRE without toolsjar.
 		}
 	}
 

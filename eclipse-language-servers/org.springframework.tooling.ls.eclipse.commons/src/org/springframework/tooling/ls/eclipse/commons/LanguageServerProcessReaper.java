@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.lsp4e.server.ProcessStreamConnectionProvider;
@@ -108,14 +109,38 @@ public class LanguageServerProcessReaper extends Thread {
 		destroyProcesses();
 	}
 
+	private static final int DESTROY_TIMEOUT_SECONDS = 5;
+
 	private synchronized void destroyProcesses() {
 		debug("Destroying errant processes... ");
 		garbageCollect();
 		for (Process process : processes.values()) {
 			try {
-				debug("Destroying process "+process);
+				if (process.isAlive()) {
+					boolean exited = false;
+					if (process.supportsNormalTermination()) {
+						debug("Waiting for process to exit on its own "+process);
+						exited = process.waitFor(DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+						if (exited) {
+							debug("Process exited gracefully "+process);
+							continue;
+						}
+						debug("Process did not exit, sending destroy "+process);
+						process.destroy();
+					}
+					exited = process.waitFor(DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+					if (exited) {
+						debug("Process exited after destroy "+process);
+						continue;
+					}
+					debug("Force-killing process "+process);
+					process.destroyForcibly();
+				}
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
 				process.destroyForcibly();
 			} catch (Throwable e) {
+				process.destroyForcibly();
 			}
 		}
 		debug("Destroying errant processes... DONE");

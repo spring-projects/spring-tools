@@ -4,6 +4,7 @@
 **/.idea
 **/*.iml
 **/*.versionsBackup
+**/.cursorrules
 
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/

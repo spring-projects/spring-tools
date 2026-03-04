@@ -154,8 +154,6 @@ async function findJdtEmbeddedJRE(): Promise<string | undefined> {
     }
 }
 
-const JAVA_25_VERSION = 25;
-
 function hashString(value: string): string {
     return Crypto.createHash('sha256').update(value).digest('hex').substring(0, 12);
 }
@@ -170,9 +168,9 @@ async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionConte
         return { cdsArgs: [] };
     }
 
-    if (jvm.getMajorVersion() < JAVA_25_VERSION) {
+    if (jvm.getMajorVersion() < 25) {
         window.showInformationMessage(
-            'Spring Boot Language Server: CDS is enabled but requires Java 25 or later. ' +
+            'Spring Boot Language Server: CDS is enabled but requires Java 25+. ' +
             `Current Java version is ${jvm.getMajorVersion()}. Starting without CDS.`
         );
         return { cdsArgs: [] };

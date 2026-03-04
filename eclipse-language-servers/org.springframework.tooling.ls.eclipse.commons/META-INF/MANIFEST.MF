@@ -4,8 +4,7 @@ Bundle-Name: Eclipse Language Server Commons
 Bundle-SymbolicName: org.springframework.tooling.ls.eclipse.commons;singleton:=true
 Bundle-Version: 5.1.0.qualifier
 Bundle-Vendor: Broadcom
-Require-Bundle: org.eclipse.jdt.launching;bundle-version="3.8.0",
- org.eclipse.ui,
+Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.lsp4e;bundle-version="0.15.0",
  org.eclipse.lsp4j.jsonrpc;bundle-version="0.19.0",

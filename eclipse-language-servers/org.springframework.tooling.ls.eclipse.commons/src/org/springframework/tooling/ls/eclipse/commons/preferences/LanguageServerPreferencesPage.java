@@ -14,6 +14,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.ComboFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.FileFieldEditor;
@@ -38,7 +39,7 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 
 	@Override
 	public void init(IWorkbench workbench) {
-		setDescription("Log settings for STS Language Servers. Changes only take effect the next time a Language Server is started.");
+		setDescription("Settings for STS Language Servers. Changes only take effect the next time a Language Server is started.");
 		setPreferenceStore(getPrefsStoreFromPlugin());
 	}
 
@@ -131,6 +132,12 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 				}
 
 			});
+
+			c = new Composite(group, SWT.NONE);
+			c.setLayout(new GridLayout());
+			c.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+			addField(new BooleanFieldEditor(s.preferenceKeyCdsEnabled(),
+					"Enable AOT Cache for faster startup (requires Java 25+)", c));
 
 		}
 	}

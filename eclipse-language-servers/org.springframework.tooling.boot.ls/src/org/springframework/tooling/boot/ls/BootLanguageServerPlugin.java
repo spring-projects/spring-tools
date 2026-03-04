@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -31,8 +31,14 @@ import org.eclipse.jface.bindings.Binding;
 import org.eclipse.jface.preference.JFacePreferences;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.lsp4e.LanguageServerWrapper;
+import org.eclipse.lsp4e.LanguageServersRegistry;
+import org.eclipse.lsp4e.LanguageServersRegistry.LanguageServerDefinition;
+import org.eclipse.lsp4e.LanguageServiceAccessor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.RGB;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchListener;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.keys.IBindingService;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
@@ -46,6 +52,7 @@ import org.springframework.tooling.boot.ls.prefs.LiveInformationPreferencePage;
  * @author Alex Boyko
  *
  */
+@SuppressWarnings("restriction")
 public class BootLanguageServerPlugin extends AbstractUIPlugin {
 	
 	private static final String STEREOTYPE_IMG_PREFIX = "stereotype-";
@@ -60,6 +67,8 @@ public class BootLanguageServerPlugin extends AbstractUIPlugin {
 	private static BootLanguageServerPlugin plugin;
 
 	public static final String BOOT_LS_DEFINITION_ID = "org.eclipse.languageserver.languages.springboot";
+	
+	private IWorkbenchListener workbenchListener;
 	
 	public BootLanguageServerPlugin() {
 		// Empty
@@ -77,14 +86,46 @@ public class BootLanguageServerPlugin extends AbstractUIPlugin {
 		LiveInformationPreferencePage.manageCodeMiningPreferences();
 		
 		CategoryProblemsSeverityPrefsPage.loadProblemCategoriesIntoPreferences();
+		
+		workbenchListener = new IWorkbenchListener() {
+			@Override
+			public boolean preShutdown(IWorkbench workbench, boolean forced) {
+				stopBootLanguageServers();
+				return true;
+			}
+
+			@Override
+			public void postShutdown(IWorkbench workbench) {
+			}
+		};
+		PlatformUI.getWorkbench().addWorkbenchListener(workbenchListener);
 	}
-	
-	
 
 	@Override
 	public void stop(BundleContext context) throws Exception {
+		if (workbenchListener != null) {
+			PlatformUI.getWorkbench().removeWorkbenchListener(workbenchListener);
+			workbenchListener = null;
+		}
 		super.stop(context);
 		plugin = null;
+	}
+	
+	private void stopBootLanguageServers() {
+		try {
+			LanguageServerDefinition bootDefinition = LanguageServersRegistry.getInstance()
+					.getDefinition(BOOT_LS_DEFINITION_ID);
+			if (bootDefinition == null) {
+				return;
+			}
+			for (LanguageServerWrapper wrapper : LanguageServiceAccessor.getStartedWrappers(null, true)) {
+				if (wrapper.serverDefinition.equals(bootDefinition)) {
+					wrapper.stop();
+				}
+			}
+		} catch (Exception e) {
+			getLog().log(Status.error("Failed to stop Boot Language Server on shutdown", e));
+		}
 	}
 	
 	public static BootLanguageServerPlugin getDefault() {

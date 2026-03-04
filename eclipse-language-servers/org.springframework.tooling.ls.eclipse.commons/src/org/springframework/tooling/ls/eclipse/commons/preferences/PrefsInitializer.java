@@ -23,6 +23,7 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		for (ServerInfo s : installedServers) {
 			store.setDefault(s.preferenceKeyLogLevel(), "error");
 			store.setDefault(s.prefernceKeyLogTarget(), LoggingTarget.OFF.toString());
+			store.setDefault(s.preferenceKeyCdsEnabled(), false);
 //			Bundle bundle = Platform.getBundle(s.bundleId);
 //			if (bundle != null) {
 //				IPath stateLocation = Platform.getStateLocation(bundle);

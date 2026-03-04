@@ -31,6 +31,7 @@ out/**
 
 # Extensions
 .gitignore
+.cursorrules
 **/*.map
 
 # Temporary, include after legal approval

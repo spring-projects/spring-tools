@@ -1,7 +1,7 @@
 # IDE configs
 .vscode/**
 .idea/**
-*.iml
+x*.iml
 javaconfig.json
 classpath.txt
 tsconfig.json
@@ -30,6 +30,7 @@ out/**
 
 # Extensions
 .gitignore
+.cursorrules
 **/*.map
 
 # Temporary, include after legal approval

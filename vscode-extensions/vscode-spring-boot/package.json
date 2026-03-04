@@ -533,7 +533,7 @@
           "spring-boot.ls.cds.enabled": {
             "type": "boolean",
             "default": false,
-            "description": "Enable Class Data Sharing (AOT Cache) for faster Language Server startup. Requires Java 25 or later."
+            "description": "Enable Class Data Sharing (AOT Cache) for faster Language Server startup. Requires Java 25+."
           }
         }
       },

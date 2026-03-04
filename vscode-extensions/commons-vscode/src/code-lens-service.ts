@@ -10,7 +10,7 @@ import {
     Uri
 } from "vscode";
 import {HighlightParams, toVSRange} from './highlight-service';
-import * as Lsp from 'vscode-languageclient';
+import { CodeLens as LspCodeLens }  from 'vscode-languageclient';
 
 export class HighlightCodeLensProvider implements CodeLensProvider {
 
@@ -28,7 +28,7 @@ export class HighlightCodeLensProvider implements CodeLensProvider {
         }
     }
 
-    static toVSCodeLens(cl: Lsp.CodeLens): CodeLens {
+    static toVSCodeLens(cl: LspCodeLens): CodeLens {
         return {
             range: toVSRange(cl.range),
             isResolved: true,

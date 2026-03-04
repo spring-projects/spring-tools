@@ -1,23 +1,30 @@
 'use strict';
 
-import * as VSCode from 'vscode';
+import {
+    Disposable,
+    Event,
+    EventEmitter,
+    ExtensionContext,
+    FileType,
+    OutputChannel,
+    Selection,
+    Uri,
+    WorkspaceConfiguration,
+    extensions,
+    languages,
+    window,
+    workspace
+} from 'vscode';
 import * as Path from 'path';
-import * as FS from 'fs';
 import * as Crypto from 'crypto';
 import PortFinder from 'portfinder';
 import * as Net from 'net';
 import * as CommonsCommands from './commands';
 import { RequestType, LanguageClientOptions, Position } from 'vscode-languageclient';
 import {LanguageClient, StreamInfo, ServerOptions, ExecutableOptions, Executable} from 'vscode-languageclient/node';
-import {
-    Disposable,
-    Event,
-    EventEmitter
-} from 'vscode';
 import { Trace, NotificationType } from 'vscode-jsonrpc';
 import * as P2C from 'vscode-languageclient/lib/common/protocolConverter';
 import {HighlightService, HighlightParams} from './highlight-service';
-import { log } from 'util';
 import { JVM, findJvm, findJdk } from '@pivotal-tools/jvm-launch-utils';
 import {HighlightCodeLensProvider} from "./code-lens-service";
 
@@ -29,6 +36,28 @@ const LOG_RESOLVE_VM_ARG_PREFIX = '-Xlog:jni+resolve=';
 const LOG_AOT_VM_ARG_PREFIX = '-Xlog:aot';
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y';
 
+async function fileExists(filePath: string): Promise<boolean> {
+    try {
+        await workspace.fs.stat(Uri.file(filePath));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function isDirectory(filePath: string): Promise<boolean> {
+    try {
+        const stat = await workspace.fs.stat(Uri.file(filePath));
+        return (stat.type & FileType.Directory) !== 0;
+    } catch {
+        return false;
+    }
+}
+
+async function readDirectory(dirPath: string): Promise<[string, FileType][]> {
+    return workspace.fs.readDirectory(Uri.file(dirPath));
+}
+
 export interface ActivatorOptions {
     DEBUG: boolean;
     CONNECT_TO_LS?: boolean;
@@ -36,8 +65,8 @@ export interface ActivatorOptions {
     extensionId: string;
     clientOptions: LanguageClientOptions;
     jvmHeap?: string;
-    workspaceOptions: VSCode.WorkspaceConfiguration;
-    checkjvm?: (context: VSCode.ExtensionContext, jvm: JVM) => any;
+    workspaceOptions: WorkspaceConfiguration;
+    checkjvm?: (context: ExtensionContext, jvm: JVM) => any;
     preferJdk?: boolean;
     highlightCodeLensSettingKey?: string;
     explodedLsJarData?: ExplodedLsJarData;
@@ -56,7 +85,7 @@ type JavaOptions = {
     vmargs?: string[]
 }
 
-function getUserDefinedJvmHeap(wsOpts : VSCode.WorkspaceConfiguration,  dflt : string) : string {
+function getUserDefinedJvmHeap(wsOpts : WorkspaceConfiguration,  dflt : string) : string {
     if (!wsOpts) {
         return dflt;
     }
@@ -64,14 +93,14 @@ function getUserDefinedJvmHeap(wsOpts : VSCode.WorkspaceConfiguration,  dflt : s
     return (javaOptions && javaOptions.heap) || dflt;
 }
 
-function isCheckingJVM(wsOpts : VSCode.WorkspaceConfiguration): boolean {
+function isCheckingJVM(wsOpts : WorkspaceConfiguration): boolean {
     if (!wsOpts) {
         return true;
     }
     return wsOpts.get("checkJVM");
 }
 
-function getUserDefinedJvmArgs(wsOpts : VSCode.WorkspaceConfiguration) : string[] {
+function getUserDefinedJvmArgs(wsOpts : WorkspaceConfiguration) : string[] {
     const dflt = [];
     if (!wsOpts) {
         return dflt;
@@ -80,7 +109,7 @@ function getUserDefinedJvmArgs(wsOpts : VSCode.WorkspaceConfiguration) : string[
     return javaOptions && javaOptions.vmargs || dflt;
 }
 
-function getSpringUserDefinedJavaHome(wsOpts : VSCode.WorkspaceConfiguration, log: VSCode.OutputChannel) : string {
+async function getSpringUserDefinedJavaHome(wsOpts : WorkspaceConfiguration, log: OutputChannel) : Promise<string> {
     let javaHome: string = null;
     if (wsOpts) {
         const javaOptions: JavaOptions = wsOpts.get("java");
@@ -88,7 +117,7 @@ function getSpringUserDefinedJavaHome(wsOpts : VSCode.WorkspaceConfiguration, lo
     }
     if (!javaHome) {
         log.appendLine('"spring-boot.ls.java.home" setting not specified or empty value');
-    } else if (!FS.existsSync(javaHome)) {
+    } else if (!await fileExists(javaHome)) {
         log.appendLine('"spring-boot.ls.java.home" points to folder that does NOT exist: ' + javaHome);
         javaHome = null;
     } else {
@@ -97,11 +126,11 @@ function getSpringUserDefinedJavaHome(wsOpts : VSCode.WorkspaceConfiguration, lo
     return javaHome;
 }
 
-function getJdtUserDefinedJavaHome(log: VSCode.OutputChannel): string {
-    let javaHome: string = VSCode.workspace.getConfiguration('java')?.get('home');
+async function getJdtUserDefinedJavaHome(log: OutputChannel): Promise<string> {
+    let javaHome: string = workspace.getConfiguration('java')?.get('home');
     if (!javaHome) {
         log.appendLine('"java.home" setting not specified or empty value');
-    } else if (!FS.existsSync(javaHome)) {
+    } else if (!await fileExists(javaHome)) {
         log.appendLine('"java.home" points to folder that does NOT exist: ' + javaHome);
         javaHome = null;
     } else {
@@ -110,14 +139,14 @@ function getJdtUserDefinedJavaHome(log: VSCode.OutputChannel): string {
     return javaHome;
 }
 
-function findJdtEmbeddedJRE(): string | undefined{
-    const javaExtension = VSCode.extensions.getExtension('redhat.java');
+async function findJdtEmbeddedJRE(): Promise<string | undefined> {
+    const javaExtension = extensions.getExtension('redhat.java');
     if (javaExtension) {
         const jreHome = Path.resolve(javaExtension.extensionPath, 'jre');
-        if (FS.existsSync(jreHome) && FS.statSync(jreHome).isDirectory()) {
-            const candidates = FS.readdirSync(jreHome);
-            for (const candidate of candidates) {
-                if (FS.existsSync(Path.join(jreHome, candidate, "bin"))) {
+        if (await isDirectory(jreHome)) {
+            const entries = await readDirectory(jreHome);
+            for (const [candidate] of entries) {
+                if (await fileExists(Path.join(jreHome, candidate, "bin"))) {
                     return Path.join(jreHome, candidate);
                 }
             }
@@ -136,13 +165,13 @@ function getAotCachePath(extensionPath: string, jvm: JVM): string {
     return Path.join(extensionPath, 'language-server', `spring-boot-ls_${javaHomeHash}.aot`);
 }
 
-function prepareCdsArgs(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, useSocket: boolean): CdsResult {
+async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, useSocket: boolean): Promise<CdsResult> {
     if (!options.workspaceOptions.get("cds.enabled")) {
         return { cdsArgs: [] };
     }
 
     if (jvm.getMajorVersion() < JAVA_25_VERSION) {
-        VSCode.window.showInformationMessage(
+        window.showInformationMessage(
             'Spring Boot Language Server: CDS is enabled but requires Java 25 or later. ' +
             `Current Java version is ${jvm.getMajorVersion()}. Starting without CDS.`
         );
@@ -152,7 +181,7 @@ function prepareCdsArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
     const aotCachePath = getAotCachePath(context.extensionPath, jvm);
     const cdsArgs: string[] = [];
 
-    if (FS.existsSync(aotCachePath)) {
+    if (await fileExists(aotCachePath)) {
         options.clientOptions.outputChannel.appendLine(`CDS: Using existing AOT cache: ${aotCachePath}`);
         cdsArgs.push(`-XX:AOTCache=${aotCachePath}`);
     } else {
@@ -183,51 +212,52 @@ function addCdsArgs(vmArgs: string[], cdsResult?: CdsResult): void {
     }
 }
 
-export function activate(options: ActivatorOptions, context: VSCode.ExtensionContext): Thenable<LanguageClient> {
+export async function activate(options: ActivatorOptions, context: ExtensionContext): Promise<LanguageClient> {
+    const clientOptions = options.clientOptions;
+
+    const outputChannelName = options.extensionId + "-debug-log";
+    clientOptions.outputChannel = window.createOutputChannel(outputChannelName);
+    clientOptions.outputChannelName = outputChannelName;
+    clientOptions.outputChannel.appendLine("Activating '" + options.extensionId + "' extension");
+
     if (options.CONNECT_TO_LS) {
-        return VSCode.window.showInformationMessage("Start language server")
-        .then((_) => connectToLS(context, options));
+        await window.showInformationMessage("Start language server");
+        return connectToLS(context, options);
+    }
+
+    const findJRE = options.preferJdk ? findJdk : findJvm;
+
+    const javaHome = await getSpringUserDefinedJavaHome(options.workspaceOptions, clientOptions.outputChannel)
+        || await findJdtEmbeddedJRE()
+        || await getJdtUserDefinedJavaHome(clientOptions.outputChannel);
+
+    let jvm: JVM;
+    try {
+        jvm = await findJRE(javaHome, msg => clientOptions.outputChannel.appendLine(msg));
+    } catch (error) {
+        window.showErrorMessage("Error trying to find JVM: " + error);
+        throw error;
+    }
+
+    if (!jvm) {
+        window.showErrorMessage("Couldn't locate java in $JAVA_HOME or $PATH");
+        return;
+    }
+
+    clientOptions.outputChannel.appendLine("Found java executable: " + jvm.getJavaExecutable());
+    clientOptions.outputChannel.appendLine("isJavaEightOrHigher => true");
+
+    const useSocket = !!process.env['SPRING_LS_USE_SOCKET'];
+    const cdsResult = await prepareCdsArgs(options, context, jvm, useSocket);
+
+    if (useSocket) {
+        return setupLanguageClient(context, await createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
     } else {
-        const clientOptions = options.clientOptions;
-
-        const outChennalName = options.extensionId + "-debug-log"
-        clientOptions.outputChannel = VSCode.window.createOutputChannel(outChennalName);
-        clientOptions.outputChannelName = outChennalName;
-        clientOptions.outputChannel.appendLine("Activating '" + options.extensionId + "' extension");
-
-        const findJRE = options.preferJdk ? findJdk : findJvm;
-
-        return findJRE(getSpringUserDefinedJavaHome(options.workspaceOptions, clientOptions.outputChannel)
-            || findJdtEmbeddedJRE()
-            || getJdtUserDefinedJavaHome(clientOptions.outputChannel),
-            msg => clientOptions.outputChannel.appendLine(msg))
-        .catch(error => {
-            VSCode.window.showErrorMessage("Error trying to find JVM: "+error);
-            return Promise.reject(error);
-        })
-        .then((jvm) => {
-            if (!jvm) {
-                VSCode.window.showErrorMessage("Couldn't locate java in $JAVA_HOME or $PATH");
-                return;
-            }
-            const javaExecutablePath = jvm.getJavaExecutable();
-            clientOptions.outputChannel.appendLine("Found java executable: " + javaExecutablePath);
-
-            clientOptions.outputChannel.appendLine("isJavaEightOrHigher => true");
-
-            const useSocket = !!process.env['SPRING_LS_USE_SOCKET'];
-            const cdsResult = prepareCdsArgs(options, context, jvm, useSocket);
-
-            if (useSocket) {
-                return setupLanguageClient(context, createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
-            } else {
-                return setupLanguageClient(context, createServerOptions(options, context, jvm, undefined, cdsResult), options);
-            }
-        });
+        return setupLanguageClient(context, await createServerOptions(options, context, jvm, undefined, cdsResult), options);
     }
 }
 
-function createServerOptions(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, port?: number, cdsResult?: CdsResult): Executable {
+async function createServerOptions(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, port?: number, cdsResult?: CdsResult): Promise<Executable> {
     const executable: Executable = Object.create(null);
     const execOptions: ExecutableOptions = Object.create(null);
     execOptions.env = Object.assign(process.env);
@@ -236,13 +266,16 @@ function createServerOptions(options: ActivatorOptions, context: VSCode.Extensio
     executable.command = jvm.getJavaExecutable();
     const vmArgs = prepareJvmArgs(options, context, jvm, port);
     addCdsArgs(vmArgs, cdsResult);
-    addCpAndLauncherToJvmArgs(vmArgs, options, context);
+    await addCpAndLauncherToJvmArgs(vmArgs, options, context);
     executable.args = vmArgs;
     return executable;
-
 }
 
-function createServerOptionsForPortComm(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, cdsResult?: CdsResult): ServerOptions {
+async function createServerOptionsForPortComm(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, cdsResult?: CdsResult): Promise<ServerOptions> {
+    const launcher = options.explodedLsJarData
+        ? undefined
+        : await findServerJar(Path.resolve(context.extensionPath, 'language-server'));
+
     return () =>
         new Promise((resolve) => {
             PortFinder.getPort((err, port) => {
@@ -264,15 +297,12 @@ function createServerOptionsForPortComm(options: ActivatorOptions, context: VSCo
                             const explodedLsJarData = options.explodedLsJarData;
                             const lsRoot = Path.resolve(context.extensionPath, explodedLsJarData.lsLocation);
 
-                            // Add classpath
                             const classpath: string[] = [];
                             classpath.push(Path.resolve(lsRoot, 'BOOT-INF/classes'));
                             classpath.push(`${Path.resolve(lsRoot, 'BOOT-INF/lib')}${Path.sep}*`);
 
                             jvm.mainClassLaunch(explodedLsJarData.mainClass, classpath, args, processLaunchoptions);
                         } else {
-                            // Start the child java process
-                            const launcher = findServerJar(Path.resolve(context.extensionPath, 'language-server'));
                             jvm.jarLaunch(launcher, args, processLaunchoptions);
                         }
                     });
@@ -280,7 +310,7 @@ function createServerOptionsForPortComm(options: ActivatorOptions, context: VSCo
         });
 }
 
-function prepareJvmArgs(options: ActivatorOptions, context: VSCode.ExtensionContext, jvm: JVM, port?: number): string[] {
+function prepareJvmArgs(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, port?: number): string[] {
     const DEBUG = options.DEBUG;
     const jvmHeap = getUserDefinedJvmHeap(options.workspaceOptions, options.jvmHeap);
     const jvmArgs = getUserDefinedJvmArgs(options.workspaceOptions);
@@ -338,24 +368,21 @@ function prepareJvmArgs(options: ActivatorOptions, context: VSCode.ExtensionCont
     return args;
 }
 
-function addCpAndLauncherToJvmArgs(args: string[], options: ActivatorOptions, context: VSCode.ExtensionContext) {
+async function addCpAndLauncherToJvmArgs(args: string[], options: ActivatorOptions, context: ExtensionContext) {
     if (options.explodedLsJarData) {
         const explodedLsJarData = options.explodedLsJarData;
         const lsRoot = Path.resolve(context.extensionPath, explodedLsJarData.lsLocation);
 
-        // Add classpath
         const classpath: string[] = [];
         classpath.push(Path.resolve(lsRoot, 'BOOT-INF/classes'));
         classpath.push(`${Path.resolve(lsRoot, 'BOOT-INF/lib')}${Path.sep}*`);
-
 
         args.unshift(classpath.join(Path.delimiter));
         args.unshift('-cp');
         args.push(explodedLsJarData.mainClass);
     } else {
-        // Start the child java process
         args.push('-jar');
-        const launcher = findServerJar(Path.resolve(context.extensionPath, 'language-server'));
+        const launcher = await findServerJar(Path.resolve(context.extensionPath, 'language-server'));
         args.push(launcher);
    }
 }
@@ -372,21 +399,21 @@ function hasVmArg(argPrefix: string, vmargs?: string[]): boolean {
 
 }
 
-function findServerJar(jarsDir) : string {
-    const serverJars = FS.readdirSync(jarsDir).filter(jar =>
-        jar.indexOf('language-server')>=0 &&
-        jar.endsWith(".jar")
-    );
-    if (serverJars.length==0) {
-        throw new Error("Server jar not found in "+jarsDir);
+async function findServerJar(jarsDir: string) : Promise<string> {
+    const entries = await readDirectory(jarsDir);
+    const serverJars = entries
+        .map(([name]) => name)
+        .filter(name => name.indexOf('language-server') >= 0 && name.endsWith(".jar"));
+    if (serverJars.length === 0) {
+        throw new Error("Server jar not found in " + jarsDir);
     }
-    if (serverJars.length>1) {
-        throw new Error("Multiple server jars found in "+jarsDir);
+    if (serverJars.length > 1) {
+        throw new Error("Multiple server jars found in " + jarsDir);
     }
     return Path.resolve(jarsDir, serverJars[0]);
 }
 
-function connectToLS(context: VSCode.ExtensionContext, options: ActivatorOptions): Promise<LanguageClient> {
+function connectToLS(context: ExtensionContext, options: ActivatorOptions): Promise<LanguageClient> {
     const connectionInfo = {
         port: 5007
     };
@@ -403,13 +430,13 @@ function connectToLS(context: VSCode.ExtensionContext, options: ActivatorOptions
     return setupLanguageClient(context, serverOptions, options);
 }
 
-function setupLanguageClient(context: VSCode.ExtensionContext, createServer: ServerOptions, options: ActivatorOptions): Promise<LanguageClient> {
+function setupLanguageClient(context: ExtensionContext, createServer: ServerOptions, options: ActivatorOptions): Promise<LanguageClient> {
     // Create the language client and start the client.
     const client = new LanguageClient(options.extensionId, options.extensionId,
         createServer, options.clientOptions
     );
     client.registerProposedFeatures();
-    log("Proposed protocol extensions loaded!");
+    options.clientOptions.outputChannel.appendLine("Proposed protocol extensions loaded!");
     if (options.TRACE) {
         client.setTrace(Trace.Verbose);
     }
@@ -430,7 +457,7 @@ function setupLanguageClient(context: VSCode.ExtensionContext, createServer: Ser
 
     function toggleHighlightCodeLens() {
         if (!codeLensProviderSubscription && codeLensListanableSetting.value) {
-            codeLensProviderSubscription = VSCode.languages.registerCodeLensProvider(options.clientOptions.documentSelector, codelensService);
+            codeLensProviderSubscription = languages.registerCodeLensProvider(options.clientOptions.documentSelector, codelensService);
             context.subscriptions.push(codeLensProviderSubscription);
         } else if (codeLensProviderSubscription) {
             codeLensProviderSubscription.dispose();
@@ -454,10 +481,10 @@ function setupLanguageClient(context: VSCode.ExtensionContext, createServer: Ser
         }
     });
     client.onRequest(moveCursorRequest, (params: MoveCursorParams) => {
-        for (const editor of VSCode.window.visibleTextEditors) {
+        for (const editor of window.visibleTextEditors) {
             if (editor.document.uri.toString() == params.uri) {
                 const cursor = p2c.asPosition(params.position);
-                const selection: VSCode.Selection = new VSCode.Selection(cursor, cursor);
+                const selection = new Selection(cursor, cursor);
                 editor.selections = [selection];
             }
         }
@@ -477,7 +504,7 @@ interface MoveCursorResponse {
 
 export interface ListenableSetting<T> {
     value: T;
-    onDidChangeValue: VSCode.Event<void>
+    onDidChangeValue: Event<void>
 }
 
 export class ListenablePreferenceSetting<T> implements ListenableSetting<T> {
@@ -486,7 +513,7 @@ export class ListenablePreferenceSetting<T> implements ListenableSetting<T> {
     private _disposable: Disposable;
 
     constructor(private section: string) {
-        this._disposable = VSCode.workspace.onDidChangeConfiguration(e => {
+        this._disposable = workspace.onDidChangeConfiguration(e => {
            if (e.affectsConfiguration(this.section)) {
                this._onDidChangeValue.fire();
            }
@@ -494,7 +521,7 @@ export class ListenablePreferenceSetting<T> implements ListenableSetting<T> {
     }
 
     get value(): T {
-        return VSCode.workspace.getConfiguration().get(this.section);
+        return workspace.getConfiguration().get(this.section);
     }
 
     get onDidChangeValue(): Event<void> {

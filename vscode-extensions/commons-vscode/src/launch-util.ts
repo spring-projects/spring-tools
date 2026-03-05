@@ -165,7 +165,7 @@ function getAotCachePath(extensionPath: string, jvm: JVM): string {
 
 async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, useSocket: boolean): Promise<CdsResult> {
     if (!options.workspaceOptions.get("cds.enabled")) {
-        return { cdsArgs: [] };
+        return new CdsResult([]);
     }
 
     if (jvm.getMajorVersion() < 25) {
@@ -173,7 +173,7 @@ async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionConte
             'Spring Boot Language Server: CDS is enabled but requires Java 25+. ' +
             `Current Java version is ${jvm.getMajorVersion()}. Starting without CDS.`
         );
-        return { cdsArgs: [] };
+        return new CdsResult([]);
     }
 
     const aotCachePath = getAotCachePath(context.extensionPath, jvm);
@@ -185,17 +185,30 @@ async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionConte
     } else {
         options.clientOptions.outputChannel.appendLine(`CDS: No AOT cache found, will record cache on this run: ${aotCachePath}`);
         cdsArgs.push(`-XX:AOTCacheOutput=${aotCachePath}`);
+        window.showInformationMessage(
+            'Language Server: CDS training run in progress. ' +
+            'To ensure the AOT cache is saved correctly, please exit VS Code normally when done rather than using "Reload Window".',
+            'Got it'
+        );
     }
 
     if (!useSocket) {
         cdsArgs.push(`${LOG_AOT_VM_ARG_PREFIX}*=off`);
     }
 
-    return { cdsArgs };
+    return new CdsResult(cdsArgs);
 }
 
-interface CdsResult {
-    cdsArgs: string[];
+class CdsResult {
+    private readonly _trainingRun: boolean;
+
+    constructor(readonly cdsArgs: string[]) {
+        this._trainingRun = cdsArgs.some(a => a.startsWith('-XX:AOTCacheOutput'));
+    }
+
+    get isTrainingRun(): boolean {
+        return this._trainingRun;
+    }
 }
 
 function addCdsArgs(vmArgs: string[], cdsResult?: CdsResult): void {
@@ -249,9 +262,9 @@ export async function activate(options: ActivatorOptions, context: ExtensionCont
     const cdsResult = await prepareCdsArgs(options, context, jvm, useSocket);
 
     if (useSocket) {
-        return setupLanguageClient(context, await createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
+        return setupLanguageClient(context, await createServerOptionsForPortComm(options, context, jvm, cdsResult), options, cdsResult);
     } else {
-        return setupLanguageClient(context, await createServerOptions(options, context, jvm, undefined, cdsResult), options);
+        return setupLanguageClient(context, await createServerOptions(options, context, jvm, undefined, cdsResult), options, cdsResult);
     }
 }
 
@@ -385,8 +398,8 @@ async function addCpAndLauncherToJvmArgs(args: string[], options: ActivatorOptio
    }
 }
 
-function hasHeapArg(_vmargs?: string[]) : boolean {
-    return hasVmArg('-Xmx');
+function hasHeapArg(vmargs?: string[]) : boolean {
+    return hasVmArg('-Xmx', vmargs);
 }
 
 function hasVmArg(argPrefix: string, vmargs?: string[]): boolean {
@@ -428,7 +441,7 @@ function connectToLS(context: ExtensionContext, options: ActivatorOptions): Prom
     return setupLanguageClient(context, serverOptions, options);
 }
 
-function setupLanguageClient(context: ExtensionContext, createServer: ServerOptions, options: ActivatorOptions): Promise<LanguageClient> {
+function setupLanguageClient(context: ExtensionContext, createServer: ServerOptions, options: ActivatorOptions, cdsResult?: CdsResult): Promise<LanguageClient> {
     // Create the language client and start the client.
     const client = new LanguageClient(options.extensionId, options.extensionId,
         createServer, options.clientOptions
@@ -450,7 +463,7 @@ function setupLanguageClient(context: ExtensionContext, createServer: ServerOpti
 
     CommonsCommands.registerCommands(context);
 
-    context.subscriptions.push({dispose: () => client.stop()});
+    context.subscriptions.push({dispose: () => cdsResult?.isTrainingRun ? client.stop(10000) : client.stop()});
     context.subscriptions.push(highlightService);
 
     function toggleHighlightCodeLens() {

@@ -29,20 +29,20 @@ jobs:
 #      java_version: '21'
 #    secrets: inherit
 
-#  e437-distro:
-#    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
-#    with:
-#      eclipse_profile: 'e437'
-#      build_type: 'release'
-#      p2-qualifier: ${{ inputs.qualifier }}
-#      sts-language-servers-version: ${{ inputs.sts-language-servers-version }}
-#      java_version: '21'
-#    secrets: inherit
-
   e438-distro:
     uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
     with:
       eclipse_profile: 'e438'
+      build_type: 'release'
+      p2-qualifier: ${{ inputs.qualifier }}
+      sts-language-servers-version: ${{ inputs.sts-language-servers-version }}
+      java_version: '21'
+    secrets: inherit
+
+  e439-distro:
+    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+    with:
+      eclipse_profile: 'e439'
       build_type: 'release'
       p2-qualifier: ${{ inputs.qualifier }}
       sts-language-servers-version: ${{ inputs.sts-language-servers-version }}

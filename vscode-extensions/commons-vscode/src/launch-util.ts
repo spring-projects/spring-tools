@@ -16,7 +16,6 @@ import {
     workspace
 } from 'vscode';
 import * as Path from 'path';
-import * as Crypto from 'crypto';
 import PortFinder from 'portfinder';
 import * as Net from 'net';
 import * as CommonsCommands from './commands';
@@ -27,13 +26,13 @@ import * as P2C from 'vscode-languageclient/lib/common/protocolConverter';
 import {HighlightService, HighlightParams} from './highlight-service';
 import { JVM, findJvm, findJdk } from '@pivotal-tools/jvm-launch-utils';
 import {HighlightCodeLensProvider} from "./code-lens-service";
+import { CdsSupport, CdsResult } from './cds';
 
 const p2c = P2C.createConverter(undefined, false, false);
 
 PortFinder.basePort = 45556;
 
 const LOG_RESOLVE_VM_ARG_PREFIX = '-Xlog:jni+resolve=';
-const LOG_AOT_VM_ARG_PREFIX = '-Xlog:aot';
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y';
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -154,56 +153,12 @@ async function findJdtEmbeddedJRE(): Promise<string | undefined> {
     }
 }
 
-function hashString(value: string): string {
-    return Crypto.createHash('sha256').update(value).digest('hex').substring(0, 12);
-}
-
-function getAotCachePath(extensionPath: string, jvm: JVM): string {
-    const javaHomeHash = hashString(jvm.getJavaHome());
-    return Path.join(extensionPath, 'language-server', `spring-boot-ls_${javaHomeHash}.aot`);
-}
-
-async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, useSocket: boolean): Promise<CdsResult> {
-    if (!options.workspaceOptions.get("cds.enabled")) {
-        return { cdsArgs: [] };
-    }
-
-    if (jvm.getMajorVersion() < 25) {
-        window.showInformationMessage(
-            'Spring Boot Language Server: CDS is enabled but requires Java 25+. ' +
-            `Current Java version is ${jvm.getMajorVersion()}. Starting without CDS.`
-        );
-        return { cdsArgs: [] };
-    }
-
-    const aotCachePath = getAotCachePath(context.extensionPath, jvm);
-    const cdsArgs: string[] = [];
-
-    if (await fileExists(aotCachePath)) {
-        options.clientOptions.outputChannel.appendLine(`CDS: Using existing AOT cache: ${aotCachePath}`);
-        cdsArgs.push(`-XX:AOTCache=${aotCachePath}`);
-    } else {
-        options.clientOptions.outputChannel.appendLine(`CDS: No AOT cache found, will record cache on this run: ${aotCachePath}`);
-        cdsArgs.push(`-XX:AOTCacheOutput=${aotCachePath}`);
-    }
-
-    if (!useSocket) {
-        cdsArgs.push(`${LOG_AOT_VM_ARG_PREFIX}*=off`);
-    }
-
-    return { cdsArgs };
-}
-
-interface CdsResult {
-    cdsArgs: string[];
-}
-
 function addCdsArgs(vmArgs: string[], cdsResult?: CdsResult): void {
     if (!cdsResult?.cdsArgs.length) {
         return;
     }
     for (const arg of cdsResult.cdsArgs) {
-        if (arg.startsWith(LOG_AOT_VM_ARG_PREFIX) && hasVmArg(LOG_AOT_VM_ARG_PREFIX, vmArgs)) {
+        if (arg.startsWith('-Xlog:aot') && hasVmArg('-Xlog:aot', vmArgs)) {
             continue;
         }
         vmArgs.push(arg);
@@ -246,13 +201,21 @@ export async function activate(options: ActivatorOptions, context: ExtensionCont
     clientOptions.outputChannel.appendLine("isJavaEightOrHigher => true");
 
     const useSocket = !!process.env['SPRING_LS_USE_SOCKET'];
-    const cdsResult = await prepareCdsArgs(options, context, jvm, useSocket);
+    const cds = new CdsSupport(options, context, jvm, useSocket);
+    const cdsResult = await cds.prepareArgs();
 
+    let client: LanguageClient;
     if (useSocket) {
-        return setupLanguageClient(context, await createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
+        client = await setupLanguageClient(context, await createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
     } else {
-        return setupLanguageClient(context, await createServerOptions(options, context, jvm, undefined, cdsResult), options);
+        client = await setupLanguageClient(context, await createServerOptions(options, context, jvm, undefined, cdsResult), options);
     }
+
+    if (cdsResult.isTrainingRun) {
+        cds.handleTrainingRun(client);
+    }
+
+    return client;
 }
 
 async function createServerOptions(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, port?: number, cdsResult?: CdsResult): Promise<Executable> {
@@ -385,8 +348,8 @@ async function addCpAndLauncherToJvmArgs(args: string[], options: ActivatorOptio
    }
 }
 
-function hasHeapArg(_vmargs?: string[]) : boolean {
-    return hasVmArg('-Xmx');
+function hasHeapArg(vmargs?: string[]) : boolean {
+    return hasVmArg('-Xmx', vmargs);
 }
 
 function hasVmArg(argPrefix: string, vmargs?: string[]): boolean {

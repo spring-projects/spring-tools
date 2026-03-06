@@ -94,7 +94,7 @@ export class CdsSupport {
                             }).then(() => commands.executeCommand('workbench.action.reloadWindow'));
                         }
                     });
-                }, 30000);
+                }, 600000); // 10 mins timeout in ms
             }
         });
         this.context.subscriptions.push(disposable);

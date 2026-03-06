@@ -7,9 +7,11 @@ import {
     ExtensionContext,
     FileType,
     OutputChannel,
+    ProgressLocation,
     Selection,
     Uri,
     WorkspaceConfiguration,
+    commands,
     extensions,
     languages,
     window,
@@ -20,7 +22,7 @@ import * as Crypto from 'crypto';
 import PortFinder from 'portfinder';
 import * as Net from 'net';
 import * as CommonsCommands from './commands';
-import { RequestType, LanguageClientOptions, Position } from 'vscode-languageclient';
+import { RequestType, LanguageClientOptions, Position, State } from 'vscode-languageclient';
 import {LanguageClient, StreamInfo, ServerOptions, ExecutableOptions, Executable} from 'vscode-languageclient/node';
 import { Trace, NotificationType } from 'vscode-jsonrpc';
 import * as P2C from 'vscode-languageclient/lib/common/protocolConverter';
@@ -185,11 +187,6 @@ async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionConte
     } else {
         options.clientOptions.outputChannel.appendLine(`CDS: No AOT cache found, will record cache on this run: ${aotCachePath}`);
         cdsArgs.push(`-XX:AOTCacheOutput=${aotCachePath}`);
-        window.showInformationMessage(
-            'Language Server: CDS training run in progress. ' +
-            'To ensure the AOT cache is saved correctly, please exit VS Code normally when done rather than using "Reload Window".',
-            'Got it'
-        );
     }
 
     if (!useSocket) {
@@ -261,11 +258,62 @@ export async function activate(options: ActivatorOptions, context: ExtensionCont
     const useSocket = !!process.env['SPRING_LS_USE_SOCKET'];
     const cdsResult = await prepareCdsArgs(options, context, jvm, useSocket);
 
+    let client: LanguageClient;
     if (useSocket) {
-        return setupLanguageClient(context, await createServerOptionsForPortComm(options, context, jvm, cdsResult), options, cdsResult);
+        client = await setupLanguageClient(context, await createServerOptionsForPortComm(options, context, jvm, cdsResult), options);
     } else {
-        return setupLanguageClient(context, await createServerOptions(options, context, jvm, undefined, cdsResult), options, cdsResult);
+        client = await setupLanguageClient(context, await createServerOptions(options, context, jvm, undefined, cdsResult), options);
     }
+
+    if (cdsResult.isTrainingRun) {
+        handleCdsTrainingRun(client, context, jvm);
+    }
+
+    return client;
+}
+
+function handleCdsTrainingRun(client: LanguageClient, context: ExtensionContext, jvm: JVM) {
+    const disposable = client.onDidChangeState(async e => {
+        if (e.newState === State.Running) {
+            disposable.dispose();
+            window.showInformationMessage(
+                'Language Server: CDS training run in progress. ' +
+                'To ensure the AOT cache is saved correctly, please exit VS Code normally when done rather than using "Reload Window".',
+                'Got it', 'Finish Training Run'
+            ).then(selection => {
+                if (selection === 'Finish Training Run') {
+                    window.withProgress({
+                        location: ProgressLocation.Notification,
+                        title: 'Language Server: CDS',
+                        cancellable: false
+                    }, async progress => {
+                        progress.report({ message: 'Stopping Language Server...' });
+                        await client.stop();
+                        await waitForAotCache(getAotCachePath(context.extensionPath, jvm), progress);
+                        commands.executeCommand('workbench.action.reloadWindow');
+                    });
+                }
+            });
+        }
+    });
+    context.subscriptions.push(disposable);
+    return disposable;
+}
+
+async function waitForAotCache(aotCachePath: string, progress: { report(value: { message?: string }): void }): Promise<void> {
+    const maxWaitMs = 30000;
+    const intervalMs = 1000;
+    let waited = 0;
+    while (waited < maxWaitMs) {
+        if (await fileExists(aotCachePath)) {
+            progress.report({ message: 'AOT cache ready, reloading window...' });
+            return;
+        }
+        waited += intervalMs;
+        progress.report({ message: `Waiting for AOT cache... (${waited / 1000}s)` });
+        await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+    progress.report({ message: 'Timed out waiting for AOT cache.' });
 }
 
 async function createServerOptions(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, port?: number, cdsResult?: CdsResult): Promise<Executable> {
@@ -441,7 +489,7 @@ function connectToLS(context: ExtensionContext, options: ActivatorOptions): Prom
     return setupLanguageClient(context, serverOptions, options);
 }
 
-function setupLanguageClient(context: ExtensionContext, createServer: ServerOptions, options: ActivatorOptions, cdsResult?: CdsResult): Promise<LanguageClient> {
+function setupLanguageClient(context: ExtensionContext, createServer: ServerOptions, options: ActivatorOptions): Promise<LanguageClient> {
     // Create the language client and start the client.
     const client = new LanguageClient(options.extensionId, options.extensionId,
         createServer, options.clientOptions
@@ -463,7 +511,7 @@ function setupLanguageClient(context: ExtensionContext, createServer: ServerOpti
 
     CommonsCommands.registerCommands(context);
 
-    context.subscriptions.push({dispose: () => cdsResult?.isTrainingRun ? client.stop(10000) : client.stop()});
+    context.subscriptions.push({dispose: () => client.stop()});
     context.subscriptions.push(highlightService);
 
     function toggleHighlightCodeLens() {

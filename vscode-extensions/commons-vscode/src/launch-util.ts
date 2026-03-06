@@ -7,35 +7,32 @@ import {
     ExtensionContext,
     FileType,
     OutputChannel,
-    ProgressLocation,
     Selection,
     Uri,
     WorkspaceConfiguration,
-    commands,
     extensions,
     languages,
     window,
     workspace
 } from 'vscode';
 import * as Path from 'path';
-import * as Crypto from 'crypto';
 import PortFinder from 'portfinder';
 import * as Net from 'net';
 import * as CommonsCommands from './commands';
-import { RequestType, LanguageClientOptions, Position, State } from 'vscode-languageclient';
+import { RequestType, LanguageClientOptions, Position } from 'vscode-languageclient';
 import {LanguageClient, StreamInfo, ServerOptions, ExecutableOptions, Executable} from 'vscode-languageclient/node';
 import { Trace, NotificationType } from 'vscode-jsonrpc';
 import * as P2C from 'vscode-languageclient/lib/common/protocolConverter';
 import {HighlightService, HighlightParams} from './highlight-service';
 import { JVM, findJvm, findJdk } from '@pivotal-tools/jvm-launch-utils';
 import {HighlightCodeLensProvider} from "./code-lens-service";
+import { CdsSupport, CdsResult } from './cds';
 
 const p2c = P2C.createConverter(undefined, false, false);
 
 PortFinder.basePort = 45556;
 
 const LOG_RESOLVE_VM_ARG_PREFIX = '-Xlog:jni+resolve=';
-const LOG_AOT_VM_ARG_PREFIX = '-Xlog:aot';
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y';
 
 async function fileExists(filePath: string): Promise<boolean> {
@@ -156,64 +153,12 @@ async function findJdtEmbeddedJRE(): Promise<string | undefined> {
     }
 }
 
-function hashString(value: string): string {
-    return Crypto.createHash('sha256').update(value).digest('hex').substring(0, 12);
-}
-
-function getAotCachePath(extensionPath: string, jvm: JVM): string {
-    const javaHomeHash = hashString(jvm.getJavaHome());
-    return Path.join(extensionPath, 'language-server', `spring-boot-ls_${javaHomeHash}.aot`);
-}
-
-async function prepareCdsArgs(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, useSocket: boolean): Promise<CdsResult> {
-    if (!options.workspaceOptions.get("cds.enabled")) {
-        return new CdsResult([]);
-    }
-
-    if (jvm.getMajorVersion() < 25) {
-        window.showInformationMessage(
-            'Spring Boot Language Server: CDS is enabled but requires Java 25+. ' +
-            `Current Java version is ${jvm.getMajorVersion()}. Starting without CDS.`
-        );
-        return new CdsResult([]);
-    }
-
-    const aotCachePath = getAotCachePath(context.extensionPath, jvm);
-    const cdsArgs: string[] = [];
-
-    if (await fileExists(aotCachePath)) {
-        options.clientOptions.outputChannel.appendLine(`CDS: Using existing AOT cache: ${aotCachePath}`);
-        cdsArgs.push(`-XX:AOTCache=${aotCachePath}`);
-    } else {
-        options.clientOptions.outputChannel.appendLine(`CDS: No AOT cache found, will record cache on this run: ${aotCachePath}`);
-        cdsArgs.push(`-XX:AOTCacheOutput=${aotCachePath}`);
-    }
-
-    if (!useSocket) {
-        cdsArgs.push(`${LOG_AOT_VM_ARG_PREFIX}*=off`);
-    }
-
-    return new CdsResult(cdsArgs);
-}
-
-class CdsResult {
-    private readonly _trainingRun: boolean;
-
-    constructor(readonly cdsArgs: string[]) {
-        this._trainingRun = cdsArgs.some(a => a.startsWith('-XX:AOTCacheOutput'));
-    }
-
-    get isTrainingRun(): boolean {
-        return this._trainingRun;
-    }
-}
-
 function addCdsArgs(vmArgs: string[], cdsResult?: CdsResult): void {
     if (!cdsResult?.cdsArgs.length) {
         return;
     }
     for (const arg of cdsResult.cdsArgs) {
-        if (arg.startsWith(LOG_AOT_VM_ARG_PREFIX) && hasVmArg(LOG_AOT_VM_ARG_PREFIX, vmArgs)) {
+        if (arg.startsWith('-Xlog:aot') && hasVmArg('-Xlog:aot', vmArgs)) {
             continue;
         }
         vmArgs.push(arg);
@@ -256,7 +201,8 @@ export async function activate(options: ActivatorOptions, context: ExtensionCont
     clientOptions.outputChannel.appendLine("isJavaEightOrHigher => true");
 
     const useSocket = !!process.env['SPRING_LS_USE_SOCKET'];
-    const cdsResult = await prepareCdsArgs(options, context, jvm, useSocket);
+    const cds = new CdsSupport(options, context, jvm, useSocket);
+    const cdsResult = await cds.prepareArgs();
 
     let client: LanguageClient;
     if (useSocket) {
@@ -266,54 +212,10 @@ export async function activate(options: ActivatorOptions, context: ExtensionCont
     }
 
     if (cdsResult.isTrainingRun) {
-        handleCdsTrainingRun(client, context, jvm);
+        cds.handleTrainingRun(client);
     }
 
     return client;
-}
-
-function handleCdsTrainingRun(client: LanguageClient, context: ExtensionContext, jvm: JVM) {
-    const disposable = client.onDidChangeState(async e => {
-        if (e.newState === State.Running) {
-            disposable.dispose();
-            window.showInformationMessage(
-                'Language Server: CDS training run in progress. ' +
-                'To ensure the AOT cache is saved correctly, please exit VS Code normally when done rather than using "Reload Window".',
-                'Got it', 'Finish Training Run'
-            ).then(selection => {
-                if (selection === 'Finish Training Run') {
-                    window.withProgress({
-                        location: ProgressLocation.Notification,
-                        title: 'Language Server: CDS',
-                        cancellable: false
-                    }, async progress => {
-                        progress.report({ message: 'Stopping Language Server...' });
-                        await client.stop();
-                        await waitForAotCache(getAotCachePath(context.extensionPath, jvm), progress);
-                        commands.executeCommand('workbench.action.reloadWindow');
-                    });
-                }
-            });
-        }
-    });
-    context.subscriptions.push(disposable);
-    return disposable;
-}
-
-async function waitForAotCache(aotCachePath: string, progress: { report(value: { message?: string }): void }): Promise<void> {
-    const maxWaitMs = 30000;
-    const intervalMs = 1000;
-    let waited = 0;
-    while (waited < maxWaitMs) {
-        if (await fileExists(aotCachePath)) {
-            progress.report({ message: 'AOT cache ready, reloading window...' });
-            return;
-        }
-        waited += intervalMs;
-        progress.report({ message: `Waiting for AOT cache... (${waited / 1000}s)` });
-        await new Promise(resolve => setTimeout(resolve, intervalMs));
-    }
-    progress.report({ message: 'Timed out waiting for AOT cache.' });
 }
 
 async function createServerOptions(options: ActivatorOptions, context: ExtensionContext, jvm: JVM, port?: number, cdsResult?: CdsResult): Promise<Executable> {

@@ -247,7 +247,7 @@
       {
         "command": "vscode-spring-boot.live.show.active",
         "title": "Show Live Data from launched Spring Boot App",
-        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state != 'connected'",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'disconnected'",
         "icon": "./images/light-bulb-off.svg",
         "category": "Spring Boot"
       },

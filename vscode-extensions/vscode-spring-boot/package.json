@@ -166,7 +166,7 @@
       ],
       "debug/toolBar": [
         {
-          "when": "ivscode-spring-boot.ls.started && nDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'disconnected' || vscode-spring-boot.active-app-state == 'connecting')",
+          "when": "vscode-spring-boot.ls.started && inDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'disconnected' || vscode-spring-boot.active-app-state == 'connecting')",
           "command": "vscode-spring-boot.live.show.active",
           "group": "Spring Boot"
         },
@@ -247,7 +247,7 @@
       {
         "command": "vscode-spring-boot.live.show.active",
         "title": "Show Live Data from launched Spring Boot App",
-        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'disconnected'",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state != 'connected'",
         "icon": "./images/light-bulb-off.svg",
         "category": "Spring Boot"
       },

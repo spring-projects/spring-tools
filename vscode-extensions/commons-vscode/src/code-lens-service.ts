@@ -1,4 +1,4 @@
-import * as deepEqual from 'deep-equal';
+import deepEqual from 'deep-equal';
 import {
     CancellationToken,
     CodeLens,

@@ -1,3 +1,62 @@
+## 2026-03-11 (5.1.0 RELEASE, incl. language servers version 2.1.0)
+
+#### important highlights
+
+* _(Spring Boot)_ **SQL Intelligence for JDBC**: adds syntax highlighting, validation, and multiline formatting for `@Query` annotations
+* _(Spring Boot)_ **Modern Query Conversion**: supports automatic conversion of JDBC queries to Java 15+ text blocks for improved readability
+* _(Spring Boot)_ **AOT Repository Support**: fixes and improvements for turning AOT queries into annotations and handling repository symbols
+* _(Spring Boot)_ **Framework 7 API Versioning**: adds deep validation for property-based web configs, media types, and versioning syntax
+* _(Spring Boot)_ **Functional Endpoint Indexing**: full support for indexing WebMvc functional endpoints and WebFlux builder patterns
+* _(Spring Boot)_ **API Tooling Quick-Fixes**: new automated actions to add version configurations and resolve missing client classes
+* _(Spring Boot)_ **Infrastructure**: leverages **JDK 25 AOT Cache** (CDS) to drastically reduce language server startup time—configurable via settings—and refines logging by adjusting default levels
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ switch structure view commands to be executed on separate thread pool [#1815](https://github.com/spring-projects/spring-tools/issues/1815)
+* _(Spring Boot)_ Enable validation for queries inside JDBC query annotation [#1806](https://github.com/spring-projects/spring-tools/pull/1806)
+* _(Spring Boot)_ support SQL syntax validation for Spring Data JDBC [#1805](https://github.com/spring-projects/spring-tools/issues/1805)
+* _(Spring Boot)_ quick fix to add class to client configs [#1802](https://github.com/spring-projects/spring-tools/issues/1802)
+* _(Spring Boot)_ add validation to flag `final` on `@Autowired` fields [#1782](https://github.com/spring-projects/spring-tools/issues/1782)
+* _(Spring Boot)_ update lsp4j in language servers to `1.0.0` [#1781](https://github.com/spring-projects/spring-tools/issues/1781)
+* _(Spring Boot)_ Rewrite snippet formatting based on styles detected [#1775](https://github.com/spring-projects/spring-tools/pull/1775)
+* _(Spring Boot)_ use JDK 25 AOT Cache features to improve startup performance [#1774](https://github.com/spring-projects/spring-tools/issues/1774)
+* _(Spring Boot)_ Enhancement Request: IDE Warning for Missing `@Validated` in Non-Controller Components [#1773](https://github.com/spring-projects/spring-tools/issues/1773)
+* _(Spring Boot)_ take specific load balancer client configuration into account [#1770](https://github.com/spring-projects/spring-tools/issues/1770)
+* _(Spring Boot)_ take media type style into account when indexing web api versioning configs [#1768](https://github.com/spring-projects/spring-tools/issues/1768)
+* _(Spring Boot)_ enable web api validations for non-boot projects [#1767](https://github.com/spring-projects/spring-tools/issues/1767)
+* _(Spring Boot)_ Api version qfix [#1765](https://github.com/spring-projects/spring-tools/pull/1765)
+* _(Spring Boot)_ Add support for multiline query formatting in Query annotations [#1763](https://github.com/spring-projects/spring-tools/pull/1763)
+* _(Spring Boot)_ Use Java text blocks for query conversion in Java 15+ [#1762](https://github.com/spring-projects/spring-tools/pull/1762)
+* _(Spring Boot)_ [structure view] more fine-grained check for existing catalog files when adding default ones [#1759](https://github.com/spring-projects/spring-tools/issues/1759)
+* _(Spring Boot)_ change default log levels of the language server [#1743](https://github.com/spring-projects/spring-tools/issues/1743)
+* _(Spring Boot)_ log messages from language server appear in Error Log view in Eclipse [#1742](https://github.com/spring-projects/spring-tools/issues/1742)
+* _(Spring Boot)_ add version validation for spring cloud (for linked generations) [#1740](https://github.com/spring-projects/spring-tools/issues/1740)
+* _(Spring Boot)_ [structure view] unify labels for request mappings [#1738](https://github.com/spring-projects/spring-tools/issues/1738)
+* _(Spring Boot)_ [structure view] symbol based child nodes should have an icon [#1737](https://github.com/spring-projects/spring-tools/issues/1737)
+* _(Spring Boot)_ update splash screen for 2026 [#1736](https://github.com/spring-projects/spring-tools/issues/1736)
+* _(Spring Boot)_ add validation to check for `@Configuration` on web config classes [#1728](https://github.com/spring-projects/spring-tools/issues/1728)
+* _(Spring Boot)_ support SQL syntax highlighting for Spring Data JDBC [#1727](https://github.com/spring-projects/spring-tools/issues/1727)
+* _(Spring Boot)_ [aot repositories] use text block when converting spring data jdbc query strings [#1726](https://github.com/spring-projects/spring-tools/issues/1726)
+* _(Spring Boot)_ [framework 7] API versioning - take property-based web config into account for version syntax validation [#1718](https://github.com/spring-projects/spring-tools/issues/1718)
+* _(Spring Boot)_ dependency tracker should be project-specific, not global [#1701](https://github.com/spring-projects/spring-tools/issues/1701)
+* _(Spring Boot)_ add support for indexing functional web endpoints for webmvc [#1668](https://github.com/spring-projects/spring-tools/issues/1668)
+* _(Spring Boot)_ add support for builder pattern for webflux functional endpoints [#1667](https://github.com/spring-projects/spring-tools/issues/1667)
+* _(Spring Boot)_ [framework 7] API versioning - quick fix for adding version configuration [#1659](https://github.com/spring-projects/spring-tools/issues/1659)
+* _(Spring Boot)_ Consider to create "Spring" as View directory type [#1351](https://github.com/spring-projects/spring-tools/issues/1351)
+* _(Spring Boot VSCode)_ [Performance] Use Webpack to build VSCode extensions [#1347](https://github.com/spring-projects/spring-tools/issues/1347)
+* _(Spring Boot)_ `@Repository` causes duplicate symbols being created [#1812](https://github.com/spring-projects/spring-tools/issues/1812)
+* _(Spring Boot)_ [aot repositories] turn into query throws exception [#1811](https://github.com/spring-projects/spring-tools/issues/1811)
+* _(Spring Boot)_ Duplicate nodes in the "Logical Structure Tree" [#1810](https://github.com/spring-projects/spring-tools/issues/1810)
+* _(Spring Boot)_ Rewrite quickfix doesn't resolve types coming from the same source folder [#1809](https://github.com/spring-projects/spring-tools/issues/1809)
+* _(Spring Boot)_ indentation slightly off when turning AOT query into annotation [#1801](https://github.com/spring-projects/spring-tools/issues/1801)
+* _(Spring Boot)_ symbol indexing causes duplicate symbols to appear when annotation appears multiple times [#1780](https://github.com/spring-projects/spring-tools/issues/1780)
+* _(Spring Boot)_ VSCode writes to C:/dev/null [#1761](https://github.com/spring-projects/spring-tools/issues/1761)
+* _(Spring Boot)_ IDE configuration metadata does not respect `@Name` annotation for property binding [#1751](https://github.com/spring-projects/spring-tools/issues/1751)
+* _(Spring Boot)_ bean registrar validation flags warning when imported on application [#1749](https://github.com/spring-projects/spring-tools/issues/1749)
+* _(Spring Boot)_ ai-related code lenses around Copilot do not show up [#1744](https://github.com/spring-projects/spring-tools/issues/1744)
+* _(Spring Boot)_ improve error handing when jre classpath container doesn't seem to work [#1565](https://github.com/spring-projects/spring-tools/issues/1565)
+* _(Spring Boot VSCode)_ [VSCode] Spring Boot extension live hover UI is broken [#1834](https://github.com/spring-projects/spring-tools/issues/1834)
+
 ## 2025-12-22 (5.0.1 RELEASE, incl. language servers version 2.0.1)
 
 #### all fixes and improvements in detail

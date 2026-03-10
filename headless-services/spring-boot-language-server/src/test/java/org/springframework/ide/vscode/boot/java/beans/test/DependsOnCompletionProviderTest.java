@@ -240,6 +240,22 @@ public class DependsOnCompletionProviderTest {
 	}
 
 	@Test
+	public void testDependsOnCompletionExcludeExplicitBeanNameFromRestController() throws Exception {
+		Bean restControllerBeanWithName = new Bean("myRestService", "org.test.TestDependsOnClass", new Location(tempJavaDocUri, new Range(new Position(1,1), new Position(1, 20))), null, null, null, false, "symbolLabel");
+		springIndex.updateBeans(project.getElementName(), new Bean[] {bean1, bean2, restControllerBeanWithName});
+		
+		assertCompletionsWithRestControllerBeanName("@DependsOn(<*>)", 2, "@DependsOn(\"bean1\"<*>)");
+	}
+
+	@Test
+	public void testDependsOnCompletionExcludeExplicitBeanNameFromService() throws Exception {
+		Bean serviceBeanWithName = new Bean("myService", "org.test.TestDependsOnClass", new Location(tempJavaDocUri, new Range(new Position(1,1), new Position(1, 20))), null, null, null, false, "symbolLabel");
+		springIndex.updateBeans(project.getElementName(), new Bean[] {bean1, bean2, serviceBeanWithName});
+		
+		assertCompletionsWithServiceBeanName("@DependsOn(<*>)", 2, "@DependsOn(\"bean1\"<*>)");
+	}
+
+	@Test
 	public void testDependsOnCompletionExcludeExplicitBeanNameFromBeanMethod() throws Exception {
 		Bean beanFromMethodWithName = new Bean("beanFromMethodWithName", "org.test.TestDependsOnClass", new Location(tempJavaDocUri, new Range(new Position(1,1), new Position(1, 20))), null, null, null, false, "symbolLabel");
 		springIndex.updateBeans(project.getElementName(), new Bean[] {bean1, bean2, beanFromMethodWithName});
@@ -370,6 +386,80 @@ public class DependsOnCompletionProviderTest {
 												
 					}
 					""", editor.getText());
+        }
+	}
+
+	private void assertCompletionsWithRestControllerBeanName(String completionLine, int noOfExpectedCompletions, String expectedCompletedLine) throws Exception {
+		String editorContent = """
+				package org.test;
+
+        		import org.springframework.web.bind.annotation.RestController;
+				import org.springframework.context.annotation.DependsOn;
+
+				@RestController("myRestService")
+				""" +
+				completionLine + "\n" +
+				"""
+				public class TestDependsOnClass {
+				}
+				""";
+		
+		Editor editor = harness.newEditor(LanguageId.JAVA, editorContent, tempJavaDocUri);
+
+        List<CompletionItem> completions = editor.getCompletions();
+        assertEquals(noOfExpectedCompletions, completions.size());
+        
+        if (noOfExpectedCompletions > 0) {
+	        editor.apply(completions.get(0));
+	        assertEquals("""
+					package org.test;
+	
+	        		import org.springframework.web.bind.annotation.RestController;
+					import org.springframework.context.annotation.DependsOn;
+	
+					@RestController("myRestService")
+					""" + expectedCompletedLine + "\n" +
+					"""
+					public class TestDependsOnClass {
+					}
+	        		""", editor.getText());
+        }
+	}
+
+	private void assertCompletionsWithServiceBeanName(String completionLine, int noOfExpectedCompletions, String expectedCompletedLine) throws Exception {
+		String editorContent = """
+				package org.test;
+
+        		import org.springframework.stereotype.Service;
+				import org.springframework.context.annotation.DependsOn;
+
+				@Service("myService")
+				""" +
+				completionLine + "\n" +
+				"""
+				public class TestDependsOnClass {
+				}
+				""";
+		
+		Editor editor = harness.newEditor(LanguageId.JAVA, editorContent, tempJavaDocUri);
+
+        List<CompletionItem> completions = editor.getCompletions();
+        assertEquals(noOfExpectedCompletions, completions.size());
+        
+        if (noOfExpectedCompletions > 0) {
+	        editor.apply(completions.get(0));
+	        assertEquals("""
+					package org.test;
+	
+	        		import org.springframework.stereotype.Service;
+					import org.springframework.context.annotation.DependsOn;
+	
+					@Service("myService")
+					""" + expectedCompletedLine + "\n" +
+					"""
+					public class TestDependsOnClass {
+					}
+	        		""", editor.getText());
         }
 	}
 

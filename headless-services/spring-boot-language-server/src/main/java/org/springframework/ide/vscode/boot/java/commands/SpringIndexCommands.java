@@ -75,6 +75,7 @@ public class SpringIndexCommands {
 
 				return projects
 						.sorted(Comparator.comparing(IJavaProject::getElementName))
+						.parallel()
 						.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata,
 								args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))
 						.filter(Objects::nonNull)

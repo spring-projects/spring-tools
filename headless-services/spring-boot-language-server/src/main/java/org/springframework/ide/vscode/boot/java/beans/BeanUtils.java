@@ -56,6 +56,8 @@ public class BeanUtils {
 	private static final Set<String> ANNOTATIONS_THAT_DEFINE_NAME_OF_BEAN_AS_VALUE = Set.of(
 			Annotations.COMPONENT,
 			Annotations.CONFIGURATION,
+			Annotations.SERVICE,
+			Annotations.REPOSITORY,
 			Annotations.CONTROLLER,
 			Annotations.REST_CONTROLLER,
 			Annotations.NAMED_JAKARTA,
@@ -111,7 +113,7 @@ public class BeanUtils {
 		if (annotationMetadata != null) {
 			for (AnnotationMetadata annotation : annotationMetadata) {
 
-				if (ANNOTATIONS_THAT_DEFINE_NAME_OF_BEAN_AS_VALUE.contains(annotation.getAnnotationType())) {
+				if (isComponentNamingAnnotation(annotation.getAnnotationType())) {
 					Map<String, AnnotationAttributeValue[]> attributes = annotation.getAttributes();
 					if (attributes != null) {
 						AnnotationAttributeValue[] values = attributes.get("value");
@@ -144,22 +146,26 @@ public class BeanUtils {
 		}
 	}
 
+	/**
+	 * Returns true if the given type of an annotation is one of the annotations that
+	 * can define the name of the bean via the default valule attribute (used to infer the bean
+	 * name)
+	 */
+	public static boolean isComponentNamingAnnotation(String annotationFqName) {
+		return ANNOTATIONS_THAT_DEFINE_NAME_OF_BEAN_AS_VALUE.contains(annotationFqName);
+	}
+
 	public static String getBeanNameFromComponentAnnotation(Annotation annotation, AbstractTypeDeclaration type) {
 		
 		// try to extract name from annotation attribute
 		IAnnotationBinding binding = annotation.resolveAnnotationBinding();
 		if (binding != null) {
 			ITypeBinding annotationType = binding.getAnnotationType();
-			if (annotationType != null) {
-				if (Annotations.COMPONENT.equals(annotationType.getQualifiedName())
-						|| Annotations.CONFIGURATION.equals(annotationType.getQualifiedName())
-						|| Annotations.NAMED_JAKARTA.equals(annotationType.getQualifiedName())
-						|| Annotations.NAMED_JAVAX.equals(annotationType.getQualifiedName())) {
+			if (annotationType != null && isComponentNamingAnnotation(annotationType.getQualifiedName())) {
 
-					Optional<Expression> attribute = ASTUtils.getAttribute(annotation, "value");
-					if (attribute.isPresent()) {
-						return ASTUtils.getExpressionValueAsString(attribute.get(), (a) -> {});
-					}
+				Optional<Expression> attribute = ASTUtils.getAttribute(annotation, "value");
+				if (attribute.isPresent()) {
+					return ASTUtils.getExpressionValueAsString(attribute.get(), (a) -> {});
 				}
 			}
 		}

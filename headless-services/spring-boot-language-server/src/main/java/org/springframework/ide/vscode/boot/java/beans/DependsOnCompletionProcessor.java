@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,10 +17,10 @@ import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
-import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationAttributeCompletionProvider;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationAttributeProposal;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
@@ -60,8 +60,20 @@ public class DependsOnCompletionProcessor implements AnnotationAttributeCompleti
 			return BeanUtils.getBeanNamesFromBeanAnnotation(beanAnnotation);
 		}
 		else if (parent instanceof TypeDeclaration type) {
-			Annotation componentAnnotation = ASTUtils.getAnnotation(type, Annotations.COMPONENT);
-			return List.of(BeanUtils.getBeanNameFromComponentAnnotation(componentAnnotation, type));
+			Collection<Annotation> annotations = ASTUtils.getAnnotations(type);
+			List<String> beanNames = annotations.stream()
+					.filter(annotation -> {
+						ITypeBinding typeBinding = annotation.resolveTypeBinding();
+						return typeBinding != null && BeanUtils.isComponentNamingAnnotation(typeBinding.getQualifiedName());
+					})
+					.map(annotation -> BeanUtils.getBeanNameFromComponentAnnotation(annotation, type))
+					.toList();
+			
+			if (beanNames.size() > 0) {
+				return beanNames;
+			} else {
+				return List.of(BeanUtils.getBeanNameFromType(type.getName().toString()));
+			}
 		}
 		
 		return List.of();

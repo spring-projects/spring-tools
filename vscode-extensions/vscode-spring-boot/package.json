@@ -166,7 +166,7 @@
       ],
       "debug/toolBar": [
         {
-          "when": "ivscode-spring-boot.ls.started && nDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'disconnected' || vscode-spring-boot.active-app-state == 'connecting')",
+          "when": "vscode-spring-boot.ls.started && inDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'disconnected' || vscode-spring-boot.active-app-state == 'connecting')",
           "command": "vscode-spring-boot.live.show.active",
           "group": "Spring Boot"
         },

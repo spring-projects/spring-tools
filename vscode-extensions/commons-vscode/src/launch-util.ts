@@ -16,7 +16,7 @@ import {
     workspace
 } from 'vscode';
 import * as Path from 'path';
-import PortFinder from 'portfinder';
+import * as PortFinder from 'portfinder';
 import * as Net from 'net';
 import * as CommonsCommands from './commands';
 import { RequestType, LanguageClientOptions, Position } from 'vscode-languageclient';
@@ -30,7 +30,7 @@ import { CdsSupport, CdsResult } from './cds';
 
 const p2c = P2C.createConverter(undefined, false, false);
 
-PortFinder.basePort = 45556;
+PortFinder.setBasePort(45556);
 
 const LOG_RESOLVE_VM_ARG_PREFIX = '-Xlog:jni+resolve=';
 const DEBUG_ARG = '-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y';

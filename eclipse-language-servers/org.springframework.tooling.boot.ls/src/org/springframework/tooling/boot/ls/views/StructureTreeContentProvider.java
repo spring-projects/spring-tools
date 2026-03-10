@@ -22,10 +22,13 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
  */
 public class StructureTreeContentProvider implements ITreeContentProvider {
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Object[] getElements(Object input) {
 		if (input instanceof List) {
-			return ((List<?>) input).toArray();
+			List<StereotypeNode> nodes = (List<StereotypeNode>) input;
+			nodes.sort((c1, c2) -> c1.text().compareTo(c2.text()));
+			return nodes.toArray();
 		}
 		return getChildren(input);
 	}

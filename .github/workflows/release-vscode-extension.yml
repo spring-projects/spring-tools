@@ -87,7 +87,7 @@ jobs:
                   "header": {
                     "title": "${{ inputs.extension-name }} ${{ steps.version.outputs.version }}",
                     "subtitle": "Release Candidate ${{ inputs.postfix }}",
-                    "imageUrl": "https://code.visualstudio.com/assets/images/code-stable.png",
+                    "imageUrl": "https://code.visualstudio.com/assets/branding/code-stable.png",
                   },
                   "sections": [
                     {

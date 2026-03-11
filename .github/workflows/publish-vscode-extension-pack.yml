@@ -82,7 +82,7 @@ jobs:
                   {
                     \"header\": {
                       \"title\": \"Published `${{ steps.version.outputs.vsix_file }}`\",
-                      \"imageUrl\": \"https://code.visualstudio.com/assets/images/code-stable.png\",
+                      \"imageUrl\": \"https://code.visualstudio.com/assets/branding/code-stable.png\",
                     },
                     \"sections\": [
                       {

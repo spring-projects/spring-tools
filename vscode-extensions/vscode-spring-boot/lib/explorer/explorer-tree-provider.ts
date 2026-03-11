@@ -30,7 +30,8 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
         return this.getRootElements();
     }
 
-    getRootElements(): ProviderResult<StereotypedNode[]> {
-        return this.manager.rootElements;
+    async getRootElements(): Promise<StereotypedNode[]> {
+        const nodes = await this.manager.rootElements;
+        return nodes ? nodes.sort((n1, n2) => n1.label.localeCompare(n2.label)) : nodes;
     }
 }

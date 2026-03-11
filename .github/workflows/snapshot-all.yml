@@ -56,6 +56,15 @@ jobs:
       java_version: '21'
     secrets: inherit
 
+  e440-distro:
+    needs: [ eclipse-ls-extensions ]
+    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+    with:
+      eclipse_profile: 'e440'
+      build_type: 'snapshot'
+      java_version: '21'
+    secrets: inherit
+
   vscode-spring-boot:
     needs: [ language-servers-multiplatform-build ]
     uses: ./.github/workflows/snapshot-vscode-extension.yml

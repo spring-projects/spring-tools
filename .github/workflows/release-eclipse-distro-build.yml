@@ -49,3 +49,12 @@ jobs:
       java_version: '21'
     secrets: inherit
 
+  e440-distro:
+    uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
+    with:
+      eclipse_profile: 'e440'
+      build_type: 'release'
+      p2-qualifier: ${{ inputs.qualifier }}
+      sts-language-servers-version: ${{ inputs.sts-language-servers-version }}
+      java_version: '21'
+    secrets: inherit

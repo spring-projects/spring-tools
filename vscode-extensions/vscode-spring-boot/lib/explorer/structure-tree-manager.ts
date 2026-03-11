@@ -122,7 +122,7 @@ export class StructureManager {
 
     private parseArray(json: any, parent?: StereotypedNode): StereotypedNode[] {
         return Array.isArray(json) ? (json as []).map(j => this.parseNode(j, parent)).filter(e => !!e)
-            .sort((n1, n2) => n1.label.localeCompare(n1.label)) : [];
+            .sort((n1, n2) => n1.label.localeCompare(n2.label)) : [];
     }
 
     public get onDidChange(): Event<undefined | StereotypedNode | StereotypedNode[]> {

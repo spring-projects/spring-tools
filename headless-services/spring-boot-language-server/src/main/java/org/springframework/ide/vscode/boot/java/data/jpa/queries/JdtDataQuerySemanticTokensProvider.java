@@ -118,11 +118,13 @@ public class JdtDataQuerySemanticTokensProvider implements JdtSemanticTokensProv
 	}
 	
 	private SemanticTokensDataProvider getSqlSemanticTokensProvider(IJavaProject project) {
-		if (SpringProjectUtil.hasDependencyStartingWith(project, "mysql-connector", null)) {
+		if (SpringProjectUtil.hasDependencyStartingWith(project, "mysql-connector", null)
+				|| SpringProjectUtil.hasDependencyStartingWith(project, "mariadb-java-client", null)) {
 			return sqlTokenProviders.get(SqlType.MYSQL);
 		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "postgresql", null)) {
 			return sqlTokenProviders.get(SqlType.POSTGRESQL);
 		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "h2", null)) {
+			// Keep H2 the last as it might be added in combination with other DB clients
 			return sqlTokenProviders.get(SqlType.POSTGRESQL);
 		}
 		return sqlTokenProviders.get(SqlType.MYSQL);

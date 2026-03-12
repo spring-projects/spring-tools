@@ -127,11 +127,13 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 	}
 	
 	private Optional<Reconciler> getSqlReconciler(IJavaProject project) {
-		if (SpringProjectUtil.hasDependencyStartingWith(project, "mysql-connector", null)) {
+		if (SpringProjectUtil.hasDependencyStartingWith(project, "mysql-connector", null)
+				|| SpringProjectUtil.hasDependencyStartingWith(project, "mariadb-java-client", null)) {
 			return Optional.of(sqlReconcilers.get(SqlType.MYSQL));
 		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "postgresql", null)) {
 			return Optional.of(sqlReconcilers.get(SqlType.POSTGRESQL));
 		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "h2", null)) {
+			// Keep H2 the last as it might be added in combination with other DB clients
 			return Optional.of(sqlReconcilers.get(SqlType.POSTGRESQL));
 		}
 		return Optional.empty();

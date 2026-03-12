@@ -337,14 +337,14 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 			needToResolveBindings = false;
 		}
 		
-		CompilationUnit cu = CUResolver.convert(unit, source, AST.JLS24, options, needToResolveBindings, DefaultWorkingCopyOwner.PRIMARY, flags);
+		CompilationUnit cu = CUResolver.convert(unit, source, AST.JLS25, options, needToResolveBindings, DefaultWorkingCopyOwner.PRIMARY, flags);
 
 		AnnotationHierarchies.set(cu, annotations);
 		return cu;
 	}
 	
 	private static List<Classpath> createClasspath(String[] classpathEntries) {
-		ASTParser parser = ASTParser.newParser(AST.JLS24);
+		ASTParser parser = ASTParser.newParser(AST.JLS25);
 		String[] sourceEntries = new String[] {};
 		parser.setEnvironment(classpathEntries, sourceEntries, null, false);
 		return CUResolver.getClasspath(parser);

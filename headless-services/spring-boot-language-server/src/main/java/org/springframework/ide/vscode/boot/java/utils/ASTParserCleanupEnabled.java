@@ -36,7 +36,7 @@ public class ASTParserCleanupEnabled {
 	
 	public ASTParserCleanupEnabled(String[] classpathEntries, String[] sourceEntries, String complianceVersion, AnnotationHierarchies annotationHierarchies, boolean ignoreMethodBodies) {
 		this.annotationHierachies = annotationHierarchies; 
-		parser = ASTParser.newParser(AST.JLS24);
+		parser = ASTParser.newParser(AST.JLS25);
 		options = JavaCore.getOptions();
 		JavaCore.setComplianceOptions(complianceVersion, options);
 

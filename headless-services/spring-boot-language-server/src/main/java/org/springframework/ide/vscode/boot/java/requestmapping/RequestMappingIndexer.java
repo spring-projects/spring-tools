@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,7 +22,6 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -107,12 +106,9 @@ public class RequestMappingIndexer {
 									return WebEndpointIndexer.combinePath(parent, p);
 								}))
 						.forEach(p -> {
-							// symbol
-							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes, version);
-	
-							// index element for request mapping
+							String label = RouteUtils.createRouteLabel(location, p, methods, contentTypes, acceptTypes, version);
 							RequestMappingIndexElement requestMappingIndexElement =
-									new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), symbol.getName(), methodSignature);
+									new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), label, methodSignature);
 
 							controller.addChild(requestMappingIndexElement);
 						});

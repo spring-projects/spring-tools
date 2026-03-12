@@ -224,7 +224,6 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		javaCompletionSettings.put("inject-bean", preferenceStore.getBoolean(Constants.PREF_COMPLETION_JAVA_INJECT_BEAN));
 		
 		javaSettings.put("beans-structure-tree", preferenceStore.getBoolean(Constants.PREF_BEANS_STRUCTURE_TREE));
-		javaSettings.put("symbols-from-new-index", preferenceStore.getBoolean(Constants.PREF_SYMBOLS_FROM_NEW_INDEX));
 		javaSettings.put("completions", javaCompletionSettings);
 		javaSettings.put("reconcilers", preferenceStore.getBoolean(Constants.PREF_JAVA_RECONCILE));
 		javaSettings.put("codelens-over-query-methods", preferenceStore.getBoolean(Constants.PREF_CODELENS_QUERY_METHODS));

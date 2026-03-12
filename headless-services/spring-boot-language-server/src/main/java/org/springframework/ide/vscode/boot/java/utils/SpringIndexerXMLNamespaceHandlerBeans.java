@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2025 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,15 +17,11 @@ import org.eclipse.lemminx.dom.DOMNode;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
-import org.eclipse.lsp4j.SymbolKind;
-import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.springframework.ide.vscode.boot.java.beans.BeanUtils;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
-import org.springframework.lang.NonNull;
 
 /**
  * @author Martin Lippert
@@ -34,15 +30,15 @@ public class SpringIndexerXMLNamespaceHandlerBeans implements SpringIndexerXMLNa
 
 	@Override
 	public void processNode(DOMNode node, IJavaProject project, String docURI, long lastModified, TextDocument document,
-			List<CachedSymbol> generatedSymbols, List<CachedIndexElement> generatedBeans) throws Exception {
+			List<CachedIndexElement> generatedBeans) throws Exception {
 		String localName = node.getLocalName();
 		if (localName != null && "bean".equals(localName)) {
-			createBeanSymbol(node, project, docURI, lastModified, document, generatedSymbols, generatedBeans);
+			createBeanSymbol(node, project, docURI, lastModified, document, generatedBeans);
 		}
 	}
 
 	private void createBeanSymbol(DOMNode node, IJavaProject project, String docURI, long lastModified, TextDocument document,
-			List<CachedSymbol> generatedSymbols, List<CachedIndexElement> generatedBeans) throws Exception {
+			List<CachedIndexElement> generatedBeans) throws Exception {
 		String beanID = null;
 		int symbolStart = 0;
 		int symbolEnd = 0;
@@ -90,16 +86,12 @@ public class SpringIndexerXMLNamespaceHandlerBeans implements SpringIndexerXMLNa
 				beanID = deriveBeanIDFromClass(beanClass);
 			}
 
-			WorkspaceSymbol symbol = new WorkspaceSymbol("@+ '" + beanID + "' " + beanClass, SymbolKind.Interface, Either.forLeft(new Location(docURI, range)));
-			CachedSymbol cachedSymbol = new CachedSymbol(docURI, lastModified, symbol);
-			generatedSymbols.add(cachedSymbol);
-			
-			// TODO: bean index
-			generatedBeans.add(new CachedIndexElement(docURI, new Bean(beanID, fqBeanClass, location, null, null, null, false, symbol.getName())));
+			String name = "@+ '" + beanID + "' " + beanClass;
+			generatedBeans.add(new CachedIndexElement(docURI, new Bean(beanID, fqBeanClass, location, null, null, null, false, name)));
 		}
 	}
 
-	private String deriveBeanIDFromClass(@NonNull String beanClass) {
+	private String deriveBeanIDFromClass(String beanClass) {
 		return BeanUtils.getBeanNameFromType(beanClass);
 	}
 

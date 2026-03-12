@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -72,13 +73,23 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	private final Map<IndexCacheKey, ConcurrentMap<InternalFileIdentifier, Long>> timestamps;
 	private final Map<IndexCacheKey, Integer> compactingCounter;
 	private final int compactingCounterBoundary;
+	private final Set<String> categoriesToRemoveAllCacheFiles;
 	
 	private static final int DEFAULT_COMPACTING_TRIGGER = 20;
+	private static final Set<String> CATEGORIES_TO_REMOVE_ALL_CACHE_FILES = Set.of("symbols");
 
 	private static final Logger log = LoggerFactory.getLogger(IndexCacheOnDiscDeltaBased.class);
 
 	public IndexCacheOnDiscDeltaBased(File cacheDirectory) {
+		this(cacheDirectory, CATEGORIES_TO_REMOVE_ALL_CACHE_FILES);
+	}
+
+	/**
+	 * Constructor for testing that allows specifying which categories should have all cache files removed.
+	 */
+	public IndexCacheOnDiscDeltaBased(File cacheDirectory, Set<String> categoriesToRemoveAllCacheFiles) {
 		this.cacheDirectory = cacheDirectory;
+		this.categoriesToRemoveAllCacheFiles = categoriesToRemoveAllCacheFiles == null ? Collections.emptySet() : categoriesToRemoveAllCacheFiles;
 
 		if (!this.cacheDirectory.exists()) {
 			this.cacheDirectory.mkdirs();
@@ -300,12 +311,19 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
 	private void deleteOutdatedCacheFiles(IndexCacheKey cacheKey) {
 		File[] cacheFiles = this.cacheDirectory.listFiles();
+		if (cacheFiles == null) {
+			return;
+		}
 
 		for (int i = 0; i < cacheFiles.length; i++) {
 			String fileName = cacheFiles[i].getName();
 			IndexCacheKey key = IndexCacheKey.parse(fileName);
 
-			if (key != null && !key.equals(cacheKey)
+			// Remove all cache files for categories in the removal set
+			if (key != null && categoriesToRemoveAllCacheFiles.contains(key.getCategory())) {
+				cacheFiles[i].delete();
+			}
+			else if (key != null && !key.equals(cacheKey)
 					&& key.getProject().equals(cacheKey.getProject())
 					&& key.getIndexer().equals(cacheKey.getIndexer())
 					&& key.getCategory().equals(cacheKey.getCategory())) {

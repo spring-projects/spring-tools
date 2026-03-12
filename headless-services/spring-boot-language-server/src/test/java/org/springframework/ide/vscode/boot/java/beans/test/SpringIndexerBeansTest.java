@@ -143,18 +143,6 @@ public class SpringIndexerBeansTest {
     }
 
     @Test
-    void testScanConfigurationClassWithConditionalsDefaultSymbol() throws Exception {
-        String docUri = directory.toPath().resolve("src/main/java/org/test/ConfigurationWithConditionalsDefaultSymbols.java").toUri().toString();
-        SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("ConfigurationWithConditionalsDefaultSymbols", "@+ 'configurationWithConditionalsDefaultSymbols' (@Configuration <: @Component) ConfigurationWithConditionalsDefaultSymbols"),
-                SpringIndexerHarness.symbol("@ConditionalOnJava(JavaVersion.EIGHT)", "@ConditionalOnJava(JavaVersion.EIGHT)"),
-                SpringIndexerHarness.symbol("@Profile(\"cloud\")", "@Profile(\"cloud\")"),
-                SpringIndexerHarness.symbol("@ConditionalOnJava(JavaVersion.EIGHT)", "@ConditionalOnJava(JavaVersion.EIGHT)"),
-                SpringIndexerHarness.symbol("@Profile(\"cloud\")", "@Profile(\"cloud\")")
-        );
-    }
-
-    @Test
     void testScanAbstractBeanConfiguration() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/AbstractBeanConfiguration.java").toUri().toString();
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
@@ -226,14 +214,6 @@ public class SpringIndexerBeansTest {
         );
     }
 
-    @Test
-    void testCustomAnnotationClass() throws Exception {
-        String docUri = directory.toPath().resolve("src/main/java/org/test/CustomAnnotation.java").toUri().toString();
-        SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
-                SpringIndexerHarness.symbol("@AliasFor(annotation = Component.class)", "@AliasFor(annotation=Component.class)")
-        );
-    }
-    
     @Test
     void testScanControllerWithTwoNames() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/ControllerWithTwoNames.java").toUri().toString();

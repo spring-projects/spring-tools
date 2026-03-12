@@ -23,17 +23,11 @@ import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.SymbolKind;
-import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import org.eclipse.lsp4j.jsonrpc.messages.Tuple;
-import org.eclipse.lsp4j.jsonrpc.messages.Tuple.Two;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -49,12 +43,7 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
 		try {
 			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration) {
-				Two<WorkspaceSymbol, Bean> result = createSymbol(node, annotationType, metaAnnotations, context, context.getDoc());
-
-				WorkspaceSymbol symbol = result.getFirst();
-				Bean beanDefinition = result.getSecond();
-				
-				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
+				Bean beanDefinition = createSymbol(node, annotationType, metaAnnotations, context, context.getDoc());
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 			}
 		}
@@ -63,7 +52,7 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 		}
 	}
 
-	private Two<WorkspaceSymbol, Bean> createSymbol(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
+	private Bean createSymbol(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		String annotationTypeName = annotationType.getName();
 		Collection<String> metaAnnotationNames = metaAnnotations.stream()
 				.map(ITypeBinding::getName)
@@ -76,14 +65,10 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 
 		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
-		WorkspaceSymbol symbol = new WorkspaceSymbol(
-				beanLabel("+", annotationTypeName, metaAnnotationNames, beanName, beanType == null ? "" : beanType.getName()), SymbolKind.Interface,
-				Either.forLeft(location));
+		String name = beanLabel("+", annotationTypeName, metaAnnotationNames, beanName, beanType == null ? "" : beanType.getName());
 		
 		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
-		
 		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
-		
 		Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
 		
 		AnnotationMetadata[] annotations = Stream.concat(
@@ -93,11 +78,10 @@ public class FeignClientSymbolProvider implements SymbolProvider {
 				.map(an -> new AnnotationMetadata(an.getQualifiedName(), true, null, null)))
 				.toArray(AnnotationMetadata[]::new);
 		
-		Bean beanDefinition = new Bean(beanName, beanType == null ? "" : beanType.getQualifiedName(), location, injectionPoints, supertypes, annotations, false, symbol.getName());
-		
+		Bean beanDefinition = new Bean(beanName, beanType == null ? "" : beanType.getQualifiedName(), location, injectionPoints, supertypes, annotations, false, name);
 		RequestMappingIndexer.indexRequestMappings(beanDefinition, type, annotationType, context, doc);
 		
-		return Tuple.two(symbol, beanDefinition);
+		return beanDefinition;
 	}
 
 	protected String beanLabel(String searchPrefix, String annotationTypeName, Collection<String> metaAnnotationNames, String beanName, String beanType) {

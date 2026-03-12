@@ -68,10 +68,6 @@ public class SpringIndexerJakartaJavaxAnnotationsTest {
 
         SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
         		SpringIndexerHarness.symbol("SimpleMovieLister", "@+ 'simpleMovieLister' (@Component) SimpleMovieLister"),
-        		SpringIndexerHarness.symbol("@Resource", "@Resource"),
-                SpringIndexerHarness.symbol("@Resource", "@Resource"),
-                SpringIndexerHarness.symbol("@Resource(name=\"myMovieFinder\")", "@Resource(name=\"myMovieFinder\")"),
-                SpringIndexerHarness.symbol("@Inject", "@Inject"),
                 SpringIndexerHarness.symbol("@Named(\"specificFinder\")", "@Named(\"specificFinder\")")
         );
      }

@@ -121,7 +121,7 @@ public class SpringIndexerXMLProjectTest {
         assertEquals(5, allSymbols.size());
 
         symbolIndex.configureIndexer(SymbolIndexConfig.builder()
-                .scanXml(true)
+                .scanXml(false)
                 .build());
         allSymbols = symbolIndex.getAllSymbols("");
         assertEquals(0, allSymbols.size());

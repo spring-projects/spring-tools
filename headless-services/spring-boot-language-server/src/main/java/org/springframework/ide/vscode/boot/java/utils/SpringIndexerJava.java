@@ -51,13 +51,11 @@ import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentSymbol;
-import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringIndexToSymbolsConverter;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
-import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchyAwareLookup;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
@@ -94,10 +92,9 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	// whenever the implementation of the indexer changes in a way that the stored data in the cache is no longer valid,
 	// we need to change the generation - this will result in a re-indexing due to no up-to-date cache data being found
-	private static final String GENERATION = "GEN-34";
+	private static final String GENERATION = "GEN-35";
 	private static final String INDEX_FILES_TASK_ID = "index-java-source-files-task-";
 
-	private static final String SYMBOL_KEY = "symbols";
 	private static final String INDEX_KEY = "index";
 	private static final String DIAGNOSTICS_KEY = "diagnostics";
 
@@ -165,11 +162,9 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	@Override
 	public void removeProject(IJavaProject project) throws Exception {
-		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
 		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
-		this.cache.remove(symbolsCacheKey);
 		this.cache.remove(indexCacheKey);
 		this.cache.remove(diagnosticsCacheKey);
 		
@@ -178,13 +173,11 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	@Override
 	public void updateFile(IJavaProject project, DocumentDescriptor updatedDoc, String content) throws Exception {
-		IndexCacheKey symbolCacheKey = getCacheKey(project, SYMBOL_KEY);
 		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		if (updatedDoc != null && shouldProcessDocument(project, updatedDoc.getDocURI())) {
-			if (isCacheOutdated(symbolCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())
-					|| isCacheOutdated(indexCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())
+			if (isCacheOutdated(indexCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())
 					|| isCacheOutdated(diagnosticsCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())) {
 
 				this.symbolHandler.removeSymbols(project, updatedDoc.getDocURI());
@@ -243,56 +236,11 @@ public class SpringIndexerJava implements SpringIndexer {
 			}
 		}).toArray(String[]::new);
 		
-		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
 		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
-		this.cache.removeFiles(symbolsCacheKey, files, CachedSymbol.class);
 		this.cache.removeFiles(indexCacheKey, files, CachedIndexElement.class);
 		this.cache.removeFiles(diagnosticsCacheKey, files, CachedDiagnostics.class);
-	}
-	
-	/**
-	 * Computes document symbols ad-hoc, based on the given doc URI and the given content,
-	 * re-using the AST from the compilation unit cache. This is meant to compute symbols
-	 * for files opened in editors, so that symbols can be based on editor buffer content,
-	 * not the file content on disc.
-	 * 
-	 * @deprecated (will use computeDocumentSymbols in the future exclusively)
-	 */
-	public List<WorkspaceSymbol> computeSymbols(IJavaProject project, String docURI, String content) throws Exception {
-		if (content != null) {
-			URI uri = URI.create(docURI);
-			
-			return cuCache.withCompilationUnit(project, uri, cu -> {
-				String file = UriUtil.toFileString(docURI);
-				SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, new String[] {file});
-
-				IProblemCollector voidProblemCollector = new IProblemCollector() {
-					@Override
-					public void endCollecting() {
-					}
-
-					@Override
-					public void beginCollecting() {
-					}
-
-					@Override
-					public void accept(ReconcileProblem problem) {
-					}
-				};
-
-				TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
-				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-						0, doc, content, voidProblemCollector, new ArrayList<>(), true, true, result);
-
-				scanAST(context, false, new ReconcilingIndex());
-
-				return result.getGeneratedSymbols().stream().map(s -> s.getSymbol()).collect(Collectors.toList());
-			});
-		}
-		
-		return Collections.emptyList();
 	}
 	
 	/**
@@ -347,15 +295,13 @@ public class SpringIndexerJava implements SpringIndexer {
 	 * valid up-to-date cache data anymore
 	 */
 	private DocumentDescriptor[] filterDocuments(IJavaProject project, DocumentDescriptor[] updatedDocs) {
-		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
 		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
 		return Arrays.stream(updatedDocs)
 				.filter(doc -> doc.getDocURI().endsWith(".java"))
 				.filter(doc -> shouldProcessDocument(project, doc.getDocURI()))
-				.filter(doc -> isCacheOutdated(symbolsCacheKey, doc.getDocURI(), doc.getLastModified())
-						|| isCacheOutdated(indexCacheKey, doc.getDocURI(), doc.getLastModified())
+				.filter(doc -> isCacheOutdated(indexCacheKey, doc.getDocURI(), doc.getLastModified())
 						|| isCacheOutdated(diagnosticsCacheKey, doc.getDocURI(), doc.getLastModified()))
 				.toArray(DocumentDescriptor[]::new);
 	}
@@ -436,11 +382,9 @@ public class SpringIndexerJava implements SpringIndexer {
 
 			// update cache
 			
-			IndexCacheKey symbolCacheKey = getCacheKey(project, SYMBOL_KEY);
 			IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 			IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 			
-			this.cache.update(symbolCacheKey, file, lastModified, result.getGeneratedSymbols(), context.getDependencies(), CachedSymbol.class);
 			this.cache.update(indexCacheKey, file, lastModified, result.getGeneratedIndexElements(), context.getDependencies(), CachedIndexElement.class);
 			this.cache.update(diagnosticsCacheKey, file, lastModified, result.getGeneratedDiagnostics(), context.getDependencies(), CachedDiagnostics.class);
 			
@@ -520,11 +464,9 @@ public class SpringIndexerJava implements SpringIndexer {
 		
 		// update the cache
 		
-		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
 		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
-		this.cache.update(symbolsCacheKey, javaFiles, lastModified, result.getGeneratedSymbols(), dependencies, CachedSymbol.class);
 		this.cache.update(indexCacheKey, javaFiles, lastModified, result.getGeneratedIndexElements(), dependencies, CachedIndexElement.class);
 		this.cache.update(diagnosticsCacheKey, javaFiles, lastModified, result.getGeneratedDiagnostics(), dependencies, CachedDiagnostics.class);
 		
@@ -578,22 +520,20 @@ public class SpringIndexerJava implements SpringIndexer {
 		SpringIndexerJavaScanResult result = null;
 		
 		// check cached elements first
-		IndexCacheKey symbolsCacheKey = getCacheKey(project, SYMBOL_KEY);
 		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
 		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
 
-		Pair<CachedSymbol[], Multimap<String, String>> cachedSymbols = this.cache.retrieve(symbolsCacheKey, javaFiles, CachedSymbol.class);
 		Pair<CachedIndexElement[], Multimap<String, String>> cachedIndexElements = this.cache.retrieve(indexCacheKey, javaFiles, CachedIndexElement.class);
 		Pair<CachedDiagnostics[], Multimap<String, String>> cachedDiagnostics = this.cache.retrieve(diagnosticsCacheKey, javaFiles, CachedDiagnostics.class);
 
-		if (!clean && cachedSymbols != null && cachedIndexElements != null && cachedDiagnostics != null) {
+		if (!clean && cachedIndexElements != null && cachedDiagnostics != null) {
 			// use cached data
 
-			result = new SpringIndexerJavaScanResult(project, javaFiles, symbolHandler, cachedSymbols.getLeft(), cachedIndexElements.getLeft(), cachedDiagnostics.getLeft());
-			this.dependencyTracker.restore(project, cachedSymbols.getRight());
+			result = new SpringIndexerJavaScanResult(project, javaFiles, symbolHandler, cachedIndexElements.getLeft(), cachedDiagnostics.getLeft());
+			this.dependencyTracker.restore(project, cachedIndexElements.getRight());
 
-			log.info("scan java files used cached data: {} - no. of cached symbols retrieved: {}", project.getElementName(), result.getGeneratedSymbols().size());
-			log.info("scan java files restored cached dependency data: {} - no. of cached dependencies: {}", cachedSymbols.getRight().size());
+			log.info("scan java files used cached data: {} - no. of cached symbols retrieved: {}", project.getElementName(), result.getGeneratedIndexElements().size());
+			log.info("scan java files restored cached dependency data: {} - no. of cached dependencies: {}", cachedIndexElements.getRight().size());
 
 		}
 		else {
@@ -623,9 +563,8 @@ public class SpringIndexerJava implements SpringIndexer {
 				}
 	        }
 			
-			log.info("scan java files done, number of symbols created: " + result.getGeneratedSymbols().size());
+			log.info("scan java files done, number of index elements created: " + result.getGeneratedIndexElements().size());
 
-			this.cache.store(symbolsCacheKey, javaFiles, result.getGeneratedSymbols(), dependencyTracker.getAllDependencies(project), CachedSymbol.class);
 			this.cache.store(indexCacheKey, javaFiles, result.getGeneratedIndexElements(), dependencyTracker.getAllDependencies(project), CachedIndexElement.class);
 			this.cache.store(diagnosticsCacheKey, javaFiles, result.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(project), CachedDiagnostics.class);
 		}
@@ -1002,51 +941,12 @@ public class SpringIndexerJava implements SpringIndexer {
 				for (SymbolProvider provider : providers) {
 					provider.addSymbols(node, typeBinding, metaAnnotations, context);
 				}
-			} else {
-				WorkspaceSymbol symbol = provideDefaultSymbol(node, context);
-				if (symbol != null) {
-					context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-					
-//					SimpleSymbolElement symbolIndexElement = new SimpleSymbolElement(symbol);
-//					SpringIndexElement parentIndexElement = context.getNearestIndexElementForNode(node.getParent());
-//					if (parentIndexElement != null) {
-//						parentIndexElement.addChild(symbolIndexElement);
-//					}
-//					else {
-//						context.getBeans().add(new CachedBean(context.getDocURI(), symbolIndexElement));
-//					}
-//					context.setIndexElementForASTNode(node.getParent(), symbolIndexElement);
-				}
 			}
 			
 		}
 		else {
 			log.debug("type binding not around: " + context.getDocURI() + " - " + node.toString());
 		}
-	}
-
-	private WorkspaceSymbol provideDefaultSymbol(Annotation node, final SpringIndexerJavaContext context) {
-		try {
-			ITypeBinding type = node.resolveTypeBinding();
-			if (type != null) {
-				String qualifiedName = type.getQualifiedName();
-				if (qualifiedName != null
-						&& ((qualifiedName.startsWith("org.springframework") && !qualifiedName.startsWith("org.springframework.lang"))
-							|| Annotations.JAKARTA_ANNOTATIONS.contains(qualifiedName))) {
-
-					TextDocument doc = context.getDoc();
-					return DefaultSymbolProvider.provideDefaultSymbol(node, doc);
-				}
-			}
-		}
-		catch (RequiredCompleteAstException e) {
-			throw e;
-		}
-		catch (Exception e) {
-			log.error("error creating default symbol in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-		}
-
-		return null;
 	}
 
 	public static ASTParserCleanupEnabled createParser(IJavaProject project, AnnotationHierarchies annotationHierarchies, boolean ignoreMethodBodies) throws Exception {

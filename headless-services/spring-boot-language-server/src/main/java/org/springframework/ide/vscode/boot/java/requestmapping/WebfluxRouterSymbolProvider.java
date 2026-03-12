@@ -21,10 +21,8 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
-import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -122,14 +120,11 @@ public class WebfluxRouterSymbolProvider {
 
 				Location location = new Location(doc.getUri(), routeInfo.getRange());
 
-				WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, path, getElementStrings(httpMethods),
+				String label = RouteUtils.createRouteLabel(location, path, getElementStrings(httpMethods),
 						getElementStrings(contentTypes), getElementStrings(acceptTypes), null);
 
-				context.getGeneratedSymbols()
-						.add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-
 				WebfluxHandlerMethodIndexElement handler = extractHandlerInformation(handlerClass, handlerMethod, path, httpMethods,
-						contentTypes, acceptTypes, version, location.getRange(), symbol.getName());
+						contentTypes, acceptTypes, version, location.getRange(), label);
 
 				WebfluxRouteElementRangesIndexElement elements = extractElementsInformation(pathElements, httpMethods,
 						contentTypes, acceptTypes);

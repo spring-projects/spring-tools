@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -30,10 +30,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
+import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.utils.test.TestFileScanListener;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
@@ -50,6 +52,7 @@ public class BeanRegistrarAdvancedReconcilingTest {
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
+	@Autowired private SpringMetamodelIndex springIndex;
 
 	private File directory;
 
@@ -93,9 +96,9 @@ public class BeanRegistrarAdvancedReconcilingTest {
         String registeredRegistrarDocUri = directory.toPath().resolve("src/main/java/com/example/MyBeanRegistrar.java").toUri().toString();
         String nonRegisteredRegistrarDocUri = directory.toPath().resolve("src/main/java/com/example/NotRegisteredBeanRegistrar.java").toUri().toString();
 
-        // symbol pre-check
-        List<? extends WorkspaceSymbol> symbols = indexer.getWorkspaceSymbolsFromSymbolIndex(registeredRegistrarDocUri);
-        assertEquals(5, symbols.size());
+        // bean index pre-check
+        Bean[] beans = springIndex.getBeansOfDocument(registeredRegistrarDocUri);
+        assertEquals(4, beans.length);
 
         // now change the config class source code and update doc
         TestFileScanListener fileScanListener = new TestFileScanListener();
@@ -122,9 +125,9 @@ public class BeanRegistrarAdvancedReconcilingTest {
         List<Diagnostic> diagnosticsForPreviouslyNotRegisteredRegistrar = diagnosticsResultForNewlyRegisteredRegistrar.getDiagnostics();
         assertEquals(0, diagnosticsForPreviouslyNotRegisteredRegistrar.size());
 
-        // check if the symbols are still in place correctly
-        List<? extends WorkspaceSymbol> symbolsAfterUpdate = indexer.getWorkspaceSymbolsFromSymbolIndex(registeredRegistrarDocUri);
-        assertEquals(5, symbolsAfterUpdate.size());
+        // check if the beans are still in place correctly
+        Bean[] beansAfterUpdate = springIndex.getBeansOfDocument(registeredRegistrarDocUri);
+        assertEquals(4, beansAfterUpdate.length);
     }
     
     @Test

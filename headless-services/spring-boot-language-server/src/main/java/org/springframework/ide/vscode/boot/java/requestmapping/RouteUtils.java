@@ -11,16 +11,13 @@
 package org.springframework.ide.vscode.boot.java.requestmapping;
 
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.SymbolKind;
-import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
 /**
  * @author Martin Lippert
  */
 public class RouteUtils {
 	
-	public static WorkspaceSymbol createRouteSymbol(Location location, String path,
+	public static String createRouteLabel(Location location, String path,
 			String[] httpMethods, String[] contentTypes, String[] acceptTypes, String version) {
 		
 		if (path != null && path.length() > 0) {
@@ -35,10 +32,10 @@ public class RouteUtils {
 			String contentType = WebFnUtils.getStringRep(contentTypes, WebFnUtils::getMediaType);
 			label += contentType != null ? " - Content-Type: " + contentType : "";
 
-			return new WorkspaceSymbol(label, SymbolKind.Interface, Either.forLeft(location));
+			return label;
 		}
 		else {
-			return null;
+			return "";
 		}
 		
 	}

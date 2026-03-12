@@ -69,16 +69,15 @@ public class SpringIndexerTestSpecialCharacters {
 
     @Test
     void testScanningAllAnnotationsSimpleProjectUpfront() throws Exception {
-        List<? extends WorkspaceSymbol> allSymbols = indexer.getAllSymbols("");
+        String docUri = UriUtil.toUri(directory.toPath().resolve("src/main/java/org/test/ClassWithSpécialCharacter.java").toFile()).toASCIIString();
 
-        assertEquals(8, allSymbols.size());
+        List<? extends WorkspaceSymbol> allSymbols = indexer.getSymbols(docUri);
+
+        assertEquals(1, allSymbols.size());
 
         // TODO: the direct path to URI conversion changes the é into an %-encoded character, so maybe we should switch to that entirely
 
-//		String docUri = directory.toPath().resolve("src/main/java/org/test/ClassWithSpécialCharacter.java").toUri().toString();
-        String docUri = UriUtil.toUri(directory.toPath().resolve("src/main/java/org/test/ClassWithSpécialCharacter.java").toFile()).toASCIIString();
-
-        assertTrue(SpringIndexerTest.containsSymbol(allSymbols, "@Configurable", docUri, 4, 0, 4, 13));
+        assertTrue(SpringIndexerTest.containsSymbol(allSymbols, "@+ 'classWithSpécialCharacter' (@Component) ClassWithSpécialCharacter", docUri, 5, 13, 5, 38));
     }
 	
 }

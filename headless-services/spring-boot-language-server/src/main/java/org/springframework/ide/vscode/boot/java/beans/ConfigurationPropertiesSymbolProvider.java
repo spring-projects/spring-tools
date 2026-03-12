@@ -28,16 +28,12 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
-import org.eclipse.lsp4j.SymbolKind;
-import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
@@ -89,15 +85,11 @@ public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
 			List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
 			AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
 
-			WorkspaceSymbol symbol = new WorkspaceSymbol(
-					BeanUtils.createBeanLabel(annotationMetadata, beanName, typeBinding.getName()), SymbolKind.Interface,
-					Either.forLeft(location));
+			String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, typeBinding.getName());
 		
-			Bean beanDefinition = new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, symbol.getName());
-			
+			Bean beanDefinition = new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
 			indexConfigurationProperties(beanDefinition, type, context, doc);
 
-			context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 		}
 	}

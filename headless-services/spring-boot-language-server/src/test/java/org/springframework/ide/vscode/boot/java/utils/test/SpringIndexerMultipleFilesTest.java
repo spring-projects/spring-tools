@@ -107,9 +107,9 @@ public class SpringIndexerMultipleFilesTest {
 
             // check for updated index per document
             symbols = indexer.getSymbols(changedDocURI);
-            assertEquals(2, symbols.size());
-            assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/mapping1-CHANGED", changedDocURI, 6, 1, 6, 36));
-            assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/mapping2", changedDocURI, 11, 1, 11, 28));
+            assertEquals(3, symbols.size());
+            assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/mapping1-CHANGED", changedDocURI, 8, 1, 8, 36));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/mapping2", changedDocURI, 13, 1, 13, 28));
 
             fileScanListener.assertScannedUris(changedDocURI);
             fileScanListener.assertScannedUri(changedDocURI, 1);
@@ -155,17 +155,17 @@ public class SpringIndexerMultipleFilesTest {
 
             // check for updated index per document
             List<? extends WorkspaceSymbol> symbols1 = indexer.getSymbols(doc1URI);
-            assertEquals(2, symbols1.size());
-            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping1-CHANGED", doc1URI, 6, 1, 6, 36));
-            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping2", doc1URI, 11, 1, 11, 28));
+            assertEquals(3, symbols1.size());
+            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping1-CHANGED", doc1URI, 8, 1, 8, 36));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping2", doc1URI, 13, 1, 13, 28));
 
             List<? extends WorkspaceSymbol> symbols2 = indexer.getSymbols(doc2URI);
-            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@+ 'mainClass' (@SpringBootApplication <: @SpringBootConfiguration, @Configuration, @Component) MainClass", doc2URI, 7, 13, 7, 22));
-            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@/embedded-foo-mapping-CHANGED", doc2URI, 17, 1, 17, 49));
-            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@/foo-root-mapping/embedded-foo-mapping-with-root", doc2URI, 27, 1, 27, 51));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@+ 'mainClass' (@SpringBootApplication <: @SpringBootConfiguration, @Configuration, @Component) MainClass", doc2URI, 8, 13, 8, 22));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@/embedded-foo-mapping-CHANGED", doc2URI, 19, 1, 19, 49));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols2, "@/foo-root-mapping/embedded-foo-mapping-with-root", doc2URI, 30, 1, 30, 51));
 
             List<? extends WorkspaceSymbol> symbols3 = indexer.getSymbols(doc3URI);
-            assertTrue(SpringIndexerTest.containsSymbol(symbols3, "@/classlevel-CHANGED/mapping-subpackage", doc3URI, 7, 1, 7, 38));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols3, "@/classlevel-CHANGED/mapping-subpackage", doc3URI, 9, 1, 9, 38));
         }
         finally {
             FileUtils.writeStringToFile(new File(new URI(doc1URI)), original1Content, Charset.defaultCharset());
@@ -188,7 +188,7 @@ public class SpringIndexerMultipleFilesTest {
         fileScanListener.assertScannedUri(unchangedDocURI, 0);
 
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(unchangedDocURI);
-        assertEquals(2, symbols.size());
+        assertEquals(3, symbols.size());
     }
 
     @Test
@@ -223,15 +223,15 @@ public class SpringIndexerMultipleFilesTest {
 
             // check for updated index per document
             List<? extends WorkspaceSymbol> symbols1 = indexer.getSymbols(doc1URI);
-            assertEquals(2, symbols1.size());
-            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping1-CHANGED", doc1URI, 6, 1, 6, 36));
-            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping2", doc1URI, 11, 1, 11, 28));
+            assertEquals(3, symbols1.size());
+            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping1-CHANGED", doc1URI, 8, 1, 8, 36));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols1, "@/mapping2", doc1URI, 13, 1, 13, 28));
 
             List<? extends WorkspaceSymbol> symbols2 = indexer.getSymbols(doc2URI);
-            assertEquals(3, symbols2.size());
+            assertEquals(5, symbols2.size());
 
             List<? extends WorkspaceSymbol> symbols3 = indexer.getSymbols(doc3URI);
-            assertTrue(SpringIndexerTest.containsSymbol(symbols3, "@/classlevel-CHANGED/mapping-subpackage", doc3URI, 7, 1, 7, 38));
+            assertTrue(SpringIndexerTest.containsSymbol(symbols3, "@/classlevel-CHANGED/mapping-subpackage", doc3URI, 9, 1, 9, 38));
 
             fileScanListener.assertScannedUris(doc1URI, doc3URI);
             fileScanListener.assertScannedUri(doc1URI, 1);

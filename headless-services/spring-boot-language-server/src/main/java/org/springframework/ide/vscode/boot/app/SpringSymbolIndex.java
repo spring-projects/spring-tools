@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +46,6 @@ import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.eclipse.lsp4j.WorkspaceSymbolLocation;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,11 +113,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	@Autowired JdtReconciler jdtReconciler;
 	@Autowired CompilationUnitCache cuCache;
 
-	private final List<WorkspaceSymbol> symbols = new ArrayList<>();
-
-	private final ConcurrentMap<String, List<WorkspaceSymbol>> symbolsByDoc = new ConcurrentHashMap<>();
-	private final ConcurrentMap<String, List<WorkspaceSymbol>> symbolsByProject = new ConcurrentHashMap<>();
-
 	private final ExecutorService updateQueue = Executors.newSingleThreadExecutor();
 	private final Map<String, CompletableFuture<Void>> latestScheduledTaskByProject = new ConcurrentHashMap<String, CompletableFuture<Void>>();
 	
@@ -173,12 +165,8 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 		SymbolHandler handler = new SymbolHandler() {
 			@Override
-			public void addSymbols(IJavaProject project, String docURI, WorkspaceSymbol[] symbols, List<SpringIndexElement> beanDefinitions,
+			public void addSymbols(IJavaProject project, String docURI, List<SpringIndexElement> beanDefinitions,
 					List<Diagnostic> diagnostics) {
-
-				if (symbols != null) {
-					SpringSymbolIndex.this.addSymbolsByDoc(project, docURI, symbols);
-				}
 
 				if (beanDefinitions != null) {
 					springIndex.updateElements(project.getElementName(), docURI, beanDefinitions.toArray(SpringIndexElement[]::new));
@@ -191,29 +179,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			}
 
 			@Override
-			public void addSymbols(IJavaProject project, WorkspaceSymbol[] symbols,
+			public void addSymbols(IJavaProject project,
 					Map<String, List<SpringIndexElement>> beanDefinitionsByDoc, Map<String, List<Diagnostic>> diagnosticsPerDoc) {
 
-				if (symbols != null) {
-
-					// organize symbols by doc URI
-					Map<String, List<WorkspaceSymbol>> symbolsPerDoc = new HashMap<>();
-					for (WorkspaceSymbol symbol : symbols) {
-						Either<Location, WorkspaceSymbolLocation> location = symbol.getLocation();
-						String docURI = location.isLeft() ? location.getLeft().getUri() : location.getRight().getUri();
-						
-						symbolsPerDoc.computeIfAbsent(docURI, k -> new ArrayList<>()).add(symbol);
-					}
-	
-					// add symbols per doc
-					for (Map.Entry<String, List<WorkspaceSymbol>> entry : symbolsPerDoc.entrySet()) {
-						String docURI = entry.getKey();
-						List<WorkspaceSymbol> symbolsForDoc = entry.getValue();
-						
-						SpringSymbolIndex.this.addSymbolsByDoc(project, docURI, (WorkspaceSymbol[]) symbolsForDoc.toArray(new WorkspaceSymbol[symbolsForDoc.size()]));
-					}
-				}
-				
 				if (beanDefinitionsByDoc != null) {
 
 					// add beans per doc URI
@@ -235,8 +203,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			
 			@Override
 			public void removeSymbols(IJavaProject project, String docURI) {
-				SpringSymbolIndex.this.removeSymbolsByDoc(project, docURI);
-//				springIndex.removeElements(project.getElementName(), docURI);
+				springIndex.removeElements(project.getElementName(), docURI);
 				
 				// TODO remove diagnostics ?!? maybe, maybe not
 				
@@ -399,7 +366,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 						// clean future
 						futures[0] = CompletableFuture.runAsync(() -> {
-							removeSymbolsByProject(project);
 							springIndex.removeProject(project.getElementName());
 						}, this.updateQueue);
 						
@@ -595,48 +561,40 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	private Map<IJavaProject, List<String>> getProjectMapping(Map<String, IJavaProject> docsToProject) {
 		return docsToProject.keySet().stream().collect(Collectors.groupingBy(docURI -> docsToProject.get(docURI)));
 	}
-	
+
 	private Map<IJavaProject, Set<String>> getDocsPerProjectFromPaths(String[] paths) {
 		Map<IJavaProject, Set<String>> result = new HashMap<>();
-		
-		for (String path : paths) {
-			Optional<IJavaProject> project = projectFinder().find(new TextDocumentIdentifier(path));
-			if (project.isPresent()) {
-				result.putIfAbsent(project.get(), new HashSet<>());
-				
-				Set<String> docs = result.get(project.get());
-				docs.addAll(getDocsFromPath(project.get(), path));
+		if (paths == null || paths.length == 0) {
+			return result;
+		}
+
+		Map<String, IJavaProject> projectByName = new HashMap<>();
+		for (IJavaProject project : projectFinder().all()) {
+			if (project.getElementName() != null) {
+				projectByName.put(project.getElementName(), project);
 			}
 		}
-		
-		return result;
-	}
-	
-	private Collection<? extends String> getDocsFromPath(IJavaProject project, String path) {
-		List<WorkspaceSymbol> allProjectSymbols = this.symbolsByProject.get(project.getElementName());
-		Set<String> result = new HashSet<>();
 
-		if (allProjectSymbols != null) {
-			
-			synchronized(allProjectSymbols) {
-				for (WorkspaceSymbol symbol : allProjectSymbols) {
-					Either<Location, WorkspaceSymbolLocation> location = symbol.getLocation();
-
-					String docURI = null;
-					if (location.isLeft()) {
-						docURI = location.getLeft().getUri();
-					}
-					else if (location.isRight()) {
-						docURI = location.getRight().getUri();
-					}
-
-					if (docURI != null && docURI.startsWith(path)) {
-						result.add(docURI);
+		Collection<ProjectElement> projects = springIndex.getProjects();
+		for (ProjectElement projectElement : projects) {
+			IJavaProject javaProject = projectByName.get(projectElement.getProjectName());
+			if (javaProject == null) {
+				continue;
+			}
+			Set<String> docsForProject = result.computeIfAbsent(javaProject, p -> new HashSet<>());
+			for (SpringIndexElement child : projectElement.getChildren()) {
+				if (child instanceof DocumentElement) {
+					DocumentElement docElement = (DocumentElement) child;
+					String docURI = docElement.getDocURI();
+					for (String path : paths) {
+						if (docURI.startsWith(path)) {
+							docsForProject.add(docURI);
+							break;
+						}
 					}
 				}
 			}
 		}
-		
 		return result;
 	}
 
@@ -689,28 +647,11 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		long start = System.currentTimeMillis();
 
 		try {
-			if (config.isSymbolsFromNewIndexEnabled()) {
-				return getAllSymbolsFromMetamodelIndex(query);
-			}
-			else {
-				return getAllSymbolsFromSymbolsIndex(query);
-			}
+			return getAllSymbolsFromMetamodelIndex(query);
 		}
 		finally {
 			long end = System.currentTimeMillis();
 			log.info("workspace symbols computation took " + (end - start) + "ms");
-		}
-	}
-	
-	private List<WorkspaceSymbol> getAllSymbolsFromSymbolsIndex(String query) {
-		if (query != null && query.length() > 0) {
-			synchronized(this.symbols) {
-				return searchMatchingSymbols(this.symbols, query);
-			}
-		} else {
-			synchronized(this.symbols) {
-				return this.symbols.stream().collect(Collectors.toList());
-			}
 		}
 	}
 	
@@ -755,21 +696,11 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	}
 	
 	public List<? extends WorkspaceSymbol> getSymbols(String docURI) {
-		if (config.isBeanStructureTreeEnabled()) {
-			return getWorkspaceSymbolsFromMetamodelIndex(docURI);
-		}
-		else {
-			return getWorkspaceSymbolsFromSymbolIndex(docURI);
-		}
+		return getWorkspaceSymbolsFromMetamodelIndex(docURI);
 	}
 	
 	public List<? extends DocumentSymbol> getDocumentSymbols(String docURI) {
-		if (config.isBeanStructureTreeEnabled()) {
-			return getDocumentSymbolsFromMetamodelIndex(docURI);
-		}
-		else {
-			return getDocumentSymbolsFromSymbolsIndex(docURI);
-		}
+		return getDocumentSymbolsFromMetamodelIndex(docURI);
 	}
 	
 	public List<? extends WorkspaceSymbol> getWorkspaceSymbolsFromMetamodelIndex(String docURI) {
@@ -801,24 +732,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		return result;
 	}
 	
-	public List<? extends DocumentSymbol> getDocumentSymbolsFromSymbolsIndex(String docURI) {
-		List<DocumentSymbol> result = new ArrayList<>();
-		
-		List<? extends WorkspaceSymbol> symbols = getWorkspaceSymbolsFromSymbolIndex(docURI);
-		for (WorkspaceSymbol symbol : symbols) {
-			DocumentSymbol docSymbol = new DocumentSymbol();
-			docSymbol.setName(symbol.getName());
-			docSymbol.setKind(symbol.getKind());
-			docSymbol.setRange(symbol.getLocation().getLeft().getRange());
-			docSymbol.setSelectionRange(symbol.getLocation().getLeft().getRange());
-			docSymbol.setTags(symbol.getTags());
-			
-			result.add(docSymbol);
-		}
-		
-		return result;
-	}
-
 	public List<? extends DocumentSymbol> getDocumentSymbolsFromMetamodelIndex(String docURI) {
 		try {
 			TextDocument doc = server.getTextDocumentService().getLatestSnapshot(docURI);
@@ -854,47 +767,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 					builder.addAll(SpringIndexToSymbolsConverter.createDocumentSymbols(children));
 				}
 
-			}
-			return builder.build();
-		} catch (Exception e) {
-			log.warn("", e);
-			return Collections.emptyList();
-		}
-	}
-	
-	public List<? extends WorkspaceSymbol> getWorkspaceSymbolsFromSymbolIndex(String docURI) {
-		try {
-			TextDocument doc = server.getTextDocumentService().getLatestSnapshot(docURI);
-			URI uri = URI.create(docURI);
-			CompletableFuture<IJavaProject> projectInitialized = futureProjectFinder.findFuture(uri).thenCompose(project -> projectInitializedFuture(project));
-			IJavaProject project = projectInitialized.get(15, TimeUnit.SECONDS);
-			ImmutableList.Builder<WorkspaceSymbol> builder = ImmutableList.builder();
-			if (project != null && doc != null) {
-				// Collect symbols from the opened document
-				synchronized(this) {
-					for (SpringIndexer indexer : this.indexers) {
-						if (indexer.isInterestedIn(docURI)) {
-							try {
-								for (WorkspaceSymbol symbol : indexer.computeSymbols(project, docURI,
-										doc.get())) {
-									builder.add(symbol);
-								}
-							} catch (Exception e) {
-								log.error("{}", e);
-							}
-						}
-					}
-				}
-			} else {
-				// Take symbols from the index if there is no opened document.
-				List<WorkspaceSymbol> docSymbols = this.symbolsByDoc.get(uri.toASCIIString());
-				if (docSymbols != null) {
-					synchronized (docSymbols) {
-						for (WorkspaceSymbol symbol : docSymbols) {
-							builder.add(symbol);
-						}
-					}
-				}
 			}
 			return builder.build();
 		} catch (Exception e) {
@@ -949,45 +821,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			}
 		}, this.updateQueue);
 	}
-
-	private List<WorkspaceSymbol> searchMatchingSymbols(List<WorkspaceSymbol> allsymbols, String query) {
-		String locationPrefix = "";
-
-		if (query.startsWith(QUERY_PARAM_LOCATION_PREFIX)) {
-
-			int separatorIndex = query.indexOf("?");
-			if (separatorIndex > 0) {
-				locationPrefix = query.substring(QUERY_PARAM_LOCATION_PREFIX.length(), separatorIndex);
-				query = query.substring(separatorIndex + 1);
-			}
-			else {
-				locationPrefix = query.substring(QUERY_PARAM_LOCATION_PREFIX.length());
-				query = query.substring(QUERY_PARAM_LOCATION_PREFIX.length() + locationPrefix.length());
-			}
-		}
-
-		if (query.startsWith("*")) {
-			query = query.substring(1);
-		}
-
-		String finalQuery = query;
-		String finalLocationPrefix = locationPrefix;
-
-		return allsymbols.stream()
-				.filter(symbol -> {
-					Either<Location, WorkspaceSymbolLocation> eitherLocation = symbol.getLocation();
-					if (eitherLocation.isLeft()) {
-						return eitherLocation.getLeft().getUri().startsWith(finalLocationPrefix);
-					}
-					if (eitherLocation.isRight()) {
-						return symbol.getLocation().getRight().getUri().startsWith(finalLocationPrefix);
-					}
-					return false;
-				})
-				.filter(symbol -> StringUtil.containsCharactersCaseInsensitive(symbol.getName(), finalQuery))
-				.collect(Collectors.toList());
-	}
-
 
 
 	//
@@ -1076,7 +909,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		public void run() {
 			try {
 				for (String doc : this.docURIs) {
-					removeSymbolsByDoc(project, doc);
 					springIndex.removeElements(project.getElementName(), doc);
 				}
 				
@@ -1105,7 +937,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		public void run() {
 			log.debug("{} starting...", this);
 			try {
-				removeSymbolsByProject(project);
 				for (SpringIndexer index : this.indexer) {
 					index.removeProject(project);
 				}
@@ -1120,85 +951,6 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 	}
 
-	private void addSymbolsByDoc(IJavaProject project, String docURI, WorkspaceSymbol[] workspaceSymbols) {
-
-		List<WorkspaceSymbol> docSymbols = symbolsByDoc.computeIfAbsent(docURI, s -> new ArrayList<WorkspaceSymbol>());
-		List<WorkspaceSymbol> projectSymbols = symbolsByProject.computeIfAbsent(project.getElementName(), s -> new ArrayList<WorkspaceSymbol>());
-
-		for (WorkspaceSymbol symbol : workspaceSymbols) {
-
-			synchronized(this.symbols) {
-				symbols.add(symbol);
-			}
-
-			synchronized(docSymbols) {
-				docSymbols.add(symbol);
-			}
-
-			synchronized(projectSymbols) {
-				projectSymbols.add(symbol);
-			}
-
-		}
-	
-	}
-
-	private void removeSymbolsByDoc(IJavaProject project, String docURI) {
-		List<WorkspaceSymbol> oldSymbols = symbolsByDoc.remove(docURI);
-		if (oldSymbols != null) {
-
-			Set<WorkspaceSymbol> copy = null;
-			synchronized(oldSymbols) {
-				copy = new HashSet<>(oldSymbols); // use HashSet here in order to speed up removal of symbols from global list
-			}
-
-			synchronized(this.symbols) {
-				this.symbols.removeAll(copy);
-			}
-
-			List<WorkspaceSymbol> projectSymbols = symbolsByProject.get(project.getElementName());
-			if (projectSymbols != null) {
-				synchronized(projectSymbols) {
-					projectSymbols.removeAll(copy);
-				}
-			}
-		}
-	}
-
-	private void removeSymbolsByProject(IJavaProject project) {
-		// If project name is null it cannot be in the cache
-		if (project.getElementName() == null) {
-			return;
-		}
-		List<WorkspaceSymbol> oldSymbols = symbolsByProject.remove(project.getElementName());
-		if (oldSymbols != null) {
-
-			Set<WorkspaceSymbol> copy = null;
-			synchronized(oldSymbols) {
-				copy = new HashSet<>(oldSymbols); // use HashSet here in order to speed up removal of symbols from global list
-			}
-
-			synchronized(this.symbols) {
-				symbols.removeAll(copy);
-			}
-
-			Set<String> keySet = symbolsByDoc.keySet();
-			Iterator<String> docIter = keySet.iterator();
-			while (docIter.hasNext()) {
-				String docURI = docIter.next();
-				List<WorkspaceSymbol> docSymbols = symbolsByDoc.get(docURI);
-				synchronized(docSymbols) {
-					docSymbols.removeAll(copy);
-
-					if (docSymbols.isEmpty()) {
-						docIter.remove();
-					}
-				}
-			}
-		}
-
-	}
-	
 	public void onUpdate(Consumer<Void> listener) {
 		listeners.add(listener);
 	}

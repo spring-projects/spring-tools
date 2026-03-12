@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -40,7 +39,6 @@ public class SpringIndexerJavaScanResult {
 	private final List<DocumentDescriptor> markedForReconciling; // file + modification timestamp
 	private final Set<String> markedForAffetcedFilesIndexing; // file
 	
-	private final List<CachedSymbol> generatedSymbols;
 	private final List<CachedIndexElement> generatedIndexElements;
 	private final List<CachedDiagnostics> generatedDiagnostics;
 
@@ -55,13 +53,12 @@ public class SpringIndexerJavaScanResult {
 		this.markedForReconciling = new ArrayList<>();
 		this.markedForAffetcedFilesIndexing = new HashSet<>();
 		
-		this.generatedSymbols = new ArrayList<CachedSymbol>();
 		this.generatedIndexElements = new ArrayList<CachedIndexElement>();
 		this.generatedDiagnostics = new ArrayList<CachedDiagnostics>();
 	}
 	
 	public SpringIndexerJavaScanResult(IJavaProject project, String[] javaFiles, SymbolHandler symbolHandler,
-			CachedSymbol[] symbols, CachedIndexElement[] indexElements, CachedDiagnostics[] diagnostics) {
+			CachedIndexElement[] indexElements, CachedDiagnostics[] diagnostics) {
 		
 		this.project = project;
 		this.javaFiles = javaFiles;
@@ -69,7 +66,6 @@ public class SpringIndexerJavaScanResult {
 		this.markedForReconciling = new ArrayList<>();
 		this.markedForAffetcedFilesIndexing = new HashSet<>();
 
-		this.generatedSymbols = Arrays.asList(symbols);
 		this.generatedIndexElements = Arrays.asList(indexElements);
 		this.generatedDiagnostics = Arrays.asList(diagnostics);
 	}
@@ -95,16 +91,11 @@ public class SpringIndexerJavaScanResult {
 		return generatedIndexElements;
 	}
 	
-	public List<CachedSymbol> getGeneratedSymbols() {
-		return generatedSymbols;
-	}
-	
 	public List<CachedDiagnostics> getGeneratedDiagnostics() {
 		return generatedDiagnostics;
 	}
 	
 	public void publishResults(SymbolHandler symbolHandler) {
-		WorkspaceSymbol[] allSymbols = generatedSymbols.stream().map(cachedSymbol -> cachedSymbol.getSymbol()).toArray(WorkspaceSymbol[]::new);
 		Map<String, List<SpringIndexElement>> allIndexElements = generatedIndexElements.stream().filter(cachedIndexElement -> cachedIndexElement.getIndexElement() != null).collect(Collectors.groupingBy(CachedIndexElement::getDocURI, Collectors.mapping(CachedIndexElement::getIndexElement, Collectors.toList())));
 		Map<String, List<Diagnostic>> diagnosticsByDoc = generatedDiagnostics.stream().filter(cachedDiagnostic -> cachedDiagnostic.getDiagnostic() != null).collect(Collectors.groupingBy(CachedDiagnostics::getDocURI, Collectors.mapping(CachedDiagnostics::getDiagnostic, Collectors.toList())));
 
@@ -112,13 +103,13 @@ public class SpringIndexerJavaScanResult {
 		addEmptyDiagnostics(diagnosticsByDoc, javaFiles);
 		addEmptyIndexElements(allIndexElements, javaFiles);
 
-		symbolHandler.addSymbols(this.project, allSymbols, allIndexElements, diagnosticsByDoc);
+		symbolHandler.addSymbols(this.project, allIndexElements, diagnosticsByDoc);
 	}
 	
 	public void publishDiagnosticsOnly(SymbolHandler symbolHandler) {
 		Map<String, List<Diagnostic>> diagnosticsByDoc = generatedDiagnostics.stream().filter(cachedDiagnostic -> cachedDiagnostic.getDiagnostic() != null).collect(Collectors.groupingBy(CachedDiagnostics::getDocURI, Collectors.mapping(CachedDiagnostics::getDiagnostic, Collectors.toList())));
 		addEmptyDiagnostics(diagnosticsByDoc, javaFiles); // to make sure that files without index elements or diagnostics publish an empty array of diagnostics
-		symbolHandler.addSymbols(this.project, null, null, diagnosticsByDoc);
+		symbolHandler.addSymbols(this.project, null, diagnosticsByDoc);
 	}
 	
 	private void addEmptyIndexElements(Map<String, List<SpringIndexElement>> allIndexElements, String[] javaFiles) {

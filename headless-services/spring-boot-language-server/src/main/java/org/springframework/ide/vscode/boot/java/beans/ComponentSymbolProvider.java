@@ -30,9 +30,7 @@ import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -46,7 +44,6 @@ import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstE
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.DefaultSymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
@@ -84,7 +81,6 @@ public class ComponentSymbolProvider implements SymbolProvider {
 			}
 			else if (Annotations.NAMED_ANNOTATIONS.contains(annotationType.getQualifiedName())) {
 				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, context.getDoc());
-				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), new SimpleSymbolElement(symbol)));
 			}
 		}
@@ -148,12 +144,8 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		
 		String beanName = BeanUtils.getBeanNameFromType(type, annotationMetadata);
 
-		WorkspaceSymbol symbol = new WorkspaceSymbol(
-				BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName()),
-				SymbolKind.Interface,
-				Either.forLeft(location));
-		
-		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, symbol.getName());
+		String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
+		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
 		
 		// event publisher checks
 		boolean usesEventPublisher = false;
@@ -182,7 +174,6 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		
 		SpringBootApplicationIndexer.createIndexElement(type, beanType, context);
 
-		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
@@ -198,10 +189,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
 		AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
 		
-		WorkspaceSymbol symbol = new WorkspaceSymbol(
-				BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName()),
-				SymbolKind.Interface,
-				Either.forLeft(location));
+		String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
 		
 		boolean isConfiguration = Annotations.CONFIGURATION.equals(annotationType.getQualifiedName())
 				|| metaAnnotations.stream().anyMatch(t -> Annotations.CONFIGURATION.equals(t.getQualifiedName()));
@@ -210,11 +198,9 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		
 		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
 		
-		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, symbol.getName());
-		
+		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
 		indexConfigurationProperties(beanDefinition, record, beanType, context, doc);
 
-		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
@@ -327,11 +313,6 @@ public class ComponentSymbolProvider implements SymbolProvider {
 
 									EventPublisherIndexElement eventPublisherIndexElement = new EventPublisherIndexElement(eventTypeBinding.getQualifiedName(), location, typesFromhierarchy);
 									component.addChild(eventPublisherIndexElement);
-
-									// symbol
-									String symbolLabel = "@EventPublisher (" + eventTypeBinding.getName() + ")";
-									WorkspaceSymbol symbol = new WorkspaceSymbol(symbolLabel, SymbolKind.Interface, Either.forLeft(location));
-									context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 								}
 							}
 						}
@@ -451,14 +432,8 @@ public class ComponentSymbolProvider implements SymbolProvider {
 				SimpleName typeNameNode = typeDeclaration.getName();
 				Location location = new Location(doc.getUri(), doc.toRange(typeNameNode.getStartPosition(), typeNameNode.getLength()));
 				
-				WorkspaceSymbol symbol = new WorkspaceSymbol(
-						name + " (Bean Registrar)",
-						SymbolKind.Interface,
-						Either.forLeft(location));
-				
 				parentNode = new BeanRegistrarElement(name, type, location);
 
-				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), parentNode));
 			}
 			
@@ -576,18 +551,14 @@ public class ComponentSymbolProvider implements SymbolProvider {
 	public void createBean(SpringIndexElement parentNode, String beanName, String beanType, ITypeBinding beanTypeBinding, ASTNode node, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
-		WorkspaceSymbol symbol = new WorkspaceSymbol(
-				BeanUtils.createBeanLabel(null, beanName, beanType),
-				SymbolKind.Class,
-				Either.forLeft(location));
-		context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
+		String name = BeanUtils.createBeanLabel(null, beanName, beanType);
 		
 		InjectionPoint[] injectionPoints = DefaultValues.EMPTY_INJECTION_POINTS;
 		Set<String> supertypes = ASTUtils.findSupertypes(beanTypeBinding);
 		
 		AnnotationMetadata[] annotations = DefaultValues.EMPTY_ANNOTATIONS;
 		
-		Bean bean = new Bean(beanName, beanType, location, injectionPoints, supertypes, annotations, false, symbol.getName());
+		Bean bean = new Bean(beanName, beanType, location, injectionPoints, supertypes, annotations, false, name);
 		parentNode.addChild(bean);
 	}
 	

@@ -27,9 +27,6 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
-import org.eclipse.lsp4j.SymbolKind;
-import org.eclipse.lsp4j.WorkspaceSymbol;
-import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -40,7 +37,6 @@ import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitor
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils.EmbeddedQueryExpression;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -76,12 +72,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				ITypeBinding beanType = repositoryBean.getT2();
 				Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(repositoryBean.getT4()));
 				
-				WorkspaceSymbol symbol = new WorkspaceSymbol(
-						beanLabel(true, beanName, beanType.getName(), repositoryBean.getT3()),
-						SymbolKind.Interface,
-						Either.forLeft(location));
-
-				context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
+				String name = beanLabel(true, beanName, beanType.getName(), repositoryBean.getT3());
 
 				// index elements
 				InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(typeDeclaration, context.getDoc());
@@ -95,7 +86,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 				Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(typeDeclaration);
 				AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, context.getDoc());
 				
-				Bean beanDefinition = new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, symbol.getName());
+				Bean beanDefinition = new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, name);
 				indexQueryMethods(beanDefinition, typeDeclaration, context, context.getDoc());
 				
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));

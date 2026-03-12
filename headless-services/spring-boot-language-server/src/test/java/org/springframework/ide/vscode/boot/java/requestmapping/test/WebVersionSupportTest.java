@@ -76,7 +76,7 @@ public class WebVersionSupportTest {
 	}
 	
 	private List<? extends WorkspaceSymbol> getSymbols(String docUri) {
-		return indexer.getWorkspaceSymbolsFromSymbolIndex(docUri);
+		return indexer.getWorkspaceSymbolsFromMetamodelIndex(docUri);
 	}
 
     @Test

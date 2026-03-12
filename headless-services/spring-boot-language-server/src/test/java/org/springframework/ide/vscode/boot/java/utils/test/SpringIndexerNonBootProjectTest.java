@@ -69,11 +69,8 @@ public class SpringIndexerNonBootProjectTest {
         assertEquals(3, allSymbols.size());
 
         String docUri = directory.toPath().resolve("src/main/java/org/test/SimpleMappingClass.java").toUri().toString();
-        assertTrue(SpringIndexerTest.containsSymbol(allSymbols, "@/mapping1", docUri, 6, 1, 6, 28));
-        assertTrue(SpringIndexerTest.containsSymbol(allSymbols, "@/mapping2", docUri, 11, 1, 11, 28));
-
-        docUri = directory.toPath().resolve("src/main/java/org/test/ClassWithDefaultSymbol.java").toUri().toString();
-        assertTrue(SpringIndexerTest.containsSymbol(allSymbols, "@Configurable", docUri, 4, 0, 4, 13));
+        assertTrue(SpringIndexerTest.containsSymbol(allSymbols, "@/mapping1", docUri, 8, 1, 8, 28));
+        assertTrue(SpringIndexerTest.containsSymbol(allSymbols, "@/mapping2", docUri, 13, 1, 13, 28));
     }
 
 }

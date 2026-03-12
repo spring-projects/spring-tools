@@ -19,12 +19,10 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
-import org.springframework.ide.vscode.boot.java.utils.CachedSymbol;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 
@@ -52,13 +50,9 @@ public class HttpExchangeSymbolProvider implements SymbolProvider {
 									return WebEndpointIndexer.combinePath(parent, p);
 								}))
 						.forEach(p -> {
-							// symbol
-							WorkspaceSymbol symbol = RouteUtils.createRouteSymbol(location, p, methods, contentTypes, acceptTypes, version);
-							context.getGeneratedSymbols().add(new CachedSymbol(context.getDocURI(), context.getLastModified(), symbol));
-							
-							// index element
+							String label = RouteUtils.createRouteLabel(location, p, methods, contentTypes, acceptTypes, version);
 							HttpExchangeIndexElement requestMappingIndexElement =
-									new HttpExchangeIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), symbol.getName());
+									new HttpExchangeIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), label);
 
 							context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDoc().getUri(), requestMappingIndexElement));
 						});

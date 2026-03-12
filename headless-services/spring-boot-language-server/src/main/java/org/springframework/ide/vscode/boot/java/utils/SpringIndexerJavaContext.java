@@ -104,10 +104,6 @@ public class SpringIndexerJavaContext {
 		return scanResult;
 	}
 
-	public List<CachedSymbol> getGeneratedSymbols() {
-		return getResult().getGeneratedSymbols();
-	}
-	
 	public List<CachedIndexElement> getGeneratedIndexElements() {
 		return getResult().getGeneratedIndexElements();
 	}
@@ -167,14 +163,6 @@ public class SpringIndexerJavaContext {
 				beansIterator.remove();
 			}
 		}
-		
-		Iterator<CachedSymbol> symbolsIterator = getGeneratedSymbols().iterator();
-		while (symbolsIterator.hasNext()) {
-			if (symbolsIterator.next().getDocURI().equals(docURI)) {
-				symbolsIterator.remove();
-			}
-		}
-		
 	}
 
 }

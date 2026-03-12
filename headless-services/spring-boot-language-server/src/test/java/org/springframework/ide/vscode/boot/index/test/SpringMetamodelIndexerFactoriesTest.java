@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,12 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
-import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,25 +64,14 @@ public class SpringMetamodelIndexerFactoriesTest {
 	}
 
 	@Test
-	void testSymbolForAotProcessorFromFactoriesFile() {
-		String docUri = directory.toPath().resolve("src/main/resources/META-INF/spring/aot.factories").toUri().toString();
-
-		List<? extends WorkspaceSymbol> symbols = indexer.getWorkspaceSymbolsFromSymbolIndex(docUri);
-
-		assertEquals(1, symbols.size());
-		WorkspaceSymbol symbol = symbols.get(0);
-		
-		assertEquals("@+ 'registeredViaFactoriesBeanRegistrationAotProcessor' (aot.factories) org.test.aot.RegisteredViaFactoriesBeanRegistrationAotProcessor", symbol.getName());
-		assertEquals(docUri, symbol.getLocation().getLeft().getUri());
-	}
-	
-	@Test
 	void testIndexElementsForAotProcessorFromFactoriesFile() {
 		Bean[] beans = springIndex.getBeansWithName("test-spring-indexing", "registeredViaFactoriesBeanRegistrationAotProcessor");
 
 		assertEquals(1, beans.length);
 		assertEquals("registeredViaFactoriesBeanRegistrationAotProcessor", beans[0].getName());
 		assertEquals("org.test.aot.RegisteredViaFactoriesBeanRegistrationAotProcessor", beans[0].getType());
+		
+		assertEquals("@+ 'registeredViaFactoriesBeanRegistrationAotProcessor' (aot.factories) org.test.aot.RegisteredViaFactoriesBeanRegistrationAotProcessor", beans[0].getSymbolLabel());
 		
 		assertFalse(beans[0].isConfiguration());
 	}

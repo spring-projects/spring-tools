@@ -77,7 +77,7 @@ public class WebFluxMappingSymbolProviderTest {
     void testSimpleRequestMappingSymbol() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/UserController.java").toUri().toString();
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
-        assertEquals(4, symbols.size());
+        assertEquals(3, symbols.size());
         assertTrue(containsSymbol(symbols, "@/users -- GET - Content-Type: application/json", docUri, 13, 1, 13, 74));
         assertTrue(containsSymbol(symbols, "@/users/{username} -- GET - Content-Type: application/json", docUri, 18, 1, 18, 85));
 

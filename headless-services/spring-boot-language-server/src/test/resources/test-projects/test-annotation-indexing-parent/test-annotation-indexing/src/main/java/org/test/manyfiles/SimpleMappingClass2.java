@@ -1,7 +1,9 @@
 package org.test.manyfiles;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+@Controller
 public class SimpleMappingClass2 {
 	
 	@RequestMapping("mapping1")

@@ -549,5 +549,54 @@ public class JdtDataQuerySemanticTokensProviderTest {
 		);
 	}
 	
-
+	@Test
+	void jdbcSqlQueryNormalAnnotationMariaDB() throws Exception {
+		jp = projects.mavenProject("boot-mariadb-h2/");
+		harness.useProject(jp);
+		
+		String source = """
+		package my.package
+		
+		import org.springframework.data.jdbc.repository.query.Query;
+		import org.springframework.data.repository.query.Param;
+		
+		public interface EmployeeRepository {
+		
+			@Query(value = ""\"
+					INSERT INTO `user_settings` (`user_id`, `theme_color`) 
+					VALUES (101, 'dark') 
+					ON DUPLICATE KEY UPDATE `theme_color` = 'dark';
+					""\")
+			void findByLastName(@Param("lastName") String lastName);
+		}
+		""";
+        
+        String uri = Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/EmployeeRepository.java").toUri().toASCIIString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, uri);
+		
+		editor.assertSemanticTokensFull(
+				new ExpectedSemanticToken("INSERT", "keyword"),
+				new ExpectedSemanticToken("INTO", "keyword"),
+				new ExpectedSemanticToken("`user_settings`", "string"),
+				new ExpectedSemanticToken("(", "operator"),
+				new ExpectedSemanticToken("`user_id`", "string"),
+				new ExpectedSemanticToken(",", "operator"),
+				new ExpectedSemanticToken("`theme_color`", "string"),
+				new ExpectedSemanticToken(")", "operator"),
+				new ExpectedSemanticToken("VALUES", "keyword"),
+				new ExpectedSemanticToken("(", "operator"),
+				new ExpectedSemanticToken("101", "number"),
+				new ExpectedSemanticToken(",", "operator"),
+				new ExpectedSemanticToken("'dark'", "string"),
+				new ExpectedSemanticToken(")", "operator"),
+				new ExpectedSemanticToken("ON", "keyword"),
+				new ExpectedSemanticToken("DUPLICATE", "type"),
+				new ExpectedSemanticToken("KEY", "keyword"),
+				new ExpectedSemanticToken("UPDATE", "keyword"),
+				new ExpectedSemanticToken("`theme_color`", "string"),
+				new ExpectedSemanticToken("=", "operator"),
+				new ExpectedSemanticToken("'dark'", "string"),
+				new ExpectedSemanticToken(";", "operator")
+		);
+	}
 }

@@ -404,4 +404,64 @@ public class QueryReconcilerTest {
 		editor.assertProblems();
 	}
 
+	@Test
+	void queryMariaDbNoProblems() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-mariadb-h2/").toURI());
+		String projectDir = directory.toURI().toString();
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = ""\"
+							INSERT INTO `user_settings` (`user_id`, `theme_color`) 
+							VALUES (101, 'dark') 
+							ON DUPLICATE KEY UPDATE `theme_color` = 'dark';
+							""\")
+					List<Object> findByLastName(String lastName);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems();
+	}
+
+	@Test
+	void queryMariaWithPogreSqlQuery() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-mariadb-h2/").toURI());
+		String projectDir = directory.toURI().toString();
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = ""\"
+							INSERT INTO "user_settings" ("user_id", "theme_color") 
+							VALUES (101, 'dark') 
+							ON CONFLICT ("user_id") 
+							DO UPDATE SET "theme_color" = EXCLUDED.theme_color;
+							""\")
+					List<Object> findByLastName(String lastName);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems("CONFLICT|MySQL: no viable alternative at input 'INSERT INTO");
+	}
 }

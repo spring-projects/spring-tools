@@ -15,13 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.ls.core.internal.IDelegateCommandHandler;
 import org.eclipse.jdt.ls.core.internal.javadoc.JavadocContentAccess2;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.springframework.ide.vscode.commons.protocol.java.JavaDataParams;
-import org.springframework.tooling.jdt.ls.commons.java.JavaData;
+import org.springframework.tooling.jdt.ls.commons.javadoc.JavadocUtils;
 
 public class JavadocHandler implements IDelegateCommandHandler {
 	

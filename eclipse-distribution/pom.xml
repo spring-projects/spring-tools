@@ -4,7 +4,7 @@
 
 	<groupId>org.springframework.boot.ide</groupId>
 	<artifactId>org.springframework.boot.ide</artifactId>
-	<version>5.1.0-SNAPSHOT</version>
+	<version>5.1.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<organization>
@@ -198,12 +198,7 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2026-03</url>
 				</repository>
-				<repository>
-					<id>2026-03-i-builds</id>
-					<layout>p2</layout>
-					<url>https://download.eclipse.org/eclipse/updates/4.39-I-builds</url>
-				</repository>
-			
+
 <!--				<repository>
 					<id>maven-extras-mirror</id>
 					<layout>p2</layout>

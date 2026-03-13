@@ -15,12 +15,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.ls.core.internal.IDelegateCommandHandler;
 import org.eclipse.jdt.ls.core.internal.javadoc.JavadocContentAccess2;
 import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.springframework.ide.vscode.commons.protocol.java.JavaDataParams;
-import org.springframework.tooling.jdt.ls.commons.javadoc.JavadocUtils;
+import org.springframework.tooling.jdt.ls.commons.java.JavaData;
 
 public class JavadocHandler implements IDelegateCommandHandler {
 	
@@ -31,8 +32,8 @@ public class JavadocHandler implements IDelegateCommandHandler {
 		URI projectUri = URI.create(uri);
 		String bindingKey = (String) obj.get("bindingKey");
 		Boolean lookInOtherProjects = (Boolean) obj.get("lookInOtherProjects");
-		String content = JavadocUtils.javadoc(JavadocContentAccess2::getMarkdownContentReader, projectUri, bindingKey,
-				JavaDataParams.isLookInOtherProjects(uri, lookInOtherProjects));
+		IJavaElement element = JavaData.findElement(projectUri, bindingKey, JavaDataParams.isLookInOtherProjects(uri, lookInOtherProjects));
+		String content = element == null ? null : JavadocContentAccess2.getMarkdownContent(element);
 		if (content == null) {
 			return null;
 		} else {

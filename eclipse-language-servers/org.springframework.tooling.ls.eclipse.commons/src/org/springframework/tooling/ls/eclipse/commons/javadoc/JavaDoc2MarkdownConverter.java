@@ -15,14 +15,13 @@ import java.io.Reader;
 import java.lang.reflect.Field;
 
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.internal.ui.text.javadoc.JavadocContentAccess2;
 import org.jsoup.safety.Cleaner;
 import org.jsoup.safety.Whitelist;
 import org.springframework.tooling.ls.eclipse.commons.LanguageServerCommonsActivator;
 
+import com.google.common.io.CharStreams;
 import com.overzealous.remark.Options;
 import com.overzealous.remark.Options.Tables;
 import com.overzealous.remark.Remark;
@@ -76,16 +75,14 @@ public class JavaDoc2MarkdownConverter extends AbstractJavaDocConverter {
 		return remark.convert(rawHtml);
 	}
 
-	public static Reader getMarkdownContentReader(IJavaElement element) {
-
+	public static String getMarkdownContentReader(IJavaElement element) {
 		try {
 			String rawHtml = JavadocContentAccess2.getHTMLContent(element, true);
 			Reader markdownReader = new JavaDoc2MarkdownConverter(rawHtml).getAsReader();
-			return markdownReader;
+			return markdownReader == null ? null : CharStreams.toString(markdownReader);
 		} catch (IOException | CoreException e) {
-
+			// ignore
 		}
-
 		return null;
 	}
 

@@ -46,6 +46,7 @@ import org.springframework.ide.vscode.commons.protocol.java.TypeData.MethodData;
 import org.springframework.ide.vscode.commons.protocol.java.TypeDescriptorData;
 import org.springframework.tooling.jdt.ls.commons.Logger;
 import org.springframework.tooling.jdt.ls.commons.classpath.ClasspathUtil;
+import org.springframework.tooling.jdt.ls.commons.javadoc.JavadocUtils;
 import org.springframework.tooling.jdt.ls.commons.resources.ResourceUtils;
 
 import com.google.common.collect.ImmutableList;
@@ -108,7 +109,7 @@ public class JavaData {
 		if (element == null) {
 			// Try modifying the binding key to search for the alternate binding
 			try {
-				String alternateBinding = alternateBinding(bindingKey);
+				String alternateBinding = JavadocUtils.alternateBinding(bindingKey);
 				if (alternateBinding != null) {
 					element = project.findElement(alternateBinding, null);
 				}
@@ -117,18 +118,6 @@ public class JavaData {
 			}
 		}
 		return element;
-	}
-	
-	private static String alternateBinding(String bindingKey) {
-		int idxStartParams = bindingKey.indexOf('(');
-		if (idxStartParams >= 0) {
-			int idxEndParams = bindingKey.indexOf(')', idxStartParams);
-			if (idxEndParams > idxStartParams) {
-				String params = bindingKey.substring(idxStartParams, idxEndParams);
-				return bindingKey.substring(0, idxStartParams) + params.replace('/', '.') + bindingKey.substring(idxEndParams);
-			}
-		}
-		return null;
 	}
 	
 	public static String toBindingKey(String fqName) {

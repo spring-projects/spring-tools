@@ -1,13 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    target-branch: "5.0.x"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    labels:
-      - "dependencies"
-  - package-ecosystem: "github-actions"
+    target-branch: "main"
     directory: "/"
     schedule:
       interval: "weekly"

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: tools-team-slack
-        uses: slackapi/slack-github-action@e28cf165c92ffef168d23c5c9000cffc8a25e117
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95
         env:
           SLACK_BOT_TOKEN: ${{ secrets.VMWARE_SLACK_BOT_TOKEN }}
         with:

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.tooling.boot.ls.views;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -22,22 +23,18 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
  */
 public class StructureTreeContentProvider implements ITreeContentProvider {
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public Object[] getElements(Object input) {
-		if (input instanceof List) {
-			List<StereotypeNode> nodes = (List<StereotypeNode>) input;
-			nodes.sort((c1, c2) -> c1.text().compareTo(c2.text()));
-			return nodes.toArray();
-		}
-		return getChildren(input);
+		StereotypeNode[] nodes = (StereotypeNode[]) (input instanceof List ? ((List<?>) input).toArray(StereotypeNode[]::new)
+				: getChildren(input));
+		Arrays.sort(nodes, (n1, n2) -> n1.text().compareTo(n2.text()));
+		return nodes;
 	}
 
 	@Override
 	public Object[] getChildren(Object parentElement) {
-		if (parentElement instanceof StereotypeNode) {
-			StereotypeNode node = (StereotypeNode) parentElement;
-			return node.children();
+		if (parentElement instanceof StereotypeNode sn) {
+			return sn.children();
 		}
 		return new Object[0];
 	}

@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -74,7 +73,6 @@ public class SpringIndexCommands {
 				}
 
 				return projects
-						.sorted(Comparator.comparing(IJavaProject::getElementName))
 						.parallel()
 						.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata,
 								args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))

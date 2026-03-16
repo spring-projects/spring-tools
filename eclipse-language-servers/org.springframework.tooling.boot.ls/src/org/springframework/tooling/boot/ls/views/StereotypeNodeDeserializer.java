@@ -11,7 +11,6 @@
 package org.springframework.tooling.boot.ls.views;
 
 import java.lang.reflect.Type;
-import java.util.Arrays;
 import java.util.Map;
 
 import org.eclipse.lsp4j.Location;
@@ -35,13 +34,10 @@ public class StereotypeNodeDeserializer implements com.google.gson.JsonDeseriali
 	
 	private static final String NODE_ID = "nodeId";
 	
-
 	@Override
 	public StereotypeNode deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
 		JsonObject object = json.getAsJsonObject();
 		JsonObject attributes = object.getAsJsonObject("attributes");
-		StereotypeNode[] children = context.deserialize(object.get(CHILDREN), StereotypeNode[].class);
-		Arrays.sort(children, (n1, n2) -> n1.text().compareTo(n2.text()));
 		return new StereotypeNode(
 				extractString(attributes, NODE_ID),
 				extractString(attributes, TEXT),
@@ -49,7 +45,7 @@ public class StereotypeNodeDeserializer implements com.google.gson.JsonDeseriali
 				context.deserialize(attributes.get(LOCATION), Location.class),
 				context.deserialize(attributes.get(REFERENCE), Location.class),
 				context.deserialize(attributes, new TypeToken<Map<String, Object>>(){}.getType()),
-				children
+				context.deserialize(object.get(CHILDREN), StereotypeNode[].class)
 		);
 	}
 	

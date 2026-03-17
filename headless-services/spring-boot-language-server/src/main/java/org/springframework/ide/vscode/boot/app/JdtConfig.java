@@ -64,6 +64,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrateg
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionSyntaxReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.BeanValidationComponentReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataStringPropertyReferenceReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebConfigurerConfigurationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigurerAdapterReconciler;
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
@@ -190,6 +191,10 @@ public class JdtConfig {
 	
 	@Bean BeanValidationComponentReconciler beanValidationComponentReconciler(SimpleLanguageServer server) {
 		return new BeanValidationComponentReconciler(server.getQuickfixRegistry());
+	}
+	
+	@Bean SpringDataStringPropertyReferenceReconciler springDataStringPropertyReferenceReconciler() {
+		return new SpringDataStringPropertyReferenceReconciler();
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)

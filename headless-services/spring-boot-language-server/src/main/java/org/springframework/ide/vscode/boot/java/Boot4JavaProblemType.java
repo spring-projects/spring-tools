@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java;
 
+import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.INFO;
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.WARNING;
 
 import java.util.List;
@@ -27,7 +28,8 @@ public enum Boot4JavaProblemType implements ProblemType {
 	API_VERSIONING_NOT_CONFIGURED(WARNING, "API Versioning used but not configured anywhere", "API Versioning not configured anywhere"),
 	API_VERSION_SYNTAX_ERROR(WARNING, "API version cannot be parsed into a standard semantic version", "API version cannot be parsed into a standard semantic version"),
 	API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION(WARNING, "API versioninig path segment strategy should not be mixed with other strategies", "API versioninig path segment strategy should not be mixed with other strategies"),
-	API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED(WARNING, "API versioninig strategy is configured multiple times with the same strategy", "API versioninig strategy is configured multiple times with the same strategy");
+	API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED(WARNING, "API versioninig strategy is configured multiple times with the same strategy", "API versioninig strategy is configured multiple times with the same strategy"),
+	SPRING_DATA_STRING_PROPERTY_REFERENCE(INFO, "Non type-safe String-based property reference for a Spring Data domain type", "Non type-safe property reference");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

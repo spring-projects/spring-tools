@@ -1,4 +1,8 @@
-## 2026-03-11 (5.1.0 RELEASE, incl. language servers version 2.1.0)
+## 2026-03-18 (5.1.1 RELEASE, incl. language servers version 2.1.1)
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ [backport] Native query validation defaults to PostgreSQL when MariaDB and H2 driver in class path [#1840](https://github.com/spring-projects/spring-tools/issues/1840)## 2026-03-11 (5.1.0 RELEASE, incl. language servers version 2.1.0)
 
 #### important highlights
 

@@ -274,10 +274,33 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 		);
 	}
 
-	// ========== Domain type cannot be determined ==========
+	// ========== Tier 2: Contextual resolution from enclosing block ==========
 
 	@Test
-	void noDomainTypeContext_genericMessage() throws Exception {
+	void contextual_sortVariable_repositoryInSameBlock() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					private CustomerRepository repository;
+
+					void test() {
+						Sort sort = Sort.by("firstName");
+						repository.findAll(sort);
+					}
+				}
+				""", docUri);
+
+		editor.assertProblems(
+				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
+		);
+	}
+
+	@Test
+	void contextual_propertyMatchesNoCandidates_genericMessage() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -293,6 +316,29 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 
 		editor.assertProblems(
 				"\"firstName\"|Non type-safe property reference"
+		);
+	}
+
+	@Test
+	void contextual_propertyNotOnDomainType_stillShowsDomainType() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					private CustomerRepository repository;
+
+					void test() {
+						Sort sort = Sort.by("somethingUnknown");
+						repository.findAll(sort);
+					}
+				}
+				""", docUri);
+
+		editor.assertProblems(
+				"\"somethingUnknown\"|Non type-safe property reference for domain type 'Customer'"
 		);
 	}
 

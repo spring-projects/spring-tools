@@ -10,33 +10,61 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Statement;
 import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.jspecify.annotations.Nullable;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 
 /**
- * Resolves the Spring Data domain type from AST context surrounding a string-based property reference.
+ * Resolves the Spring Data domain type from the AST context surrounding a string-based
+ * property reference (e.g. {@code Sort.by("firstName")}, {@code Criteria.where("name")}).
  * <p>
- * Given an AST node (typically a {@code Sort.by(...)}, {@code Criteria.where(...)}, etc.), this class
- * walks up the AST to determine the domain type from the enclosing context:
+ * Domain type resolution uses a <b>two-tier strategy</b>:
+ * <ol>
+ *   <li><b>Exact resolution</b> ({@link #determineDomainTypeExact}) — walks the parent AST
+ *       chain to find an enclosing method invocation that directly reveals the domain type.
+ *       Returns at most one type. This is the high-confidence path.</li>
+ *   <li><b>Contextual resolution</b> ({@link #determineDomainTypesFromBlock}) — scans all
+ *       method invocations in the immediate enclosing {@link Block} to collect candidate
+ *       domain types. Returns a list of candidates that the caller can filter by property
+ *       name matching.</li>
+ * </ol>
+ * <p>
+ * Both tiers share the same extraction logic ({@link #extractDomainTypeFromInvocation}),
+ * which recognizes 5 patterns:
  * <ul>
- *   <li>Repository method call — extracts {@code T} from {@code Repository<T, ID>} type hierarchy</li>
- *   <li>Fluent Template API — walks {@code .query(X.class)} / {@code .update(X.class)} chain</li>
- *   <li>Template find/findOne/findAll — finds {@code Class<T>} literal in arguments</li>
- *   <li>Aggregation {@code newAggregation(X.class, ...)} — extracts class literal</li>
- *   <li>Template {@code update(entity, options)} — resolves entity argument type</li>
+ *   <li><b>Pattern 1 — Repository method call:</b> extracts {@code T} from
+ *       {@code Repository<T, ID>} type hierarchy</li>
+ *   <li><b>Pattern 2 — Fluent Template API:</b> walks a fluent chain to find
+ *       {@code .query(X.class)} or {@code .update(X.class)}</li>
+ *   <li><b>Pattern 3 — Template find/findOne/findAll:</b> finds the {@code Class<T>}
+ *       literal argument in calls like {@code template.find(query, Person.class)}</li>
+ *   <li><b>Pattern 4 — Aggregation:</b> extracts the class literal from
+ *       {@code newAggregation(X.class, ...)}</li>
+ *   <li><b>Pattern 5 — Template update with entity:</b> resolves the type of the first
+ *       argument in {@code operations.update(entity, options)}</li>
  * </ul>
+ * <p>
+ * The resolver only identifies the domain type; it does not validate whether a
+ * particular property exists on it.
  */
 public class SpringDataDomainTypeResolver {
 
-	private static final String REPOSITORY_FQN = "org.springframework.data.repository.Repository";
+	private static final Set<String> REPOSITORY_FQN_TYPES = Set.of(
+			"org.springframework.data.repository.Repository"
+	);
 
 	private static final Set<String> TEMPLATE_QUERY_METHOD_NAMES = Set.of(
 			"find", "findOne", "findAll", "findById", "findDistinct"
@@ -62,52 +90,27 @@ public class SpringDataDomainTypeResolver {
 			"org.springframework.data.mongodb.core.aggregation.Aggregation"
 	);
 
-	public @Nullable ITypeBinding determineDomainType(ASTNode node) {
-		ITypeBinding domainType;
-
-		domainType = findDomainTypeFromRepositoryMethodCall(node);
-		if (domainType != null) {
-			return domainType;
-		}
-
-		domainType = findDomainTypeFromFluentTemplateApi(node);
-		if (domainType != null) {
-			return domainType;
-		}
-
-		domainType = findDomainTypeFromTemplateFindCall(node);
-		if (domainType != null) {
-			return domainType;
-		}
-
-		domainType = findDomainTypeFromAggregation(node);
-		if (domainType != null) {
-			return domainType;
-		}
-
-		return findDomainTypeFromTemplateUpdateWithEntity(node);
-	}
+	// =====================================================================
+	// Tier 1: Exact resolution — walk the parent AST chain
+	// =====================================================================
 
 	/**
-	 * Scenario 1: The expression is ultimately an argument to a repository method call.
-	 * Walks up the parent chain to find a MethodInvocation whose receiver type implements Repository&lt;T, ID&gt;.
+	 * Tier 1 — Exact domain type resolution.
+	 * <p>
+	 * Walks up the AST parent chain from the given node, testing each ancestor
+	 * {@link MethodInvocation} against all 5 extraction patterns. Returns the first
+	 * domain type found, or {@code null} if no enclosing invocation reveals one.
+	 * <p>
+	 * This is the high-confidence path: when it returns a type, we know for certain
+	 * this is the domain type the property reference belongs to.
 	 */
-	private @Nullable ITypeBinding findDomainTypeFromRepositoryMethodCall(ASTNode node) {
+	public @Nullable ITypeBinding determineDomainTypeExact(ASTNode node) {
 		ASTNode current = node.getParent();
 		while (current != null) {
 			if (current instanceof MethodInvocation invocation) {
-				IMethodBinding methodBinding = invocation.resolveMethodBinding();
-				if (methodBinding != null) {
-					ITypeBinding declaringType = methodBinding.getDeclaringClass();
-					if (declaringType != null) {
-						ITypeBinding repoType = findRepositoryType(declaringType);
-						if (repoType != null) {
-							ITypeBinding[] typeArgs = repoType.getTypeArguments();
-							if (typeArgs.length >= 1) {
-								return typeArgs[0];
-							}
-						}
-					}
+				ITypeBinding domainType = extractDomainTypeFromInvocation(invocation);
+				if (domainType != null) {
+					return domainType;
 				}
 			}
 			current = current.getParent();
@@ -115,23 +118,130 @@ public class SpringDataDomainTypeResolver {
 		return null;
 	}
 
+	// =====================================================================
+	// Tier 2: Contextual resolution — scan the enclosing block
+	// =====================================================================
+
 	/**
-	 * Scenario 2: Fluent Template API chain like operations.query(X.class).matching(where(...)).
-	 * Walks up the method invocation chain looking for query(Class) or update(Class).
+	 * Tier 2 — Contextual domain type resolution.
+	 * <p>
+	 * When exact resolution fails (the Sort/Criteria call is not directly nested
+	 * inside a repository/template invocation), we look at the broader context:
+	 * all method invocations in the same enclosing {@link Block}.
+	 * <p>
+	 * This handles cases like:
+	 * <pre>
+	 *   Sort sort = Sort.by("firstName");       // &lt;-- no direct parent context
+	 *   repository.findAll(sort);                // &lt;-- but this reveals the domain type
+	 * </pre>
+	 * <p>
+	 * Returns all unique domain types found in the block. The caller can then
+	 * filter by property name matching to narrow down to a single candidate.
 	 */
-	private @Nullable ITypeBinding findDomainTypeFromFluentTemplateApi(ASTNode node) {
-		ASTNode current = node.getParent();
-		while (current != null) {
-			if (current instanceof MethodInvocation invocation) {
-				Expression expr = invocation.getExpression();
-				if (expr instanceof MethodInvocation methodExpr) {
-					ITypeBinding result = walkFluentChainForDomainType(methodExpr);
-					if (result != null) {
-						return result;
+	public List<ITypeBinding> determineDomainTypesFromBlock(ASTNode node) {
+		Block block = findEnclosingBlock(node);
+		if (block == null) {
+			return List.of();
+		}
+
+		Set<String> seenFqns = new LinkedHashSet<>();
+		List<ITypeBinding> domainTypes = new ArrayList<>();
+
+		block.accept(new ASTVisitor() {
+			@Override
+			public boolean visit(MethodInvocation invocation) {
+				ITypeBinding domainType = extractDomainTypeFromInvocation(invocation);
+				if (domainType != null) {
+					String fqn = domainType.getQualifiedName();
+					if (seenFqns.add(fqn)) {
+						domainTypes.add(domainType);
 					}
 				}
+				return true;
 			}
-			current = current.getParent();
+		});
+
+		return domainTypes;
+	}
+
+	// =====================================================================
+	// Shared extraction core — tests a single MethodInvocation
+	// =====================================================================
+
+	/**
+	 * Shared extraction logic used by both tiers.
+	 * <p>
+	 * Given a single {@link MethodInvocation}, tests it against all 5 domain type
+	 * extraction patterns and returns the domain type if any pattern matches.
+	 */
+	@Nullable ITypeBinding extractDomainTypeFromInvocation(MethodInvocation invocation) {
+		IMethodBinding methodBinding = invocation.resolveMethodBinding();
+		if (methodBinding == null) {
+			return null;
+		}
+
+		ITypeBinding declaringType = methodBinding.getDeclaringClass();
+		if (declaringType == null) {
+			return null;
+		}
+
+		ITypeBinding result;
+
+		// Pattern 1: Repository method call — repository.findAll(Sort.by(...))
+		result = tryRepositoryCall(declaringType);
+		if (result != null) {
+			return result;
+		}
+
+		// Pattern 2: Fluent Template API — mongoOps.query(X.class).matching(...)
+		result = tryFluentApi(invocation);
+		if (result != null) {
+			return result;
+		}
+
+		// Pattern 3: Template find/findOne/findAll — template.find(query, X.class)
+		result = tryTemplateFindCall(invocation, declaringType);
+		if (result != null) {
+			return result;
+		}
+
+		// Pattern 4: Aggregation — newAggregation(X.class, ...)
+		result = tryAggregation(invocation, declaringType);
+		if (result != null) {
+			return result;
+		}
+
+		// Pattern 5: Template update with entity — operations.update(entity, options)
+		return tryTemplateUpdateWithEntity(invocation, declaringType);
+	}
+
+	// =====================================================================
+	// Pattern 1: Repository method call
+	// Receiver implements Repository<T, ID> — extract T.
+	// E.g. repository.findAll(Sort.by("firstName"))
+	// =====================================================================
+
+	private @Nullable ITypeBinding tryRepositoryCall(ITypeBinding declaringType) {
+		ITypeBinding repoType = ASTUtils.findInTypeHierarchy(declaringType, REPOSITORY_FQN_TYPES);
+		if (repoType != null && repoType.isParameterizedType()) {
+			ITypeBinding[] typeArgs = repoType.getTypeArguments();
+			if (typeArgs.length >= 1) {
+				return typeArgs[0];
+			}
+		}
+		return null;
+	}
+
+	// =====================================================================
+	// Pattern 2: Fluent Template API
+	// Walk the fluent chain to find .query(X.class) or .update(X.class).
+	// E.g. mongoOps.query(Customer.class).matching(query(where("name"))).all()
+	// =====================================================================
+
+	private @Nullable ITypeBinding tryFluentApi(MethodInvocation invocation) {
+		Expression expr = invocation.getExpression();
+		if (expr instanceof MethodInvocation methodExpr) {
+			return walkFluentChainForDomainType(methodExpr);
 		}
 		return null;
 	}
@@ -148,129 +258,84 @@ public class SpringDataDomainTypeResolver {
 		return null;
 	}
 
-	/**
-	 * Scenario 3: Template find/findOne/findAll with explicit Class parameter.
-	 * E.g. template.find(query, Person.class)
-	 */
-	private @Nullable ITypeBinding findDomainTypeFromTemplateFindCall(ASTNode node) {
-		ASTNode current = node.getParent();
-		while (current != null) {
-			if (current instanceof MethodInvocation invocation) {
-				String methodName = invocation.getName().getIdentifier();
-				if (TEMPLATE_QUERY_METHOD_NAMES.contains(methodName)) {
-					IMethodBinding methodBinding = invocation.resolveMethodBinding();
-					if (methodBinding != null) {
-						ITypeBinding declaringType = methodBinding.getDeclaringClass();
-						if (declaringType != null && isTemplateOrOperationsType(declaringType)) {
-							return findClassLiteralInArguments(invocation);
-						}
-					}
-				}
-			}
-			current = current.getParent();
+	// =====================================================================
+	// Pattern 3: Template find/findOne/findAll with explicit Class parameter
+	// E.g. template.find(Query.query(Criteria.where("name")), Person.class)
+	// =====================================================================
+
+	private @Nullable ITypeBinding tryTemplateFindCall(MethodInvocation invocation, ITypeBinding declaringType) {
+		String methodName = invocation.getName().getIdentifier();
+		if (TEMPLATE_QUERY_METHOD_NAMES.contains(methodName) && ASTUtils.isAnyTypeInHierarchy(declaringType, TEMPLATE_FQN_TYPES)) {
+			return findClassLiteralInArguments(invocation);
 		}
 		return null;
 	}
 
-	/**
-	 * Scenario 4: Aggregation newAggregation(X.class, ...).
-	 * The first argument to newAggregation may be a Class literal.
-	 */
-	private @Nullable ITypeBinding findDomainTypeFromAggregation(ASTNode node) {
-		ASTNode current = node.getParent();
-		while (current != null) {
-			if (current instanceof MethodInvocation invocation) {
-				String methodName = invocation.getName().getIdentifier();
-				if ("newAggregation".equals(methodName)) {
-					IMethodBinding methodBinding = invocation.resolveMethodBinding();
-					if (methodBinding != null) {
-						String declaringFqn = getErasedFqn(methodBinding.getDeclaringClass());
-						if (AGGREGATION_FQN_TYPES.contains(declaringFqn)) {
-							return extractFirstClassLiteralArgument(invocation);
-						}
-					}
-				}
-			}
-			current = current.getParent();
+	// =====================================================================
+	// Pattern 4: Aggregation — newAggregation(X.class, ...)
+	// First argument may be a Class literal specifying the input domain type.
+	// E.g. newAggregation(Order.class, match(where("id").is(...)))
+	// =====================================================================
+
+	private @Nullable ITypeBinding tryAggregation(MethodInvocation invocation, ITypeBinding declaringType) {
+		if ("newAggregation".equals(invocation.getName().getIdentifier())
+				&& ASTUtils.isAnyTypeInHierarchy(declaringType, AGGREGATION_FQN_TYPES)) {
+			return extractFirstClassLiteralArgument(invocation);
 		}
 		return null;
 	}
 
-	/**
-	 * Scenario 5: operations.update(entity, options) where entity is the first arg.
-	 * The type of the entity argument is the domain type.
-	 */
-	private @Nullable ITypeBinding findDomainTypeFromTemplateUpdateWithEntity(ASTNode node) {
-		ASTNode current = node.getParent();
-		while (current != null) {
-			if (current instanceof MethodInvocation invocation) {
-				String methodName = invocation.getName().getIdentifier();
-				if ("update".equals(methodName)) {
-					IMethodBinding methodBinding = invocation.resolveMethodBinding();
-					if (methodBinding != null) {
-						ITypeBinding declaringType = methodBinding.getDeclaringClass();
-						if (declaringType != null && isTemplateOrOperationsType(declaringType)) {
-							@SuppressWarnings("unchecked")
-							List<Expression> args = invocation.arguments();
-							if (!args.isEmpty()) {
-								Expression firstArg = args.get(0);
-								if (!(firstArg instanceof TypeLiteral)) {
-									ITypeBinding argType = firstArg.resolveTypeBinding();
-									if (argType != null && !argType.isPrimitive()
-											&& !"java.lang.Object".equals(argType.getQualifiedName())) {
-										return argType;
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-			current = current.getParent();
-		}
-		return null;
-	}
+	// =====================================================================
+	// Pattern 5: Template update with entity argument
+	// First argument is the entity instance whose type is the domain type.
+	// E.g. operations.update(person, UpdateOptions.builder()...build())
+	// =====================================================================
 
-	private @Nullable ITypeBinding findRepositoryType(ITypeBinding type) {
-		if (type == null) {
+	private @Nullable ITypeBinding tryTemplateUpdateWithEntity(MethodInvocation invocation, ITypeBinding declaringType) {
+		if (!"update".equals(invocation.getName().getIdentifier())
+				|| !ASTUtils.isAnyTypeInHierarchy(declaringType, TEMPLATE_FQN_TYPES)) {
 			return null;
 		}
-		String erasedFqn = getErasedFqn(type);
-		if (REPOSITORY_FQN.equals(erasedFqn) && type.isParameterizedType()) {
-			return type;
-		}
-		for (ITypeBinding iface : type.getInterfaces()) {
-			ITypeBinding result = findRepositoryType(iface);
-			if (result != null) {
-				return result;
+		@SuppressWarnings("unchecked")
+		List<Expression> args = invocation.arguments();
+		if (!args.isEmpty()) {
+			Expression firstArg = args.get(0);
+			if (!(firstArg instanceof TypeLiteral)) {
+				ITypeBinding argType = firstArg.resolveTypeBinding();
+				if (argType != null && !argType.isPrimitive()
+						&& !"java.lang.Object".equals(argType.getQualifiedName())) {
+					return argType;
+				}
 			}
-		}
-		ITypeBinding superclass = type.getSuperclass();
-		if (superclass != null) {
-			return findRepositoryType(superclass);
 		}
 		return null;
 	}
 
-	private boolean isTemplateOrOperationsType(ITypeBinding type) {
-		if (type == null) {
-			return false;
-		}
-		String fqn = getErasedFqn(type);
-		if (TEMPLATE_FQN_TYPES.contains(fqn)) {
-			return true;
-		}
-		for (ITypeBinding iface : type.getInterfaces()) {
-			if (isTemplateOrOperationsType(iface)) {
-				return true;
+	// =====================================================================
+	// Helper: find enclosing Block
+	// =====================================================================
+
+	private @Nullable Block findEnclosingBlock(ASTNode node) {
+		ASTNode current = node.getParent();
+		while (current != null) {
+			if (current instanceof Block block) {
+				return block;
 			}
+			// Stop at Statement level — don't cross into parent blocks
+			if (current instanceof Statement) {
+				ASTNode parent = current.getParent();
+				if (parent instanceof Block block) {
+					return block;
+				}
+			}
+			current = current.getParent();
 		}
-		ITypeBinding superclass = type.getSuperclass();
-		if (superclass != null) {
-			return isTemplateOrOperationsType(superclass);
-		}
-		return false;
+		return null;
 	}
+
+	// =====================================================================
+	// Helper: Class literal extraction from arguments
+	// =====================================================================
 
 	private @Nullable ITypeBinding extractFirstClassLiteralArgument(MethodInvocation invocation) {
 		@SuppressWarnings("unchecked")
@@ -293,13 +358,6 @@ public class SpringDataDomainTypeResolver {
 			}
 		}
 		return null;
-	}
-
-	private String getErasedFqn(ITypeBinding type) {
-		if (type.isParameterizedType()) {
-			return type.getErasure().getQualifiedName();
-		}
-		return type.getQualifiedName();
 	}
 
 }

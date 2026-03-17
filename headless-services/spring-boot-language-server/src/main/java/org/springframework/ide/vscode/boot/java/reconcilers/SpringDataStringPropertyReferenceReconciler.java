@@ -29,6 +29,20 @@ import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
 
+/**
+ * Detects string-based property references in Spring Data code ({@code Sort.by("prop")},
+ * {@code Criteria.where("prop")}, etc.) and reports diagnostics using a two-tier
+ * domain type resolution strategy.
+ * <p>
+ * <b>Tier 1 — Exact resolution:</b> If the string property reference is structurally
+ * nested inside a repository/template call that directly reveals the domain type, we
+ * report an INFO diagnostic mentioning the domain type name.
+ * <p>
+ * <b>Tier 2 — Contextual resolution:</b> If exact resolution fails, we scan the
+ * enclosing code block for any repository/template calls that reveal domain types.
+ * If exactly one candidate is found, we report INFO with that type name; otherwise
+ * we report a generic INFO.
+ */
 public class SpringDataStringPropertyReferenceReconciler implements JdtAstReconciler {
 
 	private static final Set<String> SORT_FQN_TYPES = Set.of(
@@ -131,10 +145,9 @@ public class SpringDataStringPropertyReferenceReconciler implements JdtAstReconc
 			return;
 		}
 
-		ITypeBinding domainType = domainTypeResolver.determineDomainType(node);
 		for (Expression arg : args) {
 			if (arg instanceof StringLiteral stringLiteral) {
-				reportProblem(stringLiteral, domainType, context);
+				reportProblem(node, stringLiteral, context);
 			}
 		}
 	}
@@ -145,8 +158,7 @@ public class SpringDataStringPropertyReferenceReconciler implements JdtAstReconc
 
 		for (Expression arg : args) {
 			if (arg instanceof StringLiteral stringLiteral) {
-				ITypeBinding domainType = domainTypeResolver.determineDomainType(node);
-				reportProblem(stringLiteral, domainType, context);
+				reportProblem(node, stringLiteral, context);
 				return;
 			}
 		}
@@ -157,20 +169,48 @@ public class SpringDataStringPropertyReferenceReconciler implements JdtAstReconc
 		List<Expression> args = node.arguments();
 
 		if (args.size() == 1 && args.get(0) instanceof StringLiteral stringLiteral) {
-			ITypeBinding domainType = domainTypeResolver.determineDomainType(node);
-			reportProblem(stringLiteral, domainType, context);
+			reportProblem(node, stringLiteral, context);
 		}
 	}
 
-	private void reportProblem(StringLiteral stringLiteral, ITypeBinding domainType, ReconcilingContext context) {
+	/**
+	 * Two-tier domain type resolution and problem reporting.
+	 *
+	 * @param callSite the Sort.by / Sort.Order.desc / Criteria.where invocation
+	 * @param stringLiteral the string literal containing the property name
+	 * @param context the reconciling context for collecting problems
+	 */
+	private void reportProblem(MethodInvocation callSite, StringLiteral stringLiteral, ReconcilingContext context) {
+		// Tier 1: Exact resolution — walk the parent chain for a structurally
+		// enclosing invocation that directly reveals the domain type.
+		ITypeBinding exactType = domainTypeResolver.determineDomainTypeExact(callSite);
+
+		if (exactType != null) {
+			reportInfo(stringLiteral, exactType.getName(), context);
+			return;
+		}
+
+		// Tier 2: Contextual resolution — scan the enclosing block for any
+		// repository/template calls that reveal domain types.
+		List<ITypeBinding> candidates = domainTypeResolver.determineDomainTypesFromBlock(callSite);
+
+		if (candidates.size() == 1) {
+			reportInfo(stringLiteral, candidates.get(0).getName(), context);
+		} else {
+			reportInfo(stringLiteral, null, context);
+		}
+	}
+
+	private void reportInfo(StringLiteral stringLiteral, String domainTypeName, ReconcilingContext context) {
 		String message;
-		if (domainType != null) {
-			message = "Non type-safe property reference for domain type '" + domainType.getName() + "'";
+		if (domainTypeName != null) {
+			message = "Non type-safe property reference for domain type '" + domainTypeName + "'";
 		} else {
 			message = "Non type-safe property reference";
 		}
 		ReconcileProblemImpl problem = new ReconcileProblemImpl(
-				getProblemType(), message, stringLiteral.getStartPosition(), stringLiteral.getLength());
+				Boot4JavaProblemType.SPRING_DATA_STRING_PROPERTY_REFERENCE,
+				message, stringLiteral.getStartPosition(), stringLiteral.getLength());
 		context.getProblemCollector().accept(problem);
 	}
 

@@ -95,6 +95,7 @@ import org.springframework.ide.vscode.boot.properties.completions.SpringProperti
 import org.springframework.ide.vscode.boot.xml.SpringXMLCompletionEngine;
 import org.springframework.ide.vscode.boot.yaml.completions.ApplicationYamlAssistContext;
 import org.springframework.ide.vscode.boot.yaml.completions.SpringYamlCompletionEngine;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactoring;
 import org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory;
 import org.springframework.ide.vscode.commons.languageserver.LanguageServerRunner;
 import org.springframework.ide.vscode.commons.languageserver.java.FutureProjectFinder;
@@ -451,6 +452,8 @@ public class BootLanguageServerBootApp {
 	Consumer<GsonBuilder> configureGson() {
 		return builder -> builder
 				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(SpringIndexElement.class, "_internal_node_type")
+						.recognizeSubtypes())
+				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(JdtRefactoring.class, "_jdt_refactoring_type")
 						.recognizeSubtypes());
 	}
 }

@@ -51,7 +51,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
  * records. The live AST and {@link ASTRewrite} are provided to {@link #apply}.
  * Multiple descriptors can be passed to batch-replace several literals in one rewrite.
  */
-public class TypeSafePropertyReferenceRefactoring {
+public class TypeSafePropertyReferenceRefactoring implements JdtRefactoring {
 
 	/**
 	 * A single segment in a property path, pairing a domain type with a property name.
@@ -136,6 +136,7 @@ public class TypeSafePropertyReferenceRefactoring {
 	 * @param cu      the parsed {@link CompilationUnit} (must be the same instance
 	 *                that the rewrite was created from)
 	 */
+	@Override
 	public void apply(ASTRewrite rewrite, CompilationUnit cu) {
 		AST ast = cu.getAST();
 

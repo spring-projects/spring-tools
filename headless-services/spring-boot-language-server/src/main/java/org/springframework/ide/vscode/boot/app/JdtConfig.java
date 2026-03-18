@@ -24,6 +24,8 @@ import org.springframework.ide.vscode.boot.java.DefaultBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.VSCodeBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtCodeActionHandler;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.boot.java.cron.CronExpressionsInlayHintsProvider;
 import org.springframework.ide.vscode.boot.java.cron.CronReconciler;
 import org.springframework.ide.vscode.boot.java.cron.CronSemanticTokens;
@@ -252,6 +254,10 @@ public class JdtConfig {
 	
 	@Bean JdtCodeActionHandler jdtCodeActionHandler(CompilationUnitCache cuCache, Collection<JdtAstCodeActionProvider> providers) {
 		return new JdtCodeActionHandler(cuCache, providers);
+	}
+	
+	@Bean JdtRefactorings jdtRefactorings(SimpleLanguageServer server, JavaProjectFinder projectFinder, CompilationUnitCache cuCache) {
+		return new JdtRefactorings(server, projectFinder, cuCache);
 	}
 	
 	@Bean BuildCommandProvider buildCommandProvider(SimpleLanguageServer server) {

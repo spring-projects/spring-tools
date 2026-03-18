@@ -195,8 +195,8 @@ public class JdtConfig {
 		return new BeanValidationComponentReconciler(server.getQuickfixRegistry());
 	}
 	
-	@Bean SpringDataStringPropertyReferenceReconciler springDataStringPropertyReferenceReconciler() {
-		return new SpringDataStringPropertyReferenceReconciler();
+	@Bean SpringDataStringPropertyReferenceReconciler springDataStringPropertyReferenceReconciler(SimpleLanguageServer server) {
+		return new SpringDataStringPropertyReferenceReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)
@@ -257,7 +257,9 @@ public class JdtConfig {
 	}
 	
 	@Bean JdtRefactorings jdtRefactorings(SimpleLanguageServer server, JavaProjectFinder projectFinder, CompilationUnitCache cuCache) {
-		return new JdtRefactorings(server, projectFinder, cuCache);
+		JdtRefactorings jdtRefactorings = new JdtRefactorings(server, projectFinder, cuCache);
+		server.getQuickfixRegistry().register(JdtRefactorings.JDT_QUICKFIX, jdtRefactorings);
+		return jdtRefactorings;
 	}
 	
 	@Bean BuildCommandProvider buildCommandProvider(SimpleLanguageServer server) {

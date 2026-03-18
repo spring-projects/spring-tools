@@ -71,9 +71,9 @@ class TypeSafePropertyReferenceRefactoringTest {
 		return source.indexOf("\"" + literalValue + "\"");
 	}
 
-	private static PropertyReferenceDescriptor singleSegment(int offset, String domainTypeFqn, String property) {
+	private static PropertyReferenceDescriptor singleSegment(int offset, String domainTypeFqn, String methodName) {
 		return new PropertyReferenceDescriptor(offset,
-				List.of(new PropertySegment(domainTypeFqn, property)));
+				List.of(new PropertySegment(domainTypeFqn, methodName)));
 	}
 
 	// ========== Single-segment: basic replacement ==========
@@ -93,7 +93,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "firstName"));
+				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "getFirstName"));
 
 		assertEquals("""
 				package com.example;
@@ -127,7 +127,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "lastName"), "com.example.domain.Customer", "lastName"));
+				singleSegment(offsetOf(source, "lastName"), "com.example.domain.Customer", "getLastName"));
 
 		assertEquals("""
 				package com.example;
@@ -160,7 +160,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "firstName"), "com.example.Customer", "firstName"));
+				singleSegment(offsetOf(source, "firstName"), "com.example.Customer", "getFirstName"));
 
 		assertEquals("""
 				package com.example;
@@ -192,8 +192,8 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "firstName"),
-				singleSegment(offsetOf(source, "lastName"), "com.example.domain.Customer", "lastName"));
+				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "getFirstName"),
+				singleSegment(offsetOf(source, "lastName"), "com.example.domain.Customer", "getLastName"));
 
 		assertEquals("""
 				package com.example;
@@ -226,7 +226,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "lastName"), "com.example.domain.Customer", "lastName"));
+				singleSegment(offsetOf(source, "lastName"), "com.example.domain.Customer", "getLastName"));
 
 		assertEquals("""
 				package com.example;
@@ -260,7 +260,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "firstName"));
+				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "getFirstName"));
 
 		assertEquals("""
 				package com.example;
@@ -293,7 +293,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "firstName"));
+				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Customer", "getFirstName"));
 
 		assertEquals("""
 				package com.example;
@@ -327,8 +327,8 @@ class TypeSafePropertyReferenceRefactoringTest {
 
 		String result = applyRefactoring(source,
 				new PropertyReferenceDescriptor(offsetOf(source, "address.country"), List.of(
-						new PropertySegment("com.example.domain.Person", "address"),
-						new PropertySegment("com.example.domain.Address", "country"))));
+						new PropertySegment("com.example.domain.Person", "getAddress"),
+						new PropertySegment("com.example.domain.Address", "getCountry"))));
 
 		assertEquals("""
 				package com.example;
@@ -364,9 +364,9 @@ class TypeSafePropertyReferenceRefactoringTest {
 
 		String result = applyRefactoring(source,
 				new PropertyReferenceDescriptor(offsetOf(source, "address.city.name"), List.of(
-						new PropertySegment("com.example.domain.Employee", "address"),
-						new PropertySegment("com.example.domain.Address", "city"),
-						new PropertySegment("com.example.domain.City", "name"))));
+						new PropertySegment("com.example.domain.Employee", "getAddress"),
+						new PropertySegment("com.example.domain.Address", "getCity"),
+						new PropertySegment("com.example.domain.City", "getName"))));
 
 		assertEquals("""
 				package com.example;
@@ -404,8 +404,8 @@ class TypeSafePropertyReferenceRefactoringTest {
 
 		String result = applyRefactoring(source,
 				new PropertyReferenceDescriptor(offsetOf(source, "address.street"), List.of(
-						new PropertySegment("com.example.domain.Person", "address"),
-						new PropertySegment("com.example.domain.Address", "street"))));
+						new PropertySegment("com.example.domain.Person", "getAddress"),
+						new PropertySegment("com.example.domain.Address", "getStreet"))));
 
 		assertEquals("""
 				package com.example;
@@ -442,10 +442,10 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source,
-				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Person", "firstName"),
+				singleSegment(offsetOf(source, "firstName"), "com.example.domain.Person", "getFirstName"),
 				new PropertyReferenceDescriptor(offsetOf(source, "address.country"), List.of(
-						new PropertySegment("com.example.domain.Person", "address"),
-						new PropertySegment("com.example.domain.Address", "country"))));
+						new PropertySegment("com.example.domain.Person", "getAddress"),
+						new PropertySegment("com.example.domain.Address", "getCountry"))));
 
 		assertEquals("""
 				package com.example;
@@ -460,6 +460,39 @@ class TypeSafePropertyReferenceRefactoringTest {
 					void test() {
 						Sort.by(Person::getFirstName);
 						Criteria.where(PropertyPath.of(Person::getAddress).then(Address::getCountry));
+					}
+				}
+				""", result);
+	}
+
+	// ========== Record domain type: accessor method (no get prefix) ==========
+
+	@Test
+	void recordDomainType_accessorMethodReference() throws Exception {
+		String source = """
+				package com.example;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					void test() {
+						Sort.by("firstName");
+					}
+				}
+				""";
+
+		String result = applyRefactoring(source,
+				singleSegment(offsetOf(source, "firstName"), "com.example.domain.PersonRecord", "firstName"));
+
+		assertEquals("""
+				package com.example;
+
+				import com.example.domain.PersonRecord;
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					void test() {
+						Sort.by(PersonRecord::firstName);
 					}
 				}
 				""", result);

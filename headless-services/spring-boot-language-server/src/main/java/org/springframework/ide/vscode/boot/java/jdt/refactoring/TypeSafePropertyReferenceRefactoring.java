@@ -54,27 +54,31 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 public class TypeSafePropertyReferenceRefactoring implements JdtRefactoring {
 
 	/**
-	 * A single segment in a property path, pairing a domain type with a property name.
+	 * A single segment in a property path, pairing a domain type with the accessor
+	 * method name to use in a method reference.
 	 * <p>
 	 * For example, the dotted path {@code "address.country"} on domain type {@code Person}
 	 * is represented as two segments:
 	 * <ol>
-	 *   <li>{@code PropertySegment("com.example.Person", "address")}</li>
-	 *   <li>{@code PropertySegment("com.example.Address", "country")}</li>
+	 *   <li>{@code PropertySegment("com.example.Person", "getAddress")}</li>
+	 *   <li>{@code PropertySegment("com.example.Address", "getCountry")}</li>
 	 * </ol>
+	 * For records, the method name is the accessor name (e.g., {@code "firstName"})
+	 * rather than a getter (e.g., {@code "getFirstName"}).
 	 *
 	 * @param domainTypeFqn  fully qualified name of the type that owns this property
 	 *                       (e.g. {@code "com.example.Person"})
-	 * @param propertyName   the property name on that type (e.g. {@code "address"})
+	 * @param methodName     the accessor/getter method name on that type
+	 *                       (e.g. {@code "getAddress"} for classes, {@code "firstName"} for records)
 	 */
-	public static record PropertySegment(String domainTypeFqn, String propertyName) {
+	public static record PropertySegment(String domainTypeFqn, String methodName) {
 
 		public PropertySegment {
 			if (domainTypeFqn == null || domainTypeFqn.isBlank()) {
 				throw new IllegalArgumentException("domainTypeFqn must not be null or blank");
 			}
-			if (propertyName == null || propertyName.isBlank()) {
-				throw new IllegalArgumentException("propertyName must not be null or blank");
+			if (methodName == null || methodName.isBlank()) {
+				throw new IllegalArgumentException("methodName must not be null or blank");
 			}
 		}
 
@@ -88,10 +92,11 @@ public class TypeSafePropertyReferenceRefactoring implements JdtRefactoring {
 	 * across LSP boundaries or stored in a code action command payload.
 	 * <p>
 	 * Each {@link PropertySegment} in the chain pairs a domain type FQN with the
-	 * property name on that type. For a simple property like {@code "firstName"}
-	 * on {@code Customer}, the chain has one segment. For a dotted path like
+	 * accessor method name on that type. For a simple property like {@code "firstName"}
+	 * on {@code Customer}, the chain has one segment with method name {@code "getFirstName"}
+	 * (or {@code "firstName"} for records). For a dotted path like
 	 * {@code "address.country"} on {@code Person}, the chain has two segments:
-	 * {@code [Person/address, Address/country]}.
+	 * {@code [Person/getAddress, Address/getCountry]}.
 	 *
 	 * @param offset          start offset of the {@code StringLiteral} AST node (including
 	 *                        the opening quote) in the compilation unit source
@@ -178,12 +183,12 @@ public class TypeSafePropertyReferenceRefactoring implements JdtRefactoring {
 	}
 
 	/**
-	 * Build {@code DomainType::getProperty} for a single segment.
+	 * Build {@code DomainType::methodName} for a single segment.
 	 */
 	private static ExpressionMethodReference buildMethodReference(AST ast, PropertySegment segment) {
 		ExpressionMethodReference ref = ast.newExpressionMethodReference();
 		ref.setExpression(ast.newSimpleName(extractSimpleName(segment.domainTypeFqn())));
-		ref.setName(ast.newSimpleName(toGetterName(segment.propertyName())));
+		ref.setName(ast.newSimpleName(segment.methodName()));
 		return ref;
 	}
 
@@ -224,10 +229,6 @@ public class TypeSafePropertyReferenceRefactoring implements JdtRefactoring {
 			}
 		});
 		return result[0];
-	}
-
-	static String toGetterName(String propertyName) {
-		return "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
 	}
 
 	private static String extractSimpleName(String fqn) {

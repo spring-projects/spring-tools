@@ -70,7 +70,8 @@ public class SpringDataCommonsReconciler extends AbstractSpringDataPropertyRefer
 	}
 
 	@Override
-	protected boolean isPropertyReferenceCall(MethodInvocation node, String erasedFqn) {
+	protected boolean isPropertyReferenceCall(MethodInvocation node, ITypeBinding declaringType) {
+		String erasedFqn = getErasedFqn(declaringType);
 		return isSortByCall(node, erasedFqn) || isSortOrderCall(node, erasedFqn);
 	}
 

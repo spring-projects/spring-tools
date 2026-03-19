@@ -44,7 +44,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Reconcile
  * <ul>
  *   <li>{@link #isApplicable} — dependency version check</li>
  *   <li>{@link #getRelevantTypesFqn} — import fast-path for {@code RequiredCompleteAstException}</li>
- *   <li>{@link #isPropertyReferenceCall} — declaring class identification</li>
+ *   <li>{@link #isPropertyReferenceCall} — declaring class identification (receives {@code ITypeBinding})</li>
  *   <li>{@link #extractStringLiterals} — string literal extraction with overload validation</li>
  *   <li>{@link #getDomainTypeResolver} — module-specific domain type resolver</li>
  * </ul>
@@ -96,9 +96,9 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 	 * Checks whether the declaring class of this method invocation is one that
 	 * this reconciler cares about (e.g. {@code Sort}, {@code Criteria}, {@code Update}).
 	 *
-	 * @param erasedFqn the erased FQN of the method's declaring class
+	 * @param declaringType the resolved type binding of the method's declaring class
 	 */
-	protected abstract boolean isPropertyReferenceCall(MethodInvocation node, String erasedFqn);
+	protected abstract boolean isPropertyReferenceCall(MethodInvocation node, ITypeBinding declaringType);
 
 	/**
 	 * Extracts the {@link StringLiteral} arguments from the method invocation that
@@ -129,9 +129,7 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 			return;
 		}
 
-		String erasedFqn = getErasedFqn(declaringClass);
-
-		if (isPropertyReferenceCall(node, erasedFqn)) {
+		if (isPropertyReferenceCall(node, declaringClass)) {
 			List<StringLiteral> literals = extractStringLiterals(node);
 			for (StringLiteral literal : literals) {
 				reportProblem(node, literal, docURI, context);

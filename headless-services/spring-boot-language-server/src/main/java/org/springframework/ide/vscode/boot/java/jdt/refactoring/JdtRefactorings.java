@@ -21,11 +21,8 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.Document;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.TextDocumentEdit;
-import org.eclipse.lsp4j.TextEdit;
-import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import org.eclipse.text.edits.ReplaceEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
@@ -35,7 +32,9 @@ import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixEd
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.CodeActionResolver;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
-import org.springframework.ide.vscode.commons.util.BadLocationException;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleTextDocumentService;
+import org.springframework.ide.vscode.commons.util.text.LazyTextDocument;
+import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 import com.google.gson.Gson;
@@ -138,16 +137,15 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 							return null;
 						}
 						try {
-							String source = cuCache.fetchContent(uri);
+							TextDocument lspDoc = getDocument(docUri);
 
 							ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
 							descriptor.refactoring().apply(rewrite, cu);
 
-							Document jdtDoc = new Document(source);
+							Document jdtDoc = new Document(lspDoc.get());
 							org.eclipse.text.edits.TextEdit jdtEdit = rewrite.rewriteAST(jdtDoc, formatterOptions);
 
-							TextDocument lspDoc = new TextDocument(docUri, null, 0, source);
-							return toLspTextDocumentEdit(jdtEdit, lspDoc);
+							return JdtRefactorUtils.toLspTextDocumentEdit(jdtEdit, lspDoc);
 						}
 						catch (Exception e) {
 							log.error("Failed to compute JDT refactoring edit for {}", docUri, e);
@@ -168,46 +166,13 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 		});
 	}
 
-	// ========== JDT TextEdit → LSP TextDocumentEdit conversion ==========
-
-	private static TextDocumentEdit toLspTextDocumentEdit(org.eclipse.text.edits.TextEdit jdtEdit,
-			TextDocument doc) throws BadLocationException {
-		List<TextEdit> lspEdits = new ArrayList<>();
-		collectLspEdits(jdtEdit, doc, lspEdits);
-
-		TextDocumentEdit docEdit = new TextDocumentEdit();
-		docEdit.setTextDocument(new VersionedTextDocumentIdentifier(doc.getUri(), doc.getVersion()));
-		docEdit.setEdits(lspEdits.stream()
-				.map(e -> Either.<TextEdit, org.eclipse.lsp4j.SnippetTextEdit>forLeft(e))
-				.toList());
-		return docEdit;
-	}
-
-	private static void collectLspEdits(org.eclipse.text.edits.TextEdit jdtEdit, TextDocument doc,
-			List<TextEdit> lspEdits) throws BadLocationException {
-		if (jdtEdit.hasChildren()) {
-			for (org.eclipse.text.edits.TextEdit child : jdtEdit.getChildren()) {
-				collectLspEdits(child, doc, lspEdits);
-			}
+	private TextDocument getDocument(String docUri) {
+		SimpleTextDocumentService docService = server.getTextDocumentService();
+		TextDocument doc = docService.getLatestSnapshot(docUri);
+		if (doc != null) {
+			return doc;
 		}
-		else if (jdtEdit instanceof ReplaceEdit re) {
-			TextEdit lspEdit = new TextEdit();
-			lspEdit.setRange(doc.toRange(re.getOffset(), re.getLength()));
-			lspEdit.setNewText(re.getText());
-			lspEdits.add(lspEdit);
-		}
-		else if (jdtEdit instanceof org.eclipse.text.edits.InsertEdit ie) {
-			TextEdit lspEdit = new TextEdit();
-			lspEdit.setRange(doc.toRange(ie.getOffset(), 0));
-			lspEdit.setNewText(ie.getText());
-			lspEdits.add(lspEdit);
-		}
-		else if (jdtEdit instanceof org.eclipse.text.edits.DeleteEdit de) {
-			TextEdit lspEdit = new TextEdit();
-			lspEdit.setRange(doc.toRange(de.getOffset(), de.getLength()));
-			lspEdit.setNewText("");
-			lspEdits.add(lspEdit);
-		}
+		return new LazyTextDocument(docUri, LanguageId.JAVA);
 	}
 
 }

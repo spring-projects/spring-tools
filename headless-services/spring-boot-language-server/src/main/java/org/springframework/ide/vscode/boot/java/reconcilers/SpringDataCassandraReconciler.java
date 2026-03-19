@@ -76,7 +76,8 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 	}
 
 	@Override
-	protected boolean isPropertyReferenceCall(MethodInvocation node, String erasedFqn) {
+	protected boolean isPropertyReferenceCall(MethodInvocation node, ITypeBinding declaringType) {
+		String erasedFqn = getErasedFqn(declaringType);
 		return CRITERIA_FQN_TYPES.contains(erasedFqn) || UPDATE_FQN_TYPES.contains(erasedFqn)
 				|| COLUMNS_FQN_TYPES.contains(erasedFqn);
 	}

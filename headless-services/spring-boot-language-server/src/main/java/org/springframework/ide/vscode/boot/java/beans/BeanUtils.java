@@ -60,6 +60,7 @@ public class BeanUtils {
 			Annotations.REPOSITORY,
 			Annotations.CONTROLLER,
 			Annotations.REST_CONTROLLER,
+			Annotations.FEIGN_CLIENT,
 			Annotations.NAMED_JAKARTA,
 			Annotations.NAMED_JAVAX);
 
@@ -120,6 +121,13 @@ public class BeanUtils {
 						if (values != null) {
 							for (int i = 0; i < values.length; i++) {
 								result.add(values[i].getName());
+							}
+						}
+
+						AnnotationAttributeValue[] names = attributes.get("name");
+						if (names != null) {
+							for (int i = 0; i < names.length; i++) {
+								result.add(names[i].getName());
 							}
 						}
 					}

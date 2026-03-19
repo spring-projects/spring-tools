@@ -30,7 +30,6 @@ import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
-import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -38,13 +37,12 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement;
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexer;
 import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
-import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexer;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigJavaIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.DefaultSymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement;
@@ -53,44 +51,45 @@ import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContaine
 import org.springframework.ide.vscode.commons.protocol.spring.BeanRegistrarElement;
 import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
-import org.springframework.ide.vscode.commons.protocol.spring.SimpleSymbolElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Martin Lippert
  * @author Kris De Volder
  */
-public class ComponentSymbolProvider implements SymbolProvider {
+@Component
+public class ComponentSymbolProvider implements SpringComponentIndexer {
 	
 	private static final Logger log = LoggerFactory.getLogger(ComponentSymbolProvider.class);
 
-	@Override
+//	@Override
 	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
-		try {
-			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration type) {
+//		try {
+//			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration type) {
 //				createSymbol(type, node, annotationType, metaAnnotations, context, doc);
-			}
-			else if (node != null && node.getParent() != null && node.getParent() instanceof RecordDeclaration record) {
-				createSymbol(record, node, annotationType, metaAnnotations, context, context.getDoc());
-			}
-			else if (node != null && node.getParent() != null && node.getParent() instanceof AnnotationTypeDeclaration annotationDeclaration) {
-				createSymbol(annotationDeclaration, context, context.getDoc());
-			}
-			else if (Annotations.NAMED_ANNOTATIONS.contains(annotationType.getQualifiedName())) {
-				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, context.getDoc());
-				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), new SimpleSymbolElement(symbol)));
-			}
-		}
-		catch (BadLocationException e) {
-			log.error("", e);
-		}
+//			}
+//			else if (node != null && node.getParent() != null && node.getParent() instanceof RecordDeclaration record) {
+//				createSymbol(record, node, annotationType, metaAnnotations, context, context.getDoc());
+//			}
+//			else if (node != null && node.getParent() != null && node.getParent() instanceof AnnotationTypeDeclaration annotationDeclaration) {
+//				createSymbol(annotationDeclaration, context, context.getDoc());
+//			}
+//			else if (Annotations.NAMED_ANNOTATIONS.contains(annotationType.getQualifiedName())) {
+//				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, context.getDoc());
+//				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), new SimpleSymbolElement(symbol)));
+//			}
+//		}
+//		catch (BadLocationException e) {
+//			log.error("", e);
+//		}
 	}
 
 	@Override
-	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
+	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
 		
 		boolean isComponment = annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.COMPONENT)
@@ -107,6 +106,7 @@ public class ComponentSymbolProvider implements SymbolProvider {
 			indexBeanRegistrarImplementation(null, typeDeclaration, context, context.getDoc());
 			indexBeanMethods(null, typeDeclaration, context, context.getDoc());
 			indexAotProcessors(typeDeclaration, context);
+			indexConfigurationProperties(null, typeDeclaration, context, context.getDoc());
 		}
 	}
 	
@@ -119,37 +119,11 @@ public class ComponentSymbolProvider implements SymbolProvider {
 	}
 
 	private void createSymbol(TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
-		
-		ITypeBinding beanType = type.resolveBinding();
-
-		SimpleName nameNode = type.getName();
-		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
-		
-		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
-		boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
-		
-		// defer repository indexing to repository symbol provider
-		if (isRepository) {
-			return;
-		}
-
-		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
-		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
-
-		Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(type);
- 		
-		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
-		AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
-		
-		String beanName = BeanUtils.getBeanNameFromType(type, annotationMetadata);
-
-		String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
-		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
+		Bean beanDefinition = createBean(type, context);
 		
 		// event publisher checks
 		boolean usesEventPublisher = false;
-		for (InjectionPoint injectionPoint : injectionPoints) {
+		for (InjectionPoint injectionPoint : beanDefinition.getInjectionPoints()) {
 			if (Annotations.EVENT_PUBLISHER.equals(injectionPoint.getType())) {
 				usesEventPublisher = true;
 			}
@@ -167,51 +141,99 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		indexBeanMethods(beanDefinition, type, context, doc);
 		indexEventListeners(beanDefinition, type, context, doc);
 		indexEventListenerInterfaceImplementation(beanDefinition, type, context, doc);
-		indexRequestMappings(beanDefinition, type, beanType, context, doc);
-		indexConfigurationProperties(beanDefinition, type, beanType, context, doc);
+		indexRequestMappings(beanDefinition, type, context, doc);
+		indexConfigurationProperties(beanDefinition, type, context, doc);
 		indexBeanRegistrarImplementation(beanDefinition, type, context, doc);
 		indexWebConfig(beanDefinition, type, context, doc);
 		
-		SpringBootApplicationIndexer.createIndexElement(type, beanType, context);
+		SpringBootApplicationIndexer.createIndexElement(type, context);
 
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
-	private void createSymbol(RecordDeclaration record, Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(record);
-
-		String beanName = BeanUtils.getBeanNameFromComponentAnnotation(node, record);
-		ITypeBinding beanType = record.resolveBinding();
-
-		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
+	public static Bean createBean(TypeDeclaration type, SpringIndexerJavaContext context) throws BadLocationException {
+		TextDocument doc = context.getDoc();
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
 		
-		Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(record);
-		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
+		ITypeBinding beanType = type.resolveBinding();
+
+		SimpleName nameNode = type.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
+		
+		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
+		boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
+		
+		// defer repository indexing to repository symbol provider
+		if (isRepository) {
+			return null;
+		}
+
+		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
+
+		Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(type);
+ 		
+		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
 		AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
 		
+		String beanName = BeanUtils.getBeanNameFromType(type, annotationMetadata);
+
 		String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
-		
-		boolean isConfiguration = Annotations.CONFIGURATION.equals(annotationType.getQualifiedName())
-				|| metaAnnotations.stream().anyMatch(t -> Annotations.CONFIGURATION.equals(t.getQualifiedName()));
-
-		InjectionPoint[] injectionPoints = DefaultValues.EMPTY_INJECTION_POINTS;
-		
-		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
-		
 		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
-		indexConfigurationProperties(beanDefinition, record, beanType, context, doc);
+		return beanDefinition;
+	}
+	
+	@Override
+	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) {
+		try {
+			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(recordDeclaration);
+			TextDocument doc = context.getDoc();
 
-		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+			ITypeBinding beanType = recordDeclaration.resolveBinding();
+
+			SimpleName nameNode = recordDeclaration.getName();
+			Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
+
+			boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
+			boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
+
+			// defer repository indexing to repository symbol provider
+			if (isRepository) {
+				return;
+			}
+
+			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(recordDeclaration, doc);
+			Set<String> supertypes = ASTUtils.findSupertypes(beanType);
+
+			Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(recordDeclaration);
+
+			List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
+			AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
+
+			String beanName = BeanUtils.getBeanNameFromType(recordDeclaration, annotationMetadata);
+
+			String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
+			Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
+
+			indexConfigurationProperties(beanDefinition, recordDeclaration, context, doc);
+
+			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+		}
+		catch (BadLocationException e) {
+			log.error("problem scanning type for spring component beans", e);
+		}
 	}
 	
-	private void createSymbol(AnnotationTypeDeclaration annotationDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		SpringBootApplicationIndexer.createIndexElement(annotationDeclaration, annotationDeclaration.resolveBinding(), context);
+	@Override
+	public void index(AnnotationTypeDeclaration annotationDeclaration, SpringIndexerJavaContext context) {
+		SpringBootApplicationIndexer.createIndexElement(annotationDeclaration, context);
 	}
 	
-	private void indexConfigurationProperties(Bean beanDefinition, AbstractTypeDeclaration type, ITypeBinding typeBinding, SpringIndexerJavaContext context, TextDocument doc) {
+	private void indexConfigurationProperties(Bean beanDefinition, AbstractTypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
+		ITypeBinding typeBinding = type.resolveBinding();
 
-		if (annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.CONFIGURATION_PROPERTIES)) {
+		if (typeBinding != null && annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.CONFIGURATION_PROPERTIES)) {
 			ConfigurationPropertiesSymbolProvider.indexConfigurationProperties(beanDefinition, type, context, doc);
 		}
 	}
@@ -283,8 +305,8 @@ public class ComponentSymbolProvider implements SymbolProvider {
 		}
 	}
 
-	private void indexRequestMappings(Bean controller, TypeDeclaration type, ITypeBinding typeBinding, SpringIndexerJavaContext context, TextDocument doc) {
-		RequestMappingIndexer.indexRequestMappings(controller, type, typeBinding, context, doc);
+	private void indexRequestMappings(Bean controller, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
+		RequestMappingIndexer.indexRequestMappings(controller, type, type.resolveBinding(), context, doc);
 	}
 
 	private void scanEventPublisherInvocations(AbstractTypeDeclaration typeDeclaration, Bean component, SpringIndexerJavaContext context, TextDocument doc) {

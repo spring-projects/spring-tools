@@ -31,6 +31,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -303,6 +304,9 @@ public class ASTUtils {
 		else if (abstractTypeDeclaration instanceof RecordDeclaration recordDeclaration) {
 			return getAnnotations(recordDeclaration);
 		}
+		else if (abstractTypeDeclaration instanceof AnnotationTypeDeclaration annotationTypeDeclaration) {
+			return getAnnotations(annotationTypeDeclaration);
+		}
 		else {
 			return null;
 		}
@@ -314,6 +318,10 @@ public class ASTUtils {
 	
 	public static Collection<Annotation> getAnnotations(RecordDeclaration recordDeclaration) {
 		return getAnnotationsFromModifiers(recordDeclaration.getStructuralProperty(RecordDeclaration.MODIFIERS2_PROPERTY));
+	}
+	
+	public static Collection<Annotation> getAnnotations(AnnotationTypeDeclaration annotationTypeDeclaration) {
+		return getAnnotationsFromModifiers(annotationTypeDeclaration.getStructuralProperty(AnnotationTypeDeclaration.MODIFIERS2_PROPERTY));
 	}
 	
 	public static Collection<Annotation> getAnnotations(MethodDeclaration methodDeclaration) {

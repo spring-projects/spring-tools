@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,17 +36,12 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
-import org.eclipse.jdt.core.dom.IAnnotationBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.RecordDeclaration;
-import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentSymbol;
@@ -57,9 +51,8 @@ import org.springframework.ide.vscode.boot.index.SpringIndexToSymbolsConverter;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
-import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchyAwareLookup;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
-import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingContext;
@@ -99,7 +92,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	private static final String DIAGNOSTICS_KEY = "diagnostics";
 
 	private final SymbolHandler symbolHandler;
-	private final AnnotationHierarchyAwareLookup<SymbolProvider> symbolProviders;
+	private final SpringComponentIndexer[] componentIndexers;
 	private final JdtReconciler reconciler;
 	private final IndexCache cache;
 	private final JavaProjectFinder projectFinder;
@@ -116,12 +109,13 @@ public class SpringIndexerJava implements SpringIndexer {
 	private final BiFunction<TextDocument, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator;
 
 	
-	public SpringIndexerJava(SymbolHandler symbolHandler, AnnotationHierarchyAwareLookup<SymbolProvider> symbolProviders, IndexCache cache,
+	public SpringIndexerJava(SymbolHandler symbolHandler, SpringComponentIndexer[] componentIndexers, IndexCache cache,
 			JavaProjectFinder projectFimder, ProgressService progressService, JdtReconciler jdtReconciler,
 			BiFunction<TextDocument, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator,
 			JsonObject validationSeveritySettings, CompilationUnitCache cuCache) {
+		
 		this.symbolHandler = symbolHandler;
-		this.symbolProviders = symbolProviders;
+		this.componentIndexers = componentIndexers;
 		this.reconciler = jdtReconciler;
 		this.cache = cache;
 		this.projectFinder = projectFimder;
@@ -744,6 +738,22 @@ public class SpringIndexerJava implements SpringIndexer {
 				}
 	
 				@Override
+				public boolean visit(AnnotationTypeDeclaration node) {
+					try {
+						context.addScannedType(node.resolveBinding());
+						extractSymbolInformation(node, context);
+					}
+					catch (RequiredCompleteAstException e) {
+						throw e;
+					}
+					catch (Exception e) {
+						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
+					}
+					
+					return super.visit(node);
+				}
+	
+				@Override
 				public boolean visit(MethodDeclaration node) {
 					try {
 						extractSymbolInformation(node, context);
@@ -757,50 +767,50 @@ public class SpringIndexerJava implements SpringIndexer {
 					return super.visit(node);
 				}
 	
-				@Override
-				public boolean visit(SingleMemberAnnotation node) {
-					try {
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-	
-					return super.visit(node);
-				}
-	
-				@Override
-				public boolean visit(NormalAnnotation node) {
-					try {
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-	
-					return super.visit(node);
-				}
-	
-				@Override
-				public boolean visit(MarkerAnnotation node) {
-					try {
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-	
-					return super.visit(node);
-				}
+//				@Override
+//				public boolean visit(SingleMemberAnnotation node) {
+//					try {
+//						extractSymbolInformation(node, context);
+//					}
+//					catch (RequiredCompleteAstException e) {
+//						throw e;
+//					}
+//					catch (Exception e) {
+//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
+//					}
+//	
+//					return super.visit(node);
+//				}
+//	
+//				@Override
+//				public boolean visit(NormalAnnotation node) {
+//					try {
+//						extractSymbolInformation(node, context);
+//					}
+//					catch (RequiredCompleteAstException e) {
+//						throw e;
+//					}
+//					catch (Exception e) {
+//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
+//					}
+//	
+//					return super.visit(node);
+//				}
+//	
+//				@Override
+//				public boolean visit(MarkerAnnotation node) {
+//					try {
+//						extractSymbolInformation(node, context);
+//					}
+//					catch (RequiredCompleteAstException e) {
+//						throw e;
+//					}
+//					catch (Exception e) {
+//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
+//					}
+//	
+//					return super.visit(node);
+//				}
 			});
 		}
 		catch (RequiredCompleteAstException e) {
@@ -881,73 +891,67 @@ public class SpringIndexerJava implements SpringIndexer {
 	}
 
 	private void extractSymbolInformation(TypeDeclaration typeDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		Collection<SymbolProvider> providers = symbolProviders.getAll();
-		if (!providers.isEmpty()) {
-			for (SymbolProvider provider : providers) {
-				provider.addSymbols(typeDeclaration, context);
-			}
+		for (SpringComponentIndexer indexer : this.componentIndexers) {
+			indexer.index(typeDeclaration, context);
 		}
 	}
 
-	private void extractSymbolInformation(RecordDeclaration typeDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		Collection<SymbolProvider> providers = symbolProviders.getAll();
-		if (!providers.isEmpty()) {
-			for (SymbolProvider provider : providers) {
-				provider.addSymbols(typeDeclaration, context);
-			}
+	private void extractSymbolInformation(RecordDeclaration recordDeclaration, final SpringIndexerJavaContext context) throws Exception {
+		for (SpringComponentIndexer indexer : this.componentIndexers) {
+			indexer.index(recordDeclaration, context);
+		}
+	}
+
+	private void extractSymbolInformation(AnnotationTypeDeclaration annotationTypeDeclaration, final SpringIndexerJavaContext context) throws Exception {
+		for (SpringComponentIndexer indexer : this.componentIndexers) {
+			indexer.index(annotationTypeDeclaration, context);
 		}
 	}
 
 	private void extractSymbolInformation(MethodDeclaration methodDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		Collection<SymbolProvider> providers = symbolProviders.getAll();
-		if (!providers.isEmpty()) {
-			for (SymbolProvider provider : providers) {
-				provider.addSymbols(methodDeclaration, context);
-			}
+		for (SpringComponentIndexer indexer : this.componentIndexers) {
+			indexer.index(methodDeclaration, context);
 		}
 	}
 
 	private void extractSymbolInformation(PackageDeclaration packageDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		Collection<SymbolProvider> providers = symbolProviders.getAll();
-		if (!providers.isEmpty()) {
-			for (SymbolProvider provider : providers) {
-				provider.addSymbols(packageDeclaration, context);
-			}
+		for (SpringComponentIndexer indexer : this.componentIndexers) {
+			indexer.index(packageDeclaration, context);
 		}
 	}
 
-	private void extractSymbolInformation(Annotation node, final SpringIndexerJavaContext context) throws Exception {
-		IAnnotationBinding annotationBinding = node.resolveAnnotationBinding();
-
-		if (annotationBinding != null) {
-			
-			ITypeBinding typeBinding = annotationBinding.getAnnotationType();
-			
-			// symbol and index scanning
-			List<ITypeBinding> metaAnnotations = new ArrayList<>();
-			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(node);
-			for (Iterator<IAnnotationBinding> itr = annotationHierarchies.iterator(typeBinding); itr.hasNext();) {
-				IAnnotationBinding ab = itr.next();
-				//
-				// If meta annotations of the current annotation is a "sub-type" of one of the annotations from symbol providers then add it to meta annotations
-				//
-				if (annotationHierarchies.isAnnotatedWithAnnotationByBindingKey(ab, symbolProviders::containsKey)) {
-					metaAnnotations.add(ab.getAnnotationType());
-				}
-			}
-			
-			Collection<SymbolProvider> providers = symbolProviders.get(annotationHierarchies, annotationBinding);
-			if (!providers.isEmpty()) {
-				for (SymbolProvider provider : providers) {
-					provider.addSymbols(node, typeBinding, metaAnnotations, context);
-				}
-			}
-			
-		}
-		else {
-			log.debug("type binding not around: " + context.getDocURI() + " - " + node.toString());
-		}
-	}
+//	private void extractSymbolInformation(Annotation node, final SpringIndexerJavaContext context) throws Exception {
+//		IAnnotationBinding annotationBinding = node.resolveAnnotationBinding();
+//
+//		if (annotationBinding != null) {
+//			
+//			ITypeBinding typeBinding = annotationBinding.getAnnotationType();
+//			
+//			// symbol and index scanning
+//			List<ITypeBinding> metaAnnotations = new ArrayList<>();
+//			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(node);
+//			for (Iterator<IAnnotationBinding> itr = annotationHierarchies.iterator(typeBinding); itr.hasNext();) {
+//				IAnnotationBinding ab = itr.next();
+//				//
+//				// If meta annotations of the current annotation is a "sub-type" of one of the annotations from symbol providers then add it to meta annotations
+//				//
+//				if (annotationHierarchies.isAnnotatedWithAnnotationByBindingKey(ab, symbolProviders::containsKey)) {
+//					metaAnnotations.add(ab.getAnnotationType());
+//				}
+//			}
+//			
+//			Collection<SymbolProvider> providers = symbolProviders.get(annotationHierarchies, annotationBinding);
+//			if (!providers.isEmpty()) {
+//				for (SymbolProvider provider : providers) {
+//					provider.addSymbols(node, typeBinding, metaAnnotations, context);
+//				}
+//			}
+//			
+//		}
+//		else {
+//			log.debug("type binding not around: " + context.getDocURI() + " - " + node.toString());
+//		}
+//	}
 
 	public static ASTParserCleanupEnabled createParser(IJavaProject project, AnnotationHierarchies annotationHierarchies, boolean ignoreMethodBodies) throws Exception {
 		String[] classpathEntries = getClasspathEntries(project);

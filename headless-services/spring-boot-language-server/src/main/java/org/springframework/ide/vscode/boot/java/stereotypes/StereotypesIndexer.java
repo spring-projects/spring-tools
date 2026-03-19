@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
@@ -41,56 +40,105 @@ import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
-import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
+import org.springframework.stereotype.Component;
 
 import com.google.common.collect.Streams;
 
 /**
  * @author Martin Lippert
  */
-public class StereotypesIndexer implements SymbolProvider {
+@Component
+public class StereotypesIndexer implements SpringComponentIndexer {
 	
 	private static final Logger log = LoggerFactory.getLogger(StereotypesIndexer.class);
 
-	@Override
-	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
-		ASTNode parent = node.getParent();
-		
+//	@Override
+//	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
+//		ASTNode parent = node.getParent();
+//		
+//		try {
+//			if (parent instanceof AnnotationTypeDeclaration) {
+//				AnnotationTypeDeclaration annotationType = (AnnotationTypeDeclaration) parent;
+//				ITypeBinding annotationBinding = annotationType.resolveBinding();
+//				
+//				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
+//						annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, context.getDoc());
+//	
+//				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
+//			}
+//			else if (parent instanceof TypeDeclaration && ((TypeDeclaration) parent).isInterface()) {
+//				ITypeBinding interfaceType = ((TypeDeclaration) parent).resolveBinding();
+//	
+//				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
+//						interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, context.getDoc());
+//	
+//				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
+//			}
+//		}
+//		catch (BadLocationException e) {
+//			log.error("error identifying location of type declaration for: " + parent.toString(), e);
+//		}
+//		catch (NullPointerException e) {
+//			log.error("error creating stereotype definition element for: " + parent.toString(), e);
+//		}
+//	}
+	
+	private void createStereotypeDefinition(AbstractTypeDeclaration typeDeclaration, SpringIndexerJavaContext context, StereotypeDefinition.Assignment.Type assignment) {
 		try {
-			if (parent instanceof AnnotationTypeDeclaration) {
-				AnnotationTypeDeclaration annotationType = (AnnotationTypeDeclaration) parent;
-				ITypeBinding annotationBinding = annotationType.resolveBinding();
-				
-				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
-						annotationBinding.getQualifiedName(), Type.IS_ANNOTATED, node, context.getDoc());
-	
-				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
+			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
+			ITypeBinding typeBinding = typeDeclaration.resolveBinding();
+			
+			if (typeBinding == null || !annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.JMOLECULES_STEREOTYPE)) {
+				return;
 			}
-			else if (parent instanceof TypeDeclaration && ((TypeDeclaration) parent).isInterface()) {
-				ITypeBinding interfaceType = ((TypeDeclaration) parent).resolveBinding();
+			
+			Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
+			if (annotations == null) {
+				return;
+			}
+			
+			for (Annotation annotation : annotations) {
+				ITypeBinding annotationBinding = annotation.resolveTypeBinding();
 	
-				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement((AbstractTypeDeclaration) parent,
-						interfaceType.getQualifiedName(), Type.IMPLEMENTS, node, context.getDoc());
-	
-				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
+				if (annotationBinding != null && Annotations.JMOLECULES_STEREOTYPE.equals(annotationBinding.getQualifiedName())) {
+					StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement(typeDeclaration,
+							typeBinding.getQualifiedName(), assignment, annotation, context.getDoc());
+		
+					context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
+				}
 			}
 		}
 		catch (BadLocationException e) {
-			log.error("error identifying location of type declaration for: " + parent.toString(), e);
-		}
-		catch (NullPointerException e) {
-			log.error("error creating stereotype definition element for: " + parent.toString(), e);
+			log.error("error identifying location of type declaration for: " + typeDeclaration.toString(), e);
 		}
 	}
 	
 	@Override
-	public void addSymbols(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) {
+	public void index(AnnotationTypeDeclaration annotationTypeDeclaration, SpringIndexerJavaContext context) {
+		createStereotypeDefinition(annotationTypeDeclaration, context, Type.IS_ANNOTATED);
+	}
+
+	@Override
+	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
+		try {
+			createStereotypeDefinition(typeDeclaration, context, Type.IMPLEMENTS);
+			createStereotypeElementForType(typeDeclaration, context, context.getDoc());
+		}
+		catch (BadLocationException e) {
+			log.error("error identifying location of type declaration", e);
+		}
+	}
+
+	@Override
+	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) {
 		try {
 			createStereotypeElementForType(recordDeclaration, context, context.getDoc());
 		}
@@ -100,7 +148,7 @@ public class StereotypesIndexer implements SymbolProvider {
 	}
 	
 	@Override
-	public void addSymbols(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context) {
+	public void index(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context) {
 		try {
 			createStereotypeElementForPackage(packageDeclaration, context, context.getDoc());
 		}
@@ -137,16 +185,6 @@ public class StereotypesIndexer implements SymbolProvider {
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), classElement));
 	}
 
-	@Override
-	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
-		try {
-			createStereotypeElementForType(typeDeclaration, context, context.getDoc());
-		}
-		catch (BadLocationException e) {
-			log.error("error identifying location of type declaration", e);
-		}
-	}
-	
 	private void createStereotypeElementForType(AbstractTypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
 		if (typeBinding == null) {

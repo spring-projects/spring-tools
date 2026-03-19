@@ -35,17 +35,15 @@ public class SpringSymbolIndexerConfig {
 		ConfigurationPropertiesSymbolProvider configPropsSymbolProvider = new ConfigurationPropertiesSymbolProvider();
 		DataRepositorySymbolProvider dataRepositorySymbolProvider = new DataRepositorySymbolProvider(repositoryMetadataService);
 
-		providers.put(Annotations.COMPONENT, componentSymbolProvider);
-		providers.put(Annotations.NAMED_JAKARTA, componentSymbolProvider);
-		providers.put(Annotations.NAMED_JAVAX, componentSymbolProvider);
-		providers.put(Annotations.CONFIGURATION_PROPERTIES, configPropsSymbolProvider);
+//		providers.put(Annotations.COMPONENT, componentSymbolProvider);
+//		providers.put(Annotations.NAMED_JAKARTA, componentSymbolProvider);
+//		providers.put(Annotations.NAMED_JAVAX, componentSymbolProvider);
+//		providers.put(Annotations.CONFIGURATION_PROPERTIES, configPropsSymbolProvider);
 
-		providers.put(Annotations.REPOSITORY, dataRepositorySymbolProvider);
+//		providers.put(Annotations.FEIGN_CLIENT, new FeignClientSymbolProvider());
+//		providers.put(Annotations.HTTP_EXCHANGE, new HttpExchangeSymbolProvider());
 		
-		providers.put(Annotations.FEIGN_CLIENT, new FeignClientSymbolProvider());
-		providers.put(Annotations.HTTP_EXCHANGE, new HttpExchangeSymbolProvider());
-		
-		providers.put(Annotations.JMOLECULES_STEREOTYPE, new StereotypesIndexer());
+//		providers.put(Annotations.JMOLECULES_STEREOTYPE, new StereotypesIndexer());
 
 		return providers;
 	}

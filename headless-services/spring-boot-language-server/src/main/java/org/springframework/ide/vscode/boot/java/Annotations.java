@@ -144,6 +144,15 @@ public class Annotations {
 	public static final String DELETE_EXCHANGE = "org.springframework.web.service.annotation.DeleteExchange";
 	public static final String PATCH_EXCHANGE = "org.springframework.web.service.annotation.PatchExchange";
 	
+	public static final Set<String> EXCHANGE_ANNOTATIONS = Set.of(
+			Annotations.HTTP_EXCHANGE,
+			Annotations.GET_EXCHANGE,
+			Annotations.POST_EXCHANGE,
+			Annotations.PUT_EXCHANGE,
+			Annotations.DELETE_EXCHANGE,
+			Annotations.PATCH_EXCHANGE
+			);
+	
 	public static final String WEB_MVC_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.WebMvcConfigurer";
 	public static final String WEB_MVC_API_VERSION_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.ApiVersionConfigurer";
 	public static final String WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE = "org.springframework.web.servlet.config.annotation.PathMatchConfigurer";

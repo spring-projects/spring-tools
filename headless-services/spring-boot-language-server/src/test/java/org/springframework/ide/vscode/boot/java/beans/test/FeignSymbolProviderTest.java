@@ -77,7 +77,7 @@ public class FeignSymbolProviderTest {
         
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
         assertEquals(2, symbols.size());
-        assertTrue(SpringIndexerTest.containsSymbol(symbols, "@+ 'stores' (@FeignClient) FeignClientExample", docUri, 8, 0, 8, 71));
+        assertTrue(SpringIndexerTest.containsSymbol(symbols, "@+ 'stores' FeignClientExample", docUri, 9, 17, 9, 35));
         assertTrue(SpringIndexerTest.containsSymbol(symbols, "@/stores -- GET", docUri, 11, 1, 11, 63));
     }
 

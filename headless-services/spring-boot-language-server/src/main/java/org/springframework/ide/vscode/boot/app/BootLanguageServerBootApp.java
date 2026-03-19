@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -139,7 +139,14 @@ import reactor.core.publisher.Hooks;
 	ConfigurationPropertiesAutoConfiguration.class, 
 	PropertyPlaceholderAutoConfiguration.class
 })
-@ComponentScan(basePackages = {"org.springframework.ide.vscode.boot.app", "org.springframework.ide.vscode.boot.mcp"})
+@ComponentScan(basePackages = {
+		"org.springframework.ide.vscode.boot.app",
+		"org.springframework.ide.vscode.boot.mcp",
+		"org.springframework.ide.vscode.boot.java.data",
+		"org.springframework.ide.vscode.boot.java.beans",
+		"org.springframework.ide.vscode.boot.java.stereotypes",
+		"org.springframework.ide.vscode.boot.java.requestmapping"
+		})
 @EnableConfigurationProperties(BootLsConfigProperties.class)
 @SpringBootApplication
 public class BootLanguageServerBootApp {

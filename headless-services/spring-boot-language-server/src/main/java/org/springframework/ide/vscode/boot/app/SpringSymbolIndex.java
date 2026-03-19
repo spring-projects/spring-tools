@@ -55,8 +55,7 @@ import org.springframework.ide.vscode.boot.index.SpringIndexToSymbolsConverter;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.java.BootJavaLanguageServerComponents;
-import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchyAwareLookup;
-import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.boot.java.utils.DocumentDescriptor;
@@ -106,7 +105,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	@Autowired SimpleLanguageServer server;
 	@Autowired BootJavaConfig config;
 	@Autowired BootLanguageServerParams params;
-	@Autowired AnnotationHierarchyAwareLookup<SymbolProvider> specificProviders;
+	@Autowired SpringComponentIndexer[] componentIndexers;
 	@Autowired IndexCache cache;
 	@Autowired FutureProjectFinder futureProjectFinder;
 	@Autowired SpringMetamodelIndex springIndex;
@@ -216,7 +215,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		springIndexerXML = new SpringIndexerXML(handler, namespaceHandler, this.cache, projectFinder());
 		
 		BiFunction<TextDocument, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorFactory = (doc, aggregator) -> server.createProblemCollector(doc, aggregator);
-		springIndexerJava = new SpringIndexerJava(handler, specificProviders, this.cache, projectFinder(), server.getProgressService(), jdtReconciler, problemCollectorFactory, config.getJavaValidationSettingsJson(), cuCache);
+		springIndexerJava = new SpringIndexerJava(handler, componentIndexers, this.cache, projectFinder(), server.getProgressService(), jdtReconciler, problemCollectorFactory, config.getJavaValidationSettingsJson(), cuCache);
 		factoriesIndexer = new SpringFactoriesIndexer(handler, cache);
 
 		this.indexers = new SpringIndexer[] {

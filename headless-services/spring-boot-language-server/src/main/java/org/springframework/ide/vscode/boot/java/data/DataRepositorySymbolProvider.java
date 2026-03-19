@@ -35,7 +35,7 @@ import org.springframework.ide.vscode.boot.java.beans.BeanUtils;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils.EmbeddedQueryExpression;
-import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
+import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
@@ -44,6 +44,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
+import org.springframework.stereotype.Component;
 
 import reactor.util.function.Tuple4;
 import reactor.util.function.Tuples;
@@ -51,7 +52,8 @@ import reactor.util.function.Tuples;
 /**
  * @author Martin Lippert
  */
-public class DataRepositorySymbolProvider implements SymbolProvider {
+@Component
+public class DataRepositorySymbolProvider implements SpringComponentIndexer {
 
 	private static final Logger log = LoggerFactory.getLogger(DataRepositorySymbolProvider.class);
 
@@ -62,7 +64,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 	}
 
 	@Override
-	public void addSymbols(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
+	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
 		// this checks spring data repository beans that are defined as extensions of the repository interface
 		Tuple4<String, ITypeBinding, String, DocumentRegion> repositoryBean = getRepositoryBean(typeDeclaration, context.getDoc());
 
@@ -195,7 +197,7 @@ public class DataRepositorySymbolProvider implements SymbolProvider {
 			return queryExpression.query().getText();
 		}
 		
-		// second option: lookup repository metadata service to see if there is a matching enty
+		// second option: lookup repository metadata service to see if there is a matching entry
 		IMethodBinding methodBinding = method.resolveBinding();
 		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
 

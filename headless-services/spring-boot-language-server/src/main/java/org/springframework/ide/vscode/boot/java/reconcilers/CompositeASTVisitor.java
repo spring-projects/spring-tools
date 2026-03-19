@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
@@ -22,6 +23,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.ReturnStatement;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
@@ -41,6 +43,30 @@ public class CompositeASTVisitor extends ASTVisitor {
 	
 	@Override
 	public boolean visit(TypeDeclaration node) {
+		boolean result = true;
+		if (!checkOffset(node)) {
+			return false;
+		}
+		for (ASTVisitor astVisitor : visitors) {
+			result |= astVisitor.visit(node);
+		}
+		return result;
+	}
+	
+	@Override
+	public boolean visit(RecordDeclaration node) {
+		boolean result = true;
+		if (!checkOffset(node)) {
+			return false;
+		}
+		for (ASTVisitor astVisitor : visitors) {
+			result |= astVisitor.visit(node);
+		}
+		return result;
+	}
+	
+	@Override
+	public boolean visit(AnnotationTypeDeclaration node) {
 		boolean result = true;
 		if (!checkOffset(node)) {
 			return false;

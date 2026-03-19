@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,8 +25,8 @@ public class SpringBootApplicationIndexer {
 		return annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.BOOT_APP);
 	}
 
-	public static void createIndexElement(AbstractTypeDeclaration type, ITypeBinding typeBinding, SpringIndexerJavaContext context) {
-		if (isSpringBootApplicationType(type, typeBinding)) {
+	public static void createIndexElement(AbstractTypeDeclaration type, SpringIndexerJavaContext context) {
+		if (isSpringBootApplicationType(type, type.resolveBinding())) {
 			ITypeBinding binding = type.resolveBinding();
 			String packageName = binding.getPackage().getName();
 			String typeName = binding.getName();

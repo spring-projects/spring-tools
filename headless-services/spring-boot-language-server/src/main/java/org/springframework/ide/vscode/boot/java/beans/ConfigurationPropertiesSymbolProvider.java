@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
-import org.springframework.ide.vscode.boot.java.handlers.SymbolProvider;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
@@ -46,55 +45,47 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 /**
  * @author Martin Lippert
  */
-public class ConfigurationPropertiesSymbolProvider implements SymbolProvider {
+public class ConfigurationPropertiesSymbolProvider {
 	
 	private static final Logger log = LoggerFactory.getLogger(ConfigurationPropertiesSymbolProvider.class);
 
-	@Override
-	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
+	protected static Bean createBeanDefinition(AbstractTypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
 		try {
-			if (node != null && node.getParent() != null) {
-				if (node.getParent() instanceof AbstractTypeDeclaration abstractType) {
-					createSymbolForType(abstractType, node, annotationType, metaAnnotations, context, context.getDoc());
-				}
-			}
-		}
-		catch (BadLocationException e) {
-			log.error("", e);
-		}
-	}
-
-	protected void createSymbolForType(AbstractTypeDeclaration type, Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
-
-		ITypeBinding typeBinding = type.resolveBinding();
-		boolean isComponentAnnotated = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.COMPONENT);
-		
-		if (!isComponentAnnotated) {
-			String beanName = BeanUtils.getBeanNameFromType(type.getName().getFullyQualifiedName());
-
-			Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
-		
-			boolean isConfiguration = false; // otherwise, the ComponentSymbolProvider takes care of the bean definiton for this type
-
-			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
-
-			Set<String> supertypes = ASTUtils.findSupertypes(typeBinding);
+			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
+	
+			ITypeBinding typeBinding = type.resolveBinding();
 			
+			String beanName = BeanUtils.getBeanNameFromType(type.getName().getFullyQualifiedName());
+	
+			SimpleName nameNode = type.getName();
+			Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
+	
+			boolean isConfiguration = false; // otherwise, the ComponentSymbolProvider takes care of the bean definiton for this type
+	
+			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
+	
+			Set<String> supertypes = ASTUtils.findSupertypes(typeBinding);
+	
 			Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
 			List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
 			AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
-
+	
 			String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, typeBinding.getName());
-		
-			Bean beanDefinition = new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
-			indexConfigurationProperties(beanDefinition, type, context, doc);
-
-			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+	
+			return new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
+		}
+		catch (BadLocationException e) {
+			log.error("error identifying config property field", e);
+			throw new RuntimeException(e);
 		}
 	}
 
 	public static void indexConfigurationProperties(Bean beanDefinition, AbstractTypeDeclaration abstractType, SpringIndexerJavaContext context, TextDocument doc) {
+		if (beanDefinition == null) {
+			beanDefinition = createBeanDefinition(abstractType, context, doc);
+			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+		}
+		
 		Optional<String> prefixValue = Arrays.stream(beanDefinition.getAnnotations())
 			.filter(annotation -> Annotations.CONFIGURATION_PROPERTIES.equals(annotation.getAnnotationType()))
 			.flatMap(annotation -> Arrays.stream(getPrefix(annotation)))

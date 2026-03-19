@@ -31,7 +31,6 @@
 		<dependency>
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-core</artifactId>
-			<version>${reactor-version}</version>
 		</dependency>
 
 		<dependency>

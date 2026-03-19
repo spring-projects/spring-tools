@@ -48,12 +48,12 @@
 						<artifactItem>
 							<groupId>com.kotcrab.remark</groupId>
 							<artifactId>remark</artifactId>
-							<version>1.0.0</version>
+							<version>1.2.0</version>
 						</artifactItem>
 						<artifactItem>
 							<groupId>org.jsoup</groupId>
 							<artifactId>jsoup</artifactId>
-							<version>1.9.2</version>
+							<version>1.22.1</version>
 						</artifactItem>
 					</artifactItems>
 					<outputDirectory>${basedir}/lib/</outputDirectory>

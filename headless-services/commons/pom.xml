@@ -103,21 +103,6 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<assertj-version>3.5.2</assertj-version>
-		<slf4j-version>2.0.5</slf4j-version>
-		<guava-version>31.1-jre</guava-version>
-		<mockito-version>1.10.19</mockito-version>
-		<jackson-2-version>2.5.0</jackson-2-version>
-		<jersey-2-version>2.10</jersey-2-version>
-		<lsp4j-version>1.0.0</lsp4j-version>
-		<!-- NOTE: Reactor version must match version used by the CF client -->
-		<cloudfoundry-client-version>3.8.0.RELEASE</cloudfoundry-client-version>
-		<reactor-version>3.5.0</reactor-version>
-		<reactor-netty>0.7.15.RELEASE</reactor-netty>
-		<commons-io-version>2.16.1</commons-io-version>
-		<commons-codec-version>1.13</commons-codec-version>
-
-		<antlr.version>4.13.1</antlr.version>
 
 		<signing.skip>true</signing.skip>
 		<signing.alias>vmware</signing.alias>
@@ -148,6 +133,86 @@
 				<artifactId>commons-text</artifactId>
 				<version>1.12.0</version>
 			</dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>5.23.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.cronutils</groupId>
+                <artifactId>cron-utils</artifactId>
+                <version>9.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.kotcrab.remark</groupId>
+                <artifactId>remark</artifactId>
+                <version>1.2.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark</artifactId>
+                <version>0.27.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>31.1-jre</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>3.5.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor.ipc</groupId>
+                <artifactId>reactor-netty</artifactId>
+                <version>0.7.15.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.lsp4j</groupId>
+                <artifactId>org.eclipse.lsp4j</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.cloudfoundry</groupId>
+                <artifactId>cloudfoundry-client-reactor</artifactId>
+                <version>3.8.0.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>org.cloudfoundry</groupId>
+                <artifactId>cloudfoundry-operations</artifactId>
+                <version>3.8.0.RELEASE</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.16.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>4.13.1</version>
+            </dependency>
+            <dependency>
+                <groupId>io.smallrye</groupId>
+                <artifactId>jandex</artifactId>
+                <version>3.5.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javolution</groupId>
+                <artifactId>javolution-core-java</artifactId>
+                <version>6.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>20231013</version>
+            </dependency>
+            <dependency>
+                <groupId>org.atteo</groupId>
+                <artifactId>evo-inflector</artifactId>
+                <version>1.3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -214,7 +279,7 @@
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
 		<!-- <dependency> <groupId>org.slf4j</groupId> <artifactId>slf4j-simple</artifactId> 
-			<version>${slf4j-version}</version> </dependency> -->
+			</dependency> -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-api</artifactId>

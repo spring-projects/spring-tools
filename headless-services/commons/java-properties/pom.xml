@@ -22,13 +22,11 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>${guava-version}</version>
 		</dependency>
 		<!-- ANTLR Parser Runtime -->
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>
-			<version>${antlr.version}</version>
 		</dependency>
 	</dependencies>
 

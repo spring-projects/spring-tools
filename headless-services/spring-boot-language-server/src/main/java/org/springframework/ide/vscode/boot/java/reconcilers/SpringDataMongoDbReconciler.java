@@ -161,8 +161,8 @@ public class SpringDataMongoDbReconciler extends AbstractSpringDataPropertyRefer
 
 	/**
 	 * Domain type resolver for Spring Data MongoDB. In addition to the common
-	 * repository pattern, supports fluent API receiver type extraction,
-	 * template find calls with Class parameters, and aggregation.
+	 * repository and fluent API patterns, supports template operations with
+	 * Class parameters and aggregation.
 	 */
 	private static class DomainTypeResolver extends AbstractSpringDataDomainTypeResolver {
 
@@ -178,9 +178,26 @@ public class SpringDataMongoDbReconciler extends AbstractSpringDataPropertyRefer
 				"org.springframework.data.mongodb.core.aggregation.Aggregation"
 		);
 
-		private static final Set<String> TEMPLATE_QUERY_METHOD_NAMES = Set.of(
-				"find", "findOne", "findAll", "findById", "findDistinct"
+		private static final List<String> FLUENT_OPERATION_TYPE_PREFIXES = List.of(
+				"org.springframework.data.mongodb.core.ExecutableFindOperation",
+				"org.springframework.data.mongodb.core.ExecutableInsertOperation",
+				"org.springframework.data.mongodb.core.ExecutableUpdateOperation",
+				"org.springframework.data.mongodb.core.ExecutableRemoveOperation",
+				"org.springframework.data.mongodb.core.ExecutableAggregationOperation",
+				"org.springframework.data.mongodb.core.ExecutableMapReduceOperation",
+				"org.springframework.data.mongodb.core.ReactiveFluentMongoOperations",
+				"org.springframework.data.mongodb.core.ReactiveFindOperation",
+				"org.springframework.data.mongodb.core.ReactiveInsertOperation",
+				"org.springframework.data.mongodb.core.ReactiveUpdateOperation",
+				"org.springframework.data.mongodb.core.ReactiveRemoveOperation",
+				"org.springframework.data.mongodb.core.ReactiveAggregationOperation",
+				"org.springframework.data.mongodb.core.ReactiveMapReduceOperation"
 		);
+
+		@Override
+		protected List<String> getFluentOperationTypePrefixes() {
+			return FLUENT_OPERATION_TYPE_PREFIXES;
+		}
 
 		@Override
 		protected @Nullable ITypeBinding extractDomainTypeFromInvocation(MethodInvocation invocation) {
@@ -202,84 +219,29 @@ public class SpringDataMongoDbReconciler extends AbstractSpringDataPropertyRefer
 				return result;
 			}
 
-			// Pattern 2: Fluent API — receiver expression type argument
+			// Pattern 2: Fluent API — guarded by operation type prefix check
 			result = tryFluentReceiverType(invocation);
 			if (result != null) {
 				return result;
 			}
 
-			// Pattern 3: Template find/findOne/findAll — template.find(query, X.class)
-			result = tryTemplateFindCall(invocation, declaringType);
-			if (result != null) {
-				return result;
+			// Pattern 3: Non-fluent template call with Class<T> parameter
+			// e.g. template.find(query, Customer.class)
+			if (ASTUtils.isAnyTypeInHierarchy(declaringType, TEMPLATE_FQN_TYPES)) {
+				return findClassLiteralInArguments(invocation);
 			}
 
 			// Pattern 4: Aggregation — newAggregation(X.class, ...)
 			return tryAggregation(invocation, declaringType);
 		}
 
-		// Pattern 2: Fluent API — receiver expression type
-		// The fluent chain threads the domain type T through generics:
-		//   mongoOps.query(Customer.class)  -> ExecutableFind<Customer>
-		//   .as(Jedi.class)                 -> FindWithProjection<Jedi>  (narrowed)
-		//   .matching(query(where("name"))) -> receiver type has <Jedi>
-
-		private @Nullable ITypeBinding tryFluentReceiverType(MethodInvocation invocation) {
-			Expression receiver = invocation.getExpression();
-			if (receiver == null) {
-				return null;
-			}
-			ITypeBinding receiverType = receiver.resolveTypeBinding();
-			if (receiverType == null || !receiverType.isParameterizedType()) {
-				return null;
-			}
-			ITypeBinding[] typeArgs = receiverType.getTypeArguments();
-			if (typeArgs.length == 1 && !typeArgs[0].isWildcardType()
-					&& !typeArgs[0].isPrimitive()
-					&& !"java.lang.Object".equals(typeArgs[0].getQualifiedName())) {
-				return typeArgs[0];
-			}
-			return null;
-		}
-
-		// Pattern 3: Template find/findOne/findAll with explicit Class parameter
-
-		private @Nullable ITypeBinding tryTemplateFindCall(MethodInvocation invocation, ITypeBinding declaringType) {
-			String methodName = invocation.getName().getIdentifier();
-			if (TEMPLATE_QUERY_METHOD_NAMES.contains(methodName) && ASTUtils.isAnyTypeInHierarchy(declaringType, TEMPLATE_FQN_TYPES)) {
-				return findClassLiteralInArguments(invocation);
-			}
-			return null;
-		}
-
-		// Pattern 4: Aggregation — newAggregation(X.class, ...)
-
 		private @Nullable ITypeBinding tryAggregation(MethodInvocation invocation, ITypeBinding declaringType) {
 			if ("newAggregation".equals(invocation.getName().getIdentifier())
 					&& ASTUtils.isAnyTypeInHierarchy(declaringType, AGGREGATION_FQN_TYPES)) {
-				return extractFirstClassLiteralArgument(invocation);
-			}
-			return null;
-		}
-
-		private @Nullable ITypeBinding extractFirstClassLiteralArgument(MethodInvocation invocation) {
-			@SuppressWarnings("unchecked")
-			List<Expression> args = invocation.arguments();
-			if (!args.isEmpty() && args.get(0) instanceof TypeLiteral typeLiteral) {
-				return typeLiteral.getType().resolveBinding();
-			}
-			return null;
-		}
-
-		private @Nullable ITypeBinding findClassLiteralInArguments(MethodInvocation invocation) {
-			@SuppressWarnings("unchecked")
-			List<Expression> args = invocation.arguments();
-			for (Expression arg : args) {
-				if (arg instanceof TypeLiteral typeLiteral) {
-					ITypeBinding binding = typeLiteral.getType().resolveBinding();
-					if (binding != null && !"java.lang.Object".equals(binding.getQualifiedName())) {
-						return binding;
-					}
+				@SuppressWarnings("unchecked")
+				List<Expression> args = invocation.arguments();
+				if (!args.isEmpty() && args.get(0) instanceof TypeLiteral typeLiteral) {
+					return typeLiteral.getType().resolveBinding();
 				}
 			}
 			return null;

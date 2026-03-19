@@ -132,8 +132,8 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 
 	/**
 	 * Domain type resolver for Spring Data Cassandra. In addition to the common
-	 * repository pattern, supports template operations with Class parameters
-	 * and template update-with-entity calls.
+	 * repository and fluent API patterns, supports template operations with
+	 * Class parameters and template update-with-entity calls.
 	 */
 	private static class DomainTypeResolver extends AbstractSpringDataDomainTypeResolver {
 
@@ -143,6 +143,22 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 				"org.springframework.data.cassandra.core.ReactiveCassandraTemplate",
 				"org.springframework.data.cassandra.core.ReactiveCassandraOperations"
 		);
+
+		private static final List<String> FLUENT_OPERATION_TYPE_PREFIXES = List.of(
+				"org.springframework.data.cassandra.core.ExecutableSelectOperation",
+				"org.springframework.data.cassandra.core.ExecutableInsertOperation",
+				"org.springframework.data.cassandra.core.ExecutableUpdateOperation",
+				"org.springframework.data.cassandra.core.ExecutableDeleteOperation",
+				"org.springframework.data.cassandra.core.ReactiveSelectOperation",
+				"org.springframework.data.cassandra.core.ReactiveInsertOperation",
+				"org.springframework.data.cassandra.core.ReactiveUpdateOperation",
+				"org.springframework.data.cassandra.core.ReactiveDeleteOperation"
+		);
+
+		@Override
+		protected List<String> getFluentOperationTypePrefixes() {
+			return FLUENT_OPERATION_TYPE_PREFIXES;
+		}
 
 		@Override
 		protected @Nullable ITypeBinding extractDomainTypeFromInvocation(MethodInvocation invocation) {
@@ -164,17 +180,25 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 				return result;
 			}
 
+			// Pattern 2: Fluent API — guarded by operation type prefix check
+			result = tryFluentReceiverType(invocation);
+			if (result != null) {
+				return result;
+			}
+
 			if (!ASTUtils.isAnyTypeInHierarchy(declaringType, TEMPLATE_FQN_TYPES)) {
 				return null;
 			}
 
-			// Pattern 2: Template operation with Class<T> parameter
+			// Pattern 3: Non-fluent template call with Class<T> parameter
+			// e.g. template.selectOne(query, Customer.class)
 			result = findClassLiteralInArguments(invocation);
 			if (result != null) {
 				return result;
 			}
 
-			// Pattern 3: Template update with entity argument — operations.update(person, options)
+			// Pattern 4: Non-fluent template update with entity argument
+			// e.g. template.update(person, options) — domain type inferred from entity's type
 			return tryUpdateWithEntity(invocation);
 		}
 
@@ -191,20 +215,6 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 					if (argType != null && !argType.isPrimitive()
 							&& !"java.lang.Object".equals(argType.getQualifiedName())) {
 						return argType;
-					}
-				}
-			}
-			return null;
-		}
-
-		private @Nullable ITypeBinding findClassLiteralInArguments(MethodInvocation invocation) {
-			@SuppressWarnings("unchecked")
-			List<Expression> args = invocation.arguments();
-			for (Expression arg : args) {
-				if (arg instanceof TypeLiteral typeLiteral) {
-					ITypeBinding binding = typeLiteral.getType().resolveBinding();
-					if (binding != null && !"java.lang.Object".equals(binding.getQualifiedName())) {
-						return binding;
 					}
 				}
 			}

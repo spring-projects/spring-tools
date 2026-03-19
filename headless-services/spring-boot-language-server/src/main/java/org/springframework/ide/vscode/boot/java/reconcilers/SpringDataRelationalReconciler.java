@@ -18,7 +18,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.jspecify.annotations.Nullable;
 import org.springframework.ide.vscode.boot.java.data.AbstractSpringDataDomainTypeResolver;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
@@ -107,8 +106,8 @@ public class SpringDataRelationalReconciler extends AbstractSpringDataPropertyRe
 
 	/**
 	 * Domain type resolver for Spring Data Relational (JDBC + R2DBC).
-	 * In addition to the common repository pattern, extracts the domain type
-	 * from {@code Class<T>} arguments in JDBC/R2DBC template operations.
+	 * In addition to the common repository and fluent API patterns (R2DBC only),
+	 * extracts the domain type from {@code Class<T>} arguments in template operations.
 	 */
 	private static class DomainTypeResolver extends AbstractSpringDataDomainTypeResolver {
 
@@ -118,6 +117,18 @@ public class SpringDataRelationalReconciler extends AbstractSpringDataPropertyRe
 				"org.springframework.data.r2dbc.core.R2dbcEntityTemplate",
 				"org.springframework.data.r2dbc.core.R2dbcEntityOperations"
 		);
+
+		private static final List<String> FLUENT_OPERATION_TYPE_PREFIXES = List.of(
+				"org.springframework.data.r2dbc.core.ReactiveSelectOperation",
+				"org.springframework.data.r2dbc.core.ReactiveInsertOperation",
+				"org.springframework.data.r2dbc.core.ReactiveUpdateOperation",
+				"org.springframework.data.r2dbc.core.ReactiveDeleteOperation"
+		);
+
+		@Override
+		protected List<String> getFluentOperationTypePrefixes() {
+			return FLUENT_OPERATION_TYPE_PREFIXES;
+		}
 
 		@Override
 		protected @Nullable ITypeBinding extractDomainTypeFromInvocation(MethodInvocation invocation) {
@@ -139,25 +150,18 @@ public class SpringDataRelationalReconciler extends AbstractSpringDataPropertyRe
 				return result;
 			}
 
-			// Pattern 2: Template operation with Class<T> parameter
+			// Pattern 2: Fluent API — R2DBC only, guarded by operation type prefix check
+			result = tryFluentReceiverType(invocation);
+			if (result != null) {
+				return result;
+			}
+
+			// Pattern 3: Non-fluent template call with Class<T> parameter
+			// e.g. template.select(query, Customer.class) or template.findAll(Customer.class)
 			if (ASTUtils.isAnyTypeInHierarchy(declaringType, TEMPLATE_FQN_TYPES)) {
 				return findClassLiteralInArguments(invocation);
 			}
 
-			return null;
-		}
-
-		private @Nullable ITypeBinding findClassLiteralInArguments(MethodInvocation invocation) {
-			@SuppressWarnings("unchecked")
-			List<Expression> args = invocation.arguments();
-			for (Expression arg : args) {
-				if (arg instanceof TypeLiteral typeLiteral) {
-					ITypeBinding binding = typeLiteral.getType().resolveBinding();
-					if (binding != null && !"java.lang.Object".equals(binding.getQualifiedName())) {
-						return binding;
-					}
-				}
-			}
 			return null;
 		}
 

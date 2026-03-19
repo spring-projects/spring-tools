@@ -18,10 +18,12 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Statement;
+import org.eclipse.jdt.core.dom.TypeLiteral;
 import org.jspecify.annotations.Nullable;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 
@@ -160,6 +162,92 @@ public abstract class AbstractSpringDataDomainTypeResolver {
 
 	protected boolean isCollectionOrWrapperType(ITypeBinding erasure) {
 		return ASTUtils.isAnyTypeInHierarchy(erasure, WRAPPER_BASE_TYPES);
+	}
+
+	// =====================================================================
+	// Shared Pattern: Fluent API receiver type
+	// =====================================================================
+
+	/**
+	 * Returns FQN prefixes of the fluent operation types for this module.
+	 * The receiver type's erased FQN must start with one of these prefixes
+	 * for the fluent chain domain type extraction to apply.
+	 * <p>
+	 * For example, MongoDB returns prefixes like
+	 * {@code "org.springframework.data.mongodb.core.ExecutableFindOperation"} which
+	 * also matches inner types like {@code ExecutableFindOperation.FindWithQuery}.
+	 * <p>
+	 * Return an empty list if this module has no fluent API (e.g., JDBC).
+	 */
+	protected List<String> getFluentOperationTypePrefixes() {
+		return List.of();
+	}
+
+	/**
+	 * Extracts the domain type from the receiver expression's type argument
+	 * in a fluent API chain. Only considers receivers whose erased type FQN
+	 * starts with one of the prefixes from {@link #getFluentOperationTypePrefixes()}.
+	 * <p>
+	 * Example: {@code mongoOps.query(Customer.class).matching(where("name"))} —
+	 * the receiver of {@code matching()} has type {@code FindWithQuery<Customer>},
+	 * so the domain type is {@code Customer}.
+	 */
+	protected @Nullable ITypeBinding tryFluentReceiverType(MethodInvocation invocation) {
+		List<String> prefixes = getFluentOperationTypePrefixes();
+		if (prefixes.isEmpty()) {
+			return null;
+		}
+
+		Expression receiver = invocation.getExpression();
+		if (receiver == null) {
+			return null;
+		}
+		ITypeBinding receiverType = receiver.resolveTypeBinding();
+		if (receiverType == null || !receiverType.isParameterizedType()) {
+			return null;
+		}
+
+		String receiverFqn = receiverType.getErasure().getQualifiedName();
+		boolean isFluentType = false;
+		for (String prefix : prefixes) {
+			if (receiverFqn.startsWith(prefix)) {
+				isFluentType = true;
+				break;
+			}
+		}
+		if (!isFluentType) {
+			return null;
+		}
+
+		ITypeBinding[] typeArgs = receiverType.getTypeArguments();
+		if (typeArgs.length == 1 && !typeArgs[0].isWildcardType()
+				&& !typeArgs[0].isPrimitive()
+				&& !"java.lang.Object".equals(typeArgs[0].getQualifiedName())) {
+			return typeArgs[0];
+		}
+		return null;
+	}
+
+	// =====================================================================
+	// Shared Pattern: Class<T> literal in arguments
+	// =====================================================================
+
+	/**
+	 * Scans method arguments for a {@code Class<T>} literal (e.g., {@code Customer.class})
+	 * and returns the type binding. Skips {@code Object.class}.
+	 */
+	protected @Nullable ITypeBinding findClassLiteralInArguments(MethodInvocation invocation) {
+		@SuppressWarnings("unchecked")
+		List<Expression> args = invocation.arguments();
+		for (Expression arg : args) {
+			if (arg instanceof TypeLiteral typeLiteral) {
+				ITypeBinding binding = typeLiteral.getType().resolveBinding();
+				if (binding != null && !"java.lang.Object".equals(binding.getQualifiedName())) {
+					return binding;
+				}
+			}
+		}
+		return null;
 	}
 
 	// =====================================================================

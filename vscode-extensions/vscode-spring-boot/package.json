@@ -914,6 +914,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot4.SPRING_DATA_STRING_PROPERTY_REFERENCE": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Non type-safe String-based property reference for a Spring Data domain type",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

@@ -45,8 +45,9 @@ import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
  * Both tiers share the same extraction logic ({@link #extractDomainTypeFromInvocation}),
  * which recognizes 5 patterns:
  * <ul>
- *   <li><b>Pattern 1 — Repository method call:</b> extracts {@code T} from
- *       {@code Repository<T, ID>} type hierarchy</li>
+ *   <li><b>Pattern 1 — Repository method call:</b> extracts the domain type from
+ *       the method's return type (unwrapping collections/wrappers like {@code List<T>},
+ *       {@code Page<T>}, {@code Optional<T>}, etc.)</li>
  *   <li><b>Pattern 2 — Fluent Template API:</b> walks a fluent chain to find
  *       {@code .query(X.class)} or {@code .update(X.class)}</li>
  *   <li><b>Pattern 3 — Template find/findOne/findAll:</b> finds the {@code Class<T>}
@@ -187,8 +188,8 @@ public class SpringDataDomainTypeResolver {
 
 		ITypeBinding result;
 
-		// Pattern 1: Repository method call — repository.findAll(Sort.by(...))
-		result = tryRepositoryCall(declaringType);
+		// Pattern 1: Repository method call — extract domain type from return type
+		result = tryRepositoryCall(methodBinding, declaringType);
 		if (result != null) {
 			return result;
 		}
@@ -217,19 +218,56 @@ public class SpringDataDomainTypeResolver {
 
 	// =====================================================================
 	// Pattern 1: Repository method call
-	// Receiver implements Repository<T, ID> — extract T.
-	// E.g. repository.findAll(Sort.by("firstName"))
+	// Receiver implements Repository — domain type is derived from the
+	// method's return type, not the repository's generic parameter.
+	// E.g. List<OrdersPerCustomer> totalOrdersPerCustomer(Sort sort)
+	//      → domain type is OrdersPerCustomer
 	// =====================================================================
 
-	private @Nullable ITypeBinding tryRepositoryCall(ITypeBinding declaringType) {
-		ITypeBinding repoType = ASTUtils.findInTypeHierarchy(declaringType, REPOSITORY_FQN_TYPES);
-		if (repoType != null && repoType.isParameterizedType()) {
-			ITypeBinding[] typeArgs = repoType.getTypeArguments();
-			if (typeArgs.length >= 1) {
-				return typeArgs[0];
+	private @Nullable ITypeBinding tryRepositoryCall(IMethodBinding methodBinding, ITypeBinding declaringType) {
+		if (ASTUtils.findInTypeHierarchy(declaringType, REPOSITORY_FQN_TYPES) == null) {
+			return null;
+		}
+		return unwrapDomainType(methodBinding.getReturnType());
+	}
+
+	/**
+	 * Unwrap a return type to extract the domain type.
+	 * <p>
+	 * If the type is a parameterized collection/wrapper (e.g. {@code List<Customer>},
+	 * {@code Page<Customer>}, {@code Optional<Customer>}, {@code Flux<Customer>}),
+	 * returns the type argument. Otherwise returns the type itself, unless it's a
+	 * primitive or {@code java.lang.Object}/{@code void}.
+	 */
+	private @Nullable ITypeBinding unwrapDomainType(ITypeBinding returnType) {
+		if (returnType == null || returnType.isPrimitive()
+				|| "void".equals(returnType.getQualifiedName())
+				|| "java.lang.Object".equals(returnType.getQualifiedName())) {
+			return null;
+		}
+
+		if (returnType.isParameterizedType()) {
+			ITypeBinding erasure = returnType.getErasure();
+			if (isCollectionOrWrapperType(erasure)) {
+				ITypeBinding[] typeArgs = returnType.getTypeArguments();
+				if (typeArgs.length >= 1 && !typeArgs[0].isWildcardType()) {
+					return typeArgs[0];
+				}
 			}
 		}
-		return null;
+
+		return returnType;
+	}
+
+	private static final Set<String> WRAPPER_BASE_TYPES = Set.of(
+			"java.lang.Iterable",
+			"java.util.stream.Stream",
+			"java.util.Optional",
+			"org.reactivestreams.Publisher"
+	);
+
+	private boolean isCollectionOrWrapperType(ITypeBinding erasure) {
+		return ASTUtils.isAnyTypeInHierarchy(erasure, WRAPPER_BASE_TYPES);
 	}
 
 	// =====================================================================

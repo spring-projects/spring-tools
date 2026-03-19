@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,10 +35,16 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+/**
+ * Tests for {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataMongoDbReconciler}.
+ * <p>
+ * Covers MongoDB Criteria.where, Update methods, fluent API, template find,
+ * aggregation, and quick fixes.
+ */
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(SymbolProviderTestConf.class)
-public class SpringDataStringPropertyReferenceReconcilerTest {
+public class SpringDataMongoDbReconcilerTest {
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -56,99 +61,10 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 		projectFinder.find(new TextDocumentIdentifier(testProject.getLocationUri().toASCIIString())).get();
 	}
 
-	// ========== Scenario 1: Repository method call ==========
+	// ========== Criteria.where — Fluent API (Tier 1, Pattern 2) ==========
 
 	@Test
-	void scenario1_sortBy_singleProperty_repositoryCall() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.by("firstName"));
-					}
-				}
-				""", docUri);
-
-		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
-		);
-	}
-
-	@Test
-	void scenario1_sortBy_multipleProperties_repositoryCall() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.by("firstName", "lastName"));
-					}
-				}
-				""", docUri);
-
-		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
-		);
-	}
-
-	@Test
-	void scenario1_sortOrderDesc_repositoryCall() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.by(Sort.Order.desc("lastName")));
-					}
-				}
-				""", docUri);
-
-		editor.assertProblems(
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
-		);
-	}
-
-	@Test
-	void scenario1_sortUnsorted_noProblems() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.unsorted());
-					}
-				}
-				""", docUri);
-
-		editor.assertProblems();
-	}
-
-	// ========== Scenario 2: Fluent Template API — query(X.class).matching(where(...)) ==========
-
-	@Test
-	void scenario2_fluentQueryApi_criteriaWhere() throws Exception {
+	void fluentQueryApi_criteriaWhere() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -174,7 +90,7 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 	}
 
 	@Test
-	void scenario2_fluentUpdateApi_criteriaWhere() throws Exception {
+	void fluentUpdateApi_criteriaWhere() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -202,7 +118,7 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 	}
 
 	@Test
-	void scenario2_fluentQueryApi_withAsProjection() throws Exception {
+	void fluentQueryApi_withAsProjection() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -228,10 +144,10 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 		);
 	}
 
-	// ========== Scenario 3: Template find/findOne/findAll with Class parameter ==========
+	// ========== Template find/findAll with Class parameter (Pattern 3) ==========
 
 	@Test
-	void scenario3_templateFind_withClassParam() throws Exception {
+	void templateFind_withClassParam() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -254,10 +170,10 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 		);
 	}
 
-	// ========== Scenario 4: Aggregation — newAggregation(X.class, ...) ==========
+	// ========== Aggregation — newAggregation(X.class, ...) (Pattern 4) ==========
 
 	@Test
-	void scenario4_aggregation_withClassParam() throws Exception {
+	void aggregation_withClassParam() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -278,52 +194,24 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 		);
 	}
 
-	// ========== Scenario 5: Template update(entity, options) ==========
+	// ========== Field.include / Field.exclude (projections) ==========
 
 	@Test
-	void scenario5_templateUpdateWithEntity() throws Exception {
+	void fieldInclude_singleProperty() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
 
-				import org.springframework.data.cassandra.core.CassandraOperations;
-				import org.springframework.data.cassandra.core.UpdateOptions;
-				import org.springframework.data.cassandra.core.query.Criteria;
+				import org.springframework.data.mongodb.core.MongoTemplate;
+				import org.springframework.data.mongodb.core.query.Query;
 
 				class TestClass {
-					private CassandraOperations operations;
+					private MongoTemplate template;
 
 					void test() {
-						Customer person = new Customer();
-						operations.update(person,
-							UpdateOptions.builder()
-								.ifCondition(Criteria.where("firstName"))
-								.build());
-					}
-				}
-				""", docUri);
-
-		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
-		);
-	}
-
-	// ========== Tier 2: Contextual resolution from enclosing block ==========
-
-	@Test
-	void contextual_sortVariable_repositoryInSameBlock() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						Sort sort = Sort.by("firstName");
-						repository.findAll(sort);
+						Query q = new Query();
+						q.fields().include("firstName");
+						template.find(q, Customer.class);
 					}
 				}
 				""", docUri);
@@ -334,105 +222,57 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 	}
 
 	@Test
-	void contextual_propertyMatchesNoCandidates_genericMessage() throws Exception {
+	void fieldExclude_singleProperty() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
 
-				import org.springframework.data.domain.Sort;
+				import org.springframework.data.mongodb.core.MongoTemplate;
+				import org.springframework.data.mongodb.core.query.Query;
 
 				class TestClass {
+					private MongoTemplate template;
+
 					void test() {
-						Sort sort = Sort.by("firstName");
+						Query q = new Query();
+						q.fields().exclude("lastName");
+						template.find(q, Customer.class);
 					}
 				}
 				""", docUri);
 
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference"
+				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
 		);
 	}
 
 	@Test
-	void contextual_propertyNotOnDomainType_stillShowsDomainType() throws Exception {
+	void fieldInclude_multipleProperties() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
 
-				import org.springframework.data.domain.Sort;
+				import org.springframework.data.mongodb.core.MongoTemplate;
+				import org.springframework.data.mongodb.core.query.Query;
 
 				class TestClass {
-					private CustomerRepository repository;
+					private MongoTemplate template;
 
 					void test() {
-						Sort sort = Sort.by("somethingUnknown");
-						repository.findAll(sort);
+						Query q = new Query();
+						q.fields().include("firstName", "lastName");
+						template.find(q, Customer.class);
 					}
 				}
 				""", docUri);
 
 		editor.assertProblems(
-				"\"somethingUnknown\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
+				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
 		);
-	}
-
-	// ========== No string property reference — no problems ==========
-
-	@Test
-	void noStringPropertyReference_noProblems() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				class TestClass {
-					void test() {
-						String s = "hello";
-					}
-				}
-				""", docUri);
-
-		editor.assertProblems();
 	}
 
 	// ========== Quick fix tests ==========
-
-	@Test
-	void quickfix_exactMatch_singleProperty() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.by("firstName"));
-					}
-				}
-				""", docUri);
-
-		Diagnostic problem = editor.assertProblem("\"firstName\"");
-		List<CodeAction> actions = editor.getCodeActions(problem);
-		assertEquals(1, actions.size());
-		assertEquals("Replace with Customer::getFirstName", actions.get(0).getLabel());
-
-		actions.get(0).perform();
-		assertEquals("""
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.by(Customer::getFirstName));
-					}
-				}
-				""", editor.getRawText());
-	}
 
 	@Test
 	void quickfix_exactMatch_dottedChain() throws Exception {
@@ -484,49 +324,7 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 	}
 
 	@Test
-	void quickfix_fuzzy_singleSegment() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.by("firstNam"));
-					}
-				}
-				""", docUri);
-
-		Diagnostic problem = editor.assertProblem("\"firstNam\"");
-		List<CodeAction> actions = editor.getCodeActions(problem);
-		assertFalse(actions.isEmpty(), "Should have fuzzy match quick fixes");
-
-		CodeAction firstNameFix = actions.stream()
-				.filter(a -> a.getLabel().contains("Customer::getFirstName"))
-				.findFirst()
-				.orElseThrow(() -> new AssertionError("Should suggest firstName as fuzzy match"));
-
-		firstNameFix.perform();
-		assertEquals("""
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					private CustomerRepository repository;
-
-					void test() {
-						repository.findAll(Sort.by(Customer::getFirstName));
-					}
-				}
-				""", editor.getRawText());
-	}
-
-	@Test
-	void quickfix_fuzzy_perSegmentInChain() throws Exception {
+	void quickfix_fuzzy_dottedChain() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -574,26 +372,6 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 					}
 				}
 				""", editor.getRawText());
-	}
-
-	@Test
-	void quickfix_noDomainType_noQuickFixes() throws Exception {
-		String docUri = docUri("TestClass.java");
-		Editor editor = harness.newEditor(LanguageId.JAVA, """
-				package demo;
-
-				import org.springframework.data.domain.Sort;
-
-				class TestClass {
-					void test() {
-						Sort sort = Sort.by("something");
-					}
-				}
-				""", docUri);
-
-		Diagnostic problem = editor.assertProblem("\"something\"");
-		List<CodeAction> actions = editor.getCodeActions(problem);
-		assertTrue(actions.isEmpty(), "No quick fixes when no domain type is known");
 	}
 
 	@Test

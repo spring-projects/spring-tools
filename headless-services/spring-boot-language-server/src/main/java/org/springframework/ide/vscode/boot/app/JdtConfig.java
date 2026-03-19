@@ -24,6 +24,8 @@ import org.springframework.ide.vscode.boot.java.DefaultBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.VSCodeBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtCodeActionHandler;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.boot.java.cron.CronExpressionsInlayHintsProvider;
 import org.springframework.ide.vscode.boot.java.cron.CronReconciler;
 import org.springframework.ide.vscode.boot.java.cron.CronSemanticTokens;
@@ -64,6 +66,10 @@ import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrateg
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionSyntaxReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.BeanValidationComponentReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataCommonsReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataMongoDbReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataRelationalReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataCassandraReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebConfigurerConfigurationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigurerAdapterReconciler;
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
@@ -192,6 +198,22 @@ public class JdtConfig {
 		return new BeanValidationComponentReconciler(server.getQuickfixRegistry());
 	}
 	
+	@Bean SpringDataCommonsReconciler springDataCommonsReconciler(SimpleLanguageServer server) {
+		return new SpringDataCommonsReconciler(server.getQuickfixRegistry());
+	}
+
+	@Bean SpringDataMongoDbReconciler springDataMongoDbReconciler(SimpleLanguageServer server) {
+		return new SpringDataMongoDbReconciler(server.getQuickfixRegistry());
+	}
+
+	@Bean SpringDataRelationalReconciler springDataRelationalReconciler(SimpleLanguageServer server) {
+		return new SpringDataRelationalReconciler(server.getQuickfixRegistry());
+	}
+
+	@Bean SpringDataCassandraReconciler springDataCassandraReconciler(SimpleLanguageServer server) {
+		return new SpringDataCassandraReconciler(server.getQuickfixRegistry());
+	}
+	
 	@Conditional(LspClient.OnNotEclipseClient.class)
 	@ConditionalOnMissingClass("org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness")
 	@Bean JavaSemanticTokensProvider javaSemanticTokens() {
@@ -247,6 +269,12 @@ public class JdtConfig {
 	
 	@Bean JdtCodeActionHandler jdtCodeActionHandler(CompilationUnitCache cuCache, Collection<JdtAstCodeActionProvider> providers) {
 		return new JdtCodeActionHandler(cuCache, providers);
+	}
+	
+	@Bean JdtRefactorings jdtRefactorings(SimpleLanguageServer server, JavaProjectFinder projectFinder, CompilationUnitCache cuCache) {
+		JdtRefactorings jdtRefactorings = new JdtRefactorings(server, projectFinder, cuCache);
+		server.getQuickfixRegistry().register(JdtRefactorings.JDT_QUICKFIX, jdtRefactorings);
+		return jdtRefactorings;
 	}
 	
 	@Bean BuildCommandProvider buildCommandProvider(SimpleLanguageServer server) {

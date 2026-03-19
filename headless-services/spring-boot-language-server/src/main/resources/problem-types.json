@@ -203,6 +203,12 @@
         "label": "API versioninig strategy is configured multiple times with the same strategy",
         "description": "API versioninig strategy is configured multiple times with the same strategy",
         "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "SPRING_DATA_STRING_PROPERTY_REFERENCE",
+        "label": "Non type-safe property reference",
+        "description": "Non type-safe String-based property reference for a Spring Data domain type",
+        "defaultSeverity": "INFO"
       }
     ]
   },

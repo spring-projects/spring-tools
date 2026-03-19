@@ -396,11 +396,6 @@
             "default": true,
             "description": "Beans structure tree in the outline view (experimental)"
           },
-          "boot-java.java.symbols-from-new-index": {
-            "type": "boolean",
-            "default": true,
-            "description": "Generate workspace symbols from index (experimental)"
-          },
           "boot-java.java.codelens-over-query-methods": {
             "type": "boolean",
             "default": true,

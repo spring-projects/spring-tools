@@ -28,7 +28,7 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 
 @Configuration
 @Import(AdHocPropertyHarnessTestConf.class)
-public class SymbolProviderTestConf {
+public class IndexerTestConf {
 
 	@Bean public IndexCache symbolCache() {
 		return new IndexCacheVoid();

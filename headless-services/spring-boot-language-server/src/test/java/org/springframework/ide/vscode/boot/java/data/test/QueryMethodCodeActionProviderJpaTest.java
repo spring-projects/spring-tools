@@ -31,7 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
-import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
+import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -46,7 +46,7 @@ import com.google.gson.JsonElement;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
-@Import(SymbolProviderTestConf.class)
+@Import(IndexerTestConf.class)
 public class QueryMethodCodeActionProviderJpaTest {
 
 	@Autowired private BootLanguageServerHarness harness;

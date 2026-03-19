@@ -60,7 +60,7 @@ import org.springframework.stereotype.Component;
  * @author Kris De Volder
  */
 @Component
-public class ComponentSymbolProvider implements SpringComponentIndexer {
+public class ComponentIndexer implements SpringComponentIndexer {
 
 //	@Override
 	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
@@ -216,7 +216,7 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 		ITypeBinding typeBinding = type.resolveBinding();
 
 		if (typeBinding != null && annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.CONFIGURATION_PROPERTIES)) {
-			ConfigurationPropertiesSymbolProvider.indexConfigurationProperties(beanDefinition, type, context, doc);
+			ConfigurationPropertiesIndexer.indexConfigurationProperties(beanDefinition, type, context, doc);
 		}
 	}
 

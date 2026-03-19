@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
-import org.springframework.ide.vscode.boot.bootiful.SymbolProviderTestConf;
+import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.test.IndexCacheTimestampsOnly;
 import org.springframework.ide.vscode.boot.java.utils.SymbolIndexConfig;
@@ -54,7 +54,7 @@ public class SpringIndexerMultipleFilesTest {
 	// but here we need the one that implements at least the timestamp caching
 	// in order to check the java symbol indexer feature which avoid scanning the
 	// same file again even if the timestamp hasn't changed
-	public static class TimestampingAwareCacheConfig extends SymbolProviderTestConf {
+	public static class TimestampingAwareCacheConfig extends IndexerTestConf {
 		@Bean public IndexCache symbolCache() {
 			return new IndexCacheTimestampsOnly();
 		}

@@ -30,9 +30,9 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 /**
  * @author Martin Lippert
  */
-public class WebfluxRouterSymbolProvider {
+public class WebfluxRouterIndexer {
 	
-	private static final Logger log = LoggerFactory.getLogger(WebfluxRouterSymbolProvider.class);
+	private static final Logger log = LoggerFactory.getLogger(WebfluxRouterIndexer.class);
 	
 	public static void createWebfluxElements(Bean beanDefinition, MethodDeclaration methodDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
 		Block methodBody = methodDeclaration.getBody();

@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
-import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouterSymbolProvider;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebfluxRouterIndexer;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebFnUtils;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
@@ -82,7 +82,7 @@ public class BeansIndexer {
 				Bean beanDefinition = new Bean(nameAndRegion.getT1(), beanType.getQualifiedName(), location, injectionPoints, supertypes, annotations, false, beanLabel);
 				
 				if (isFunctionalWebRouter) {
-					WebfluxRouterSymbolProvider.createWebfluxElements(beanDefinition, method, context, doc);
+					WebfluxRouterIndexer.createWebfluxElements(beanDefinition, method, context, doc);
 				}
 
 				parentNode.addChild(beanDefinition);

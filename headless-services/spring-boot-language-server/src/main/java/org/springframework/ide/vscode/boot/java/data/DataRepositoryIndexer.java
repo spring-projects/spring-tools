@@ -51,11 +51,11 @@ import reactor.util.function.Tuples;
  * @author Martin Lippert
  */
 @Component
-public class DataRepositorySymbolProvider implements SpringComponentIndexer {
+public class DataRepositoryIndexer implements SpringComponentIndexer {
 
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	
-	public DataRepositorySymbolProvider(DataRepositoryAotMetadataService repositoryMetadataService) {
+	public DataRepositoryIndexer(DataRepositoryAotMetadataService repositoryMetadataService) {
 		this.repositoryMetadataService = repositoryMetadataService;
 	}
 

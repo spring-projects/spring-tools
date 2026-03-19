@@ -45,9 +45,9 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 /**
  * @author Martin Lippert
  */
-public class ConfigurationPropertiesSymbolProvider {
+public class ConfigurationPropertiesIndexer {
 	
-	private static final Logger log = LoggerFactory.getLogger(ConfigurationPropertiesSymbolProvider.class);
+	private static final Logger log = LoggerFactory.getLogger(ConfigurationPropertiesIndexer.class);
 
 	protected static Bean createBeanDefinition(AbstractTypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
 		try {

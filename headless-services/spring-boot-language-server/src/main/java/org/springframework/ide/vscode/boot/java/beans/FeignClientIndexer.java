@@ -25,7 +25,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FeignClientSymbolProvider implements SpringComponentIndexer {
+public class FeignClientIndexer implements SpringComponentIndexer {
 
 	@Override
 	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
@@ -44,7 +44,7 @@ public class FeignClientSymbolProvider implements SpringComponentIndexer {
 	}
 
 	private void indexFeignClient(TypeDeclaration typeDeclaration, Annotation node, SpringIndexerJavaContext context) throws Exception {
-		Bean beanDefinition = ComponentSymbolProvider.createBean(typeDeclaration, context);
+		Bean beanDefinition = ComponentIndexer.createBean(typeDeclaration, context);
 		RequestMappingIndexer.indexRequestMappings(beanDefinition, typeDeclaration, typeDeclaration.resolveBinding(), context, context.getDoc());
 
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));

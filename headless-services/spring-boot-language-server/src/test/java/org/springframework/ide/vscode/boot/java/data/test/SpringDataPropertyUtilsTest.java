@@ -13,21 +13,16 @@ package org.springframework.ide.vscode.boot.java.data.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -40,9 +35,43 @@ import org.springframework.ide.vscode.boot.java.jdt.refactoring.TypeSafeProperty
  * Unit tests for {@link SpringDataPropertyUtils}.
  * <p>
  * Uses JDT parsing with binding resolution to get real {@link ITypeBinding}s
- * for test domain types.
+ * for test domain types. All types are declared in a single compilation unit
+ * (no package) to avoid temp files on disk.
  */
 class SpringDataPropertyUtilsTest {
+
+	private static final String ALL_TYPES_SOURCE = """
+			class Address {
+				private String city;
+				private String country;
+				public String getCity() { return city; }
+				public String getCountry() { return country; }
+			}
+
+			class Customer {
+				private String id;
+				private String firstName;
+				private String lastName;
+				private Address address;
+				public String getId() { return id; }
+				public String getFirstName() { return firstName; }
+				public String getLastName() { return lastName; }
+				public Address getAddress() { return address; }
+			}
+
+			class Order {
+				private String id;
+				private String firstName;
+				private String orderDate;
+				private Customer customer;
+				public String getId() { return id; }
+				public String getFirstName() { return firstName; }
+				public String getOrderDate() { return orderDate; }
+				public Customer getCustomer() { return customer; }
+			}
+
+			record PersonRecord(String firstName, String lastName, Address address) {}
+			""";
 
 	private static ITypeBinding customerBinding;
 	private static ITypeBinding addressBinding;
@@ -50,131 +79,37 @@ class SpringDataPropertyUtilsTest {
 	private static ITypeBinding personRecordBinding;
 
 	@BeforeAll
-	static void setupBindings() throws IOException {
-		Path tempDir = Files.createTempDirectory("spring-data-prop-test");
-		Path pkgDir = tempDir.resolve("demo");
-		Files.createDirectories(pkgDir);
-
-		String customerSrc = """
-				package demo;
-				public class Customer {
-					private String id;
-					private String firstName;
-					private String lastName;
-					private Address address;
-					public String getId() { return id; }
-					public String getFirstName() { return firstName; }
-					public String getLastName() { return lastName; }
-					public Address getAddress() { return address; }
-				}
-				""";
-
-		String addressSrc = """
-				package demo;
-				public class Address {
-					private String city;
-					private String country;
-					public String getCity() { return city; }
-					public String getCountry() { return country; }
-				}
-				""";
-
-		String orderSrc = """
-				package demo;
-				public class Order {
-					private String id;
-					private String firstName;
-					private String orderDate;
-					private Customer customer;
-					public String getId() { return id; }
-					public String getFirstName() { return firstName; }
-					public String getOrderDate() { return orderDate; }
-					public Customer getCustomer() { return customer; }
-				}
-				""";
-
-		String personRecordSrc = """
-				package demo;
-				public record PersonRecord(String firstName, String lastName, Address address) {}
-				""";
-
-		Files.writeString(pkgDir.resolve("Customer.java"), customerSrc, StandardCharsets.UTF_8);
-		Files.writeString(pkgDir.resolve("Address.java"), addressSrc, StandardCharsets.UTF_8);
-		Files.writeString(pkgDir.resolve("Order.java"), orderSrc, StandardCharsets.UTF_8);
-		Files.writeString(pkgDir.resolve("PersonRecord.java"), personRecordSrc, StandardCharsets.UTF_8);
-
-		customerBinding = parseAndGetBinding(customerSrc, "demo/Customer.java", tempDir, "Customer");
-		addressBinding = parseAndGetBinding(addressSrc, "demo/Address.java", tempDir, "Address");
-		orderBinding = parseAndGetBinding(orderSrc, "demo/Order.java", tempDir, "Order");
-		personRecordBinding = parseAndGetBinding(personRecordSrc, "demo/PersonRecord.java", tempDir, "PersonRecord");
-
-		assertNotNull(customerBinding, "Customer binding must be resolved");
-		assertNotNull(addressBinding, "Address binding must be resolved");
-		assertNotNull(orderBinding, "Order binding must be resolved");
-		assertNotNull(personRecordBinding, "PersonRecord binding must be resolved");
-	}
-
-	private static ITypeBinding parseAndGetBinding(String source, String unitName, Path sourceRoot, String typeName) {
+	static void setupBindings() {
 		ASTParser parser = ASTParser.newParser(AST.JLS25);
-		parser.setSource(source.toCharArray());
+		parser.setSource(ALL_TYPES_SOURCE.toCharArray());
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setResolveBindings(true);
 		parser.setBindingsRecovery(true);
-		parser.setUnitName(unitName);
-		parser.setEnvironment(new String[0], new String[]{sourceRoot.toString()}, null, true);
+		parser.setUnitName("Test.java");
+		parser.setEnvironment(new String[0], new String[0], null, true);
 
 		Map<String, String> options = JavaCore.getOptions();
 		JavaCore.setComplianceOptions(JavaCore.VERSION_21, options);
 		parser.setCompilerOptions(options);
 
 		CompilationUnit cu = (CompilationUnit) parser.createAST(null);
+
 		for (Object type : cu.types()) {
-			if (type instanceof AbstractTypeDeclaration td && typeName.equals(td.getName().getIdentifier())) {
-				return td.resolveBinding();
+			if (type instanceof AbstractTypeDeclaration td) {
+				String name = td.getName().getIdentifier();
+				switch (name) {
+					case "Customer" -> customerBinding = td.resolveBinding();
+					case "Address" -> addressBinding = td.resolveBinding();
+					case "Order" -> orderBinding = td.resolveBinding();
+					case "PersonRecord" -> personRecordBinding = td.resolveBinding();
+				}
 			}
 		}
-		return null;
-	}
 
-	// =====================================================================
-	// findExactProperty
-	// =====================================================================
-
-	@Test
-	void exactProperty_found() {
-		PropertyMatch match = SpringDataPropertyUtils.findExactProperty(customerBinding, "firstName");
-		assertNotNull(match);
-		assertEquals("firstName", match.propertyName());
-		assertEquals("getFirstName", match.methodName());
-		assertTrue(match.isExact());
-		assertEquals(1.0, match.similarity());
-	}
-
-	@Test
-	void exactProperty_notFound() {
-		PropertyMatch match = SpringDataPropertyUtils.findExactProperty(customerBinding, "nonExistent");
-		assertNull(match);
-	}
-
-	@Test
-	void exactProperty_emptyString() {
-		PropertyMatch match = SpringDataPropertyUtils.findExactProperty(customerBinding, "");
-		assertNull(match);
-	}
-
-	@Test
-	void exactProperty_nullString() {
-		PropertyMatch match = SpringDataPropertyUtils.findExactProperty(customerBinding, null);
-		assertNull(match);
-	}
-
-	@Test
-	void exactProperty_nestedType_returnsCorrectReturnType() {
-		PropertyMatch match = SpringDataPropertyUtils.findExactProperty(customerBinding, "address");
-		assertNotNull(match);
-		assertEquals("address", match.propertyName());
-		assertEquals("getAddress", match.methodName());
-		assertEquals("demo.Address", match.returnType().getQualifiedName());
+		assertNotNull(customerBinding, "Customer binding must be resolved");
+		assertNotNull(addressBinding, "Address binding must be resolved");
+		assertNotNull(orderBinding, "Order binding must be resolved");
+		assertNotNull(personRecordBinding, "PersonRecord binding must be resolved");
 	}
 
 	// =====================================================================
@@ -226,7 +161,7 @@ class SpringDataPropertyUtilsTest {
 		assertTrue(chain.allExact());
 		assertEquals(1, chain.segments().size());
 		assertEquals("getFirstName", chain.segments().get(0).methodName());
-		assertEquals("demo.Customer", chain.segments().get(0).domainTypeFqn());
+		assertEquals("Customer", chain.segments().get(0).domainTypeFqn());
 	}
 
 	@Test
@@ -238,11 +173,11 @@ class SpringDataPropertyUtilsTest {
 		assertEquals(2, chain.segments().size());
 
 		PropertySegment seg0 = chain.segments().get(0);
-		assertEquals("demo.Customer", seg0.domainTypeFqn());
+		assertEquals("Customer", seg0.domainTypeFqn());
 		assertEquals("getAddress", seg0.methodName());
 
 		PropertySegment seg1 = chain.segments().get(1);
-		assertEquals("demo.Address", seg1.domainTypeFqn());
+		assertEquals("Address", seg1.domainTypeFqn());
 		assertEquals("getCountry", seg1.methodName());
 	}
 
@@ -302,7 +237,6 @@ class SpringDataPropertyUtilsTest {
 
 	@Test
 	void chain_exactPrefersOverFuzzy() {
-		// "firstName" has an exact match — fuzzy alternatives should be filtered out
 		List<ResolvedChain> chains = SpringDataPropertyUtils.resolvePropertyChain(customerBinding, "firstName");
 		assertEquals(1, chains.size());
 		assertTrue(chains.get(0).allExact());
@@ -335,21 +269,6 @@ class SpringDataPropertyUtilsTest {
 	// =====================================================================
 
 	@Test
-	void record_exactProperty_methodNameIsFieldName() {
-		PropertyMatch match = SpringDataPropertyUtils.findExactProperty(personRecordBinding, "firstName");
-		assertNotNull(match);
-		assertEquals("firstName", match.propertyName());
-		assertEquals("firstName", match.methodName());
-		assertTrue(match.isExact());
-	}
-
-	@Test
-	void record_exactProperty_notFound() {
-		PropertyMatch match = SpringDataPropertyUtils.findExactProperty(personRecordBinding, "nonExistent");
-		assertNull(match);
-	}
-
-	@Test
 	void record_fuzzyMatch_methodNameIsFieldName() {
 		List<PropertyMatch> matches = SpringDataPropertyUtils.findSimilarProperties(personRecordBinding, "firstNam");
 		assertFalse(matches.isEmpty());
@@ -363,7 +282,7 @@ class SpringDataPropertyUtilsTest {
 		assertEquals(1, chains.size());
 		assertTrue(chains.get(0).allExact());
 		assertEquals("firstName", chains.get(0).segments().get(0).methodName());
-		assertEquals("demo.PersonRecord", chains.get(0).segments().get(0).domainTypeFqn());
+		assertEquals("PersonRecord", chains.get(0).segments().get(0).domainTypeFqn());
 	}
 
 	@Test

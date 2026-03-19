@@ -18,7 +18,6 @@ import org.apache.commons.text.similarity.JaroWinklerSimilarity;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
-import org.jspecify.annotations.Nullable;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.TypeSafePropertyReferenceRefactoring.PropertySegment;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 
@@ -79,31 +78,12 @@ public final class SpringDataPropertyUtils {
 	}
 
 	// =====================================================================
-	// Exact property lookup
-	// =====================================================================
-
-	/**
-	 * Find an exact property match on the given type (including supertypes).
-	 * Looks for {@code get<PropertyName>()} or {@code is<PropertyName>()} methods.
-	 *
-	 * @param domainType   the type to introspect
-	 * @param propertyName lower-case-first property name (e.g., {@code "firstName"})
-	 * @return the match, or {@code null} if not found
-	 */
-	public static @Nullable PropertyMatch findExactProperty(ITypeBinding domainType, String propertyName) {
-		if (propertyName == null || propertyName.isEmpty()) {
-			return null;
-		}
-		return findPropertyOnType(domainType, propertyName, true);
-	}
-
-	// =====================================================================
 	// Fuzzy property lookup (Jaro-Winkler similarity)
 	// =====================================================================
 
 	/**
-	 * Find properties on the given type whose names have at least the specified
-	 * Jaro-Winkler similarity to {@code propertyName}.
+	 * Find properties on the given type whose names are similar to
+	 * {@code propertyName} but are <em>not</em> exact matches (similarity &lt; 1.0).
 	 *
 	 * @param domainType     the type to introspect
 	 * @param propertyName   the (possibly misspelled) property name
@@ -114,9 +94,8 @@ public final class SpringDataPropertyUtils {
 		if (propertyName == null || propertyName.isEmpty()) {
 			return List.of();
 		}
-		List<PropertyMatch> matches = new ArrayList<>();
-		collectProperties(domainType, propertyName, minSimilarity, matches);
-		matches.sort((a, b) -> Double.compare(b.similarity(), a.similarity()));
+		List<PropertyMatch> matches = collectProperties(domainType, propertyName, minSimilarity);
+		matches.removeIf(PropertyMatch::isExact);
 		return matches;
 	}
 
@@ -187,18 +166,11 @@ public final class SpringDataPropertyUtils {
 		String segmentName = segments[segmentIndex];
 		String typeFqn = currentType.getQualifiedName();
 
-		// Try exact first (similarity = 1.0, doesn't change the composite score)
-		PropertyMatch exact = findExactProperty(currentType, segmentName);
-		if (exact != null) {
-			accumulated.add(new PropertySegment(typeFqn, exact.methodName()));
-			resolveSegments(exact.returnType(), segments, segmentIndex + 1, accumulated, scoreSoFar, results);
-			accumulated.remove(accumulated.size() - 1);
-			return;
-		}
-
-		// Fuzzy fallback — multiply per-segment similarity into composite score
-		List<PropertyMatch> similar = findSimilarProperties(currentType, segmentName);
-		for (PropertyMatch match : similar) {
+		// Unified: collect all matches (exact + fuzzy) sorted best-first.
+		// Exact matches have similarity 1.0 and naturally float to the top.
+		// The caller (resolvePropertyChain) filters exact-only chains when available.
+		List<PropertyMatch> matches = collectProperties(currentType, segmentName, DEFAULT_MIN_SIMILARITY);
+		for (PropertyMatch match : matches) {
 			accumulated.add(new PropertySegment(typeFqn, match.methodName()));
 			resolveSegments(match.returnType(), segments, segmentIndex + 1, accumulated, scoreSoFar * match.similarity(), results);
 			accumulated.remove(accumulated.size() - 1);
@@ -206,71 +178,16 @@ public final class SpringDataPropertyUtils {
 	}
 
 	/**
-	 * Find a property by name on a type, walking the type hierarchy via
-	 * {@link ASTUtils#getHierarchyTypesBreadthFirstIterator}.
-	 * <p>
-	 * For records: matches field names; method name = field name (record accessor).
-	 * For classes: matches {@code get/is}-prefixed getters and plain accessor methods
-	 * with the same name as the property; method name = actual method name.
-	 */
-	private static @Nullable PropertyMatch findPropertyOnType(ITypeBinding type, String propertyName, boolean walkSuperTypes) {
-		Iterator<ITypeBinding> hierarchy = walkSuperTypes
-				? ASTUtils.getHierarchyTypesBreadthFirstIterator(type)
-				: List.of(type).iterator();
-
-		String getterName = "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-		String isName = "is" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-
-		while (hierarchy.hasNext()) {
-			ITypeBinding current = hierarchy.next();
-			if (current.getQualifiedName().startsWith("java.")) {
-				continue;
-			}
-
-			PropertyMatch match = findPropertyOnSingleType(current, propertyName, getterName, isName);
-			if (match != null) {
-				return match;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Check a single type (no supertype walking) for a property match.
-	 */
-	private static @Nullable PropertyMatch findPropertyOnSingleType(
-			ITypeBinding type, String propertyName, String getterName, String isName) {
-
-		if (type.isRecord()) {
-			for (IVariableBinding field : type.getDeclaredFields()) {
-				if (field.getName().equals(propertyName)) {
-					return new PropertyMatch(propertyName, propertyName, field.getType(), 1.0);
-				}
-			}
-		}
-
-		for (IMethodBinding method : type.getDeclaredMethods()) {
-			if (method.getParameterTypes().length != 0) {
-				continue;
-			}
-			String name = method.getName();
-			if (getterName.equals(name) || isName.equals(name) || propertyName.equals(name)) {
-				return new PropertyMatch(propertyName, name, method.getReturnType(), 1.0);
-			}
-		}
-
-		return null;
-	}
-
-	/**
 	 * Collect all properties on a type (including supertypes via
 	 * {@link ASTUtils#getHierarchyTypesBreadthFirstIterator}) that meet the
 	 * minimum Jaro-Winkler similarity threshold against the target name.
-	 * Exact matches (similarity = 1.0) are excluded — use {@link #findExactProperty} instead.
+	 * Includes exact matches (similarity = 1.0). Returned list is sorted
+	 * by similarity (best first).
 	 */
-	private static void collectProperties(ITypeBinding type, String targetName, double minSimilarity, List<PropertyMatch> matches) {
+	private static List<PropertyMatch> collectProperties(ITypeBinding type, String targetName, double minSimilarity) {
+		List<PropertyMatch> matches = new ArrayList<>();
 		Iterator<ITypeBinding> hierarchy = ASTUtils.getHierarchyTypesBreadthFirstIterator(type);
+		String targetLower = targetName.toLowerCase();
 
 		while (hierarchy.hasNext()) {
 			ITypeBinding current = hierarchy.next();
@@ -281,8 +198,8 @@ public final class SpringDataPropertyUtils {
 			if (current.isRecord()) {
 				for (IVariableBinding field : current.getDeclaredFields()) {
 					String fieldName = field.getName();
-					double sim = JARO_WINKLER.apply(targetName.toLowerCase(), fieldName.toLowerCase());
-					if (sim < 1.0 && sim >= minSimilarity) {
+					double sim = JARO_WINKLER.apply(targetLower, fieldName.toLowerCase());
+					if (sim >= minSimilarity) {
 						matches.add(new PropertyMatch(fieldName, fieldName, field.getType(), sim));
 					}
 				}
@@ -301,13 +218,16 @@ public final class SpringDataPropertyUtils {
 					propName = Character.toLowerCase(mName.charAt(2)) + mName.substring(3);
 				}
 				if (propName != null) {
-					double sim = JARO_WINKLER.apply(targetName.toLowerCase(), propName.toLowerCase());
-					if (sim < 1.0 && sim >= minSimilarity) {
+					double sim = JARO_WINKLER.apply(targetLower, propName.toLowerCase());
+					if (sim >= minSimilarity) {
 						matches.add(new PropertyMatch(propName, mName, method.getReturnType(), sim));
 					}
 				}
 			}
 		}
+
+		matches.sort((a, b) -> Double.compare(b.similarity(), a.similarity()));
+		return matches;
 	}
 
 }

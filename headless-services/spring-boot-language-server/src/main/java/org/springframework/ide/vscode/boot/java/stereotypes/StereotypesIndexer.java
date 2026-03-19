@@ -38,8 +38,6 @@ import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition.Assignment.Type;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
@@ -57,8 +55,6 @@ import com.google.common.collect.Streams;
  */
 @Component
 public class StereotypesIndexer implements SpringComponentIndexer {
-	
-	private static final Logger log = LoggerFactory.getLogger(StereotypesIndexer.class);
 
 //	@Override
 //	public void addSymbols(Annotation node, ITypeBinding typeBinding, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
@@ -91,70 +87,50 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 //		}
 //	}
 	
-	private void createStereotypeDefinition(AbstractTypeDeclaration typeDeclaration, SpringIndexerJavaContext context, StereotypeDefinition.Assignment.Type assignment) {
-		try {
-			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
-			ITypeBinding typeBinding = typeDeclaration.resolveBinding();
-			
-			if (typeBinding == null || !annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.JMOLECULES_STEREOTYPE)) {
-				return;
-			}
-			
-			Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
-			if (annotations == null) {
-				return;
-			}
-			
-			for (Annotation annotation : annotations) {
-				ITypeBinding annotationBinding = annotation.resolveTypeBinding();
-	
-				if (annotationBinding != null && Annotations.JMOLECULES_STEREOTYPE.equals(annotationBinding.getQualifiedName())) {
-					StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement(typeDeclaration,
-							typeBinding.getQualifiedName(), assignment, annotation, context.getDoc());
-		
-					context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
-				}
-			}
+	private void createStereotypeDefinition(AbstractTypeDeclaration typeDeclaration, SpringIndexerJavaContext context, StereotypeDefinition.Assignment.Type assignment) throws BadLocationException {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
+		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
+
+		if (typeBinding == null || !annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.JMOLECULES_STEREOTYPE)) {
+			return;
 		}
-		catch (BadLocationException e) {
-			log.error("error identifying location of type declaration for: " + typeDeclaration.toString(), e);
+
+		Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
+		if (annotations == null) {
+			return;
+		}
+
+		for (Annotation annotation : annotations) {
+			ITypeBinding annotationBinding = annotation.resolveTypeBinding();
+
+			if (annotationBinding != null && Annotations.JMOLECULES_STEREOTYPE.equals(annotationBinding.getQualifiedName())) {
+				StereotypeDefinitionElement stereotypeDefinitionElement = createDefinitionElement(typeDeclaration,
+						typeBinding.getQualifiedName(), assignment, annotation, context.getDoc());
+
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), stereotypeDefinitionElement));
+			}
 		}
 	}
 	
 	@Override
-	public void index(AnnotationTypeDeclaration annotationTypeDeclaration, SpringIndexerJavaContext context) {
+	public void index(AnnotationTypeDeclaration annotationTypeDeclaration, SpringIndexerJavaContext context) throws Exception {
 		createStereotypeDefinition(annotationTypeDeclaration, context, Type.IS_ANNOTATED);
 	}
 
 	@Override
-	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
-		try {
-			createStereotypeDefinition(typeDeclaration, context, Type.IMPLEMENTS);
-			createStereotypeElementForType(typeDeclaration, context, context.getDoc());
-		}
-		catch (BadLocationException e) {
-			log.error("error identifying location of type declaration", e);
-		}
+	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
+		createStereotypeDefinition(typeDeclaration, context, Type.IMPLEMENTS);
+		createStereotypeElementForType(typeDeclaration, context, context.getDoc());
 	}
 
 	@Override
-	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) {
-		try {
-			createStereotypeElementForType(recordDeclaration, context, context.getDoc());
-		}
-		catch (BadLocationException e) {
-			log.error("error identifying location of type declaration", e);
-		}
+	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) throws Exception {
+		createStereotypeElementForType(recordDeclaration, context, context.getDoc());
 	}
-	
+
 	@Override
-	public void index(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context) {
-		try {
-			createStereotypeElementForPackage(packageDeclaration, context, context.getDoc());
-		}
-		catch (BadLocationException e) {
-			log.error("error identifying location of type declaration", e);
-		}
+	public void index(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context) throws Exception {
+		createStereotypeElementForPackage(packageDeclaration, context, context.getDoc());
 	}
 	
 	private void createStereotypeElementForPackage(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
@@ -277,7 +253,7 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 	}
 	
 	private StereotypeDefinitionElement createDefinitionElement(AbstractTypeDeclaration parent, String id, StereotypeDefinition.Assignment.Type assignment,
-			Annotation additionalDetails, TextDocument doc) throws BadLocationException, NullPointerException {
+			Annotation additionalDetails, TextDocument doc) throws BadLocationException {
 
 		int priority = Stereotype.DEFAULT_PRIORITY;
 		Optional<Expression> attribute = ASTUtils.getAttribute(additionalDetails, "priority");

@@ -15,8 +15,6 @@ import java.util.Collection;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
@@ -24,19 +22,16 @@ import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingInd
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
-import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.stereotype.Component;
 
 @Component
 public class FeignClientSymbolProvider implements SpringComponentIndexer {
-	
-	private static final Logger log = LoggerFactory.getLogger(FeignClientSymbolProvider.class);
-	
+
 	@Override
-	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
+	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
 		ITypeBinding binding = typeDeclaration.resolveBinding();
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
-		
+
 		if (annotationHierarchies.isAnnotatedWith(binding, Annotations.FEIGN_CLIENT)) {
 			Collection<Annotation> annotations = ASTUtils.getAnnotations(typeDeclaration);
 			for (Annotation annotation : annotations) {
@@ -48,16 +43,11 @@ public class FeignClientSymbolProvider implements SpringComponentIndexer {
 		}
 	}
 
-	private void indexFeignClient(TypeDeclaration typeDeclaration, Annotation node, SpringIndexerJavaContext context) {
-		try {
-			Bean beanDefinition = ComponentSymbolProvider.createBean(typeDeclaration, context);
-			RequestMappingIndexer.indexRequestMappings(beanDefinition, typeDeclaration, typeDeclaration.resolveBinding(), context, context.getDoc());
-			
-			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
-		}
-		catch (BadLocationException e) {
-			log.error("", e);
-		}
+	private void indexFeignClient(TypeDeclaration typeDeclaration, Annotation node, SpringIndexerJavaContext context) throws Exception {
+		Bean beanDefinition = ComponentSymbolProvider.createBean(typeDeclaration, context);
+		RequestMappingIndexer.indexRequestMappings(beanDefinition, typeDeclaration, typeDeclaration.resolveBinding(), context, context.getDoc());
+
+		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 
 

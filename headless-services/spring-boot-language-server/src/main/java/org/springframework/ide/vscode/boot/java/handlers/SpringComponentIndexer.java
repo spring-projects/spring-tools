@@ -18,11 +18,11 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 
 public interface SpringComponentIndexer {
-	
-	default void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {};
-	default void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) {};
-	default void index(AnnotationTypeDeclaration annotationTypeDeclaration, SpringIndexerJavaContext context) {};
-	default void index(MethodDeclaration methodDeclaration, SpringIndexerJavaContext context) {};
-	default void index(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context) {};
+
+	default void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {}
+	default void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) throws Exception {}
+	default void index(AnnotationTypeDeclaration annotationTypeDeclaration, SpringIndexerJavaContext context) throws Exception {}
+	default void index(MethodDeclaration methodDeclaration, SpringIndexerJavaContext context) throws Exception {}
+	default void index(PackageDeclaration packageDeclaration, SpringIndexerJavaContext context) throws Exception {}
 
 }

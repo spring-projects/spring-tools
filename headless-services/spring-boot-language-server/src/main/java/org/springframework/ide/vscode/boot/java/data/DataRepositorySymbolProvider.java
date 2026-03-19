@@ -27,8 +27,6 @@ import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.BeanUtils;
@@ -55,8 +53,6 @@ import reactor.util.function.Tuples;
 @Component
 public class DataRepositorySymbolProvider implements SpringComponentIndexer {
 
-	private static final Logger log = LoggerFactory.getLogger(DataRepositorySymbolProvider.class);
-
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	
 	public DataRepositorySymbolProvider(DataRepositoryAotMetadataService repositoryMetadataService) {
@@ -64,64 +60,54 @@ public class DataRepositorySymbolProvider implements SpringComponentIndexer {
 	}
 
 	@Override
-	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
+	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
 		// this checks spring data repository beans that are defined as extensions of the repository interface
 		Tuple4<String, ITypeBinding, String, DocumentRegion> repositoryBean = getRepositoryBean(typeDeclaration, context.getDoc());
 
 		if (repositoryBean != null) {
-			try {
-				String beanName = repositoryBean.getT1();
-				ITypeBinding beanType = repositoryBean.getT2();
-				Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(repositoryBean.getT4()));
-				
-				String name = beanLabel(true, beanName, beanType.getName(), repositoryBean.getT3());
+			String beanName = repositoryBean.getT1();
+			ITypeBinding beanType = repositoryBean.getT2();
+			Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(repositoryBean.getT4()));
 
-				// index elements
-				InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(typeDeclaration, context.getDoc());
-				
-				ITypeBinding concreteBeanTypeBindung = typeDeclaration.resolveBinding();
+			String name = beanLabel(true, beanName, beanType.getName(), repositoryBean.getT3());
 
-				Set<String> supertypes = ASTUtils.findSupertypes(concreteBeanTypeBindung);
+			// index elements
+			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(typeDeclaration, context.getDoc());
 
-				String concreteRepoType = concreteBeanTypeBindung.getQualifiedName();
-				
-				Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(typeDeclaration);
-				AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, context.getDoc());
-				
-				Bean beanDefinition = new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, name);
-				indexQueryMethods(beanDefinition, typeDeclaration, context, context.getDoc());
-				
-				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+			ITypeBinding concreteBeanTypeBindung = typeDeclaration.resolveBinding();
 
-			} catch (BadLocationException e) {
-				log.error("error creating data repository symbol for a specific range", e);
-			}
+			Set<String> supertypes = ASTUtils.findSupertypes(concreteBeanTypeBindung);
+
+			String concreteRepoType = concreteBeanTypeBindung.getQualifiedName();
+
+			Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(typeDeclaration);
+			AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, context.getDoc());
+
+			Bean beanDefinition = new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, name);
+			indexQueryMethods(beanDefinition, typeDeclaration, context, context.getDoc());
+
+			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 		}
 	}
 
-	private void indexQueryMethods(Bean beanDefinition, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
+	private void indexQueryMethods(Bean beanDefinition, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
-		
+
 		List<MethodDeclaration> methods = identifyQueryMethods(typeDeclaration, annotationHierarchies);
-		
+
 		for (MethodDeclaration method : methods) {
 			SimpleName nameNode = method.getName();
-			
+
 			if (nameNode != null) {
 				String methodName = nameNode.getFullyQualifiedName();
 				DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, nameNode);
 
-				try {
-					Range range = doc.toRange(nodeRegion);
-				
-					if (methodName != null) {
-						String queryString = identifyQueryString(method, annotationHierarchies, context);
-						String methodSignature = identifyMethodSignature(method);
-						beanDefinition.addChild(new QueryMethodIndexElement(methodSignature, queryString, range));
-					}
-	
-				} catch (BadLocationException e) {
-					log.error("query method range computation failed", e);
+				Range range = doc.toRange(nodeRegion);
+
+				if (methodName != null) {
+					String queryString = identifyQueryString(method, annotationHierarchies, context);
+					String methodSignature = identifyMethodSignature(method);
+					beanDefinition.addChild(new QueryMethodIndexElement(methodSignature, queryString, range));
 				}
 			}
 		}

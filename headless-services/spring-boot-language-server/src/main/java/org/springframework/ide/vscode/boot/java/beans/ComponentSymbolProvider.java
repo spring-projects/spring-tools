@@ -30,8 +30,6 @@ import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement;
@@ -63,8 +61,6 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ComponentSymbolProvider implements SpringComponentIndexer {
-	
-	private static final Logger log = LoggerFactory.getLogger(ComponentSymbolProvider.class);
 
 //	@Override
 	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
@@ -89,32 +85,23 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 	}
 
 	@Override
-	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) {
+	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
-		
+
 		boolean isComponment = annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.COMPONENT)
 				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAKARTA)
 				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAVAX);
-		
+
 		if (isComponment) {
-			indexComponent(typeDeclaration, context, context.getDoc());
+			createSymbol(typeDeclaration, context, context.getDoc());
 		}
 		else {
 			// check for event listener implementations on classes that are not annotated with component, but created via bean methods (for example)
-
 			indexEventListenerInterfaceImplementation(null, typeDeclaration, context, context.getDoc());
 			indexBeanRegistrarImplementation(null, typeDeclaration, context, context.getDoc());
 			indexBeanMethods(null, typeDeclaration, context, context.getDoc());
 			indexAotProcessors(typeDeclaration, context);
 			indexConfigurationProperties(null, typeDeclaration, context, context.getDoc());
-		}
-	}
-	
-	private void indexComponent(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		try {
-			createSymbol(typeDeclaration, context, doc);
-		} catch (BadLocationException e) {
-			log.error("problem scanning type for spring component beans", e);
 		}
 	}
 
@@ -184,48 +171,43 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 	}
 	
 	@Override
-	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) {
-		try {
-			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(recordDeclaration);
-			TextDocument doc = context.getDoc();
+	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) throws Exception {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(recordDeclaration);
+		TextDocument doc = context.getDoc();
 
-			ITypeBinding beanType = recordDeclaration.resolveBinding();
+		ITypeBinding beanType = recordDeclaration.resolveBinding();
 
-			SimpleName nameNode = recordDeclaration.getName();
-			Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
+		SimpleName nameNode = recordDeclaration.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
 
-			boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
-			boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
+		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
+		boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
 
-			// defer repository indexing to repository symbol provider
-			if (isRepository) {
-				return;
-			}
-
-			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(recordDeclaration, doc);
-			Set<String> supertypes = ASTUtils.findSupertypes(beanType);
-
-			Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(recordDeclaration);
-
-			List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
-			AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
-
-			String beanName = BeanUtils.getBeanNameFromType(recordDeclaration, annotationMetadata);
-
-			String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
-			Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
-
-			indexConfigurationProperties(beanDefinition, recordDeclaration, context, doc);
-
-			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+		// defer repository indexing to repository symbol provider
+		if (isRepository) {
+			return;
 		}
-		catch (BadLocationException e) {
-			log.error("problem scanning type for spring component beans", e);
-		}
+
+		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(recordDeclaration, doc);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
+
+		Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(recordDeclaration);
+
+		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
+		AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
+
+		String beanName = BeanUtils.getBeanNameFromType(recordDeclaration, annotationMetadata);
+
+		String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
+		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
+
+		indexConfigurationProperties(beanDefinition, recordDeclaration, context, doc);
+
+		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
 	@Override
-	public void index(AnnotationTypeDeclaration annotationDeclaration, SpringIndexerJavaContext context) {
+	public void index(AnnotationTypeDeclaration annotationDeclaration, SpringIndexerJavaContext context) throws Exception {
 		SpringBootApplicationIndexer.createIndexElement(annotationDeclaration, context);
 	}
 	
@@ -238,21 +220,15 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 		}
 	}
 
-	private void indexBeanMethods(final Bean bean, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
+	private void indexBeanMethods(final Bean bean, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
-		
+
 		SpringIndexElement parent = bean;
 
 		if (bean == null) {
-			try {
-				Location location = new Location(doc.getUri(), doc.toRange(type.getName().getStartPosition(), type.getName().getLength()));
-				String typeName = type.resolveBinding().getQualifiedName();
-				parent = new BeanMethodContainerElement(location, typeName);
-
-			} catch (BadLocationException e) {
-				log.error("error while looking up position for type: " + type.toString(), e);
-				return;
-			}
+			Location location = new Location(doc.getUri(), doc.toRange(type.getName().getStartPosition(), type.getName().getLength()));
+			String typeName = type.resolveBinding().getQualifiedName();
+			parent = new BeanMethodContainerElement(location, typeName);
 		}
 		else if (!bean.isConfiguration()) {
 			return;
@@ -309,9 +285,9 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 		RequestMappingIndexer.indexRequestMappings(controller, type, type.resolveBinding(), context, doc);
 	}
 
-	private void scanEventPublisherInvocations(AbstractTypeDeclaration typeDeclaration, Bean component, SpringIndexerJavaContext context, TextDocument doc) {
+	private void scanEventPublisherInvocations(AbstractTypeDeclaration typeDeclaration, Bean component, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		typeDeclaration.accept(new ASTVisitor() {
-			
+
 			@Override
 			public boolean visit(MethodInvocation methodInvocation) {
 				try {
@@ -328,8 +304,7 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 								if (eventTypeBinding != null) {
 
 									DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, methodInvocation);
-									Location location;
-									location = new Location(doc.getUri(), nodeRegion.asRange());
+									Location location = new Location(doc.getUri(), nodeRegion.asRange());
 
 									Set<String> typesFromhierarchy = ASTUtils.findSupertypes(eventTypeBinding);
 
@@ -339,9 +314,9 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 							}
 						}
 					}
-				
-				} catch (BadLocationException e) {
-					log.error("", e);
+				}
+				catch (BadLocationException e) {
+					throw new RuntimeException(e);
 				}
 				return super.visit(methodInvocation);
 			}
@@ -361,41 +336,37 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 		}
 	}
 
-	private void indexEventListenerInterfaceImplementation(Bean bean, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		try {
-			ITypeBinding typeBinding = typeDeclaration.resolveBinding();
-			if (typeBinding == null) return;
-			
-			ITypeBinding inTypeHierarchy = ASTUtils.findInTypeHierarchy(typeBinding, Set.of(Annotations.APPLICATION_LISTENER));
-			if (inTypeHierarchy == null) return;
-	
-			MethodDeclaration handleEventMethod = findHandleEventMethod(typeDeclaration);
-			if (handleEventMethod == null) return;
-	
-			IMethodBinding methodBinding = handleEventMethod.resolveBinding();
-			ITypeBinding[] parameterTypes = methodBinding.getParameterTypes();
-			if (parameterTypes != null && parameterTypes.length == 1) {
-	
-				ITypeBinding eventType = parameterTypes[0];
-				String eventTypeFq = eventType.getQualifiedName();
-	
-				DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, handleEventMethod.getName());
-				Location handleMethodLocation = new Location(doc.getUri(), nodeRegion.asRange());
-	
-				Collection<Annotation> annotationsOnHandleEventMethod = ASTUtils.getAnnotations(handleEventMethod);
-				AnnotationMetadata[] handleEventMethodAnnotations = ASTUtils.getAnnotationsMetadata(annotationsOnHandleEventMethod, doc);
-	
-				EventListenerIndexElement eventElement = new EventListenerIndexElement(eventTypeFq, handleMethodLocation, typeBinding.getQualifiedName(), handleEventMethodAnnotations);
-				
-				if (bean != null) {
-					bean.addChild(eventElement);
-				}
-				else {
-					context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), eventElement));
-				}
+	private void indexEventListenerInterfaceImplementation(Bean bean, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
+		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
+		if (typeBinding == null) return;
+
+		ITypeBinding inTypeHierarchy = ASTUtils.findInTypeHierarchy(typeBinding, Set.of(Annotations.APPLICATION_LISTENER));
+		if (inTypeHierarchy == null) return;
+
+		MethodDeclaration handleEventMethod = findHandleEventMethod(typeDeclaration);
+		if (handleEventMethod == null) return;
+
+		IMethodBinding methodBinding = handleEventMethod.resolveBinding();
+		ITypeBinding[] parameterTypes = methodBinding.getParameterTypes();
+		if (parameterTypes != null && parameterTypes.length == 1) {
+
+			ITypeBinding eventType = parameterTypes[0];
+			String eventTypeFq = eventType.getQualifiedName();
+
+			DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, handleEventMethod.getName());
+			Location handleMethodLocation = new Location(doc.getUri(), nodeRegion.asRange());
+
+			Collection<Annotation> annotationsOnHandleEventMethod = ASTUtils.getAnnotations(handleEventMethod);
+			AnnotationMetadata[] handleEventMethodAnnotations = ASTUtils.getAnnotationsMetadata(annotationsOnHandleEventMethod, doc);
+
+			EventListenerIndexElement eventElement = new EventListenerIndexElement(eventTypeFq, handleMethodLocation, typeBinding.getQualifiedName(), handleEventMethodAnnotations);
+
+			if (bean != null) {
+				bean.addChild(eventElement);
 			}
-		} catch (BadLocationException e) {
-			log.error("", e);
+			else {
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), eventElement));
+			}
 		}
 	}
 
@@ -432,138 +403,133 @@ public class ComponentSymbolProvider implements SpringComponentIndexer {
 		return null;
 	}
 	
-	private void indexBeanRegistrarImplementation(SpringIndexElement parentNode, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) {
-		try {
-			ITypeBinding typeBinding = typeDeclaration.resolveBinding();
-			if (typeBinding == null) return;
-			
-			ITypeBinding inTypeHierarchy = ASTUtils.findInTypeHierarchy(typeBinding, Set.of(Annotations.BEAN_REGISTRAR_INTERFACE));
-			if (inTypeHierarchy == null) return;
-	
-			MethodDeclaration registerMethod = findRegisterMethod(typeDeclaration, inTypeHierarchy);
-			if (registerMethod == null) return;
-			
-			if (!context.isFullAst()) { // needs full method bodies to continue
-				throw new RequiredCompleteAstException();
-			}
-			
-			if (parentNode == null) { // need to create and register bean element
-				String name = typeBinding.getName();
-				String type = typeBinding.getQualifiedName();
-				
-				SimpleName typeNameNode = typeDeclaration.getName();
-				Location location = new Location(doc.getUri(), doc.toRange(typeNameNode.getStartPosition(), typeNameNode.getLength()));
-				
-				parentNode = new BeanRegistrarElement(name, type, location);
+	private void indexBeanRegistrarImplementation(SpringIndexElement parentNode, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
+		ITypeBinding typeBinding = typeDeclaration.resolveBinding();
+		if (typeBinding == null) return;
 
-				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), parentNode));
-			}
-			
-			scanBeanRegistryInvocations(parentNode, registerMethod.getBody(), context, doc);
-			
-		} catch (BadLocationException e) {
-			log.error("", e);
+		ITypeBinding inTypeHierarchy = ASTUtils.findInTypeHierarchy(typeBinding, Set.of(Annotations.BEAN_REGISTRAR_INTERFACE));
+		if (inTypeHierarchy == null) return;
+
+		MethodDeclaration registerMethod = findRegisterMethod(typeDeclaration, inTypeHierarchy);
+		if (registerMethod == null) return;
+
+		if (!context.isFullAst()) { // needs full method bodies to continue
+			throw new RequiredCompleteAstException();
 		}
+
+		if (parentNode == null) { // need to create and register bean element
+			String name = typeBinding.getName();
+			String type = typeBinding.getQualifiedName();
+
+			SimpleName typeNameNode = typeDeclaration.getName();
+			Location location = new Location(doc.getUri(), doc.toRange(typeNameNode.getStartPosition(), typeNameNode.getLength()));
+
+			parentNode = new BeanRegistrarElement(name, type, location);
+
+			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), parentNode));
+		}
+
+		scanBeanRegistryInvocations(parentNode, registerMethod.getBody(), context, doc);
 	}
 	
 	private void indexWebConfig(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) {
 		WebConfigJavaIndexer.indexWebConfig(beanDefinition, type, context, doc);
 	}
 
-	private void scanBeanRegistryInvocations(SpringIndexElement parent, Block body, SpringIndexerJavaContext context, TextDocument doc) {
+	private void scanBeanRegistryInvocations(SpringIndexElement parent, Block body, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		if (body == null) {
 			return;
 		}
 
 		body.accept(new ASTVisitor() {
-			
+
 			@Override
 			public boolean visit(MethodInvocation methodInvocation) {
-				try {
-					String methodName = methodInvocation.getName().toString();
-					if ("registerBean".equals(methodName)) {
+				String methodName = methodInvocation.getName().toString();
+				if ("registerBean".equals(methodName)) {
 
-						IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
-						ITypeBinding declaringClass = methodBinding.getDeclaringClass();
-						
-						if (declaringClass != null && Annotations.BEAN_REGISTRY_INTERFACE.equals(declaringClass.getQualifiedName())) {
-							
-							@SuppressWarnings("unchecked")
-							List<Expression> arguments = methodInvocation.arguments();
-							List<ITypeBinding> types = new ArrayList<>();
-							
-							for (Expression argument : arguments) {
-								ITypeBinding typeBinding = argument.resolveTypeBinding();
-								if (typeBinding != null) {
-									types.add(typeBinding);
-								}
-								else {
-									return true;
-								}
+					IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
+					ITypeBinding declaringClass = methodBinding.getDeclaringClass();
+
+					if (declaringClass != null && Annotations.BEAN_REGISTRY_INTERFACE.equals(declaringClass.getQualifiedName())) {
+
+						@SuppressWarnings("unchecked")
+						List<Expression> arguments = methodInvocation.arguments();
+						List<ITypeBinding> types = new ArrayList<>();
+
+						for (Expression argument : arguments) {
+							ITypeBinding typeBinding = argument.resolveTypeBinding();
+							if (typeBinding != null) {
+								types.add(typeBinding);
 							}
-							
+							else {
+								return true;
+							}
+						}
+
+						try {
 							if (arguments.size() == 1 && "java.lang.Class".equals(types.get(0).getBinaryName())) {
 								// <T> String registerBean(Class<T> beanClass);
- 
+
 								ITypeBinding typeBinding = types.get(0);
 								ITypeBinding[] typeParameters = typeBinding.getTypeArguments();
 								if (typeParameters != null && typeParameters.length == 1) {
 									String typeParamName = typeParameters[0].getBinaryName();
-									
+
 									String beanName = BeanUtils.getBeanNameFromType(typeParameters[0].getName());
 									String beanType = typeParamName;
-									
+
 									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 							else if (arguments.size() == 2 && "java.lang.String".equals(types.get(0).getQualifiedName()) && "java.lang.Class".equals(types.get(1).getBinaryName())) {
 								// <T> void registerBean(String name, Class<T> beanClass);
-								
+
 								String beanName = ASTUtils.getExpressionValueAsString(arguments.get(0), (dep) -> {});
-								
+
 								ITypeBinding typeBinding = types.get(1);
 								ITypeBinding[] typeParameters = typeBinding.getTypeArguments();
 								if (typeParameters != null && typeParameters.length == 1) {
 									String typeParamName = typeParameters[0].getBinaryName();
 									String beanType = typeParamName;
-									
+
 									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 							else if (arguments.size() == 2 && "java.lang.Class".equals(types.get(0).getBinaryName()) && "java.util.function.Consumer".equals(types.get(1).getBinaryName())) {
 								// <T> String registerBean(Class<T> beanClass, Consumer<Spec<T>> customizer);
-								
+
 								ITypeBinding typeBinding = types.get(0);
 								ITypeBinding[] typeParameters = typeBinding.getTypeArguments();
 								if (typeParameters != null && typeParameters.length == 1) {
 									String typeParamName = typeParameters[0].getBinaryName();
-									
+
 									String beanName = BeanUtils.getBeanNameFromType(typeParameters[0].getName());
 									String beanType = typeParamName;
-									
+
 									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 							else if (arguments.size() == 3 && "java.lang.String".equals(types.get(0).getQualifiedName())
 									&& "java.lang.Class".equals(types.get(1).getBinaryName()) && "java.util.function.Consumer".equals(types.get(2).getBinaryName())) {
 								// <T> void registerBean(String name, Class<T> beanClass, Consumer<Spec<T>> customizer);
-								
+
 								String beanName = ASTUtils.getExpressionValueAsString(arguments.get(0), (dep) -> {});
-								
+
 								ITypeBinding typeBinding = types.get(1);
 								ITypeBinding[] typeParameters = typeBinding.getTypeArguments();
 								if (typeParameters != null && typeParameters.length == 1) {
 									String typeParamName = typeParameters[0].getBinaryName();
 									String beanType = typeParamName;
-									
+
 									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 						}
+						catch (BadLocationException e) {
+							throw new RuntimeException(e);
+						}
 					}
-				
-				} catch (BadLocationException e) {
-					log.error("", e);
 				}
 				return super.visit(methodInvocation);
 			}

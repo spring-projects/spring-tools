@@ -48,8 +48,10 @@ import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
  *   <li><b>Pattern 1 — Repository method call:</b> extracts the domain type from
  *       the method's return type (unwrapping collections/wrappers like {@code List<T>},
  *       {@code Page<T>}, {@code Optional<T>}, etc.)</li>
- *   <li><b>Pattern 2 — Fluent Template API:</b> walks a fluent chain to find
- *       {@code .query(X.class)} or {@code .update(X.class)}</li>
+ *   <li><b>Pattern 2 — Fluent API receiver type:</b> extracts the domain type from the
+ *       receiver expression's resolved type argument. Fluent chains thread the domain type
+ *       {@code T} through generics (e.g. {@code ExecutableFind<Customer>}). This correctly
+ *       handles mid-chain narrowing via {@code .as(Jedi.class)}.</li>
  *   <li><b>Pattern 3 — Template find/findOne/findAll:</b> finds the {@code Class<T>}
  *       literal argument in calls like {@code template.find(query, Person.class)}</li>
  *   <li><b>Pattern 4 — Aggregation:</b> extracts the class literal from
@@ -67,10 +69,6 @@ public class SpringDataDomainTypeResolver {
 			"org.springframework.data.repository.Repository"
 	);
 
-	private static final Set<String> TEMPLATE_QUERY_METHOD_NAMES = Set.of(
-			"find", "findOne", "findAll", "findById", "findDistinct"
-	);
-
 	private static final Set<String> TEMPLATE_FQN_TYPES = Set.of(
 			"org.springframework.data.mongodb.core.MongoTemplate",
 			"org.springframework.data.mongodb.core.MongoOperations",
@@ -85,8 +83,6 @@ public class SpringDataDomainTypeResolver {
 			"org.springframework.data.r2dbc.core.R2dbcEntityOperations"
 	);
 
-	private static final Set<String> FLUENT_QUERY_METHOD_NAMES = Set.of("query", "update");
-
 	private static final Set<String> AGGREGATION_FQN_TYPES = Set.of(
 			"org.springframework.data.mongodb.core.aggregation.Aggregation"
 	);
@@ -99,7 +95,7 @@ public class SpringDataDomainTypeResolver {
 	 * Tier 1 — Exact domain type resolution.
 	 * <p>
 	 * Walks up the AST parent chain from the given node, testing each ancestor
-	 * {@link MethodInvocation} against all 5 extraction patterns. Returns the first
+	 * {@link MethodInvocation} against all extraction patterns. Returns the first
 	 * domain type found, or {@code null} if no enclosing invocation reveals one.
 	 * <p>
 	 * This is the high-confidence path: when it returns a type, we know for certain
@@ -172,7 +168,7 @@ public class SpringDataDomainTypeResolver {
 	/**
 	 * Shared extraction logic used by both tiers.
 	 * <p>
-	 * Given a single {@link MethodInvocation}, tests it against all 5 domain type
+	 * Given a single {@link MethodInvocation}, tests it against all domain type
 	 * extraction patterns and returns the domain type if any pattern matches.
 	 */
 	@Nullable ITypeBinding extractDomainTypeFromInvocation(MethodInvocation invocation) {
@@ -194,8 +190,8 @@ public class SpringDataDomainTypeResolver {
 			return result;
 		}
 
-		// Pattern 2: Fluent Template API — mongoOps.query(X.class).matching(...)
-		result = tryFluentApi(invocation);
+		// Pattern 2: Fluent API — extract domain type from receiver expression's type argument
+		result = tryFluentReceiverType(invocation);
 		if (result != null) {
 			return result;
 		}
@@ -271,27 +267,31 @@ public class SpringDataDomainTypeResolver {
 	}
 
 	// =====================================================================
-	// Pattern 2: Fluent Template API
-	// Walk the fluent chain to find .query(X.class) or .update(X.class).
-	// E.g. mongoOps.query(Customer.class).matching(query(where("name"))).all()
+	// Pattern 2: Fluent API — receiver expression type
+	// The fluent chain threads the domain type T through generics:
+	//   mongoOps.query(Customer.class)  → ExecutableFind<Customer>
+	//   .inCollection("star-wars")      → FindWithCollection<Customer>
+	//   .as(Jedi.class)                 → FindWithProjection<Jedi>  ← narrowed!
+	//   .matching(query(where("name"))) → receiver type has <Jedi>
+	// We extract T from the receiver expression's resolved type.
+	// This correctly handles .as() narrowing, unlike Class-literal extraction
+	// from the initial .query() call.
 	// =====================================================================
 
-	private @Nullable ITypeBinding tryFluentApi(MethodInvocation invocation) {
-		Expression expr = invocation.getExpression();
-		if (expr instanceof MethodInvocation methodExpr) {
-			return walkFluentChainForDomainType(methodExpr);
+	private @Nullable ITypeBinding tryFluentReceiverType(MethodInvocation invocation) {
+		Expression receiver = invocation.getExpression();
+		if (receiver == null) {
+			return null;
 		}
-		return null;
-	}
-
-	private @Nullable ITypeBinding walkFluentChainForDomainType(MethodInvocation invocation) {
-		String methodName = invocation.getName().getIdentifier();
-		if (FLUENT_QUERY_METHOD_NAMES.contains(methodName)) {
-			return extractFirstClassLiteralArgument(invocation);
+		ITypeBinding receiverType = receiver.resolveTypeBinding();
+		if (receiverType == null || !receiverType.isParameterizedType()) {
+			return null;
 		}
-		Expression expr = invocation.getExpression();
-		if (expr instanceof MethodInvocation methodExpr) {
-			return walkFluentChainForDomainType(methodExpr);
+		ITypeBinding[] typeArgs = receiverType.getTypeArguments();
+		if (typeArgs.length == 1 && !typeArgs[0].isWildcardType()
+				&& !typeArgs[0].isPrimitive()
+				&& !"java.lang.Object".equals(typeArgs[0].getQualifiedName())) {
+			return typeArgs[0];
 		}
 		return null;
 	}
@@ -300,6 +300,10 @@ public class SpringDataDomainTypeResolver {
 	// Pattern 3: Template find/findOne/findAll with explicit Class parameter
 	// E.g. template.find(Query.query(Criteria.where("name")), Person.class)
 	// =====================================================================
+
+	private static final Set<String> TEMPLATE_QUERY_METHOD_NAMES = Set.of(
+			"find", "findOne", "findAll", "findById", "findDistinct"
+	);
 
 	private @Nullable ITypeBinding tryTemplateFindCall(MethodInvocation invocation, ITypeBinding declaringType) {
 		String methodName = invocation.getName().getIdentifier();

@@ -201,6 +201,33 @@ public class SpringDataStringPropertyReferenceReconcilerTest {
 		);
 	}
 
+	@Test
+	void scenario2_fluentQueryApi_withAsProjection() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+
+					void test() {
+						mongoOps.query(Customer.class)
+							.as(Order.class)
+							.matching(query(where("orderDate")))
+							.all();
+					}
+				}
+				""", docUri);
+
+		editor.assertProblems(
+				"\"orderDate\"|Non type-safe property reference for domain type 'Order'"
+		);
+	}
+
 	// ========== Scenario 3: Template find/findOne/findAll with Class parameter ==========
 
 	@Test

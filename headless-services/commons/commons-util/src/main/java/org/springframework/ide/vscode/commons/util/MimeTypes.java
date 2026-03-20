@@ -25,7 +25,7 @@ public class MimeTypes {
 
 	public static String[] getKnownMimeTypes() {
 		try {
-			Field f = MediaType.class.getDeclaredField("KNOWN_TYPES");
+			Field f = MediaType.class.getDeclaredField("knownTypes");
 			f.setAccessible(true);
 			@SuppressWarnings("unchecked")
 			Map<MediaType, MediaType> map = (Map<MediaType, MediaType>) f.get(null);

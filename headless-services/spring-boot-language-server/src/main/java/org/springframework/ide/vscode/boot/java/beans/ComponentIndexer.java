@@ -108,6 +108,10 @@ public class ComponentIndexer implements SpringComponentIndexer {
 	private void createSymbol(TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		Bean beanDefinition = createBean(type, context);
 		
+		if (beanDefinition == null) {
+			return;
+		}
+		
 		// event publisher checks
 		boolean usesEventPublisher = false;
 		for (InjectionPoint injectionPoint : beanDefinition.getInjectionPoints()) {

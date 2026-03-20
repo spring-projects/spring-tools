@@ -34,6 +34,6 @@ Export-Package: org.springframework.tooling.ls.eclipse.commons,
  org.springframework.tooling.ls.eclipse.commons.preferences
 Bundle-Activator: org.springframework.tooling.ls.eclipse.commons.LanguageServerCommonsActivator
 Bundle-ClassPath: .,
- lib/remark-1.0.0.jar,
+ lib/remark-1.2.0.jar,
  lib/jsoup-1.9.2.jar
 Import-Package: com.google.gson;version="2.7.0"

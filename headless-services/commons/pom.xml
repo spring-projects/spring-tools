@@ -107,6 +107,8 @@
 		<signing.skip>true</signing.skip>
 		<signing.alias>vmware</signing.alias>
 		<java.version>21</java.version>
+		<!-- Property because it is also read by generate-parser(s).sh scripts -->
+		<antlr.version>4.13.2</antlr.version>
 	</properties>
 
     <dependencyManagement>
@@ -171,7 +173,7 @@
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
-                <version>4.13.2</version>
+                <version>${antlr.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.smallrye</groupId>

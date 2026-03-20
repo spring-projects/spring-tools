@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-ANTLR_VERSION=4.13.1
+ANTLR_VERSION=4.13.2
 if [ ! -f antlr-${ANTLR_VERSION}.jar ]; then
     curl https://www.antlr.org/download/antlr-${ANTLR_VERSION}-complete.jar --output antlr-${ANTLR_VERSION}.jar
 fi

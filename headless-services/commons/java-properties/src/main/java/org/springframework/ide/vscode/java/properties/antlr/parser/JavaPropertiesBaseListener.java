@@ -1,4 +1,4 @@
-// Generated from JavaProperties.g4 by ANTLR 4.13.1
+// Generated from JavaProperties.g4 by ANTLR 4.13.2
 package org.springframework.ide.vscode.java.properties.antlr.parser;
 
 import org.antlr.v4.runtime.ParserRuleContext;

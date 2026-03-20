@@ -1,4 +1,4 @@
-// Generated from PostgreSqlParser.g4 by ANTLR 4.13.1
+// Generated from PostgreSqlParser.g4 by ANTLR 4.13.2
 package org.springframework.ide.vscode.parser.postgresql;
 
 

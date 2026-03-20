@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.3</version>
+		<version>4.0.4</version>
 		<relativePath></relativePath>
 	</parent>
 
@@ -114,7 +114,7 @@
 			<dependency>
 			    <groupId>org.openrewrite</groupId>
 			    <artifactId>rewrite-bom</artifactId>
-			    <version>8.74.0</version>
+			    <version>8.75.10</version>
 			    <type>pom</type>
                 <scope>import</scope>
 			</dependency>
@@ -126,12 +126,12 @@
 			<dependency>
 				<groupId>org.eclipse.jgit</groupId>
 				<artifactId>org.eclipse.jgit</artifactId>
-				<version>7.2.1.202505142326-r</version>
+				<version>7.6.0.202603022253-r</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-text</artifactId>
-				<version>1.12.0</version>
+				<version>1.15.0</version>
 			</dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -141,7 +141,7 @@
             <dependency>
                 <groupId>com.cronutils</groupId>
                 <artifactId>cron-utils</artifactId>
-                <version>9.2.0</version>
+                <version>9.2.1</version>
             </dependency>
             <dependency>
                 <groupId>com.kotcrab.remark</groupId>
@@ -156,17 +156,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>31.1-jre</version>
-            </dependency>
-            <dependency>
-                <groupId>io.projectreactor</groupId>
-                <artifactId>reactor-core</artifactId>
-                <version>3.5.0</version>
-            </dependency>
-            <dependency>
-                <groupId>io.projectreactor.ipc</groupId>
-                <artifactId>reactor-netty</artifactId>
-                <version>0.7.15.RELEASE</version>
+                <version>33.5.0-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.lsp4j</groupId>
@@ -174,24 +164,14 @@
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>org.cloudfoundry</groupId>
-                <artifactId>cloudfoundry-client-reactor</artifactId>
-                <version>3.8.0.RELEASE</version>
-            </dependency>
-            <dependency>
-                <groupId>org.cloudfoundry</groupId>
-                <artifactId>cloudfoundry-operations</artifactId>
-                <version>3.8.0.RELEASE</version>
-            </dependency>
-            <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.16.1</version>
+                <version>2.21.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
-                <version>4.13.1</version>
+                <version>4.13.2</version>
             </dependency>
             <dependency>
                 <groupId>io.smallrye</groupId>
@@ -206,7 +186,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20231013</version>
+                <version>20251224</version>
             </dependency>
             <dependency>
                 <groupId>org.atteo</groupId>

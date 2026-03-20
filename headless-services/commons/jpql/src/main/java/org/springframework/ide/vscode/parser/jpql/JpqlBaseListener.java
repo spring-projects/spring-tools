@@ -1,4 +1,4 @@
-// Generated from Jpql.g4 by ANTLR 4.13.1
+// Generated from Jpql.g4 by ANTLR 4.13.2
 package org.springframework.ide.vscode.parser.jpql;
 
 /**

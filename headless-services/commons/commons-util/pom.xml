@@ -17,13 +17,11 @@
 		<dependency>
 			<groupId>org.eclipse.lsp4j</groupId>
 			<artifactId>org.eclipse.lsp4j</artifactId>
-			<version>${lsp4j-version}</version>
 		</dependency>
 		<!-- Efficient 'text buffer' implementation from: -->
 		<dependency>
 			<groupId>org.javolution</groupId>
 			<artifactId>javolution-core-java</artifactId>
-			<version>6.0.0</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.osgi</groupId>
@@ -38,12 +36,10 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>${guava-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>io.projectreactor</groupId>
 			<artifactId>reactor-core</artifactId>
-			<version>${reactor-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>net.bytebuddy</groupId>
@@ -55,7 +51,6 @@
 		<dependency>
 			<groupId>com.kotcrab.remark</groupId>
 			<artifactId>remark</artifactId>
-			<version>1.0.0</version>
 		</dependency>
 	</dependencies>
 

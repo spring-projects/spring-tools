@@ -54,18 +54,6 @@
 			<artifactId>commons-language-server</artifactId>
 			<version>${dependencies.version}</version>
 		</dependency>
-		<!-- CF -->
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
-			<version>${reactor-version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor.ipc</groupId>
-			<artifactId>reactor-netty</artifactId>
-			<version>${reactor-netty}</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.ide.vscode</groupId>
 			<artifactId>commons-cf</artifactId>

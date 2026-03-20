@@ -13,7 +13,6 @@
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4-runtime</artifactId>
-			<version>${antlr.version}</version>
 		</dependency>
 	</dependencies>
 	

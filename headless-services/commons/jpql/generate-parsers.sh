@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
-ANTLR_VERSION=4.13.1
+ANTLR_VERSION=$(../../mvnw help:evaluate -Dexpression=antlr.version -q -DforceStdout -f ../pom.xml)
+echo "Using ANTLR version: ${ANTLR_VERSION}"
 if [ ! -f antlr-${ANTLR_VERSION}.jar ]; then
     curl https://www.antlr.org/download/antlr-${ANTLR_VERSION}-complete.jar --output antlr-${ANTLR_VERSION}.jar
 fi
@@ -13,4 +14,3 @@ java -jar ${workdir}/antlr-${ANTLR_VERSION}.jar SpelLexer.g4 SpelParser.g4 -o ${
 java -jar ${workdir}/antlr-${ANTLR_VERSION}.jar PostgreSqlLexer.g4 PostgreSqlParser.g4 -o ${workdir}/src/main/java/org/springframework/ide/vscode/parser/postgresql -package org.springframework.ide.vscode.parser.postgresql
 java -jar ${workdir}/antlr-${ANTLR_VERSION}.jar CronLexer.g4 CronParser.g4 -o ${workdir}/src/main/java/org/springframework/ide/vscode/parser/cron -package org.springframework.ide.vscode.parser.cron
 java -jar ${workdir}/antlr-${ANTLR_VERSION}.jar PropertyPlaceHolder.g4 -o ${workdir}/src/main/java/org/springframework/ide/vscode/parser/placeholder -package org.springframework.ide.vscode.parser.placeholder
-

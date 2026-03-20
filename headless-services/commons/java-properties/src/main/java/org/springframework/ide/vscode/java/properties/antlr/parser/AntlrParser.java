@@ -36,7 +36,6 @@ import org.springframework.ide.vscode.java.properties.parser.ProblemCodes;
 import org.springframework.ide.vscode.java.properties.parser.PropertiesAst;
 import org.springframework.ide.vscode.java.properties.parser.PropertiesFileEscapes;
 
-import com.google.common.collect.ImmutableList;
 
 /**
  * ANTLR based parser implementation
@@ -130,7 +129,7 @@ public class AntlrParser implements Parser {
 	    parser.parse();
 	    
 	    // Collect and return parse results
-	    return new ParseResults(new PropertiesAst(ImmutableList.copyOf(astNodes)), ImmutableList.copyOf(syntaxErrors), ImmutableList.copyOf(problems));
+	    return new ParseResults(new PropertiesAst(List.copyOf(astNodes)), List.copyOf(syntaxErrors), List.copyOf(problems));
 	}
 	
 	private static Problem createProblem(String message, String code, Token token) {
@@ -253,7 +252,7 @@ public class AntlrParser implements Parser {
 			this.context = context;
 			this.key = key;
 			this.value = value;
-			this.children = ImmutableList.of(key, value);
+			this.children = List.of(key, value);
 		}
 		
 		protected PropertyLineContext getContext() {

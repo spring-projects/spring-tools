@@ -13,16 +13,6 @@
 
 
 	<dependencies>
-		<dependency>
-			<groupId>org.springframework.ide.vscode</groupId>
-			<artifactId>commons-util</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<!-- Guava collections -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-		</dependency>
 		<!-- ANTLR Parser Runtime -->
 		<dependency>
 			<groupId>org.antlr</groupId>

@@ -54,18 +54,6 @@
 			<artifactId>commons-language-server</artifactId>
 			<version>${dependencies.version}</version>
 		</dependency>
-		<!-- NOTE: Reactor and reactor-netty versions must match versions used by the CF client -->
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-core</artifactId>
-			<version>3.5.0</version>
-		</dependency>
-		<dependency>
-			<groupId>io.projectreactor.ipc</groupId>
-			<artifactId>reactor-netty</artifactId>
-			<version>0.7.15.RELEASE</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.ide.vscode</groupId>
 			<artifactId>commons-cf</artifactId>

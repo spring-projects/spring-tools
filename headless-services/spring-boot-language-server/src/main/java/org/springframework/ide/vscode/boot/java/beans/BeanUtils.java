@@ -48,6 +48,7 @@ public class BeanUtils {
 			Annotations.CONFIGURATION,
 			Annotations.CONTROLLER,
 			Annotations.REST_CONTROLLER,
+			Annotations.FEIGN_CLIENT,
 			Annotations.NAMED_JAKARTA,
 			Annotations.NAMED_JAVAX,
 			Annotations.BOOT_APP,

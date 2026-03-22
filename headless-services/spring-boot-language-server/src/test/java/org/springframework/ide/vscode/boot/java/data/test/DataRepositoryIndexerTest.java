@@ -113,6 +113,25 @@ public class DataRepositoryIndexerTest {
         assertEquals(SymbolKind.Constant, queryStringSymbol.getKind());
     }
 
+    @Test
+    void testNestedDocumentSymbolsForRepositoryWithQueryTextBlock() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithQueryTextBlock.java").toUri().toString();
+        List<? extends DocumentSymbol> symbols = indexer.getDocumentSymbolsFromMetamodelIndex(docUri);
+        assertEquals(1, symbols.size());
+        assertTrue(containsDocumentSymbol(symbols, "@+ 'customerRepositoryWithQueryTextBlock' Repository(Customer)", docUri, 7, 17, 7, 53));
+
+        DocumentSymbol documentSymbol = symbols.get(0);
+        List<DocumentSymbol> children = documentSymbol.getChildren();
+        DocumentSymbol queryMethodSymbol = children.get(0);
+        assertEquals("findPetTypes() : List<Object>", queryMethodSymbol.getName());
+        assertEquals(1, children.size());
+
+        List<DocumentSymbol> queryChildren = queryMethodSymbol.getChildren();
+        DocumentSymbol queryStringSymbol = queryChildren.get(0);
+        assertEquals("SELECT ptype FROM PetType ptype ORDER BY ptype.name", queryStringSymbol.getName());
+        assertEquals(SymbolKind.Constant, queryStringSymbol.getKind());
+    }
+
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri, int startLine, int startCHaracter, int endLine, int endCharacter) {
 		for (Iterator<? extends WorkspaceSymbol> iterator = symbols.iterator(); iterator.hasNext();) {
 			WorkspaceSymbol symbol = iterator.next();

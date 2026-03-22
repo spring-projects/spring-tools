@@ -180,7 +180,7 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 		}
 
 		if (queryExpression != null) {
-			return queryExpression.query().getText();
+			return normalizeQueryStringForRepositoryIndex(queryExpression.query().getText());
 		}
 		
 		// second option: lookup repository metadata service to see if there is a matching entry
@@ -192,7 +192,16 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 			return null;
 		}
 		
-		return repositoryMetadata.findMethod(methodBinding).map(aotMethod -> aotMethod.getQueryStatement()).orElse(null);
+		return repositoryMetadata.findMethod(methodBinding)
+				.map(aotMethod -> normalizeQueryStringForRepositoryIndex(aotMethod.getQueryStatement()))
+				.orElse(null);
+	}
+
+	private static String normalizeQueryStringForRepositoryIndex(String sql) {
+		if (sql == null) {
+			return null;
+		}
+		return sql.replaceAll("\\s+", " ").trim();
 	}
 	
 	protected String beanLabel(boolean isFunctionBean, String beanName, String beanType, String markerString) {

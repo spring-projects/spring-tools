@@ -84,7 +84,7 @@ public class DataRepositoryIndexElementsTest {
         assertEquals("org.test.CustomerRepository", repoBean[0].getType());
         
         Bean[] matchingBeans = springIndex.getMatchingBeans("test-spring-data-symbols", "org.springframework.data.repository.CrudRepository");
-        assertEquals(6, matchingBeans.length);
+        assertEquals(7, matchingBeans.length);
         ArrayUtils.contains(matchingBeans, repoBean[0]);
     }
     
@@ -137,6 +137,22 @@ public class DataRepositoryIndexElementsTest {
     @Test
     void testQueryMethodElementWithQueryString() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithQuery.java").toUri().toString();
+        
+        DocumentElement document = springIndex.getDocument(docUri);
+        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        Bean repositoryElement = children.get(0);
+        
+        List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
+        assertEquals(1, queryMethods.size());
+        
+        QueryMethodIndexElement queryMethod = (QueryMethodIndexElement) queryMethods.get(0);
+        assertEquals("findPetTypes() : List<Object>", queryMethod.getMethodName());
+        assertEquals("SELECT ptype FROM PetType ptype ORDER BY ptype.name", queryMethod.getQueryString());
+    }
+
+    @Test
+    void testQueryMethodElementWithQueryTextBlockNormalizesToSingleLine() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithQueryTextBlock.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
         List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));

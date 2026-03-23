@@ -45,10 +45,7 @@ import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingContext;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
-import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
-import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteIndexException;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -78,7 +75,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	private static final String INDEX_FILES_TASK_ID = "index-java-source-files-task-";
 
 	private final SymbolHandler symbolHandler;
-	private final JdtReconciler reconciler;
+	private final SpringIndexerJavaReconcileService reconcileService;
 	private final SpringIndexerJavaCacheHelper cacheHelper;
 	private final JavaProjectFinder projectFinder;
 	private final ProgressService progressService;
@@ -100,14 +97,16 @@ public class SpringIndexerJava implements SpringIndexer {
 			JsonObject validationSeveritySettings, CompilationUnitCache cuCache) {
 		
 		this.symbolHandler = symbolHandler;
-		this.reconciler = jdtReconciler;
 		this.cacheHelper = new SpringIndexerJavaCacheHelper(cache, GENERATION, validationSeveritySettings);
+		this.reconcileService = new SpringIndexerJavaReconcileService(jdtReconciler, problemCollectorCreator,
+				cacheHelper, symbolHandler, dependencyTracker);
 		this.projectFinder = projectFimder;
 		this.progressService = progressService;
 		
 		this.problemCollectorCreator = problemCollectorCreator;
 		this.cuCache = cuCache;
-		this.astScanner = new SpringIndexerJavaAstScanner(componentIndexers, dependencyTracker, this::reconcile);
+		this.astScanner = new SpringIndexerJavaAstScanner(componentIndexers, dependencyTracker,
+				reconcileService::reconcileAfterScan);
 	}
 
 	public SpringIndexerJavaDependencyTracker getDependencyTracker() {
@@ -183,11 +182,12 @@ public class SpringIndexerJava implements SpringIndexer {
 			.toList();
 		
 		if (changedPropertyFiles.size() > 0) {
-			List<String> filesToReconcile = reconciler.identifyFilesToReconcile(project, changedPropertyFiles);
+			List<String> filesToReconcile = reconcileService.identifyFilesToReconcileForPropertyChanges(project,
+					changedPropertyFiles);
 			List<DocumentDescriptor> filesWithTimestamps = DocumentDescriptor.createFromUris(filesToReconcile);
 
 			try {
-				reconcileWithCompleteIndex(project, filesWithTimestamps);
+				reconcileService.reconcileWithCompleteIndex(project, filesWithTimestamps);
 			}
 			catch (Exception e) {
 				log.error("error reconcling java source as reaction to property file change", e);
@@ -332,7 +332,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			scannedFiles.add(file);
 			fileScannedEvent(file);
 
-			reconcileWithCompleteIndex(project, result.getMarkedForReconcilingWithCompleteIndex());
+			reconcileService.reconcileWithCompleteIndex(project, result.getMarkedForReconcilingWithCompleteIndex());
 
 			scanAffectedFiles(project, context.getScannedTypes(), scannedFiles, result.getMarkedForAffectedFilesIndexing());
 		}
@@ -406,7 +406,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		cacheHelper.updateAfterBatchScan(project, javaFiles, lastModified, result, dependencies);
 		
 		result.publishResults(symbolHandler);
-		reconcileWithCompleteIndex(project, result.getMarkedForReconcilingWithCompleteIndex());
+		reconcileService.reconcileWithCompleteIndex(project, result.getMarkedForReconcilingWithCompleteIndex());
 
 		return new ScanFilesInternallyResult(scannedTypes, result);
 	}
@@ -502,10 +502,9 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 		
 		result.publishResults(symbolHandler);
-		reconcileWithCompleteIndex(project, result.getMarkedForReconcilingWithCompleteIndex());
-		
-		log.info("reconciling stats - counter: " + reconciler.getStatsCounter());
-		log.info("reconciling stats - timer: " + reconciler.getStatsTimer());
+		reconcileService.reconcileWithCompleteIndex(project, result.getMarkedForReconcilingWithCompleteIndex());
+
+		reconcileService.logReconcilingStats();
 	}
 
 	private String[] scanFiles(IJavaProject project, AnnotationHierarchies annotations, String[] javaFiles,
@@ -547,141 +546,6 @@ public class SpringIndexerJava implements SpringIndexer {
 		finally {
 			parser.cleanup();
 			progressTask.done();
-		}
-	}
-
-	private void reconcileWithCompleteIndex(IJavaProject project, List<DocumentDescriptor> filesWithTimestamps) throws Exception {
-		if (filesWithTimestamps.isEmpty()) {
-			return;
-		}
-		
-		boolean ignoreMethodBodies = false;
-		
-		String[] javaFiles = new String[filesWithTimestamps.size()];
-		long[] modificationTimestamps = new long[filesWithTimestamps.size()];
-		
-		for (int i = 0; i < filesWithTimestamps.size(); i++) {
-			javaFiles[i] = filesWithTimestamps.get(i).getFile();
-			modificationTimestamps[i] = filesWithTimestamps.get(i).getLastModified();
-		}
-		
-		log.info("additional reconciling with complete index triggered for: " + Arrays.toString(javaFiles));
-		
-		// reconcile
-		SpringIndexerJavaScanResult reconcilingResult = new SpringIndexerJavaScanResult(project, javaFiles);
-		ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
-		
-		BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
-			@Override
-			public void accept(String docURI, Diagnostic diagnostic) {
-				reconcilingResult.getGeneratedDiagnostics().add(new CachedDiagnostics(docURI, diagnostic));
-			}
-		};
-
-		FileASTRequestor requestor = new FileASTRequestor() {
-
-			@Override
-			public void acceptAST(String sourceFilePath, CompilationUnit cu) {
-				File file = new File(sourceFilePath);
-				String docURI = UriUtil.toUri(file).toASCIIString();
-				long lastModified = file.lastModified();
-				
-				TextDocument doc = DocumentUtils.createTempTextDocument(docURI);
-
-				IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
-
-				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
-						lastModified, doc, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, true, reconcilingResult);
-
-				try {
-					reconcile(context, reconcilingIndex);
-					
-					Collection<String> dependencies = dependencyTracker.get(project, context.getFile());
-					for (String dependency : context.getDependencies()) {
-						dependencies.add(dependency);
-					}
-					
-				} catch (Exception e) {
-					log.error("problem creating temp document during re-reconciling for: " + docURI, e);
-				}
-				
-			}
-		};
-
-		AnnotationHierarchies annotations = new AnnotationHierarchies();
-		ASTParserCleanupEnabled parser = SpringIndexerJavaParserUtils.createParser(project, annotations, ignoreMethodBodies);
-		try {
-			parser.createASTs(javaFiles, null, new String[0], requestor, null);
-		}
-		finally {
-			parser.cleanup();
-		}
-		
-		// cache update
-		cacheHelper.updateDiagnosticsAfterReconcile(project, javaFiles, modificationTimestamps, reconcilingResult.getGeneratedDiagnostics(),
-				dependencyTracker.getAllDependencies(project));
-
-		// publish diagnostics
-		reconcilingResult.publishDiagnosticsOnly(symbolHandler);
-	}
-
-	private void reconcile(SpringIndexerJavaContext context, ReconcilingIndex reconcilingIndex) {
-		// reconciling
-		IProblemCollector problemCollector = new IProblemCollector() {
-			
-			List<ReconcileProblem> problems = new ArrayList<>();
-			
-			@Override
-			public void beginCollecting() {
-				problems.clear();
-			}
-			
-			@Override
-			public void accept(ReconcileProblem problem) {
-				problems.add(problem);
-			}
-
-			@Override
-			public void endCollecting() {
-				for (ReconcileProblem p : problems) {
-					context.getProblemCollector().accept(p);
-				}
-			}
-		};
-
-		try {
-
-			problemCollector.beginCollecting();
-
-			List<SpringIndexElement> createdElements = context.getGeneratedIndexElements().stream()
-					.filter(cachedIndexElement -> cachedIndexElement.getDocURI().equals(context.getDocURI()))
-					.map(cachedIndexElement -> cachedIndexElement.getIndexElement())
-					.toList();
-
-			ReconcilingContext reconcilingContext = new ReconcilingContext(context.getDocURI(), problemCollector, context.isFullAst(), context.isIndexComplete(), createdElements, reconcilingIndex);
-
-			reconciler.reconcile(context.getProject(), URI.create(context.getDocURI()), context.getCu(), reconcilingContext);
-			
-			for (String dependency : reconcilingContext.getDependencies()) {
-				context.addDependency(dependency);
-			}
-			
-			context.getResult().markForAffectedFilesIndexing(reconcilingContext.getMarkedForAffectedFilesIndexing());
-			
-			problemCollector.endCollecting();
-			
-		} catch (RequiredCompleteAstException e) {
-			if (!context.isFullAst()) {
-				// Let problems be found in the next pass, don't add the problems to the aggregate problems collector to not duplicate them with the next pass
-				context.getNextPassFiles().add(context.getFile());
-				context.resetDocumentRelatedElements(context.getDocURI());
-			} else {
-				problemCollector.endCollecting();
-				log.error("Complete AST required but it is complete already. Parsing ", context.getDocURI());
-			}
-		} catch (RequiredCompleteIndexException e) {
-			context.getResult().markForReconcilingWithCompleteIndex(context.getFile(), context.getLastModified());
-			log.error("Complete AST required but it is complete already. Parsing ", context.getDocURI());
 		}
 	}
 

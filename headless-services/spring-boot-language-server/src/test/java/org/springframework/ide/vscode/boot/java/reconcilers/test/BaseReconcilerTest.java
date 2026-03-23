@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -35,7 +35,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingContext;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
-import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
+import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaParserUtils;
 import org.springframework.ide.vscode.boot.java.value.test.ValueSpelExpressionValidationTest.TestProblemCollector;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
@@ -109,7 +109,7 @@ public abstract class BaseReconcilerTest {
 		AtomicBoolean requiredCompleteAst = new AtomicBoolean(false);
 		String[] sources = Stream.concat(Arrays.stream(additionalSources), Stream.of(path)).map(p -> p.toFile().toString()).toArray(String[]::new);
 		
-		SpringIndexerJava.createParser(project, new AnnotationHierarchies(), !isCompleteAst).createASTs(sources, null, new String[0], new FileASTRequestor() {
+		SpringIndexerJavaParserUtils.createParser(project, new AnnotationHierarchies(), !isCompleteAst).createASTs(sources, null, new String[0], new FileASTRequestor() {
 
 			@Override
 			public void acceptAST(String sourceFilePath, CompilationUnit cu) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -31,7 +31,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
-import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
+import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaParserUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 
@@ -102,7 +102,7 @@ public class AnnotationHierarchiesTests {
 		}
 		""");
 		
-		SpringIndexerJava.createParser(project, new AnnotationHierarchies(), true).createASTs(new String[] { file.toString() }, null, new String[0], new FileASTRequestor() {
+		SpringIndexerJavaParserUtils.createParser(project, new AnnotationHierarchies(), true).createASTs(new String[] { file.toString() }, null, new String[0], new FileASTRequestor() {
 			@Override
 			public void acceptAST(String sourceFilePath, CompilationUnit cu) {
 				AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
@@ -148,7 +148,7 @@ public class AnnotationHierarchiesTests {
 		}
 		""");
 		
-		SpringIndexerJava.createParser(project, new AnnotationHierarchies(), true).createASTs(new String[] { file.toFile().toString() }, null, new String[0], new FileASTRequestor() {
+		SpringIndexerJavaParserUtils.createParser(project, new AnnotationHierarchies(), true).createASTs(new String[] { file.toFile().toString() }, null, new String[0], new FileASTRequestor() {
 			@Override
 			public void acceptAST(String sourceFilePath, CompilationUnit cu) {
 				AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);

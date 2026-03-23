@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -36,7 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
+import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaParserUtils;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 
@@ -203,7 +203,7 @@ public class ASTUtilsTest {
 	}
 	
 	private void runTestsAgainstTypeDeclaration(Path file, Consumer<TypeDeclaration> test) throws Exception {
-		SpringIndexerJava.createParser(this.project, new AnnotationHierarchies(), true).createASTs(new String[] { file.toFile().toString() }, null, new String[0], new FileASTRequestor() {
+		SpringIndexerJavaParserUtils.createParser(this.project, new AnnotationHierarchies(), true).createASTs(new String[] { file.toFile().toString() }, null, new String[0], new FileASTRequestor() {
 			@Override
 			public void acceptAST(String sourceFilePath, CompilationUnit cu) {
 				cu.accept(new ASTVisitor() {

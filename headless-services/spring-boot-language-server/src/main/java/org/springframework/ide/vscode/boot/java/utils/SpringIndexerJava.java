@@ -28,28 +28,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.PackageDeclaration;
-import org.eclipse.jdt.core.dom.RecordDeclaration;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringIndexToSymbolsConverter;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
-import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
@@ -67,7 +57,6 @@ import org.springframework.ide.vscode.commons.languageserver.ProgressService;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
-import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -88,25 +77,21 @@ public class SpringIndexerJava implements SpringIndexer {
 	private static final String GENERATION = "GEN-35";
 	private static final String INDEX_FILES_TASK_ID = "index-java-source-files-task-";
 
-	private static final String INDEX_KEY = "index";
-	private static final String DIAGNOSTICS_KEY = "diagnostics";
-
 	private final SymbolHandler symbolHandler;
-	private final SpringComponentIndexer[] componentIndexers;
 	private final JdtReconciler reconciler;
-	private final IndexCache cache;
+	private final SpringIndexerJavaCacheHelper cacheHelper;
 	private final JavaProjectFinder projectFinder;
 	private final ProgressService progressService;
 	private final CompilationUnitCache cuCache;
 	
 	private boolean scanTestJavaSources = false;
-	private JsonObject validationSeveritySettings;
 	private int scanChunkSize = 1000;
 
 	private FileScanListener fileScanListener = null; //used by test code only
 
 	private final SpringIndexerJavaDependencyTracker dependencyTracker = new SpringIndexerJavaDependencyTracker();
 	private final BiFunction<TextDocument, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator;
+	private final SpringIndexerJavaAstScanner astScanner;
 
 	
 	public SpringIndexerJava(SymbolHandler symbolHandler, SpringComponentIndexer[] componentIndexers, IndexCache cache,
@@ -115,15 +100,14 @@ public class SpringIndexerJava implements SpringIndexer {
 			JsonObject validationSeveritySettings, CompilationUnitCache cuCache) {
 		
 		this.symbolHandler = symbolHandler;
-		this.componentIndexers = componentIndexers;
 		this.reconciler = jdtReconciler;
-		this.cache = cache;
+		this.cacheHelper = new SpringIndexerJavaCacheHelper(cache, GENERATION, validationSeveritySettings);
 		this.projectFinder = projectFimder;
 		this.progressService = progressService;
 		
 		this.problemCollectorCreator = problemCollectorCreator;
-		this.validationSeveritySettings = validationSeveritySettings;
 		this.cuCache = cuCache;
+		this.astScanner = new SpringIndexerJavaAstScanner(componentIndexers, dependencyTracker, this::reconcile);
 	}
 
 	public SpringIndexerJavaDependencyTracker getDependencyTracker() {
@@ -156,23 +140,15 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	@Override
 	public void removeProject(IJavaProject project) throws Exception {
-		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
-		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-
-		this.cache.remove(indexCacheKey);
-		this.cache.remove(diagnosticsCacheKey);
+		cacheHelper.removeProjectCaches(project);
 		
 		this.dependencyTracker.removeProject(project);
 	}
 
 	@Override
 	public void updateFile(IJavaProject project, DocumentDescriptor updatedDoc, String content) throws Exception {
-		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
-		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-
 		if (updatedDoc != null && shouldProcessDocument(project, updatedDoc.getDocURI())) {
-			if (isCacheOutdated(indexCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())
-					|| isCacheOutdated(diagnosticsCacheKey, updatedDoc.getDocURI(), updatedDoc.getLastModified())) {
+			if (cacheHelper.isIndexOrDiagnosticsCacheOutdated(project, updatedDoc.getDocURI(), updatedDoc.getLastModified())) {
 
 				this.symbolHandler.removeSymbols(project, updatedDoc.getDocURI());
 				scanFile(project, updatedDoc, content);
@@ -188,7 +164,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	
 	private void updateJavaFiles(IJavaProject project, DocumentDescriptor[] updatedDocs) throws Exception {
 		if (updatedDocs != null) {
-			DocumentDescriptor[] docs = filterDocuments(project, updatedDocs);
+			DocumentDescriptor[] docs = cacheHelper.filterDocumentsNeedingRefresh(project, updatedDocs, this::shouldProcessDocument);
 
 			if (docs.length > 0) {
 				for (DocumentDescriptor updatedDoc : docs) {
@@ -230,11 +206,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			}
 		}).toArray(String[]::new);
 		
-		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
-		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-
-		this.cache.removeFiles(indexCacheKey, files, CachedIndexElement.class);
-		this.cache.removeFiles(diagnosticsCacheKey, files, CachedDiagnostics.class);
+		cacheHelper.removeFilesFromCaches(project, files);
 	}
 	
 	/**
@@ -271,7 +243,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
 						0, doc, content, voidProblemCollector, new ArrayList<>(), true, true, result);
 
-				scanAST(context, false, new ReconcilingIndex());
+				astScanner.scanAST(context, false, new ReconcilingIndex());
 
 				List<SpringIndexElement> indexElements = result.getGeneratedIndexElements().stream()
 					.map(cachedBean -> cachedBean.getIndexElement())
@@ -282,22 +254,6 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 		
 		return Collections.emptyList();
-	}
-
-	/**
-	 * filter the list of given documents down to those that should be processed and that don't have
-	 * valid up-to-date cache data anymore
-	 */
-	private DocumentDescriptor[] filterDocuments(IJavaProject project, DocumentDescriptor[] updatedDocs) {
-		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
-		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-
-		return Arrays.stream(updatedDocs)
-				.filter(doc -> doc.getDocURI().endsWith(".java"))
-				.filter(doc -> shouldProcessDocument(project, doc.getDocURI()))
-				.filter(doc -> isCacheOutdated(indexCacheKey, doc.getDocURI(), doc.getLastModified())
-						|| isCacheOutdated(diagnosticsCacheKey, doc.getDocURI(), doc.getLastModified()))
-				.toArray(DocumentDescriptor[]::new);
 	}
 
 	/**
@@ -317,11 +273,6 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 	}
 	
-	private boolean isCacheOutdated(IndexCacheKey cacheKey, String docURI, long modifiedTimestamp) {
-		long cachedModificationTImestamp = this.cache.getModificationTimestamp(cacheKey, UriUtil.toFileString(docURI));
-		return modifiedTimestamp > cachedModificationTImestamp;
-	}
-
 	private void scanFiles(IJavaProject project, DocumentDescriptor[] docs) throws Exception {
 		Set<String> scannedFiles = new HashSet<>();
 		for (int i = 0; i < docs.length; i++) {
@@ -334,7 +285,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	private void scanFile(IJavaProject project, DocumentDescriptor updatedDoc, String content) throws Exception {
 		final boolean ignoreMethodBodies = false;
-		ASTParserCleanupEnabled parser = createParser(project, new AnnotationHierarchies(), ignoreMethodBodies);
+		ASTParserCleanupEnabled parser = SpringIndexerJavaParserUtils.createParser(project, new AnnotationHierarchies(), ignoreMethodBodies);
 		
 		String docURI = updatedDoc.getDocURI();
 		long lastModified = updatedDoc.getLastModified();
@@ -370,17 +321,12 @@ public class SpringIndexerJava implements SpringIndexer {
 			SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
 					lastModified, doc, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
 
-			scanAST(context, true, reconcilingIndex);
+			astScanner.scanAST(context, true, reconcilingIndex);
 
 			result.publishResults(symbolHandler);
 
 			// update cache
-			
-			IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
-			IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-			
-			this.cache.update(indexCacheKey, file, lastModified, result.getGeneratedIndexElements(), context.getDependencies(), CachedIndexElement.class);
-			this.cache.update(diagnosticsCacheKey, file, lastModified, result.getGeneratedDiagnostics(), context.getDependencies(), CachedDiagnostics.class);
+			cacheHelper.updateAfterSingleFileScan(project, file, lastModified, result, context.getDependencies());
 			
 			Set<String> scannedFiles = new HashSet<>();
 			scannedFiles.add(file);
@@ -437,7 +383,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
 						lastModified, doc, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
 				
-				scanAST(context, true, reconcilingIndex);
+				astScanner.scanAST(context, true, reconcilingIndex);
 				
 				dependencies.putAll(sourceFilePath, context.getDependencies());
 				scannedTypes.addAll(context.getScannedTypes());
@@ -447,22 +393,17 @@ public class SpringIndexerJava implements SpringIndexer {
 		};
 
 		AnnotationHierarchies annotationHierarchies = new AnnotationHierarchies();
-		List<String[]> chunks = createChunks(javaFiles, this.scanChunkSize);
+		List<String[]> chunks = SpringIndexerJavaParserUtils.createChunks(javaFiles, this.scanChunkSize);
 		for(int i = 0; i < chunks.size(); i++) {
 			log.info("scan java files, AST parse, chunk {} for files: {}", i, javaFiles.length);
 			
-			ASTParserCleanupEnabled parser = createParser(project, annotationHierarchies, ignoreMethodBodies);
+			ASTParserCleanupEnabled parser = SpringIndexerJavaParserUtils.createParser(project, annotationHierarchies, ignoreMethodBodies);
 			parser.createASTs(chunks.get(i), null, new String[0], requestor, null);
 			parser.cleanup();
 		}
 		
 		// update the cache
-		
-		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
-		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-
-		this.cache.update(indexCacheKey, javaFiles, lastModified, result.getGeneratedIndexElements(), dependencies, CachedIndexElement.class);
-		this.cache.update(diagnosticsCacheKey, javaFiles, lastModified, result.getGeneratedDiagnostics(), dependencies, CachedDiagnostics.class);
+		cacheHelper.updateAfterBatchScan(project, javaFiles, lastModified, result, dependencies);
 		
 		result.publishResults(symbolHandler);
 		reconcileWithCompleteIndex(project, result.getMarkedForReconcilingWithCompleteIndex());
@@ -514,11 +455,9 @@ public class SpringIndexerJava implements SpringIndexer {
 		SpringIndexerJavaScanResult result = null;
 		
 		// check cached elements first
-		IndexCacheKey indexCacheKey = getCacheKey(project, INDEX_KEY);
-		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-
-		Pair<CachedIndexElement[], Multimap<String, String>> cachedIndexElements = this.cache.retrieve(indexCacheKey, javaFiles, CachedIndexElement.class);
-		Pair<CachedDiagnostics[], Multimap<String, String>> cachedDiagnostics = this.cache.retrieve(diagnosticsCacheKey, javaFiles, CachedDiagnostics.class);
+		SpringIndexerJavaCacheHelper.FullScanRetrieveResult cached = cacheHelper.retrieveForFullScan(project, javaFiles);
+		Pair<CachedIndexElement[], Multimap<String, String>> cachedIndexElements = cached.indexElements();
+		Pair<CachedDiagnostics[], Multimap<String, String>> cachedDiagnostics = cached.diagnostics();
 
 		if (!clean && cachedIndexElements != null && cachedDiagnostics != null) {
 			// use cached data
@@ -544,7 +483,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				}
 			};
 			
-			List<String[]> chunks = createChunks(javaFiles, this.scanChunkSize);
+			List<String[]> chunks = SpringIndexerJavaParserUtils.createChunks(javaFiles, this.scanChunkSize);
 			AnnotationHierarchies annotations = new AnnotationHierarchies();
 			for (int i = 0; i < chunks.size(); i++) {
 
@@ -559,8 +498,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			
 			log.info("scan java files done, number of index elements created: " + result.getGeneratedIndexElements().size());
 
-			this.cache.store(indexCacheKey, javaFiles, result.getGeneratedIndexElements(), dependencyTracker.getAllDependencies(project), CachedIndexElement.class);
-			this.cache.store(diagnosticsCacheKey, javaFiles, result.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(project), CachedDiagnostics.class);
+			cacheHelper.storeFullScanResults(project, javaFiles, result, dependencyTracker.getAllDependencies(project));
 		}
 		
 		result.publishResults(symbolHandler);
@@ -593,12 +531,12 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
 						lastModified, doc, null, problemCollector, nextPassFiles, !ignoreMethodBodies, false, result);
 
-				scanAST(context, true, reconcilingIndex);
+				astScanner.scanAST(context, true, reconcilingIndex);
 				progressTask.increment();
 			}
 		};
 
-		ASTParserCleanupEnabled parser = createParser(project, annotations, ignoreMethodBodies);
+		ASTParserCleanupEnabled parser = SpringIndexerJavaParserUtils.createParser(project, annotations, ignoreMethodBodies);
 		try {
 			parser.createASTs(javaFiles, null, new String[0], requestor, null);
 			return (String[]) nextPassFiles.toArray(new String[nextPassFiles.size()]);
@@ -671,7 +609,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		};
 
 		AnnotationHierarchies annotations = new AnnotationHierarchies();
-		ASTParserCleanupEnabled parser = createParser(project, annotations, ignoreMethodBodies);
+		ASTParserCleanupEnabled parser = SpringIndexerJavaParserUtils.createParser(project, annotations, ignoreMethodBodies);
 		try {
 			parser.createASTs(javaFiles, null, new String[0], requestor, null);
 		}
@@ -680,154 +618,11 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 		
 		// cache update
-		IndexCacheKey diagnosticsCacheKey = getCacheKey(project, DIAGNOSTICS_KEY);
-		this.cache.update(diagnosticsCacheKey, javaFiles, modificationTimestamps, reconcilingResult.getGeneratedDiagnostics(), dependencyTracker.getAllDependencies(project), CachedDiagnostics.class);
+		cacheHelper.updateDiagnosticsAfterReconcile(project, javaFiles, modificationTimestamps, reconcilingResult.getGeneratedDiagnostics(),
+				dependencyTracker.getAllDependencies(project));
 
 		// publish diagnostics
 		reconcilingResult.publishDiagnosticsOnly(symbolHandler);
-	}
-
-	private void scanAST(final SpringIndexerJavaContext context, boolean includeReconcile, ReconcilingIndex reconcilingIndex) {
-		try {
-			context.getCu().accept(new ASTVisitor() {
-				
-				@Override
-				public boolean visit(PackageDeclaration node) {
-					try {
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-					return super.visit(node);
-				}
-	
-				@Override
-				public boolean visit(TypeDeclaration node) {
-					try {
-						context.addScannedType(node.resolveBinding());
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-					
-					return super.visit(node);
-				}
-	
-				@Override
-				public boolean visit(RecordDeclaration node) {
-					try {
-						context.addScannedType(node.resolveBinding());
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-					
-					return super.visit(node);
-				}
-	
-				@Override
-				public boolean visit(AnnotationTypeDeclaration node) {
-					try {
-						context.addScannedType(node.resolveBinding());
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-					
-					return super.visit(node);
-				}
-	
-				@Override
-				public boolean visit(MethodDeclaration node) {
-					try {
-						extractSymbolInformation(node, context);
-					}
-					catch (RequiredCompleteAstException e) {
-						throw e;
-					}
-					catch (Exception e) {
-						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-					}
-					return super.visit(node);
-				}
-	
-//				@Override
-//				public boolean visit(SingleMemberAnnotation node) {
-//					try {
-//						extractSymbolInformation(node, context);
-//					}
-//					catch (RequiredCompleteAstException e) {
-//						throw e;
-//					}
-//					catch (Exception e) {
-//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-//					}
-//	
-//					return super.visit(node);
-//				}
-//	
-//				@Override
-//				public boolean visit(NormalAnnotation node) {
-//					try {
-//						extractSymbolInformation(node, context);
-//					}
-//					catch (RequiredCompleteAstException e) {
-//						throw e;
-//					}
-//					catch (Exception e) {
-//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-//					}
-//	
-//					return super.visit(node);
-//				}
-//	
-//				@Override
-//				public boolean visit(MarkerAnnotation node) {
-//					try {
-//						extractSymbolInformation(node, context);
-//					}
-//					catch (RequiredCompleteAstException e) {
-//						throw e;
-//					}
-//					catch (Exception e) {
-//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-//					}
-//	
-//					return super.visit(node);
-//				}
-			});
-		}
-		catch (RequiredCompleteAstException e) {
-			if (!context.isFullAst()) {
-				context.getNextPassFiles().add(context.getFile());
-				context.resetDocumentRelatedElements(context.getDocURI());
-			}
-			else {
-				log.error("Complete AST required but it is complete already. Analyzing ", context.getDocURI());
-			}
-		}
-			
-		if (includeReconcile) {
-			reconcile(context, reconcilingIndex);
-		}
-		
-		dependencyTracker.update(context.getProject(), context.getFile(), context.getDependencies());;
 	}
 
 	private void reconcile(SpringIndexerJavaContext context, ReconcilingIndex reconcilingIndex) {
@@ -890,36 +685,6 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 	}
 
-	private void extractSymbolInformation(TypeDeclaration typeDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		for (SpringComponentIndexer indexer : this.componentIndexers) {
-			indexer.index(typeDeclaration, context);
-		}
-	}
-
-	private void extractSymbolInformation(RecordDeclaration recordDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		for (SpringComponentIndexer indexer : this.componentIndexers) {
-			indexer.index(recordDeclaration, context);
-		}
-	}
-
-	private void extractSymbolInformation(AnnotationTypeDeclaration annotationTypeDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		for (SpringComponentIndexer indexer : this.componentIndexers) {
-			indexer.index(annotationTypeDeclaration, context);
-		}
-	}
-
-	private void extractSymbolInformation(MethodDeclaration methodDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		for (SpringComponentIndexer indexer : this.componentIndexers) {
-			indexer.index(methodDeclaration, context);
-		}
-	}
-
-	private void extractSymbolInformation(PackageDeclaration packageDeclaration, final SpringIndexerJavaContext context) throws Exception {
-		for (SpringComponentIndexer indexer : this.componentIndexers) {
-			indexer.index(packageDeclaration, context);
-		}
-	}
-
 //	private void extractSymbolInformation(Annotation node, final SpringIndexerJavaContext context) throws Exception {
 //		IAnnotationBinding annotationBinding = node.resolveAnnotationBinding();
 //
@@ -952,55 +717,6 @@ public class SpringIndexerJava implements SpringIndexer {
 //			log.debug("type binding not around: " + context.getDocURI() + " - " + node.toString());
 //		}
 //	}
-
-	public static ASTParserCleanupEnabled createParser(IJavaProject project, AnnotationHierarchies annotationHierarchies, boolean ignoreMethodBodies) throws Exception {
-		String[] classpathEntries = getClasspathEntries(project);
-		String[] sourceEntries = getSourceEntries(project);
-		String complianceJavaVersion = getComplianceJavaVersion(project.getClasspath().getJre() == null ? null : project.getClasspath().getJre().version());
-		
-		return new ASTParserCleanupEnabled(classpathEntries, sourceEntries, complianceJavaVersion, annotationHierarchies, ignoreMethodBodies);
-	}
-
-	private static String getComplianceJavaVersion(String javaVersion) {
-		String complianceLevel = extractComplianceVersion(javaVersion);
-		// Currently the java version in the classpath seems to be 1.8, 17, 21 etc.
-		return complianceLevel == null || complianceLevel.isBlank() ? JavaCore.VERSION_25 : complianceLevel;
-	}
-	
-	private static String extractComplianceVersion(String versionString) {
-        if (versionString != null && versionString.contains(".")) {
-            String[] parts = versionString.split("\\.");
-            if ("1".equals(parts[0])) {
-    			if (parts.length > 1) {
-    				return "%s.%s".formatted(parts[0], parts[1]);
-    			}
-    		} else {
-    			String version = parts[0];
-    			int idx = version.indexOf('+');
-    			return idx >= 0 ? version.substring(0, idx) : version;
-    		}
-        }
-        return null;
-    }
-
-
-	private static String[] getClasspathEntries(IJavaProject project) throws Exception {
-		IClasspath classpath = project.getClasspath();
-		Stream<File> classpathEntries = IClasspathUtil.getAllBinaryRoots(classpath).stream();
-		return classpathEntries
-				.filter(file -> file.exists())
-				.map(file -> file.getAbsolutePath())
-				.toArray(String[]::new);
-	}
-
-	private static String[] getSourceEntries(IJavaProject project) throws Exception {
-		IClasspath classpath = project.getClasspath();
-		Stream<File> sourceEntries = IClasspathUtil.getSourceFolders(classpath);
-		return sourceEntries
-				.filter(file -> file.exists())
-				.map(file -> file.getAbsolutePath())
-				.toArray(String[]::new);
-	}
 	
 	private Stream<File> foldersToScan(IJavaProject project) {
 		IClasspath classpath = project.getClasspath();
@@ -1022,36 +738,6 @@ public class SpringIndexerJava implements SpringIndexer {
 			.filter(Files::isRegularFile)
 			.map(path -> path.toAbsolutePath().toString())
 			.toArray(String[]::new);
-	}
-
-	private IndexCacheKey getCacheKey(IJavaProject project, String elementType) {
-		IClasspath classpath = project.getClasspath();
-		Stream<File> classpathEntries = IClasspathUtil.getBinaryRoots(classpath, cpe -> !Classpath.ENTRY_KIND_SOURCE.equals(cpe.getKind())).stream();
-
-		String classpathIdentifier = classpathEntries
-				.filter(file -> file.exists())
-				.map(file -> file.getAbsolutePath() + "#" + file.lastModified())
-				.collect(Collectors.joining(","));
-
-		return new IndexCacheKey(project.getElementName(), "java", elementType, DigestUtils.md5Hex(GENERATION + "-" + validationSeveritySettings.toString() + "-" + classpathIdentifier).toUpperCase());
-	}
-	
-	private List<String[]> createChunks(String[] sourceArray, int chunkSize) {
-
-		int numberOfChunks = (int) Math.ceil((double) sourceArray.length / chunkSize);
-		List<String[]> result = new ArrayList<>();
-
-		for (int i = 0; i < numberOfChunks; i++) {
-			int startIdx = i * chunkSize;
-			int endIdx = Math.min(startIdx + chunkSize, sourceArray.length);
-
-			String[] chunk = new String[endIdx - startIdx];
-			System.arraycopy(sourceArray, startIdx, chunk, 0, endIdx - startIdx);
-			
-			result.add(chunk);
-		}
-		
-		return result;
 	}
 
 	public void setScanTestJavaSources(boolean scanTestJavaSources) {
@@ -1120,7 +806,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	}
 
 	public void setValidationSeveritySettings(JsonObject javaValidationSettingsJson) {
-		this.validationSeveritySettings = javaValidationSettingsJson;
+		this.cacheHelper.setValidationSeveritySettings(javaValidationSettingsJson);
 	}
 
 	public void setFileScanListener(FileScanListener fileScanListener) {

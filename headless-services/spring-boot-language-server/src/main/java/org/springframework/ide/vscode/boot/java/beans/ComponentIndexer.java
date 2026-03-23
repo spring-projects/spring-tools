@@ -142,7 +142,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
-	public static Bean createBean(TypeDeclaration type, SpringIndexerJavaContext context) throws BadLocationException {
+	public static Bean createBean(AbstractTypeDeclaration type, SpringIndexerJavaContext context) throws BadLocationException {
 		TextDocument doc = context.getDoc();
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
 		
@@ -176,35 +176,11 @@ public class ComponentIndexer implements SpringComponentIndexer {
 	
 	@Override
 	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) throws Exception {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(recordDeclaration);
-		TextDocument doc = context.getDoc();
-
-		ITypeBinding beanType = recordDeclaration.resolveBinding();
-
-		SimpleName nameNode = recordDeclaration.getName();
-		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
-
-		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
-		boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
-
-		// defer repository indexing to repository symbol provider
-		if (isRepository) {
+		Bean beanDefinition = createBean(recordDeclaration, context);
+		if (beanDefinition == null) {
 			return;
 		}
-
-		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(recordDeclaration, doc);
-		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
-
-		Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(recordDeclaration);
-
-		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
-		AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
-
-		String beanName = BeanUtils.getBeanNameFromType(recordDeclaration, annotationMetadata);
-
-		String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
-		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
-
+		TextDocument doc = context.getDoc();
 		indexConfigurationProperties(beanDefinition, recordDeclaration, context, doc);
 
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
@@ -483,7 +459,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 									String beanName = BeanUtils.getBeanNameFromType(typeParameters[0].getName());
 									String beanType = typeParamName;
 
-									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
+									addChildBeanFromRegistryInvocation(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 							else if (arguments.size() == 2 && "java.lang.String".equals(types.get(0).getQualifiedName()) && "java.lang.Class".equals(types.get(1).getBinaryName())) {
@@ -497,7 +473,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 									String typeParamName = typeParameters[0].getBinaryName();
 									String beanType = typeParamName;
 
-									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
+									addChildBeanFromRegistryInvocation(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 							else if (arguments.size() == 2 && "java.lang.Class".equals(types.get(0).getBinaryName()) && "java.util.function.Consumer".equals(types.get(1).getBinaryName())) {
@@ -511,7 +487,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 									String beanName = BeanUtils.getBeanNameFromType(typeParameters[0].getName());
 									String beanType = typeParamName;
 
-									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
+									addChildBeanFromRegistryInvocation(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 							else if (arguments.size() == 3 && "java.lang.String".equals(types.get(0).getQualifiedName())
@@ -526,7 +502,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 									String typeParamName = typeParameters[0].getBinaryName();
 									String beanType = typeParamName;
 
-									createBean(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
+									addChildBeanFromRegistryInvocation(parent, beanName, beanType, typeParameters[0], methodInvocation, context, doc);
 								}
 							}
 						}
@@ -540,7 +516,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		});
 	}
 	
-	public void createBean(SpringIndexElement parentNode, String beanName, String beanType, ITypeBinding beanTypeBinding, ASTNode node, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
+	public void addChildBeanFromRegistryInvocation(SpringIndexElement parentNode, String beanName, String beanType, ITypeBinding beanTypeBinding, ASTNode node, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
 		String name = BeanUtils.createBeanLabel(null, beanName, beanType);

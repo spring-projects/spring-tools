@@ -26,10 +26,13 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
+import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -106,6 +109,33 @@ public class BeanUtils {
 		symbolLabel.append(' ');
 		symbolLabel.append(beanType);
 		return symbolLabel.toString();
+	}
+
+	/**
+	 * Display label for a Spring Data repository bean in the index (at-plus prefix, bean name, optional Repository(domain) suffix).
+	 */
+	public static String createRepositoryBeanLabel(String beanName, String domainTypeMarker) {
+		StringBuilder symbolLabel = new StringBuilder();
+		symbolLabel.append("@+");
+		symbolLabel.append(' ');
+		symbolLabel.append('\'');
+		symbolLabel.append(beanName);
+		symbolLabel.append('\'');
+
+		String marker = domainTypeMarker != null && domainTypeMarker.length() > 0 ? " Repository(" + domainTypeMarker + ")" : "";
+		symbolLabel.append(marker);
+
+		return symbolLabel.toString();
+	}
+
+	/**
+	 * Creates a {@link Bean} index element for a Spring Data repository implementation type.
+	 */
+	public static Bean createRepositoryBean(String beanName, String concreteRepoType, Location location,
+			InjectionPoint[] injectionPoints, Set<String> supertypes, AnnotationMetadata[] annotations,
+			String domainTypeMarker) {
+		String name = createRepositoryBeanLabel(beanName, domainTypeMarker);
+		return new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, name);
 	}
 	
 	public static List<String> getBeanNamesFromType(AbstractTypeDeclaration type, List<AnnotationMetadata> annotationMetadata) {

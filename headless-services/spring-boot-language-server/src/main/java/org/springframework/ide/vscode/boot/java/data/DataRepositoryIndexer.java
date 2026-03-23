@@ -66,10 +66,7 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 
 		if (repositoryBean != null) {
 			String beanName = repositoryBean.getT1();
-			ITypeBinding beanType = repositoryBean.getT2();
 			Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(repositoryBean.getT4()));
-
-			String name = beanLabel(true, beanName, beanType.getName(), repositoryBean.getT3());
 
 			// index elements
 			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(typeDeclaration, context.getDoc());
@@ -83,7 +80,7 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 			Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(typeDeclaration);
 			AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, context.getDoc());
 
-			Bean beanDefinition = new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, name);
+			Bean beanDefinition = BeanUtils.createRepositoryBean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, repositoryBean.getT3());
 			indexQueryMethods(beanDefinition, typeDeclaration, context, context.getDoc());
 
 			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
@@ -202,20 +199,6 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 			return null;
 		}
 		return sql.replaceAll("\\s+", " ").trim();
-	}
-	
-	protected String beanLabel(boolean isFunctionBean, String beanName, String beanType, String markerString) {
-		StringBuilder symbolLabel = new StringBuilder();
-		symbolLabel.append("@+");
-		symbolLabel.append(' ');
-		symbolLabel.append('\'');
-		symbolLabel.append(beanName);
-		symbolLabel.append('\'');
-
-		markerString = markerString != null && markerString.length() > 0 ? " Repository(" + markerString + ")" : "";
-		symbolLabel.append(markerString);
-
-		return symbolLabel.toString();
 	}
 
 	private static Tuple4<String, ITypeBinding, String, DocumentRegion> getRepositoryBean(TypeDeclaration typeDeclaration, TextDocument doc) {

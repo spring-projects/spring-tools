@@ -99,27 +99,42 @@
 				<artifactId>exec-maven-plugin</artifactId>
 				<version>3.3.0</version>
 				<executions>
-					<execution>
-						<id>extract</id>
-						<phase>prepare-package</phase>
-						<configuration>
-							<executable>java</executable>
-							<arguments>
-								<argument>-Djarmode=tools</argument>
-								<argument>-jar</argument>
-								<argument>${project.basedir}/servers/spring-boot-language-server-${project.version}-exec.jar</argument>
-								<argument>extract</argument>
-								<argument>--force</argument>
-								<argument>--destination</argument>
-								<argument>${project.basedir}/servers/spring-boot-language-server</argument>
-							</arguments>
-						</configuration>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+				<execution>
+					<id>extract</id>
+					<phase>prepare-package</phase>
+					<configuration>
+						<executable>java</executable>
+						<arguments>
+							<argument>-Djarmode=tools</argument>
+							<argument>-jar</argument>
+							<argument>${project.basedir}/servers/spring-boot-language-server-${project.version}-exec.jar</argument>
+							<argument>extract</argument>
+							<argument>--force</argument>
+							<argument>--destination</argument>
+							<argument>${project.basedir}/servers/spring-boot-language-server</argument>
+						</arguments>
+					</configuration>
+					<goals>
+						<goal>exec</goal>
+					</goals>
+				</execution>
+
+				<execution>
+					<id>remove-signatures</id>
+					<phase>prepare-package</phase>
+					<configuration>
+						<executable>bash</executable>
+						<workingDirectory>${project.basedir}/servers/spring-boot-language-server/lib</workingDirectory>
+						<arguments>
+							<argument>${project.basedir}/../../headless-services/spring-boot-language-server/remove-signatures.sh</argument>
+						</arguments>
+					</configuration>
+					<goals>
+						<goal>exec</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

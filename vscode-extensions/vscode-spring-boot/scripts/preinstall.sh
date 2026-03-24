@@ -26,6 +26,9 @@ cd ${workdir}/../../headless-services/spring-boot-language-server/target
 server_jar_file=$(find . -name '*-exec.jar');
 java -Djarmode=tools -jar $server_jar_file extract --destination ${workdir}/language-server
 
+# Remove signatures from extracted lib JARs
+(cd ${workdir}/language-server/lib && ${workdir}/../../headless-services/spring-boot-language-server/remove-signatures.sh)
+
 # JDT LS Extension
 cd ${workdir}/../../headless-services/jdt-ls-extension
 find . -name "*-sources.jar" -delete

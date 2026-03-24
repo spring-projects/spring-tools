@@ -84,7 +84,7 @@ public class DataRepositoryIndexElementsTest {
         assertEquals("org.test.CustomerRepository", repoBean[0].getType());
         
         Bean[] matchingBeans = springIndex.getMatchingBeans("test-spring-data-symbols", "org.springframework.data.repository.CrudRepository");
-        assertEquals(7, matchingBeans.length);
+        assertEquals(8, matchingBeans.length);
         ArrayUtils.contains(matchingBeans, repoBean[0]);
     }
     

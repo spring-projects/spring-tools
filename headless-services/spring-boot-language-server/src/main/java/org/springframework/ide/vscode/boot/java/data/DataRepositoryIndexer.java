@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.java.data;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.IMethodBinding;
@@ -25,7 +24,6 @@ import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Range;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
@@ -36,15 +34,13 @@ import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitor
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
-import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
-import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.stereotype.Component;
 
-import reactor.util.function.Tuple4;
+import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 /**
@@ -62,25 +58,11 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 	@Override
 	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
 		// this checks spring data repository beans that are defined as extensions of the repository interface
-		Tuple4<String, ITypeBinding, String, DocumentRegion> repositoryBean = getRepositoryBean(typeDeclaration, context.getDoc());
+		Tuple2<ITypeBinding, String> repositoryBean = getRepositoryBean(typeDeclaration);
 
 		if (repositoryBean != null) {
-			String beanName = repositoryBean.getT1();
-			Location location = new Location(context.getDoc().getUri(), context.getDoc().toRange(repositoryBean.getT4()));
-
-			// index elements
-			InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(typeDeclaration, context.getDoc());
-
-			ITypeBinding concreteBeanTypeBindung = typeDeclaration.resolveBinding();
-
-			Set<String> supertypes = ASTUtils.findSupertypes(concreteBeanTypeBindung);
-
-			String concreteRepoType = concreteBeanTypeBindung.getQualifiedName();
-
-			Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(typeDeclaration);
-			AnnotationMetadata[] annotations = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, context.getDoc());
-
-			Bean beanDefinition = BeanUtils.createRepositoryBean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, repositoryBean.getT3());
+			Bean beanDefinition = BeanUtils.createRepositoryBean(typeDeclaration, context.getDoc(),
+					repositoryBean.getT2());
 			indexQueryMethods(beanDefinition, typeDeclaration, context, context.getDoc());
 
 			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
@@ -201,19 +183,19 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 		return sql.replaceAll("\\s+", " ").trim();
 	}
 
-	private static Tuple4<String, ITypeBinding, String, DocumentRegion> getRepositoryBean(TypeDeclaration typeDeclaration, TextDocument doc) {
+	private static Tuple2<ITypeBinding, String> getRepositoryBean(TypeDeclaration typeDeclaration) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
 
 		ITypeBinding resolvedType = typeDeclaration.resolveBinding();
 		if (resolvedType != null && !annotationHierarchies.isAnnotatedWith(resolvedType, Annotations.NO_REPO_BEAN)) {
-			return getRepositoryBean(typeDeclaration, doc, resolvedType);
+			return getRepositoryBean(resolvedType);
 		}
 		else {
 			return null;
 		}
 	}
 
-	private static Tuple4<String, ITypeBinding, String, DocumentRegion> getRepositoryBean(TypeDeclaration typeDeclaration, TextDocument doc, ITypeBinding resolvedType) {
+	private static Tuple2<ITypeBinding, String> getRepositoryBean(ITypeBinding resolvedType) {
 
 		ITypeBinding[] interfaces = resolvedType.getInterfaces();
 		for (ITypeBinding resolvedInterface : interfaces) {
@@ -226,8 +208,6 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 			}
 
 			if (Constants.REPOSITORY_TYPE.equals(simplifiedType)) {
-				String beanName = BeanUtils.getBeanName(typeDeclaration);
-
 				String domainType = null;
 				if (resolvedInterface.isParameterizedType()) {
 					ITypeBinding[] typeParameters = resolvedInterface.getTypeArguments();
@@ -235,12 +215,11 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 						domainType = typeParameters[0].getName();
 					}
 				}
-				DocumentRegion region = ASTUtils.nodeRegion(doc, typeDeclaration.getName());
 
-				return Tuples.of(beanName, resolvedInterface, domainType, region);
+				return Tuples.of(resolvedInterface, domainType);
 			}
 			else {
-				Tuple4<String, ITypeBinding, String, DocumentRegion> result = getRepositoryBean(typeDeclaration, doc, resolvedInterface);
+				Tuple2<ITypeBinding, String> result = getRepositoryBean(resolvedInterface);
 				if (result != null) {
 					return result;
 				}
@@ -249,7 +228,7 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 
 		ITypeBinding superclass = resolvedType.getSuperclass();
 		if (superclass != null) {
-			return getRepositoryBean(typeDeclaration, doc, superclass);
+			return getRepositoryBean(superclass);
 		}
 		else {
 			return null;

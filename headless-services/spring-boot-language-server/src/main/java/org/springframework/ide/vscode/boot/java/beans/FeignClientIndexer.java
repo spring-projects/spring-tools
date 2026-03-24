@@ -44,7 +44,7 @@ public class FeignClientIndexer implements SpringComponentIndexer {
 	}
 
 	private void indexFeignClient(TypeDeclaration typeDeclaration, Annotation node, SpringIndexerJavaContext context) throws Exception {
-		Bean beanDefinition = ComponentIndexer.createBean(typeDeclaration, context);
+		Bean beanDefinition = BeanUtils.createComponentBean(typeDeclaration, context);
 		RequestMappingIndexer.indexRequestMappings(beanDefinition, typeDeclaration, typeDeclaration.resolveBinding(), context, context.getDoc());
 
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));

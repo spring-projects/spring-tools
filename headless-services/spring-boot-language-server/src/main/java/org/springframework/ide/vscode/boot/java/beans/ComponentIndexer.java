@@ -62,28 +62,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class ComponentIndexer implements SpringComponentIndexer {
 
-//	@Override
-	public void addSymbols(Annotation node, ITypeBinding annotationType, Collection<ITypeBinding> metaAnnotations, SpringIndexerJavaContext context) {
-//		try {
-//			if (node != null && node.getParent() != null && node.getParent() instanceof TypeDeclaration type) {
-//				createSymbol(type, node, annotationType, metaAnnotations, context, doc);
-//			}
-//			else if (node != null && node.getParent() != null && node.getParent() instanceof RecordDeclaration record) {
-//				createSymbol(record, node, annotationType, metaAnnotations, context, context.getDoc());
-//			}
-//			else if (node != null && node.getParent() != null && node.getParent() instanceof AnnotationTypeDeclaration annotationDeclaration) {
-//				createSymbol(annotationDeclaration, context, context.getDoc());
-//			}
-//			else if (Annotations.NAMED_ANNOTATIONS.contains(annotationType.getQualifiedName())) {
-//				WorkspaceSymbol symbol = DefaultSymbolProvider.provideDefaultSymbol(node, context.getDoc());
-//				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), new SimpleSymbolElement(symbol)));
-//			}
-//		}
-//		catch (BadLocationException e) {
-//			log.error("", e);
-//		}
-	}
-
 	@Override
 	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
@@ -106,7 +84,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 	}
 
 	private void createSymbol(TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
-		Bean beanDefinition = createBean(type, context);
+		Bean beanDefinition = BeanUtils.createComponentBean(type, context);
 		
 		if (beanDefinition == null) {
 			return;
@@ -142,41 +120,9 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 	}
 	
-	public static Bean createBean(AbstractTypeDeclaration type, SpringIndexerJavaContext context) throws BadLocationException {
-		TextDocument doc = context.getDoc();
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
-		
-		ITypeBinding beanType = type.resolveBinding();
-
-		SimpleName nameNode = type.getName();
-		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
-		
-		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
-		boolean isRepository = annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY);
-		
-		// defer repository indexing to repository symbol provider
-		if (isRepository) {
-			return null;
-		}
-
-		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
-		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
-
-		Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(type);
- 		
-		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
-		AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
-		
-		String beanName = BeanUtils.getBeanNameFromType(type, annotationMetadata);
-
-		String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, beanType.getName());
-		Bean beanDefinition = new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
-		return beanDefinition;
-	}
-	
 	@Override
 	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) throws Exception {
-		Bean beanDefinition = createBean(recordDeclaration, context);
+		Bean beanDefinition = BeanUtils.createComponentBean(recordDeclaration, context);
 		if (beanDefinition == null) {
 			return;
 		}

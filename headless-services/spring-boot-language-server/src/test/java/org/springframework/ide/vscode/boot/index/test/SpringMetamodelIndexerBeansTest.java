@@ -535,10 +535,11 @@ public class SpringMetamodelIndexerBeansTest {
 		assertEquals(1, beans.length);
 		
 		AnnotationMetadata[] annotations = beans[0].getAnnotations();
-		assertEquals(2, annotations.length);
+		assertEquals(3, annotations.length);
 		
 		AnnotationMetadata qualifierAnnotation = annotations[0];
 		AnnotationMetadata profileAnnotation = annotations[1];
+		AnnotationMetadata conditionalMetaAnnotation = annotations[2];
 		
 		assertEquals("org.springframework.beans.factory.annotation.Qualifier", qualifierAnnotation.getAnnotationType());
 		assertFalse(qualifierAnnotation.isMetaAnnotation());
@@ -563,6 +564,9 @@ public class SpringMetamodelIndexerBeansTest {
 
 		assertEquals("prof2", profileAttributeValues[1].getName());
 		assertEquals(new Location(beans[0].getLocation().getUri(), new Range(new Position(9, 19), new Position(9, 26))), profileAttributeValues[1].getLocation());
+
+		assertEquals("org.springframework.context.annotation.Conditional", conditionalMetaAnnotation.getAnnotationType());
+		assertTrue(conditionalMetaAnnotation.isMetaAnnotation());
 	}
 	
 	@Test

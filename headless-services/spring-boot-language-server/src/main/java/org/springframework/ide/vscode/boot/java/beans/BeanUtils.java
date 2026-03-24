@@ -24,15 +24,19 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
+import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
+import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -129,13 +133,57 @@ public class BeanUtils {
 	}
 
 	/**
-	 * Creates a {@link Bean} index element for a Spring Data repository implementation type.
+	 * Creates a {@link Bean} for a stereotypical Spring component (or record) type. Returns
+	 * {@code null} when repository indexing is delegated to {@link org.springframework.ide.vscode.boot.java.data.DataRepositoryIndexer}.
 	 */
-	public static Bean createRepositoryBean(String beanName, String concreteRepoType, Location location,
-			InjectionPoint[] injectionPoints, Set<String> supertypes, AnnotationMetadata[] annotations,
-			String domainTypeMarker) {
+	public static Bean createComponentBean(AbstractTypeDeclaration type, SpringIndexerJavaContext context) throws BadLocationException {
+		TextDocument doc = context.getDoc();
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
+		ITypeBinding beanType = type.resolveBinding();
+
+		if (annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY)) {
+			return null;
+		}
+
+		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
+
+		SimpleName nameNode = type.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
+		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
+
+		Collection<Annotation> allAnnotations = ASTUtils.getAnnotations(type);
+		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(allAnnotations, doc, annotationHierarchies);
+		AnnotationMetadata[] annotations = annotationMetadata.toArray(AnnotationMetadata[]::new);
+
+		String beanName = getBeanNameFromType(type, annotationMetadata);
+		String name = createBeanLabel(annotationMetadata, beanName, beanType.getName());
+		return new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints,
+				supertypes, annotations, isConfiguration, name);
+	}
+
+	/**
+	 * Creates a {@link Bean} for a Spring Data repository from the declaring type.
+	 */
+	public static Bean createRepositoryBean(TypeDeclaration type, TextDocument doc, String domainTypeMarker) throws BadLocationException {
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
+		ITypeBinding beanType = type.resolveBinding();
+
+		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
+
+		SimpleName nameNode = type.getName();
+		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
+		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
+		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
+
+		Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
+		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
+		AnnotationMetadata[] annotations = annotationMetadata.toArray(AnnotationMetadata[]::new);
+
+		String beanName = getBeanNameFromType(type, annotationMetadata);
 		String name = createRepositoryBeanLabel(beanName, domainTypeMarker);
-		return new Bean(beanName, concreteRepoType, location, injectionPoints, supertypes, annotations, false, name);
+		return new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints,
+				supertypes, annotations, isConfiguration, name);
 	}
 	
 	public static List<String> getBeanNamesFromType(AbstractTypeDeclaration type, List<AnnotationMetadata> annotationMetadata) {

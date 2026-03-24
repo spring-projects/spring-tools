@@ -132,6 +132,14 @@ public class DataRepositoryIndexerTest {
         assertEquals(SymbolKind.Constant, queryStringSymbol.getKind());
     }
 
+    @Test
+    void testCustomBeanNameFromRepositoryAnnotation() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithCustomBeanName.java").toUri().toString();
+        List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
+        assertEquals(2, symbols.size());
+        assertTrue(containsSymbol(symbols, "@+ 'myCustomerRepo' Repository(Customer)", docUri, 8, 17, 8, 53));
+    }
+
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri, int startLine, int startCHaracter, int endLine, int endCharacter) {
 		for (Iterator<? extends WorkspaceSymbol> iterator = symbols.iterator(); iterator.hasNext();) {
 			WorkspaceSymbol symbol = iterator.next();

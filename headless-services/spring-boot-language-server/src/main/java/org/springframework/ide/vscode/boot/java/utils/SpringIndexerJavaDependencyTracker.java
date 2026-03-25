@@ -33,10 +33,11 @@ public class SpringIndexerJavaDependencyTracker {
 		log.info("=== Dependencies for project: {} ===", project.getElementName());
 		for (String sourceFile : dependencies.keySet()) {
 			Collection<String> values = dependencies.get(sourceFile);
-			if (!values.isEmpty())
-			log.info(sourceFile + "=> ");
-			for (String v : values) {
-				log.info("   "+v);
+			if (!values.isEmpty()) {
+				log.info("{}=> ", sourceFile);
+				for (String v : values) {
+					log.info("   {}", v);
+				}
 			}
 		}
 		log.info("======================");

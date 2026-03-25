@@ -71,8 +71,8 @@ public class SpringIndexerJavaReconcileService {
 	}
 
 	public void logReconcilingStats() {
-		log.info("reconciling stats - counter: " + reconciler.getStatsCounter());
-		log.info("reconciling stats - timer: " + reconciler.getStatsTimer());
+		log.info("reconciling stats - counter: {}", reconciler.getStatsCounter());
+		log.info("reconciling stats - timer: {}", reconciler.getStatsTimer());
 	}
 
 	public void reconcileAfterScan(SpringIndexerJavaContext context, ReconcilingIndex reconcilingIndex) {
@@ -151,17 +151,13 @@ public class SpringIndexerJavaReconcileService {
 			modificationTimestamps[i] = filesWithTimestamps.get(i).getLastModified();
 		}
 
-		log.info("additional reconciling with complete index triggered for: " + Arrays.toString(javaFiles));
+		log.info("additional reconciling with complete index triggered for: {}", Arrays.toString(javaFiles));
 
 		SpringIndexerJavaScanResult reconcilingResult = new SpringIndexerJavaScanResult(project, javaFiles);
 		ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 
-		BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
-			@Override
-			public void accept(String docURI, Diagnostic diagnostic) {
-				reconcilingResult.getGeneratedDiagnostics().add(new CachedDiagnostics(docURI, diagnostic));
-			}
-		};
+		BiConsumer<String, Diagnostic> diagnosticsAggregator =
+				(uri, diagnostic) -> reconcilingResult.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
 
 		FileASTRequestor requestor = new FileASTRequestor() {
 
@@ -187,9 +183,9 @@ public class SpringIndexerJavaReconcileService {
 						dependencies.add(dependency);
 					}
 
-				} catch (Exception e) {
-					log.error("problem creating temp document during re-reconciling for: " + docURI, e);
-				}
+			} catch (Exception e) {
+				log.error("problem creating temp document during re-reconciling for: {}", docURI, e);
+			}
 
 			}
 		};

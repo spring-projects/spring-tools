@@ -87,51 +87,6 @@ public class SpringIndexerJavaAstScanner {
 					extractSafely(context, node.toString(), () -> extractSymbolInformation(node, context));
 					return super.visit(node);
 				}
-
-//				@Override
-//				public boolean visit(SingleMemberAnnotation node) {
-//					try {
-//						extractSymbolInformation(node, context);
-//					}
-//					catch (RequiredCompleteAstException e) {
-//						throw e;
-//					}
-//					catch (Exception e) {
-//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-//					}
-//
-//					return super.visit(node);
-//				}
-//
-//				@Override
-//				public boolean visit(NormalAnnotation node) {
-//					try {
-//						extractSymbolInformation(node, context);
-//					}
-//					catch (RequiredCompleteAstException e) {
-//						throw e;
-//					}
-//					catch (Exception e) {
-//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-//					}
-//
-//					return super.visit(node);
-//				}
-//
-//				@Override
-//				public boolean visit(MarkerAnnotation node) {
-//					try {
-//						extractSymbolInformation(node, context);
-//					}
-//					catch (RequiredCompleteAstException e) {
-//						throw e;
-//					}
-//					catch (Exception e) {
-//						log.error("error extracting symbol information in project '" + context.getProject().getElementName() + "' - for docURI '" + context.getDocURI() + "' - on node: " + node.toString(), e);
-//					}
-//
-//					return super.visit(node);
-//				}
 			});
 		}
 		catch (RequiredCompleteAstException e) {
@@ -160,8 +115,8 @@ public class SpringIndexerJavaAstScanner {
 			throw e;
 		}
 		catch (Exception e) {
-			log.error("error extracting symbol information in project '" + context.getProject().getElementName()
-					+ "' - for docURI '" + context.getDocURI() + "' - on node: " + nodeDescription, e);
+			log.error("error extracting symbol information in project '{}' - for docURI '{}' - on node: {}",
+					context.getProject().getElementName(), context.getDocURI(), nodeDescription, e);
 		}
 	}
 

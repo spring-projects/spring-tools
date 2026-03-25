@@ -34,7 +34,7 @@ public class SpringIndexerJavaContext {
 	private final long lastModified;
 	private final TextDocument doc;
 	private final String content;
-	private final IProblemCollector getProblemCollector;
+	private final IProblemCollector problemCollector;
 	private final List<String> nextPassFiles;
 	private final boolean fullAst;
 	private final boolean isIndexComplete;
@@ -57,7 +57,6 @@ public class SpringIndexerJavaContext {
 			boolean isIndexComplete,
 			SpringIndexerJavaScanResult scanResult
 	) {
-		super();
 		this.project = project;
 		this.cu = cu;
 		this.docURI = docURI;
@@ -65,7 +64,7 @@ public class SpringIndexerJavaContext {
 		this.lastModified = lastModified;
 		this.doc = doc;
 		this.content = content;
-		this.getProblemCollector = problemCollector;
+		this.problemCollector = problemCollector;
 		this.nextPassFiles = nextPassFiles;
 		this.fullAst = fullAst;
 		this.isIndexComplete = isIndexComplete;
@@ -145,7 +144,7 @@ public class SpringIndexerJavaContext {
 	}
 
 	public IProblemCollector getProblemCollector() {
-		return this.getProblemCollector;
+		return this.problemCollector;
 	}
 	
 	public boolean isFullAst() {

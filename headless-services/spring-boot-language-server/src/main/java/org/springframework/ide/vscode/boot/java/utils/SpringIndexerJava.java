@@ -69,6 +69,12 @@ public class SpringIndexerJava implements SpringIndexer {
 	
 	private static final Logger log = LoggerFactory.getLogger(SpringIndexerJava.class);
 
+	private static final IProblemCollector NO_OP_PROBLEM_COLLECTOR = new IProblemCollector() {
+		@Override public void beginCollecting() {}
+		@Override public void endCollecting() {}
+		@Override public void accept(ReconcileProblem problem) {}
+	};
+
 	// whenever the implementation of the indexer changes in a way that the stored data in the cache is no longer valid,
 	// we need to change the generation - this will result in a re-indexing due to no up-to-date cache data being found
 	private static final String GENERATION = "GEN-35";
@@ -92,7 +98,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	
 	public SpringIndexerJava(SymbolHandler symbolHandler, SpringComponentIndexer[] componentIndexers, IndexCache cache,
-			JavaProjectFinder projectFimder, ProgressService progressService, JdtReconciler jdtReconciler,
+			JavaProjectFinder projectFinder, ProgressService progressService, JdtReconciler jdtReconciler,
 			BiFunction<TextDocument, BiConsumer<String, Diagnostic>, IProblemCollector> problemCollectorCreator,
 			JsonObject validationSeveritySettings, CompilationUnitCache cuCache) {
 		
@@ -100,7 +106,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		this.cacheHelper = new SpringIndexerJavaCacheHelper(cache, GENERATION, validationSeveritySettings);
 		this.reconcileService = new SpringIndexerJavaReconcileService(jdtReconciler, problemCollectorCreator,
 				cacheHelper, symbolHandler, dependencyTracker);
-		this.projectFinder = projectFimder;
+		this.projectFinder = projectFinder;
 		this.progressService = progressService;
 		
 		this.problemCollectorCreator = problemCollectorCreator;
@@ -224,24 +230,10 @@ public class SpringIndexerJava implements SpringIndexer {
 				String file = UriUtil.toFileString(docURI);
 
 				SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, new String[] {file});
-				
-				IProblemCollector voidProblemCollector = new IProblemCollector() {
-					@Override
-					public void endCollecting() {
-					}
-
-					@Override
-					public void beginCollecting() {
-					}
-
-					@Override
-					public void accept(ReconcileProblem problem) {
-					}
-				};
 
 				TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-						0, doc, content, voidProblemCollector, new ArrayList<>(), true, true, result);
+						0, doc, content, NO_OP_PROBLEM_COLLECTOR, new ArrayList<>(), true, true, result);
 
 				astScanner.scanAST(context, false, new ReconcilingIndex());
 
@@ -264,9 +256,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		try {
 			Path path = new File(new URI(docURI)).toPath();
 			return foldersToScan(project)
-					.filter(sourceFolder -> path.startsWith(sourceFolder.toPath()))
-					.findFirst()
-					.isPresent();
+					.anyMatch(sourceFolder -> path.startsWith(sourceFolder.toPath()));
 		} catch (URISyntaxException e) {
 			log.info("shouldProcessDocument - docURI syntax problem: {}", docURI);
 			return false;
@@ -308,13 +298,9 @@ public class SpringIndexerJava implements SpringIndexer {
 			SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, new String[] {file});
 			ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 			
-			BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
-				@Override
-				public void accept(String docURI, Diagnostic diagnostic) {
-					result.getGeneratedDiagnostics().add(new CachedDiagnostics(docURI, diagnostic));
-				}
-			};
-			
+			BiConsumer<String, Diagnostic> diagnosticsAggregator =
+					(uri, diagnostic) -> result.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
+
 			TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
 
 			IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
@@ -360,12 +346,8 @@ public class SpringIndexerJava implements SpringIndexer {
 		
 		Multimap<String, String> dependencies = MultimapBuilder.hashKeys().hashSetValues().build();
 		
-		BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
-			@Override
-			public void accept(String docURI, Diagnostic diagnostic) {
-				result.getGeneratedDiagnostics().add(new CachedDiagnostics(docURI, diagnostic));
-			}
-		};
+		BiConsumer<String, Diagnostic> diagnosticsAggregator =
+				(uri, diagnostic) -> result.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
 
 		FileASTRequestor requestor = new FileASTRequestor() {
 			@Override
@@ -447,7 +429,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			scanFilesInternally(project, docsToScan);
 		}
 
-		log.info("Finished scanning affected files {}", alreadyScannedFiles);
+		log.info("Finished scanning affected files {}", filesToScan);
 	}
 
 	private void scanFiles(IJavaProject project, String[] javaFiles, boolean clean) throws Exception {
@@ -476,12 +458,8 @@ public class SpringIndexerJava implements SpringIndexer {
 			ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 
 			final SpringIndexerJavaScanResult finalResult = result;
-			BiConsumer<String, Diagnostic> diagnosticsAggregator = new BiConsumer<>() {
-				@Override
-				public void accept(String docURI, Diagnostic diagnostic) {
-					finalResult.getGeneratedDiagnostics().add(new CachedDiagnostics(docURI, diagnostic));
-				}
-			};
+			BiConsumer<String, Diagnostic> diagnosticsAggregator =
+					(uri, diagnostic) -> finalResult.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
 			
 			List<String[]> chunks = SpringIndexerJavaParserUtils.createChunks(javaFiles, this.scanChunkSize);
 			AnnotationHierarchies annotations = new AnnotationHierarchies();
@@ -496,7 +474,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				}
 	        }
 			
-			log.info("scan java files done, number of index elements created: " + result.getGeneratedIndexElements().size());
+			log.info("scan java files done, number of index elements created: {}", result.getGeneratedIndexElements().size());
 
 			cacheHelper.storeFullScanResults(project, javaFiles, result, dependencyTracker.getAllDependencies(project));
 		}
@@ -538,7 +516,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		ASTParserCleanupEnabled parser = SpringIndexerJavaParserUtils.createParser(project, annotations, ignoreMethodBodies);
 		try {
 			parser.createASTs(javaFiles, null, new String[0], requestor, null);
-			return (String[]) nextPassFiles.toArray(new String[nextPassFiles.size()]);
+			return nextPassFiles.toArray(String[]::new);
 		} catch (Throwable t) {
 			log.error("Failed to index project '%s'".formatted(project.getElementName()), t);
 			return new String[0];
@@ -549,39 +527,6 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 	}
 
-//	private void extractSymbolInformation(Annotation node, final SpringIndexerJavaContext context) throws Exception {
-//		IAnnotationBinding annotationBinding = node.resolveAnnotationBinding();
-//
-//		if (annotationBinding != null) {
-//			
-//			ITypeBinding typeBinding = annotationBinding.getAnnotationType();
-//			
-//			// symbol and index scanning
-//			List<ITypeBinding> metaAnnotations = new ArrayList<>();
-//			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(node);
-//			for (Iterator<IAnnotationBinding> itr = annotationHierarchies.iterator(typeBinding); itr.hasNext();) {
-//				IAnnotationBinding ab = itr.next();
-//				//
-//				// If meta annotations of the current annotation is a "sub-type" of one of the annotations from symbol providers then add it to meta annotations
-//				//
-//				if (annotationHierarchies.isAnnotatedWithAnnotationByBindingKey(ab, symbolProviders::containsKey)) {
-//					metaAnnotations.add(ab.getAnnotationType());
-//				}
-//			}
-//			
-//			Collection<SymbolProvider> providers = symbolProviders.get(annotationHierarchies, annotationBinding);
-//			if (!providers.isEmpty()) {
-//				for (SymbolProvider provider : providers) {
-//					provider.addSymbols(node, typeBinding, metaAnnotations, context);
-//				}
-//			}
-//			
-//		}
-//		else {
-//			log.debug("type binding not around: " + context.getDocURI() + " - " + node.toString());
-//		}
-//	}
-	
 	private Stream<File> foldersToScan(IJavaProject project) {
 		IClasspath classpath = project.getClasspath();
 		return scanTestJavaSources ? IClasspathUtil.getProjectJavaSourceFolders(classpath)

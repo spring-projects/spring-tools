@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
+import org.springframework.ide.vscode.boot.java.data.DataRepositoryIndexer;
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement;
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexer;
 import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
@@ -62,16 +63,28 @@ import org.springframework.stereotype.Component;
 @Component
 public class ComponentIndexer implements SpringComponentIndexer {
 
+	private final DataRepositoryIndexer dataRepositoryIndexer;
+
+	public ComponentIndexer(DataRepositoryIndexer dataRepositoryIndexer) {
+		this.dataRepositoryIndexer = dataRepositoryIndexer;
+	}
+
 	@Override
 	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
 
+		// check for repository beans
+		Bean bean = this.dataRepositoryIndexer.createReppsitoryBean(typeDeclaration, context);
+
 		boolean isComponment = annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.COMPONENT)
 				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAKARTA)
 				|| annotationHierarchies.isAnnotatedWith(typeDeclaration.resolveBinding(), Annotations.NAMED_JAVAX);
+		if (bean == null && isComponment) {
+			bean = indexComponent(typeDeclaration, context, context.getDoc());
+		}
 
-		if (isComponment) {
-			createSymbol(typeDeclaration, context, context.getDoc());
+		if (bean != null) {
+			postProcessComponent(bean, typeDeclaration, context, context.getDoc());
 		}
 		else {
 			// check for event listener implementations on classes that are not annotated with component, but created via bean methods (for example)
@@ -83,13 +96,11 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		}
 	}
 
-	private void createSymbol(TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
-		Bean beanDefinition = BeanUtils.createComponentBean(type, context);
-		
-		if (beanDefinition == null) {
-			return;
-		}
-		
+	private Bean indexComponent(TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
+		return BeanUtils.createBean(type, doc, BeanUtils.COMPONENT_LABEL_STRATEGY);
+	}
+	
+	private void postProcessComponent(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		// event publisher checks
 		boolean usesEventPublisher = false;
 		for (InjectionPoint injectionPoint : beanDefinition.getInjectionPoints()) {
@@ -122,7 +133,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 	
 	@Override
 	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) throws Exception {
-		Bean beanDefinition = BeanUtils.createComponentBean(recordDeclaration, context);
+		Bean beanDefinition = BeanUtils.createBean(recordDeclaration, context.getDoc(), BeanUtils.COMPONENT_LABEL_STRATEGY);
 		if (beanDefinition == null) {
 			return;
 		}
@@ -465,7 +476,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 	public void addChildBeanFromRegistryInvocation(SpringIndexElement parentNode, String beanName, String beanType, ITypeBinding beanTypeBinding, ASTNode node, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
 		Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 		
-		String name = BeanUtils.createBeanLabel(null, beanName, beanType);
+		String name = BeanUtils.COMPONENT_LABEL_STRATEGY.createLabel(beanName, null, beanType);
 		
 		InjectionPoint[] injectionPoints = DefaultValues.EMPTY_INJECTION_POINTS;
 		Set<String> supertypes = ASTUtils.findSupertypes(beanTypeBinding);

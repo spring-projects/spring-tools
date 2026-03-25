@@ -70,7 +70,7 @@ public class ConfigurationPropertiesIndexer {
 			List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
 			AnnotationMetadata[] annotationMetadataArrays = annotationMetadata.toArray(AnnotationMetadata[]::new);
 	
-			String name = BeanUtils.createBeanLabel(annotationMetadata, beanName, typeBinding.getName());
+			String name = BeanUtils.COMPONENT_LABEL_STRATEGY.createLabel(beanName, annotationMetadata, typeBinding.getName());
 	
 			return new Bean(beanName, typeBinding.getQualifiedName(), location, injectionPoints, supertypes, annotationMetadataArrays, isConfiguration, name);
 		}

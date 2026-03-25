@@ -31,7 +31,6 @@ import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
-import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -47,9 +46,14 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 public class BeanUtils {
-	
+
+	@FunctionalInterface
+	public interface BeanLabelStrategy {
+		String createLabel(String beanName, List<AnnotationMetadata> annotations, String beanTypeName);
+	}
+
 	private static final String[] NAME_ATTRIBUTES = {"value", "name"};
-	
+
 	private static final Set<String> ANNOTATIONS_TO_INCLUDE_IN_LABEL = Set.of(
 			Annotations.COMPONENT,
 			Annotations.CONFIGURATION,
@@ -60,7 +64,7 @@ public class BeanUtils {
 			Annotations.NAMED_JAVAX,
 			Annotations.BOOT_APP,
 			Annotations.BOOT_APP_CONFIGURATION);
-	
+
 	private static final Set<String> ANNOTATIONS_THAT_DEFINE_NAME_OF_BEAN_AS_VALUE = Set.of(
 			Annotations.COMPONENT,
 			Annotations.CONFIGURATION,
@@ -72,78 +76,51 @@ public class BeanUtils {
 			Annotations.NAMED_JAKARTA,
 			Annotations.NAMED_JAVAX);
 
-	public static String createBeanLabel(List<AnnotationMetadata> annotations, String beanName, String beanType) {
+	public static final BeanLabelStrategy COMPONENT_LABEL_STRATEGY = (beanName, annotations, beanTypeName) -> {
 		StringBuilder symbolLabel = new StringBuilder();
-		
 		symbolLabel.append('@');
 		symbolLabel.append('+');
 		symbolLabel.append(' ');
 		symbolLabel.append('\'');
 		symbolLabel.append(beanName);
 		symbolLabel.append('\'');
-		
+
 		if (annotations != null) {
 			List<String> directAnnotations = annotations.stream()
 					.filter(annotation -> ANNOTATIONS_TO_INCLUDE_IN_LABEL.contains(annotation.getAnnotationType()))
 					.filter(annotation -> !annotation.isMetaAnnotation())
 					.map(annotation -> "@" + annotation.getAnnotationName())
 					.toList();
-			
+
 			List<String> metaAnnotationNames = annotations.stream()
 					.filter(annotation -> ANNOTATIONS_TO_INCLUDE_IN_LABEL.contains(annotation.getAnnotationType()))
 					.filter(annotation -> annotation.isMetaAnnotation())
 					.map(annotation -> "@" + annotation.getAnnotationName())
 					.distinct()
 					.toList();
-			
+
 			if (directAnnotations.size() > 0) {
 				symbolLabel.append(' ');
 				symbolLabel.append('(');
 				symbolLabel.append(String.join(", ", directAnnotations));
-				
+
 				if (metaAnnotationNames.size() > 0) {
 					symbolLabel.append(" <: ");
 					symbolLabel.append(String.join(", ", metaAnnotationNames));
 				}
-				
+
 				symbolLabel.append(')');
 			}
 		}
 
 		symbolLabel.append(' ');
-		symbolLabel.append(beanType);
+		symbolLabel.append(beanTypeName);
 		return symbolLabel.toString();
-	}
+	};
 
-	/**
-	 * Display label for a Spring Data repository bean in the index (at-plus prefix, bean name, optional Repository(domain) suffix).
-	 */
-	public static String createRepositoryBeanLabel(String beanName, String domainTypeMarker) {
-		StringBuilder symbolLabel = new StringBuilder();
-		symbolLabel.append("@+");
-		symbolLabel.append(' ');
-		symbolLabel.append('\'');
-		symbolLabel.append(beanName);
-		symbolLabel.append('\'');
-
-		String marker = domainTypeMarker != null && domainTypeMarker.length() > 0 ? " Repository(" + domainTypeMarker + ")" : "";
-		symbolLabel.append(marker);
-
-		return symbolLabel.toString();
-	}
-
-	/**
-	 * Creates a {@link Bean} for a stereotypical Spring component (or record) type. Returns
-	 * {@code null} when repository indexing is delegated to {@link org.springframework.ide.vscode.boot.java.data.DataRepositoryIndexer}.
-	 */
-	public static Bean createComponentBean(AbstractTypeDeclaration type, SpringIndexerJavaContext context) throws BadLocationException {
-		TextDocument doc = context.getDoc();
+	public static Bean createBean(AbstractTypeDeclaration type, TextDocument doc, BeanLabelStrategy labelStrategy) throws BadLocationException {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
 		ITypeBinding beanType = type.resolveBinding();
-
-		if (annotationHierarchies.isAnnotatedWith(beanType, Annotations.REPOSITORY)) {
-			return null;
-		}
 
 		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
 
@@ -157,31 +134,8 @@ public class BeanUtils {
 		AnnotationMetadata[] annotations = annotationMetadata.toArray(AnnotationMetadata[]::new);
 
 		String beanName = getBeanNameFromType(type, annotationMetadata);
-		String name = createBeanLabel(annotationMetadata, beanName, beanType.getName());
-		return new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints,
-				supertypes, annotations, isConfiguration, name);
-	}
+		String name = labelStrategy.createLabel(beanName, annotationMetadata, beanType.getName());
 
-	/**
-	 * Creates a {@link Bean} for a Spring Data repository from the declaring type.
-	 */
-	public static Bean createRepositoryBean(TypeDeclaration type, TextDocument doc, String domainTypeMarker) throws BadLocationException {
-		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(type);
-		ITypeBinding beanType = type.resolveBinding();
-
-		boolean isConfiguration = annotationHierarchies.isAnnotatedWith(beanType, Annotations.CONFIGURATION);
-
-		SimpleName nameNode = type.getName();
-		Location location = new Location(doc.getUri(), doc.toRange(nameNode.getStartPosition(), nameNode.getLength()));
-		InjectionPoint[] injectionPoints = ASTUtils.findInjectionPoints(type, doc);
-		Set<String> supertypes = ASTUtils.findSupertypes(beanType);
-
-		Collection<Annotation> annotationsOnType = ASTUtils.getAnnotations(type);
-		List<AnnotationMetadata> annotationMetadata = ASTUtils.extractAnnotationMetadata(annotationsOnType, doc, annotationHierarchies);
-		AnnotationMetadata[] annotations = annotationMetadata.toArray(AnnotationMetadata[]::new);
-
-		String beanName = getBeanNameFromType(type, annotationMetadata);
-		String name = createRepositoryBeanLabel(beanName, domainTypeMarker);
 		return new Bean(beanName, beanType.getQualifiedName(), location, injectionPoints,
 				supertypes, annotations, isConfiguration, name);
 	}

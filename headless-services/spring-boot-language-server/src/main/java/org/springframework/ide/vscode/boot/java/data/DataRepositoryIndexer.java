@@ -28,10 +28,9 @@ import org.eclipse.lsp4j.Range;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.BeanUtils;
-import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.beans.BeanUtils.BeanLabelStrategy;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils.EmbeddedQueryExpression;
-import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -40,14 +39,11 @@ import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.stereotype.Component;
 
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
-
 /**
  * @author Martin Lippert
  */
 @Component
-public class DataRepositoryIndexer implements SpringComponentIndexer {
+public class DataRepositoryIndexer {
 
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	
@@ -55,18 +51,36 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 		this.repositoryMetadataService = repositoryMetadataService;
 	}
 
-	@Override
-	public void index(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
-		// this checks spring data repository beans that are defined as extensions of the repository interface
-		Tuple2<ITypeBinding, String> repositoryBean = getRepositoryBean(typeDeclaration);
+	public BeanLabelStrategy createRepositoryLabelStrategy(String domainTypeMarker) {
+		return (beanName, annotations, beanTypeName) -> {
+			StringBuilder symbolLabel = new StringBuilder();
+			symbolLabel.append("@+");
+			symbolLabel.append(' ');
+			symbolLabel.append('\'');
+			symbolLabel.append(beanName);
+			symbolLabel.append('\'');
+			
+			String marker = domainTypeMarker != null && domainTypeMarker.length() > 0
+					? " Repository(" + domainTypeMarker + ")"
+					: "";
+			symbolLabel.append(marker);
+			
+			return symbolLabel.toString();
+		};
+	}
 
-		if (repositoryBean != null) {
-			Bean beanDefinition = BeanUtils.createRepositoryBean(typeDeclaration, context.getDoc(),
-					repositoryBean.getT2());
+	public Bean createReppsitoryBean(TypeDeclaration typeDeclaration, SpringIndexerJavaContext context) throws Exception {
+		// this checks spring data repository beans that are defined as extensions of the repository interface
+		String domainTypeMarker = findRepositoryDomainType(typeDeclaration);
+
+		if (domainTypeMarker != null) {
+			Bean beanDefinition = BeanUtils.createBean(typeDeclaration, context.getDoc(), createRepositoryLabelStrategy(domainTypeMarker));
 			indexQueryMethods(beanDefinition, typeDeclaration, context, context.getDoc());
 
-			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+			return beanDefinition;
 		}
+
+		return null;
 	}
 
 	private void indexQueryMethods(Bean beanDefinition, TypeDeclaration typeDeclaration, SpringIndexerJavaContext context, TextDocument doc) throws BadLocationException {
@@ -176,26 +190,26 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 				.orElse(null);
 	}
 
-	private static String normalizeQueryStringForRepositoryIndex(String sql) {
+	private String normalizeQueryStringForRepositoryIndex(String sql) {
 		if (sql == null) {
 			return null;
 		}
 		return sql.replaceAll("\\s+", " ").trim();
 	}
 
-	private static Tuple2<ITypeBinding, String> getRepositoryBean(TypeDeclaration typeDeclaration) {
+	private String findRepositoryDomainType(TypeDeclaration typeDeclaration) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(typeDeclaration);
 
 		ITypeBinding resolvedType = typeDeclaration.resolveBinding();
 		if (resolvedType != null && !annotationHierarchies.isAnnotatedWith(resolvedType, Annotations.NO_REPO_BEAN)) {
-			return getRepositoryBean(resolvedType);
+			return findRepositoryDomainType(resolvedType);
 		}
 		else {
 			return null;
 		}
 	}
 
-	private static Tuple2<ITypeBinding, String> getRepositoryBean(ITypeBinding resolvedType) {
+	private String findRepositoryDomainType(ITypeBinding resolvedType) {
 
 		ITypeBinding[] interfaces = resolvedType.getInterfaces();
 		for (ITypeBinding resolvedInterface : interfaces) {
@@ -208,18 +222,16 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 			}
 
 			if (Constants.REPOSITORY_TYPE.equals(simplifiedType)) {
-				String domainType = null;
 				if (resolvedInterface.isParameterizedType()) {
 					ITypeBinding[] typeParameters = resolvedInterface.getTypeArguments();
 					if (typeParameters != null && typeParameters.length > 0) {
-						domainType = typeParameters[0].getName();
+						return typeParameters[0].getName();
 					}
 				}
-
-				return Tuples.of(resolvedInterface, domainType);
+				return null;
 			}
 			else {
-				Tuple2<ITypeBinding, String> result = getRepositoryBean(resolvedInterface);
+				String result = findRepositoryDomainType(resolvedInterface);
 				if (result != null) {
 					return result;
 				}
@@ -228,7 +240,7 @@ public class DataRepositoryIndexer implements SpringComponentIndexer {
 
 		ITypeBinding superclass = resolvedType.getSuperclass();
 		if (superclass != null) {
-			return getRepositoryBean(superclass);
+			return findRepositoryDomainType(superclass);
 		}
 		else {
 			return null;

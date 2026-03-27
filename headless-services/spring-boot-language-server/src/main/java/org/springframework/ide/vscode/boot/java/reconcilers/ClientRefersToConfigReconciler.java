@@ -99,7 +99,7 @@ public class ClientRefersToConfigReconciler implements JdtAstReconciler {
 						.filter(beanContainer -> configurationTypes.contains(beanContainer.getType()))
 						.map(beanContainer -> beanContainer.getLocation().getUri())
 						.map(docURI -> UriUtil.toFileString(docURI))
-						.forEach(file -> context.markForAffetcedFilesIndexing(file));
+						.forEach(file -> context.markForAffectedFilesIndexing(file));
 
 				return true;
 			}

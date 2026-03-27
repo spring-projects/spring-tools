@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
-import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.UriUtil;
@@ -40,7 +40,7 @@ public class SpringIndexerJavaScanResult {
 	private final Set<String> markedForAffectedFilesIndexing; // file
 	
 	private final List<CachedIndexElement> generatedIndexElements;
-	private final List<CachedDiagnostics> generatedDiagnostics;
+	private final List<CachedDiagnostic> generatedDiagnostics;
 
 	private final IJavaProject project;
 	private final String[] javaFiles;
@@ -58,7 +58,7 @@ public class SpringIndexerJavaScanResult {
 	}
 	
 	public SpringIndexerJavaScanResult(IJavaProject project, String[] javaFiles, SymbolHandler symbolHandler,
-			CachedIndexElement[] indexElements, CachedDiagnostics[] diagnostics) {
+			CachedIndexElement[] indexElements, CachedDiagnostic[] diagnostics) {
 		
 		this.project = project;
 		this.javaFiles = javaFiles;
@@ -91,7 +91,7 @@ public class SpringIndexerJavaScanResult {
 		return generatedIndexElements;
 	}
 	
-	public List<CachedDiagnostics> getGeneratedDiagnostics() {
+	public List<CachedDiagnostic> getGeneratedDiagnostics() {
 		return generatedDiagnostics;
 	}
 	
@@ -102,8 +102,8 @@ public class SpringIndexerJavaScanResult {
 						Collectors.mapping(CachedIndexElement::getIndexElement, Collectors.toList())));
 		Map<String, List<Diagnostic>> diagnosticsByDoc = generatedDiagnostics.stream()
 				.filter(e -> e.getDiagnostic() != null)
-				.collect(Collectors.groupingBy(CachedDiagnostics::getDocURI,
-						Collectors.mapping(CachedDiagnostics::getDiagnostic, Collectors.toList())));
+				.collect(Collectors.groupingBy(CachedDiagnostic::getDocURI,
+						Collectors.mapping(CachedDiagnostic::getDiagnostic, Collectors.toList())));
 
 		// to make sure that files without index elements or diagnostics publish an empty array of diagnostics
 		addEmptyDiagnostics(diagnosticsByDoc, javaFiles);
@@ -115,8 +115,8 @@ public class SpringIndexerJavaScanResult {
 	public void publishDiagnosticsOnly(SymbolHandler symbolHandler) {
 		Map<String, List<Diagnostic>> diagnosticsByDoc = generatedDiagnostics.stream()
 				.filter(e -> e.getDiagnostic() != null)
-				.collect(Collectors.groupingBy(CachedDiagnostics::getDocURI,
-						Collectors.mapping(CachedDiagnostics::getDiagnostic, Collectors.toList())));
+				.collect(Collectors.groupingBy(CachedDiagnostic::getDocURI,
+						Collectors.mapping(CachedDiagnostic::getDiagnostic, Collectors.toList())));
 		addEmptyDiagnostics(diagnosticsByDoc, javaFiles); // to make sure that files without index elements or diagnostics publish an empty array of diagnostics
 		symbolHandler.addSymbols(this.project, null, diagnosticsByDoc);
 	}

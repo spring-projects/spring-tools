@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,11 +24,11 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Reconcile
 import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
 import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 
-public abstract class AbstractSecurityLamdaDslReconciler implements JdtAstReconciler {
+public abstract class AbstractSecurityLambdaDslReconciler implements JdtAstReconciler {
 	
 	private QuickfixRegistry registry;
 
-	public AbstractSecurityLamdaDslReconciler(QuickfixRegistry registry) {
+	public AbstractSecurityLambdaDslReconciler(QuickfixRegistry registry) {
 		this.registry = registry;
 	}
 

@@ -197,7 +197,7 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 				
 				identifyBeansToReconcile(project)
 					.map(bean -> UriUtil.toFileString(bean.getLocation().getUri()))
-					.forEach(file -> context.markForAffetcedFilesIndexing(file));
+					.forEach(file -> context.markForAffectedFilesIndexing(file));
 					
 				return super.visit(type);
 			}

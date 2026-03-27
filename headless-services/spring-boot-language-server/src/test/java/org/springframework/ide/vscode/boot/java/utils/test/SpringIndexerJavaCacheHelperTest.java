@@ -34,7 +34,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
-import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.java.utils.DocumentDescriptor;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaCacheHelper;
 import org.springframework.ide.vscode.commons.java.IClasspath;
@@ -161,29 +161,29 @@ class SpringIndexerJavaCacheHelperTest {
 		String[] paths = { "/a/A.java", "/b/B.java" };
 		helper.removeFilesFromCaches(project, paths);
 		verify(cache).removeFiles(any(IndexCacheKey.class), eq(paths), eq(CachedIndexElement.class));
-		verify(cache).removeFiles(any(IndexCacheKey.class), eq(paths), eq(CachedDiagnostics.class));
+		verify(cache).removeFiles(any(IndexCacheKey.class), eq(paths), eq(CachedDiagnostic.class));
 	}
 
 	@Test
 	void retrieveForFullScan_delegatesToCache() {
 		String[] files = { "/x/X.java" };
 		when(cache.retrieve(any(IndexCacheKey.class), eq(files), eq(CachedIndexElement.class))).thenReturn(null);
-		when(cache.retrieve(any(IndexCacheKey.class), eq(files), eq(CachedDiagnostics.class))).thenReturn(null);
+		when(cache.retrieve(any(IndexCacheKey.class), eq(files), eq(CachedDiagnostic.class))).thenReturn(null);
 
 		var result = helper.retrieveForFullScan(project, files);
 		assertNull(result.indexElements());
 		assertNull(result.diagnostics());
 		verify(cache).retrieve(any(IndexCacheKey.class), eq(files), eq(CachedIndexElement.class));
-		verify(cache).retrieve(any(IndexCacheKey.class), eq(files), eq(CachedDiagnostics.class));
+		verify(cache).retrieve(any(IndexCacheKey.class), eq(files), eq(CachedDiagnostic.class));
 	}
 
 	@Test
 	void updateDiagnosticsAfterReconcile_delegatesToCache() {
 		String[] javaFiles = { "/p/T.java" };
 		long[] ts = { 42L };
-		List<CachedDiagnostics> diags = List.of();
+		List<CachedDiagnostic> diags = List.of();
 		var deps = ArrayListMultimap.<String, String>create();
 		helper.updateDiagnosticsAfterReconcile(project, javaFiles, ts, diags, deps);
-		verify(cache).update(any(IndexCacheKey.class), eq(javaFiles), eq(ts), eq(diags), eq(deps), eq(CachedDiagnostics.class));
+		verify(cache).update(any(IndexCacheKey.class), eq(javaFiles), eq(ts), eq(diags), eq(deps), eq(CachedDiagnostic.class));
 	}
 }

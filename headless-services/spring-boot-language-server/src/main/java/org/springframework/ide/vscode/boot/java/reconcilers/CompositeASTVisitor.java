@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -43,62 +44,27 @@ public class CompositeASTVisitor extends ASTVisitor {
 	
 	@Override
 	public boolean visit(TypeDeclaration node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(RecordDeclaration node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(AnnotationTypeDeclaration node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(MethodInvocation node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(MethodDeclaration node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
@@ -110,110 +76,47 @@ public class CompositeASTVisitor extends ASTVisitor {
 
 	@Override
 	public boolean visit(FieldDeclaration node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 
 	@Override
 	public boolean visit(SingleMemberAnnotation node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(SingleVariableDeclaration node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(NormalAnnotation node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 
 	@Override
 	public boolean visit(MarkerAnnotation node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(ImportDeclaration node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 
 	@Override
 	public boolean visit(SimpleType node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(QualifiedName node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 	
 	@Override
 	public boolean visit(ReturnStatement node) {
-		boolean result = true;
-		if (!checkOffset(node)) {
-			return false;
-		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
-		}
-		return result;
+		return delegateVisit(node, v -> v.visit(node));
 	}
 
 	/*
@@ -221,19 +124,18 @@ public class CompositeASTVisitor extends ASTVisitor {
 	 */
 	@Override
 	public boolean visit(SimpleName node) {
-		boolean result = true;
+		return delegateVisit(node, v -> v.visit(node));
+	}
+
+	private boolean delegateVisit(ASTNode node, Function<ASTVisitor, Boolean> visitFn) {
 		if (!checkOffset(node)) {
 			return false;
 		}
-		for (ASTVisitor astVisitor : visitors) {
-			result |= astVisitor.visit(node);
+		boolean result = false;
+		for (ASTVisitor visitor : visitors) {
+			result |= visitFn.apply(visitor);
 		}
 		return result;
-	}
-
-	private boolean checkOffset(ASTNode n) {
-		return (startOffset < 0 || n.getStartPosition() >= startOffset)
-				|| (endOffset <0 || n.getStartPosition() + n.getLength() < endOffset);
 	}
 
 	public int getStartOffset() {
@@ -250,6 +152,11 @@ public class CompositeASTVisitor extends ASTVisitor {
 
 	public void setEndOffset(int endOffset) {
 		this.endOffset = endOffset;
+	}
+
+	private boolean checkOffset(ASTNode n) {
+		return (startOffset < 0 || n.getStartPosition() >= startOffset)
+				|| (endOffset <0 || n.getStartPosition() + n.getLength() < endOffset);
 	}
 
 }

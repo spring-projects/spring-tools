@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -36,19 +36,6 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 public class JdtReconciler implements JavaReconciler {
 	
 	private static final Logger log = LoggerFactory.getLogger(JdtReconciler.class);
-	
-	// annotations with SpEL expression params 
-	public static final String SPRING_CACHEABLE = "org.springframework.cache.annotation.Cacheable";
-	public static final String SPRING_CACHE_EVICT = "org.springframework.cache.annotation.CacheEvict";
-	
-	public static final String SPRING_EVENT_LISTENER = "org.springframework.context.event.EventListener";
-	
-	public static final String SPRING_PRE_AUTHORIZE = "org.springframework.security.access.prepost.PreAuthorize";
-	public static final String SPRING_PRE_FILTER = "org.springframework.security.access.prepost.PreFilter";
-	public static final String SPRING_POST_AUTHORIZE = "org.springframework.security.access.prepost.PostAuthorize";
-	public static final String SPRING_POST_FILTER= "org.springframework.security.access.prepost.PostFilter";
-	
-	public static final String SPRING_CONDITIONAL_ON_EXPRESSION = "org.springframework.boot.autoconfigure.condition.ConditionalOnExpression";
 	
 	private final CompilationUnitCache compilationUnitCache;
 	final JdtAstReconciler[] reconcilers;
@@ -131,16 +118,6 @@ public class JdtReconciler implements JavaReconciler {
 		try {
 			ASTVisitor compositeVisitor = createCompositeVisitor(project, docUri, cu, context);
 			cu.accept(compositeVisitor);
-		
-//			for (JdtAstReconciler reconciler : getApplicableReconcilers(project)) {
-//				try {
-//					reconciler.reconcile(project, docUri, cu, problemCollector, isCompleteAst);
-//				} catch (RequiredCompleteAstException e) {
-//					throw e;
-//				} catch (Exception e) {
-//					log.error("", e);
-//				}
-//			}
 		}
 		finally {
 			long end = System.currentTimeMillis();

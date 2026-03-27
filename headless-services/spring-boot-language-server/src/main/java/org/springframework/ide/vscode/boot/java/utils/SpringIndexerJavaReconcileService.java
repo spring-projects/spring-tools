@@ -25,7 +25,7 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
-import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingContext;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
@@ -157,7 +157,7 @@ public class SpringIndexerJavaReconcileService {
 		ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 
 		BiConsumer<String, Diagnostic> diagnosticsAggregator =
-				(uri, diagnostic) -> reconcilingResult.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
+				(uri, diagnostic) -> reconcilingResult.getGeneratedDiagnostics().add(new CachedDiagnostic(uri, diagnostic));
 
 		FileASTRequestor requestor = new FileASTRequestor() {
 

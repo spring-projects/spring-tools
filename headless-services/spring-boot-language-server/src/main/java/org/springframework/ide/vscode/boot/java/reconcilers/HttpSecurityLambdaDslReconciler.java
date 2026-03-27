@@ -21,7 +21,7 @@ import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 
-public class HttpSecurityLambdaDslReconciler extends AbstractSecurityLamdaDslReconciler {
+public class HttpSecurityLambdaDslReconciler extends AbstractSecurityLambdaDslReconciler {
 	
     private static final Collection<String> APPLICABLE_METHOD_NAMES = Arrays.asList(
             "anonymous", "authorizeRequests", "cors", "csrf", "exceptionHandling", "formLogin",

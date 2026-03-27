@@ -182,7 +182,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 				Arrays.stream(springIndex.getBeansOfProject(project.getElementName()))
 					.filter(bean -> isAnnotatedWith(bean, Annotations.CONTROLLER))
 					.map(bean -> UriUtil.toFileString(bean.getLocation().getUri()))
-					.forEach(file -> context.markForAffetcedFilesIndexing(file));
+					.forEach(file -> context.markForAffectedFilesIndexing(file));
 					
 				return super.visit(type);
 			}

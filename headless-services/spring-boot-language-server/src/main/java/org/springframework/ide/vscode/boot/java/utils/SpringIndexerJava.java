@@ -43,7 +43,7 @@ import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
-import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.commons.java.IClasspath;
@@ -299,7 +299,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 			
 			BiConsumer<String, Diagnostic> diagnosticsAggregator =
-					(uri, diagnostic) -> result.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
+					(uri, diagnostic) -> result.getGeneratedDiagnostics().add(new CachedDiagnostic(uri, diagnostic));
 
 			TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
 
@@ -347,7 +347,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		Multimap<String, String> dependencies = MultimapBuilder.hashKeys().hashSetValues().build();
 		
 		BiConsumer<String, Diagnostic> diagnosticsAggregator =
-				(uri, diagnostic) -> result.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
+				(uri, diagnostic) -> result.getGeneratedDiagnostics().add(new CachedDiagnostic(uri, diagnostic));
 
 		FileASTRequestor requestor = new FileASTRequestor() {
 			@Override
@@ -439,7 +439,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		// check cached elements first
 		SpringIndexerJavaCacheHelper.FullScanRetrieveResult cached = cacheHelper.retrieveForFullScan(project, javaFiles);
 		Pair<CachedIndexElement[], Multimap<String, String>> cachedIndexElements = cached.indexElements();
-		Pair<CachedDiagnostics[], Multimap<String, String>> cachedDiagnostics = cached.diagnostics();
+		Pair<CachedDiagnostic[], Multimap<String, String>> cachedDiagnostics = cached.diagnostics();
 
 		if (!clean && cachedIndexElements != null && cachedDiagnostics != null) {
 			// use cached data
@@ -459,7 +459,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 			final SpringIndexerJavaScanResult finalResult = result;
 			BiConsumer<String, Diagnostic> diagnosticsAggregator =
-					(uri, diagnostic) -> finalResult.getGeneratedDiagnostics().add(new CachedDiagnostics(uri, diagnostic));
+					(uri, diagnostic) -> finalResult.getGeneratedDiagnostics().add(new CachedDiagnostic(uri, diagnostic));
 			
 			List<String[]> chunks = SpringIndexerJavaParserUtils.createChunks(javaFiles, this.scanChunkSize);
 			AnnotationHierarchies annotations = new AnnotationHierarchies();

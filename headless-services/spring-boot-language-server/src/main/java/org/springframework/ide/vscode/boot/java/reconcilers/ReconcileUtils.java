@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -74,16 +73,14 @@ public class ReconcileUtils {
 		}
 	}
 	
-	public static Annotation findAnnotation(AnnotationHierarchies annotationHiererachies, BodyDeclaration decl, String annotationFqType, boolean includeMetaHierarchy) {
-		for (Iterator<?> itr = decl.modifiers().iterator(); itr.hasNext();) {
-			Object mod = itr.next();
-			if (mod instanceof Annotation) {
-				Annotation a = (Annotation) mod;
+	public static Annotation findAnnotation(AnnotationHierarchies annotationHierarchies, BodyDeclaration decl, String annotationFqType, boolean includeMetaHierarchy) {
+		for (Object mod : decl.modifiers()) {
+			if (mod instanceof Annotation a) {
 				ITypeBinding aType = a.resolveTypeBinding();
-				if (aType != null && 
-						(annotationFqType.equals(aType.getQualifiedName()) || (includeMetaHierarchy && annotationHiererachies.isAnnotatedWith(aType, annotationFqType)))
+				if (aType != null &&
+						(annotationFqType.equals(aType.getQualifiedName()) || (includeMetaHierarchy && annotationHierarchies.isAnnotatedWith(aType, annotationFqType)))
 				) {
-					return (Annotation) mod;
+					return a;
 				}
 			}
 		}

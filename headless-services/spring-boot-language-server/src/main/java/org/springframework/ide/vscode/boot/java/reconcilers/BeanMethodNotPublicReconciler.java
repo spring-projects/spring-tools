@@ -25,18 +25,14 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.openrewrite.java.spring.framework.BeanMethodsNotPublic;
-import org.openrewrite.marker.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
-import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
-import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
@@ -75,6 +71,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 				try {
 					visitAnnotation(project, cu, docUri, node, context.getProblemCollector());
 				} catch (Exception e) {
+					log.error("", e);
 				}
 				return super.visit(node);
 			}
@@ -84,6 +81,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 				try {
 					visitAnnotation(project, cu, docUri, node, context.getProblemCollector());
 				} catch (Exception e) {
+					log.error("", e);
 				}
 				return super.visit(node);
 			}
@@ -93,6 +91,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 				try {
 					visitAnnotation(project, cu, docUri, node, context.getProblemCollector());
 				} catch (Exception e) {
+					log.error("", e);
 				}
 				return super.visit(node);
 			}
@@ -146,32 +145,18 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 	
 	private void addQuickFixes(CompilationUnit cu, URI docUri, ReconcileProblemImpl problem, MethodDeclaration method) {
 		if (quickfixRegistry != null) {
-			
 			String id = BeanMethodsNotPublic.class.getName();
-		
-			FixDescriptor fix1 = new FixDescriptor(id, List.of(docUri.toASCIIString()), LABEL)
-					.withRecipeScope(RecipeScope.NODE)
-					.withRangeScope(ReconcileUtils.createOpenRewriteRange(cu, method, null));
+			String uri = docUri.toASCIIString();
 
-			Range methodRange = ReconcileUtils.createOpenRewriteRange(cu, method, null);
-			fix1 = fix1.withRangeScope(methodRange);
-
-			FixDescriptor fix2 = new FixDescriptor(id, List.of(docUri.toASCIIString()), ReconcileUtils.buildLabel(LABEL, RecipeScope.FILE))
-					.withRecipeScope(RecipeScope.FILE);
-	
-			FixDescriptor fix3 = new FixDescriptor(id, List.of(docUri.toASCIIString()), ReconcileUtils.buildLabel(LABEL, RecipeScope.PROJECT))
-					.withRecipeScope(RecipeScope.PROJECT);
-			
-			
-			QuickfixType quickfixType = quickfixRegistry.getQuickfixType(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX);
-	
-			if (quickfixType != null /* && recipeRepo.getRecipe(ID).isPresent()*/ ) { // recipes load async, so they might not be around when this validation runs
-				// in addition to that we assume and ship those recipes with the language server anyway, so we can assume they are around
-
-				problem.addQuickfix(new QuickfixData<>(quickfixType, fix1, fix1.getLabel()));
-				problem.addQuickfix(new QuickfixData<>(quickfixType, fix2, fix2.getLabel()));
-				problem.addQuickfix(new QuickfixData<>(quickfixType, fix3, fix3.getLabel()));
-			}
+			ReconcileUtils.setRewriteFixes(quickfixRegistry, problem, List.of(
+					new FixDescriptor(id, List.of(uri), LABEL)
+							.withRecipeScope(RecipeScope.NODE)
+							.withRangeScope(ReconcileUtils.createOpenRewriteRange(cu, method, null)),
+					new FixDescriptor(id, List.of(uri), ReconcileUtils.buildLabel(LABEL, RecipeScope.FILE))
+							.withRecipeScope(RecipeScope.FILE),
+					new FixDescriptor(id, List.of(uri), ReconcileUtils.buildLabel(LABEL, RecipeScope.PROJECT))
+							.withRecipeScope(RecipeScope.PROJECT)
+			));
 		}
 	}
 

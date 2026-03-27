@@ -23,7 +23,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
-import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostics;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -99,42 +99,42 @@ public class SpringIndexerJavaCacheHelper {
 
 	public void removeFilesFromCaches(IJavaProject project, String[] absolutePaths) {
 		cache.removeFiles(getCacheKey(project, INDEX_KEY), absolutePaths, CachedIndexElement.class);
-		cache.removeFiles(getCacheKey(project, DIAGNOSTICS_KEY), absolutePaths, CachedDiagnostics.class);
+		cache.removeFiles(getCacheKey(project, DIAGNOSTICS_KEY), absolutePaths, CachedDiagnostic.class);
 	}
 
 	public void updateAfterSingleFileScan(IJavaProject project, String file, long lastModified, SpringIndexerJavaScanResult result,
 			Set<String> dependencies) {
 		cache.update(getCacheKey(project, INDEX_KEY), file, lastModified, result.getGeneratedIndexElements(), dependencies, CachedIndexElement.class);
-		cache.update(getCacheKey(project, DIAGNOSTICS_KEY), file, lastModified, result.getGeneratedDiagnostics(), dependencies, CachedDiagnostics.class);
+		cache.update(getCacheKey(project, DIAGNOSTICS_KEY), file, lastModified, result.getGeneratedDiagnostics(), dependencies, CachedDiagnostic.class);
 	}
 
 	public void updateAfterBatchScan(IJavaProject project, String[] javaFiles, long[] lastModified, SpringIndexerJavaScanResult result,
 			Multimap<String, String> dependencies) {
 		cache.update(getCacheKey(project, INDEX_KEY), javaFiles, lastModified, result.getGeneratedIndexElements(), dependencies, CachedIndexElement.class);
-		cache.update(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles, lastModified, result.getGeneratedDiagnostics(), dependencies, CachedDiagnostics.class);
+		cache.update(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles, lastModified, result.getGeneratedDiagnostics(), dependencies, CachedDiagnostic.class);
 	}
 
 	public FullScanRetrieveResult retrieveForFullScan(IJavaProject project, String[] javaFiles) {
 		Pair<CachedIndexElement[], Multimap<String, String>> indexElements = cache.retrieve(getCacheKey(project, INDEX_KEY), javaFiles,
 				CachedIndexElement.class);
-		Pair<CachedDiagnostics[], Multimap<String, String>> diagnostics = cache.retrieve(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles,
-				CachedDiagnostics.class);
+		Pair<CachedDiagnostic[], Multimap<String, String>> diagnostics = cache.retrieve(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles,
+				CachedDiagnostic.class);
 		return new FullScanRetrieveResult(indexElements, diagnostics);
 	}
 
 	public void storeFullScanResults(IJavaProject project, String[] javaFiles, SpringIndexerJavaScanResult result,
 			Multimap<String, String> allDependencies) {
 		cache.store(getCacheKey(project, INDEX_KEY), javaFiles, result.getGeneratedIndexElements(), allDependencies, CachedIndexElement.class);
-		cache.store(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles, result.getGeneratedDiagnostics(), allDependencies, CachedDiagnostics.class);
+		cache.store(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles, result.getGeneratedDiagnostics(), allDependencies, CachedDiagnostic.class);
 	}
 
 	public void updateDiagnosticsAfterReconcile(IJavaProject project, String[] javaFiles, long[] modificationTimestamps,
-			List<CachedDiagnostics> diagnostics, Multimap<String, String> allDependencies) {
-		cache.update(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles, modificationTimestamps, diagnostics, allDependencies, CachedDiagnostics.class);
+			List<CachedDiagnostic> diagnostics, Multimap<String, String> allDependencies) {
+		cache.update(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles, modificationTimestamps, diagnostics, allDependencies, CachedDiagnostic.class);
 	}
 
 	public record FullScanRetrieveResult(
 			Pair<CachedIndexElement[], Multimap<String, String>> indexElements,
-			Pair<CachedDiagnostics[], Multimap<String, String>> diagnostics) {
+			Pair<CachedDiagnostic[], Multimap<String, String>> diagnostics) {
 	}
 }

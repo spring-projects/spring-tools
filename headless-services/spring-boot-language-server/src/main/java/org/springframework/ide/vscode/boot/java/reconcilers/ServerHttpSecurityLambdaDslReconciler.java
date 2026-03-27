@@ -21,7 +21,7 @@ import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 
-public class ServerHttpSecurityLambdaDslReconciler extends AbstractSecurityLamdaDslReconciler {
+public class ServerHttpSecurityLambdaDslReconciler extends AbstractSecurityLambdaDslReconciler {
 
 	private static final Collection<String> APPLICABLE_METHOD_NAMES = Arrays.asList("anonymous", "authorizeExchange",
 			"cors", "csrf", "exceptionHandling", "formLogin", "headers", "httpBasic", "logout", "oauth2Client",
@@ -29,7 +29,6 @@ public class ServerHttpSecurityLambdaDslReconciler extends AbstractSecurityLamda
 
 	public ServerHttpSecurityLambdaDslReconciler(QuickfixRegistry registry) {
 		super(registry);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override

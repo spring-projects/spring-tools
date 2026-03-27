@@ -203,7 +203,7 @@ public class BeanRegistrarDeclarationReconciler implements JdtAstReconciler {
 				.filter(registrar -> importedTypesDelta.contains(registrar.getType()))
 				.map(registrar -> registrar.getLocation().getUri())
 				.map(docURI -> UriUtil.toFileString(docURI))
-				.forEach(file -> context.markForAffetcedFilesIndexing(file));
+				.forEach(file -> context.markForAffectedFilesIndexing(file));
 	}
 
 	public Set<String> getImportAnnotationTypesDelta(List<SpringIndexElement> updatedElements, List<SpringIndexElement> previousElements) {

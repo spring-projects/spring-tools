@@ -348,6 +348,66 @@ public class SpringAiIndexerTest {
 	}
 
 	@Test
+	void testMcpResourceSymbolsWithinComponent() throws Exception {
+		String docUri = directory.toPath()
+				.resolve("src/main/java/com/example/springai/demo/McpResourceWithinComponent.java")
+				.toUri().toString();
+
+		SpringIndexerHarness.assertDocumentSymbols(indexer, docUri,
+				SpringIndexerHarness.symbol("McpResourceWithinComponent", "@+ 'mcpResourceWithinComponent' (@Component) McpResourceWithinComponent"),
+				SpringIndexerHarness.symbol("getProfile", "@McpResource getProfile"));
+	}
+
+	@Test
+	void testMcpResourceIndexElementAsChildOfBean() throws Exception {
+		String docUri = directory.toPath()
+				.resolve("src/main/java/com/example/springai/demo/McpResourceWithinComponent.java")
+				.toUri().toString();
+
+		Bean[] beans = springIndex.getBeansOfDocument(docUri);
+		assertEquals(1, beans.length);
+
+		Bean componentBean = beans[0];
+		List<SpringIndexElement> children = componentBean.getChildren();
+		assertEquals(1, children.size());
+
+		SpringAiAnnotationIndexElement resourceElement = children.stream()
+				.filter(e -> e instanceof SpringAiAnnotationIndexElement)
+				.map(e -> (SpringAiAnnotationIndexElement) e)
+				.filter(e -> e.getAnnotationType() == AnnotationType.MCP_RESOURCE)
+				.findFirst().orElse(null);
+		assertNotNull(resourceElement);
+		assertEquals("getProfile", resourceElement.getName());
+		assertEquals("Get the user profile resource", resourceElement.getDescription());
+		assertEquals("com.example.springai.demo.McpResourceWithinComponent", resourceElement.getContainerBeanType());
+
+		Location location = resourceElement.getLocation();
+		assertEquals(docUri, location.getUri());
+		assertEquals(new Range(new Position(9, 15), new Position(9, 25)), location.getRange());
+
+		DocumentSymbol symbol = resourceElement.getDocumentSymbol();
+		assertEquals("@McpResource getProfile", symbol.getName());
+		assertEquals(SymbolKind.Function, symbol.getKind());
+	}
+
+	@Test
+	void testMcpResourceElementsFoundViaGlobalIndex() throws Exception {
+		String docUri = directory.toPath()
+				.resolve("src/main/java/com/example/springai/demo/McpResourceWithinComponent.java")
+				.toUri().toString();
+
+		List<SpringAiAnnotationIndexElement> allAnnotationElements = springIndex.getNodesOfType(SpringAiAnnotationIndexElement.class);
+		assertFalse(allAnnotationElements.isEmpty());
+
+		List<SpringAiAnnotationIndexElement> resourceElements = allAnnotationElements.stream()
+				.filter(e -> e.getAnnotationType() == AnnotationType.MCP_RESOURCE)
+				.filter(e -> e.getLocation().getUri().equals(docUri))
+				.toList();
+		assertEquals(1, resourceElements.size());
+		assertEquals("getProfile", resourceElements.get(0).getName());
+	}
+
+	@Test
 	void testToolStandaloneElementsFoundViaGlobalIndex() throws Exception {
 		String docUri = directory.toPath()
 				.resolve("src/main/java/com/example/springai/demo/StandaloneToolsClass.java")

@@ -19,8 +19,8 @@ import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 /**
  * Generic index element for Spring AI method-level annotations:
- * {@code @Tool}, {@code @McpTool}, {@code @McpPrompt}, {@code @McpComplete},
- * {@code @McpElicitation}, {@code @McpSampling}.
+ * {@code @Tool}, {@code @McpTool}, {@code @McpPrompt}, {@code @McpResource},
+ * {@code @McpComplete}, {@code @McpElicitation}, {@code @McpSampling}.
  * <p>
  * Use {@link #getAnnotationType()} to determine the specific annotation.
  *
@@ -29,7 +29,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 public class SpringAiAnnotationIndexElement extends AbstractSpringIndexElement implements SymbolElement {
 
 	public enum AnnotationType {
-		TOOL, MCP_TOOL, MCP_PROMPT, MCP_COMPLETE, MCP_ELICITATION, MCP_SAMPLING
+		TOOL, MCP_TOOL, MCP_PROMPT, MCP_RESOURCE, MCP_COMPLETE, MCP_ELICITATION, MCP_SAMPLING
 	}
 
 	private final AnnotationType annotationType;
@@ -85,6 +85,7 @@ public class SpringAiAnnotationIndexElement extends AbstractSpringIndexElement i
 			case TOOL -> "@Tool ";
 			case MCP_TOOL -> "@McpTool ";
 			case MCP_PROMPT -> "@McpPrompt ";
+			case MCP_RESOURCE -> "@McpResource ";
 			case MCP_COMPLETE -> "@McpComplete ";
 			case MCP_ELICITATION -> "@McpElicitation ";
 			case MCP_SAMPLING -> "@McpSampling ";

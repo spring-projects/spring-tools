@@ -34,8 +34,8 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 /**
  * Static utility class that indexes Spring AI method-level annotations
- * ({@code @Tool}, {@code @McpTool}, {@code @McpPrompt}, {@code @McpComplete},
- * {@code @McpElicitation}, {@code @McpSampling}).
+ * ({@code @Tool}, {@code @McpTool}, {@code @McpPrompt}, {@code @McpResource},
+ * {@code @McpComplete}, {@code @McpElicitation}, {@code @McpSampling}).
  * <p>
  * When a surrounding {@link SpringIndexElement} parent (i.e. a Bean) is
  * provided the created index elements are attached as children. Otherwise they
@@ -76,10 +76,13 @@ public class SpringAiIndexer {
 					else if (Annotations.SPRING_AI_MCP_TOOL.equals(fqn)) {
 						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_TOOL);
 					}
-					else if (Annotations.SPRING_AI_MCP_PROMPT.equals(fqn)) {
-						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_PROMPT);
-					}
-					else if (Annotations.SPRING_AI_MCP_COMPLETE.equals(fqn)) {
+				else if (Annotations.SPRING_AI_MCP_PROMPT.equals(fqn)) {
+					indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_PROMPT);
+				}
+				else if (Annotations.SPRING_AI_MCP_RESOURCE.equals(fqn)) {
+					indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_RESOURCE);
+				}
+				else if (Annotations.SPRING_AI_MCP_COMPLETE.equals(fqn)) {
 						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_COMPLETE);
 					}
 					else if (Annotations.SPRING_AI_MCP_ELICITATION.equals(fqn)) {

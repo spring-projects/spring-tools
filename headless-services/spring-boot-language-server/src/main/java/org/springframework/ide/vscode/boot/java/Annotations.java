@@ -241,5 +241,15 @@ public class Annotations {
 			"lombok.NoArgsConstructor",
 			"lombok.AllArgsConstructor"
 	);
+
+	// Spring AI
+
+	public static final String SPRING_AI_TOOL = "org.springframework.ai.tool.annotation.Tool";
+	public static final String SPRING_AI_MCP_TOOL = "org.springframework.ai.mcp.annotation.McpTool";
+	public static final String SPRING_AI_MCP_PROMPT = "org.springframework.ai.mcp.annotation.McpPrompt";
+	public static final String SPRING_AI_MCP_RESOURCE = "org.springframework.ai.mcp.annotation.McpResource";
+	public static final String SPRING_AI_MCP_COMPLETE = "org.springframework.ai.mcp.annotation.McpComplete";
+	public static final String SPRING_AI_MCP_ELICITATION = "org.springframework.ai.mcp.annotation.McpElicitation";
+	public static final String SPRING_AI_MCP_SAMPLING = "org.springframework.ai.mcp.annotation.McpSampling";
 	
 }

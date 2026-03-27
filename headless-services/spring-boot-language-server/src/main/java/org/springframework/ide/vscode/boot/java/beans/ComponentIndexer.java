@@ -36,6 +36,7 @@ import org.springframework.ide.vscode.boot.java.data.DataRepositoryIndexer;
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexElement;
 import org.springframework.ide.vscode.boot.java.events.EventListenerIndexer;
 import org.springframework.ide.vscode.boot.java.events.EventPublisherIndexElement;
+import org.springframework.ide.vscode.boot.java.springai.SpringAiIndexer;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
@@ -93,6 +94,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 			indexBeanMethods(null, typeDeclaration, context, context.getDoc());
 			indexAotProcessors(typeDeclaration, context);
 			indexConfigurationProperties(null, typeDeclaration, context, context.getDoc());
+			SpringAiIndexer.indexSpringAiMethods(null, typeDeclaration, context, context.getDoc());
 		}
 	}
 
@@ -125,6 +127,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		indexConfigurationProperties(beanDefinition, type, context, doc);
 		indexBeanRegistrarImplementation(beanDefinition, type, context, doc);
 		indexWebConfig(beanDefinition, type, context, doc);
+		SpringAiIndexer.indexSpringAiMethods(beanDefinition, type, context, doc);
 		
 		SpringBootApplicationIndexer.createIndexElement(type, context);
 

@@ -17,6 +17,7 @@ import java.util.function.Function;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
@@ -69,6 +70,13 @@ public class CompositeASTVisitor extends ASTVisitor {
 	
 	@Override
 	public void endVisit(MethodDeclaration node) {
+		for (ASTVisitor astVisitor : visitors) {
+			astVisitor.endVisit(node);
+		}
+	}
+
+	@Override
+	public void endVisit(CompilationUnit node) {
 		for (ASTVisitor astVisitor : visitors) {
 			astVisitor.endVisit(node);
 		}

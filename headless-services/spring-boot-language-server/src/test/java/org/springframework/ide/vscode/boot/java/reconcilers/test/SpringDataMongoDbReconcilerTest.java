@@ -266,9 +266,9 @@ public class SpringDataMongoDbReconcilerTest {
 				}
 				""", docUri);
 
+		// Varargs: single warning spanning both string literals
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\", \"lastName\"|Non type-safe property reference for domain type 'Customer'"
 		);
 	}
 
@@ -400,12 +400,14 @@ public class SpringDataMongoDbReconcilerTest {
 		);
 
 		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
-		assertEquals(1, actions0.size());
+		assertEquals(2, actions0.size());
 		assertEquals("Replace with Customer::getFirstName", actions0.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions0.get(1).getLabel());
 
 		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
-		assertEquals(1, actions1.size());
+		assertEquals(2, actions1.size());
 		assertEquals("Replace with Customer::getLastName", actions1.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions1.get(1).getLabel());
 	}
 
 	private String docUri(String fileName) {

@@ -197,7 +197,7 @@ public class SpringDataCommonsReconcilerTest {
 	}
 
 	@Test
-	void contextual_propertyNotOnDomainType_stillShowsDomainType() throws Exception {
+	void contextual_propertyNotOnDomainType_genericMessage() throws Exception {
 		String docUri = docUri("TestClass.java");
 		Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package demo;
@@ -214,8 +214,9 @@ public class SpringDataCommonsReconcilerTest {
 				}
 				""", docUri);
 
+		// No quick fix possible for "somethingUnknown" so domain type is omitted from the message
 		editor.assertProblems(
-				"\"somethingUnknown\"|Non type-safe property reference for domain type 'Customer'"
+				"\"somethingUnknown\"|Non type-safe property reference"
 		);
 	}
 
@@ -375,6 +376,95 @@ public class SpringDataCommonsReconcilerTest {
 		Diagnostic problem = editor.assertProblem("\"something\"");
 		List<CodeAction> actions = editor.getCodeActions(problem);
 		assertTrue(actions.isEmpty(), "No quick fixes when no domain type is known");
+	}
+
+	// ========== Fix all in file ==========
+
+	@Test
+	void fixAll_multipleExactMatches_singleFixAllQuickFix() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					private CustomerRepository repository;
+
+					void test() {
+						repository.findAll(Sort.by("firstName"));
+						repository.findAll(Sort.by(Sort.Order.desc("lastName")));
+					}
+				}
+				""", docUri);
+
+		List<Diagnostic> problems = editor.assertProblems(
+				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
+				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+		);
+
+		// Each problem should have 2 quick fixes: individual + fix all
+		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
+		assertEquals(2, actions0.size());
+		assertEquals("Replace with Customer::getFirstName", actions0.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions0.get(1).getLabel());
+
+		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
+		assertEquals(2, actions1.size());
+		assertEquals("Replace with Customer::getLastName", actions1.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions1.get(1).getLabel());
+
+		// Apply "fix all" from the first problem — replaces both
+		actions0.get(1).perform();
+		assertEquals("""
+				package demo;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					private CustomerRepository repository;
+
+					void test() {
+						repository.findAll(Sort.by(Customer::getFirstName));
+						repository.findAll(Sort.by(Sort.Order.desc(Customer::getLastName)));
+					}
+				}
+				""", editor.getRawText());
+	}
+
+	@Test
+	void fixAll_mixedExactAndNonMatching_onlyOnFixableProblems() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					private CustomerRepository repository;
+
+					void test() {
+						repository.findAll(Sort.by("firstName"));
+						Sort sort = Sort.by("unknownProperty");
+						repository.findAll(sort);
+					}
+				}
+				""", docUri);
+
+		List<Diagnostic> problems = editor.assertProblems(
+				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
+				"\"unknownProperty\"|Non type-safe property reference"
+		);
+
+		// First problem (exact match): only individual fix, no "fix all"
+		// because there is only 1 exact-match descriptor in the file
+		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
+		assertEquals(1, actions0.size());
+		assertEquals("Replace with Customer::getFirstName", actions0.get(0).getLabel());
+
+		// Second problem (no match): no quick fixes at all
+		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
+		assertTrue(actions1.isEmpty(), "No quick fixes for non-matching property");
 	}
 
 	private String docUri(String fileName) {

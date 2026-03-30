@@ -86,7 +86,7 @@ public class SpringDataMongoDbReconciler extends AbstractSpringDataPropertyRefer
 	}
 
 	@Override
-	protected List<StringLiteral> extractStringLiterals(MethodInvocation node) {
+	protected List<List<StringLiteral>> extractStringLiteralGroups(MethodInvocation node) {
 		IMethodBinding methodBinding = node.resolveMethodBinding();
 		if (methodBinding == null) {
 			return List.of();
@@ -101,11 +101,15 @@ public class SpringDataMongoDbReconciler extends AbstractSpringDataPropertyRefer
 		String declaringFqn = getErasedFqn(methodBinding.getDeclaringClass());
 
 		if (CRITERIA_FQN_TYPES.contains(declaringFqn)) {
-			return extractCriteriaLiterals(args, methodBinding);
+			List<StringLiteral> group = extractCriteriaLiterals(args, methodBinding);
+			return group.isEmpty() ? List.of() : List.of(group);
 		} else if (UPDATE_FQN_TYPES.contains(declaringFqn)) {
-			return extractFirstArgLiteral(args, methodBinding);
+			List<StringLiteral> group = extractFirstArgLiteral(args, methodBinding);
+			return group.isEmpty() ? List.of() : List.of(group);
 		} else if (FIELD_FQN_TYPES.contains(declaringFqn)) {
-			return extractAllArgLiterals(args, methodBinding);
+			// Field.include/exclude are varargs — all args form a single group
+			List<StringLiteral> group = extractAllArgLiterals(args, methodBinding);
+			return group.isEmpty() ? List.of() : List.of(group);
 		}
 
 		return List.of();

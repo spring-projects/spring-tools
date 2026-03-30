@@ -103,9 +103,9 @@ public class SpringDataCommonsReconcilerTest {
 				}
 				""", docUri);
 
+		// Varargs: single warning spanning both string literals
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\", \"lastName\"|Non type-safe property reference for domain type 'Customer'"
 		);
 	}
 
@@ -314,6 +314,44 @@ public class SpringDataCommonsReconcilerTest {
 
 					void test() {
 						repository.findAll(Sort.by(Customer::getFirstName));
+					}
+				}
+				""", editor.getRawText());
+	}
+
+	@Test
+	void quickfix_multipleProperties_singleFix() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					private CustomerRepository repository;
+
+					void test() {
+						repository.findAll(Sort.by("firstName", "lastName"));
+					}
+				}
+				""", docUri);
+
+		Diagnostic problem = editor.assertProblem("\"firstName\", \"lastName\"");
+		List<CodeAction> actions = editor.getCodeActions(problem);
+		assertEquals(1, actions.size());
+		assertEquals("Replace with type-safe property references", actions.get(0).getLabel());
+
+		actions.get(0).perform();
+		assertEquals("""
+				package demo;
+
+				import org.springframework.data.domain.Sort;
+
+				class TestClass {
+					private CustomerRepository repository;
+
+					void test() {
+						repository.findAll(Sort.by(Customer::getFirstName, Customer::getLastName));
 					}
 				}
 				""", editor.getRawText());

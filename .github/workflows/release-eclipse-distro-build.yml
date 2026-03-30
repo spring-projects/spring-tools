@@ -26,7 +26,7 @@ jobs:
 #      build_type: 'release'
 #      p2-qualifier: 'RELEASE'
 #      sts-language-servers-version: ${{ inputs.sts-language-servers-version }}
-#      java_version: '21'
+#      java_version: '25'
 #    secrets: inherit
 
   e439-distro:
@@ -36,7 +36,7 @@ jobs:
       build_type: 'release'
       p2-qualifier: ${{ inputs.qualifier }}
       sts-language-servers-version: ${{ inputs.sts-language-servers-version }}
-      java_version: '21'
+      java_version: '25'
     secrets: inherit
 
   e440-distro:
@@ -46,5 +46,5 @@ jobs:
       build_type: 'release'
       p2-qualifier: ${{ inputs.qualifier }}
       sts-language-servers-version: ${{ inputs.sts-language-servers-version }}
-      java_version: '21'
+      java_version: '25'
     secrets: inherit

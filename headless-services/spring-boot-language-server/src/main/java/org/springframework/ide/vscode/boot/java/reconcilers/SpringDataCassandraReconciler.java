@@ -128,6 +128,11 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 		return domainTypeResolver;
 	}
 
+	@Override
+	protected Set<String> getFieldAnnotationFqns() {
+		return Set.of("org.springframework.data.cassandra.core.mapping.Column");
+	}
+
 	// =====================================================================
 	// Domain type resolver — Cassandra-specific patterns
 	// =====================================================================

@@ -103,6 +103,11 @@ public class SpringDataCommonsReconciler extends AbstractSpringDataPropertyRefer
 		return domainTypeResolver;
 	}
 
+	@Override
+	protected Set<String> getFieldAnnotationFqns() {
+		return Set.of();
+	}
+
 	// =====================================================================
 	// Sort.by detection
 	// =====================================================================

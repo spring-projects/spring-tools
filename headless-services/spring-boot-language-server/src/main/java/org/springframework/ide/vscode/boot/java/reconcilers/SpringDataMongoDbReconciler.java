@@ -120,6 +120,11 @@ public class SpringDataMongoDbReconciler extends AbstractSpringDataPropertyRefer
 		return domainTypeResolver;
 	}
 
+	@Override
+	protected Set<String> getFieldAnnotationFqns() {
+		return Set.of("org.springframework.data.mongodb.core.mapping.Field");
+	}
+
 	// =====================================================================
 	// Criteria.where detection — first argument is the property name
 	// =====================================================================

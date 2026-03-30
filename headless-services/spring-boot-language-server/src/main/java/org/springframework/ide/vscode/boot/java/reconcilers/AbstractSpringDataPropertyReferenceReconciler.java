@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -112,6 +113,16 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 	 * Returns the module-specific domain type resolver.
 	 */
 	protected abstract AbstractSpringDataDomainTypeResolver getDomainTypeResolver();
+
+	/**
+	 * Returns the FQNs of field/column name annotations relevant to this module.
+	 * These annotations (e.g., {@code @Field}, {@code @Column}) map Java property
+	 * names to database field/column names, and are consulted during property
+	 * matching to resolve annotated names back to their Java accessors.
+	 *
+	 * @return annotation FQNs; empty set if the module has no such annotations
+	 */
+	protected abstract Set<String> getFieldAnnotationFqns();
 
 	// =====================================================================
 	// Visitor — collects problems during the walk, attaches "fix all" at the end
@@ -222,7 +233,7 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 				boolean allExact = true;
 
 				for (StringLiteral literal : literals) {
-					List<ResolvedChain> chains = SpringDataPropertyUtils.resolvePropertyChain(domainType, literal.getLiteralValue());
+					List<ResolvedChain> chains = SpringDataPropertyUtils.resolvePropertyChain(domainType, literal.getLiteralValue(), getFieldAnnotationFqns());
 					if (chains.isEmpty()) {
 						allResolved = false;
 						break;

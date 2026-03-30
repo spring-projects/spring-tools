@@ -100,6 +100,11 @@ public class SpringDataRelationalReconciler extends AbstractSpringDataPropertyRe
 		return domainTypeResolver;
 	}
 
+	@Override
+	protected Set<String> getFieldAnnotationFqns() {
+		return Set.of("org.springframework.data.relational.core.mapping.Column");
+	}
+
 	// =====================================================================
 	// Domain type resolver — Relational-specific patterns
 	// =====================================================================

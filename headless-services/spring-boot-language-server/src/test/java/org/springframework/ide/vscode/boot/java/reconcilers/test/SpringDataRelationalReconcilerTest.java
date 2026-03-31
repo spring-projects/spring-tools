@@ -35,7 +35,8 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Tests for {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataRelationalReconciler}.
+ * Tests for Spring Data Relational property reference detection
+ * via {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataPropertyReferenceReconciler}.
  * <p>
  * Covers relational Criteria.where and Update.update/set string property references.
  */
@@ -80,7 +81,7 @@ public class SpringDataRelationalReconcilerTest {
 				""", docUri);
 
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\"|Non type-safe property reference"
 		);
 	}
 
@@ -125,7 +126,7 @@ public class SpringDataRelationalReconcilerTest {
 				""", docUri);
 
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\"|Non type-safe property reference"
 		);
 	}
 
@@ -148,8 +149,8 @@ public class SpringDataRelationalReconcilerTest {
 				""", docUri);
 
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\"|Non type-safe property reference",
+				"\"lastName\"|Non type-safe property reference"
 		);
 	}
 
@@ -176,7 +177,7 @@ public class SpringDataRelationalReconcilerTest {
 		Diagnostic problem = editor.assertProblem("\"firstName\"");
 		List<CodeAction> actions = editor.getCodeActions(problem);
 		assertEquals(1, actions.size());
-		assertEquals("Replace with Customer::getFirstName", actions.get(0).getLabel());
+		assertEquals("Replace with Customer::getFirstName (inferred)", actions.get(0).getLabel());
 
 		actions.get(0).perform();
 		assertEquals("""

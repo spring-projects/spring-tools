@@ -188,9 +188,18 @@ public abstract class AbstractSpringDataDomainTypeResolver {
 	 * in a fluent API chain. Only considers receivers whose erased type FQN
 	 * starts with one of the prefixes from {@link #getFluentOperationTypePrefixes()}.
 	 * <p>
+	 * If the receiver was produced by a projection step ({@code .as(Class)}) on a
+	 * {@code *Projection*} type, walks further up the fluent chain to find the
+	 * original entity type rather than the projection type.
+	 * <p>
 	 * Example: {@code mongoOps.query(Customer.class).matching(where("name"))} —
 	 * the receiver of {@code matching()} has type {@code FindWithQuery<Customer>},
 	 * so the domain type is {@code Customer}.
+	 * <p>
+	 * Example with projection: {@code mongoOps.query(Jedi.class).as(Sith.class).matching(...)} —
+	 * the receiver of {@code matching()} has type {@code FindWithQuery<Sith>},
+	 * but since it came from {@code .as()} on a {@code FindWithProjection<Jedi>},
+	 * the entity type is {@code Jedi}.
 	 */
 	protected @Nullable ITypeBinding tryFluentReceiverType(MethodInvocation invocation) {
 		List<String> prefixes = getFluentOperationTypePrefixes();
@@ -207,19 +216,80 @@ public abstract class AbstractSpringDataDomainTypeResolver {
 			return null;
 		}
 
-		String receiverFqn = receiverType.getErasure().getQualifiedName();
-		boolean isFluentType = false;
-		for (String prefix : prefixes) {
-			if (receiverFqn.startsWith(prefix)) {
-				isFluentType = true;
-				break;
-			}
-		}
-		if (!isFluentType) {
+		if (!isFluentOperationType(receiverType, prefixes)) {
 			return null;
 		}
 
-		ITypeBinding[] typeArgs = receiverType.getTypeArguments();
+		// Walk past projection steps: if the receiver is the result of .as() called
+		// on a *Projection* type, the type parameter is the projection, not the entity.
+		if (receiver instanceof MethodInvocation receiverCall) {
+			ITypeBinding preProjectionType = walkPastProjection(receiverCall, prefixes);
+			if (preProjectionType != null) {
+				return preProjectionType;
+			}
+		}
+
+		return extractFluentTypeArgument(receiverType);
+	}
+
+	private boolean isFluentOperationType(ITypeBinding type, List<String> prefixes) {
+		String fqn = type.getErasure().getQualifiedName();
+		for (String prefix : prefixes) {
+			if (fqn.startsWith(prefix)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * If {@code receiverCall} was produced by {@code .as()} on a type whose hierarchy
+	 * includes a "Projection" type, walk up to the pre-projection receiver and extract
+	 * the entity type from its type argument.
+	 */
+	private @Nullable ITypeBinding walkPastProjection(MethodInvocation receiverCall, List<String> prefixes) {
+		if (!"as".equals(receiverCall.getName().getIdentifier())) {
+			return null;
+		}
+		Expression preProjectionReceiver = receiverCall.getExpression();
+		if (preProjectionReceiver == null) {
+			return null;
+		}
+		ITypeBinding preProjectionType = preProjectionReceiver.resolveTypeBinding();
+		if (preProjectionType == null || !preProjectionType.isParameterizedType()) {
+			return null;
+		}
+		if (!isFluentOperationType(preProjectionType, prefixes)) {
+			return null;
+		}
+		if (!hasProjectionTypeInHierarchy(preProjectionType)) {
+			return null;
+		}
+		return extractFluentTypeArgument(preProjectionType);
+	}
+
+	private boolean hasProjectionTypeInHierarchy(ITypeBinding type) {
+		ITypeBinding erasure = type.getErasure();
+		if (erasure.getQualifiedName().contains("Projection")) {
+			return true;
+		}
+		for (ITypeBinding iface : erasure.getInterfaces()) {
+			if (iface.getErasure().getQualifiedName().contains("Projection")) {
+				return true;
+			}
+			if (hasProjectionTypeInHierarchy(iface)) {
+				return true;
+			}
+		}
+		ITypeBinding superclass = erasure.getSuperclass();
+		if (superclass != null) {
+			return hasProjectionTypeInHierarchy(superclass);
+		}
+		return false;
+	}
+
+	private @Nullable ITypeBinding extractFluentTypeArgument(ITypeBinding fluentType) {
+		ITypeBinding[] typeArgs = fluentType.getTypeArguments();
 		if (typeArgs.length == 1 && !typeArgs[0].isWildcardType()
 				&& !typeArgs[0].isPrimitive()
 				&& !"java.lang.Object".equals(typeArgs[0].getQualifiedName())) {

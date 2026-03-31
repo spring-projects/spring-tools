@@ -66,10 +66,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrateg
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionSyntaxReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersioningReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.BeanValidationComponentReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataCommonsReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataMongoDbReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataRelationalReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataCassandraReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.SpringDataPropertyReferenceReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebConfigurerConfigurationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigurerAdapterReconciler;
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
@@ -198,20 +195,8 @@ public class JdtConfig {
 		return new BeanValidationComponentReconciler(server.getQuickfixRegistry());
 	}
 	
-	@Bean SpringDataCommonsReconciler springDataCommonsReconciler(SimpleLanguageServer server) {
-		return new SpringDataCommonsReconciler(server.getQuickfixRegistry());
-	}
-
-	@Bean SpringDataMongoDbReconciler springDataMongoDbReconciler(SimpleLanguageServer server) {
-		return new SpringDataMongoDbReconciler(server.getQuickfixRegistry());
-	}
-
-	@Bean SpringDataRelationalReconciler springDataRelationalReconciler(SimpleLanguageServer server) {
-		return new SpringDataRelationalReconciler(server.getQuickfixRegistry());
-	}
-
-	@Bean SpringDataCassandraReconciler springDataCassandraReconciler(SimpleLanguageServer server) {
-		return new SpringDataCassandraReconciler(server.getQuickfixRegistry());
+	@Bean SpringDataPropertyReferenceReconciler springDataPropertyReferenceReconciler(SimpleLanguageServer server) {
+		return new SpringDataPropertyReferenceReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)

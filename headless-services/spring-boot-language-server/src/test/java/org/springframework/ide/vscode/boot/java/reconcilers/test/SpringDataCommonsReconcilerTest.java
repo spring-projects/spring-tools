@@ -37,7 +37,8 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Tests for {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataCommonsReconciler}.
+ * Tests for Spring Data Commons property reference detection
+ * via {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataPropertyReferenceReconciler}.
  * <p>
  * Covers Sort.by and Sort.Order string property references with domain type
  * resolution from repository calls (Tier 1) and contextual block scanning (Tier 2).
@@ -103,9 +104,9 @@ public class SpringDataCommonsReconcilerTest {
 				}
 				""", docUri);
 
-		// Varargs: single warning spanning both string literals
+		// Varargs: single warning spanning both string literals (plural)
 		editor.assertProblems(
-				"\"firstName\", \"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\", \"lastName\"|Non type-safe property references for domain type 'Customer'"
 		);
 	}
 
@@ -172,7 +173,7 @@ public class SpringDataCommonsReconcilerTest {
 				""", docUri);
 
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\"|Non type-safe property reference"
 		);
 	}
 
@@ -340,6 +341,7 @@ public class SpringDataCommonsReconcilerTest {
 		Diagnostic problem = editor.assertProblem("\"firstName\", \"lastName\"");
 		List<CodeAction> actions = editor.getCodeActions(problem);
 		assertEquals(1, actions.size());
+		// Plural label for multi-argument varargs
 		assertEquals("Replace with type-safe property references", actions.get(0).getLabel());
 
 		actions.get(0).perform();
@@ -407,12 +409,12 @@ public class SpringDataCommonsReconcilerTest {
 		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
 		assertEquals(2, actions0.size());
 		assertEquals("Replace with Customer::getFirstName", actions0.get(0).getLabel());
-		assertEquals("Replace all with type-safe property references in file", actions0.get(1).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions0.get(1).getLabel());
 
 		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
 		assertEquals(2, actions1.size());
 		assertEquals("Replace with Customer::getLastName", actions1.get(0).getLabel());
-		assertEquals("Replace all with type-safe property references in file", actions1.get(1).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions1.get(1).getLabel());
 
 		// Apply "fix all" from the first problem — replaces both
 		actions0.get(1).perform();
@@ -465,6 +467,70 @@ public class SpringDataCommonsReconcilerTest {
 		// Second problem (no match): no quick fixes at all
 		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
 		assertTrue(actions1.isEmpty(), "No quick fixes for non-matching property");
+	}
+
+	// ========== Cross-module fix all in file ==========
+
+	@Test
+	void fixAll_crossModule_commonsAndMongodb() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.domain.Sort;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+					private CustomerRepository repository;
+
+					void test() {
+						repository.findAll(Sort.by("firstName"));
+						mongoOps.query(Customer.class)
+							.matching(query(where("lastName")))
+							.all();
+					}
+				}
+				""", docUri);
+
+		List<Diagnostic> problems = editor.assertProblems(
+				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
+				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+		);
+
+		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
+		assertEquals(2, actions0.size());
+		assertEquals("Replace with Customer::getFirstName", actions0.get(0).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions0.get(1).getLabel());
+
+		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
+		assertEquals(2, actions1.size());
+		assertEquals("Replace with Customer::getLastName", actions1.get(0).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions1.get(1).getLabel());
+
+		actions0.get(1).perform();
+		assertEquals("""
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.domain.Sort;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+					private CustomerRepository repository;
+
+					void test() {
+						repository.findAll(Sort.by(Customer::getFirstName));
+						mongoOps.query(Customer.class)
+							.matching(query(where(Customer::getLastName)))
+							.all();
+					}
+				}
+				""", editor.getRawText());
 	}
 
 	private String docUri(String fileName) {

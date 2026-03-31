@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
+import static org.springframework.ide.vscode.boot.java.reconcilers.SpringDataPropertyReferenceContributor.getErasedFqn;
+import static org.springframework.ide.vscode.boot.java.reconcilers.SpringDataPropertyReferenceContributor.hasTypedPropertyPathOverload;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -26,21 +29,12 @@ import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
-import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 
 /**
- * Reconciler for <b>Spring Data Cassandra</b> string-based property references.
- * <p>
- * Detects:
- * <ul>
- *   <li>{@code Criteria.where("prop")} — the first string argument</li>
- *   <li>{@code Update.set("prop", value)}, {@code Update.addTo("prop")}, and all other
- *       Cassandra {@code Update} methods that accept a string key — dynamically checked
- *       via {@code TypedPropertyPath} overload detection.</li>
- *   <li>{@code Columns.from("col1", "col2")} — column selection (varargs)</li>
- * </ul>
+ * Contributor for <b>Spring Data Cassandra</b> string-based property references.
+ * Detects {@code Criteria.where}, {@code Update.*}, and {@code Columns.from}.
  */
-public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyReferenceReconciler {
+class SpringDataCassandraContributor implements SpringDataPropertyReferenceContributor {
 
 	private static final Set<String> CRITERIA_FQN_TYPES = Set.of(
 			"org.springframework.data.cassandra.core.query.Criteria"
@@ -56,10 +50,6 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 
 	private final DomainTypeResolver domainTypeResolver = new DomainTypeResolver();
 
-	public SpringDataCassandraReconciler(QuickfixRegistry quickfixRegistry) {
-		super(quickfixRegistry);
-	}
-
 	@Override
 	public boolean isApplicable(IJavaProject project) {
 		Version version = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-data-cassandra");
@@ -67,7 +57,7 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 	}
 
 	@Override
-	protected List<String> getRelevantTypesFqn() {
+	public List<String> getRelevantTypesFqn() {
 		return List.of(
 				"org.springframework.data.cassandra.core.query.Criteria",
 				"org.springframework.data.cassandra.core.query.Update",
@@ -76,14 +66,14 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 	}
 
 	@Override
-	protected boolean isPropertyReferenceCall(MethodInvocation node, ITypeBinding declaringType) {
+	public boolean isPropertyReferenceCall(MethodInvocation node, ITypeBinding declaringType) {
 		String erasedFqn = getErasedFqn(declaringType);
 		return CRITERIA_FQN_TYPES.contains(erasedFqn) || UPDATE_FQN_TYPES.contains(erasedFqn)
 				|| COLUMNS_FQN_TYPES.contains(erasedFqn);
 	}
 
 	@Override
-	protected List<List<StringLiteral>> extractStringLiteralGroups(MethodInvocation node) {
+	public List<List<StringLiteral>> extractStringLiteralGroups(MethodInvocation node) {
 		IMethodBinding methodBinding = node.resolveMethodBinding();
 		if (methodBinding == null) {
 			return List.of();
@@ -98,7 +88,6 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 		String declaringFqn = getErasedFqn(methodBinding.getDeclaringClass());
 
 		if (COLUMNS_FQN_TYPES.contains(declaringFqn)) {
-			// Columns.from("a", "b") is varargs — all args form a single group
 			List<StringLiteral> group = extractAllArgLiterals(args, methodBinding);
 			return group.isEmpty() ? List.of() : List.of(group);
 		}
@@ -109,6 +98,16 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 			}
 		}
 		return List.of();
+	}
+
+	@Override
+	public AbstractSpringDataDomainTypeResolver getDomainTypeResolver() {
+		return domainTypeResolver;
+	}
+
+	@Override
+	public Set<String> getFieldAnnotationFqns() {
+		return Set.of("org.springframework.data.cassandra.core.mapping.Column");
 	}
 
 	private List<StringLiteral> extractAllArgLiterals(List<Expression> args, IMethodBinding methodBinding) {
@@ -123,25 +122,6 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 		return result;
 	}
 
-	@Override
-	protected AbstractSpringDataDomainTypeResolver getDomainTypeResolver() {
-		return domainTypeResolver;
-	}
-
-	@Override
-	protected Set<String> getFieldAnnotationFqns() {
-		return Set.of("org.springframework.data.cassandra.core.mapping.Column");
-	}
-
-	// =====================================================================
-	// Domain type resolver — Cassandra-specific patterns
-	// =====================================================================
-
-	/**
-	 * Domain type resolver for Spring Data Cassandra. In addition to the common
-	 * repository and fluent API patterns, supports template operations with
-	 * Class parameters and template update-with-entity calls.
-	 */
 	private static class DomainTypeResolver extends AbstractSpringDataDomainTypeResolver {
 
 		private static final Set<String> TEMPLATE_FQN_TYPES = Set.of(
@@ -181,13 +161,11 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 
 			ITypeBinding result;
 
-			// Pattern 1: Repository method call
 			result = tryRepositoryCall(methodBinding, declaringType);
 			if (result != null) {
 				return result;
 			}
 
-			// Pattern 2: Fluent API — guarded by operation type prefix check
 			result = tryFluentReceiverType(invocation);
 			if (result != null) {
 				return result;
@@ -197,15 +175,11 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 				return null;
 			}
 
-			// Pattern 3: Non-fluent template call with Class<T> parameter
-			// e.g. template.selectOne(query, Customer.class)
 			result = findClassLiteralInArguments(invocation);
 			if (result != null) {
 				return result;
 			}
 
-			// Pattern 4: Non-fluent template update with entity argument
-			// e.g. template.update(person, options) — domain type inferred from entity's type
 			return tryUpdateWithEntity(invocation);
 		}
 

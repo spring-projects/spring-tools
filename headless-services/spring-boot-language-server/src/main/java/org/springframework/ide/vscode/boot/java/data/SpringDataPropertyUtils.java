@@ -13,8 +13,11 @@ package org.springframework.ide.vscode.boot.java.data;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.text.similarity.JaroWinklerSimilarity;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
+import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
@@ -91,19 +94,36 @@ public final class SpringDataPropertyUtils {
 	 * @return list of matches sorted by similarity (best first), never {@code null}
 	 */
 	public static List<PropertyMatch> findSimilarProperties(ITypeBinding domainType, String propertyName, double minSimilarity) {
-		if (propertyName == null || propertyName.isEmpty()) {
-			return List.of();
-		}
-		List<PropertyMatch> matches = collectProperties(domainType, propertyName, minSimilarity);
-		matches.removeIf(PropertyMatch::isExact);
-		return matches;
+		return findSimilarProperties(domainType, propertyName, minSimilarity, Set.of());
 	}
 
 	/**
 	 * Overload using default minimum similarity threshold.
 	 */
 	public static List<PropertyMatch> findSimilarProperties(ITypeBinding domainType, String propertyName) {
-		return findSimilarProperties(domainType, propertyName, DEFAULT_MIN_SIMILARITY);
+		return findSimilarProperties(domainType, propertyName, DEFAULT_MIN_SIMILARITY, Set.of());
+	}
+
+	/**
+	 * Find properties on the given type whose names are similar to
+	 * {@code propertyName} but are <em>not</em> exact matches (similarity &lt; 1.0).
+	 * Also considers annotated field names from annotations like {@code @Field} or
+	 * {@code @Column}.
+	 *
+	 * @param domainType           the type to introspect
+	 * @param propertyName         the (possibly misspelled) property name
+	 * @param minSimilarity        minimum Jaro-Winkler similarity to consider (0.0–1.0)
+	 * @param fieldAnnotationFqns  FQNs of annotations that map field names (e.g., {@code @Field}, {@code @Column})
+	 * @return list of matches sorted by similarity (best first), never {@code null}
+	 */
+	public static List<PropertyMatch> findSimilarProperties(ITypeBinding domainType, String propertyName,
+			double minSimilarity, Set<String> fieldAnnotationFqns) {
+		if (propertyName == null || propertyName.isEmpty()) {
+			return List.of();
+		}
+		List<PropertyMatch> matches = collectProperties(domainType, propertyName, minSimilarity, fieldAnnotationFqns);
+		matches.removeIf(PropertyMatch::isExact);
+		return matches;
 	}
 
 	// =====================================================================
@@ -125,6 +145,20 @@ public final class SpringDataPropertyUtils {
 	 * @return list of resolved chains; empty if no resolution is possible
 	 */
 	public static List<ResolvedChain> resolvePropertyChain(ITypeBinding domainType, String dottedProperty) {
+		return resolvePropertyChain(domainType, dottedProperty, Set.of());
+	}
+
+	/**
+	 * Resolve a dotted property chain against a root domain type, also considering
+	 * annotated field names from the given annotations.
+	 *
+	 * @param domainType           the root domain type
+	 * @param dottedProperty       the property string, possibly containing dots
+	 * @param fieldAnnotationFqns  FQNs of annotations that map field names
+	 * @return list of resolved chains; empty if no resolution is possible
+	 */
+	public static List<ResolvedChain> resolvePropertyChain(ITypeBinding domainType, String dottedProperty,
+			Set<String> fieldAnnotationFqns) {
 		if (dottedProperty == null || dottedProperty.isEmpty()) {
 			return List.of();
 		}
@@ -135,7 +169,7 @@ public final class SpringDataPropertyUtils {
 		}
 
 		List<ResolvedChain> results = new ArrayList<>();
-		resolveSegments(domainType, segments, 0, new ArrayList<>(), 1.0, results);
+		resolveSegments(domainType, segments, 0, new ArrayList<>(), 1.0, results, fieldAnnotationFqns);
 
 		List<ResolvedChain> exact = results.stream().filter(ResolvedChain::allExact).toList();
 		if (!exact.isEmpty()) {
@@ -156,7 +190,8 @@ public final class SpringDataPropertyUtils {
 			int segmentIndex,
 			List<PropertySegment> accumulated,
 			double scoreSoFar,
-			List<ResolvedChain> results
+			List<ResolvedChain> results,
+			Set<String> fieldAnnotationFqns
 	) {
 		if (segmentIndex >= segments.length) {
 			results.add(new ResolvedChain(List.copyOf(accumulated), scoreSoFar));
@@ -166,13 +201,10 @@ public final class SpringDataPropertyUtils {
 		String segmentName = segments[segmentIndex];
 		String typeFqn = currentType.getQualifiedName();
 
-		// Unified: collect all matches (exact + fuzzy) sorted best-first.
-		// Exact matches have similarity 1.0 and naturally float to the top.
-		// The caller (resolvePropertyChain) filters exact-only chains when available.
-		List<PropertyMatch> matches = collectProperties(currentType, segmentName, DEFAULT_MIN_SIMILARITY);
+		List<PropertyMatch> matches = collectProperties(currentType, segmentName, DEFAULT_MIN_SIMILARITY, fieldAnnotationFqns);
 		for (PropertyMatch match : matches) {
 			accumulated.add(new PropertySegment(typeFqn, match.methodName()));
-			resolveSegments(match.returnType(), segments, segmentIndex + 1, accumulated, scoreSoFar * match.similarity(), results);
+			resolveSegments(match.returnType(), segments, segmentIndex + 1, accumulated, scoreSoFar * match.similarity(), results, fieldAnnotationFqns);
 			accumulated.remove(accumulated.size() - 1);
 		}
 	}
@@ -183,8 +215,14 @@ public final class SpringDataPropertyUtils {
 	 * minimum Jaro-Winkler similarity threshold against the target name.
 	 * Includes exact matches (similarity = 1.0). Returned list is sorted
 	 * by similarity (best first).
+	 * <p>
+	 * When {@code fieldAnnotationFqns} is non-empty, also checks fields for
+	 * annotations (e.g., {@code @Field("firstname")}, {@code @Column("col_name")})
+	 * that map the Java property to a different database name. If the annotated
+	 * name matches the target, the corresponding Java accessor is returned.
 	 */
-	private static List<PropertyMatch> collectProperties(ITypeBinding type, String targetName, double minSimilarity) {
+	private static List<PropertyMatch> collectProperties(ITypeBinding type, String targetName,
+			double minSimilarity, Set<String> fieldAnnotationFqns) {
 		List<PropertyMatch> matches = new ArrayList<>();
 		Iterator<ITypeBinding> hierarchy = ASTUtils.getHierarchyTypesBreadthFirstIterator(type);
 		String targetLower = targetName.toLowerCase();
@@ -201,6 +239,22 @@ public final class SpringDataPropertyUtils {
 					double sim = JARO_WINKLER.apply(targetLower, fieldName.toLowerCase());
 					if (sim >= minSimilarity) {
 						matches.add(new PropertyMatch(fieldName, fieldName, field.getType(), sim));
+					}
+				}
+			}
+
+			// Annotation-aware matching: check @Field/@Column annotations on fields
+			if (!fieldAnnotationFqns.isEmpty()) {
+				for (IVariableBinding field : current.getDeclaredFields()) {
+					String annotatedName = extractAnnotatedFieldName(field, fieldAnnotationFqns);
+					if (annotatedName != null) {
+						double sim = JARO_WINKLER.apply(targetLower, annotatedName.toLowerCase());
+						if (sim >= minSimilarity) {
+							String accessor = findAccessorForField(current, field);
+							if (accessor != null) {
+								matches.add(new PropertyMatch(annotatedName, accessor, field.getType(), sim));
+							}
+						}
 					}
 				}
 			}
@@ -228,6 +282,56 @@ public final class SpringDataPropertyUtils {
 
 		matches.sort((a, b) -> Double.compare(b.similarity(), a.similarity()));
 		return matches;
+	}
+
+	/**
+	 * Extracts the annotated field name from a field's annotations, checking against
+	 * the given set of annotation FQNs. Returns the {@code value()} of the first
+	 * matching annotation, or {@code null} if none found.
+	 */
+	private static String extractAnnotatedFieldName(IVariableBinding field, Set<String> annotationFqns) {
+		for (IAnnotationBinding ann : field.getAnnotations()) {
+			ITypeBinding annType = ann.getAnnotationType();
+			if (annType != null && annotationFqns.contains(annType.getQualifiedName())) {
+				// Extract the value() or name() member
+				for (IMemberValuePairBinding pair : ann.getAllMemberValuePairs()) {
+					String memberName = pair.getName();
+					if ("value".equals(memberName) || "name".equals(memberName)) {
+						Object val = pair.getValue();
+						if (val instanceof String s && !s.isEmpty()) {
+							return s;
+						}
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Finds the accessor method name for a field. For records, the accessor is
+	 * the field name itself. For classes, looks for {@code getXxx()} or {@code isXxx()}.
+	 */
+	private static String findAccessorForField(ITypeBinding declaringType, IVariableBinding field) {
+		String fieldName = field.getName();
+
+		if (declaringType.isRecord()) {
+			return fieldName;
+		}
+
+		String expectedGetter = "get" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+		String expectedIs = "is" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+
+		for (IMethodBinding method : declaringType.getDeclaredMethods()) {
+			if (method.getParameterTypes().length != 0) {
+				continue;
+			}
+			String mName = method.getName();
+			if (mName.equals(expectedGetter) || mName.equals(expectedIs)) {
+				return mName;
+			}
+		}
+		return null;
 	}
 
 }

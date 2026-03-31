@@ -75,7 +75,7 @@ public class SpringDataRelationalReconciler extends AbstractSpringDataPropertyRe
 	}
 
 	@Override
-	protected List<StringLiteral> extractStringLiterals(MethodInvocation node) {
+	protected List<List<StringLiteral>> extractStringLiteralGroups(MethodInvocation node) {
 		IMethodBinding methodBinding = node.resolveMethodBinding();
 		if (methodBinding == null) {
 			return List.of();
@@ -89,7 +89,7 @@ public class SpringDataRelationalReconciler extends AbstractSpringDataPropertyRe
 
 		if (args.get(0) instanceof StringLiteral literal) {
 			if (hasTypedPropertyPathOverload(methodBinding, 0)) {
-				return List.of(literal);
+				return List.of(List.of(literal));
 			}
 		}
 		return List.of();
@@ -98,6 +98,11 @@ public class SpringDataRelationalReconciler extends AbstractSpringDataPropertyRe
 	@Override
 	protected AbstractSpringDataDomainTypeResolver getDomainTypeResolver() {
 		return domainTypeResolver;
+	}
+
+	@Override
+	protected Set<String> getFieldAnnotationFqns() {
+		return Set.of("org.springframework.data.relational.core.mapping.Column");
 	}
 
 	// =====================================================================

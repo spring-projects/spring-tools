@@ -164,9 +164,9 @@ public class SpringDataCassandraReconcilerTest {
 				}
 				""", docUri);
 
+		// Varargs: single warning spanning both string literals
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\", \"lastName\"|Non type-safe property reference for domain type 'Customer'"
 		);
 	}
 

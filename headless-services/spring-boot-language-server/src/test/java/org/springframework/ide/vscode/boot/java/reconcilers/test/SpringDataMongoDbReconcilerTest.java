@@ -266,9 +266,9 @@ public class SpringDataMongoDbReconcilerTest {
 				}
 				""", docUri);
 
+		// Varargs: single warning spanning both string literals
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'",
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\", \"lastName\"|Non type-safe property reference for domain type 'Customer'"
 		);
 	}
 
@@ -400,12 +400,151 @@ public class SpringDataMongoDbReconcilerTest {
 		);
 
 		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
-		assertEquals(1, actions0.size());
+		assertEquals(2, actions0.size());
 		assertEquals("Replace with Customer::getFirstName", actions0.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions0.get(1).getLabel());
 
 		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
-		assertEquals(1, actions1.size());
+		assertEquals(2, actions1.size());
 		assertEquals("Replace with Customer::getLastName", actions1.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions1.get(1).getLabel());
+	}
+
+	// ========== @Field annotation-aware matching ==========
+
+	@Test
+	void annotatedField_exactMatch_viaFieldAnnotation() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+
+					void test() {
+						mongoOps.query(SWCharacter.class)
+							.matching(query(where("firstname")))
+							.all();
+					}
+				}
+				""", docUri);
+
+		Diagnostic problem = editor.assertProblem("\"firstname\"");
+		List<CodeAction> actions = editor.getCodeActions(problem);
+		assertEquals(1, actions.size());
+		assertEquals("Replace with SWCharacter::getName", actions.get(0).getLabel());
+
+		actions.get(0).perform();
+		assertEquals("""
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+
+					void test() {
+						mongoOps.query(SWCharacter.class)
+							.matching(query(where(SWCharacter::getName)))
+							.all();
+					}
+				}
+				""", editor.getRawText());
+	}
+
+	@Test
+	void annotatedField_fixAllInFile_includesAnnotationMatch() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+
+					void test() {
+						mongoOps.query(SWCharacter.class)
+							.matching(query(where("firstname")))
+							.all();
+						mongoOps.query(SWCharacter.class)
+							.matching(query(where("homePlanet")))
+							.all();
+					}
+				}
+				""", docUri);
+
+		List<Diagnostic> problems = editor.assertProblems(
+				"\"firstname\"|Non type-safe property reference for domain type 'SWCharacter'",
+				"\"homePlanet\"|Non type-safe property reference for domain type 'SWCharacter'"
+		);
+
+		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
+		assertEquals(2, actions0.size());
+		assertEquals("Replace with SWCharacter::getName", actions0.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions0.get(1).getLabel());
+
+		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
+		assertEquals(2, actions1.size());
+		assertEquals("Replace with SWCharacter::getHomePlanet", actions1.get(0).getLabel());
+		assertEquals("Replace all with type-safe property references in file", actions1.get(1).getLabel());
+
+		actions0.get(1).perform();
+		assertEquals("""
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+
+					void test() {
+						mongoOps.query(SWCharacter.class)
+							.matching(query(where(SWCharacter::getName)))
+							.all();
+						mongoOps.query(SWCharacter.class)
+							.matching(query(where(SWCharacter::getHomePlanet)))
+							.all();
+					}
+				}
+				""", editor.getRawText());
+	}
+
+	@Test
+	void annotatedField_noAnnotationMatch_fallsBackToProperty() throws Exception {
+		String docUri = docUri("TestClass.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package demo;
+
+				import static org.springframework.data.mongodb.core.query.Criteria.where;
+				import static org.springframework.data.mongodb.core.query.Query.query;
+				import org.springframework.data.mongodb.core.MongoOperations;
+
+				class TestClass {
+					private MongoOperations mongoOps;
+
+					void test() {
+						mongoOps.query(SWCharacter.class)
+							.matching(query(where("homePlanet")))
+							.all();
+					}
+				}
+				""", docUri);
+
+		Diagnostic problem = editor.assertProblem("\"homePlanet\"");
+		List<CodeAction> actions = editor.getCodeActions(problem);
+		assertEquals(1, actions.size());
+		assertEquals("Replace with SWCharacter::getHomePlanet", actions.get(0).getLabel());
 	}
 
 	private String docUri(String fileName) {

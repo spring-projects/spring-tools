@@ -76,7 +76,7 @@ public class SpringDataCommonsReconciler extends AbstractSpringDataPropertyRefer
 	}
 
 	@Override
-	protected List<StringLiteral> extractStringLiterals(MethodInvocation node) {
+	protected List<List<StringLiteral>> extractStringLiteralGroups(MethodInvocation node) {
 		IMethodBinding methodBinding = node.resolveMethodBinding();
 		if (methodBinding == null) {
 			return List.of();
@@ -88,9 +88,12 @@ public class SpringDataCommonsReconciler extends AbstractSpringDataPropertyRefer
 		String declaringFqn = getErasedFqn(methodBinding.getDeclaringClass());
 
 		if (isSortByCall(node, declaringFqn)) {
-			return extractSortByLiterals(args, methodBinding);
+			// Sort.by("a", "b") is varargs — all string args form a single group
+			List<StringLiteral> group = extractSortByLiterals(args, methodBinding);
+			return group.isEmpty() ? List.of() : List.of(group);
 		} else if (isSortOrderCall(node, declaringFqn)) {
-			return extractSortOrderLiterals(args, methodBinding);
+			List<StringLiteral> group = extractSortOrderLiterals(args, methodBinding);
+			return group.isEmpty() ? List.of() : List.of(group);
 		}
 		return List.of();
 	}
@@ -98,6 +101,11 @@ public class SpringDataCommonsReconciler extends AbstractSpringDataPropertyRefer
 	@Override
 	protected AbstractSpringDataDomainTypeResolver getDomainTypeResolver() {
 		return domainTypeResolver;
+	}
+
+	@Override
+	protected Set<String> getFieldAnnotationFqns() {
+		return Set.of();
 	}
 
 	// =====================================================================

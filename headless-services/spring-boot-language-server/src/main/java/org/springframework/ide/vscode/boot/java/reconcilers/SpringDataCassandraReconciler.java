@@ -83,7 +83,7 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 	}
 
 	@Override
-	protected List<StringLiteral> extractStringLiterals(MethodInvocation node) {
+	protected List<List<StringLiteral>> extractStringLiteralGroups(MethodInvocation node) {
 		IMethodBinding methodBinding = node.resolveMethodBinding();
 		if (methodBinding == null) {
 			return List.of();
@@ -98,12 +98,14 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 		String declaringFqn = getErasedFqn(methodBinding.getDeclaringClass());
 
 		if (COLUMNS_FQN_TYPES.contains(declaringFqn)) {
-			return extractAllArgLiterals(args, methodBinding);
+			// Columns.from("a", "b") is varargs — all args form a single group
+			List<StringLiteral> group = extractAllArgLiterals(args, methodBinding);
+			return group.isEmpty() ? List.of() : List.of(group);
 		}
 
 		if (args.get(0) instanceof StringLiteral literal) {
 			if (hasTypedPropertyPathOverload(methodBinding, 0)) {
-				return List.of(literal);
+				return List.of(List.of(literal));
 			}
 		}
 		return List.of();
@@ -124,6 +126,11 @@ public class SpringDataCassandraReconciler extends AbstractSpringDataPropertyRef
 	@Override
 	protected AbstractSpringDataDomainTypeResolver getDomainTypeResolver() {
 		return domainTypeResolver;
+	}
+
+	@Override
+	protected Set<String> getFieldAnnotationFqns() {
+		return Set.of("org.springframework.data.cassandra.core.mapping.Column");
 	}
 
 	// =====================================================================

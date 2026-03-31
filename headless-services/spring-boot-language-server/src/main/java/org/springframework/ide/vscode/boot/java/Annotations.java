@@ -251,5 +251,6 @@ public class Annotations {
 	public static final String SPRING_AI_MCP_COMPLETE = "org.springframework.ai.mcp.annotation.McpComplete";
 	public static final String SPRING_AI_MCP_ELICITATION = "org.springframework.ai.mcp.annotation.McpElicitation";
 	public static final String SPRING_AI_MCP_SAMPLING = "org.springframework.ai.mcp.annotation.McpSampling";
+	public static final String SPRING_AI_MCP_TOOL_PARAM = "org.springframework.ai.mcp.annotation.McpToolParam";
 	
 }

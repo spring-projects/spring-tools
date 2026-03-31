@@ -10,16 +10,21 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.springai;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -27,6 +32,7 @@ import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.springai.SpringAiAnnotationIndexElement.AnnotationType;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
+import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
@@ -122,10 +128,51 @@ public class SpringAiIndexer {
 		Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(method);
 		AnnotationMetadata[] annotationsMetadata = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, doc);
 
+		List<SpringAiToolParameter> parameters = extractParameters(method, doc);
+
 		SpringAiAnnotationIndexElement element = new SpringAiAnnotationIndexElement(annotationType, name, description,
-				methodSignature, location, containerBeanType, annotationsMetadata);
+				methodSignature, location, containerBeanType, annotationsMetadata, parameters);
 
 		addElement(parent, element, context);
+	}
+
+	private static List<SpringAiToolParameter> extractParameters(MethodDeclaration method, TextDocument doc)
+			throws BadLocationException {
+		List<SpringAiToolParameter> result = new ArrayList<>();
+		for (Object object : method.parameters()) {
+			if (object instanceof SingleVariableDeclaration variable) {
+				String paramName = variable.getName().getIdentifier();
+
+				IVariableBinding variableBinding = variable.resolveBinding();
+				String paramType = variableBinding != null ? variableBinding.getType().getQualifiedName() : null;
+
+				DocumentRegion region = ASTUtils.nodeRegion(doc, variable.getName());
+				Range range = doc.toRange(region);
+				Location paramLocation = new Location(doc.getUri(), range);
+
+				Collection<Annotation> paramAnnotations = ASTUtils.getAnnotations(variable);
+				AnnotationMetadata[] paramAnnotationsMetadata = ASTUtils.getAnnotationsMetadata(paramAnnotations, doc);
+
+				String paramDescription = extractMcpToolParamDescription(paramAnnotations);
+
+				result.add(new SpringAiToolParameter(paramName, paramType, paramDescription, paramLocation,
+						paramAnnotationsMetadata));
+			}
+		}
+		return result;
+	}
+
+	private static String extractMcpToolParamDescription(Collection<Annotation> paramAnnotations) {
+		for (Annotation annotation : paramAnnotations) {
+			ITypeBinding binding = annotation.resolveTypeBinding();
+			if (binding != null && Annotations.SPRING_AI_MCP_TOOL_PARAM.equals(binding.getQualifiedName())) {
+				String description = getAnnotationStringAttribute(annotation, "description");
+				if (description != null && !description.isEmpty()) {
+					return description;
+				}
+			}
+		}
+		return null;
 	}
 
 	private static void addElement(SpringIndexElement parent, SpringIndexElement element,

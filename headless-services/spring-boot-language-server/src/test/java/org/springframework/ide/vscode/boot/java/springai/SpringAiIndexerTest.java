@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.springai;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.util.Arrays;
@@ -37,6 +38,7 @@ import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.beans.test.SpringIndexerHarness;
 import org.springframework.ide.vscode.boot.java.springai.SpringAiAnnotationIndexElement.AnnotationType;
+import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
@@ -133,6 +135,20 @@ public class SpringAiIndexerTest {
 		DocumentSymbol addSymbol = addTool.getDocumentSymbol();
 		assertEquals("@Tool add", addSymbol.getName());
 		assertEquals(SymbolKind.Function, addSymbol.getKind());
+
+		List<SpringAiToolParameter> addParams = addTool.getParameters();
+		assertEquals(2, addParams.size());
+
+		SpringAiToolParameter paramA = addParams.get(0);
+		assertEquals("a", paramA.getName());
+		assertEquals("int", paramA.getType());
+		assertNotNull(paramA.getLocation());
+		assertEquals(docUri, paramA.getLocation().getUri());
+
+		SpringAiToolParameter paramB = addParams.get(1);
+		assertEquals("b", paramB.getName());
+		assertEquals("int", paramB.getType());
+		assertNotNull(paramB.getLocation());
 	}
 
 	@Test
@@ -422,6 +438,106 @@ public class SpringAiIndexerTest {
 				.toList();
 		assertEquals(1, toolsFromStandaloneClass.size());
 		assertEquals("search", toolsFromStandaloneClass.get(0).getName());
+	}
+
+	@Test
+	void testToolParameterAnnotationMetadataIsCaptured() throws Exception {
+		String docUri = directory.toPath()
+				.resolve("src/main/java/com/example/springai/demo/ToolWithAnnotatedParam.java")
+				.toUri().toString();
+
+		Bean[] beans = springIndex.getBeansOfDocument(docUri);
+		assertEquals(1, beans.length);
+
+		Bean componentBean = beans[0];
+		List<SpringIndexElement> children = componentBean.getChildren();
+		assertEquals(1, children.size());
+
+		SpringAiAnnotationIndexElement convertTool = (SpringAiAnnotationIndexElement) children.get(0);
+		assertEquals("convertTemperature", convertTool.getName());
+		assertEquals(AnnotationType.TOOL, convertTool.getAnnotationType());
+
+		List<SpringAiToolParameter> params = convertTool.getParameters();
+		assertEquals(1, params.size());
+
+		SpringAiToolParameter celsiusParam = params.get(0);
+		assertEquals("celsius", celsiusParam.getName());
+		assertEquals("double", celsiusParam.getType());
+		assertNotNull(celsiusParam.getLocation());
+		assertEquals(docUri, celsiusParam.getLocation().getUri());
+
+		AnnotationMetadata[] paramAnnotations = celsiusParam.getAnnotations();
+		assertEquals(1, paramAnnotations.length);
+		assertEquals("com.fasterxml.jackson.annotation.JsonProperty", paramAnnotations[0].getAnnotationType());
+	}
+
+	@Test
+	void testMcpToolParamAnnotationIsCaptured() throws Exception {
+		String docUri = directory.toPath()
+				.resolve("src/main/java/com/example/springai/demo/ToolWithMcpToolParam.java")
+				.toUri().toString();
+
+		Bean[] beans = springIndex.getBeansOfDocument(docUri);
+		assertEquals(1, beans.length);
+
+		Bean componentBean = beans[0];
+		List<SpringIndexElement> children = componentBean.getChildren();
+		assertEquals(1, children.size());
+
+		SpringAiAnnotationIndexElement divideTool = (SpringAiAnnotationIndexElement) children.get(0);
+		assertEquals("divide", divideTool.getName());
+		assertEquals(AnnotationType.MCP_TOOL, divideTool.getAnnotationType());
+
+		List<SpringAiToolParameter> params = divideTool.getParameters();
+		assertEquals(2, params.size());
+
+		SpringAiToolParameter dividendParam = params.get(0);
+		assertEquals("dividend", dividendParam.getName());
+		assertEquals("double", dividendParam.getType());
+		assertEquals("The dividend", dividendParam.getDescription());
+		assertNotNull(dividendParam.getLocation());
+		assertEquals(docUri, dividendParam.getLocation().getUri());
+		AnnotationMetadata[] dividendAnnotations = dividendParam.getAnnotations();
+		assertEquals(1, dividendAnnotations.length);
+		assertEquals("org.springframework.ai.mcp.annotation.McpToolParam", dividendAnnotations[0].getAnnotationType());
+
+		SpringAiToolParameter divisorParam = params.get(1);
+		assertEquals("divisor", divisorParam.getName());
+		assertEquals("double", divisorParam.getType());
+		assertEquals("The divisor", divisorParam.getDescription());
+		AnnotationMetadata[] divisorAnnotations = divisorParam.getAnnotations();
+		assertEquals(1, divisorAnnotations.length);
+		assertEquals("org.springframework.ai.mcp.annotation.McpToolParam", divisorAnnotations[0].getAnnotationType());
+	}
+
+	@Test
+	void testMcpToolParametersAreIndexed() throws Exception {
+		String docUri = directory.toPath()
+				.resolve("src/main/java/com/example/springai/demo/McpToolsWithinComponent.java")
+				.toUri().toString();
+
+		Bean[] beans = springIndex.getBeansOfDocument(docUri);
+		Bean componentBean = beans[0];
+
+		SpringAiAnnotationIndexElement calculateTool = componentBean.getChildren().stream()
+				.filter(e -> e instanceof SpringAiAnnotationIndexElement)
+				.map(e -> (SpringAiAnnotationIndexElement) e)
+				.filter(e -> e.getAnnotationType() == AnnotationType.MCP_TOOL)
+				.findFirst().orElse(null);
+		assertNotNull(calculateTool);
+
+		List<SpringAiToolParameter> params = calculateTool.getParameters();
+		assertEquals(2, params.size());
+
+		SpringAiToolParameter paramX = params.get(0);
+		assertEquals("x", paramX.getName());
+		assertEquals("int", paramX.getType());
+		assertNotNull(paramX.getLocation());
+		assertTrue(paramX.getAnnotations().length == 0);
+
+		SpringAiToolParameter paramY = params.get(1);
+		assertEquals("y", paramY.getName());
+		assertEquals("int", paramY.getType());
 	}
 
 }

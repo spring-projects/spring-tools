@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.springai;
 
+import java.util.Collections;
+import java.util.List;
+
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.SymbolKind;
@@ -39,9 +42,11 @@ public class SpringAiAnnotationIndexElement extends AbstractSpringIndexElement i
 	private final Location location;
 	private final String containerBeanType;
 	private final AnnotationMetadata[] annotations;
+	private final List<SpringAiToolParameter> parameters;
 
 	public SpringAiAnnotationIndexElement(AnnotationType annotationType, String name, String description,
-			String methodSignature, Location location, String containerBeanType, AnnotationMetadata[] annotations) {
+			String methodSignature, Location location, String containerBeanType, AnnotationMetadata[] annotations,
+			List<SpringAiToolParameter> parameters) {
 		this.annotationType = annotationType;
 		this.name = name;
 		this.description = description;
@@ -49,6 +54,7 @@ public class SpringAiAnnotationIndexElement extends AbstractSpringIndexElement i
 		this.location = location;
 		this.containerBeanType = containerBeanType;
 		this.annotations = annotations;
+		this.parameters = parameters != null ? parameters : Collections.emptyList();
 	}
 
 	public AnnotationType getAnnotationType() {
@@ -77,6 +83,10 @@ public class SpringAiAnnotationIndexElement extends AbstractSpringIndexElement i
 
 	public AnnotationMetadata[] getAnnotations() {
 		return annotations;
+	}
+
+	public List<SpringAiToolParameter> getParameters() {
+		return parameters;
 	}
 
 	@Override

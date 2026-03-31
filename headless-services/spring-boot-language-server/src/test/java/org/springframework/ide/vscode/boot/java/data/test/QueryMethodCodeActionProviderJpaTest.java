@@ -32,9 +32,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixEdit;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
@@ -52,7 +53,7 @@ public class QueryMethodCodeActionProviderJpaTest {
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
-	@Autowired private RewriteRefactorings refactorings;
+	@Autowired private JdtRefactorings jdtRefactorings;
 	
 	private IJavaProject testProject;
 
@@ -81,8 +82,9 @@ public class QueryMethodCodeActionProviderJpaTest {
 		CodeAction ca = codeActions.get(0);
 		assertEquals("Add `@Query`", ca.getLabel());
 		Command cmd = ca.getCommand();
-		assertEquals(RewriteRefactorings.REWRITE_RECIPE_QUICKFIX, cmd.getArguments().get(0));
-		WorkspaceEdit edit = refactorings.createEdit((JsonElement) cmd.getArguments().get(1)).get(5, TimeUnit.SECONDS);
+		assertEquals(JdtRefactorings.JDT_QUICKFIX, cmd.getArguments().get(0));
+		QuickfixEdit qfEdit = jdtRefactorings.createEdits((JsonElement) cmd.getArguments().get(1)).block();
+		WorkspaceEdit edit = qfEdit.getWorkspaceEdit();
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
 		String rawText = docEdit.getEdits().get(0).getLeft().getNewText();
 

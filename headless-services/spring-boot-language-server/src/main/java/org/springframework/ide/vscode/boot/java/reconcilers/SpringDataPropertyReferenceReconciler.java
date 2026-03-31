@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -38,27 +39,39 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
 
 /**
- * Abstract base for Spring Data string property reference reconcilers.
+ * Unified reconciler for Spring Data string-based property references across all modules.
+ * Delegates module-specific detection and domain type resolution to a list of
+ * {@link SpringDataPropertyReferenceContributor} strategy objects.
  * <p>
- * Provides the shared visitor logic, two-tier domain type resolution, problem reporting,
- * quick fix attachment, and the {@code TypedPropertyPath} overload check. Concrete
- * subclasses supply module-specific behavior:
- * <ul>
- *   <li>{@link #isApplicable} — dependency version check</li>
- *   <li>{@link #getRelevantTypesFqn} — import fast-path for {@code RequiredCompleteAstException}</li>
- *   <li>{@link #isPropertyReferenceCall} — declaring class identification (receives {@code ITypeBinding})</li>
- *   <li>{@link #extractStringLiteralGroups} — string literal extraction with overload validation</li>
- *   <li>{@link #getDomainTypeResolver} — module-specific domain type resolver</li>
- * </ul>
+ * This single reconciler handles all modules (Commons, MongoDB, Relational, Cassandra)
+ * and produces a unified "fix all in file" quick fix that spans all detected problems,
+ * regardless of which module's contributor found them.
  */
-public abstract class AbstractSpringDataPropertyReferenceReconciler implements JdtAstReconciler {
+public class SpringDataPropertyReferenceReconciler implements JdtAstReconciler {
 
-	private static final String TYPED_PROPERTY_PATH_FQN = "org.springframework.data.core.TypedPropertyPath";
+	private static final String FIX_ALL_LABEL = "Replace all exact matches with type-safe property references in file";
 
 	private final QuickfixRegistry quickfixRegistry;
+	private final List<SpringDataPropertyReferenceContributor> contributors;
 
-	protected AbstractSpringDataPropertyReferenceReconciler(QuickfixRegistry quickfixRegistry) {
+	public SpringDataPropertyReferenceReconciler(QuickfixRegistry quickfixRegistry) {
 		this.quickfixRegistry = quickfixRegistry;
+		this.contributors = List.of(
+				new SpringDataCommonsContributor(),
+				new SpringDataMongoDbContributor(),
+				new SpringDataRelationalContributor(),
+				new SpringDataCassandraContributor()
+		);
+	}
+
+	@Override
+	public boolean isApplicable(IJavaProject project) {
+		for (SpringDataPropertyReferenceContributor contributor : contributors) {
+			if (contributor.isApplicable(project)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -68,10 +81,21 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 
 	@Override
 	public ASTVisitor createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
+		List<SpringDataPropertyReferenceContributor> applicable = contributors.stream()
+				.filter(c -> c.isApplicable(project))
+				.toList();
+
+		if (applicable.isEmpty()) {
+			return null;
+		}
+
 		if (context.isCompleteAst()) {
-			return new PropertyReferenceVisitor(docURI, context);
+			return new PropertyReferenceVisitor(applicable, docURI, context);
 		} else {
-			if (ReconcileUtils.isAnyTypeUsed(cu, getRelevantTypesFqn())) {
+			List<String> allRelevantTypes = applicable.stream()
+					.flatMap(c -> c.getRelevantTypesFqn().stream())
+					.collect(Collectors.toList());
+			if (ReconcileUtils.isAnyTypeUsed(cu, allRelevantTypes)) {
 				throw new RequiredCompleteAstException();
 			}
 			return null;
@@ -79,65 +103,21 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 	}
 
 	// =====================================================================
-	// Abstract methods — implemented by each module-specific subclass
-	// =====================================================================
-
-	/**
-	 * Returns the FQNs of types whose presence in imports should trigger a
-	 * full AST re-parse. Used for the {@code RequiredCompleteAstException} fast path.
-	 */
-	protected abstract List<String> getRelevantTypesFqn();
-
-	/**
-	 * Checks whether the declaring class of this method invocation is one that
-	 * this reconciler cares about (e.g. {@code Sort}, {@code Criteria}, {@code Update}).
-	 *
-	 * @param declaringType the resolved type binding of the method's declaring class
-	 */
-	protected abstract boolean isPropertyReferenceCall(MethodInvocation node, ITypeBinding declaringType);
-
-	/**
-	 * Extracts groups of {@link StringLiteral} arguments from the method invocation that
-	 * represent property names with a type-safe alternative available.
-	 * <p>
-	 * Each inner list is a group of literals that must be replaced together (e.g., all
-	 * varargs string arguments to {@code Sort.by("a", "b")}). Non-varargs calls return
-	 * a single-element inner list per detected literal.
-	 * <p>
-	 * Implementations should use {@link #hasTypedPropertyPathOverload} to verify
-	 * that a {@code TypedPropertyPath} overload exists before including a string literal.
-	 */
-	protected abstract List<List<StringLiteral>> extractStringLiteralGroups(MethodInvocation node);
-
-	/**
-	 * Returns the module-specific domain type resolver.
-	 */
-	protected abstract AbstractSpringDataDomainTypeResolver getDomainTypeResolver();
-
-	/**
-	 * Returns the FQNs of field/column name annotations relevant to this module.
-	 * These annotations (e.g., {@code @Field}, {@code @Column}) map Java property
-	 * names to database field/column names, and are consulted during property
-	 * matching to resolve annotated names back to their Java accessors.
-	 *
-	 * @return annotation FQNs; empty set if the module has no such annotations
-	 */
-	protected abstract Set<String> getFieldAnnotationFqns();
-
-	// =====================================================================
 	// Visitor — collects problems during the walk, attaches "fix all" at the end
 	// =====================================================================
 
-	private static final String FIX_ALL_LABEL = "Replace all with type-safe property references in file";
-
 	private class PropertyReferenceVisitor extends ASTVisitor {
 
+		private final List<SpringDataPropertyReferenceContributor> applicable;
 		private final URI docURI;
 		private final ReconcilingContext context;
 		private final List<PropertyReferenceDescriptor> allExactDescriptors = new ArrayList<>();
 		private final List<ReconcileProblemImpl> allProblems = new ArrayList<>();
+		private final List<ReconcileProblemImpl> fixAllEligibleProblems = new ArrayList<>();
 
-		PropertyReferenceVisitor(URI docURI, ReconcilingContext context) {
+		PropertyReferenceVisitor(List<SpringDataPropertyReferenceContributor> applicable,
+				URI docURI, ReconcilingContext context) {
+			this.applicable = applicable;
 			this.docURI = docURI;
 			this.context = context;
 		}
@@ -154,12 +134,15 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 				return true;
 			}
 
-			if (isPropertyReferenceCall(node, declaringClass)) {
-				List<List<StringLiteral>> groups = extractStringLiteralGroups(node);
-				for (List<StringLiteral> group : groups) {
-					if (!group.isEmpty()) {
-						collectProblem(node, group);
+			for (SpringDataPropertyReferenceContributor contributor : applicable) {
+				if (contributor.isPropertyReferenceCall(node, declaringClass)) {
+					List<List<StringLiteral>> groups = contributor.extractStringLiteralGroups(node);
+					for (List<StringLiteral> group : groups) {
+						if (!group.isEmpty()) {
+							collectProblem(contributor, node, group);
+						}
 					}
+					break;
 				}
 			}
 			return true;
@@ -173,21 +156,18 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 			}
 		}
 
-		private void collectProblem(MethodInvocation callSite, List<StringLiteral> literals) {
-			AbstractSpringDataDomainTypeResolver resolver = getDomainTypeResolver();
+		private void collectProblem(SpringDataPropertyReferenceContributor contributor,
+				MethodInvocation callSite, List<StringLiteral> literals) {
+			AbstractSpringDataDomainTypeResolver resolver = contributor.getDomainTypeResolver();
 
 			ITypeBinding exactType = resolver.determineDomainTypeExact(callSite);
+			boolean exactDomainType = exactType != null;
 
 			List<ITypeBinding> domainTypes;
-			String domainTypeName;
-
-			if (exactType != null) {
+			if (exactDomainType) {
 				domainTypes = List.of(exactType);
-				domainTypeName = exactType.getName();
 			} else {
-				List<ITypeBinding> candidates = resolver.determineDomainTypesFromBlock(callSite);
-				domainTypes = candidates;
-				domainTypeName = candidates.size() == 1 ? candidates.get(0).getName() : null;
+				domainTypes = resolver.determineDomainTypesFromBlock(callSite);
 			}
 
 			int startOffset = literals.get(0).getStartPosition();
@@ -195,36 +175,50 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 			int endOffset = lastLiteral.getStartPosition() + lastLiteral.getLength();
 			int length = endOffset - startOffset;
 
-			List<QuickfixData<?>> quickfixes = computeQuickFixes(literals, domainTypes);
+			QuickFixResult qfResult = computeQuickFixes(
+					contributor, literals, domainTypes, !exactDomainType);
 
-			String message = (domainTypeName != null && !quickfixes.isEmpty())
-					? "Non type-safe property reference for domain type '" + domainTypeName + "'"
-					: "Non type-safe property reference";
+			boolean plural = literals.size() > 1;
+			String refWord = plural ? "references" : "reference";
+
+			String message;
+			if (exactDomainType && !qfResult.quickfixes().isEmpty()) {
+				message = "Non type-safe property " + refWord
+						+ " for domain type '" + exactType.getName() + "'";
+			} else {
+				message = "Non type-safe property " + refWord;
+			}
 
 			ReconcileProblemImpl problem = new ReconcileProblemImpl(
 					Boot4JavaProblemType.SPRING_DATA_STRING_PROPERTY_REFERENCE,
 					message, startOffset, length);
 
-			for (QuickfixData<?> qf : quickfixes) {
+			for (QuickfixData<?> qf : qfResult.quickfixes()) {
 				problem.addQuickfix(qf);
 			}
 
 			allProblems.add(problem);
+			if (qfResult.exactMatch()) {
+				fixAllEligibleProblems.add(problem);
+			}
 		}
 
-		private List<QuickfixData<?>> computeQuickFixes(List<StringLiteral> literals,
-				List<ITypeBinding> domainTypes) {
+		private QuickFixResult computeQuickFixes(SpringDataPropertyReferenceContributor contributor,
+				List<StringLiteral> literals, List<ITypeBinding> domainTypes,
+				boolean inferredDomainType) {
 			if (domainTypes.isEmpty() || quickfixRegistry == null) {
-				return List.of();
+				return QuickFixResult.EMPTY;
 			}
 
 			QuickfixType quickfixType = quickfixRegistry.getQuickfixType(JdtRefactorings.JDT_QUICKFIX);
 			if (quickfixType == null) {
-				return List.of();
+				return QuickFixResult.EMPTY;
 			}
 
 			String docUri = docURI.toASCIIString();
+			Set<String> annotationFqns = contributor.getFieldAnnotationFqns();
 			List<QuickfixData<?>> result = new ArrayList<>();
+			boolean hasExactSingleDomainMatch = false;
 
 			for (ITypeBinding domainType : domainTypes) {
 				List<PropertyReferenceDescriptor> descriptors = new ArrayList<>();
@@ -233,7 +227,8 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 				boolean allExact = true;
 
 				for (StringLiteral literal : literals) {
-					List<ResolvedChain> chains = SpringDataPropertyUtils.resolvePropertyChain(domainType, literal.getLiteralValue(), getFieldAnnotationFqns());
+					List<ResolvedChain> chains = SpringDataPropertyUtils.resolvePropertyChain(
+							domainType, literal.getLiteralValue(), annotationFqns);
 					if (chains.isEmpty()) {
 						allResolved = false;
 						break;
@@ -247,7 +242,8 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 				}
 
 				if (allResolved && !descriptors.isEmpty()) {
-					String label = buildQuickFixLabel(segments);
+					boolean similarProperty = !allExact;
+					String label = buildQuickFixLabel(segments, inferredDomainType, similarProperty);
 					JdtFixDescriptor descriptor = new JdtFixDescriptor(
 							new TypeSafePropertyReferenceRefactoring(
 									descriptors.toArray(PropertyReferenceDescriptor[]::new)),
@@ -256,23 +252,18 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 
 					if (allExact) {
 						allExactDescriptors.addAll(descriptors);
+						hasExactSingleDomainMatch = true;
 					}
 				}
 			}
 
-			return result;
+			boolean exactMatch = domainTypes.size() == 1 && hasExactSingleDomainMatch;
+			return new QuickFixResult(result, exactMatch);
 		}
 
 		private void attachFixAllInFile() {
-			if (allExactDescriptors.isEmpty() || quickfixRegistry == null) {
-				return;
-			}
-
-			List<ReconcileProblemImpl> problemsWithFixes = allProblems.stream()
-					.filter(p -> !p.getQuickfixes().isEmpty())
-					.toList();
-
-			if (problemsWithFixes.size() < 2) {
+			if (fixAllEligibleProblems.size() < 2 || allExactDescriptors.isEmpty()
+					|| quickfixRegistry == null) {
 				return;
 			}
 
@@ -287,17 +278,41 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 							allExactDescriptors.toArray(PropertyReferenceDescriptor[]::new)),
 					List.of(docUri), FIX_ALL_LABEL);
 
-			for (ReconcileProblemImpl problem : problemsWithFixes) {
+			for (ReconcileProblemImpl problem : fixAllEligibleProblems) {
 				problem.addQuickfix(new QuickfixData<>(quickfixType, fixAllDescriptor, FIX_ALL_LABEL, false));
 			}
 		}
 	}
 
-	static String buildQuickFixLabel(List<List<PropertySegment>> segmentGroups) {
+	private record QuickFixResult(List<QuickfixData<?>> quickfixes, boolean exactMatch) {
+		static final QuickFixResult EMPTY = new QuickFixResult(List.of(), false);
+	}
+
+	// =====================================================================
+	// Label building — shared by all contributors
+	// =====================================================================
+
+	static String buildQuickFixLabel(List<List<PropertySegment>> segmentGroups,
+			boolean inferred, boolean similarProperty) {
+		String suffix = buildQualifierSuffix(inferred, similarProperty);
 		if (segmentGroups.size() == 1) {
-			return buildSingleLabel(segmentGroups.get(0));
+			return buildSingleLabel(segmentGroups.get(0)) + suffix;
 		}
-		return "Replace with type-safe property references";
+		return "Replace with type-safe property references" + suffix;
+	}
+
+	private static String buildQualifierSuffix(boolean inferred, boolean similarProperty) {
+		if (!inferred && !similarProperty) {
+			return "";
+		}
+		List<String> qualifiers = new ArrayList<>();
+		if (inferred) {
+			qualifiers.add("inferred");
+		}
+		if (similarProperty) {
+			qualifiers.add("similar match");
+		}
+		return " (" + String.join(", ", qualifiers) + ")";
 	}
 
 	private static String buildSingleLabel(List<PropertySegment> segments) {
@@ -317,65 +332,9 @@ public abstract class AbstractSpringDataPropertyReferenceReconciler implements J
 		return sb.toString();
 	}
 
-	// =====================================================================
-	// TypedPropertyPath overload check
-	// =====================================================================
-
-	/**
-	 * Checks whether the declaring class of the given method has an overload with
-	 * the same name where the parameter at {@code argIndex} is {@code TypedPropertyPath}
-	 * instead of {@code String}. Handles varargs: for a varargs parameter like
-	 * {@code TypedPropertyPath...}, JDT represents it as {@code TypedPropertyPath[]},
-	 * so we unwrap the array component type before comparing.
-	 */
-	protected static boolean hasTypedPropertyPathOverload(IMethodBinding methodBinding, int argIndex) {
-		ITypeBinding declaringClass = methodBinding.getDeclaringClass();
-		if (declaringClass == null) {
-			return false;
-		}
-
-		String methodName = methodBinding.getName();
-		ITypeBinding[] paramTypes = methodBinding.getParameterTypes();
-		int effectiveIndex = methodBinding.isVarargs()
-				? Math.min(argIndex, paramTypes.length - 1)
-				: argIndex;
-
-		for (IMethodBinding candidate : declaringClass.getDeclaredMethods()) {
-			if (!methodName.equals(candidate.getName())) {
-				continue;
-			}
-			ITypeBinding[] candidateParams = candidate.getParameterTypes();
-			if (candidateParams.length != paramTypes.length) {
-				continue;
-			}
-			if (effectiveIndex >= candidateParams.length) {
-				continue;
-			}
-			ITypeBinding candidateParam = candidateParams[effectiveIndex].getErasure();
-			if (candidateParam.isArray()) {
-				candidateParam = candidateParam.getComponentType().getErasure();
-			}
-			if (TYPED_PROPERTY_PATH_FQN.equals(candidateParam.getQualifiedName())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// =====================================================================
-	// Utilities
-	// =====================================================================
-
 	private static String extractSimpleName(String fqn) {
 		int lastDot = fqn.lastIndexOf('.');
 		return lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
-	}
-
-	protected static String getErasedFqn(ITypeBinding type) {
-		if (type.isParameterizedType()) {
-			return type.getErasure().getQualifiedName();
-		}
-		return type.getQualifiedName();
 	}
 
 }

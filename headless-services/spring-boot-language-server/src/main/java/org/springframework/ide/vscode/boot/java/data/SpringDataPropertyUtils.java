@@ -30,7 +30,7 @@ import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
  * Supports exact and fuzzy (Jaro-Winkler similarity) property matching, as well as
  * dotted property chain resolution (e.g., {@code "address.country"}).
  * <p>
- * This class is intentionally separate from {@link SpringDataDomainTypeResolver},
+ * This class is intentionally separate from {@link AbstractSpringDataDomainTypeResolver},
  * which handles domain type identification only.
  */
 public final class SpringDataPropertyUtils {

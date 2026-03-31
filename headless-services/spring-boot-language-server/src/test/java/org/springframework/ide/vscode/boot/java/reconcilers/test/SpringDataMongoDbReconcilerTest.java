@@ -36,7 +36,8 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Tests for {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataMongoDbReconciler}.
+ * Tests for Spring Data MongoDB property reference detection
+ * via {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataPropertyReferenceReconciler}.
  * <p>
  * Covers MongoDB Criteria.where, Update methods, fluent API, template find,
  * aggregation, and quick fixes.
@@ -133,14 +134,15 @@ public class SpringDataMongoDbReconcilerTest {
 					void test() {
 						mongoOps.query(Customer.class)
 							.as(Order.class)
-							.matching(query(where("orderDate")))
+							.matching(query(where("firstName")))
 							.all();
 					}
 				}
 				""", docUri);
 
+		// Domain type is Customer (entity), not Order (projection)
 		editor.assertProblems(
-				"\"orderDate\"|Non type-safe property reference for domain type 'Order'"
+				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
 		);
 	}
 
@@ -217,7 +219,7 @@ public class SpringDataMongoDbReconcilerTest {
 				""", docUri);
 
 		editor.assertProblems(
-				"\"firstName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\"|Non type-safe property reference"
 		);
 	}
 
@@ -242,7 +244,7 @@ public class SpringDataMongoDbReconcilerTest {
 				""", docUri);
 
 		editor.assertProblems(
-				"\"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"lastName\"|Non type-safe property reference"
 		);
 	}
 
@@ -266,9 +268,9 @@ public class SpringDataMongoDbReconcilerTest {
 				}
 				""", docUri);
 
-		// Varargs: single warning spanning both string literals
+		// Varargs: single warning spanning both string literals (plural, inferred domain type)
 		editor.assertProblems(
-				"\"firstName\", \"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\", \"lastName\"|Non type-safe property references"
 		);
 	}
 
@@ -402,12 +404,12 @@ public class SpringDataMongoDbReconcilerTest {
 		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
 		assertEquals(2, actions0.size());
 		assertEquals("Replace with Customer::getFirstName", actions0.get(0).getLabel());
-		assertEquals("Replace all with type-safe property references in file", actions0.get(1).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions0.get(1).getLabel());
 
 		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
 		assertEquals(2, actions1.size());
 		assertEquals("Replace with Customer::getLastName", actions1.get(0).getLabel());
-		assertEquals("Replace all with type-safe property references in file", actions1.get(1).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions1.get(1).getLabel());
 	}
 
 	// ========== @Field annotation-aware matching ==========
@@ -490,12 +492,12 @@ public class SpringDataMongoDbReconcilerTest {
 		List<CodeAction> actions0 = editor.getCodeActions(problems.get(0));
 		assertEquals(2, actions0.size());
 		assertEquals("Replace with SWCharacter::getName", actions0.get(0).getLabel());
-		assertEquals("Replace all with type-safe property references in file", actions0.get(1).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions0.get(1).getLabel());
 
 		List<CodeAction> actions1 = editor.getCodeActions(problems.get(1));
 		assertEquals(2, actions1.size());
 		assertEquals("Replace with SWCharacter::getHomePlanet", actions1.get(0).getLabel());
-		assertEquals("Replace all with type-safe property references in file", actions1.get(1).getLabel());
+		assertEquals("Replace all exact matches with type-safe property references in file", actions1.get(1).getLabel());
 
 		actions0.get(1).perform();
 		assertEquals("""

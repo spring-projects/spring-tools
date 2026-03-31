@@ -35,7 +35,8 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Tests for {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataCassandraReconciler}.
+ * Tests for Spring Data Cassandra property reference detection
+ * via {@link org.springframework.ide.vscode.boot.java.reconcilers.SpringDataPropertyReferenceReconciler}.
  * <p>
  * Covers Cassandra Criteria.where, Update.set and template update-with-entity
  * string property references.
@@ -164,9 +165,9 @@ public class SpringDataCassandraReconcilerTest {
 				}
 				""", docUri);
 
-		// Varargs: single warning spanning both string literals
+		// Varargs: single warning spanning both (plural, exact domain type)
 		editor.assertProblems(
-				"\"firstName\", \"lastName\"|Non type-safe property reference for domain type 'Customer'"
+				"\"firstName\", \"lastName\"|Non type-safe property references for domain type 'Customer'"
 		);
 	}
 

@@ -245,11 +245,11 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 	private String extractValueFromAttributes(CodeLens codeLens) {
 		Object args = codeLens.getCommand().getArguments().get(1);
 		if (args instanceof JsonObject) {
-			JsonObject params = (JsonObject) args;
-			if (params.has("parameters") && params.get("parameters").isJsonObject()) {
-				JsonObject parameters = params.getAsJsonObject("parameters");
-				if (parameters.has("attributes") && parameters.get("attributes").isJsonArray()) {
-					JsonArray attributes = parameters.getAsJsonArray("attributes");
+			JsonObject root = (JsonObject) args;
+			if (root.has("refactoring") && root.get("refactoring").isJsonObject()) {
+				JsonObject refactoring = root.getAsJsonObject("refactoring");
+				if (refactoring.has("attributes") && refactoring.get("attributes").isJsonArray()) {
+					JsonArray attributes = refactoring.getAsJsonArray("attributes");
 					for (JsonElement element : attributes) {
 						if (element.isJsonObject()) {
 							JsonObject attr = element.getAsJsonObject();

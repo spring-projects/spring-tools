@@ -84,7 +84,7 @@ public class QueryMethodCodeActionProviderMongoDbTest {
 		Command cmd = ca.getCommand();
 		assertEquals(JdtRefactorings.JDT_QUICKFIX, cmd.getArguments().get(0));
 		QuickfixEdit qfEdit = jdtRefactorings.createEdits((JsonElement) cmd.getArguments().get(1)).block();
-		WorkspaceEdit edit = qfEdit.getWorkspaceEdit();
+		WorkspaceEdit edit = qfEdit.workspaceEdit;
 		TextDocumentEdit docEdit = edit.getDocumentChanges().get(0).getLeft();
 		String rawText = docEdit.getEdits().get(0).getLeft().getNewText().trim();
 

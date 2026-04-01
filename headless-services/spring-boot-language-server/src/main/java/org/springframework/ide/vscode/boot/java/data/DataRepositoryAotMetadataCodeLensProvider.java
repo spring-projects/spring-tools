@@ -37,7 +37,7 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
 import org.springframework.ide.vscode.parser.hql.HqlQueryFormatter;
 import org.springframework.ide.vscode.parser.postgresql.PostgreSqlQueryFormatter;
-import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddQueryAnnotationRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddAnnotationRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorUtils;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
@@ -205,7 +205,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				.map(pt -> pt.getName())
 				.collect(Collectors.toList());
 
-		AddQueryAnnotationRefactoring refactoring = new AddQueryAnnotationRefactoring(
+		AddAnnotationRefactoring refactoring = new AddAnnotationRefactoring(
 				moduleToQueryMapping.get(module),
 				mb.getDeclaringClass().getQualifiedName(),
 				mb.getName(),
@@ -215,8 +215,8 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		return new JdtFixDescriptor(refactoring, List.of(docUri), "Turn into `@Query`");
 	}
 
-	private static List<AddQueryAnnotationRefactoring.Attribute> createAttributeList(Map<String, String> attributes, DataRepositoryModule module, BootJavaConfig config) {
-		List<AddQueryAnnotationRefactoring.Attribute> result = new ArrayList<>();
+	private static List<AddAnnotationRefactoring.Attribute> createAttributeList(Map<String, String> attributes, DataRepositoryModule module, BootJavaConfig config) {
+		List<AddAnnotationRefactoring.Attribute> result = new ArrayList<>();
 		boolean isMultiline = config.isDataQueryMultiline();
 
 		for (Map.Entry<String, String> entry : attributes.entrySet()) {
@@ -240,7 +240,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 				value = "\"" + StringEscapeUtils.escapeJava(value).trim() + "\"";
 			}
 
-			result.add(new AddQueryAnnotationRefactoring.Attribute(key, value));
+			result.add(new AddAnnotationRefactoring.Attribute(key, value));
 		}
 		return result;
 	}

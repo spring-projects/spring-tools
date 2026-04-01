@@ -24,10 +24,10 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.TextEdit;
 import org.junit.jupiter.api.Test;
-import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddQueryAnnotationRefactoring.Attribute;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddAnnotationRefactoring.Attribute;
 
 /**
- * Unit tests for {@link AddQueryAnnotationRefactoring}.
+ * Unit tests for {@link AddAnnotationRefactoring}.
  * <p>
  * Pure JDT-level: source text in, apply edit, assert result.
  * No Spring context, LSP harness, or mock beans required.
@@ -36,7 +36,7 @@ import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddQueryAnnotati
  * falls back to name + parameter count only (the declaring-class and
  * parameter-type checks are skipped when bindings are unavailable).
  */
-class AddQueryAnnotationRefactoringTest {
+class AddAnnotationRefactoringTest {
 
 	private static final String JPA_QUERY_FQN = "org.springframework.data.jpa.repository.Query";
 	private static final String DECLARING_CLASS = "com.example.OrderRepository";
@@ -70,7 +70,7 @@ class AddQueryAnnotationRefactoringTest {
 			String methodName, List<String> paramTypes, List<Attribute> attrs) throws Exception {
 		CompilationUnit cu = parseSource(source);
 		ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
-		new AddQueryAnnotationRefactoring(annotationFqn, declaringClass, methodName, paramTypes, attrs).apply(rewrite, cu);
+		new AddAnnotationRefactoring(annotationFqn, declaringClass, methodName, paramTypes, attrs).apply(rewrite, cu);
 		Document doc = new Document(source);
 		TextEdit edit = rewrite.rewriteAST(doc, defaultFormatterOptions());
 		edit.apply(doc);

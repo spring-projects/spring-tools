@@ -43,7 +43,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
  * Attributes are supplied as name/value pairs where the value is already formatted
  * as a Java source literal (quoted string or text block).
  */
-public class AddQueryAnnotationRefactoring implements JdtRefactoring {
+public class AddAnnotationRefactoring implements JdtRefactoring {
 
 	/**
 	 * @param name  attribute name (e.g. {@code "value"}, {@code "nativeQuery"})
@@ -58,7 +58,7 @@ public class AddQueryAnnotationRefactoring implements JdtRefactoring {
 	private final List<String> parameterTypeNames;
 	private final List<Attribute> attributes;
 
-	public AddQueryAnnotationRefactoring(
+	public AddAnnotationRefactoring(
 			String annotationFqn,
 			String declaringClassFqn,
 			String methodName,
@@ -238,6 +238,10 @@ public class AddQueryAnnotationRefactoring implements JdtRefactoring {
 		StringLiteral sl = ast.newStringLiteral();
 		sl.setLiteralValue(rawValue);
 		return sl;
+	}
+
+	public List<Attribute> getAttributes() {
+		return attributes;
 	}
 
 }

@@ -159,4 +159,38 @@ public final class JdtRefactorUtils {
 		}
 	}
 
+	/**
+	 * Returns the simple class name from a fully qualified name.
+	 * For example, {@code "org.example.Foo"} → {@code "Foo"}.
+	 */
+	public static String extractSimpleName(String fqn) {
+		int lastDot = fqn.lastIndexOf('.');
+		return lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
+	}
+
+	/**
+	 * Returns the package name from a fully qualified name.
+	 * For example, {@code "org.example.Foo"} → {@code "org.example"}.
+	 * Returns an empty string for default-package types.
+	 */
+	public static String extractPackageName(String fqn) {
+		int lastDot = fqn.lastIndexOf('.');
+		return lastDot >= 0 ? fqn.substring(0, lastDot) : "";
+	}
+
+	/**
+	 * Escapes a raw string value so it can be safely embedded inside a Java text
+	 * block literal.
+	 * <p>
+	 * Backslashes must be doubled because Java recognises escape sequences (e.g.
+	 * {@code \'} → {@code '}) inside text blocks, which would silently drop a bare
+	 * {@code \} that appears before a quotable character.
+	 *
+	 * @param value the raw runtime string value to escape
+	 * @return the escaped string, safe to embed between {@code """} delimiters
+	 */
+	public static String escapeForTextBlock(String value) {
+		return value.replace("\\", "\\\\");
+	}
+
 }

@@ -87,13 +87,16 @@ public class AddQueryAnnotationRefactoring implements JdtRefactoring {
 		} else if (existing instanceof NormalAnnotation normalAnnotation) {
 			addMissingAttributes(rewrite, ast, normalAnnotation);
 		} else if (existing instanceof SingleMemberAnnotation singleMember) {
-			replaceSingleMemberWithNormal(rewrite, ast, singleMember);
+			boolean hasNonValueAttributes = attributes.stream().anyMatch(a -> !"value".equals(a.name()));
+			if (hasNonValueAttributes) {
+				replaceSingleMemberWithNormal(rewrite, ast, singleMember);
+			}
 		} else if (existing instanceof MarkerAnnotation marker && !attributes.isEmpty()) {
 			rewrite.replace(marker, buildAnnotation(ast, attributes), null);
 		}
 
 		JdtRefactorUtils.addImport(rewrite, ast, cu,
-				new ClassType(extractPackageName(annotationFqn), extractSimpleName(annotationFqn)));
+				new ClassType(JdtRefactorUtils.extractPackageName(annotationFqn), JdtRefactorUtils.extractSimpleName(annotationFqn)));
 	}
 
 	private void addMissingAttributes(ASTRewrite rewrite, AST ast, NormalAnnotation annotation) {
@@ -116,7 +119,7 @@ public class AddQueryAnnotationRefactoring implements JdtRefactoring {
 		Expression existingValue = singleMember.getValue();
 
 		NormalAnnotation replacement = ast.newNormalAnnotation();
-		replacement.setTypeName(ast.newSimpleName(extractSimpleName(annotationFqn)));
+		replacement.setTypeName(ast.newSimpleName(JdtRefactorUtils.extractSimpleName(annotationFqn)));
 
 		@SuppressWarnings("unchecked")
 		List<MemberValuePair> values = replacement.values();
@@ -182,7 +185,7 @@ public class AddQueryAnnotationRefactoring implements JdtRefactoring {
 	}
 
 	private Annotation findAnnotation(MethodDeclaration node) {
-		String simpleName = extractSimpleName(annotationFqn);
+		String simpleName = JdtRefactorUtils.extractSimpleName(annotationFqn);
 		for (Object mod : node.modifiers()) {
 			if (mod instanceof Annotation a) {
 				String name = a.getTypeName().getFullyQualifiedName();
@@ -196,7 +199,7 @@ public class AddQueryAnnotationRefactoring implements JdtRefactoring {
 
 	@SuppressWarnings("unchecked")
 	private Annotation buildAnnotation(AST ast, List<Attribute> attrs) {
-		String simpleName = extractSimpleName(annotationFqn);
+		String simpleName = JdtRefactorUtils.extractSimpleName(annotationFqn);
 
 		if (attrs.size() == 1 && "value".equals(attrs.get(0).name())) {
 			SingleMemberAnnotation sma = ast.newSingleMemberAnnotation();
@@ -235,16 +238,6 @@ public class AddQueryAnnotationRefactoring implements JdtRefactoring {
 		StringLiteral sl = ast.newStringLiteral();
 		sl.setLiteralValue(rawValue);
 		return sl;
-	}
-
-	private static String extractSimpleName(String fqn) {
-		int lastDot = fqn.lastIndexOf('.');
-		return lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
-	}
-
-	private static String extractPackageName(String fqn) {
-		int lastDot = fqn.lastIndexOf('.');
-		return lastDot >= 0 ? fqn.substring(0, lastDot) : "";
 	}
 
 }

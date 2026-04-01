@@ -39,6 +39,7 @@ import org.springframework.ide.vscode.parser.hql.HqlQueryFormatter;
 import org.springframework.ide.vscode.parser.postgresql.PostgreSqlQueryFormatter;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddQueryAnnotationRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorUtils;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -234,7 +235,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 						}
 					}
 				};
-				value = "\"\"\"\n" + formattedValue + "\n\"\"\"";
+				value = "\"\"\"\n" + JdtRefactorUtils.escapeForTextBlock(formattedValue) + "\n\"\"\"";
 			} else {
 				value = "\"" + StringEscapeUtils.escapeJava(value).trim() + "\"";
 			}
@@ -243,5 +244,6 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		}
 		return result;
 	}
+
 }
 

@@ -187,7 +187,7 @@ public class TypeSafePropertyReferenceRefactoring implements JdtRefactoring {
 	 */
 	private static ExpressionMethodReference buildMethodReference(AST ast, PropertySegment segment) {
 		ExpressionMethodReference ref = ast.newExpressionMethodReference();
-		ref.setExpression(ast.newSimpleName(extractSimpleName(segment.domainTypeFqn())));
+		ref.setExpression(ast.newSimpleName(JdtRefactorUtils.extractSimpleName(segment.domainTypeFqn())));
 		ref.setName(ast.newSimpleName(segment.methodName()));
 		return ref;
 	}
@@ -231,18 +231,8 @@ public class TypeSafePropertyReferenceRefactoring implements JdtRefactoring {
 		return result[0];
 	}
 
-	private static String extractSimpleName(String fqn) {
-		int lastDot = fqn.lastIndexOf('.');
-		return lastDot >= 0 ? fqn.substring(lastDot + 1) : fqn;
-	}
-
-	private static String extractPackageName(String fqn) {
-		int lastDot = fqn.lastIndexOf('.');
-		return lastDot >= 0 ? fqn.substring(0, lastDot) : "";
-	}
-
 	private static ClassType classTypeFromFqn(String fqn) {
-		return new ClassType(extractPackageName(fqn), extractSimpleName(fqn));
+		return new ClassType(JdtRefactorUtils.extractPackageName(fqn), JdtRefactorUtils.extractSimpleName(fqn));
 	}
 
 }

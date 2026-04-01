@@ -84,13 +84,10 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 	// ========== Command creation ==========
 
 	public Command createFixCommand(String title, JdtFixDescriptor descriptor) {
-		List<Object> args = new ArrayList<>(2);
-		args.add(JDT_QUICKFIX);
-		args.add(server.getGson().toJsonTree(descriptor));
 		return new Command(
 				title,
 				server.CODE_ACTION_COMMAND_ID,
-				args
+				List.of(JDT_QUICKFIX, descriptor)
 		);
 	}
 

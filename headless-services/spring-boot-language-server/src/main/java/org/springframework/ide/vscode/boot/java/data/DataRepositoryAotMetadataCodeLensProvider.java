@@ -37,14 +37,14 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
 import org.springframework.ide.vscode.parser.hql.HqlQueryFormatter;
 import org.springframework.ide.vscode.parser.postgresql.PostgreSqlQueryFormatter;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddAnnotationRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorUtils;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
-import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
-import org.springframework.ide.vscode.commons.rewrite.java.AddAnnotationOverMethod;
-import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -65,11 +65,11 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
 	private final JavaProjectFinder projectFinder;
-	private final RewriteRefactorings refactorings;
+	private final JdtRefactorings refactorings;
 	private final BootJavaConfig config;
 
 	public DataRepositoryAotMetadataCodeLensProvider(SimpleLanguageServer server, JavaProjectFinder projectFinder, DataRepositoryAotMetadataService repositoryMetadataService,
-			RewriteRefactorings refactorings, BootJavaConfig config) {
+			JdtRefactorings refactorings, BootJavaConfig config) {
 		this.projectFinder = projectFinder;
 		this.repositoryMetadataService = repositoryMetadataService;
 		this.refactorings = refactorings;
@@ -159,7 +159,7 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 							|| hierarchyAnnot.isAnnotatedWith(mb, Annotations.DATA_JDBC_QUERY);
 					
 					if (!isQueryAnnotated) {
-						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata, config)), null));
+						codeLenses.add(new CodeLens(range, refactorings.createFixCommand(COVERT_TO_QUERY_LABEL, createJdtFixDescriptor(mb, document.getUri(), metadata.module(), methodMetadata, config)), null));
 					}
 					
 					Command impl = new Command("Go To Implementation", GenAotQueryMethodImplProvider.CMD_NAVIGATE_TO_IMPL, List.of(new GenAotQueryMethodImplProvider.GoToImplParams(
@@ -200,20 +200,23 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		});
 	}
 
-	static FixDescriptor createFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata, BootJavaConfig config) {
-		return new FixDescriptor(AddAnnotationOverMethod.class.getName(), List.of(docUri), "Turn into `@Query`")
-				.withRecipeScope(RecipeScope.FILE)
-				.withParameters(Map.of(
-						"annotationType", moduleToQueryMapping.get(module),
-						"method", "%s %s(%s)".formatted(mb.getDeclaringClass().getQualifiedName(), mb.getName(),
-								Arrays.stream(mb.getParameterTypes())
-										.map(pt -> pt.getName())
-										.collect(Collectors.joining(","))),
-						"attributes", createAttributeList(methodMetadata.getAttributesMap(), module, config)));
+	static JdtFixDescriptor createJdtFixDescriptor(IMethodBinding mb, String docUri, DataRepositoryModule module, IDataRepositoryAotMethodMetadata methodMetadata, BootJavaConfig config) {
+		List<String> paramTypeNames = Arrays.stream(mb.getParameterTypes())
+				.map(pt -> pt.getName())
+				.collect(Collectors.toList());
+
+		AddAnnotationRefactoring refactoring = new AddAnnotationRefactoring(
+				moduleToQueryMapping.get(module),
+				mb.getDeclaringClass().getQualifiedName(),
+				mb.getName(),
+				paramTypeNames,
+				createAttributeList(methodMetadata.getAttributesMap(), module, config));
+
+		return new JdtFixDescriptor(refactoring, List.of(docUri), "Turn into `@Query`");
 	}
 
-	private static List<AddAnnotationOverMethod.Attribute> createAttributeList(Map<String, String> attributes, DataRepositoryModule module, BootJavaConfig config) {
-		List<AddAnnotationOverMethod.Attribute> result = new ArrayList<>();
+	private static List<AddAnnotationRefactoring.Attribute> createAttributeList(Map<String, String> attributes, DataRepositoryModule module, BootJavaConfig config) {
+		List<AddAnnotationRefactoring.Attribute> result = new ArrayList<>();
 		boolean isMultiline = config.isDataQueryMultiline();
 
 		for (Map.Entry<String, String> entry : attributes.entrySet()) {
@@ -232,14 +235,15 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 						}
 					}
 				};
-				value = "\"\"\"\n" + formattedValue + "\n\"\"\"";
+				value = "\"\"\"\n" + JdtRefactorUtils.escapeForTextBlock(formattedValue) + "\n\"\"\"";
 			} else {
 				value = "\"" + StringEscapeUtils.escapeJava(value).trim() + "\"";
 			}
 
-			result.add(new AddAnnotationOverMethod.Attribute(key, value));
+			result.add(new AddAnnotationRefactoring.Attribute(key, value));
 		}
 		return result;
 	}
+
 }
 

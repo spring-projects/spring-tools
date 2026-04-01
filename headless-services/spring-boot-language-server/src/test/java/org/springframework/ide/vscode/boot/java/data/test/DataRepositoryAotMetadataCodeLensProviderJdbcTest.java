@@ -10,8 +10,10 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.data.test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -19,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -32,8 +35,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddAnnotationRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -41,11 +47,6 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
-import org.springframework.ide.vscode.commons.languageserver.util.Settings;
 
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
@@ -118,7 +119,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 
 		List<CodeLens> cls = editor.getCodeLenses("findAllByNameContaining", 1);
 
-		String queryValue = extractValueFromAttributes(cls.get(0));
+		String queryValue = extractValueFromAttributes(cls.get(0)).orElse(null);
 		assertNotNull(queryValue, "Query value should not be null");
 
 		assertTrue(queryValue.startsWith("\"\"\""), "Query should be generated as a text block");
@@ -232,7 +233,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 
 		List<CodeLens> cls = editor.getCodeLenses("findAllByNameContaining", 1);
 
-		String queryValue = extractValueFromAttributes(cls.get(0));
+		String queryValue = extractValueFromAttributes(cls.get(0)).orElse(null);
 
 		assertNotNull(queryValue, "Query value should not be null");
 
@@ -242,25 +243,13 @@ public class DataRepositoryAotMetadataCodeLensProviderJdbcTest {
 	}
 
 
-	private String extractValueFromAttributes(CodeLens codeLens) {
+	private Optional<String> extractValueFromAttributes(CodeLens codeLens) {
 		Object args = codeLens.getCommand().getArguments().get(1);
-		if (args instanceof JsonObject) {
-			JsonObject params = (JsonObject) args;
-			if (params.has("parameters") && params.get("parameters").isJsonObject()) {
-				JsonObject parameters = params.getAsJsonObject("parameters");
-				if (parameters.has("attributes") && parameters.get("attributes").isJsonArray()) {
-					JsonArray attributes = parameters.getAsJsonArray("attributes");
-					for (JsonElement element : attributes) {
-						if (element.isJsonObject()) {
-							JsonObject attr = element.getAsJsonObject();
-							if (attr.has("name") && "value".equals(attr.get("name").getAsString())) {
-								return attr.get("value").getAsString();
-							}
-						}
-					}
-				}
+		if (args instanceof JdtFixDescriptor fix) {
+			if (fix.refactoring() instanceof AddAnnotationRefactoring refactoring) {
+				return refactoring.getAttributes().stream().filter(a -> "value".equals(a.name())).findFirst().map(a -> a.value());
 			}
 		}
-		return null;
+		return Optional.empty();
 	}
 }

@@ -24,7 +24,7 @@ import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
-import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
@@ -37,10 +37,10 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 	private static final String TITLE = "Add `@Query`";
 	
 	private final DataRepositoryAotMetadataService repositoryMetadataService;
-	private final RewriteRefactorings refactorings;
+	private final JdtRefactorings refactorings;
 	private final BootJavaConfig config;
 
-	public QueryMethodCodeActionProvider(DataRepositoryAotMetadataService repositoryMetadataService, RewriteRefactorings refactorings, BootJavaConfig config) {
+	public QueryMethodCodeActionProvider(DataRepositoryAotMetadataService repositoryMetadataService, JdtRefactorings refactorings, BootJavaConfig config) {
 		this.repositoryMetadataService = repositoryMetadataService;
 		this.refactorings = refactorings;
 		this.config = config;
@@ -98,7 +98,7 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 	
 	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata method) {
 		CodeAction ca = new CodeAction();
-		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createFixDescriptor(mb, docUri.toASCIIString(), metadata.module(), method, config)));
+		ca.setCommand(refactorings.createFixCommand(TITLE, DataRepositoryAotMetadataCodeLensProvider.createJdtFixDescriptor(mb, docUri.toASCIIString(), metadata.module(), method, config)));
 		ca.setTitle(TITLE);
 		ca.setKind(CodeActionKind.Refactor);
 		return ca;

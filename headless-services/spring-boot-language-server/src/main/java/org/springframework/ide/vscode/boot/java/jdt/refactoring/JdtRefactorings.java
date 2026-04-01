@@ -20,6 +20,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.Document;
 import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -78,6 +79,16 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 		this.server = server;
 		this.projectFinder = projectFinder;
 		this.cuCache = cuCache;
+	}
+
+	// ========== Command creation ==========
+
+	public Command createFixCommand(String title, JdtFixDescriptor descriptor) {
+		return new Command(
+				title,
+				server.CODE_ACTION_COMMAND_ID,
+				List.of(JDT_QUICKFIX, descriptor)
+		);
 	}
 
 	// ========== CodeActionResolver ==========

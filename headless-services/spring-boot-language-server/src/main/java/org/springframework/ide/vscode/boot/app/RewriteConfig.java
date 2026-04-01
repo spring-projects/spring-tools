@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
 import org.springframework.ide.vscode.boot.java.data.QueryMethodCodeActionProvider;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcileProblemCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRecipeRepository;
@@ -45,9 +46,9 @@ public class RewriteConfig {
 		return new SpringBootUpgrade(server, recipeRepo, projectFinder);
 	}
 	
-	@ConditionalOnBean(RewriteRefactorings.class)
-	@Bean QueryMethodCodeActionProvider queryMethodCodeActionProvider(DataRepositoryAotMetadataService dataRepoAotService, RewriteRefactorings refactorings, BootJavaConfig config) {
-		return new QueryMethodCodeActionProvider(dataRepoAotService, refactorings, config);
+	@ConditionalOnBean(JdtRefactorings.class)
+	@Bean QueryMethodCodeActionProvider queryMethodCodeActionProvider(DataRepositoryAotMetadataService dataRepoAotService, JdtRefactorings jdtRefactorings, BootJavaConfig config) {
+		return new QueryMethodCodeActionProvider(dataRepoAotService, jdtRefactorings, config);
 	}
 
 }

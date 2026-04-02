@@ -557,5 +557,33 @@
         "defaultSeverity": "ERROR"
       }
     ]
+  },
+  {
+    "id": "spring-ai",
+    "label": "Spring AI",
+    "toggle": {
+      "label": "Enablement",
+      "values": [
+        "OFF",
+        "ON"
+      ],
+      "preferenceKey": "boot-java.validation.spring-ai",
+      "defaultValue": "ON"
+    },
+    "order": 11,
+    "problemTypes": [
+      {
+        "code": "SPRING_AI_TOOL_MISSING_DESCRIPTION",
+        "label": "Missing @Tool description",
+        "description": "Spring AI tool/prompt/resource is missing a description. Descriptions are critical for the LLM to correctly select and invoke the tool.",
+        "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT",
+        "label": "@Tool description too short",
+        "description": "Spring AI tool/prompt/resource description is too short. A meaningful description helps the LLM decide when and how to invoke the tool.",
+        "defaultSeverity": "WARNING"
+      }
+    ]
   }
 ]

@@ -13,10 +13,8 @@ package org.springframework.ide.vscode.boot.java.springai;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.Annotation;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -109,12 +107,12 @@ public class SpringAiIndexer {
 			MethodDeclaration method, SpringIndexerJavaContext context, TextDocument doc, String containerBeanType,
 			AnnotationType annotationType) throws BadLocationException {
 
-		String name = getAnnotationStringAttribute(annotation, "name");
+		String name = ASTUtils.getAnnotationAttributeAsString(annotation, "name");
 		if (name == null || name.isEmpty()) {
 			name = method.getName().getIdentifier();
 		}
 
-		String description = getAnnotationStringAttribute(annotation, "description");
+		String description = ASTUtils.getAnnotationAttributeAsString(annotation, "description");
 		if (description == null) {
 			description = "";
 		}
@@ -166,7 +164,7 @@ public class SpringAiIndexer {
 		for (Annotation annotation : paramAnnotations) {
 			ITypeBinding binding = annotation.resolveTypeBinding();
 			if (binding != null && Annotations.SPRING_AI_MCP_TOOL_PARAM.equals(binding.getQualifiedName())) {
-				String description = getAnnotationStringAttribute(annotation, "description");
+				String description = ASTUtils.getAnnotationAttributeAsString(annotation, "description");
 				if (description != null && !description.isEmpty()) {
 					return description;
 				}
@@ -183,14 +181,6 @@ public class SpringAiIndexer {
 		else {
 			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), element));
 		}
-	}
-
-	private static String getAnnotationStringAttribute(Annotation annotation, String attributeName) {
-		Optional<Expression> attribute = ASTUtils.getAttribute(annotation, attributeName);
-		if (attribute.isPresent()) {
-			return ASTUtils.getExpressionValueAsString(attribute.get(), dep -> {});
-		}
-		return null;
 	}
 
 }

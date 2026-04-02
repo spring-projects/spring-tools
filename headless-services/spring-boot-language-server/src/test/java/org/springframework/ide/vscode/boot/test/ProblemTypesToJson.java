@@ -30,6 +30,7 @@ import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.Boot3JavaProblemType;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.SpelProblemType;
+import org.springframework.ide.vscode.boot.java.SpringAiProblemType;
 import org.springframework.ide.vscode.boot.java.SpringAotJavaProblemType;
 import org.springframework.ide.vscode.boot.java.cron.CronProblemType;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.QueryProblemType;
@@ -183,6 +184,7 @@ public class ProblemTypesToJson {
 		writer.collectProblemTypeData(VersionValidationProblemType.values());
 		writer.collectProblemTypeData(QueryProblemType.values());
 		writer.collectProblemTypeData(CronProblemType.values());
+		writer.collectProblemTypeData(SpringAiProblemType.values());
 		
 		Collections.sort(writer.problemCategories);
 		

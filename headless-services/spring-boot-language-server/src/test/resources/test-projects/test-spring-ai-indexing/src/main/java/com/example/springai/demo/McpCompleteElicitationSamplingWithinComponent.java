@@ -8,17 +8,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class McpCompleteElicitationSamplingWithinComponent {
 
-	@McpComplete(name = "completeCode", description = "Provide code completion suggestions")
+	@McpComplete(prompt = "completeCode")
 	public String completeCode(String prefix) {
 		return prefix + "completed";
 	}
 
-	@McpElicitation(name = "getUserInfo", description = "Elicit information from the user")
+	@McpElicitation(clients = "my-client")
 	public String getUserInfo(String prompt) {
 		return prompt;
 	}
 
-	@McpSampling(name = "sampleText", description = "Sample text from a language model")
+	@McpSampling(clients = "my-client")
 	public String sampleText(String context) {
 		return context;
 	}

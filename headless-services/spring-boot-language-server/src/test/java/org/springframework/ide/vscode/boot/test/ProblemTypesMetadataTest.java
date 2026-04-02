@@ -15,6 +15,7 @@ import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.Boot3JavaProblemType;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
 import org.springframework.ide.vscode.boot.java.SpelProblemType;
+import org.springframework.ide.vscode.boot.java.SpringAiProblemType;
 import org.springframework.ide.vscode.boot.java.SpringAotJavaProblemType;
 import org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType;
 import org.springframework.ide.vscode.boot.validation.generations.preferences.VersionValidationProblemType;
@@ -36,6 +37,7 @@ public class ProblemTypesMetadataTest {
 		reader.validate("spring-aot", SpringAotJavaProblemType.values());
 		reader.validate("spel", SpelProblemType.values());
 		reader.validate("version-validation", VersionValidationProblemType.values());
+		reader.validate("spring-ai", SpringAiProblemType.values());
 	}
 
 }

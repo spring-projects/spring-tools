@@ -46,5 +46,8 @@ public class SpringProblemCategories {
 	
 	public static final ProblemCategory CRON = new ProblemCategory("cron", "CRON Expressions",
 			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.cron"));
-	
+
+	public static final ProblemCategory SPRING_AI = new ProblemCategory("spring-ai", "Spring AI",
+			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.spring-ai"));
+
 }

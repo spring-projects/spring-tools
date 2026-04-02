@@ -10,6 +10,6 @@ jobs:
   language-servers-build:
     uses: ./.github/workflows/multiplatform-ls-build.yml
     with:
-      java_version: '21'
+      java_version: '25'
       skip_tests: false
     secrets: inherit

@@ -16,7 +16,7 @@ jobs:
   language-servers-multiplatform-build:
     uses: ./.github/workflows/multiplatform-ls-build.yml
     with:
-      java_version: '21'
+      java_version: '25'
       skip_tests: false
     secrets: inherit
 
@@ -35,7 +35,7 @@ jobs:
 #    with:
 #      eclipse_profile: 'e435'
 #      build_type: 'snapshot'
-#      java_version: '21'
+#      java_version: '25'
 #    secrets: inherit
 #
 
@@ -45,7 +45,7 @@ jobs:
     with:
       eclipse_profile: 'e439'
       build_type: 'snapshot'
-      java_version: '21'
+      java_version: '25'
     secrets: inherit
 
   e440-distro:
@@ -54,7 +54,7 @@ jobs:
     with:
       eclipse_profile: 'e440'
       build_type: 'snapshot'
-      java_version: '21'
+      java_version: '25'
     secrets: inherit
 
   vscode-spring-boot:

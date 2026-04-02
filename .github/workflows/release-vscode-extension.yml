@@ -54,10 +54,10 @@ jobs:
               ref: 'refs/tags/${{ steps.version.outputs.release_name }}',
               sha: context.sha
             })
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # 5.2.0
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # 6.3.0
         with:

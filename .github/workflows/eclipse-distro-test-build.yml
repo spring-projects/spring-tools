@@ -9,5 +9,5 @@ jobs:
     with:
       eclipse_profile: 'e432'
       build_type: 'snapshot'
-      java_version: '21'
+      java_version: '25'
     secrets: inherit

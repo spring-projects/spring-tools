@@ -29,7 +29,7 @@ class ImplicitWebAnnotationNamesTest implements RewriteTest {
     @Override
     public void defaults(RecipeSpec spec) {
         spec.recipe(new ImplicitWebAnnotationNames())
-          .parser(JavaParser.fromJavaVersion().classpath("spring-web"));
+          .parser(JavaParser.fromJavaVersion().classpath("spring-web", "jspecify", "spring-context"));
     }
 
     @DocumentExample

@@ -55,6 +55,7 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.protocol.spring.BeansParams;
+import org.springframework.ide.vscode.commons.util.ExternalProcess;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 import com.google.gson.GsonBuilder;
@@ -353,29 +354,29 @@ public class ModulithService {
 			String cp, String pkg) {
 		try {
 			File outputFile = File.createTempFile(projectName + "-" + pkg, "json");
-			Process process = Runtime.getRuntime()
-					.exec(new String[] { 
-							javaCmd,
-							"-cp",
-							cp,
-							"org.springframework.modulith.core.util.ApplicationModulesExporter",
-							pkg,
-							outputFile.toString()
-					});
-			StringBuilder builder = new StringBuilder();
-			String line = null;
-			while ((line = process.errorReader().readLine()) != null) {
-				builder.append(line);
-				builder.append(System.getProperty("line.separator"));
-			}
+			ProcessBuilder pb = new ProcessBuilder(
+					javaCmd, "-cp", cp,
+					"org.springframework.modulith.core.util.ApplicationModulesExporter",
+					pkg, outputFile.toString());
+			Process process = pb.start();
+			// Both streams must be drained concurrently to prevent the OS pipe buffer
+			// (~64KB) from filling up and deadlocking the subprocess. StreamGobler
+			// starts a background reader thread immediately in its constructor.
+			ExternalProcess.StreamGobler stdoutGobler = new ExternalProcess.StreamGobler(process.getInputStream());
+			ExternalProcess.StreamGobler stderrGobler = new ExternalProcess.StreamGobler(process.getErrorStream());
 			int exitValue = process.waitFor();
+			String stdout = stdoutGobler.getContents();
+			String stderr = stderrGobler.getContents();
 			if (exitValue == 0) {
+				if (stdout != null && !stdout.isBlank()) {
+					log.debug("[ApplicationModulesExporter stdout]\n{}", stdout);
+				}
 				log.info("Updating Modulith metadata for project '" + projectName + "'");
 				JsonObject json = JsonParser.parseReader(new FileReader(outputFile)).getAsJsonObject();
 				log.info("Modulith metadata: " + new GsonBuilder().setPrettyPrinting().create().toJson(json));
 				return loadAppModules(json);
 			} else {
-				log.error("Failed to generate modulith metadata for project '" + projectName + "'. Modulith Exporter process exited with code " + process.exitValue() + "\n" + builder.toString());
+				log.error("Failed to generate modulith metadata for project '{}'. Modulith Exporter process exited with code {}\n--- stdout ---\n{}\n--- stderr ---\n{}", projectName, exitValue, stdout, stderr);
 			}
 		} catch (IOException | InterruptedException e) {
 			log.error("", e);

@@ -44,7 +44,10 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
 
     // registerPipelineGenerator(context);
 
-    const specificVmArgs = ["-Dspring.config.location=classpath:/application.properties"];
+    const specificVmArgs = [
+        "-Dspring.config.location=classpath:/application.properties",
+        "-Djdk.util.zip.disableZip64ExtraFieldValidation=true"
+    ];
 
     const aiPreferencesConfig = workspace.getConfiguration("boot-java.ai");
     const mcpServerEnabled = aiPreferencesConfig.get("mcp-server-enabled");

@@ -42,6 +42,7 @@ public class SpringBootLanguageServer extends STS4LanguageServerProcessStreamCon
 //		args.add("-Xrunjdwp:server=y,transport=dt_socket,address=1044,suspend=n");
 		args.add("-Xmx1024m");
 		args.add("-Dspring.config.location=classpath:/application.properties");
+		args.add("-Djdk.util.zip.disableZip64ExtraFieldValidation=true");
 		
 		// enable/disable embedded MCP server, depending on preference
 		boolean mcpServerEnabled = BootLanguageServerPlugin.getDefault().getPreferenceStore().getBoolean(Constants.PREF_AI_MCP_ENABLED);

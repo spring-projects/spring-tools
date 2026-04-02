@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025, 2026 Broadcom, Inc.
+ * Copyright (c) 2025 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,7 +16,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -50,10 +54,11 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		server.onCommand(CMD_EXEC_MAVEN_GOAL, params -> {
 			String pomPath = extractString(params.getArguments().get(0));
 			String goal = extractString(params.getArguments().get(1));
-			Path buildFile = validateOpenProjectBuildFile(pomPath, ProjectBuild.MAVEN_PROJECT_TYPE);
-			String[] goals = goal.trim().split("\\s+");
+            Map<String, String> env = params.getArguments().size() > 2 ? extractEnv(params.getArguments().get(2)) : null;
 			try {
-				return executeMaven(buildFile, goals);
+                Path buildFile = validateOpenProjectBuildFile(pomPath, ProjectBuild.MAVEN_PROJECT_TYPE);
+                String[] goals = goal.trim().split("\\s+");
+				return executeMaven(buildFile, goals, env);
 			} catch (Exception e) {
 				return CompletableFuture.failedFuture(e);
 			}
@@ -63,10 +68,11 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		server.onCommand(CMD_EXEC_GRADLE_BUILD, params -> {
 			String gradleBuildPath = extractString(params.getArguments().get(0));
 			String command = extractString(params.getArguments().get(1));
-			try {
+            Map<String, String> env = params.getArguments().size() > 2 ? extractEnv(params.getArguments().get(2)) : null;
+            try {
 				Path buildFile = validateOpenProjectBuildFile(gradleBuildPath, ProjectBuild.GRADLE_PROJECT_TYPE);
 				String[] tasks = command.trim().split("\\s+");
-				return executeGradle(buildFile, tasks);
+				return executeGradle(buildFile, tasks, env);
 			} catch (Exception e) {
 				return CompletableFuture.failedFuture(e);
 			}
@@ -107,7 +113,14 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		Command cmd = new Command();
 		cmd.setCommand(CMD_EXEC_MAVEN_GOAL);
 		cmd.setTitle("Execute Maven Goal");
-		cmd.setArguments(List.of(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), goal));
+		List<Object> args = new ArrayList<>(3);
+        args.add(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString());
+        args.add(goal);
+		Map<String, String> env = BuildCommandProvider.buildEnv(project);
+		if (!env.isEmpty()) {
+			args.add(env);
+		}
+		cmd.setArguments(args);
 		return cmd;
 	}
 	
@@ -116,7 +129,14 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		Command cmd = new Command();
 		cmd.setCommand(CMD_EXEC_GRADLE_BUILD);
 		cmd.setTitle("Execute Gradle Build");
-		cmd.setArguments(List.of(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), command));
+		List<Object> args = new ArrayList<>(3);
+        args.add(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString());
+        args.add(command);
+		Map<String, String> env = BuildCommandProvider.buildEnv(project);
+		if (env != null && !env.isEmpty()) {
+			args.add(env);
+		}
+		cmd.setArguments(args);
 		return cmd;
 	}
 
@@ -124,24 +144,32 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		return o instanceof JsonPrimitive ? ((JsonPrimitive) o).getAsString() : o.toString();
 	}
 
-	private CompletableFuture<Void> executeMaven(Path pom, String[] goal) throws IOException {
+    private static Map<String, String> extractEnv(Object o) {
+        Map<String, String> env = new LinkedHashMap<>();
+        if (o instanceof JsonObject jo) {
+            jo.entrySet().forEach(e -> env.put(e.getKey(), e.getValue().getAsString()));
+        }
+        return env;
+    }
+
+    private CompletableFuture<Void> executeMaven(Path pom, String[] goal, Map<String, String> env) throws IOException {
 		synchronized(MAVEN_LOCK) {
 			String[] cmd = new String[1 + goal.length];
 			Path projectPath = pom.getParent();
 			Path mvnw = projectPath.resolve(OS.isWindows() ? "mvnw.cmd" : "mvnw");
 			cmd[0] = Files.isRegularFile(mvnw) ? mvnw.toFile().toString() : "mvn";
 			System.arraycopy(goal, 0, cmd, 1, goal.length);
-			return runProcess(cmd, projectPath, "Failed to execute Maven goal");
+			return runProcess(cmd, projectPath, "Failed to execute Maven goal", env);
 		}
 	}
 
-	private CompletableFuture<Void> executeGradle(Path gradleBuildPath, String[] command) throws IOException {
+	private CompletableFuture<Void> executeGradle(Path gradleBuildPath, String[] command, Map<String, String> env) throws IOException {
 		String[] cmd = new String[1 + command.length];
 		Path projectPath = gradleBuildPath.getParent();
 		Path gradlew = projectPath.resolve(OS.isWindows() ? "gradlew.bat" : "gradlew");
 		cmd[0] = Files.isRegularFile(gradlew) ? gradlew.toFile().toString() : "gradle";
 		System.arraycopy(command, 0, cmd, 1, command.length);
-		return runProcess(cmd, projectPath, "Failed to execute Gradle build");
+		return runProcess(cmd, projectPath, env, "Failed to execute Gradle build");
 	}
 
 	/**
@@ -150,7 +178,7 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 	 * output is attached to the resulting exception if the process exits with a
 	 * non-zero status.
 	 */
-	private CompletableFuture<Void> runProcess(String[] cmd, Path workingDir, String failureMessage) throws IOException {
+	private CompletableFuture<Void> runProcess(String[] cmd, Path workingDir, , Map<String, String> env, String failureMessage) throws IOException {
 		Process process = new ProcessBuilder()
 				.command(cmd)
 				.directory(workingDir.toFile())

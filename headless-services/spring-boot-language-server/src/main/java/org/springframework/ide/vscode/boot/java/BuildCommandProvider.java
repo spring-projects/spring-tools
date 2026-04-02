@@ -10,13 +10,26 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.eclipse.lsp4j.Command;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.protocol.java.Jre;
 
 public interface BuildCommandProvider {
 	
 	Command executeMavenGoal(IJavaProject project, String goal);
 	
 	Command executeGradleBuild(IJavaProject project, String command);
-	
+
+	static Map<String, String> buildEnv(IJavaProject project) {
+		Map<String, String> env = new LinkedHashMap<>();
+		Jre jre = project.getClasspath().getJre();
+		if (jre != null && jre.installationPath() != null) {
+			env.put("JAVA_HOME", jre.installationPath());
+		}
+		return env;
+	}
+
 }

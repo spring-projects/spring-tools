@@ -1,0 +1,2 @@
+# Ignore the built jar — populate with build.sh
+language-server/*.jar

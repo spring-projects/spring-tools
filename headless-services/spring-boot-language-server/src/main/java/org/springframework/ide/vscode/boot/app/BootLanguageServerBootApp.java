@@ -273,7 +273,10 @@ public class BootLanguageServerBootApp {
 		};
 	}
 	
-	@ConditionalOnMissingClass("org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness")
+	@ConditionalOnMissingClass({
+		"org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness",
+		"org.springframework.ide.vscode.boot.app.LegacyJavaProjectsService"
+	})
 	@Bean JavaProjectsService javaProjectsService(SimpleLanguageServer server, BootLsConfigProperties configProperties) {
 		return new JdtLsProjectCache(server, configProperties.isEnableJandexIndex());
 	}

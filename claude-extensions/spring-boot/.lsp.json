@@ -1,0 +1,23 @@
+{
+  "spring-boot": {
+    "command": "java",
+    "args": [
+      "-Xmx1024m",
+      "-Djdk.util.zip.disableZip64ExtraFieldValidation=true",
+      "-Dspring.config.location=classpath:/application.properties",
+      "-jar",
+      "${CLAUDE_PLUGIN_ROOT}/language-server/spring-boot-language-server-standalone-exec.jar"
+    ],
+    "extensionToLanguage": {
+      ".java":       "java",
+      ".properties": "spring-boot-properties",
+      ".yml":        "spring-boot-properties-yaml",
+      ".yaml":       "spring-boot-properties-yaml",
+      ".xml":        "xml",
+      ".factories":  "spring-factories"
+    },
+    "transport": "stdio",
+    "startupTimeout": 60000,
+    "restartOnCrash": true
+  }
+}

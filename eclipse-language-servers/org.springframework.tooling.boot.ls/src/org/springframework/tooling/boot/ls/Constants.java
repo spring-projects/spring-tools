@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -62,5 +62,7 @@ public class Constants {
 
 	public static final String PREF_AI_MCP_ENABLED = "boot-java.ai.mcp-server-enabled";
 	public static final String PREF_AI_MCP_PORT = "boot-java.ai.mcp-server-port";
+
+	public static final String PREF_SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH = "boot-java.spring-ai.validation.tool-description-minimum-length";
 	
 }

@@ -220,6 +220,16 @@ public class ASTUtils {
 		}
 	}
 
+	/**
+	 * Returns the string value of a named annotation attribute, or {@code null} if the
+	 * attribute is absent or cannot be resolved to a string.
+	 */
+	public static String getAnnotationAttributeAsString(Annotation annotation, String attributeName) {
+		return getAttribute(annotation, attributeName)
+				.map(expr -> getExpressionValueAsString(expr, dep -> {}))
+				.orElse(null);
+	}
+
 	public static String getExpressionValueAsString(Expression exp, Consumer<ITypeBinding> dependencies) {
 		if (exp instanceof StringLiteral) {
 			return getLiteralValue((StringLiteral) exp);

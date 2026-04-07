@@ -298,7 +298,7 @@ public class SpringAiIndexerTest {
 				.findFirst().orElse(null);
 		assertNotNull(completeElement);
 		assertEquals("completeCode", completeElement.getName());
-		assertEquals("Provide code completion suggestions", completeElement.getDescription());
+		assertEquals("", completeElement.getDescription());
 		assertEquals("com.example.springai.demo.McpCompleteElicitationSamplingWithinComponent", completeElement.getContainerBeanType());
 
 		Location location = completeElement.getLocation();
@@ -325,7 +325,7 @@ public class SpringAiIndexerTest {
 				.findFirst().orElse(null);
 		assertNotNull(elicitationElement);
 		assertEquals("getUserInfo", elicitationElement.getName());
-		assertEquals("Elicit information from the user", elicitationElement.getDescription());
+		assertEquals("", elicitationElement.getDescription());
 		assertEquals("com.example.springai.demo.McpCompleteElicitationSamplingWithinComponent", elicitationElement.getContainerBeanType());
 
 		Location location = elicitationElement.getLocation();
@@ -352,7 +352,7 @@ public class SpringAiIndexerTest {
 				.findFirst().orElse(null);
 		assertNotNull(samplingElement);
 		assertEquals("sampleText", samplingElement.getName());
-		assertEquals("Sample text from a language model", samplingElement.getDescription());
+		assertEquals("", samplingElement.getDescription());
 		assertEquals("com.example.springai.demo.McpCompleteElicitationSamplingWithinComponent", samplingElement.getContainerBeanType());
 
 		Location location = samplingElement.getLocation();

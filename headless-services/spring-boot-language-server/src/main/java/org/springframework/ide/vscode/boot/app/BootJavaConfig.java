@@ -50,13 +50,20 @@ public class BootJavaConfig implements InitializingBean {
 	
 	public static final boolean VALIDAITON_SPEL_EXPRESSIONS_ENABLED_DEFAULT = true;
 
+	public static final int SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT = 30;
+
 
 	private final SimpleWorkspaceService workspace;
 	private Settings settings = new Settings(null);
 	private ListenerList<Void> listeners = new ListenerList<Void>();
 
-	BootJavaConfig(SimpleLanguageServer server) {
+	public BootJavaConfig(SimpleLanguageServer server) {
 		this.workspace = server.getWorkspaceService();
+	}
+
+	public int getSpringAiToolDescriptionMinimumLength() {
+		Integer len = settings.getInt("boot-java", "spring-ai", "validation", "tool-description-minimum-length");
+		return len != null ? len : SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT;
 	}
 
 	public int getLiveInformationFetchDataMaxRetryCount() {

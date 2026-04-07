@@ -546,6 +546,12 @@
             "type": "integer",
             "default": 50627,
             "description": "Port used by the embedded MCP serverr"
+          },
+          "boot-java.spring-ai.validation.tool-description-minimum-length": {
+            "type": "integer",
+            "default": 30,
+            "minimum": 1,
+            "description": "Minimum required character length for Spring AI tool descriptions (@Tool, @McpTool, @McpPrompt, @McpResource). Descriptions shorter than this will be reported as a warning."
           }
         }
       },

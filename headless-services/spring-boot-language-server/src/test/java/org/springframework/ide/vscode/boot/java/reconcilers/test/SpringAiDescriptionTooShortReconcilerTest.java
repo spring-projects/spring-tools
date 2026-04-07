@@ -11,19 +11,27 @@
 package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.ide.vscode.boot.java.reconcilers.SpringAiDescriptionTooShortReconciler.MIN_DESCRIPTION_LENGTH;
+import static org.springframework.ide.vscode.boot.app.BootJavaConfig.SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT;
 
 import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.SpringAiProblemType;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.SpringAiDescriptionTooShortReconciler;
+import org.springframework.ide.vscode.commons.languageserver.config.LanguageServerProperties;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+
+import com.google.gson.JsonObject;
 
 public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTest {
+
+	private SimpleLanguageServer languageServer;
 
 	@Override
 	protected String getFolder() {
@@ -37,12 +45,13 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 
 	@Override
 	protected JdtAstReconciler getReconciler() {
-		return new SpringAiDescriptionTooShortReconciler();
+		return new SpringAiDescriptionTooShortReconciler(new BootJavaConfig(languageServer));
 	}
 
 	@BeforeEach
 	void setup() throws Exception {
 		super.setup();
+		languageServer = new SimpleLanguageServer("test", null, new LanguageServerProperties());
 	}
 
 	@AfterEach
@@ -52,7 +61,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 
 	@Test
 	void toolWithTooShortDescription_shouldWarn() throws Exception {
-		String shortDesc = "X".repeat(MIN_DESCRIPTION_LENGTH - 1);
+		String shortDesc = "X".repeat(SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT - 1);
 		String source = """
 				package example.springai;
 
@@ -77,7 +86,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 
 	@Test
 	void toolWithDescriptionAtMinimumLength_shouldNotWarn() throws Exception {
-		String okDesc = "X".repeat(MIN_DESCRIPTION_LENGTH);
+		String okDesc = "X".repeat(SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT);
 		String source = """
 				package example.springai;
 
@@ -209,6 +218,76 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 		List<ReconcileProblem> problems = reconcile("MyMcpTools.java", source, true);
 
 		assertEquals(0, problems.size());
+	}
+
+	@Test
+	void customMinLength_shorterThanDefault_descriptionBetweenCustomAndDefault_shouldNotWarn() throws Exception {
+		// This description is longer than the custom minimum (10) but shorter than the standard default (30).
+		// With the custom minimum in effect, it should not warn.
+		String desc = "X".repeat(20);
+		String source = """
+				package example.springai;
+
+				import org.springframework.ai.tool.annotation.Tool;
+
+				class MyTools {
+
+					@Tool(description = "%s")
+					public String compute(String input) {
+						return input;
+					}
+
+				}
+				""".formatted(desc);
+
+		List<ReconcileProblem> problems = reconcile(
+				() -> new SpringAiDescriptionTooShortReconciler(configWithMinLength(10)),
+				"MyTools.java", source, true);
+
+		assertEquals(0, problems.size());
+	}
+
+	@Test
+	void customMinLength_longerThanDefault_descriptionBetweenDefaultAndCustom_shouldWarn() throws Exception {
+		// This description is longer than the standard default (30) but shorter than the custom minimum (50).
+		// With the custom minimum in effect, it should still warn.
+		String desc = "X".repeat(35);
+		String source = """
+				package example.springai;
+
+				import org.springframework.ai.tool.annotation.Tool;
+
+				class MyTools {
+
+					@Tool(description = "%s")
+					public String compute(String input) {
+						return input;
+					}
+
+				}
+				""".formatted(desc);
+
+		List<ReconcileProblem> problems = reconcile(
+				() -> new SpringAiDescriptionTooShortReconciler(configWithMinLength(50)),
+				"MyTools.java", source, true);
+
+		assertEquals(1, problems.size());
+		assertEquals(SpringAiProblemType.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT, problems.get(0).getType());
+	}
+
+	private BootJavaConfig configWithMinLength(int minLength) {
+		JsonObject validation = new JsonObject();
+		validation.addProperty("tool-description-minimum-length", minLength);
+		JsonObject springAi = new JsonObject();
+		springAi.add("validation", validation);
+		JsonObject bootJava = new JsonObject();
+		bootJava.add("spring-ai", springAi);
+		JsonObject root = new JsonObject();
+		root.add("boot-java", bootJava);
+
+		BootJavaConfig config = new BootJavaConfig(languageServer);
+		config.handleConfigurationChange(new Settings(root));
+		return config;
 	}
 
 	@Test

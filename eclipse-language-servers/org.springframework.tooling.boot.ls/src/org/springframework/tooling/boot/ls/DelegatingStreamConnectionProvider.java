@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -264,6 +264,12 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 				"mcp-server-port", preferenceStore.getBoolean(Constants.PREF_AI_MCP_PORT) 
 			)
 		);
+
+		bootJavaObj.put("spring-ai", Map.of(
+				"validation", Map.of(
+						"tool-description-minimum-length", preferenceStore.getInt(Constants.PREF_SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH)
+				)
+		));
 		
 
 		settings.put("boot-java", bootJavaObj);

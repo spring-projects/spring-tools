@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -43,6 +43,11 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 	@Override
 	protected String getPluginId() {
 		return BootLanguageServerPlugin.PLUGIN_ID;
+	}
+
+	@Override
+	protected String getProblemParametersPreferencePrefix() {
+		return "problem-parameters." + category.getId() + ".";
 	}
 	
 	@Override

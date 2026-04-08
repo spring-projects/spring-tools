@@ -270,7 +270,6 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 						"tool-description-minimum-length", preferenceStore.getInt(Constants.PREF_SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH)
 				)
 		));
-		
 
 		settings.put("boot-java", bootJavaObj);
 		
@@ -319,7 +318,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		try {
 			IEclipsePreferences prefs = BootLanguageServerPlugin.getPreferences();
 			for (String key : prefs.keys()) {
-				if (key.startsWith("problem.")) {
+				if (key.startsWith("problem.") || key.startsWith("problem-parameters.")) {
 					String val = prefs.get(key, null);
 					if (val!=null) {
 						dotPut(settings, "spring-boot.ls."+key, val);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -34,4 +34,12 @@ public interface ProblemType {
 	String getDescription();
 	ProblemCategory getCategory();
 	List<DiagnosticTag> getTags();
+
+	/**
+	 * Optional settings (thresholds, limits) for this problem type. Keys map to
+	 * {@code spring-boot.ls.problem-parameters.&lt;category&gt;.&lt;code&gt;.&lt;key&gt;} in LSP settings.
+	 */
+	default List<ProblemTypeParameter> getParameters() {
+		return ProblemTypeParameter.none();
+	}
 }

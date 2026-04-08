@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2022 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCa
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
+import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTypeParameter;
 import org.springframework.ide.vscode.commons.util.Streams;
 import org.springframework.ide.vscode.commons.yaml.path.YamlPath;
 import org.springframework.ide.vscode.commons.yaml.util.JSONCursor;
@@ -71,12 +73,54 @@ public class ProblemTypesToJson {
 	public static final String resourcesPath = "src/main/resources";
 	public static final String metaDataFileName = "problem-types.json";
 	public static final String problemCategoriesFileName = "problem-categories.json";
+
+	/** Settings branch for per-problem parameters (severity stays on {@code spring-boot.ls.problem}). */
+	public static final String PROBLEM_PARAMETERS_PROPERTY_PREFIX = "spring-boot.ls.problem-parameters";
+	
+	public static class ProblemTypeParameterData {
+		String key;
+		String label;
+		String description;
+		String type;
+		String defaultValue;
+
+		public ProblemTypeParameterData() {}
+
+		public ProblemTypeParameterData(ProblemTypeParameter p) {
+			this.key = p.getKey();
+			this.label = p.getLabel();
+			this.description = p.getDescription();
+			this.type = p.getType().name().toLowerCase();
+			this.defaultValue = p.getDefaultValue();
+		}
+
+		public String getKey() {
+			return key;
+		}
+
+		public String getLabel() {
+			return label;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public String getDefaultValue() {
+			return defaultValue;
+		}
+	}
 	
 	public static class ProblemTypeData {
 		String code;
 		String label;
 		String description;
 		String defaultSeverity;
+		List<ProblemTypeParameterData> parameters;
 		
 		public ProblemTypeData() {}
 		
@@ -85,6 +129,7 @@ public class ProblemTypesToJson {
 			this.description = type.getDescription();
 			this.defaultSeverity =type.getDefaultSeverity().name();
 			this.label = type.getLabel();
+			this.parameters = type.getParameters().stream().map(ProblemTypeParameterData::new).collect(Collectors.toList());
 		}
 		
 		public ProblemTypeData(String defaultSeverity) {
@@ -119,6 +164,14 @@ public class ProblemTypesToJson {
 		
 		public void setLabel(String label) {
 			this.label = label;
+		}
+
+		public List<ProblemTypeParameterData> getParameters() {
+			return parameters;
+		}
+
+		public void setParameters(List<ProblemTypeParameterData> parameters) {
+			this.parameters = parameters;
 		}
 	}
 	
@@ -239,13 +292,37 @@ public class ProblemTypesToJson {
 			}
 		}
 		
-		for (int i = 0; i < metadataProblemTypes.size(); i++) {
-			ProblemTypeData metadata = metadataProblemTypes.get(i);
-			ProblemType actual = actualProblemTypes[i];
+		List<ProblemTypeData> sortedMeta = metadataProblemTypes.stream().sorted(Comparator.comparing(ProblemTypeData::getCode)).collect(Collectors.toList());
+		List<ProblemType> sortedActual = Stream.of(actualProblemTypes).sorted(Comparator.comparing(ProblemType::getCode)).collect(Collectors.toList());
+		for (int i = 0; i < sortedMeta.size(); i++) {
+			ProblemTypeData metadata = sortedMeta.get(i);
+			ProblemType actual = sortedActual.get(i);
 			assertEquals(actual.getCode(), metadata.getCode());
 			assertEquals(actual.getDescription(), metadata.getDescription());
 			assertEquals(actual.getDefaultSeverity().toString(), metadata.getDefaultSeverity());
 			assertEquals(actual.getLabel(), metadata.getLabel());
+			validateParameters(metadata, actual);
+		}
+	}
+
+	private void validateParameters(ProblemTypeData metadata, ProblemType actual) {
+		List<ProblemTypeParameterData> md = metadata.getParameters();
+		if (md == null) {
+			md = Collections.emptyList();
+		}
+		assertEquals(actual.getParameters().size(), md.size(), "parameter count for " + actual.getCode());
+		List<ProblemTypeParameter> ap = new ArrayList<>(actual.getParameters());
+		ap.sort(Comparator.comparing(ProblemTypeParameter::getKey));
+		List<ProblemTypeParameterData> mdSorted = new ArrayList<>(md);
+		mdSorted.sort(Comparator.comparing(ProblemTypeParameterData::getKey));
+		for (int i = 0; i < ap.size(); i++) {
+			ProblemTypeParameter p = ap.get(i);
+			ProblemTypeParameterData d = mdSorted.get(i);
+			assertEquals(p.getKey(), d.getKey());
+			assertEquals(p.getLabel(), d.getLabel());
+			assertEquals(p.getDescription(), d.getDescription());
+			assertEquals(p.getType().name().toLowerCase(), d.getType());
+			assertEquals(p.getDefaultValue(), d.getDefaultValue());
 		}
 	}
 
@@ -337,6 +414,7 @@ public class ProblemTypesToJson {
 				schema.addProperty("description", data.description);
 				schema.add("enum", severities);
 				props.add(propertyPrefix + "." + category.getId() + "." + data.code, schema);
+				addParameterPropertySchemas(props, category, data);
 			}
 			configProps.add("properties", props);
 			allProps.add(configProps);
@@ -344,6 +422,31 @@ public class ProblemTypesToJson {
 			
 		String newContent = gson.toJson(parsed);
 		FileUtils.writeStringToFile(packageJsonFile, newContent);
+	}
+
+	private static void addParameterPropertySchemas(JsonObject props, ProblemCategoryData category, ProblemTypeData data) {
+		if (data.getParameters() == null || data.getParameters().isEmpty()) {
+			return;
+		}
+		String base = PROBLEM_PARAMETERS_PROPERTY_PREFIX + "." + category.getId() + "." + data.code + ".";
+		for (ProblemTypeParameterData param : data.getParameters()) {
+			String fullKey = base + param.getKey();
+			JsonObject schema = new JsonObject();
+			String t = param.getType();
+			if ("integer".equals(t)) {
+				schema.addProperty("type", "integer");
+				schema.addProperty("default", Integer.parseInt(param.getDefaultValue()));
+				schema.addProperty("minimum", 1);
+			} else if ("boolean".equals(t)) {
+				schema.addProperty("type", "boolean");
+				schema.addProperty("default", Boolean.parseBoolean(param.getDefaultValue()));
+			} else {
+				schema.addProperty("type", "string");
+				schema.addProperty("default", param.getDefaultValue());
+			}
+			schema.addProperty("description", param.getDescription());
+			props.add(fullKey, schema);
+		}
 	}
 	
 }

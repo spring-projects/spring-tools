@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -35,11 +35,62 @@ public abstract class ProblemSeverityPreferityPageFromMetadata extends AbstractP
 		}
 	}
 
+	public static class ProblemParameterData {
+		private String key;
+		private String label;
+		private String description;
+		private String type;
+		private String defaultValue;
+
+		public ProblemParameterData() {}
+
+		public String getKey() {
+			return key;
+		}
+
+		public void setKey(String key) {
+			this.key = key;
+		}
+
+		public String getLabel() {
+			return label;
+		}
+
+		public void setLabel(String label) {
+			this.label = label;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+
+		public void setDescription(String description) {
+			this.description = description;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public String getDefaultValue() {
+			return defaultValue;
+		}
+
+		public void setDefaultValue(String defaultValue) {
+			this.defaultValue = defaultValue;
+		}
+	}
+
 	public static class ProblemTypeData implements ProblemType {
 		String code;
 		String label;
 		String description;
 		String defaultSeverity;
+		ProblemParameterData[] parameters;
 
 		public ProblemTypeData() {}
 
@@ -70,6 +121,14 @@ public abstract class ProblemSeverityPreferityPageFromMetadata extends AbstractP
 
 		public void setLabel(String label) {
 			this.label = label;
+		}
+
+		public ProblemParameterData[] getParameters() {
+			return parameters;
+		}
+
+		public void setParameters(ProblemParameterData[] parameters) {
+			this.parameters = parameters;
 		}
 
 		@Override

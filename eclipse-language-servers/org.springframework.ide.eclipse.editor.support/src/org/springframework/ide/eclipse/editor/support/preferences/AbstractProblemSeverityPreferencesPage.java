@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,9 +21,12 @@ import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jface.dialogs.ControlEnableState;
+import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.ComboFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
+import org.eclipse.jface.preference.IntegerFieldEditor;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.preference.StringFieldEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -95,11 +98,37 @@ public abstract class AbstractProblemSeverityPreferencesPage extends FieldEditor
 		IEclipsePreferences defaults = DefaultScope.INSTANCE.getNode(getPluginId());
 		for (ProblemType problemType : getProblemTypes()) {
 			defaults.put(util.getPreferenceName(problemType), problemType.getDefaultSeverity().toString());
+			initProblemParameterDefaults(defaults, problemType);
 		}
 		try {
 			defaults.flush();
 		} catch (BackingStoreException e) {
 			Log.log(e);
+		}
+	}
+
+	/**
+	 * @return e.g. {@code problem-parameters.spring-ai.} or {@code null} when this page has no per-problem parameters
+	 */
+	protected String getProblemParametersPreferencePrefix() {
+		return null;
+	}
+
+	private void initProblemParameterDefaults(IEclipsePreferences defaults, ProblemType problemType) {
+		String paramPrefix = getProblemParametersPreferencePrefix();
+		if (paramPrefix == null) {
+			return;
+		}
+		if (!(problemType instanceof ProblemSeverityPreferityPageFromMetadata.ProblemTypeData)) {
+			return;
+		}
+		ProblemSeverityPreferityPageFromMetadata.ProblemTypeData ptd = (ProblemSeverityPreferityPageFromMetadata.ProblemTypeData) problemType;
+		if (ptd.getParameters() == null) {
+			return;
+		}
+		for (ProblemSeverityPreferityPageFromMetadata.ProblemParameterData param : ptd.getParameters()) {
+			String prefKey = paramPrefix + problemType.getId() + "." + param.getKey();
+			defaults.put(prefKey, param.getDefaultValue());
 		}
 	}
 
@@ -132,6 +161,40 @@ public abstract class AbstractProblemSeverityPreferencesPage extends FieldEditor
 			);
 			setTooltip(field, problemType.getDescription());
 			addField(field);
+			addProblemParameterFieldEditors(problemType);
+		}
+	}
+
+	private void addProblemParameterFieldEditors(ProblemType problemType) {
+		String paramPrefix = getProblemParametersPreferencePrefix();
+		if (paramPrefix == null) {
+			return;
+		}
+		if (!(problemType instanceof ProblemSeverityPreferityPageFromMetadata.ProblemTypeData)) {
+			return;
+		}
+		ProblemSeverityPreferityPageFromMetadata.ProblemTypeData ptd = (ProblemSeverityPreferityPageFromMetadata.ProblemTypeData) problemType;
+		if (ptd.getParameters() == null) {
+			return;
+		}
+		Composite parent = getFieldEditorParent();
+		for (ProblemSeverityPreferityPageFromMetadata.ProblemParameterData param : ptd.getParameters()) {
+			String prefKey = paramPrefix + problemType.getId() + "." + param.getKey();
+			String t = param.getType();
+			if ("integer".equals(t)) {
+				IntegerFieldEditor intEd = new IntegerFieldEditor(prefKey, "    " + param.getLabel(), parent);
+				intEd.setValidRange(1, Integer.MAX_VALUE);
+				addField(intEd);
+				intEd.getLabelControl(parent).setToolTipText(param.getDescription());
+			} else if ("boolean".equals(t)) {
+				BooleanFieldEditor boolEd = new BooleanFieldEditor(prefKey, "    " + param.getLabel(), parent);
+				addField(boolEd);
+				boolEd.getLabelControl(parent).setToolTipText(param.getDescription());
+			} else {
+				StringFieldEditor strEd = new StringFieldEditor(prefKey, "    " + param.getLabel(), parent);
+				addField(strEd);
+				strEd.getLabelControl(parent).setToolTipText(param.getDescription());
+			}
 		}
 	}
 

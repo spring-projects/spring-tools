@@ -23,15 +23,39 @@ This builds `spring-boot-language-server-standalone` from source and copies the 
 
 ### During development / testing
 
+Due to a known bug in Claude Code with the `--plugin-dir` flag, local plugins must be installed via a local marketplace. We have provided a `marketplace.json` in the `claude-plugins` directory for this purpose.
+
+To install it for local testing:
+
 ```bash
-claude --plugin-dir ./claude-extensions/spring-boot
+# From the git root directory:
+claude plugin marketplace add ./claude-plugins
+claude plugin install spring-boot@spring-tools-local --scope local
 ```
 
-### Install permanently
+Once installed, just run `claude` normally.
 
-Follow the [Claude Code plugin installation guide](https://code.claude.com/docs/en/discover-plugins) to install from a local directory or marketplace.
+### Updating the plugin
 
-Once installed, the language server starts automatically when you open `.java`, `.properties`, `.yml`, or `.xml` files in a Spring Boot project. No configuration required.
+If you make changes to the `.lsp.json` or plugin manifest, you may need to update the installation:
+
+```bash
+claude plugin update spring-boot
+```
+
+### Testing the LSP Plugin
+
+To verify that the Spring Boot Language Server is correctly booting up and providing diagnostics to Claude Code, you must run Claude Code **interactively** (don't use the `-p` single-shot flag, as it will kill the CLI before the LSP finishes initializing).
+
+Open a Spring Boot project and start Claude Code:
+```bash
+claude
+```
+
+Then, ask Claude to open a file and check the diagnostics. For example:
+> "Open CoffeeController.java and tell me what the Spring Boot LSP says about the @GetMapping version attribute."
+
+Claude will wait for the LSP to initialize, read the file, and then summarize the exact Spring Boot warnings and quick fixes provided by the Language Server.
 
 ## What the language server provides
 

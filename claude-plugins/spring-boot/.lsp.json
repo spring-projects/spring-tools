@@ -17,7 +17,6 @@
       ".factories":  "spring-factories"
     },
     "transport": "stdio",
-    "startupTimeout": 60000,
-    "restartOnCrash": true
+    "startupTimeout": 60000
   }
 }

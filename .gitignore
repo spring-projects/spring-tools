@@ -45,3 +45,6 @@ third-party-open-source-licenses.txt
 nohttp-cli-*.jar
 
 unpack/
+
+# Claude Code
+.claude/

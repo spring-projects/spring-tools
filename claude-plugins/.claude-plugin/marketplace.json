@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "spring-tools-local",
+  "metadata": {
+    "description": "Local test marketplace for Spring Tools plugins",
+    "version": "1.0.0",
+    "license": "MIT"
+  },
+  "owner": {
+    "name": "Spring Tools"
+  },
+  "plugins": [
+    {
+      "name": "spring-boot",
+      "version": "1.0.0",
+      "source": "./spring-boot",
+      "description": "Spring Boot Language Server standalone plugin",
+      "author": { "name": "Spring Tools" },
+      "category": "development",
+      "tags": ["java", "spring-boot"]
+    }
+  ]
+}

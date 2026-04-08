@@ -15,7 +15,6 @@ import java.util.Objects;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
-import org.eclipse.jface.preference.IntegerFieldEditor;
 import org.eclipse.jface.preference.StringFieldEditor;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.widgets.Composite;
@@ -59,13 +58,6 @@ public class AiConfigPreferencePage extends FieldEditorPreferencePage implements
 		
 		// Initialize the enabled state of the port field
 		updateMcpPortFieldState();
-
-		IntegerFieldEditor minDescLengthEditor = new IntegerFieldEditor(
-				Constants.PREF_SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH,
-				"Minimum length for @Tool/@McpTool description",
-				fieldEditorParent);
-		minDescLengthEditor.setValidRange(1, Integer.MAX_VALUE);
-		addField(minDescLengthEditor);
 	}
 	
 	@Override

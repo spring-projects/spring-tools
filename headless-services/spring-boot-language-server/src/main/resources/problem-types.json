@@ -582,7 +582,16 @@
         "code": "SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT",
         "label": "@Tool description too short",
         "description": "Spring AI tool/prompt/resource description is too short. A meaningful description helps the LLM decide when and how to invoke the tool.",
-        "defaultSeverity": "WARNING"
+        "defaultSeverity": "WARNING",
+        "parameters": [
+          {
+            "key": "minimum-length",
+            "label": "Minimum description length",
+            "description": "Minimum required character length for Spring AI tool descriptions (@Tool, @McpTool, @McpPrompt, @McpResource).",
+            "type": "integer",
+            "defaultValue": "30"
+          }
+        ]
       }
     ]
   }

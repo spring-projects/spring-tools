@@ -11,7 +11,7 @@
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import org.eclipse.jdt.core.dom.Annotation;
-import org.springframework.ide.vscode.boot.app.BootJavaConfig;
+import org.springframework.ide.vscode.boot.app.ProblemParameterProvider;
 import org.springframework.ide.vscode.boot.java.SpringAiProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
@@ -19,10 +19,12 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Reconcile
 
 public class SpringAiDescriptionTooShortReconciler extends AbstractSpringAiAnnotationReconciler {
 
-	private final BootJavaConfig config;
+	private static final String MIN_LENGTH_KEY = "minimum-length";
 
-	public SpringAiDescriptionTooShortReconciler(BootJavaConfig config) {
-		this.config = config;
+	private final ProblemParameterProvider parameterProvider;
+
+	public SpringAiDescriptionTooShortReconciler(ProblemParameterProvider parameterProvider) {
+		this.parameterProvider = parameterProvider;
 	}
 
 	@Override
@@ -32,7 +34,8 @@ public class SpringAiDescriptionTooShortReconciler extends AbstractSpringAiAnnot
 
 	@Override
 	protected void validateDescription(String description, Annotation node, IProblemCollector problemCollector) {
-		if (description != null && !description.isBlank() && description.trim().length() < config.getSpringAiToolDescriptionMinimumLength()) {
+		int minLen = parameterProvider.getIntParameter(SpringAiProblemType.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT, MIN_LENGTH_KEY);
+		if (description != null && !description.isBlank() && description.trim().length() < minLen) {
 			problemCollector.accept(new ReconcileProblemImpl(getProblemType(),
 					SpringAiProblemType.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT.getLabel(),
 					node.getStartPosition(), node.getLength()));

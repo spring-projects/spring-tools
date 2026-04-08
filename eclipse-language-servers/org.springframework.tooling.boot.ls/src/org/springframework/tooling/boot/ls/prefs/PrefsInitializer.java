@@ -57,8 +57,6 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 
 		preferenceStore.setDefault(Constants.PREF_AI_MCP_ENABLED, false);
 		preferenceStore.setDefault(Constants.PREF_AI_MCP_PORT, 50627);
-
-		preferenceStore.setDefault(Constants.PREF_SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH, 30);
 	}
 
 }

@@ -546,12 +546,6 @@
             "type": "integer",
             "default": 50627,
             "description": "Port used by the embedded MCP serverr"
-          },
-          "boot-java.spring-ai.validation.tool-description-minimum-length": {
-            "type": "integer",
-            "default": 30,
-            "minimum": 1,
-            "description": "Minimum required character length for Spring AI tool descriptions (@Tool, @McpTool, @McpPrompt, @McpResource). Descriptions shorter than this will be reported as a warning."
           }
         }
       },
@@ -1525,6 +1519,52 @@
               "HINT",
               "ERROR"
             ]
+          }
+        }
+      },
+      {
+        "id": "spring-ai",
+        "title": "Spring AI",
+        "order": 411,
+        "properties": {
+          "boot-java.validation.spring-ai": {
+            "type": "string",
+            "default": "ON",
+            "description": "Enablement",
+            "enum": [
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.spring-ai.SPRING_AI_TOOL_MISSING_DESCRIPTION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Spring AI tool/prompt/resource is missing a description. Descriptions are critical for the LLM to correctly select and invoke the tool.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.spring-ai.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Spring AI tool/prompt/resource description is too short. A meaningful description helps the LLM decide when and how to invoke the tool.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem-parameters.spring-ai.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT.minimum-length": {
+            "type": "integer",
+            "default": 30,
+            "minimum": 1,
+            "description": "Minimum required character length for Spring AI tool descriptions (@Tool, @McpTool, @McpPrompt, @McpResource)."
           }
         }
       }

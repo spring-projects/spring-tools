@@ -62,7 +62,5 @@ public class Constants {
 
 	public static final String PREF_AI_MCP_ENABLED = "boot-java.ai.mcp-server-enabled";
 	public static final String PREF_AI_MCP_PORT = "boot-java.ai.mcp-server-port";
-
-	public static final String PREF_SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH = "boot-java.spring-ai.validation.tool-description-minimum-length";
 	
 }

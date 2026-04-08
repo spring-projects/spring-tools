@@ -11,7 +11,7 @@
 package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.ide.vscode.boot.app.BootJavaConfig.SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT;
+import static org.springframework.ide.vscode.boot.java.SpringAiProblemType.DEFAULT_TOOL_DESCRIPTION_MIN_LENGTH;
 
 import java.util.List;
 
@@ -19,6 +19,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
+import org.springframework.ide.vscode.boot.app.ProblemParameterProvider;
 import org.springframework.ide.vscode.boot.java.SpringAiProblemType;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.SpringAiDescriptionTooShortReconciler;
@@ -45,7 +46,8 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 
 	@Override
 	protected JdtAstReconciler getReconciler() {
-		return new SpringAiDescriptionTooShortReconciler(new BootJavaConfig(languageServer));
+		return new SpringAiDescriptionTooShortReconciler(
+				new ProblemParameterProvider(new BootJavaConfig(languageServer)));
 	}
 
 	@BeforeEach
@@ -61,7 +63,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 
 	@Test
 	void toolWithTooShortDescription_shouldWarn() throws Exception {
-		String shortDesc = "X".repeat(SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT - 1);
+		String shortDesc = "X".repeat(DEFAULT_TOOL_DESCRIPTION_MIN_LENGTH - 1);
 		String source = """
 				package example.springai;
 
@@ -86,7 +88,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 
 	@Test
 	void toolWithDescriptionAtMinimumLength_shouldNotWarn() throws Exception {
-		String okDesc = "X".repeat(SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH_DEFAULT);
+		String okDesc = "X".repeat(DEFAULT_TOOL_DESCRIPTION_MIN_LENGTH);
 		String source = """
 				package example.springai;
 
@@ -241,7 +243,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 				""".formatted(desc);
 
 		List<ReconcileProblem> problems = reconcile(
-				() -> new SpringAiDescriptionTooShortReconciler(configWithMinLength(10)),
+				() -> new SpringAiDescriptionTooShortReconciler(new ProblemParameterProvider(configWithMinLength(10))),
 				"MyTools.java", source, true);
 
 		assertEquals(0, problems.size());
@@ -268,7 +270,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 				""".formatted(desc);
 
 		List<ReconcileProblem> problems = reconcile(
-				() -> new SpringAiDescriptionTooShortReconciler(configWithMinLength(50)),
+				() -> new SpringAiDescriptionTooShortReconciler(new ProblemParameterProvider(configWithMinLength(50))),
 				"MyTools.java", source, true);
 
 		assertEquals(1, problems.size());
@@ -276,14 +278,18 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 	}
 
 	private BootJavaConfig configWithMinLength(int minLength) {
-		JsonObject validation = new JsonObject();
-		validation.addProperty("tool-description-minimum-length", minLength);
+		JsonObject tooShort = new JsonObject();
+		tooShort.addProperty("minimum-length", minLength);
 		JsonObject springAi = new JsonObject();
-		springAi.add("validation", validation);
-		JsonObject bootJava = new JsonObject();
-		bootJava.add("spring-ai", springAi);
+		springAi.add("SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT", tooShort);
+		JsonObject problemParameters = new JsonObject();
+		problemParameters.add("spring-ai", springAi);
+		JsonObject ls = new JsonObject();
+		ls.add("problem-parameters", problemParameters);
+		JsonObject springBoot = new JsonObject();
+		springBoot.add("ls", ls);
 		JsonObject root = new JsonObject();
-		root.add("boot-java", bootJava);
+		root.add("spring-boot", springBoot);
 
 		BootJavaConfig config = new BootJavaConfig(languageServer);
 		config.handleConfigurationChange(new Settings(root));

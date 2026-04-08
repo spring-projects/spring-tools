@@ -205,8 +205,8 @@ public class JdtConfig {
 		return new SpringAiDescriptionExistsReconciler();
 	}
 
-	@Bean SpringAiDescriptionTooShortReconciler springAiDescriptionTooShortReconciler(BootJavaConfig config) {
-		return new SpringAiDescriptionTooShortReconciler(config);
+	@Bean SpringAiDescriptionTooShortReconciler springAiDescriptionTooShortReconciler(ProblemParameterProvider parameterProvider) {
+		return new SpringAiDescriptionTooShortReconciler(parameterProvider);
 	}
 	
 	@Conditional(LspClient.OnNotEclipseClient.class)

@@ -265,12 +265,6 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 			)
 		);
 
-		bootJavaObj.put("spring-ai", Map.of(
-				"validation", Map.of(
-						"tool-description-minimum-length", preferenceStore.getInt(Constants.PREF_SPRING_AI_TOOL_DESCRIPTION_MIN_LENGTH)
-				)
-		));
-
 		settings.put("boot-java", bootJavaObj);
 		
 		settings.put("http", createHttpProxySettings());

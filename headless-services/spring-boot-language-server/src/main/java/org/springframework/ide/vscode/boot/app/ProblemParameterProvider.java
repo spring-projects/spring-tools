@@ -50,28 +50,11 @@ public class ProblemParameterProvider {
 		if (v != null) {
 			return v;
 		}
-		v = legacySpringAiMinimumLength(problem, paramKey);
-		if (v != null) {
-			return v;
-		}
 		for (ProblemTypeParameter p : problem.getParameters()) {
 			if (paramKey.equals(p.getKey()) && p.getType() == ValueType.INTEGER) {
 				return Integer.parseInt(p.getDefaultValue());
 			}
 		}
 		throw new IllegalStateException("No integer parameter '" + paramKey + "' for " + problem.getCode());
-	}
-
-	private Integer legacySpringAiMinimumLength(ProblemType problem, String paramKey) {
-		if (!"minimum-length".equals(paramKey)) {
-			return null;
-		}
-		if (!"spring-ai".equals(problem.getCategory().getId())) {
-			return null;
-		}
-		if (!"SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT".equals(problem.getCode())) {
-			return null;
-		}
-		return config.getRawSettings().getInt("boot-java", "spring-ai", "validation", "tool-description-minimum-length");
 	}
 }

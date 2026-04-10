@@ -50,4 +50,8 @@ export class StereotypedNode {
         return this.n.attributes.reference as ls.Location;
     }
 
+    getParent(): StereotypedNode | undefined {
+        return this.parent;
+    }
+
 }

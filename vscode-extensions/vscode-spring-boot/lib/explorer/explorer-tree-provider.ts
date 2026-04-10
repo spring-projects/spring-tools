@@ -16,7 +16,7 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
     createTreeView(context: ExtensionContext, viewId: string) {
         const treeView = window.createTreeView(viewId, { treeDataProvider: this, showCollapseAll: true });            
         context.subscriptions.push(treeView);
-        return treeView
+        return treeView;
     }
 
     getTreeItem(element: StereotypedNode): TreeItem | Thenable<TreeItem> {
@@ -30,8 +30,15 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
         return this.getRootElements();
     }
 
+    getParent(element: StereotypedNode): ProviderResult<StereotypedNode> {
+        return element.getParent();
+    }
+
     async getRootElements(): Promise<StereotypedNode[]> {
+        if (!this.manager.rootElements) {
+            return [];
+        }
         const nodes = await this.manager.rootElements;
-        return nodes ? nodes.sort((n1, n2) => n1.label.localeCompare(n2.label)) : nodes;
+        return nodes ? nodes.slice().sort((n1, n2) => n1.label < n2.label ? -1 : (n1.label > n2.label ? 1 : 0)) : nodes;
     }
 }

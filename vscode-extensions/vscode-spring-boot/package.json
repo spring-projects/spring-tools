@@ -100,7 +100,7 @@
         {
           "id": "explorer.spring",
           "name": "Logical Structure",
-          "when": "java:serverMode || workbenchState==empty",
+          "when": "vscode-spring-boot.ls.started",
           "contextualTitle": "Logical Structure",
           "icon": "resources/logo.png"
         }

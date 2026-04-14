@@ -28,20 +28,6 @@
     "application-yaml"
   ],
   "contributes": {
-    "//chatParticipants": [
-      {
-        "//id": "springboot.agent",
-        "//fullName": "Spring Tools",
-        "//name": "spring",
-        "//description": "Spring Tools chat agent",
-        "//commands": [
-          {
-            "//name": "add",
-            "//description": "Add a new spring module to the exisiting project"
-          }
-        ]
-      }
-    ],
     "javaExtensions": [
       "./jars/io.projectreactor.reactor-core.jar",
       "./jars/org.reactivestreams.reactive-streams.jar",
@@ -268,14 +254,8 @@
       {
         "command": "vscode-spring-boot.query.explain",
         "enablement": "vscode-spring-boot.ls.started",
-        "title": "Explain Spel expressions, Spring Data queries, and AOP annotations (using Copilot)",
+        "title": "Explain SpEL expressions, Spring Data queries, and AOP annotations (AI assistant)",
         "category": "Spring Boot"
-      },
-      {
-        "command": "vscode-spring-boot.agent.apply",
-        "title": "Apply Changes",
-        "category": "Spring Boot Agent",
-        "enablement": "false"
       },
       {
         "command": "vscode-spring-boot.structure.openReference",
@@ -473,7 +453,7 @@
           "boot-java.highlight-copilot-codelens.on": {
             "type": "boolean",
             "default": false,
-            "description": "Explain SpEL expressions, Spring Data queries, and AOP annotations using Copilot"
+            "description": "Explain SpEL expressions, Spring Data queries, and AOP annotations using AI Assistant"
           }
         }
       },
@@ -1577,12 +1557,10 @@
     "@pivotal-tools/commons-vscode": "file:../commons-vscode/pivotal-tools-commons-vscode-0.2.4.tgz",
     "portfinder": "~1.0.38",
     "ps-list": "^7.2.0",
-    "semver": "^7.7.4",
     "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^18.8.0",
-    "@types/semver": "^7.5.8",
     "@types/vscode": "1.92.0",
     "@vscode/vsce": "^2.22.0",
     "esbuild": "^0.27.3",

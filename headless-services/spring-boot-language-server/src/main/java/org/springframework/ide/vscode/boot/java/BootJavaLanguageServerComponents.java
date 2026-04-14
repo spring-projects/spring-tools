@@ -31,8 +31,6 @@ import org.springframework.ide.vscode.boot.java.beans.NamedReferencesProvider;
 import org.springframework.ide.vscode.boot.java.beans.ProfileReferencesProvider;
 import org.springframework.ide.vscode.boot.java.beans.QualifierReferencesProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalsLiveHoverProvider;
-import org.springframework.ide.vscode.boot.java.copilot.CopilotAgentCommandHandler;
-import org.springframework.ide.vscode.boot.java.copilot.util.ResponseModifier;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataCodeLensProvider;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
 import org.springframework.ide.vscode.boot.java.events.EventReferenceProvider;
@@ -116,8 +114,6 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 
 	private final ProjectObserver projectObserver;
 	private final CompilationUnitCache cuCache;
-	private final ResponseModifier responseModifier;
-
 	private JavaProjectFinder projectFinder;
 	private BootJavaHoverProvider hoverProvider;
 	private CodeLensHandler codeLensHandler;
@@ -133,8 +129,6 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 	public BootJavaLanguageServerComponents(ApplicationContext appContext) {
 		this.server = appContext.getBean(SimpleLanguageServer.class);
 		this.serverParams = appContext.getBean(BootLanguageServerParams.class);
-		this.responseModifier = appContext.getBean(ResponseModifier.class);
-
 		projectFinder = serverParams.projectFinder;
 		projectObserver = serverParams.projectObserver;
 
@@ -175,8 +169,6 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 		// create and handle commands
 		new SpringProcessCommandHandler(server, liveDataService, liveDataLocalProcessConnector, appContext.getBeansOfType(SpringProcessConnectorRemote.class).values());
 		
-		new CopilotAgentCommandHandler(server, projectFinder,responseModifier);
-
 		docSymbolProvider = params -> springSymbolIndex.getDocumentSymbols(params.getTextDocument().getUri());
 		
 		workspaceService.onWorkspaceSymbol(new BootJavaWorkspaceSymbolHandler(springSymbolIndex,

@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       extension-name:
-        description: name of the extension, e.g. vscode-spring-cli
+        description: name of the extension, e.g. vscode-spring-boot
         required: true
         type: string
   workflow_call:
     inputs:
       extension-name:
-        description: name of the extension, e.g. vscode-spring-cli
+        description: name of the extension, e.g. vscode-spring-boot
         required: true
         type: string
 

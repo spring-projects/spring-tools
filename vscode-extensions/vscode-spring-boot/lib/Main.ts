@@ -7,7 +7,6 @@ import {
     workspace,
     ExtensionContext,
     Uri,
-    lm,
     TextDocumentContentProvider
 } from 'vscode';
 
@@ -22,11 +21,7 @@ import {registerJavaDataService} from "@pivotal-tools/commons-vscode/lib/java-da
 import * as setLogLevelUi from './set-log-levels-ui';
 import { startTestJarSupport } from "./test-jar-launch";
 import { startPropertiesConversionSupport } from "./convert-props-yaml";
-import { activateCopilotFeatures } from "./copilot";
-import * as springBootAgent from './copilot/springBootAgent';
-import { applyLspEdit } from "./copilot/guideApply";
-import { isLlmApiReady } from "./copilot/util";
-import { logger } from "./copilot/copilotRequest";
+import { activateCopilotFeatures, registerQueryExplainCommand } from "./copilot";
 import { StructureManager } from "./explorer/structure-tree-manager";
 import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
 
@@ -41,6 +36,8 @@ const STOP_ASKING = "Stop Asking";
 
 /** Called when extension is activated */
 export async function activate(context: ExtensionContext): Promise<ExtensionAPI> {
+
+    registerQueryExplainCommand(context);
 
     // registerPipelineGenerator(context);
 
@@ -192,14 +189,7 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
     liveHoverUi.activate(client, options, context);
     setLogLevelUi.activate(client, options, context);
     startPropertiesConversionSupport(context);
-    if(isLlmApiReady)
-        activateSpringBootParticipant(context);
-    else 
-        window.showInformationMessage("Spring Boot chat participant is not available. Please use the vscode insiders version 1.90.0 or above and make sure all `lm` API is enabled.");
-
     registerMiscCommands(context);
-
-    context.subscriptions.push(commands.registerCommand('vscode-spring-boot.agent.apply', applyLspEdit));
 
 	// Register content loader for URIs of type `spring-boot-ls:...` (load JAR content via Boot LS)
     context.subscriptions.push(workspace.registerTextDocumentContentProvider('spring-boot-ls', new (class implements TextDocumentContentProvider {
@@ -241,11 +231,3 @@ function registerMiscCommands(context: ExtensionContext) {
     );
 }
 
-async function activateSpringBootParticipant(context: ExtensionContext) {
-    const models = await lm.selectChatModels();
-    if (!models || models.length === 0) {
-        logger.error(`No suitable model available. Please make sure you have installed the latest "GitHub Copilot Chat" (v0.16.0 or later) and all \`lm\` API is enabled.`);
-        return;
-    }
-    springBootAgent.activate(context);
-}

@@ -1,7 +1,24 @@
-import { commands, extensions, lm, window, workspace, LogOutputChannel, env } from "vscode";
+import { commands, extensions, lm, window, workspace, LogOutputChannel, env, ExtensionContext } from "vscode";
 
 export const REQUIRED_EXTENSION = 'github.copilot-chat';
-export const logger: LogOutputChannel = window.createOutputChannel("Spring tools copilot", { log: true });
+export const logger: LogOutputChannel = window.createOutputChannel("Spring Boot AI assistant", { log: true });
+
+export function registerQueryExplainCommand(context: ExtensionContext): void {
+    context.subscriptions.push(commands.registerCommand('vscode-spring-boot.query.explain', async (userPrompt) => {
+        if (isCursor()) {
+            await commands.executeCommand('composer.createNew', {
+                partialState: {
+                    text: userPrompt
+                },
+                autoSubmit: true,
+                focusMainInputBox: true,
+                dontRefreshReactiveContext: true
+            });
+        } else {
+            await commands.executeCommand('workbench.action.chat.open', { query: userPrompt });
+        }
+    }));
+}
 
 export async function activateCopilotFeatures(): Promise<void> {
     workspace.onDidChangeConfiguration(event => {
@@ -10,13 +27,11 @@ export async function activateCopilotFeatures(): Promise<void> {
         }
     });
 
-    logger.info("vscode.lm is ready.");
+    logger.info("Spring Boot AI code lens integration ready.");
     await configureGenAi();
 
     // Add listener to handle installation/uninstallation of the required extension
     extensions.onDidChange(async () => await configureGenAi());
-
-    explainQueryWithGenAI();
 
 }
 
@@ -90,23 +105,6 @@ async function updateConfiguration(value: boolean) {
     if(value && configValue === true) {
         commands.executeCommand('sts/enable/copilot/features', value);
     }
-}
-
-async function explainQueryWithGenAI() {
-    commands.registerCommand('vscode-spring-boot.query.explain', async (userPrompt) => {
-        if (isCursor()) {
-            await commands.executeCommand('composer.createNew', {
-                partialState: {
-                    text: userPrompt
-                },
-                autoSubmit: true, // Optional: automatically submits the query
-                focusMainInputBox: true, // Optional: focuses the input box
-                dontRefreshReactiveContext: true // Optional: prevents context refresh
-            });
-        } else {
-            await commands.executeCommand('workbench.action.chat.open', { query: userPrompt });
-        }
-    })
 }
 
 async function promptReloadWindow() {

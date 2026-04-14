@@ -54,7 +54,6 @@ import org.springframework.ide.vscode.boot.java.beans.QualifierDefinitionProvide
 import org.springframework.ide.vscode.boot.java.beans.ResourceDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnBeanDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnResourceDefinitionProvider;
-import org.springframework.ide.vscode.boot.java.copilot.util.ResponseModifier;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
 import org.springframework.ide.vscode.boot.java.data.GenAotQueryMethodImplProvider;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.DataQueryParameterDefinitionProvider;
@@ -449,10 +448,6 @@ public class BootLanguageServerBootApp {
 	@Bean
 	StereotypeCatalogRegistry stereotypeCatalogRegistry(ProjectObserver projectObserver) {
 		return new StereotypeCatalogRegistry(projectObserver);
-	}
-	
-	@Bean ResponseModifier responseModifier() {
-		return new ResponseModifier();
 	}
 	
 	@Bean

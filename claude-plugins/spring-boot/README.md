@@ -6,18 +6,8 @@ Unlike the VS Code extension, this plugin uses the **standalone** variant of the
 
 ## Requirements
 
-- Java 21 or higher on `PATH`
+- Java 21+ on `PATH`
 - Maven or Gradle projects in your workspace
-
-## Build
-
-Run the build script once to compile the language server and install it into this plugin:
-
-```bash
-./build.sh
-```
-
-This builds `spring-boot-language-server-standalone` from source and copies the resulting fat jar to `language-server/`.
 
 ## Usage
 
@@ -27,27 +17,23 @@ To install the latest release of the plugin from the official Spring Marketplace
 
 ```bash
 claude plugin marketplace add https://cdn.spring.io/spring-tools/release/claude-plugins/marketplace.json
-claude plugin install spring-boot@spring-official-marketplace
+claude plugin install spring-boot@spring-tools-marketplace
 ```
 
 To install the bleeding-edge snapshot:
+
 ```bash
 claude plugin marketplace add https://cdn.spring.io/spring-tools/snapshot/claude-plugins/marketplace.json
-claude plugin install spring-boot@spring-official-snapshots
+claude plugin install spring-boot@spring-tools-snapshots
 ```
 
 ### During development / testing
 
-Due to a known bug in Claude Code with the `--plugin-dir` flag, local plugins must be installed via a local marketplace or tarball.
+To test this plugin locally, you can use Claude Code's native `git-subdir` marketplace functionality or a relative path directly to this repository:
 
-To test your local changes, you can package the plugin and install from a tarball directly:
-```bash
-./build.sh
-tar -czf spring-boot-local.tar.gz .claude-plugin .lsp.json .mcp.json proxy.js language-server README.md
-claude plugin install ./spring-boot-local.tar.gz
-```
-
-Once installed, just run `claude` normally.
+1. Build the standalone language server jar from the `sts4` repository.
+2. Copy the jar into this plugin's `language-server/` directory.
+3. Run: `claude plugin install . --scope local` from this directory.
 
 ### Updating the plugin
 
@@ -87,9 +73,10 @@ spring-boot/
 ├── .lsp.json                # LSP server proxy configuration (runs proxy.js)
 ├── .mcp.json                # MCP server configuration (starts the Java process)
 ├── proxy.js                 # Node.js script to pipe stdio to the Java LSP socket
-├── language-server/         # Populated by build.sh (gitignored)
+├── package.json             # NPM configuration triggering install.js
+├── install.js               # Node.js script that downloads the JAR on installation
+├── language-server/         # Populated by install.js during npm install (gitignored)
 │   └── spring-boot-language-server-standalone-exec.jar
-├── build.sh                 # Build script
 └── README.md
 ```
 
@@ -99,5 +86,6 @@ To eliminate race conditions and avoid booting multiple heavy Java processes, th
 
 1. **MCP starts the server:** Claude Code parses `.mcp.json` at startup. This boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
 2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses `.lsp.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on port 5007, avoiding the need to spawn a second JVM.
+3. **NPM installs the heavy JAR:** When you install this plugin via the marketplace, `install.js` automatically downloads the pre-compiled `spring-boot-language-server-standalone-exec.jar` from Spring's CDN, keeping this git repository incredibly lightweight.
 
 The standalone LS uses `MavenProjectCache` and `GradleProjectCache` to scan the workspace for `pom.xml` and `build.gradle` files, discovering projects without JDT LS. All type indexing is done locally using [Jandex](https://smallrye.io/jandex/).

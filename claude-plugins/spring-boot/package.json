@@ -1,0 +1,9 @@
+{
+  "name": "claude-spring-boot-installer",
+  "version": "1.0.0",
+  "description": "Installer for the Spring Boot Claude Code Plugin",
+  "private": true,
+  "scripts": {
+    "postinstall": "node install.js"
+  }
+}

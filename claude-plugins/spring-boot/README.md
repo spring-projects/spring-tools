@@ -21,16 +21,30 @@ This builds `spring-boot-language-server-standalone` from source and copies the 
 
 ## Usage
 
-### During development / testing
+### Installation
 
-Due to a known bug in Claude Code with the `--plugin-dir` flag, local plugins must be installed via a local marketplace. We have provided a `marketplace.json` in the `claude-plugins` directory for this purpose.
-
-To install it for local testing:
+To install the latest release of the plugin from the official Spring Marketplace:
 
 ```bash
-# From the git root directory:
-claude plugin marketplace add ./claude-plugins
-claude plugin install spring-boot@spring-tools-local --scope local
+claude plugin marketplace add https://cdn.spring.io/spring-tools/release/claude-plugins/marketplace.json
+claude plugin install spring-boot@spring-official-marketplace
+```
+
+To install the bleeding-edge snapshot:
+```bash
+claude plugin marketplace add https://cdn.spring.io/spring-tools/snapshot/claude-plugins/marketplace.json
+claude plugin install spring-boot@spring-official-snapshots
+```
+
+### During development / testing
+
+Due to a known bug in Claude Code with the `--plugin-dir` flag, local plugins must be installed via a local marketplace or tarball.
+
+To test your local changes, you can package the plugin and install from a tarball directly:
+```bash
+./build.sh
+tar -czf spring-boot-local.tar.gz .claude-plugin .lsp.json .mcp.json proxy.js language-server README.md
+claude plugin install ./spring-boot-local.tar.gz
 ```
 
 Once installed, just run `claude` normally.
@@ -70,7 +84,9 @@ Claude will wait for the LSP to initialize, read the file, and then summarize th
 spring-boot/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin manifest
-├── .lsp.json                # LSP server configuration (uses java directly — cross-platform)
+├── .lsp.json                # LSP server proxy configuration (runs proxy.js)
+├── .mcp.json                # MCP server configuration (starts the Java process)
+├── proxy.js                 # Node.js script to pipe stdio to the Java LSP socket
 ├── language-server/         # Populated by build.sh (gitignored)
 │   └── spring-boot-language-server-standalone-exec.jar
 ├── build.sh                 # Build script
@@ -79,6 +95,9 @@ spring-boot/
 
 ## How it works
 
-The plugin registers a Language Server Protocol server for Java, Spring Boot properties, and XML files. Claude Code launches the server process when any of these file types are opened and communicates over `stdio`.
+To eliminate race conditions and avoid booting multiple heavy Java processes, this plugin configures Claude Code to share a single JVM for both MCP and LSP:
+
+1. **MCP starts the server:** Claude Code parses `.mcp.json` at startup. This boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
+2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses `.lsp.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on port 5007, avoiding the need to spawn a second JVM.
 
 The standalone LS uses `MavenProjectCache` and `GradleProjectCache` to scan the workspace for `pom.xml` and `build.gradle` files, discovering projects without JDT LS. All type indexing is done locally using [Jandex](https://smallrye.io/jandex/).

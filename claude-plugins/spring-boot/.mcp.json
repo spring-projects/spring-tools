@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "spring-boot-mcp": {
+      "command": "java",
+      "args": [
+        "-Xmx1024m",
+        "-Djdk.util.zip.disableZip64ExtraFieldValidation=true",
+        "-Dspring.config.location=classpath:/application.properties",
+        "-jar",
+        "${CLAUDE_PLUGIN_ROOT}/language-server/spring-boot-language-server-standalone-exec.jar",
+        "--logging.level.root=OFF",
+        "--spring.ai.mcp.server.stdio=true",
+        "--languageserver.standalone=true",
+        "--languageserver.standalone-port=5007"
+      ]
+    }
+  }
+}

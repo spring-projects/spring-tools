@@ -1,7 +1,7 @@
 {
   "name": "spring-boot",
   "description": "Spring Boot Language Server — real-time diagnostics, completions, and code navigation for Spring Boot projects. Operates standalone without requiring JDT Language Server.",
-  "version": "1.0.0",
+  "version": "2.2.0",
   "author": {
     "name": "Spring Tools"
   },

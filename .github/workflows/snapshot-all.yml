@@ -84,3 +84,10 @@ jobs:
     with:
       extension-name: vscode-bosh
     secrets: inherit
+
+  claude-spring-boot:
+    needs: [ language-servers-multiplatform-build ]
+    uses: ./.github/workflows/snapshot-claude-plugin.yml
+    with:
+      plugin-name: spring-boot
+    secrets: inherit

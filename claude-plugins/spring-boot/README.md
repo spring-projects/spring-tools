@@ -74,9 +74,7 @@ Claude will wait for the LSP to initialize, read the file, and then summarize th
 ```
 spring-boot/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest
-├── .lsp.json                # LSP server proxy configuration (runs proxy.js)
-├── .mcp.json                # MCP server configuration (runs launcher.js)
+│   └── plugin.json          # Plugin manifest (includes MCP and LSP server configs)
 ├── proxy.js                 # Node.js script to pipe stdio to the Java LSP socket
 ├── launcher.js              # Node.js script that downloads the JAR (if missing) and starts Java
 ├── install.js               # Node.js script that downloads the JAR
@@ -89,5 +87,5 @@ spring-boot/
 
 To eliminate race conditions and avoid booting multiple heavy Java processes, this plugin configures Claude Code to share a single JVM for both MCP and LSP:
 
-1. **MCP starts the server:** Claude Code parses `.mcp.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
-2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses `.lsp.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on port 5007, avoiding the need to spawn a second JVM.
+1. **MCP starts the server:** Claude Code parses the MCP configuration in `plugin.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
+2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses the LSP configuration in `plugin.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on port 5007, avoiding the need to spawn a second JVM.

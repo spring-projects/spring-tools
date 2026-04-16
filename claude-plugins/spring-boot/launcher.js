@@ -21,15 +21,29 @@ const javaArgs = [
     "-Xmx1024m",
     "-Djdk.util.zip.disableZip64ExtraFieldValidation=true",
     "-Dspring.config.location=classpath:/application.properties",
+    "-Dspring.profiles.active=file-logging",
+    `-Dlogging.file.name=${path.join(__dirname, 'boot-ls.log')}`,
+    "-Dlogging.level.root=INFO",
+    "-Dspring.ai.mcp.server.stdio=true",
+    "-Dlanguageserver.standalone=true",
+    "-Dlanguageserver.standalone-port=5007",
     "-jar",
-    jarPath,
-    "--logging.level.root=OFF",
-    "--spring.ai.mcp.server.stdio=true",
-    "--languageserver.standalone=true",
-    "--languageserver.standalone-port=5007"
+    jarPath
 ];
 
 const child = spawn('java', javaArgs, { stdio: 'inherit' });
+
+// When Claude Code exits, it sends a termination signal to this Node script.
+// We must catch these signals and manually kill the heavy Java child process
+// so it doesn't remain active as an orphan in the background.
+['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach(signal => {
+    process.on(signal, () => {
+        if (!child.killed) {
+            child.kill('SIGTERM');
+        }
+        process.exit(0);
+    });
+});
 
 child.on('error', (err) => {
     console.error('Failed to start Java process:', err);

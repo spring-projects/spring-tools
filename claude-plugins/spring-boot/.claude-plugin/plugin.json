@@ -6,5 +6,29 @@
     "name": "Spring Tools"
   },
   "homepage": "https://spring.io/tools",
-  "repository": "https://github.com/spring-projects/spring-tools"
+  "repository": "https://github.com/spring-projects/spring-tools",
+  "mcpServers": {
+    "spring-boot-mcp": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/launcher.js"
+      ]
+    }
+  },
+  "lspServers": {
+    "spring-boot": {
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/proxy.js"
+      ],
+      "extensionToLanguage": {
+        ".java":       "java",
+        ".properties": "spring-boot-properties",
+        ".yml":        "spring-boot-properties-yaml",
+        ".yaml":       "spring-boot-properties-yaml",
+        ".xml":        "xml",
+        ".factories":  "spring-factories"
+      }
+    }
+  }
 }

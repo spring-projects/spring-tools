@@ -71,11 +71,11 @@ spring-boot/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin manifest
 ├── .lsp.json                # LSP server proxy configuration (runs proxy.js)
-├── .mcp.json                # MCP server configuration (starts the Java process)
+├── .mcp.json                # MCP server configuration (runs launcher.js)
 ├── proxy.js                 # Node.js script to pipe stdio to the Java LSP socket
-├── package.json             # NPM configuration triggering install.js
-├── install.js               # Node.js script that downloads the JAR on installation
-├── language-server/         # Populated by install.js during npm install (gitignored)
+├── launcher.js              # Node.js script that downloads the JAR (if missing) and starts Java
+├── install.js               # Node.js script that downloads the JAR
+├── language-server/         # Populated by install.js on first run (gitignored)
 │   └── spring-boot-language-server-standalone-exec.jar
 └── README.md
 ```
@@ -84,8 +84,7 @@ spring-boot/
 
 To eliminate race conditions and avoid booting multiple heavy Java processes, this plugin configures Claude Code to share a single JVM for both MCP and LSP:
 
-1. **MCP starts the server:** Claude Code parses `.mcp.json` at startup. This boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
+1. **MCP starts the server:** Claude Code parses `.mcp.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
 2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses `.lsp.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on port 5007, avoiding the need to spawn a second JVM.
-3. **NPM installs the heavy JAR:** When you install this plugin via the marketplace, `install.js` automatically downloads the pre-compiled `spring-boot-language-server-standalone-exec.jar` from Spring's CDN, keeping this git repository incredibly lightweight.
 
 The standalone LS uses `MavenProjectCache` and `GradleProjectCache` to scan the workspace for `pom.xml` and `build.gradle` files, discovering projects without JDT LS. All type indexing is done locally using [Jandex](https://smallrye.io/jandex/).

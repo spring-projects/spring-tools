@@ -29,7 +29,7 @@ function get(url) {
 }
 
 async function downloadFile(url, dest) {
-    console.log(`Downloading: ${url}`);
+    console.error(`Downloading: ${url}`);
     const res = await get(url);
     const fileStream = fs.createWriteStream(dest);
     return new Promise((resolve, reject) => {
@@ -40,7 +40,7 @@ async function downloadFile(url, dest) {
 }
 
 async function install() {
-    console.log(`Installing Spring Boot Language Server v${version}...`);
+    console.error(`Installing Spring Boot Language Server v${version}...`);
     
     // First, try to download the stable release JAR for this version
     const releaseUrl = `https://cdn.spring.io/spring-tools/release/language-server/spring-boot/${version}/${JAR_NAME}`;
@@ -48,15 +48,15 @@ async function install() {
 
     try {
         await downloadFile(releaseUrl, jarPath);
-        console.log(`Successfully installed Release version to ${jarPath}`);
+        console.error(`Successfully installed Release version to ${jarPath}`);
     } catch (releaseErr) {
         // If the release JAR is not found (e.g. 404 or 403 Access Denied), 
         // it means this version has not been officially released yet.
         // Fallback to downloading the bleeding-edge snapshot!
-        console.log(`Release JAR not found for v${version}. Falling back to snapshot...`);
+        console.error(`Release JAR not found for v${version}. Falling back to snapshot...`);
         try {
             await downloadFile(snapshotUrl, jarPath);
-            console.log(`Successfully installed Snapshot version to ${jarPath}`);
+            console.error(`Successfully installed Snapshot version to ${jarPath}`);
         } catch (snapshotErr) {
             throw new Error(`Failed to download both Release and Snapshot JARs.\nRelease Error: ${releaseErr.message}\nSnapshot Error: ${snapshotErr.message}`);
         }

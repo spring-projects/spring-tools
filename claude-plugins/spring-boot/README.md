@@ -11,39 +11,44 @@ Unlike the VS Code extension, this plugin uses the **standalone** variant of the
 
 ## Usage
 
-### Installation
+### 1. Add the Marketplace
 
-To install the latest release of the plugin from the official Spring Marketplace:
+First, add either the Release or Snapshot marketplace to Claude Code:
 
+**To use the stable release:**
 ```bash
 claude plugin marketplace add https://cdn.spring.io/spring-tools/release/claude-plugins/marketplace.json
+```
+
+**To use the bleeding-edge snapshot:**
+```bash
+claude plugin marketplace add https://cdn.spring.io/spring-tools/snapshot/claude-plugins/marketplace.json
+```
+
+### 2. Install the Plugin
+
+Once the marketplace is added, install the plugin:
+
+**If you added the stable release marketplace:**
+```bash
 claude plugin install spring-boot@spring-tools-marketplace
 ```
 
-To install the bleeding-edge snapshot:
-
+**If you added the snapshot marketplace:**
 ```bash
-claude plugin marketplace add https://cdn.spring.io/spring-tools/snapshot/claude-plugins/marketplace.json
 claude plugin install spring-boot@spring-tools-snapshots
 ```
 
-### During development / testing
+### 3. Update the Plugin
 
-To test this plugin locally, you can use Claude Code's native `git-subdir` marketplace functionality or a relative path directly to this repository:
-
-1. Build the standalone language server jar from the `sts4` repository.
-2. Copy the jar into this plugin's `language-server/` directory.
-3. Run: `claude plugin install . --scope local` from this directory.
-
-### Updating the plugin
-
-If you make changes to the `.lsp.json` or plugin manifest, you may need to update the installation:
+When new versions of the plugin are published to the marketplace, update it by running:
 
 ```bash
+claude plugin marketplace update
 claude plugin update spring-boot
 ```
 
-### Testing the LSP Plugin
+### 4. Testing the LSP Plugin
 
 To verify that the Spring Boot Language Server is correctly booting up and providing diagnostics to Claude Code, you must run Claude Code **interactively** (don't use the `-p` single-shot flag, as it will kill the CLI before the LSP finishes initializing).
 
@@ -52,7 +57,7 @@ Open a Spring Boot project and start Claude Code:
 claude
 ```
 
-Then, ask Claude to open a file and check the diagnostics. For example:
+Then, ask Claude a test query to verify the LSP integration. For example:
 > "Open CoffeeController.java and tell me what the Spring Boot LSP says about the @GetMapping version attribute."
 
 Claude will wait for the LSP to initialize, read the file, and then summarize the exact Spring Boot warnings and quick fixes provided by the Language Server.
@@ -86,5 +91,3 @@ To eliminate race conditions and avoid booting multiple heavy Java processes, th
 
 1. **MCP starts the server:** Claude Code parses `.mcp.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
 2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses `.lsp.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on port 5007, avoiding the need to spawn a second JVM.
-
-The standalone LS uses `MavenProjectCache` and `GradleProjectCache` to scan the workspace for `pom.xml` and `build.gradle` files, discovering projects without JDT LS. All type indexing is done locally using [Jandex](https://smallrye.io/jandex/).

@@ -187,7 +187,7 @@ public class SpringProcessConnectorLocal {
 				allStatusUpdates.get(5, TimeUnit.SECONDS);
 			}
 			catch (Exception e) {
-				log.info("timeout or problem occured while updating the status of the new processes");
+				log.info("timeout or problem occurred while updating the status of the new processes");
 			}
 		}
 	}

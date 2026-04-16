@@ -116,7 +116,7 @@ public class ResourceProvider {
 			} catch (BackingStoreException e) {
 				StatusHandler.log(new Status(IStatus.ERROR,
 						CorePlugin.PLUGIN_ID,
-						"Error occured while saving preferences", e));
+						"Error occurred while saving preferences", e));
 			}
 		}
 

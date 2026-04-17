@@ -1,0 +1,16 @@
+{
+  "name": "spring-tools-local",
+  "owner": {
+    "name": "Spring Tools"
+  },
+  "plugins": [
+    {
+      "name": "spring-boot",
+      "source": "./spring-boot",
+      "description": "Spring Boot Language Server (Local Test)",
+      "author": {
+        "name": "Spring Tools"
+      }
+    }
+  ]
+}

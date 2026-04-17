@@ -62,6 +62,23 @@ Then, ask Claude a test query to verify the LSP integration. For example:
 
 Claude will wait for the LSP to initialize, read the file, and then summarize the exact Spring Boot warnings and quick fixes provided by the Language Server.
 
+### 5. Local Testing
+
+We maintain a local marketplace configuration (`claude-plugins/.claude-plugin/marketplace.json`) to make testing the plugin directly from the source tree easy.
+
+1. Run the update script to build the standalone language server JAR and copy it into this plugin's directory (run this from the `claude-plugins` directory):
+   ```bash
+   ./update-local-jars.sh
+   ```
+2. Add the local `claude-plugins` directory as a marketplace (run this from the `sts4` root directory):
+   ```bash
+   claude plugin marketplace add ./claude-plugins
+   ```
+3. Install the plugin from your new local marketplace:
+   ```bash
+   claude plugin install spring-boot@spring-tools-local
+   ```
+
 ## What the language server provides
 
 - **Diagnostics** — Spring-specific warnings and quick fixes (missing annotations, incorrect bean wiring, etc.)

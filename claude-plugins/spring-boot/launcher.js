@@ -27,6 +27,7 @@ const javaArgs = [
     "-Dspring.ai.mcp.server.stdio=true",
     "-Dlanguageserver.standalone=true",
     "-Dlanguageserver.standalone-port=5007",
+    `-Dspring.boot.ls.project.dir=${process.env.CLAUDE_PROJECT_DIR || process.cwd()}`,
     "-jar",
     jarPath
 ];

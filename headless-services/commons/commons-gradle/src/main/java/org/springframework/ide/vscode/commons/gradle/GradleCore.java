@@ -44,7 +44,8 @@ public class GradleCore {
 		BuildEnvironment getBuildEnvironment();
 	}
 	
-	static final String GRADLE_BUILD_FILE = "build.gradle";
+	public static final String GRADLE_BUILD_FILE = "build.gradle";
+	public static final String GRADLE_KTS_BUILD_FILE = "build.gradle.kts";
 
 	static final String GLOB_GRADLE_FILE = "**/*.gradle";
 	

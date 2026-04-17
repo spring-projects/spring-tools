@@ -16,6 +16,9 @@ import java.util.Collection;
 import java.util.Optional;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ide.vscode.boot.jdt.ls.JavaProjectsService;
 import org.springframework.ide.vscode.commons.gradle.GradleCore;
 import org.springframework.ide.vscode.commons.gradle.GradleProjectCache;
@@ -41,17 +44,25 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
  * Its presence on the classpath causes {@link BootLanguageServerBootApp} to skip creating
  * the JDT-LS-backed {@code JavaProjectsService} bean.
  */
-public class LegacyJavaProjectsService implements JavaProjectsService {
+public class LegacyJavaProjectsService implements JavaProjectsService, InitializingBean {
+
+	private static final Logger log = LoggerFactory.getLogger(LegacyJavaProjectsService.class);
+
+	private static final java.util.Set<String> IGNORED_DIRECTORIES = java.util.Set.of(
+			"target", "node_modules", "build", ".git", "bin"
+	);
 
 	private final CompositeJavaProjectFinder projectFinder;
 	private final CompositeProjectOvserver projectObserver;
+	private final MavenProjectCache mavenProjectCache;
+	private final GradleProjectCache gradleProjectCache;
 
 	public LegacyJavaProjectsService(SimpleLanguageServer server) {
-		MavenProjectCache mavenProjectCache = new MavenProjectCache(server, MavenCore.getDefault(), false, null,
+		this.mavenProjectCache = new MavenProjectCache(server, MavenCore.getDefault(), false, null,
 				(uri, cpe) -> JavaDocProviders.createFor(cpe));
 		mavenProjectCache.setAlwaysFireEventOnFileChanged(true);
 
-		GradleProjectCache gradleProjectCache = new GradleProjectCache(server, GradleCore.getDefault(), false, null,
+		this.gradleProjectCache = new GradleProjectCache(server, GradleCore.getDefault(), false, null,
 				(uri, cpe) -> JavaDocProviders.createFor(cpe));
 		gradleProjectCache.setAlwaysFireEventOnFileChanged(true);
 
@@ -60,6 +71,14 @@ public class LegacyJavaProjectsService implements JavaProjectsService {
 		projectFinder.addJavaProjectFinder(new GradleProjectFinder(gradleProjectCache));
 
 		this.projectObserver = new CompositeProjectOvserver(Arrays.asList(mavenProjectCache, gradleProjectCache));
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		String projectDir = System.getProperty("spring.boot.ls.project.dir");
+		if (projectDir != null && !projectDir.isEmpty()) {
+			initializeProject(new java.io.File(projectDir));
+		}
 	}
 
 	@Override
@@ -85,6 +104,54 @@ public class LegacyJavaProjectsService implements JavaProjectsService {
 	@Override
 	public boolean isSupported() {
 		return projectObserver.isSupported();
+	}
+
+	public void initializeProject(java.io.File projectRoot) {
+		if (projectRoot == null || !projectRoot.exists() || !projectRoot.isDirectory()) {
+			return;
+		}
+		log.info("Initializing workspace project directory: {}", projectRoot.getAbsolutePath());
+		try {
+			java.nio.file.Files.walkFileTree(projectRoot.toPath(), java.util.EnumSet.noneOf(java.nio.file.FileVisitOption.class), 10, new java.nio.file.SimpleFileVisitor<java.nio.file.Path>() {
+				@Override
+				public java.nio.file.FileVisitResult preVisitDirectory(java.nio.file.Path dir, java.nio.file.attribute.BasicFileAttributes attrs) {
+					String name = dir.getFileName().toString();
+					if (IGNORED_DIRECTORIES.contains(name)) {
+						return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+					}
+
+					java.io.File dirFile = dir.toFile();
+					java.io.File pomFile = new java.io.File(dirFile, MavenCore.POM_XML);
+					if (pomFile.exists() && pomFile.isFile()) {
+						log.info("Found Maven project: {}", pomFile.getAbsolutePath());
+						mavenProjectCache.project(pomFile);
+						return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+					}
+
+					java.io.File gradleFile = new java.io.File(dirFile, GradleCore.GRADLE_BUILD_FILE);
+					if (gradleFile.exists() && gradleFile.isFile()) {
+						log.info("Found Gradle project: {}", gradleFile.getAbsolutePath());
+						gradleProjectCache.project(gradleFile);
+						return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+					}
+
+					java.io.File gradleKtsFile = new java.io.File(dirFile, GradleCore.GRADLE_KTS_BUILD_FILE);
+					if (gradleKtsFile.exists() && gradleKtsFile.isFile()) {
+						log.info("Found Gradle Kotlin project: {}", gradleKtsFile.getAbsolutePath());
+						gradleProjectCache.project(gradleKtsFile);
+						return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+					}
+
+					return java.nio.file.FileVisitResult.CONTINUE;
+				}
+				@Override
+				public java.nio.file.FileVisitResult visitFileFailed(java.nio.file.Path file, java.io.IOException exc) {
+					return java.nio.file.FileVisitResult.CONTINUE;
+				}
+			});
+		} catch (Exception e) {
+			// ignore
+		}
 	}
 
 	@Override

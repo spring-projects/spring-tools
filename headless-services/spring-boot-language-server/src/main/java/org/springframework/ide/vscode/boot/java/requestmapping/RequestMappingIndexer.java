@@ -114,7 +114,7 @@ public class RequestMappingIndexer {
 						});
 
 			} catch (Exception e) {
-				log.error("problem occured while scanning for request mapping symbols from " + doc.getUri(), e);
+				log.error("problem occurred while scanning for request mapping symbols from " + doc.getUri(), e);
 			}
 		}
 	}

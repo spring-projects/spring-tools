@@ -172,7 +172,7 @@ public class SpringProcessConnectorService {
 				throw new CompletionException(e);
 			}
 		}, CompletableFuture.delayedExecutor(delay, unit, scheduler)).thenCompose(v -> refreshProcess(new SpringProcessParams(processKey, "", "", ""))).exceptionallyCompose(e -> {
-			log.info("problem occured during process connect", e);
+			log.info("problem occurred during process connect", e);
 
 			if (retryNo < maxRetryCount && isKnownProcessKey(processKey)) {
 				return scheduleConnect(progressTask, processKey, connector, retryDelayInSeconds, TimeUnit.SECONDS, retryNo + 1);
@@ -201,7 +201,7 @@ public class SpringProcessConnectorService {
 				progressTask.done();
 			}
 			catch (Exception e) {
-				log.info("problem occured during process disconnect", e);
+				log.info("problem occurred during process disconnect", e);
 
 				if (retryNo < maxRetryCount) {
 					scheduleDisconnect(progressTask, processKey, connector, retryDelayInSeconds, TimeUnit.SECONDS, retryNo + 1);
@@ -266,7 +266,7 @@ public class SpringProcessConnectorService {
 				throw new CompletionException(e);
 			}
 		}, CompletableFuture.delayedExecutor(delay, unit, scheduler)).exceptionallyCompose(e -> {
-			log.info("problem occured during process live data refresh", e);
+			log.info("problem occurred during process live data refresh", e);
 			
 			if (retryNo < maxRetryCount && isKnownProcessKey(processKey)) {
 				return scheduleRefresh(progressTask, springProcessParams, connector, retryDelayInSeconds, TimeUnit.SECONDS,
@@ -336,7 +336,7 @@ public class SpringProcessConnectorService {
 			}
 			catch (Exception e) {
 
-				log.info("problem occured during process live data refresh", e);
+				log.info("problem occurred during process live data refresh", e);
 
 				if (retryNo < maxRetryCount && isKnownProcessKey(processKey)) {
 					getLoggersData(progressTask, springProcessParams, connector, loggerData, retryDelayInSeconds, TimeUnit.SECONDS,
@@ -395,7 +395,7 @@ public class SpringProcessConnectorService {
 			}
 			catch (Exception e) {
 
-				log.info("problem occured during process live data refresh", e);
+				log.info("problem occurred during process live data refresh", e);
 
 				if (retryNo < maxRetryCount && isKnownProcessKey(processKey)) {
 					configureLogLevel(progressTask, springProcessParams, connector, retryDelayInSeconds, TimeUnit.SECONDS,

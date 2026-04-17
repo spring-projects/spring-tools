@@ -109,7 +109,7 @@ public class XMLStructureCreator implements IStructureCreator {
 			Log.log(e);
 			return null;
 		} catch (Exception e) {
-			//				MessageDialog.openError(PomPlugin.getActiveWorkbenchShell(),"Error in XML parser","An error occured in the XML parser.\nNo structured compare can be shown");
+			//				MessageDialog.openError(PomPlugin.getActiveWorkbenchShell(),"Error in XML parser","An error occurred in the XML parser.\nNo structured compare can be shown");
 			Log.log(e);
 			return null;
 		}

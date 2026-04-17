@@ -16,7 +16,7 @@
     }
   },
   "lspServers": {
-    "spring-boot": {
+    "spring-boot-lsp": {
       "command": "node",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/proxy.js"

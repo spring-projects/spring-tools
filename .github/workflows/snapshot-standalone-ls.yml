@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   workflow_call:
 
+permissions:
+  contents: write
+
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.CDN_S3_ACCESS_KEY }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.CDN_S3_SECRET_KEY  }}
@@ -35,21 +38,45 @@ jobs:
           jar_file="spring-boot-language-server-standalone-exec.jar"
           s3_path=snapshot/language-server/spring-boot
           echo "S3 path: ${s3_path}"
-          aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive
           aws s3 cp ./standalone-ls-dist/$jar_file s3://$AWS_S3_BUCKET/$s3_path/$jar_file --no-progress --checksum-algorithm CRC32
+      - name: Update plugin.json for Snapshot
+        id: update-plugin
+        run: |
+          git config --global user.name "@spring-projects/spring-ide-admin"
+          git config --global user.email "spring-ide-admin@users.noreply.github.com"
+          
+          version=$(cat ./standalone-ls-dist/version.txt)
+          
+          # Create or reset a local branch to the current commit (which is what triggered the action)
+          git checkout -B claude-snapshot
+          
+          # Update the version in plugin.json
+          tmp=$(mktemp)
+          jq --arg v "$version" '.version = $v' claude-plugins/spring-boot/.claude-plugin/plugin.json > "$tmp" && mv "$tmp" claude-plugins/spring-boot/.claude-plugin/plugin.json
+          
+          git add claude-plugins/spring-boot/.claude-plugin/plugin.json
+          git commit -m "Update Claude plugin version to $version"
+          
+          # Push to the remote claude-snapshot branch forcefully.
+          # If it doesn't exist, this creates it. If it does exist, it completely overwrites it
+          # to exactly match the current main + this single version bump commit.
+          git push origin claude-snapshot --force
+          
+          echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Update Marketplace JSON
         run: |
           aws s3 cp s3://$AWS_S3_BUCKET/snapshot/claude-plugins/marketplace.json ./marketplace.json || echo '{"name": "spring-tools-snapshots", "description": "Bleeding-edge snapshot builds for Spring Tools Claude Code plugins.", "owner": {"name": "Spring Tools"}, "plugins": []}' > ./marketplace.json
           
           version=$(cat ./standalone-ls-dist/version.txt)
+          sha="${{ steps.update-plugin.outputs.sha }}"
           
           tmp=$(mktemp)
           jq --arg name "spring-boot" \
              --arg version "$version" \
-             --arg sha "${{ github.sha }}" \
+             --arg sha "$sha" \
              '
              .plugins |= if map(.name == $name) | any then
-                 map(if .name == $name then .version=$version | .source.sha=$sha else . end)
+                 map(if .name == $name then .version=$version | .source.sha=$sha | .source.ref="claude-snapshot" else . end)
              else
                  . + [{
                     "name": $name, 
@@ -58,7 +85,7 @@ jobs:
                       "source": "git-subdir",
                       "url": "https://github.com/spring-projects/spring-tools.git",
                       "path": "claude-plugins/spring-boot",
-                      "ref": "main",
+                      "ref": "claude-snapshot",
                       "sha": $sha
                     }, 
                     "description": "Spring Boot Language Server", 

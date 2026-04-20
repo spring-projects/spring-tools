@@ -42,24 +42,16 @@ async function downloadFile(url, dest) {
 async function install() {
     console.error(`Installing Spring Boot Language Server v${version}...`);
     
-    // First, try to download the stable release JAR for this version
-    const releaseUrl = `https://cdn.spring.io/spring-tools/release/language-server/spring-boot/${version}/${JAR_NAME}`;
-    const snapshotUrl = `https://cdn.spring.io/spring-tools/snapshot/language-server/spring-boot/${JAR_NAME}`;
+    const isSnapshot = version.includes('-');
+    const baseUrl = isSnapshot 
+        ? `https://cdn.spring.io/spring-tools/snapshot/language-server/spring-boot/${JAR_NAME}`
+        : `https://cdn.spring.io/spring-tools/release/language-server/spring-boot/${version}/${JAR_NAME}`;
 
     try {
-        await downloadFile(releaseUrl, jarPath);
-        console.error(`Successfully installed Release version to ${jarPath}`);
-    } catch (releaseErr) {
-        // If the release JAR is not found (e.g. 404 or 403 Access Denied), 
-        // it means this version has not been officially released yet.
-        // Fallback to downloading the bleeding-edge snapshot!
-        console.error(`Release JAR not found for v${version}. Falling back to snapshot...`);
-        try {
-            await downloadFile(snapshotUrl, jarPath);
-            console.error(`Successfully installed Snapshot version to ${jarPath}`);
-        } catch (snapshotErr) {
-            throw new Error(`Failed to download both Release and Snapshot JARs.\nRelease Error: ${releaseErr.message}\nSnapshot Error: ${snapshotErr.message}`);
-        }
+        await downloadFile(baseUrl, jarPath);
+        console.error(`Successfully installed version ${version} to ${jarPath}`);
+    } catch (err) {
+        throw new Error(`Failed to download JAR from ${baseUrl}\nError: ${err.message}`);
     }
 }
 

@@ -210,12 +210,13 @@ public class ProjectClasspathNamespaceDefinitionResolver implements INamespaceDe
 
 				try (
 					InputStream is = cls.getResourceAsStream(icon);
-					FileOutputStream os = new FileOutputStream(iconFile);
-				) {
-					IOUtils.copy(is, os);
-				}
+					try (FileOutputStream os = new FileOutputStream(iconFile)) {
+						) {
+						IOUtils.copy(is, os);
+						}
 				
-				return iconFile;
+						return iconFile;
+					}
 			}
 			catch (Exception e) {
 				SpringXmlNamespacesPlugin.log(

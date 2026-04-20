@@ -87,5 +87,7 @@ jobs:
 
   standalone-ls:
     needs: [ language-servers-multiplatform-build ]
+    permissions:
+      contents: write
     uses: ./.github/workflows/snapshot-standalone-ls.yml
     secrets: inherit

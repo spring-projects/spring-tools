@@ -19,11 +19,17 @@ import org.apache.commons.lang3.function.TriConsumer;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
+import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Range;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -50,13 +56,15 @@ public class WebConfigJavaIndexer {
 	public static final String USE_PATH_SEGMENT = "usePathSegment";
 	public static final String USE_REQUEST_HEADER = "useRequestHeader";
 	public static final String USE_MEDIA_TYPE_PARAMETER = "useMediaTypeParameter";
+	public static final String USE_VERSION_RESOLVER = "useVersionResolver";
 	public static final String ADD_SUPPORTED_VERSIONS = "addSupportedVersions";
 	
 	public static final Set<String> VERSIONING_CONFIG_METHODS = Set.of(
 			USE_PATH_SEGMENT,
 			USE_QUERY_PARAM,
 			USE_REQUEST_HEADER,
-			USE_MEDIA_TYPE_PARAMETER
+			USE_MEDIA_TYPE_PARAMETER,
+			USE_VERSION_RESOLVER
 	);
 
 	
@@ -241,6 +249,37 @@ public class WebConfigJavaIndexer {
 			}
 		}));
 
+		result.put(USE_VERSION_RESOLVER, new MethodInvocationExtractor() {
+
+			@Override
+			public Set<String> getTargetInvocationType() {
+				return apiConfigurerInterfaces;
+			}
+
+			@Override
+			public void extractParameters(TextDocument doc, MethodInvocation methodInvocation, Builder webconfigBuilder) {
+				@SuppressWarnings("unchecked")
+				List<Expression> arguments = methodInvocation.arguments();
+				if (arguments.isEmpty()) {
+					recordVersionResolver(doc, methodInvocation, webconfigBuilder, "unspecified");
+					return;
+				}
+				for (Expression expression : arguments) {
+					String label = describeApiVersionResolverArgument(expression);
+					recordVersionResolver(doc, expression, webconfigBuilder, label != null ? label : "custom ApiVersionResolver");
+				}
+			}
+
+			private void recordVersionResolver(TextDocument doc, ASTNode rangeNode, Builder webconfigBuilder, String label) {
+				try {
+					Range range = doc.toRange(rangeNode.getStartPosition(), rangeNode.getLength());
+					webconfigBuilder.versionStrategy("Version Resolver: " + label, range);
+				}
+				catch (BadLocationException e) {
+				}
+			}
+		});
+
 
 		Set<String> pathConfigurerInterfaces = Set.of(
 				Annotations.WEB_MVC_PATH_MATCH_CONFIGURER_INTERFACE,
@@ -256,6 +295,40 @@ public class WebConfigJavaIndexer {
 
 		
 		return result;
+	}
+
+	private static String describeApiVersionResolverArgument(Expression expression) {
+		if (expression instanceof CastExpression cast) {
+			return describeApiVersionResolverArgument(cast.getExpression());
+		}
+		if (expression instanceof ClassInstanceCreation cic) {
+			ITypeBinding typeBinding = cic.getType().resolveBinding();
+			if (typeBinding != null) {
+				return typeBinding.getQualifiedName();
+			}
+		}
+		if (expression instanceof LambdaExpression) {
+			return "lambda expression";
+		}
+		if (expression instanceof MethodInvocation mi) {
+			IMethodBinding methodBinding = mi.resolveMethodBinding();
+			if (methodBinding != null) {
+				ITypeBinding returnType = methodBinding.getReturnType();
+				if (returnType != null) {
+					return returnType.getQualifiedName();
+				}
+			}
+		}
+		if (expression instanceof Name name) {
+			IBinding binding = name.resolveBinding();
+			if (binding instanceof IVariableBinding variableBinding) {
+				ITypeBinding variableType = variableBinding.getType();
+				if (variableType != null) {
+					return variableType.getQualifiedName();
+				}
+			}
+		}
+		return null;
 	}
 	
 	interface MethodInvocationExtractor {

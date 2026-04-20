@@ -210,5 +210,46 @@ public class WebApiVersioningNotConfiguredAdvancedReconcilerTest {
         }
 
 	}
-    
+
+	@Test
+	void testNoErrorWhenWebConfigUsesVersionResolver() throws Exception {
+		String webConfigUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/WebConfig.java").toUri().toString();
+		String controllerUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/TestController.java").toUri().toString();
+
+		String updatedWebConfigSource = """
+				package com.example.demo.apiversioning;
+
+				import org.springframework.context.annotation.Configuration;
+				import org.springframework.web.accept.ApiVersionResolver;
+				import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
+				import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+				import jakarta.servlet.http.HttpServletRequest;
+
+				@Configuration
+				public class WebConfig implements WebMvcConfigurer {
+
+					static final class CustomResolver implements ApiVersionResolver {
+						@Override
+						public String resolveVersion(HttpServletRequest request) {
+							return null;
+						}
+					}
+
+					@Override
+					public void configureApiVersioning(ApiVersionConfigurer configurer) {
+						configurer.useVersionResolver(new CustomResolver());
+					}
+
+				}
+				""";
+
+		CompletableFuture<Void> updateFuture = indexer.updateDocument(webConfigUri, updatedWebConfigSource, "useVersionResolver test");
+		updateFuture.get(5, TimeUnit.SECONDS);
+
+		PublishDiagnosticsParams diagnosticsResult = harness.getDiagnostics(controllerUri);
+		List<Diagnostic> diagnostics = diagnosticsResult.getDiagnostics();
+		assertEquals(0, diagnostics.size());
+	}
+
 }

@@ -136,4 +136,47 @@ public class WebApiVersionStrategyPathSegmentReconcilerTest extends BaseReconcil
 		assertEquals(0, problems.size());
 	}
 
+	@Test
+	void webConfigUsesPathSegmentAndUseVersionResolverShowsError() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.context.annotation.Configuration;
+				import org.springframework.web.accept.ApiVersionResolver;
+				import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
+				import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+				
+				import jakarta.servlet.http.HttpServletRequest;
+				
+				@Configuration
+				public class A implements WebMvcConfigurer {
+				
+					static final class CustomResolver implements ApiVersionResolver {
+						@Override
+						public String resolveVersion(HttpServletRequest request) {
+							return null;
+						}
+					}
+				
+					@Override
+					public void configureApiVersioning(ApiVersionConfigurer configurer) {
+						configurer.useVersionResolver(new CustomResolver());
+						configurer.usePathSegment(1);
+					}
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile(() -> {
+			return new WebApiVersionStrategyPathSegmentReconciler();
+		}, "A.java", source, true);
+
+		assertEquals(1, problems.size());
+
+		ReconcileProblem problem = problems.get(0);
+
+		assertEquals(Boot4JavaProblemType.API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION, problem.getType());
+
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("configurer.usePathSegment(1)", markedStr);
+	}
+
 }

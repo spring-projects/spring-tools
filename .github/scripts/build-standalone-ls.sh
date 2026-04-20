@@ -10,7 +10,7 @@ cd headless-services
 ./mvnw -f pom.xml -pl spring-boot-language-server-standalone -am -DskipTests clean package
 
 # Get the version from Maven
-base_version=$(./mvnw -q -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec | tail -n 1)
+base_version=$(./mvnw -q -f spring-boot-language-server-standalone/pom.xml -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec | tail -n 1)
 
 # Strip -SNAPSHOT if it exists, to get the clean base version
 base_version=${base_version%-SNAPSHOT}

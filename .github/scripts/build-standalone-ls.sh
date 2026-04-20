@@ -9,8 +9,8 @@ echo "Building standalone LS jar..."
 cd headless-services
 ./mvnw -f pom.xml -pl spring-boot-language-server-standalone -am -DskipTests clean package
 
-# Get the version from Maven
-base_version=$(./mvnw -q -f spring-boot-language-server-standalone/pom.xml -Dexec.executable=echo -Dexec.args='${project.version}' --non-recursive exec:exec | tail -n 1)
+# Get the version from Maven using help:evaluate
+base_version=$(./mvnw help:evaluate -Dexpression="project.version" -q -DforceStdout -f spring-boot-language-server-standalone/pom.xml)
 
 # Strip -SNAPSHOT if it exists, to get the clean base version
 base_version=${base_version%-SNAPSHOT}

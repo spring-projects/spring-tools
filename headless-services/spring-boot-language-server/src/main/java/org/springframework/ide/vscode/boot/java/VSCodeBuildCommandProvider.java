@@ -25,8 +25,9 @@ public class VSCodeBuildCommandProvider implements BuildCommandProvider {
 		Command cmd = new Command();
 		cmd.setCommand("maven.goal.custom");
 		cmd.setTitle("Execute Maven Goal");
-		List<Object> args = new ArrayList<>(List.of(
-				Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), goal));
+		List<Object> args = new ArrayList<>(3);
+		args.add(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString());
+		args.add(goal);
 		Map<String, String> env = BuildCommandProvider.buildEnv(project);
 		if (env != null && !env.isEmpty()) {
 			args.add(env);
@@ -40,8 +41,9 @@ public class VSCodeBuildCommandProvider implements BuildCommandProvider {
 		Command cmd = new Command();
 		cmd.setCommand("gradle.runBuild");
 		cmd.setTitle("Execute Gradle Build");
-		List<Object> args = new ArrayList<>(List.of(
-				Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), command));
+		List<Object> args = new ArrayList<>(3);
+		args.add(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString());
+		args.add(command);
 		Map<String, String> env = BuildCommandProvider.buildEnv(project);
 		if (env != null && !env.isEmpty()) {
 			args.add(env);

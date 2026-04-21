@@ -1,7 +1,7 @@
 {
   "name": "spring-boot",
   "description": "Spring Boot Language Server — real-time diagnostics, completions, and code navigation for Spring Boot projects. Operates standalone without requiring JDT Language Server.",
-  "version": "2.2.0",
+  "version": "2.2.0-202604212357",
   "author": {
     "name": "Spring Tools"
   },
@@ -22,12 +22,12 @@
         "${CLAUDE_PLUGIN_ROOT}/proxy.js"
       ],
       "extensionToLanguage": {
-        ".java":       "java",
+        ".java": "java",
         ".properties": "spring-boot-properties",
-        ".yml":        "spring-boot-properties-yaml",
-        ".yaml":       "spring-boot-properties-yaml",
-        ".xml":        "xml",
-        ".factories":  "spring-factories"
+        ".yml": "spring-boot-properties-yaml",
+        ".yaml": "spring-boot-properties-yaml",
+        ".xml": "xml",
+        ".factories": "spring-factories"
       }
     }
   }

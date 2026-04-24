@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -90,7 +90,7 @@ public class ComponentAnalysisMcpTools {
 			Returns information for all beans with the given name (there may be multiple beans with the same name in different contexts).
 			""")
 	public List<BeanUsageInfo> getBeanUsageInfo(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName,
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
 			@ToolParam(description = "the name of the bean to analyze") String beanName) throws Exception {
 		
 		logger.info("get bean usage info for: {} in project: {}", beanName, projectName);
@@ -133,7 +133,7 @@ public class ComponentAnalysisMcpTools {
 			This is useful for finding all implementations of an interface or all beans of a certain class.
 			""")
 	public List<ComponentInfo> findBeansByType(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName,
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
 			@ToolParam(description = "the fully qualified type name to search for") String typeName) throws Exception {
 		
 		logger.info("find beans by type: {} for project: {}", typeName, projectName);

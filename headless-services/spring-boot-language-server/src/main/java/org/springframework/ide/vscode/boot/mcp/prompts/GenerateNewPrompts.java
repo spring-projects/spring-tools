@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,8 +28,13 @@ public class GenerateNewPrompts {
 	private static List<SyncPromptSpecification> initializePrompts() {
 		ArrayList<SyncPromptSpecification> prompts = new ArrayList<>();
 		
-		var generateRepositorySample = new McpSchema.Prompt("create a sample Spring Data JDBC repository", "Creates a sample Spring Data JDBC repository with a sample domain type",
-                List.of(new McpSchema.PromptArgument("domain-type-name", "The name to the domain type the repository should be for", true)));
+		var generateRepositorySample = new McpSchema.Prompt(
+				"create a sample Spring Data JDBC repository",
+				"Expands into instructions to add a Spring Data JDBC repository interface plus a minimal domain type. Use when bootstrapping persistence code.",
+				List.of(new McpSchema.PromptArgument(
+						"domain-type-name",
+						"Simple Java type name for the domain class (e.g. Customer, OrderLine)",
+						true)));
 
         var promptSpecification = new McpServerFeatures.SyncPromptSpecification(generateRepositorySample, (exchange, getPromptRequest) -> {
         	String domainTypeName = (String) getPromptRequest.arguments().get("domain-type-name");

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -42,9 +42,16 @@ public class SpringVersionsAndGenerations {
 
 	public record ReleaseInformation(String projectName, String version, String endOfOssSupport, String endOfCommercialSupport) {}
 
-	@Tool(description = "This function provides information about the latest release of a specific Spring project, including the version number and release date")
+	@Tool(description = """
+			Returns the latest general-availability (current) release for a Spring portfolio project plus OSS and commercial support end dates for that generation.
+			Data is resolved from the language server's Spring projects metadata (same source used for validations), not a live per-call HAL dump.
+			Use getReleases when you need every release record; use getGenerations when you need all generation windows from the live Spring IO API; use getUpcomingReleases for scheduled upcoming releases from the calendar API.
+			""")
 	public ReleaseInformation getLatestReleaseInformation(
-			@ToolParam(description = "the technical name of the Spring project, e.g. \"spring-boot\" for Spring Boot or \"spring-data-jpa\" for Spring Data JPA") String projectName) {
+			@ToolParam(description = """
+					Spring project technical id, e.g. "spring-boot", "spring-framework", "spring-data-jpa" (not the IDE workspace project name).
+					""")
+			String projectName) {
 		
 		try {
 			ResolvedSpringProject info = provider.getProject(projectName);

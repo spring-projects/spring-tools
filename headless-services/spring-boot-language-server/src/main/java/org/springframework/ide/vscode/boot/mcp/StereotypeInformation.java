@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -49,7 +49,7 @@ public class StereotypeInformation {
 			This function provides information about all the stereotype definitions that are defined and available in the given project
 			""")
 	public Set<StereotypeDefinition> getStereotypesList(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName)
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
 			throws Exception {
 
 		IJavaProject project = getProject(projectName);
@@ -63,7 +63,7 @@ public class StereotypeInformation {
 			This way you can identify, for example, all components from a specific stereotype (e.g. all data repositories, all services, all entities, and so on)
 			""")
 	public List<ComponentWithStereotypes> getListOfComponentsAndTheirStereotypes(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName)
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
 			throws Exception {
 
 		IJavaProject project = getProject(projectName);
@@ -86,7 +86,7 @@ public class StereotypeInformation {
 			Returns all components that have the specified stereotype.
 			""")
 	public List<ComponentWithStereotypes> findComponentsByStereotype(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName,
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
 			@ToolParam(description = "the stereotype name to filter by (e.g., 'Controller', 'Service', 'Repository', 'Entity')") String stereotypeName)
 			throws Exception {
 

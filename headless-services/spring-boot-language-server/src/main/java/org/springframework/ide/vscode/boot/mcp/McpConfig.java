@@ -10,10 +10,16 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
+import java.util.List;
+
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.springframework.ide.vscode.boot.mcp.prompts.Prompts;
+
+import io.modelcontextprotocol.server.McpServerFeatures;
 
 /**
  * @author Martin Lippert
@@ -40,10 +46,13 @@ public class McpConfig {
         		requestMappingMcpTools,
         		componentAnalysisMcpTools));
 	}
-	
-//    @Bean
-//    List<McpServerFeatures.SyncPromptSpecification> springToolsPrompts() {
-//    	return Prompts.PROMPTS;
-//    }
-    
+
+	/**
+	 * MCP protocol prompts (templates clients can expand into user/assistant messages), separate from {@link ToolCallbackProvider} tools.
+	 */
+	@Bean
+	List<McpServerFeatures.SyncPromptSpecification> springToolsPrompts() {
+		return Prompts.PROMPTS;
+	}
+
 }

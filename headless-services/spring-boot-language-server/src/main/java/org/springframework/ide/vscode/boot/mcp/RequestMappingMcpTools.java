@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -70,7 +70,7 @@ public class RequestMappingMcpTools {
 			as well as HttpExchange interfaces.
 			""")
 	public List<RequestMappingInfo> getRequestMappings(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName) throws Exception {
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		logger.info("get request mappings for project: {}", projectName);
 		
@@ -96,7 +96,7 @@ public class RequestMappingMcpTools {
 			Returns all endpoints that handle the specified HTTP method.
 			""")
 	public List<RequestMappingInfo> findRequestMappingsByMethod(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName,
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
 			@ToolParam(description = "the HTTP method to filter by (e.g., 'GET', 'POST', 'PUT', 'DELETE', 'PATCH')") String httpMethod) throws Exception {
 		
 		logger.info("find request mappings by method: {} for project: {}", httpMethod, projectName);

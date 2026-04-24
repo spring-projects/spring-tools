@@ -39,8 +39,9 @@ public class ProjectInformation {
 
 
 	@Tool(description = """
-						This function provides a list of all the projects that are in the current workspace
-						""")
+			Lists all Java projects in the workspace with Boot flag and JRE level.
+			Use each Project.projectName when calling other tools; those tools match this name case-insensitively.
+			""")
 	public List<Project> getProjectList() throws Exception {
 		return projectFinder.all()
 				.stream()
@@ -52,10 +53,10 @@ public class ProjectInformation {
 
 
 	@Tool(description = """
-						This function provides information about which version of Spring Boot the given project from the workspace uses
-						""")
+			Returns the Spring Boot version for a workspace Java project (from the resolved classpath / BOM).
+			""")
 	public Version getSpringBootVersion(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName) throws Exception {
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		IJavaProject project = getProject(projectName);
 
@@ -69,10 +70,10 @@ public class ProjectInformation {
 
 
 	@Tool(description = """
-						This function provides information about which version of Java the given project from the workspace uses
-						""")
+			Returns the Java/JRE version configured for the project's classpath.
+			""")
 	public String getJavaVersion(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName) throws Exception {
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		IJavaProject project = getProject(projectName);
 		IClasspath classpath = project.getClasspath();
@@ -82,11 +83,11 @@ public class ProjectInformation {
 
 
 	@Tool(description = """
-						This function provides detailed information about the libraries that this project uses and the versio of those libraries.
-						It gets this information from the resolved classpath and is therefore very precise.
-						""")
+			Returns non-system binary classpath entries for the project (resolved JARs) with versions from build tooling.
+			Each Library.name is the classpath entry path (often a local .m2 or Gradle cache path), not necessarily a Maven coordinate; use it to see exact resolved artifacts.
+			""")
 	public List<Library> getResolvedProjectClasspath(
-			@ToolParam(description = "the name of the project in the workspace of the user") String projectName) throws Exception {
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		IJavaProject project = getProject(projectName);
 		

@@ -43,6 +43,8 @@ public class BootJavaConfig implements InitializingBean {
 	
 	private static final String SPRING_IO_API_URL = "https://api.spring.io/projects";
 
+	private static final String SPRING_CALENDAR_API_URL = "https://calendar.spring.io";
+
 	private static final Logger log = LoggerFactory.getLogger(BootJavaConfig.class);
 	
 	public static final int LIVE_INFORMATION_FETCH_DATA_RETRY_MAX_NO_DEFAULT = 10;
@@ -169,6 +171,16 @@ public class BootJavaConfig implements InitializingBean {
 	public String getSpringIOApiUrl() {
 		String url = getRawSettings().getString("boot-java", "io", "api");
 		return url == null ? SPRING_IO_API_URL : url;
+	}
+
+	/**
+	 * Base URL for the Spring release calendar JSON API (used by embedded MCP tools).
+	 * Workspace setting path: {@code boot-java} / {@code io} / {@code calendar-api}
+	 * (same nesting as {@code boot-java.io.api} for the projects index).
+	 */
+	public String getSpringCalendarApiUrl() {
+		String url = getRawSettings().getString("boot-java", "io", "calendar-api");
+		return url == null ? SPRING_CALENDAR_API_URL : url;
 	}
 
 	

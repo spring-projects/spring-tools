@@ -24,6 +24,7 @@ public class McpConfig {
 	@Bean
 	ToolCallbackProvider registerTools(
     		SpringVersionsAndGenerations springVersionsAndGenerations,
+    		SpringIoApiMcpTools springIoApiMcpTools,
     		SpringIndexAccess springIndexAccess,
     		ProjectInformation projectInformation,
     		StereotypeInformation stereotypeInformation,
@@ -32,6 +33,7 @@ public class McpConfig {
     	
         return ToolCallbackProvider.from(ToolCallbacks.from(
         		springVersionsAndGenerations,
+        		springIoApiMcpTools,
         		springIndexAccess,
         		projectInformation,
         		stereotypeInformation,

@@ -19,9 +19,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
@@ -145,7 +147,8 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		
 		try {
 			IMethodBinding mb = node.resolveBinding();
-			Position startPos = document.toPosition(node.getStartPosition());
+			int anchorOffset = methodHeaderAnchorOffset(node);
+			Position startPos = document.toPosition(anchorOffset);
 			Position endPos = document.toPosition(node.getName().getStartPosition() + node.getName().getLength());
 			Range range = new Range(startPos, endPos);
 			AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
@@ -191,6 +194,21 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 			log.error("bad location while calculating code lens for data repository query method", e);
 		}
 		return codeLenses;
+	}
+
+	/**
+	 * Offset for the code lens range start so the client shows lenses below Javadoc but above
+	 * method annotations (same attachment style as annotation-targeted lenses).
+	 */
+	static int methodHeaderAnchorOffset(MethodDeclaration node) {
+		List<IExtendedModifier> modifiers = node.modifiers();
+		if (!modifiers.isEmpty() && modifiers.get(0) instanceof ASTNode first) {
+			return first.getStartPosition();
+		}
+		if (node.getReturnType2() != null) {
+			return node.getReturnType2().getStartPosition();
+		}
+		return node.getName().getStartPosition();
 	}
 	
 	private Optional<CodeLens> createRefreshCodeLens(IJavaProject project, String title, Range range) {

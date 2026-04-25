@@ -50,7 +50,7 @@ jobs:
               ref: 'refs/tags/${{ steps.version.outputs.release_name }}',
               sha: context.sha
             })
-      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # 6.3.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # 6.4.0
         with:
           node-version: 22
       - name: Publish to VSCode Marketplace

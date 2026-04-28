@@ -24,20 +24,23 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.openrewrite.java.spring.framework.BeanMethodsNotPublic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.ChangeMethodVisibilityRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.ChangeMethodVisibilityRefactoring.Visibility;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
-import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
-import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 
 public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 		
@@ -65,11 +68,14 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 
 		return new ASTVisitor() {
+			
+			private final List<Integer> problemOffsets = new java.util.ArrayList<>();
+			private final List<ReconcileProblemImpl> problems = new java.util.ArrayList<>();
 
 			@Override
 			public boolean visit(SingleMemberAnnotation node) {
 				try {
-					visitAnnotation(project, cu, docUri, node, context.getProblemCollector());
+					visitAnnotation(project, cu, docUri, node, context.getProblemCollector(), problemOffsets, problems);
 				} catch (Exception e) {
 					log.error("", e);
 				}
@@ -79,7 +85,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 			@Override
 			public boolean visit(NormalAnnotation node) {
 				try {
-					visitAnnotation(project, cu, docUri, node, context.getProblemCollector());
+					visitAnnotation(project, cu, docUri, node, context.getProblemCollector(), problemOffsets, problems);
 				} catch (Exception e) {
 					log.error("", e);
 				}
@@ -89,11 +95,30 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 			@Override
 			public boolean visit(MarkerAnnotation node) {
 				try {
-					visitAnnotation(project, cu, docUri, node, context.getProblemCollector());
+					visitAnnotation(project, cu, docUri, node, context.getProblemCollector(), problemOffsets, problems);
 				} catch (Exception e) {
 					log.error("", e);
 				}
 				return super.visit(node);
+			}
+			
+			@Override
+			public void endVisit(CompilationUnit node) {
+				if (problemOffsets.size() > 1 && quickfixRegistry != null) {
+					QuickfixType quickfixType = quickfixRegistry.getQuickfixType(JdtRefactorings.JDT_QUICKFIX);
+					if (quickfixType != null) {
+						String uri = docUri.toASCIIString();
+						JdtFixDescriptor descriptor = new JdtFixDescriptor(
+								new ChangeMethodVisibilityRefactoring(Visibility.PACKAGE_PRIVATE, problemOffsets.stream().mapToInt(i -> i).toArray()),
+								List.of(uri), LABEL + " in file");
+						
+						// We need to attach this "fix all" quickfix to all the problems we found
+						for (ReconcileProblemImpl problem : problems) {
+							problem.addQuickfix(new QuickfixData<>(quickfixType, descriptor, LABEL + " in file", false));
+						}
+					}
+				}
+				super.endVisit(node);
 			}
 
 		};
@@ -103,7 +128,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 		return !isOverriding(methodBinding) && (methodBinding.getModifiers() & Modifier.PUBLIC) != 0;
 	}
 	
-	private void visitAnnotation(IJavaProject project, CompilationUnit cu, URI docUri, Annotation node,	IProblemCollector problemCollector) {
+	private void visitAnnotation(IJavaProject project, CompilationUnit cu, URI docUri, Annotation node,	IProblemCollector problemCollector, List<Integer> problemOffsets, List<ReconcileProblemImpl> problems) {
 		ITypeBinding typeBinding = node.resolveTypeBinding();
 		if (typeBinding != null && Annotations.BEAN.equals(typeBinding.getQualifiedName()) && node.getParent() instanceof MethodDeclaration) {
 			MethodDeclaration method = (MethodDeclaration) node.getParent();
@@ -123,6 +148,8 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 								method.getName().getStartPosition(), method.getName().getLength()));
 
 				addQuickFixes(cu, docUri, problem, method);
+				problemOffsets.add(method.getStartPosition());
+				problems.add(problem);
 				
 				problemCollector.accept(problem);
 			}
@@ -145,18 +172,14 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 	
 	private void addQuickFixes(CompilationUnit cu, URI docUri, ReconcileProblemImpl problem, MethodDeclaration method) {
 		if (quickfixRegistry != null) {
-			String id = BeanMethodsNotPublic.class.getName();
-			String uri = docUri.toASCIIString();
-
-			ReconcileUtils.setRewriteFixes(quickfixRegistry, problem, List.of(
-					new FixDescriptor(id, List.of(uri), LABEL)
-							.withRecipeScope(RecipeScope.NODE)
-							.withRangeScope(ReconcileUtils.createOpenRewriteRange(cu, method, null)),
-					new FixDescriptor(id, List.of(uri), ReconcileUtils.buildLabel(LABEL, RecipeScope.FILE))
-							.withRecipeScope(RecipeScope.FILE),
-					new FixDescriptor(id, List.of(uri), ReconcileUtils.buildLabel(LABEL, RecipeScope.PROJECT))
-							.withRecipeScope(RecipeScope.PROJECT)
-			));
+			QuickfixType quickfixType = quickfixRegistry.getQuickfixType(JdtRefactorings.JDT_QUICKFIX);
+			if (quickfixType != null) {
+				String uri = docUri.toASCIIString();
+				JdtFixDescriptor descriptor = new JdtFixDescriptor(
+						new ChangeMethodVisibilityRefactoring(Visibility.PACKAGE_PRIVATE, method.getStartPosition()),
+						List.of(uri), LABEL);
+				problem.addQuickfix(new QuickfixData<>(quickfixType, descriptor, LABEL, true));
+			}
 		}
 	}
 

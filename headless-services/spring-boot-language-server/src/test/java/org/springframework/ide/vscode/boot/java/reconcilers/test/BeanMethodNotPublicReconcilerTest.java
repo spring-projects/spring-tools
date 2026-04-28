@@ -40,7 +40,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(IndexerTestConf.class)
-public class CodeActionViaReconcilerTest {
+public class BeanMethodNotPublicReconcilerTest {
 	
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -65,10 +65,11 @@ public class CodeActionViaReconcilerTest {
 		initProject.get(5, TimeUnit.SECONDS);
 	}
 
-    @Test
-    void codeActionsFromReconcilingProblems() throws Exception {
-        String docUri = directory.toPath().resolve("src/main/java/org/test/BeanMethodNotPublic1.java").toUri().toString();
-        Editor editor = harness.newEditor(LanguageId.JAVA, """
+	@Test
+	void codeActionsFromReconcilingProblems() throws Exception {
+		String docUri = directory.toPath().resolve("src/main/java/org/test/BeanMethodNotPublic1.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
 		package org.test;
 		
 		import org.springframework.context.annotation.Bean;
@@ -89,24 +90,43 @@ public class CodeActionViaReconcilerTest {
 		
 		}
 		""", docUri);
-        
-        List<CodeAction> codeActions = editor.getCodeActions("public", 1);
-        assertEquals(0, codeActions.size());
-        
-        Diagnostic problem = editor.assertProblem("public");
-        assertNotNull(problem);
-        assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getCode(), problem.getCode().getLeft());
-        assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getLabel(), problem.getMessage().getLeft());
-        
-        codeActions = editor.getCodeActions(problem);
-        assertEquals(3, codeActions.size());
-		harness.changeConfiguration("{\"spring-boot\": {\"ls\": {\"problem\": { \"boot2\": { \"JAVA_PUBLIC_BEAN_METHOD\": \"IGNORE\"}}}}}");
 
-        editor.assertProblems();
-        
-        codeActions = editor.getCodeActions("public", 1);
-        assertEquals(3, codeActions.size());
-    }
+		List<CodeAction> codeActions = editor.getCodeActions("public", 1);
+		assertEquals(0, codeActions.size());
 
+		Diagnostic problem = editor.assertProblem("public");
+		assertNotNull(problem);
+		assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getCode(), problem.getCode().getLeft());
+		assertEquals(Boot2JavaProblemType.JAVA_PUBLIC_BEAN_METHOD.getLabel(), problem.getMessage().getLeft());
+
+		codeActions = editor.getCodeActions(problem);
+		assertEquals(1, codeActions.size());
+
+		harness.executeCommand(codeActions.get(0).getCommand());
+
+		String expectedText = """
+		package org.test;
+		
+		import org.springframework.context.annotation.Bean;
+		import org.springframework.context.annotation.Configuration;
+		
+		@Configuration
+		class BeanMethodNotPublic1 {
+		
+			@Bean BeanClass1 publicBeanMethod() {
+				return new BeanClass1();
+			}
+			
+			@Bean
+			BeanClass2 nonPublicBeanMethod() {
+				return new BeanClass2();
+			}
+		
+		}
+		""";
+		assertEquals(expectedText, editor.getRawText());
+
+		editor.assertProblems();
+	}
 
 }

@@ -183,9 +183,9 @@ public class SpringIndexerJavaReconcileService {
 						dependencies.add(dependency);
 					}
 
-			} catch (Exception e) {
-				log.error("problem creating temp document during re-reconciling for: {}", docURI, e);
-			}
+				} catch (Exception e) {
+					log.error("problem creating temp document during re-reconciling for: {}", docURI, e);
+				}
 
 			}
 		};

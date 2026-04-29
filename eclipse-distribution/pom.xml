@@ -425,15 +425,6 @@
 								<arch>aarch64</arch>
 							</environment>
 						</environments>
-						<filters>
-							<filter>
-								<type>eclipse-plugin</type>
-								<id>jakarta.ws.rs-api</id>
-								<restrictTo>
-									<versionRange>[3.1.0,4.0.0)</versionRange>
-								</restrictTo>
-							</filter>
-						</filters>
 					</configuration>
 				</plugin>
 

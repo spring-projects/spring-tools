@@ -211,8 +211,9 @@ public class SpringIndexerJava implements SpringIndexer {
 				throw new RuntimeException(e);
 			}
 		}).toArray(String[]::new);
-		
+
 		cacheHelper.removeFilesFromCaches(project, files);
+		dependencyTracker.removeFiles(project, files);
 	}
 	
 	/**

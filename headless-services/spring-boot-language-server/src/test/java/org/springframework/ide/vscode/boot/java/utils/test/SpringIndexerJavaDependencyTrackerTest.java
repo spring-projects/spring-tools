@@ -172,4 +172,52 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		assertNotNull(retrieved);
 		assertTrue(retrieved.isEmpty());
 	}
+
+	@Test
+	public void testRemoveFilesClearsEntriesForThosePaths() {
+		String fileA = "/proj/src/Foo.java";
+		String fileB = "/proj/src/Bar.java";
+		tracker.update(project1, fileA, Set.of("com.example.Dep"));
+		tracker.update(project1, fileB, Set.of("com.example.Other"));
+
+		tracker.removeFiles(project1, new String[] { fileA });
+
+		assertTrue(tracker.get(project1, fileA).isEmpty());
+		assertEquals(1, tracker.get(project1, fileB).size());
+		assertTrue(tracker.get(project1, fileB).contains("com.example.Other"));
+	}
+
+	@Test
+	public void testRemoveFilesNullOrEmptyIsNoOp() {
+		tracker.update(project1, "/proj/Foo.java", Set.of("com.example.X"));
+
+		tracker.removeFiles(project1, null);
+		tracker.removeFiles(project1, new String[0]);
+
+		assertEquals(1, tracker.getAllDependencies(project1).keySet().size());
+	}
+
+	@Test
+	public void testRemoveFilesUnknownProjectIsNoOp() {
+		IJavaProject other = mock(IJavaProject.class);
+		when(other.getElementName()).thenReturn("other");
+
+		tracker.update(project1, "/p/Foo.java", Set.of("com.example.X"));
+		tracker.removeFiles(other, new String[] { "/p/Foo.java" });
+
+		assertEquals(1, tracker.get(project1, "/p/Foo.java").size());
+	}
+
+	@Test
+	public void testRemoveFilesMultiplePaths() {
+		tracker.update(project1, "/a.java", Set.of("t.A"));
+		tracker.update(project1, "/b.java", Set.of("t.B"));
+		tracker.update(project1, "/c.java", Set.of("t.C"));
+
+		tracker.removeFiles(project1, new String[] { "/a.java", "/c.java" });
+
+		assertTrue(tracker.get(project1, "/a.java").isEmpty());
+		assertEquals(1, tracker.get(project1, "/b.java").size());
+		assertTrue(tracker.get(project1, "/c.java").isEmpty());
+	}
 }

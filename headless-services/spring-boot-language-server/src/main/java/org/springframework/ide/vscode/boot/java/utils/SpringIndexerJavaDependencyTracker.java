@@ -62,6 +62,19 @@ public class SpringIndexerJavaDependencyTracker {
 	public void removeProject(IJavaProject project) {
 		dependenciesByProject.remove(project.getElementName());
 	}
+
+	public void removeFiles(IJavaProject project, String[] absolutePaths) {
+		if (absolutePaths == null || absolutePaths.length == 0) {
+			return;
+		}
+
+		Multimap<String, String> deps = dependenciesByProject.get(project.getElementName());
+		if (deps != null) {
+			for (String file : absolutePaths) {
+				deps.removeAll(file);
+			}
+		}
+	}
 	
 	private Multimap<String, String> getDependenciesForProject(IJavaProject project) {
 		return dependenciesByProject.computeIfAbsent(

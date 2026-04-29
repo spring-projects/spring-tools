@@ -46,6 +46,15 @@ public class SpringIndexerJavaAstScanner {
 	}
 
 	public void scanAST(SpringIndexerJavaContext context, boolean includeReconcile, ReconcilingIndex reconcilingIndex) {
+		scanAST(context, includeReconcile, reconcilingIndex, true);
+	}
+
+	/**
+	 * @param updateDependencyTracking when false, skips updating {@link SpringIndexerJavaDependencyTracker}
+	 *        (e.g. ad-hoc document symbols from editor buffers must not overwrite disk-indexed dependencies).
+	 */
+	public void scanAST(SpringIndexerJavaContext context, boolean includeReconcile, ReconcilingIndex reconcilingIndex,
+			boolean updateDependencyTracking) {
 		try {
 			context.getCu().accept(new ASTVisitor() {
 
@@ -103,7 +112,9 @@ public class SpringIndexerJavaAstScanner {
 			reconcileAction.accept(context, reconcilingIndex);
 		}
 
-		dependencyTracker.update(context.getProject(), context.getFile(), context.getDependencies());
+		if (updateDependencyTracking) {
+			dependencyTracker.update(context.getProject(), context.getFile(), context.getDependencies());
+		}
 	}
 
 	private void extractSafely(SpringIndexerJavaContext context, String nodeDescription, SymbolExtraction extraction)

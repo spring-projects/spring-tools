@@ -236,7 +236,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
 						0, doc, content, NO_OP_PROBLEM_COLLECTOR, new ArrayList<>(), true, true, result);
 
-				astScanner.scanAST(context, false, new ReconcilingIndex());
+				astScanner.scanAST(context, false, new ReconcilingIndex(), false);
 
 				List<SpringIndexElement> indexElements = result.getGeneratedIndexElements().stream()
 					.map(cachedBean -> cachedBean.getIndexElement())

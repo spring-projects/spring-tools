@@ -50,7 +50,9 @@ class JdtRefactorUtilsTest {
 		ASTParser parser = ASTParser.newParser(AST.JLS25);
 		parser.setSource(source.toCharArray());
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(false);
+		parser.setResolveBindings(true);
+		parser.setEnvironment(new String[0], new String[0], null, true);
+		parser.setUnitName("Test.java");
 		Map<String, String> options = JavaCore.getOptions();
 		JavaCore.setComplianceOptions(JavaCore.VERSION_21, options);
 		parser.setCompilerOptions(options);
@@ -62,6 +64,16 @@ class JdtRefactorUtilsTest {
 		ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
 		JdtRefactorUtils.addImport(rewrite, cu.getAST(), cu,
 				new ClassType(JdtRefactorUtils.extractPackageName(fqn), JdtRefactorUtils.extractSimpleName(fqn)));
+		Document doc = new Document(source);
+		TextEdit edit = rewrite.rewriteAST(doc, defaultFormatterOptions());
+		edit.apply(doc);
+		return doc.get();
+	}
+
+	private static String applyRemoveImports(String source, String... fqns) throws Exception {
+		CompilationUnit cu = parseSource(source);
+		ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
+		JdtRefactorUtils.removeImports(cu, rewrite, fqns);
 		Document doc = new Document(source);
 		TextEdit edit = rewrite.rewriteAST(doc, defaultFormatterOptions());
 		edit.apply(doc);
@@ -396,6 +408,167 @@ class JdtRefactorUtilsTest {
 		var lspEdit = result.getEdits().get(0).getLeft();
 		assertEquals(1, lspEdit.getRange().getStart().getLine());
 		assertEquals(0, lspEdit.getRange().getStart().getCharacter());
+	}
+
+	// ========== removeImports ==========
+
+	@Test
+	void removeImports_unusedImport_removed() throws Exception {
+		String source = """
+				package com.example;
+
+				import java.util.List;
+				import java.util.ArrayList;
+
+				class Foo {
+					List<String> list;
+				}
+				""";
+
+		String result = applyRemoveImports(source, "java.util.ArrayList");
+
+		assertEquals("""
+				package com.example;
+
+				import java.util.List;
+
+				class Foo {
+					List<String> list;
+				}
+				""", result);
+	}
+
+	@Test
+	void removeImports_usedImport_kept() throws Exception {
+		String source = """
+				package com.example;
+
+				import java.util.List;
+				import java.util.ArrayList;
+
+				class Foo {
+					List<String> list = new ArrayList<>();
+				}
+				""";
+
+		String result = applyRemoveImports(source, "java.util.ArrayList");
+
+		assertEquals(source, result);
+	}
+
+	@Test
+	void removeImports_multipleUnusedImports_removed() throws Exception {
+		String source = """
+				package com.example;
+
+				import java.util.List;
+				import java.util.ArrayList;
+				import java.util.Map;
+				import java.util.HashMap;
+
+				class Foo {
+				}
+				""";
+
+		String result = applyRemoveImports(source, "java.util.List", "java.util.ArrayList", "java.util.Map");
+
+		assertEquals("""
+				package com.example;
+
+				import java.util.HashMap;
+
+				class Foo {
+				}
+				""", result);
+	}
+
+	@Test
+	void removeImports_usedInAnnotation_kept() throws Exception {
+		String source = """
+				package com.example;
+
+				import java.lang.annotation.Documented;
+
+				@Documented
+				class Foo {
+				}
+				""";
+
+		String result = applyRemoveImports(source, "java.lang.annotation.Documented");
+
+		assertEquals(source, result);
+	}
+
+	@Test
+	void removeImports_usedAsStaticMethod_kept() throws Exception {
+		String source = """
+				package com.example;
+
+				import java.util.Collections;
+
+				class Foo {
+					void test() {
+						Collections.emptyList();
+					}
+				}
+				""";
+
+		String result = applyRemoveImports(source, "java.util.Collections");
+
+		assertEquals(source, result);
+	}
+
+	@Test
+	void removeImports_onDemandImport_ignored() throws Exception {
+		String source = """
+				package com.example;
+
+				import java.util.*;
+
+				class Foo {
+				}
+				""";
+
+		String result = applyRemoveImports(source, "java.util.List");
+
+		assertEquals(source, result);
+	}
+
+	@Test
+	void removeImports_survivesRewrite_removedIfNodeRemoved() throws Exception {
+		String source = """
+				package com.example;
+
+				import java.util.List;
+				import java.util.ArrayList;
+
+				class Foo {
+					List<String> list;
+				}
+				""";
+
+		CompilationUnit cu = parseSource(source);
+		ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
+		
+		// Remove the 'List<String> list;' field declaration
+		org.eclipse.jdt.core.dom.TypeDeclaration typeDecl = (org.eclipse.jdt.core.dom.TypeDeclaration) cu.types().get(0);
+		org.eclipse.jdt.core.dom.FieldDeclaration fieldDecl = typeDecl.getFields()[0];
+		rewrite.remove(fieldDecl, null);
+		
+		JdtRefactorUtils.removeImports(cu, rewrite, "java.util.List");
+		
+		Document doc = new Document(source);
+		TextEdit edit = rewrite.rewriteAST(doc, defaultFormatterOptions());
+		edit.apply(doc);
+		
+		assertEquals("""
+				package com.example;
+
+				import java.util.ArrayList;
+
+				class Foo {
+				}
+				""", doc.get());
 	}
 
 }

@@ -79,7 +79,7 @@ public class SpringIndexerJavaAstScannerTest {
 		SpringIndexerJavaContext context = minimalContext();
 		scanner.scanAST(context, false, new ReconcilingIndex(), false);
 
-		assertTrue(tracker.get(project, FILE).contains("com.example.StaleDep"));
+		assertTrue(tracker.getDependenciesForFile(project, FILE).contains("com.example.StaleDep"));
 	}
 
 	@Test
@@ -93,7 +93,7 @@ public class SpringIndexerJavaAstScannerTest {
 		SpringIndexerJavaContext context = minimalContext();
 		scanner.scanAST(context, false, new ReconcilingIndex(), true);
 
-		assertFalse(tracker.get(project, FILE).contains("com.example.StaleDep"));
+		assertFalse(tracker.getDependenciesForFile(project, FILE).contains("com.example.StaleDep"));
 	}
 
 	private SpringIndexerJavaContext minimalContext() {

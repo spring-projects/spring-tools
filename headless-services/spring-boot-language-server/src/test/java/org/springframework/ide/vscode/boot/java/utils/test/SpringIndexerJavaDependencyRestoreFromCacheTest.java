@@ -106,7 +106,7 @@ class SpringIndexerJavaDependencyRestoreFromCacheTest {
 
 		indexer.initializeProject(project, false);
 
-		Set<String> restored = Set.copyOf(indexer.getDependencyTracker().get(project, javaFilePath));
+		Set<String> restored = indexer.getDependencyTracker().getDependenciesForFile(project, javaFilePath);
 		assertTrue(restored.contains(DEP_FROM_INDEX), "sanity: index-cache dependencies should be restored");
 		assertTrue(restored.contains(DEP_FROM_RECONCILE),
 				"dependencies persisted only with the diagnostics cache must be restored too "

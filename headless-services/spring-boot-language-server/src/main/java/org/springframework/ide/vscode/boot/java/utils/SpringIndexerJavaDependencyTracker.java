@@ -21,6 +21,7 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.MultimapBuilder;
+import com.google.common.collect.Multimaps;
 
 public class SpringIndexerJavaDependencyTracker {
 	
@@ -44,11 +45,17 @@ public class SpringIndexerJavaDependencyTracker {
 	}
 
 	public Multimap<String, String> getAllDependencies(IJavaProject project) {
-		return getDependenciesForProject(project);
+		return Multimaps.unmodifiableMultimap(getDependenciesForProject(project));
 	}
-	
-	public Collection<String> get(IJavaProject project, String file) {
-		return getDependenciesForProject(project).get(file);
+
+	public Set<String> getDependenciesForFile(IJavaProject project, String file) {
+		return Set.copyOf(getDependenciesForProject(project).get(file));
+	}
+
+	public void addDependencies(IJavaProject project, String file, Iterable<String> dependencies) {
+		if (dependencies != null) {
+			getDependenciesForProject(project).putAll(file, dependencies);
+		}
 	}
 
 	public void update(IJavaProject project, String file, Set<String> dependenciesForFile) {
@@ -56,7 +63,12 @@ public class SpringIndexerJavaDependencyTracker {
 	}
 
 	public void restore(IJavaProject project, Multimap<String, String> deps) {
-		dependenciesByProject.put(project.getElementName(), deps);
+		Multimap<String, String> copy = MultimapBuilder.hashKeys().hashSetValues().build();
+		if (deps != null) {
+			copy.putAll(deps);
+		}
+
+		dependenciesByProject.put(project.getElementName(), copy);
 	}
 	
 	public void removeProject(IJavaProject project) {

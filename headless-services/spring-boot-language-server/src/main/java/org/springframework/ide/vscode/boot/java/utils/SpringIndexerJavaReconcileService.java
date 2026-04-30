@@ -14,7 +14,6 @@ import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -178,10 +177,7 @@ public class SpringIndexerJavaReconcileService {
 				try {
 					reconcileAfterScan(context, reconcilingIndex);
 
-					Collection<String> dependencies = dependencyTracker.get(project, context.getFile());
-					for (String dependency : context.getDependencies()) {
-						dependencies.add(dependency);
-					}
+					dependencyTracker.addDependencies(project, context.getFile(), context.getDependencies());
 
 				} catch (Exception e) {
 					log.error("problem creating temp document during re-reconciling for: {}", docURI, e);

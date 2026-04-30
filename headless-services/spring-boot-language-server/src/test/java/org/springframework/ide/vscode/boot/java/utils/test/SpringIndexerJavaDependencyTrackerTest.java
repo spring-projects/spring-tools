@@ -54,7 +54,7 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		
 		tracker.update(project1, file1, dependencies1);
 		
-		Collection<String> retrieved = tracker.get(project1, file1);
+		Collection<String> retrieved = tracker.getDependenciesForFile(project1, file1);
 		assertNotNull(retrieved);
 		assertEquals(2, retrieved.size());
 		assertTrue(retrieved.contains("com/example/Bar.java"));
@@ -70,7 +70,7 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		tracker.update(project1, file1, dependencies1);
 		tracker.update(project1, file1, dependencies2);
 		
-		Collection<String> retrieved = tracker.get(project1, file1);
+		Collection<String> retrieved = tracker.getDependenciesForFile(project1, file1);
 		assertNotNull(retrieved);
 		assertEquals(1, retrieved.size());
 		assertTrue(retrieved.contains("com/example/Qux.java"));
@@ -102,8 +102,8 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		tracker.update(project1, file1, dependencies1);
 		tracker.update(project2, file1, dependencies2);
 		
-		Collection<String> project1Deps = tracker.get(project1, file1);
-		Collection<String> project2Deps = tracker.get(project2, file1);
+		Collection<String> project1Deps = tracker.getDependenciesForFile(project1, file1);
+		Collection<String> project2Deps = tracker.getDependenciesForFile(project2, file1);
 		
 		assertEquals(1, project1Deps.size());
 		assertTrue(project1Deps.contains("com/example/Bar.java"));
@@ -123,11 +123,11 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		tracker.removeProject(project1);
 		
 		// Project1 dependencies should be gone (empty)
-		Collection<String> project1Deps = tracker.get(project1, file1);
+		Collection<String> project1Deps = tracker.getDependenciesForFile(project1, file1);
 		assertTrue(project1Deps.isEmpty());
 		
 		// Project2 dependencies should still exist
-		Collection<String> project2Deps = tracker.get(project2, file1);
+		Collection<String> project2Deps = tracker.getDependenciesForFile(project2, file1);
 		assertEquals(1, project2Deps.size());
 	}
 
@@ -148,14 +148,14 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		// Restore original state
 		tracker.restore(project1, savedDeps);
 		
-		Collection<String> restored = tracker.get(project1, file1);
+		Collection<String> restored = tracker.getDependenciesForFile(project1, file1);
 		assertEquals(1, restored.size());
 		assertTrue(restored.contains("com/example/Baz.java"));
 	}
 
 	@Test
 	public void testGetNonExistentFile() {
-		Collection<String> deps = tracker.get(project1, "nonexistent.java");
+		Collection<String> deps = tracker.getDependenciesForFile(project1, "nonexistent.java");
 		assertNotNull(deps);
 		assertTrue(deps.isEmpty());
 	}
@@ -168,7 +168,7 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		tracker.update(project1, file1, dependencies);
 		tracker.update(project1, file1, Set.of());
 		
-		Collection<String> retrieved = tracker.get(project1, file1);
+		Collection<String> retrieved = tracker.getDependenciesForFile(project1, file1);
 		assertNotNull(retrieved);
 		assertTrue(retrieved.isEmpty());
 	}
@@ -182,9 +182,9 @@ public class SpringIndexerJavaDependencyTrackerTest {
 
 		tracker.removeFiles(project1, new String[] { fileA });
 
-		assertTrue(tracker.get(project1, fileA).isEmpty());
-		assertEquals(1, tracker.get(project1, fileB).size());
-		assertTrue(tracker.get(project1, fileB).contains("com.example.Other"));
+		assertTrue(tracker.getDependenciesForFile(project1, fileA).isEmpty());
+		assertEquals(1, tracker.getDependenciesForFile(project1, fileB).size());
+		assertTrue(tracker.getDependenciesForFile(project1, fileB).contains("com.example.Other"));
 	}
 
 	@Test
@@ -205,7 +205,16 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		tracker.update(project1, "/p/Foo.java", Set.of("com.example.X"));
 		tracker.removeFiles(other, new String[] { "/p/Foo.java" });
 
-		assertEquals(1, tracker.get(project1, "/p/Foo.java").size());
+		assertEquals(1, tracker.getDependenciesForFile(project1, "/p/Foo.java").size());
+	}
+
+	@Test
+	public void testAddDependenciesAccumulatesWithExisting() {
+		String file = "com/example/Foo.java";
+		tracker.update(project1, file, Set.of("com/example/Existing.java"));
+		tracker.addDependencies(project1, file, Set.of("com/example/Added.java"));
+
+		assertEquals(Set.of("com/example/Existing.java", "com/example/Added.java"), tracker.getDependenciesForFile(project1, file));
 	}
 
 	@Test
@@ -216,8 +225,8 @@ public class SpringIndexerJavaDependencyTrackerTest {
 
 		tracker.removeFiles(project1, new String[] { "/a.java", "/c.java" });
 
-		assertTrue(tracker.get(project1, "/a.java").isEmpty());
-		assertEquals(1, tracker.get(project1, "/b.java").size());
-		assertTrue(tracker.get(project1, "/c.java").isEmpty());
+		assertTrue(tracker.getDependenciesForFile(project1, "/a.java").isEmpty());
+		assertEquals(1, tracker.getDependenciesForFile(project1, "/b.java").size());
+		assertTrue(tracker.getDependenciesForFile(project1, "/c.java").isEmpty());
 	}
 }

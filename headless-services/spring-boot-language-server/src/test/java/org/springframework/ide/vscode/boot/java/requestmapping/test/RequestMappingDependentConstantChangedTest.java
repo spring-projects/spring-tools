@@ -84,6 +84,7 @@ public class RequestMappingDependentConstantChangedTest {
     void testSimpleRequestMappingSymbolFromConstantInDifferentClass() throws Exception {
         String docUri = directory.resolve("src/main/java/org/test/SimpleMappingClassWithConstantInDifferentClass.java").toUri().toString();
         String constantsUri = directory.resolve("src/main/java/org/test/Constants.java").toUri().toString();
+        String mappingsWithConcatUri = directory.resolve("src/main/java/org/test/MappingsWithConcatenatedStrings.java").toUri().toString();
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
         assertEquals(2, symbols.size());
         assertSymbol(docUri, "@/path/from/constant", "@RequestMapping(Constants.REQUEST_MAPPING_PATH)");
@@ -94,9 +95,10 @@ public class RequestMappingDependentConstantChangedTest {
         replaceInFile(constantsUri, "path/from/constant", "/changed-path");
         indexer.updateDocument(constantsUri, null, "triggered by test code").get();
 
-        fileScanListener.assertScannedUris(constantsUri, docUri);
+        fileScanListener.assertScannedUris(constantsUri, docUri, mappingsWithConcatUri);
         fileScanListener.assertScannedUri(constantsUri, 1);
         fileScanListener.assertScannedUri(docUri, 1);
+        fileScanListener.assertScannedUri(mappingsWithConcatUri, 1);
 
         symbols = indexer.getSymbols(docUri);
         assertSymbolCount(2, symbols);
@@ -107,6 +109,7 @@ public class RequestMappingDependentConstantChangedTest {
     void testSimpleRequestMappingSymbolFromConstantInDifferentClassViaMultipleFilesUpdate() throws Exception {
         String docUri = directory.resolve("src/main/java/org/test/SimpleMappingClassWithConstantInDifferentClass.java").toUri().toString();
         String constantsUri = directory.resolve("src/main/java/org/test/Constants.java").toUri().toString();
+        String mappingsWithConcatUri = directory.resolve("src/main/java/org/test/MappingsWithConcatenatedStrings.java").toUri().toString();
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
         assertEquals(2, symbols.size());
         assertSymbol(docUri, "@/path/from/constant", "@RequestMapping(Constants.REQUEST_MAPPING_PATH)");
@@ -117,9 +120,10 @@ public class RequestMappingDependentConstantChangedTest {
         replaceInFile(constantsUri, "path/from/constant", "/changed-path");
         indexer.updateDocuments(new String[]{constantsUri}, "triggered by test code").get();
 
-        fileScanListener.assertScannedUris(constantsUri, docUri);
+        fileScanListener.assertScannedUris(constantsUri, docUri, mappingsWithConcatUri);
         fileScanListener.assertScannedUri(constantsUri, 1);
         fileScanListener.assertScannedUri(docUri, 1);
+        fileScanListener.assertScannedUri(mappingsWithConcatUri, 1);
 
         symbols = indexer.getSymbols(docUri);
         assertSymbolCount(2, symbols);

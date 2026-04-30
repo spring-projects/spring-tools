@@ -118,6 +118,8 @@ public class RequestMappingIndexerTest {
     void testSimpleRequestMappingSymbolFromConstantInDifferentClass() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/SimpleMappingClassWithConstantInDifferentClass.java").toUri().toString();
         String constantsUri = directory.toPath().resolve("src/main/java/org/test/Constants.java").toUri().toString();
+        String otherFileDependingOnConstantsClassUri = directory.toPath().resolve("src/main/java/org/test/MappingsWithConcatenatedStrings.java").toUri().toString();
+        
         List<? extends WorkspaceSymbol> symbols = getSymbols(docUri);
         assertEquals(2, symbols.size());
         assertTrue(containsSymbol(symbols, "@/path/from/constant", docUri, 8, 1, 8, 48));
@@ -132,7 +134,7 @@ public class RequestMappingIndexerTest {
         CompletableFuture<Void> updateFuture = indexer.updateDocument(constantsUri, FileUtils.readFileToString(UriUtil.toFile(constantsUri), Charset.defaultCharset()), "test triggered");
         updateFuture.get(5, TimeUnit.SECONDS);
 
-        fileScanListener.assertScannedUris(constantsUri, docUri);
+        fileScanListener.assertScannedUris(constantsUri, docUri, otherFileDependingOnConstantsClassUri);
         fileScanListener.assertScannedUri(constantsUri, 1);
         fileScanListener.assertScannedUri(docUri, 1);
     }
@@ -421,8 +423,11 @@ public class RequestMappingIndexerTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/MappingsWithConcatenatedStrings.java").toUri().toString();
         List<? extends WorkspaceSymbol> symbols =  getSymbols(docUri);
         assertTrue(containsSymbol(symbols, "@/path1/path/from/constant -- GET", docUri, 20, 1, 20, 56));
+        
+        SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("org.test.Constants")), ImmutableSet.copyOf(dt.getAllDependencies(project).get(SourceJavaFile.of(UriUtil.toFileString(docUri)))));
     }
-    
+
 	private boolean containsSymbol(List<? extends WorkspaceSymbol> symbols, String name, String uri, int startLine, int startCHaracter, int endLine, int endCharacter) {
 		for (Iterator<? extends WorkspaceSymbol> iterator = symbols.iterator(); iterator.hasNext();) {
 			WorkspaceSymbol symbol = iterator.next();

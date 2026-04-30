@@ -34,13 +34,16 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
+import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
@@ -49,6 +52,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
@@ -230,7 +234,57 @@ public class ASTUtils {
 				.orElse(null);
 	}
 
+	/**
+	 * Collects types referenced by field or enum constants appearing anywhere in an expression tree.
+	 * Use together with {@link #getExpressionValueAsString(Expression, Consumer)} so dependencies are
+	 * recorded for nested references (e.g. {@code "/api/" + OtherClass.PATH}) as well as top-level names.
+	 */
+	public static void collectTypeDependenciesForConstantExpression(Expression exp, Consumer<ITypeBinding> dependencies) {
+		if (exp == null) {
+			return;
+		}
+		if (exp instanceof StringLiteral) {
+			return;
+		}
+		if (exp instanceof Name name) {
+			IBinding binding = name.resolveBinding();
+			if (binding != null && binding.getKind() == IBinding.VARIABLE) {
+				IVariableBinding varBinding = (IVariableBinding) binding;
+				ITypeBinding klass = varBinding.getDeclaringClass();
+				if (klass != null) {
+					dependencies.accept(klass);
+				}
+			}
+			return;
+		}
+		if (exp instanceof InfixExpression infix) {
+			collectTypeDependenciesForConstantExpression(infix.getLeftOperand(), dependencies);
+			collectTypeDependenciesForConstantExpression(infix.getRightOperand(), dependencies);
+			for (Object extended : infix.extendedOperands()) {
+				collectTypeDependenciesForConstantExpression((Expression) extended, dependencies);
+			}
+			return;
+		}
+		if (exp instanceof ParenthesizedExpression paren) {
+			collectTypeDependenciesForConstantExpression(paren.getExpression(), dependencies);
+			return;
+		}
+		if (exp instanceof ConditionalExpression cond) {
+			collectTypeDependenciesForConstantExpression(cond.getExpression(), dependencies);
+			collectTypeDependenciesForConstantExpression(cond.getThenExpression(), dependencies);
+			collectTypeDependenciesForConstantExpression(cond.getElseExpression(), dependencies);
+			return;
+		}
+		if (exp instanceof CastExpression cast) {
+			collectTypeDependenciesForConstantExpression(cast.getExpression(), dependencies);
+		}
+	}
+
 	public static String getExpressionValueAsString(Expression exp, Consumer<ITypeBinding> dependencies) {
+		if (exp == null) {
+			return null;
+		}
+		collectTypeDependenciesForConstantExpression(exp, dependencies);
 		if (exp instanceof StringLiteral) {
 			return getLiteralValue((StringLiteral) exp);
 		} else if (exp instanceof Name) {
@@ -239,11 +293,6 @@ public class ASTUtils {
 			if (binding != null && binding.getKind() == IBinding.VARIABLE) {
 
 				IVariableBinding varBinding = (IVariableBinding) binding;
-				
-				ITypeBinding klass = varBinding.getDeclaringClass();
-				if (klass != null) {
-					dependencies.accept(klass);
-				}
 
 				Object constValue = varBinding.getConstantValue();
 				if (constValue != null) {

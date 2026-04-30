@@ -396,11 +396,9 @@ public class SpringIndexerJava implements SpringIndexer {
 	
 	private static record ScanFilesInternallyResult(Set<String> scannedTypes, SpringIndexerJavaScanResult scanResult) {};
 
-
 	private void scanAffectedFiles(IJavaProject project, Set<String> changedTypes, Set<String> alreadyScannedFiles, Set<String> alreadyMarkedForAffectedFilesIndexing) throws Exception {
 		log.info("Start scanning affected files for types {}", changedTypes);
 		
-		Multimap<String, String> dependencies = dependencyTracker.getAllDependencies(project);
 		Set<String> filesToScan = new HashSet<>();
 		
 		for (String affectedFile : alreadyMarkedForAffectedFilesIndexing) {
@@ -409,6 +407,7 @@ public class SpringIndexerJava implements SpringIndexer {
 			}
 		}
 		
+		Multimap<String, String> dependencies = dependencyTracker.getAllDependencies(project);
 		for (String file : dependencies.keys()) {
 			if (!alreadyScannedFiles.contains(file)) {
 				Collection<String> dependsOn = dependencies.get(file);
@@ -446,10 +445,12 @@ public class SpringIndexerJava implements SpringIndexer {
 			// use cached data
 
 			result = new SpringIndexerJavaScanResult(project, javaFiles, symbolHandler, cachedIndexElements.getLeft(), cachedDiagnostics.getLeft());
-			this.dependencyTracker.restore(project, cachedIndexElements.getRight());
+			Multimap<String, String> mergedDeps = mergeCachedDependencyMultimaps(cachedIndexElements.getRight(),
+					cachedDiagnostics.getRight());
+			this.dependencyTracker.restore(project, mergedDeps);
 
 			log.info("scan java files used cached data: {} - no. of cached symbols retrieved: {}", project.getElementName(), result.getGeneratedIndexElements().size());
-			log.info("scan java files restored cached dependency data: {} - no. of cached dependencies: {}", cachedIndexElements.getRight().size());
+			log.info("scan java files restored cached dependency data: {} - no. of cached dependencies: {}", project.getElementName(), mergedDeps.size());
 
 		}
 		else {
@@ -609,6 +610,20 @@ public class SpringIndexerJava implements SpringIndexer {
 				log.error("{}", e);
 			}
 		}
+	}
+
+	private static Multimap<String, String> mergeCachedDependencyMultimaps(Multimap<String, String> fromIndexCache, Multimap<String, String> fromDiagnosticsCache) {
+		Multimap<String, String> merged = MultimapBuilder.hashKeys().hashSetValues().build();
+
+		if (fromIndexCache != null) {
+			merged.putAll(fromIndexCache);
+		}
+
+		if (fromDiagnosticsCache != null) {
+			merged.putAll(fromDiagnosticsCache);
+		}
+
+		return merged;
 	}
 
 	public void setScanChunkSize(int chunkSize) {

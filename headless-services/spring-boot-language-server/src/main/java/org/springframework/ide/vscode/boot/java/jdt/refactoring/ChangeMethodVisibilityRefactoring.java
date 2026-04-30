@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2026 Broadcom
+ * Copyright (c) 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,11 +11,12 @@
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Modifier.ModifierKeyword;
+import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
@@ -82,16 +83,18 @@ public class ChangeMethodVisibilityRefactoring implements JdtRefactoring {
 	}
 
 	private MethodDeclaration findMethodAtOffset(CompilationUnit cu, int offset) {
-		MethodDeclaration[] result = new MethodDeclaration[1];
-		cu.accept(new ASTVisitor() {
-			@Override
-			public boolean visit(MethodDeclaration node) {
-				if (node.getStartPosition() == offset) {
-					result[0] = node;
+		ASTNode node = NodeFinder.perform(cu, offset, 0);
+		while (node != null) {
+			if (node instanceof MethodDeclaration m) {
+				int start = m.getName().getStartPosition();
+				int end = start + m.getName().getLength();
+				if (offset >= start && offset <= end) {
+					return m;
 				}
-				return result[0] == null; // stop visiting if found
+				return null;
 			}
-		});
-		return result[0];
+			node = node.getParent();
+		}
+		return null;
 	}
 }

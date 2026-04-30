@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.lang.reflect.Field;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -69,8 +70,8 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 
 		return new ASTVisitor() {
 			
-			private final List<Integer> problemOffsets = new java.util.ArrayList<>();
-			private final List<ReconcileProblemImpl> problems = new java.util.ArrayList<>();
+			private final List<Integer> problemOffsets = new ArrayList<>();
+			private final List<ReconcileProblemImpl> problems = new ArrayList<>();
 
 			@Override
 			public boolean visit(SingleMemberAnnotation node) {
@@ -148,7 +149,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 								method.getName().getStartPosition(), method.getName().getLength()));
 
 				addQuickFixes(cu, docUri, problem, method);
-				problemOffsets.add(method.getStartPosition());
+				problemOffsets.add(method.getName().getStartPosition());
 				problems.add(problem);
 				
 				problemCollector.accept(problem);
@@ -176,7 +177,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 			if (quickfixType != null) {
 				String uri = docUri.toASCIIString();
 				JdtFixDescriptor descriptor = new JdtFixDescriptor(
-						new ChangeMethodVisibilityRefactoring(Visibility.PACKAGE_PRIVATE, method.getStartPosition()),
+						new ChangeMethodVisibilityRefactoring(Visibility.PACKAGE_PRIVATE, method.getName().getStartPosition()),
 						List.of(uri), LABEL);
 				problem.addQuickfix(new QuickfixData<>(quickfixType, descriptor, LABEL, true));
 			}

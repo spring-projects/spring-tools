@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,25 +22,27 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
-import org.openrewrite.java.spring.NoAutowiredOnConstructor;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.RemoveAnnotationRefactoring;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
-import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
-import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 
 public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 
 	private static final String PROBLEM_LABEL = "Unnecessary `@Autowired` annotation";
 	private static final String FIX_LABEL = "Remove unnecessary `@Autowired` annotation";
 
-	private QuickfixRegistry registry;
+	private final QuickfixRegistry registry;
 
 	public NoAutowiredOnConstructorReconciler(QuickfixRegistry registry) {
 		this.registry = registry;
@@ -97,10 +99,14 @@ public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 						if (autowiredAnnotation != null) {
 							ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
 									autowiredAnnotation.getStartPosition(), autowiredAnnotation.getLength());
-							ReconcileUtils.setRewriteFixes(registry, problem,
-									List.of(new FixDescriptor(NoAutowiredOnConstructor.class.getName(), List.of(docUri.toASCIIString()), FIX_LABEL)
-											.withRecipeScope(RecipeScope.NODE)
-											.withRangeScope(ReconcileUtils.createOpenRewriteRange(cu, typeDecl, null))));
+							QuickfixType quickfixType = registry.getQuickfixType(JdtRefactorings.JDT_QUICKFIX);
+							if (quickfixType != null) {
+								JdtFixDescriptor fix = new JdtFixDescriptor(
+										new RemoveAnnotationRefactoring(autowiredAnnotation.getStartPosition()),
+										List.of(docUri.toASCIIString()),
+										FIX_LABEL);
+								problem.addQuickfix(new QuickfixData<>(quickfixType, fix, FIX_LABEL, true));
+							}
 							context.getProblemCollector().accept(problem);
 						}
 					}

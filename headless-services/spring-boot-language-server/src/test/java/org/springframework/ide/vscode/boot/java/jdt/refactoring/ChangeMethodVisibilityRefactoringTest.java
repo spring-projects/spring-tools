@@ -67,7 +67,7 @@ class ChangeMethodVisibilityRefactoringTest {
 	}
 
 	@Test
-	void publicToPackagePrivate() throws Exception {
+	void publicToPackagePrivate_offsetInsideMethodName() throws Exception {
 		String source = """
 				package com.example;
 
@@ -77,7 +77,8 @@ class ChangeMethodVisibilityRefactoringTest {
 				}
 				""";
 
-		String result = applyRefactoring(source, Visibility.PACKAGE_PRIVATE, offsetOf(source, "public void test"));
+		// Offset inside the method name "test"
+		String result = applyRefactoring(source, Visibility.PACKAGE_PRIVATE, offsetOf(source, "test") + 1);
 
 		assertEquals("""
 				package com.example;
@@ -87,6 +88,24 @@ class ChangeMethodVisibilityRefactoringTest {
 					}
 				}
 				""", result);
+	}
+
+	@Test
+	void ignoreOffsetOutsideMethodName() throws Exception {
+		String source = """
+				package com.example;
+
+				class TestClass {
+					public void test() {
+					}
+				}
+				""";
+
+		// Offset inside the return type "void"
+		String result = applyRefactoring(source, Visibility.PACKAGE_PRIVATE, offsetOf(source, "void"));
+
+		// Should not modify the source
+		assertEquals(source, result);
 	}
 
 	@Test
@@ -100,7 +119,7 @@ class ChangeMethodVisibilityRefactoringTest {
 				}
 				""";
 
-		String result = applyRefactoring(source, Visibility.PUBLIC, offsetOf(source, "private void test"));
+		String result = applyRefactoring(source, Visibility.PUBLIC, offsetOf(source, "test") + 1);
 
 		assertEquals("""
 				package com.example;
@@ -123,7 +142,7 @@ class ChangeMethodVisibilityRefactoringTest {
 				}
 				""";
 
-		String result = applyRefactoring(source, Visibility.PROTECTED, offsetOf(source, "void test"));
+		String result = applyRefactoring(source, Visibility.PROTECTED, offsetOf(source, "test") + 1);
 
 		assertEquals("""
 				package com.example;
@@ -147,7 +166,7 @@ class ChangeMethodVisibilityRefactoringTest {
 				}
 				""";
 
-		String result = applyRefactoring(source, Visibility.PRIVATE, offsetOf(source, "@Override"));
+		String result = applyRefactoring(source, Visibility.PRIVATE, offsetOf(source, "test") + 1);
 
 		assertEquals("""
 				package com.example;
@@ -175,8 +194,8 @@ class ChangeMethodVisibilityRefactoringTest {
 				""";
 
 		String result = applyRefactoring(source, Visibility.PACKAGE_PRIVATE, 
-				offsetOf(source, "public void test1"),
-				offsetOf(source, "protected void test2"));
+				offsetOf(source, "test1") + 1,
+				offsetOf(source, "test2") + 1);
 
 		assertEquals("""
 				package com.example;

@@ -13,7 +13,9 @@ package org.springframework.ide.vscode.boot.bootiful;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.BootLanguageServerParams;
+import org.springframework.ide.vscode.boot.app.ProblemParameterProvider;
 import org.springframework.ide.vscode.boot.editor.harness.PropertyIndexHarness;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheVoid;
@@ -56,6 +58,10 @@ public class IndexerTestConf {
 
 	@Bean SourceLinks sourceLinks() {
 		return SourceLinkFactory.NO_SOURCE_LINKS;
+	}
+
+	@Bean ProblemParameterProvider problemParameterProvider(SimpleLanguageServer server) {
+		return new ProblemParameterProvider(new BootJavaConfig(server));
 	}
 
 }

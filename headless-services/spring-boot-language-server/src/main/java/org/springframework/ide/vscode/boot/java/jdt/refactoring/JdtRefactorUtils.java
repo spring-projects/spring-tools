@@ -11,11 +11,24 @@
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.QualifiedName;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.lsp4j.TextDocumentEdit;
@@ -34,6 +47,137 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
  * @author Alex Boyko
  */
 public final class JdtRefactorUtils {
+
+	public static void removeImports(CompilationUnit cu, ASTRewrite rewrite, String... fqns) {
+		Set<String> fqnsToCheck = new HashSet<>();
+		Map<String, List<ImportDeclaration>> fqnToImports = new HashMap<>();
+		
+		for (String fqn : fqns) {
+			for (Object importObj : cu.imports()) {
+				ImportDeclaration imp = (ImportDeclaration) importObj;
+				if (!imp.isOnDemand() && imp.getName().getFullyQualifiedName().equals(fqn)) {
+					fqnsToCheck.add(fqn);
+					fqnToImports.computeIfAbsent(fqn, k -> new ArrayList<>()).add(imp);
+				}
+			}
+		}
+		
+		if (fqnsToCheck.isEmpty()) {
+			return;
+		}
+
+		Set<String> usedFqns = getUsedTypes(cu, rewrite, fqnsToCheck);
+		
+		ListRewrite importsRewrite = null;
+		for (String fqn : fqnsToCheck) {
+			if (!usedFqns.contains(fqn)) {
+				if (importsRewrite == null) {
+					importsRewrite = rewrite.getListRewrite(cu, CompilationUnit.IMPORTS_PROPERTY);
+				}
+				for (ImportDeclaration imp : fqnToImports.get(fqn)) {
+					importsRewrite.remove(imp, null);
+				}
+			}
+		}
+	}
+
+	private static Set<String> getUsedTypes(CompilationUnit cu, ASTRewrite rewrite, Set<String> fqnsToCheck) {
+		Set<String> usedFqns = new HashSet<>();
+		
+		cu.accept(new ASTVisitor() {
+			
+			private void checkTypeRef(Name node) {
+				if (usedFqns.size() == fqnsToCheck.size()) return; // All found
+				
+				if (node == null) return;
+				
+				// Get the leftmost qualifier
+				while (node.isQualifiedName()) {
+					node = ((QualifiedName) node).getQualifier();
+				}
+				
+				IBinding binding = node.resolveBinding();
+				String fqn = null;
+				
+				if (binding instanceof ITypeBinding) {
+					fqn = ((ITypeBinding) binding).getErasure().getQualifiedName();
+				}
+				
+				if (fqn != null && fqnsToCheck.contains(fqn) && !usedFqns.contains(fqn)) {
+					if (survivesRewrite(node, rewrite)) {
+						usedFqns.add(fqn);
+					}
+				}
+			}
+
+			@Override
+			public boolean visit(SimpleName node) {
+				// If we get here directly, it might be a static reference
+				if (!isInsideImport(node)) {
+					checkTypeRef(node);
+				}
+				return true;
+			}
+			
+		});
+		return usedFqns;
+	}
+
+	private static boolean isInsideImport(ASTNode node) {
+		ASTNode current = node;
+		while (current != null) {
+			if (current instanceof ImportDeclaration) {
+				return true;
+			}
+			current = current.getParent();
+		}
+		return false;
+	}
+
+	private static boolean survivesRewrite(ASTNode node, ASTRewrite rewrite) {
+		ASTNode current = node;
+		while (current != null) {
+			ASTNode parent = current.getParent();
+			if (parent != null) {
+				StructuralPropertyDescriptor prop = current.getLocationInParent();
+				if (prop != null) {
+					if (prop.isChildListProperty()) {
+						ListRewrite listRewrite = rewrite.getListRewrite(parent, (ChildListPropertyDescriptor) prop);
+						
+						List<?> originalList = listRewrite.getOriginalList();
+						List<?> rewrittenList = listRewrite.getRewrittenList();
+						
+						boolean inOriginal = false;
+						for (Object o : originalList) {
+							if (o == current) {
+								inOriginal = true;
+								break;
+							}
+						}
+						
+						boolean inRewritten = false;
+						for (Object o : rewrittenList) {
+							if (o == current) {
+								inRewritten = true;
+								break;
+							}
+						}
+						
+						if (inOriginal && !inRewritten) {
+							return false; // Removed from list
+						}
+					} else {
+						Object rewrittenNode = rewrite.get(parent, prop);
+						if (rewrittenNode != current) {
+							return false; // Replaced or removed
+						}
+					}
+				}
+			}
+			current = parent;
+		}
+		return true;
+	}
 
 	/**
 	 * Add an import for the given {@link ClassType} to the compilation unit, unless

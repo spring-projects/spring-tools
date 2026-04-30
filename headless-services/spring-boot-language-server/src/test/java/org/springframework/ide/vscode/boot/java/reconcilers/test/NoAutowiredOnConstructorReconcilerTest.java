@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,114 +11,146 @@
 package org.springframework.ide.vscode.boot.java.reconcilers.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.File;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.AfterEach;
+import org.eclipse.lsp4j.Diagnostic;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
+import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
+import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
+import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
-import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
-import org.springframework.ide.vscode.boot.java.reconcilers.NoAutowiredOnConstructorReconciler;
-import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
-import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.util.text.LanguageId;
+import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
+import org.springframework.ide.vscode.languageserver.testharness.Editor;
+import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
+import org.springframework.ide.vscode.project.harness.ProjectsHarness;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-public class NoAutowiredOnConstructorReconcilerTest extends BaseReconcilerTest {
+@ExtendWith(SpringExtension.class)
+@BootLanguageServerTest
+@Import(IndexerTestConf.class)
+public class NoAutowiredOnConstructorReconcilerTest {
 
-	@Override
-	protected String getFolder() {
-		return "noautowiredonconstructor";
-	}
+	@Autowired private BootLanguageServerHarness harness;
+	@Autowired private JavaProjectFinder projectFinder;
+	@Autowired private SpringSymbolIndex indexer;
 
-	@Override
-	protected String getProjectName() {
-		return "test-spring-validations";
-	}
-
-	@Override
-	protected JdtAstReconciler getReconciler() {
-		return new NoAutowiredOnConstructorReconciler(new QuickfixRegistry());
-	}
+	private File directory;
 
 	@BeforeEach
-	void setup() throws Exception {
-		super.setup();
+	public void setup() throws Exception {
+		harness.intialize(null);
+		harness.changeConfiguration("{\"boot-java\": {\"validation\": {\"java\": { \"reconcilers\": true}}}}");
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-spring-validations/").toURI());
+		String projectDir = directory.toURI().toString();
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+		CompletableFuture<Void> initProject = indexer.waitOperation();
+		initProject.get(5, TimeUnit.SECONDS);
 	}
-	
-	@AfterEach
-	void tearDown() throws Exception {
-		super.tearDown();
-	}
-	
+
 	@Test
 	void singleConstructors() throws Exception {
-		String source = """
-				package example.demo;
-				
-				import org.springframework.beans.factory.annotation.Autowired;
-				
-				class A {
-				
-					@Autowired
-					A() {};
-					
-				}
-				""";
-		List<ReconcileProblem> problems = reconcile("A.java", source, false);
-		
-		assertEquals(1, problems.size());
-		
-		ReconcileProblem problem = problems.get(0);
-		
-		assertEquals(Boot2JavaProblemType.JAVA_AUTOWIRED_CONSTRUCTOR, problem.getType());
-		
-		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
-		assertEquals("@Autowired", markedStr);
+		String docUri = directory.toPath()
+				.resolve("src/main/java/org/test/WithAutowiredConstructor.java").toUri().toString();
 
-		assertEquals(1, problem.getQuickfixes().size());
-		
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.beans.factory.annotation.Autowired;
+
+				public class WithAutowiredConstructor {
+
+					private final String value;
+
+					@Autowired
+					public WithAutowiredConstructor(String value) {
+						this.value = value;
+					}
+
+				}
+				""", docUri);
+
+		Diagnostic problem = editor.assertProblem("@Autowired");
+		assertNotNull(problem);
+		assertEquals(Boot2JavaProblemType.JAVA_AUTOWIRED_CONSTRUCTOR.getCode(), problem.getCode().getLeft());
+
+		List<CodeAction> codeActions = editor.getCodeActions(problem);
+		assertEquals(1, codeActions.size());
+
+		harness.executeCommand(codeActions.get(0).getCommand());
+
+		assertEquals("""
+				package org.test;
+
+				public class WithAutowiredConstructor {
+
+					private final String value;
+
+					public WithAutowiredConstructor(String value) {
+						this.value = value;
+					}
+
+				}
+				""", editor.getRawText());
+
+		editor.assertProblems();
 	}
 
 	@Test
 	void multipleConstructors() throws Exception {
-		String source = """
-				package example.demo;
-				
+		String docUri = directory.toPath()
+				.resolve("src/main/java/org/test/MultipleConstructors.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
 				import org.springframework.beans.factory.annotation.Autowired;
-				
-				class A {
-				
+
+				class MultipleConstructors {
+
 					@Autowired
-					A() {};
-					
-					A(int k) {}
-					
+					MultipleConstructors() {}
+
+					MultipleConstructors(int k) {}
+
 				}
-				""";
-		List<ReconcileProblem> problems = reconcile("A.java", source, false);
-		
-		assertEquals(0, problems.size());
+				""", docUri);
+
+		editor.assertProblems();
 	}
 
 	@Test
 	void multipleConstructorsViaLombok() throws Exception {
-		String source = """
-				package example.demo;
-				
+		String docUri = directory.toPath()
+				.resolve("src/main/java/org/test/LombokConstructors.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
 				import org.springframework.beans.factory.annotation.Autowired;
 				import lombok.RequiredArgsConstructor;
-				
+
 				@RequiredArgsConstructor
-				class A {
-				
+				class LombokConstructors {
+
 					@Autowired
-					A() {};
-					
+					LombokConstructors() {}
+
 				}
-				""";
-		List<ReconcileProblem> problems = reconcile("A.java", source, false);
-		
-		assertEquals(0, problems.size());
+				""", docUri);
+
+		editor.assertProblems();
 	}
 
 }

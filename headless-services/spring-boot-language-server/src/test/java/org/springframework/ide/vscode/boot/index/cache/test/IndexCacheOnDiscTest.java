@@ -35,6 +35,8 @@ import org.springframework.ide.vscode.boot.index.cache.AbstractIndexCacheable;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDisc;
 import org.springframework.ide.vscode.commons.util.UriUtil;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -101,7 +103,7 @@ public class IndexCacheOnDiscTest {
 
     @Test
     void testEmptyCache() throws Exception {
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(new IndexCacheKey("something", "someIndexer", "someCategory", "0"), new String[0], TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(new IndexCacheKey("something", "someIndexer", "someCategory", "0"), new String[0], TestCacheElement.class);
         assertNull(result);
     }
 
@@ -121,13 +123,13 @@ public class IndexCacheOnDiscTest {
         List<TestCacheElement> generatedElements = new ArrayList<>();
         generatedElements.add(new TestCacheElement("", "element1", "field"));
 
-        cache.store(CACHE_KEY_VERSION_1, files, generatedElements, ImmutableMultimap.of(
-                file1.toString(), "file1dep1",
-                file2.toString(), "file2dep1",
-                file2.toString(), "file2dep2"
-        ), TestCacheElement.class);
+        cache.store(CACHE_KEY_VERSION_1, files, generatedElements, ImmutableMultimap.<SourceJavaFile, QualifiedTypeName>builder()
+                .put(SourceJavaFile.of(file1.toString()), QualifiedTypeName.of("file1dep1"))
+                .put(SourceJavaFile.of(file2.toString()), QualifiedTypeName.of("file2dep1"))
+                .put(SourceJavaFile.of(file2.toString()), QualifiedTypeName.of("file2dep2"))
+                .build(), TestCacheElement.class);
 
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
 
         TestCacheElement[] cachedElements = result.getLeft();
         assertNotNull(cachedElements);
@@ -136,10 +138,10 @@ public class IndexCacheOnDiscTest {
         assertEquals("element1", cachedElements[0].getName());
         assertEquals("field", cachedElements[0].getKind());
 
-        Multimap<String, String> dependencies = result.getRight();
+        Multimap<SourceJavaFile, QualifiedTypeName> dependencies = result.getRight();
         assertEquals(2, dependencies.keySet().size());
-        assertEquals(dependencies.get(file1.toString()), ImmutableSet.of("file1dep1"));
-        assertEquals(dependencies.get(file2.toString()), ImmutableSet.of("file2dep1", "file2dep2"));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("file1dep1")), ImmutableSet.copyOf(dependencies.get(SourceJavaFile.of(file1.toString()))));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("file2dep1"), QualifiedTypeName.of("file2dep2")), ImmutableSet.copyOf(dependencies.get(SourceJavaFile.of(file2.toString()))));
 
         assertEquals(timeFile1.toMillis(), cache.getModificationTimestamp(CACHE_KEY_VERSION_1, file1.toString()));
         assertEquals(0, cache.getModificationTimestamp(CACHE_KEY_VERSION_1, "random-non-existing-file"));
@@ -162,7 +164,7 @@ public class IndexCacheOnDiscTest {
 
         cache.store(CACHE_KEY_VERSION_1, files, generatedElements, null, TestCacheElement.class);
 
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(new IndexCacheKey("someOtherProject", "someOtherIndexer", "someOtherCategory", "1"), files, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(new IndexCacheKey("someOtherProject", "someOtherIndexer", "someOtherCategory", "1"), files, TestCacheElement.class);
         assertNull(result);
     }
 
@@ -182,14 +184,14 @@ public class IndexCacheOnDiscTest {
         List<TestCacheElement> generatedElements = new ArrayList<>();
         generatedElements.add(new TestCacheElement("", "element1", "field"));
 
-        cache.store(CACHE_KEY_VERSION_1, files, generatedElements, ImmutableMultimap.of(
-                file1.toString(), "file1dep",
-                file2.toString(), "file2dep"
-        ), TestCacheElement.class);
+        cache.store(CACHE_KEY_VERSION_1, files, generatedElements, ImmutableMultimap.<SourceJavaFile, QualifiedTypeName>builder()
+                .put(SourceJavaFile.of(file1.toString()), QualifiedTypeName.of("file1dep"))
+                .put(SourceJavaFile.of(file2.toString()), QualifiedTypeName.of("file2dep"))
+                .build(), TestCacheElement.class);
 
         assertTrue(file1.toFile().setLastModified(timeFile1.toMillis() + 1000));
 
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
         assertNull(result);
     }
 
@@ -392,16 +394,18 @@ public class IndexCacheOnDiscTest {
 
         List<TestCacheElement> generatedElements = ImmutableList.of();
 
-        Multimap<String, String> dependencies = ImmutableMultimap.of(file1.toString(), "dep1");
+        Multimap<SourceJavaFile, QualifiedTypeName> dependencies = ImmutableMultimap.of(
+                SourceJavaFile.of(file1.toAbsolutePath().toString()), QualifiedTypeName.of("dep1"));
         cache.store(CACHE_KEY_VERSION_1, files, generatedElements, dependencies, TestCacheElement.class);
 
         assertTrue(file1.toFile().setLastModified(timeFile1.toMillis() + 2000));
-        Set<String> dependencies2 = ImmutableSet.of("dep1", "dep2");
+        Set<QualifiedTypeName> dependencies2 = ImmutableSet.of(QualifiedTypeName.of("dep1"), QualifiedTypeName.of("dep2"));
         cache.update(CACHE_KEY_VERSION_1, file1.toAbsolutePath().toString(), timeFile1.toMillis() + 2000, generatedElements, dependencies2, TestCacheElement.class);
 
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
         assertNotNull(result);
-        assertEquals(ImmutableSet.of("dep1", "dep2"), result.getRight().get(file1.toString()));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("dep1"), QualifiedTypeName.of("dep2")),
+        		ImmutableSet.copyOf(result.getRight().get(SourceJavaFile.of(file1.toAbsolutePath().toString()))));
     }
 
     @Test
@@ -441,22 +445,23 @@ public class IndexCacheOnDiscTest {
 
         List<TestCacheElement> generatedElements1 = ImmutableList.of();
 
-        ImmutableMultimap<String, String> dependencies1 = ImmutableMultimap.of(
-                file1.toString(), "dep1",
-                file1.toString(), "dep2"
-        );
+        ImmutableMultimap<SourceJavaFile, QualifiedTypeName> dependencies1 = ImmutableMultimap.<SourceJavaFile, QualifiedTypeName>builder()
+                .put(SourceJavaFile.of(file1.toAbsolutePath().toString()), QualifiedTypeName.of("dep1"))
+                .put(SourceJavaFile.of(file1.toAbsolutePath().toString()), QualifiedTypeName.of("dep2"))
+                .build();
 
         cache.store(CACHE_KEY_VERSION_1, files, generatedElements1, dependencies1, TestCacheElement.class);
 
         List<TestCacheElement> generatedElements2 = new ArrayList<>();
         assertTrue(file1.toFile().setLastModified(timeFile1.toMillis() + 2000));
 
-        Set<String> dependencies2 = ImmutableSet.of("dep2");
+        Set<QualifiedTypeName> dependencies2 = ImmutableSet.of(QualifiedTypeName.of("dep2"));
         cache.update(CACHE_KEY_VERSION_1, file1.toAbsolutePath().toString(), timeFile1.toMillis() + 2000, generatedElements2, dependencies2, TestCacheElement.class);
 
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
         assertNotNull(result);
-        assertEquals(ImmutableSet.of("dep2"), result.getRight().get(file1.toString()));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("dep2")),
+        		ImmutableSet.copyOf(result.getRight().get(SourceJavaFile.of(file1.toAbsolutePath().toString()))));
     }
 
     @Test
@@ -500,18 +505,17 @@ public class IndexCacheOnDiscTest {
         String[] files = {file1.toString()};
 
         List<TestCacheElement> generatedElements1 = ImmutableList.of();
-        Multimap<String, String> dependencies1 = ImmutableMultimap.of(
-                file1.toString(), "dep1"
-        );
+        Multimap<SourceJavaFile, QualifiedTypeName> dependencies1 = ImmutableMultimap.of(
+                SourceJavaFile.of(file1.toString()), QualifiedTypeName.of("dep1"));
         cache.store(CACHE_KEY_VERSION_1, files, generatedElements1, dependencies1, TestCacheElement.class);
 
-        Set<String> dependencies2 = ImmutableSet.of("dep2");
+        Set<QualifiedTypeName> dependencies2 = ImmutableSet.of(QualifiedTypeName.of("dep2"));
         cache.update(CACHE_KEY_VERSION_1, file2.toString(), timeFile2.toMillis(), generatedElements1, dependencies2, TestCacheElement.class);
 
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(CACHE_KEY_VERSION_1, new String[]{file1.toString(), file2.toString()}, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(CACHE_KEY_VERSION_1, new String[]{file1.toString(), file2.toString()}, TestCacheElement.class);
         assertNotNull(result);
-        assertEquals(ImmutableSet.of("dep2"), result.getRight().get(file2.toString()));
-        assertEquals(ImmutableSet.of("dep1"), result.getRight().get(file1.toString()));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("dep2")), ImmutableSet.copyOf(result.getRight().get(SourceJavaFile.of(file2.toString()))));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("dep1")), ImmutableSet.copyOf(result.getRight().get(SourceJavaFile.of(file1.toString()))));
     }
 
     @Test
@@ -541,15 +545,14 @@ public class IndexCacheOnDiscTest {
         generatedElements.add(new TestCacheElement(doc1URI, "element1", "field"));
         generatedElements.add(new TestCacheElement(doc2URI, "element2", "field"));
 
-        Multimap<String, String> dependencies = ImmutableMultimap.of(
-                file1.toString(), "dep1",
-                file2.toString(), "dep2"
-        );
+        Multimap<SourceJavaFile, QualifiedTypeName> dependencies = ImmutableMultimap.of(
+                SourceJavaFile.of(file1.toAbsolutePath().toString()), QualifiedTypeName.of("dep1"),
+                SourceJavaFile.of(file2.toAbsolutePath().toString()), QualifiedTypeName.of("dep2"));
         cache.store(CACHE_KEY_VERSION_1, files, generatedElements, dependencies, TestCacheElement.class);
         cache.removeFile(CACHE_KEY_VERSION_1, file1.toAbsolutePath().toString(), TestCacheElement.class);
 
         files = new String[]{file2.toAbsolutePath().toString()};
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
         TestCacheElement[] cachedElements = result.getLeft();
         assertNotNull(result);
         assertEquals(1, cachedElements.length);
@@ -558,9 +561,9 @@ public class IndexCacheOnDiscTest {
         assertEquals("field", cachedElements[0].getKind());
         assertEquals(doc2URI, cachedElements[0].getDocURI());
 
-        Multimap<String, String> cachedDependencies = result.getRight();
-        assertEquals(ImmutableSet.of(), cachedDependencies.get(file1.toString()));
-        assertEquals(ImmutableSet.of("dep2"), cachedDependencies.get(file2.toString()));
+        Multimap<SourceJavaFile, QualifiedTypeName> cachedDependencies = result.getRight();
+        assertEquals(ImmutableSet.of(), ImmutableSet.copyOf(cachedDependencies.get(SourceJavaFile.of(file1.toAbsolutePath().toString()))));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("dep2")), ImmutableSet.copyOf(cachedDependencies.get(SourceJavaFile.of(file2.toAbsolutePath().toString()))));
     }
 
     @Test
@@ -593,15 +596,14 @@ public class IndexCacheOnDiscTest {
         generatedElements.add(new TestCacheElement(doc3URI, "element3", "field"));
         generatedElements.add(new TestCacheElement(doc4URI, "element4", "field"));
 
-        Multimap<String, String> dependencies = ImmutableMultimap.of(
-                file1.toString(), "dep1",
-                file2.toString(), "dep2"
-        );
+        Multimap<SourceJavaFile, QualifiedTypeName> dependencies = ImmutableMultimap.of(
+                SourceJavaFile.of(file1.toAbsolutePath().toString()), QualifiedTypeName.of("dep1"),
+                SourceJavaFile.of(file2.toAbsolutePath().toString()), QualifiedTypeName.of("dep2"));
         cache.store(CACHE_KEY_VERSION_1, files, generatedElements, dependencies, TestCacheElement.class);
         cache.removeFiles(CACHE_KEY_VERSION_1, new String[] {file1.toAbsolutePath().toString(), file3.toAbsolutePath().toString()}, TestCacheElement.class);
 
         files = new String[]{file2.toAbsolutePath().toString(), file4.toAbsolutePath().toString()};
-        Pair<TestCacheElement[], Multimap<String, String>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
+        Pair<TestCacheElement[], Multimap<SourceJavaFile, QualifiedTypeName>> result = cache.retrieve(CACHE_KEY_VERSION_1, files, TestCacheElement.class);
         TestCacheElement[] cachedElements = result.getLeft();
         assertNotNull(result);
         assertEquals(2, cachedElements.length);
@@ -614,9 +616,9 @@ public class IndexCacheOnDiscTest {
         assertEquals("field", cachedElements[1].getKind());
         assertEquals(doc4URI, cachedElements[1].getDocURI());
 
-        Multimap<String, String> cachedDependencies = result.getRight();
-        assertEquals(ImmutableSet.of(), cachedDependencies.get(file1.toString()));
-        assertEquals(ImmutableSet.of("dep2"), cachedDependencies.get(file2.toString()));
+        Multimap<SourceJavaFile, QualifiedTypeName> cachedDependencies = result.getRight();
+        assertEquals(ImmutableSet.of(), ImmutableSet.copyOf(cachedDependencies.get(SourceJavaFile.of(file1.toAbsolutePath().toString()))));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("dep2")), ImmutableSet.copyOf(cachedDependencies.get(SourceJavaFile.of(file2.toAbsolutePath().toString()))));
     }
 
 }

@@ -111,7 +111,7 @@ public class SpringIndexerJavaReconcileService {
 
 			reconciler.reconcile(context.getProject(), URI.create(context.getDocURI()), context.getCu(), reconcilingContext);
 
-			for (String dependency : reconcilingContext.getDependencies()) {
+			for (QualifiedTypeName dependency : reconcilingContext.getDependencies()) {
 				context.addDependency(dependency);
 			}
 
@@ -177,7 +177,7 @@ public class SpringIndexerJavaReconcileService {
 				try {
 					reconcileAfterScan(context, reconcilingIndex);
 
-					dependencyTracker.addDependencies(project, context.getFile(), context.getDependencies());
+					dependencyTracker.addDependencies(project, SourceJavaFile.of(context.getFile()), context.getDependencies());
 
 				} catch (Exception e) {
 					log.error("problem creating temp document during re-reconciling for: {}", docURI, e);

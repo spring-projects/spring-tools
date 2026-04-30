@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,6 +26,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheable;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 
 import com.google.common.collect.Multimap;
 
@@ -41,7 +43,7 @@ public class IndexCacheTimestampsOnly implements IndexCache {
 	}
 
 	@Override
-	public <T extends IndexCacheable> void store(IndexCacheKey cacheKey, String[] files, List<T> generatedSymbols, Multimap<String, String> dependencies, Class<T> type) {
+	public <T extends IndexCacheable> void store(IndexCacheKey cacheKey, String[] files, List<T> generatedSymbols, Multimap<SourceJavaFile, QualifiedTypeName> dependencies, Class<T> type) {
 		SortedMap<String, Long> timestampedFiles = new TreeMap<>();
 
 		timestampedFiles = Arrays.stream(files)
@@ -58,18 +60,18 @@ public class IndexCacheTimestampsOnly implements IndexCache {
 	}
 
 	@Override
-	public <T extends IndexCacheable> Pair<T[], Multimap<String, String>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type) {
+	public <T extends IndexCacheable> Pair<T[], Multimap<SourceJavaFile, QualifiedTypeName>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type) {
 		return null;
 	}
 
 	@Override
-	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String file, long lastModified, List<T> generatedSymbols, Set<String> dependencies, Class<T> type) {
+	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String file, long lastModified, List<T> generatedSymbols, Set<QualifiedTypeName> dependencies, Class<T> type) {
 		Map<String, Long> timestampMap = timestampCache.get(cacheKey);
 		timestampMap.put(file, lastModified);
 	}
 
 	@Override
-	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String[] files, long[] lastModified, List<T> generatedSymbols, Multimap<String, String> dependencies, Class<T> type) {
+	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String[] files, long[] lastModified, List<T> generatedSymbols, Multimap<SourceJavaFile, QualifiedTypeName> dependencies, Class<T> type) {
 		Map<String, Long> timestampMap = timestampCache.get(cacheKey);
 
 		for (int i = 0; i < files.length; i++) {

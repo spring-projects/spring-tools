@@ -40,8 +40,8 @@ public class SpringIndexerJavaContext {
 	private final boolean isIndexComplete;
 	private final SpringIndexerJavaScanResult scanResult;
 	
-	private final Set<String> dependencies = new HashSet<>();
-	private final Set<String> scannedTypes = new HashSet<>();
+	private final Set<QualifiedTypeName> dependencies = new HashSet<>();
+	private final Set<QualifiedTypeName> scannedTypes = new HashSet<>();
 
 	public SpringIndexerJavaContext(
 			IJavaProject project, 
@@ -111,7 +111,7 @@ public class SpringIndexerJavaContext {
 		return nextPassFiles;
 	}
 
-	public Set<String> getDependencies() {
+	public Set<QualifiedTypeName> getDependencies() {
 		return dependencies;
 	}
 	
@@ -119,27 +119,39 @@ public class SpringIndexerJavaContext {
 		if (dependsOn != null && dependsOn.isFromSource()) {
 			String type = dependsOn.getQualifiedName();
 		
-			if (type != null && !scannedTypes.contains(type)) {
-				dependencies.add(type);
+			if (type != null) {
+				QualifiedTypeName q = QualifiedTypeName.of(type);
+				if (!scannedTypes.contains(q)) {
+					dependencies.add(q);
+				}
 			}
 		}
 	}
 	
 	public void addDependency(String qualifiedTypeName) {
 		if (qualifiedTypeName != null) {
+			dependencies.add(QualifiedTypeName.of(qualifiedTypeName));
+		}
+	}
+
+	public void addDependency(QualifiedTypeName qualifiedTypeName) {
+		if (qualifiedTypeName != null) {
 			dependencies.add(qualifiedTypeName);
 		}
 	}
 
-	public Set<String> getScannedTypes() {
+	public Set<QualifiedTypeName> getScannedTypes() {
 		return scannedTypes;
 	}
 	
 	public void addScannedType(ITypeBinding scannedType) {
 		if (scannedType != null) {
 			String type = scannedType.getQualifiedName();
-			scannedTypes.add(type);
-			dependencies.remove(type);
+			if (type != null) {
+				QualifiedTypeName q = QualifiedTypeName.of(type);
+				scannedTypes.add(q);
+				dependencies.remove(q);
+			}
 		}
 	}
 

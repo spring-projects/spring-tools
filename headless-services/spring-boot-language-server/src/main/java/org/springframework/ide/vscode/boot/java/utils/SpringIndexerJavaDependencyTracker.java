@@ -27,43 +27,43 @@ public class SpringIndexerJavaDependencyTracker {
 	
 	private static final Logger log = LoggerFactory.getLogger(SpringIndexerJavaDependencyTracker.class);
 
-	private Map<String, Multimap<String, String>> dependenciesByProject = new ConcurrentHashMap<>();
+	private Map<String, Multimap<SourceJavaFile, QualifiedTypeName>> dependenciesByProject = new ConcurrentHashMap<>();
 	
 	public void dump(IJavaProject project) {
-		Multimap<String, String> dependencies = getDependenciesForProject(project);
+		Multimap<SourceJavaFile, QualifiedTypeName> dependencies = getDependenciesForProject(project);
 		log.info("=== Dependencies for project: {} ===", project.getElementName());
-		for (String sourceFile : dependencies.keySet()) {
-			Collection<String> values = dependencies.get(sourceFile);
+		for (SourceJavaFile sourceFile : dependencies.keySet()) {
+			Collection<QualifiedTypeName> values = dependencies.get(sourceFile);
 			if (!values.isEmpty()) {
-				log.info("{}=> ", sourceFile);
-				for (String v : values) {
-					log.info("   {}", v);
+				log.info("{}=> ", sourceFile.absolutePath());
+				for (QualifiedTypeName v : values) {
+					log.info("   {}", v.name());
 				}
 			}
 		}
 		log.info("======================");
 	}
 
-	public Multimap<String, String> getAllDependencies(IJavaProject project) {
+	public Multimap<SourceJavaFile, QualifiedTypeName> getAllDependencies(IJavaProject project) {
 		return Multimaps.unmodifiableMultimap(getDependenciesForProject(project));
 	}
 
-	public Set<String> getDependenciesForFile(IJavaProject project, String file) {
-		return Set.copyOf(getDependenciesForProject(project).get(file));
+	public Set<QualifiedTypeName> getDependenciesForFile(IJavaProject project, String absolutePath) {
+		return Set.copyOf(getDependenciesForProject(project).get(SourceJavaFile.of(absolutePath)));
 	}
 
-	public void addDependencies(IJavaProject project, String file, Iterable<String> dependencies) {
+	public void addDependencies(IJavaProject project, SourceJavaFile file, Iterable<QualifiedTypeName> dependencies) {
 		if (dependencies != null) {
 			getDependenciesForProject(project).putAll(file, dependencies);
 		}
 	}
 
-	public void update(IJavaProject project, String file, Set<String> dependenciesForFile) {
+	public void update(IJavaProject project, SourceJavaFile file, Set<QualifiedTypeName> dependenciesForFile) {
 		getDependenciesForProject(project).replaceValues(file, dependenciesForFile);
 	}
 
-	public void restore(IJavaProject project, Multimap<String, String> deps) {
-		Multimap<String, String> copy = MultimapBuilder.hashKeys().hashSetValues().build();
+	public void restore(IJavaProject project, Multimap<SourceJavaFile, QualifiedTypeName> deps) {
+		Multimap<SourceJavaFile, QualifiedTypeName> copy = MultimapBuilder.hashKeys().hashSetValues().build();
 		if (deps != null) {
 			copy.putAll(deps);
 		}
@@ -80,15 +80,15 @@ public class SpringIndexerJavaDependencyTracker {
 			return;
 		}
 
-		Multimap<String, String> deps = dependenciesByProject.get(project.getElementName());
+		Multimap<SourceJavaFile, QualifiedTypeName> deps = dependenciesByProject.get(project.getElementName());
 		if (deps != null) {
-			for (String file : absolutePaths) {
-				deps.removeAll(file);
+			for (String path : absolutePaths) {
+				deps.removeAll(SourceJavaFile.of(path));
 			}
 		}
 	}
 	
-	private Multimap<String, String> getDependenciesForProject(IJavaProject project) {
+	private Multimap<SourceJavaFile, QualifiedTypeName> getDependenciesForProject(IJavaProject project) {
 		return dependenciesByProject.computeIfAbsent(
 			project.getElementName(), 
 			k -> MultimapBuilder.hashKeys().hashSetValues().build()

@@ -21,6 +21,8 @@ import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaDependencyTracker;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
@@ -35,11 +37,18 @@ public class SpringIndexerJavaDependencyTrackerTest {
 	private IJavaProject project1;
 	private IJavaProject project2;
 
+	private static SourceJavaFile f(String path) {
+		return SourceJavaFile.of(path);
+	}
+
+	private static QualifiedTypeName t(String name) {
+		return QualifiedTypeName.of(name);
+	}
+
 	@BeforeEach
 	public void setUp() {
 		tracker = new SpringIndexerJavaDependencyTracker();
 		
-		// Create mock projects
 		project1 = mock(IJavaProject.class);
 		when(project1.getElementName()).thenReturn("project1");
 		
@@ -49,44 +58,44 @@ public class SpringIndexerJavaDependencyTrackerTest {
 
 	@Test
 	public void testUpdateAndGetDependencies() {
-		String file1 = "com/example/Foo.java";
-		Set<String> dependencies1 = Set.of("com/example/Bar.java", "com/example/Baz.java");
+		SourceJavaFile file1 = f("com/example/Foo.java");
+		Set<QualifiedTypeName> dependencies1 = Set.of(t("com.example.Bar"), t("com.example.Baz"));
 		
 		tracker.update(project1, file1, dependencies1);
 		
-		Collection<String> retrieved = tracker.getDependenciesForFile(project1, file1);
+		Collection<QualifiedTypeName> retrieved = tracker.getDependenciesForFile(project1, file1.absolutePath());
 		assertNotNull(retrieved);
 		assertEquals(2, retrieved.size());
-		assertTrue(retrieved.contains("com/example/Bar.java"));
-		assertTrue(retrieved.contains("com/example/Baz.java"));
+		assertTrue(retrieved.contains(t("com.example.Bar")));
+		assertTrue(retrieved.contains(t("com.example.Baz")));
 	}
 
 	@Test
 	public void testUpdateReplacesExistingDependencies() {
-		String file1 = "com/example/Foo.java";
-		Set<String> dependencies1 = Set.of("com/example/Bar.java", "com/example/Baz.java");
-		Set<String> dependencies2 = Set.of("com/example/Qux.java");
+		SourceJavaFile file1 = f("com/example/Foo.java");
+		Set<QualifiedTypeName> dependencies1 = Set.of(t("com.example.Bar"), t("com.example.Baz"));
+		Set<QualifiedTypeName> dependencies2 = Set.of(t("com.example.Qux"));
 		
 		tracker.update(project1, file1, dependencies1);
 		tracker.update(project1, file1, dependencies2);
 		
-		Collection<String> retrieved = tracker.getDependenciesForFile(project1, file1);
+		Collection<QualifiedTypeName> retrieved = tracker.getDependenciesForFile(project1, file1.absolutePath());
 		assertNotNull(retrieved);
 		assertEquals(1, retrieved.size());
-		assertTrue(retrieved.contains("com/example/Qux.java"));
+		assertTrue(retrieved.contains(t("com.example.Qux")));
 	}
 
 	@Test
 	public void testGetAllDependencies() {
-		String file1 = "com/example/Foo.java";
-		String file2 = "com/example/Bar.java";
-		Set<String> dependencies1 = Set.of("com/example/Baz.java");
-		Set<String> dependencies2 = Set.of("com/example/Qux.java", "com/example/Quux.java");
+		SourceJavaFile file1 = f("com/example/Foo.java");
+		SourceJavaFile file2 = f("com/example/Bar.java");
+		Set<QualifiedTypeName> dependencies1 = Set.of(t("com.example.Baz"));
+		Set<QualifiedTypeName> dependencies2 = Set.of(t("com.example.Qux"), t("com.example.Quux"));
 		
 		tracker.update(project1, file1, dependencies1);
 		tracker.update(project1, file2, dependencies2);
 		
-		Multimap<String, String> allDeps = tracker.getAllDependencies(project1);
+		Multimap<SourceJavaFile, QualifiedTypeName> allDeps = tracker.getAllDependencies(project1);
 		assertNotNull(allDeps);
 		assertEquals(2, allDeps.keySet().size());
 		assertEquals(1, allDeps.get(file1).size());
@@ -95,80 +104,75 @@ public class SpringIndexerJavaDependencyTrackerTest {
 
 	@Test
 	public void testMultipleProjectsAreIndependent() {
-		String file1 = "com/example/Foo.java";
-		Set<String> dependencies1 = Set.of("com/example/Bar.java");
-		Set<String> dependencies2 = Set.of("com/example/Baz.java");
+		SourceJavaFile file1 = f("com/example/Foo.java");
+		Set<QualifiedTypeName> dependencies1 = Set.of(t("com.example.Bar"));
+		Set<QualifiedTypeName> dependencies2 = Set.of(t("com.example.Baz"));
 		
 		tracker.update(project1, file1, dependencies1);
 		tracker.update(project2, file1, dependencies2);
 		
-		Collection<String> project1Deps = tracker.getDependenciesForFile(project1, file1);
-		Collection<String> project2Deps = tracker.getDependenciesForFile(project2, file1);
+		Collection<QualifiedTypeName> project1Deps = tracker.getDependenciesForFile(project1, file1.absolutePath());
+		Collection<QualifiedTypeName> project2Deps = tracker.getDependenciesForFile(project2, file1.absolutePath());
 		
 		assertEquals(1, project1Deps.size());
-		assertTrue(project1Deps.contains("com/example/Bar.java"));
+		assertTrue(project1Deps.contains(t("com.example.Bar")));
 		
 		assertEquals(1, project2Deps.size());
-		assertTrue(project2Deps.contains("com/example/Baz.java"));
+		assertTrue(project2Deps.contains(t("com.example.Baz")));
 	}
 
 	@Test
 	public void testRemoveProject() {
-		String file1 = "com/example/Foo.java";
-		Set<String> dependencies1 = Set.of("com/example/Bar.java");
+		SourceJavaFile file1 = f("com/example/Foo.java");
+		Set<QualifiedTypeName> dependencies1 = Set.of(t("com.example.Bar"));
 		
 		tracker.update(project1, file1, dependencies1);
 		tracker.update(project2, file1, dependencies1);
 		
 		tracker.removeProject(project1);
 		
-		// Project1 dependencies should be gone (empty)
-		Collection<String> project1Deps = tracker.getDependenciesForFile(project1, file1);
+		Collection<QualifiedTypeName> project1Deps = tracker.getDependenciesForFile(project1, file1.absolutePath());
 		assertTrue(project1Deps.isEmpty());
 		
-		// Project2 dependencies should still exist
-		Collection<String> project2Deps = tracker.getDependenciesForFile(project2, file1);
+		Collection<QualifiedTypeName> project2Deps = tracker.getDependenciesForFile(project2, file1.absolutePath());
 		assertEquals(1, project2Deps.size());
 	}
 
 	@Test
 	public void testRestore() {
-		String file1 = "com/example/Foo.java";
-		String file2 = "com/example/Bar.java";
-		Set<String> dependencies1 = Set.of("com/example/Baz.java");
+		SourceJavaFile file1 = f("com/example/Foo.java");
+		SourceJavaFile file2 = f("com/example/Bar.java");
+		Set<QualifiedTypeName> dependencies1 = Set.of(t("com.example.Baz"));
 		
-		// Set up initial state
 		tracker.update(project1, file1, dependencies1);
-		Multimap<String, String> savedDeps = tracker.getAllDependencies(project1);
+		Multimap<SourceJavaFile, QualifiedTypeName> savedDeps = tracker.getAllDependencies(project1);
 		
-		// Clear and add different data
 		tracker.removeProject(project1);
-		tracker.update(project1, file2, Set.of("com/example/Different.java"));
+		tracker.update(project1, file2, Set.of(t("com.example.Different")));
 		
-		// Restore original state
 		tracker.restore(project1, savedDeps);
 		
-		Collection<String> restored = tracker.getDependenciesForFile(project1, file1);
+		Collection<QualifiedTypeName> restored = tracker.getDependenciesForFile(project1, file1.absolutePath());
 		assertEquals(1, restored.size());
-		assertTrue(restored.contains("com/example/Baz.java"));
+		assertTrue(restored.contains(t("com.example.Baz")));
 	}
 
 	@Test
 	public void testGetNonExistentFile() {
-		Collection<String> deps = tracker.getDependenciesForFile(project1, "nonexistent.java");
+		Collection<QualifiedTypeName> deps = tracker.getDependenciesForFile(project1, "nonexistent.java");
 		assertNotNull(deps);
 		assertTrue(deps.isEmpty());
 	}
 
 	@Test
 	public void testUpdateWithEmptyDependencies() {
-		String file1 = "com/example/Foo.java";
-		Set<String> dependencies = Set.of("com/example/Bar.java");
+		SourceJavaFile file1 = f("com/example/Foo.java");
+		Set<QualifiedTypeName> dependencies = Set.of(t("com.example.Bar"));
 		
 		tracker.update(project1, file1, dependencies);
 		tracker.update(project1, file1, Set.of());
 		
-		Collection<String> retrieved = tracker.getDependenciesForFile(project1, file1);
+		Collection<QualifiedTypeName> retrieved = tracker.getDependenciesForFile(project1, file1.absolutePath());
 		assertNotNull(retrieved);
 		assertTrue(retrieved.isEmpty());
 	}
@@ -177,19 +181,19 @@ public class SpringIndexerJavaDependencyTrackerTest {
 	public void testRemoveFilesClearsEntriesForThosePaths() {
 		String fileA = "/proj/src/Foo.java";
 		String fileB = "/proj/src/Bar.java";
-		tracker.update(project1, fileA, Set.of("com.example.Dep"));
-		tracker.update(project1, fileB, Set.of("com.example.Other"));
+		tracker.update(project1, f(fileA), Set.of(t("com.example.Dep")));
+		tracker.update(project1, f(fileB), Set.of(t("com.example.Other")));
 
 		tracker.removeFiles(project1, new String[] { fileA });
 
 		assertTrue(tracker.getDependenciesForFile(project1, fileA).isEmpty());
 		assertEquals(1, tracker.getDependenciesForFile(project1, fileB).size());
-		assertTrue(tracker.getDependenciesForFile(project1, fileB).contains("com.example.Other"));
+		assertTrue(tracker.getDependenciesForFile(project1, fileB).contains(t("com.example.Other")));
 	}
 
 	@Test
 	public void testRemoveFilesNullOrEmptyIsNoOp() {
-		tracker.update(project1, "/proj/Foo.java", Set.of("com.example.X"));
+		tracker.update(project1, f("/proj/Foo.java"), Set.of(t("com.example.X")));
 
 		tracker.removeFiles(project1, null);
 		tracker.removeFiles(project1, new String[0]);
@@ -202,7 +206,7 @@ public class SpringIndexerJavaDependencyTrackerTest {
 		IJavaProject other = mock(IJavaProject.class);
 		when(other.getElementName()).thenReturn("other");
 
-		tracker.update(project1, "/p/Foo.java", Set.of("com.example.X"));
+		tracker.update(project1, f("/p/Foo.java"), Set.of(t("com.example.X")));
 		tracker.removeFiles(other, new String[] { "/p/Foo.java" });
 
 		assertEquals(1, tracker.getDependenciesForFile(project1, "/p/Foo.java").size());
@@ -210,18 +214,18 @@ public class SpringIndexerJavaDependencyTrackerTest {
 
 	@Test
 	public void testAddDependenciesAccumulatesWithExisting() {
-		String file = "com/example/Foo.java";
-		tracker.update(project1, file, Set.of("com/example/Existing.java"));
-		tracker.addDependencies(project1, file, Set.of("com/example/Added.java"));
+		SourceJavaFile file = f("com/example/Foo.java");
+		tracker.update(project1, file, Set.of(t("com.example.Existing")));
+		tracker.addDependencies(project1, file, Set.of(t("com.example.Added")));
 
-		assertEquals(Set.of("com/example/Existing.java", "com/example/Added.java"), tracker.getDependenciesForFile(project1, file));
+		assertEquals(Set.of(t("com.example.Existing"), t("com.example.Added")), tracker.getDependenciesForFile(project1, file.absolutePath()));
 	}
 
 	@Test
 	public void testRemoveFilesMultiplePaths() {
-		tracker.update(project1, "/a.java", Set.of("t.A"));
-		tracker.update(project1, "/b.java", Set.of("t.B"));
-		tracker.update(project1, "/c.java", Set.of("t.C"));
+		tracker.update(project1, f("/a.java"), Set.of(t("t.A")));
+		tracker.update(project1, f("/b.java"), Set.of(t("t.B")));
+		tracker.update(project1, f("/c.java"), Set.of(t("t.C")));
 
 		tracker.removeFiles(project1, new String[] { "/a.java", "/c.java" });
 

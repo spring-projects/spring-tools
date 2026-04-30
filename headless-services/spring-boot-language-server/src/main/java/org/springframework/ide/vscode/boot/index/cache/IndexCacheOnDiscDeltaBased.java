@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -44,6 +43,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.UriUtil;
+
+import org.springframework.ide.vscode.boot.java.utils.JavaDependencyMultimaps;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -105,7 +108,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	}
 
 	@Override
-	public <T extends IndexCacheable> void store(IndexCacheKey cacheKey, String[] files, List<T> elements, Multimap<String, String> dependencies, Class<T> type) {
+	public <T extends IndexCacheable> void store(IndexCacheKey cacheKey, String[] files, List<T> elements, Multimap<SourceJavaFile, QualifiedTypeName> dependencies, Class<T> type) {
 		if (dependencies == null) {
 			dependencies = ImmutableMultimap.of();
 		}
@@ -122,7 +125,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 					}
 				}, (v1,v2) -> { throw new RuntimeException(String.format("Duplicate key for values %s and %s", v1, v2));}, TreeMap::new));
 
-		IndexCacheStore<T> store = new IndexCacheStore<T>(timestampedFiles, elements, dependencies.asMap(), type);
+		IndexCacheStore<T> store = new IndexCacheStore<T>(timestampedFiles, elements, JavaDependencyMultimaps.toSerializationMap(dependencies), type);
 		persist(cacheKey, new DeltaSnapshot<T>(store), false);
 		
 		// update local timestamp cache
@@ -136,7 +139,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends IndexCacheable> Pair<T[], Multimap<String, String>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type) {
+	public <T extends IndexCacheable> Pair<T[], Multimap<SourceJavaFile, QualifiedTypeName>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type) {
 		File cacheStore = new File(cacheDirectory, cacheKey.toString() + ".json");
 		if (cacheStore.exists()) {
 
@@ -158,13 +161,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 				List<T> symbols = store.getSymbols();
 
 				Map<String, Collection<String>> storedDependencies = store.getDependencies();
-				Multimap<String, String> dependencies = MultimapBuilder.hashKeys().hashSetValues().build();
-
-				if (storedDependencies!=null && !storedDependencies.isEmpty()) {
-					for (Entry<String, Collection<String>> entry : storedDependencies.entrySet()) {
-						dependencies.replaceValues(entry.getKey(), entry.getValue());
-					}
-				}
+				Multimap<SourceJavaFile, QualifiedTypeName> dependencies = JavaDependencyMultimaps.fromSerializationMap(storedDependencies);
 
 				// update local timestamp cache
 				ConcurrentMap<InternalFileIdentifier, Long> timestampMap = timestampedFiles.entrySet().stream()
@@ -217,7 +214,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
 	@Override
 	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String file, long lastModified,
-			List<T> generatedSymbols, Set<String> dependencies, Class<T> type) {
+			List<T> generatedSymbols, Set<QualifiedTypeName> dependencies, Class<T> type) {
 		if (dependencies == null) {
 			dependencies = ImmutableSet.of();
 		}
@@ -227,7 +224,8 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 		timestampsDelta.put(file, lastModified);
 
 		Map<String, Collection<String>> dependenciesDelta = new HashMap<>();
-		dependenciesDelta.put(file, ImmutableSet.copyOf(dependencies));
+		dependenciesDelta.put(file, ImmutableSet.copyOf(
+				dependencies.stream().map(QualifiedTypeName::name).collect(Collectors.toSet())));
 
 		IndexCacheStore<T> deltaStore = new IndexCacheStore<T>(timestampsDelta, generatedSymbols, dependenciesDelta, type);
 		persist(cacheKey, new DeltaUpdate<T>(deltaStore), true);
@@ -241,7 +239,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
 	@Override
 	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String[] files, long[] lastModified,
-			List<T> generatedSymbols, Multimap<String, String> dependencies, Class<T> type) {
+			List<T> generatedSymbols, Multimap<SourceJavaFile, QualifiedTypeName> dependencies, Class<T> type) {
 		if (dependencies == null) {
 			dependencies = ImmutableMultimap.of();
 		}
@@ -252,7 +250,9 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
 		for (int i = 0; i < files.length; i++) {
 			timestampsDelta.put(files[i], lastModified[i]);
-			dependenciesDelta.put(files[i], ImmutableSet.copyOf(dependencies.get(files[i])));
+			Collection<QualifiedTypeName> depsForFile = dependencies.get(SourceJavaFile.of(files[i]));
+			dependenciesDelta.put(files[i], ImmutableSet.copyOf(
+					depsForFile.stream().map(QualifiedTypeName::name).collect(Collectors.toSet())));
 		}
 
 		IndexCacheStore<T> deltaStore = new IndexCacheStore<T>(timestampsDelta, generatedSymbols, dependenciesDelta, type);

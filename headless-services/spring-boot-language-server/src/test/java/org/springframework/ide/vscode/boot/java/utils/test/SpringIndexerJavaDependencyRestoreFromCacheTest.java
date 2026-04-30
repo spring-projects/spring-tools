@@ -34,6 +34,8 @@ import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
 import org.springframework.ide.vscode.boot.java.utils.SymbolHandler;
 import org.springframework.ide.vscode.commons.java.IClasspath;
@@ -67,11 +69,12 @@ class SpringIndexerJavaDependencyRestoreFromCacheTest {
 		Files.writeString(javaFile, "public class Sample {}\n");
 		String javaFilePath = javaFile.toAbsolutePath().normalize().toString();
 
-		Multimap<String, String> indexCacheDeps = MultimapBuilder.hashKeys().hashSetValues().build();
-		indexCacheDeps.replaceValues(javaFilePath, Set.of(DEP_FROM_INDEX));
+		Multimap<SourceJavaFile, QualifiedTypeName> indexCacheDeps = MultimapBuilder.hashKeys().hashSetValues().build();
+		indexCacheDeps.replaceValues(SourceJavaFile.of(javaFilePath), Set.of(QualifiedTypeName.of(DEP_FROM_INDEX)));
 
-		Multimap<String, String> diagnosticsCacheDeps = MultimapBuilder.hashKeys().hashSetValues().build();
-		diagnosticsCacheDeps.replaceValues(javaFilePath, Set.of(DEP_FROM_INDEX, DEP_FROM_RECONCILE));
+		Multimap<SourceJavaFile, QualifiedTypeName> diagnosticsCacheDeps = MultimapBuilder.hashKeys().hashSetValues().build();
+		diagnosticsCacheDeps.replaceValues(SourceJavaFile.of(javaFilePath),
+				Set.of(QualifiedTypeName.of(DEP_FROM_INDEX), QualifiedTypeName.of(DEP_FROM_RECONCILE)));
 
 		IndexCache cache = mock(IndexCache.class);
 		when(cache.retrieve(any(IndexCacheKey.class), any(String[].class), eq(CachedIndexElement.class)))
@@ -106,9 +109,9 @@ class SpringIndexerJavaDependencyRestoreFromCacheTest {
 
 		indexer.initializeProject(project, false);
 
-		Set<String> restored = indexer.getDependencyTracker().getDependenciesForFile(project, javaFilePath);
-		assertTrue(restored.contains(DEP_FROM_INDEX), "sanity: index-cache dependencies should be restored");
-		assertTrue(restored.contains(DEP_FROM_RECONCILE),
+		Set<QualifiedTypeName> restored = indexer.getDependencyTracker().getDependenciesForFile(project, javaFilePath);
+		assertTrue(restored.contains(QualifiedTypeName.of(DEP_FROM_INDEX)), "sanity: index-cache dependencies should be restored");
+		assertTrue(restored.contains(QualifiedTypeName.of(DEP_FROM_RECONCILE)),
 				"dependencies persisted only with the diagnostics cache must be restored too "
 						+ "(currently restore uses index-cache deps only)");
 	}

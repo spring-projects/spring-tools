@@ -113,7 +113,7 @@ public class SpringIndexerJavaAstScanner {
 		}
 
 		if (updateDependencyTracking) {
-			dependencyTracker.update(context.getProject(), context.getFile(), context.getDependencies());
+			dependencyTracker.update(context.getProject(), SourceJavaFile.of(context.getFile()), context.getDependencies());
 		}
 	}
 

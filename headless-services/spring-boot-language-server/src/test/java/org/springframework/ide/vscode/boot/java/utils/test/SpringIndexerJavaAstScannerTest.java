@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.utils.DocumentUtils;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaAstScanner;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaDependencyTracker;
@@ -70,7 +72,7 @@ public class SpringIndexerJavaAstScannerTest {
 
 	@Test
 	public void scanAST_withoutDependencyTracking_doesNotOverwriteTracker() {
-		tracker.update(project, FILE, Set.of("com.example.StaleDep"));
+		tracker.update(project, SourceJavaFile.of(FILE), Set.of(QualifiedTypeName.of("com.example.StaleDep")));
 
 		SpringIndexerJavaAstScanner scanner = new SpringIndexerJavaAstScanner(new SpringComponentIndexer[0], tracker,
 				(ctx, idx) -> {
@@ -79,12 +81,12 @@ public class SpringIndexerJavaAstScannerTest {
 		SpringIndexerJavaContext context = minimalContext();
 		scanner.scanAST(context, false, new ReconcilingIndex(), false);
 
-		assertTrue(tracker.getDependenciesForFile(project, FILE).contains("com.example.StaleDep"));
+		assertTrue(tracker.getDependenciesForFile(project, FILE).contains(QualifiedTypeName.of("com.example.StaleDep")));
 	}
 
 	@Test
 	public void scanAST_withDependencyTracking_replacesTrackerEntry() {
-		tracker.update(project, FILE, Set.of("com.example.StaleDep"));
+		tracker.update(project, SourceJavaFile.of(FILE), Set.of(QualifiedTypeName.of("com.example.StaleDep")));
 
 		SpringIndexerJavaAstScanner scanner = new SpringIndexerJavaAstScanner(new SpringComponentIndexer[0], tracker,
 				(ctx, idx) -> {
@@ -93,7 +95,7 @@ public class SpringIndexerJavaAstScannerTest {
 		SpringIndexerJavaContext context = minimalContext();
 		scanner.scanAST(context, false, new ReconcilingIndex(), true);
 
-		assertFalse(tracker.getDependenciesForFile(project, FILE).contains("com.example.StaleDep"));
+		assertFalse(tracker.getDependenciesForFile(project, FILE).contains(QualifiedTypeName.of("com.example.StaleDep")));
 	}
 
 	private SpringIndexerJavaContext minimalContext() {

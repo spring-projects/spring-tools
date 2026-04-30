@@ -36,12 +36,15 @@ import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.java.utils.DocumentDescriptor;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaCacheHelper;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 import com.google.gson.JsonObject;
 
 /**
@@ -182,7 +185,7 @@ class SpringIndexerJavaCacheHelperTest {
 		String[] javaFiles = { "/p/T.java" };
 		long[] ts = { 42L };
 		List<CachedDiagnostic> diags = List.of();
-		var deps = ArrayListMultimap.<String, String>create();
+		Multimap<SourceJavaFile, QualifiedTypeName> deps = ImmutableMultimap.of();
 		helper.updateDiagnosticsAfterReconcile(project, javaFiles, ts, diags, deps);
 		verify(cache).update(any(IndexCacheKey.class), eq(javaFiles), eq(ts), eq(diags), eq(deps), eq(CachedDiagnostic.class));
 	}

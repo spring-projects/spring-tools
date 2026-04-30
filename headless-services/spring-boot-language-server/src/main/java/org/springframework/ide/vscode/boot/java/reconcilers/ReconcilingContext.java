@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
@@ -28,7 +29,7 @@ public class ReconcilingContext {
 	private final boolean isCompleteAst;
 	private final boolean isIndexComplete;
 	
-	private final Set<String> dependencies; // set of fully qualified types
+	private final Set<QualifiedTypeName> dependencies;
 	private final Set<String> markedForAffectedFilesIndexing; // set of files
 	
 	private final List<SpringIndexElement> createdIndexElements;
@@ -66,10 +67,12 @@ public class ReconcilingContext {
 	}
 
 	public void addDependency(String type) {
-		this.dependencies.add(type);
+		if (type != null) {
+			this.dependencies.add(QualifiedTypeName.of(type));
+		}
 	}
 	
-	public Set<String> getDependencies() {
+	public Set<QualifiedTypeName> getDependencies() {
 		return dependencies;
 	}
 	

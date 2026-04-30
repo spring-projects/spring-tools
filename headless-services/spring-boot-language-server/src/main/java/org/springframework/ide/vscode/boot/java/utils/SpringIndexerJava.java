@@ -329,7 +329,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		final boolean ignoreMethodBodies = false;
 		
 		// this is to keep track of already scanned files to avoid endless loops due to circular dependencies
-		Set<String> scannedTypes = new HashSet<>();
+		Set<QualifiedTypeName> scannedTypes = new HashSet<>();
 
 		Map<String, DocumentDescriptor> updatedDocs = new HashMap<>(); // docURI -> UpdatedDoc
 		String[] javaFiles = new String[docs.length];
@@ -345,7 +345,7 @@ public class SpringIndexerJava implements SpringIndexer {
 		SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, javaFiles);
 		ReconcilingIndex reconcilingIndex = new ReconcilingIndex();
 		
-		Multimap<String, String> dependencies = MultimapBuilder.hashKeys().hashSetValues().build();
+		Multimap<SourceJavaFile, QualifiedTypeName> dependencies = MultimapBuilder.hashKeys().hashSetValues().build();
 		
 		BiConsumer<String, Diagnostic> diagnosticsAggregator =
 				(uri, diagnostic) -> result.getGeneratedDiagnostics().add(new CachedDiagnostic(uri, diagnostic));
@@ -368,7 +368,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				
 				astScanner.scanAST(context, true, reconcilingIndex);
 				
-				dependencies.putAll(sourceFilePath, context.getDependencies());
+				dependencies.putAll(SourceJavaFile.of(sourceFilePath), context.getDependencies());
 				scannedTypes.addAll(context.getScannedTypes());
 
 				fileScannedEvent(sourceFilePath);
@@ -394,9 +394,9 @@ public class SpringIndexerJava implements SpringIndexer {
 		return new ScanFilesInternallyResult(scannedTypes, result);
 	}
 	
-	private static record ScanFilesInternallyResult(Set<String> scannedTypes, SpringIndexerJavaScanResult scanResult) {};
+	private static record ScanFilesInternallyResult(Set<QualifiedTypeName> scannedTypes, SpringIndexerJavaScanResult scanResult) {};
 
-	private void scanAffectedFiles(IJavaProject project, Set<String> changedTypes, Set<String> alreadyScannedFiles, Set<String> alreadyMarkedForAffectedFilesIndexing) throws Exception {
+	private void scanAffectedFiles(IJavaProject project, Set<QualifiedTypeName> changedTypes, Set<String> alreadyScannedFiles, Set<String> alreadyMarkedForAffectedFilesIndexing) throws Exception {
 		log.info("Start scanning affected files for types {}", changedTypes);
 		
 		Set<String> filesToScan = new HashSet<>();
@@ -407,12 +407,12 @@ public class SpringIndexerJava implements SpringIndexer {
 			}
 		}
 		
-		Multimap<String, String> dependencies = dependencyTracker.getAllDependencies(project);
-		for (String file : dependencies.keys()) {
-			if (!alreadyScannedFiles.contains(file)) {
-				Collection<String> dependsOn = dependencies.get(file);
+		Multimap<SourceJavaFile, QualifiedTypeName> dependencies = dependencyTracker.getAllDependencies(project);
+		for (SourceJavaFile file : dependencies.keySet()) {
+			if (!alreadyScannedFiles.contains(file.absolutePath())) {
+				Collection<QualifiedTypeName> dependsOn = dependencies.get(file);
 				if (dependsOn.stream().anyMatch(changedTypes::contains)) {
-					filesToScan.add(file);
+					filesToScan.add(file.absolutePath());
 				}
 			}
 		}
@@ -438,14 +438,14 @@ public class SpringIndexerJava implements SpringIndexer {
 		
 		// check cached elements first
 		SpringIndexerJavaCacheHelper.FullScanRetrieveResult cached = cacheHelper.retrieveForFullScan(project, javaFiles);
-		Pair<CachedIndexElement[], Multimap<String, String>> cachedIndexElements = cached.indexElements();
-		Pair<CachedDiagnostic[], Multimap<String, String>> cachedDiagnostics = cached.diagnostics();
+		Pair<CachedIndexElement[], Multimap<SourceJavaFile, QualifiedTypeName>> cachedIndexElements = cached.indexElements();
+		Pair<CachedDiagnostic[], Multimap<SourceJavaFile, QualifiedTypeName>> cachedDiagnostics = cached.diagnostics();
 
 		if (!clean && cachedIndexElements != null && cachedDiagnostics != null) {
 			// use cached data
 
 			result = new SpringIndexerJavaScanResult(project, javaFiles, symbolHandler, cachedIndexElements.getLeft(), cachedDiagnostics.getLeft());
-			Multimap<String, String> mergedDeps = mergeCachedDependencyMultimaps(cachedIndexElements.getRight(),
+			Multimap<SourceJavaFile, QualifiedTypeName> mergedDeps = mergeCachedDependencyMultimaps(cachedIndexElements.getRight(),
 					cachedDiagnostics.getRight());
 			this.dependencyTracker.restore(project, mergedDeps);
 
@@ -612,8 +612,8 @@ public class SpringIndexerJava implements SpringIndexer {
 		}
 	}
 
-	private static Multimap<String, String> mergeCachedDependencyMultimaps(Multimap<String, String> fromIndexCache, Multimap<String, String> fromDiagnosticsCache) {
-		Multimap<String, String> merged = MultimapBuilder.hashKeys().hashSetValues().build();
+	private static Multimap<SourceJavaFile, QualifiedTypeName> mergeCachedDependencyMultimaps(Multimap<SourceJavaFile, QualifiedTypeName> fromIndexCache, Multimap<SourceJavaFile, QualifiedTypeName> fromDiagnosticsCache) {
+		Multimap<SourceJavaFile, QualifiedTypeName> merged = MultimapBuilder.hashKeys().hashSetValues().build();
 
 		if (fromIndexCache != null) {
 			merged.putAll(fromIndexCache);

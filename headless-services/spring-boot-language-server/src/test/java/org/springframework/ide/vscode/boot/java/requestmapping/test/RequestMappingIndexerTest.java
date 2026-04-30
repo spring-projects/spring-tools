@@ -38,6 +38,8 @@ import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaDependencyTracker;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 import org.springframework.ide.vscode.boot.java.utils.test.TestFileScanListener;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -122,7 +124,7 @@ public class RequestMappingIndexerTest {
 
         //Verify whether dependency tracker logics works properly for this example.
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("org.test.Constants")), ImmutableSet.copyOf(dt.getAllDependencies(project).get(SourceJavaFile.of(UriUtil.toFileString(docUri)))));
 
         TestFileScanListener fileScanListener = new TestFileScanListener();
         indexer.getJavaIndexer().setFileScanListener(fileScanListener);
@@ -148,7 +150,7 @@ public class RequestMappingIndexerTest {
 
         //Verify whether dependency tracker logics works properly for this example.
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("org.test.Constants")), ImmutableSet.copyOf(dt.getAllDependencies(project).get(SourceJavaFile.of(UriUtil.toFileString(docUri)))));
 
         TestFileScanListener fileScanListener = new TestFileScanListener();
         indexer.getJavaIndexer().setFileScanListener(fileScanListener);
@@ -156,7 +158,7 @@ public class RequestMappingIndexerTest {
         CompletableFuture<Void> updateFuture = indexer.updateDocument(docUri, FileUtils.readFileToString(UriUtil.toFile(docUri), Charset.defaultCharset()), "test triggered");
         updateFuture.get(5, TimeUnit.SECONDS);
 
-        assertEquals(ImmutableSet.of("org.test.Constants"), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of(QualifiedTypeName.of("org.test.Constants")), ImmutableSet.copyOf(dt.getAllDependencies(project).get(SourceJavaFile.of(UriUtil.toFileString(docUri)))));
 
         fileScanListener.assertScannedUris(docUri);
         fileScanListener.assertScannedUri(constantsUri, 0);
@@ -202,7 +204,7 @@ public class RequestMappingIndexerTest {
         assertTrue(containsSymbol(symbols, "@/request/mapping/path/from/same/class/constant", docUri, 10, 1, 10, 52));
 
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of(), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of(), ImmutableSet.copyOf(dt.getAllDependencies(project).get(SourceJavaFile.of(UriUtil.toFileString(docUri)))));
     }
 
     @Test
@@ -213,7 +215,7 @@ public class RequestMappingIndexerTest {
         assertTrue(containsSymbol(symbols, "@/(inferred)", docUri, 9, 1, 9, 53));
 
         SpringIndexerJavaDependencyTracker dt = indexer.getJavaIndexer().getDependencyTracker();
-        assertEquals(ImmutableSet.of(), dt.getAllDependencies(project).get(UriUtil.toFileString(docUri)));
+        assertEquals(ImmutableSet.of(), ImmutableSet.copyOf(dt.getAllDependencies(project).get(SourceJavaFile.of(UriUtil.toFileString(docUri)))));
     }
 
     @Test

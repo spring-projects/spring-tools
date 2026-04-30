@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2025 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -39,6 +38,10 @@ import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.util.UriUtil;
+
+import org.springframework.ide.vscode.boot.java.utils.JavaDependencyMultimaps;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -80,7 +83,7 @@ public class IndexCacheOnDisc implements IndexCache {
 	}
 
 	@Override
-	public <T extends IndexCacheable> void store(IndexCacheKey cacheKey, String[] files, List<T> elements, Multimap<String, String> dependencies, Class<T> type) {
+	public <T extends IndexCacheable> void store(IndexCacheKey cacheKey, String[] files, List<T> elements, Multimap<SourceJavaFile, QualifiedTypeName> dependencies, Class<T> type) {
 		if (dependencies == null) {
 			dependencies = ImmutableMultimap.of();
 		}
@@ -97,12 +100,12 @@ public class IndexCacheOnDisc implements IndexCache {
 					}
 				}, (v1,v2) -> { throw new RuntimeException(String.format("Duplicate key for values %s and %s", v1, v2));}, TreeMap::new));
 
-		save(cacheKey, elements, timestampedFiles, dependencies.asMap(), type);
+		save(cacheKey, elements, timestampedFiles, JavaDependencyMultimaps.toSerializationMap(dependencies), type);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends IndexCacheable> Pair<T[], Multimap<String, String>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type) {
+	public <T extends IndexCacheable> Pair<T[], Multimap<SourceJavaFile, QualifiedTypeName>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type) {
 		File cacheStore = new File(cacheDirectory, cacheKey.toString() + ".json");
 		if (cacheStore.exists()) {
 
@@ -127,13 +130,7 @@ public class IndexCacheOnDisc implements IndexCache {
 					List<T> symbols = store.getSymbols();
 
 					Map<String, Collection<String>> storedDependencies = store.getDependencies();
-					Multimap<String, String> dependencies = MultimapBuilder.hashKeys().hashSetValues().build();
-
-					if (storedDependencies!=null && !storedDependencies.isEmpty()) {
-						for (Entry<String, Collection<String>> entry : storedDependencies.entrySet()) {
-							dependencies.replaceValues(entry.getKey(), entry.getValue());
-						}
-					}
+					Multimap<SourceJavaFile, QualifiedTypeName> dependencies = JavaDependencyMultimaps.fromSerializationMap(storedDependencies);
 
 					return Pair.of(
 							(T[]) symbols.toArray((T[]) Array.newInstance(type, symbols.size())),
@@ -206,7 +203,7 @@ public class IndexCacheOnDisc implements IndexCache {
 
 	@Override
 	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String file, long lastModified,
-			List<T> generatedSymbols, Set<String> dependencies, Class<T> type) {
+			List<T> generatedSymbols, Set<QualifiedTypeName> dependencies, Class<T> type) {
 		if (dependencies == null) {
 			dependencies = ImmutableSet.of();
 		}
@@ -230,7 +227,8 @@ public class IndexCacheOnDisc implements IndexCache {
 			if (dependencies.isEmpty()) {
 				changedDependencies.remove(file);
 			} else {
-				changedDependencies.put(file, ImmutableSet.copyOf(dependencies));
+				changedDependencies.put(file, ImmutableSet.copyOf(
+						dependencies.stream().map(QualifiedTypeName::name).collect(Collectors.toSet())));
 			}
 
 			save(cacheKey, cachedSymbols, timestampedFiles, changedDependencies, type);
@@ -239,7 +237,7 @@ public class IndexCacheOnDisc implements IndexCache {
 
 	@Override
 	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String[] files, long[] lastModified,
-			List<T> generatedSymbols, Multimap<String, String> dependencies, Class<T> type) {
+			List<T> generatedSymbols, Multimap<SourceJavaFile, QualifiedTypeName> dependencies, Class<T> type) {
 		if (dependencies == null) {
 			dependencies = ImmutableMultimap.of();
 		}
@@ -262,11 +260,12 @@ public class IndexCacheOnDisc implements IndexCache {
 				timestampedFiles.put(files[i], lastModified[i]);
 
 				// update cache internal map of dependencies per file
-				Collection<String> updatedDependencies = dependencies.get(files[i]);
+				Collection<QualifiedTypeName> updatedDependencies = dependencies.get(SourceJavaFile.of(files[i]));
 				if (updatedDependencies == null || updatedDependencies.isEmpty()) {
 					changedDependencies.remove(files[i]);
 				} else {
-					changedDependencies.put(files[i], ImmutableSet.copyOf(updatedDependencies));
+					changedDependencies.put(files[i], ImmutableSet.copyOf(
+							updatedDependencies.stream().map(QualifiedTypeName::name).collect(Collectors.toSet())));
 				}
 			}
 

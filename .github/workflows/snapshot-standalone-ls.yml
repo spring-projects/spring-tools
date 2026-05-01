@@ -52,9 +52,9 @@ jobs:
           
           # Update the version in plugin.json
           tmp=$(mktemp)
-          jq --arg v "$version" '.version = $v' claude-plugins/spring-boot/.claude-plugin/plugin.json > "$tmp" && mv "$tmp" claude-plugins/spring-boot/.claude-plugin/plugin.json
+          jq --arg v "$version" '.version = $v' claude-plugins/spring-tools/.claude-plugin/plugin.json > "$tmp" && mv "$tmp" claude-plugins/spring-tools/.claude-plugin/plugin.json
           
-          git add claude-plugins/spring-boot/.claude-plugin/plugin.json
+          git add claude-plugins/spring-tools/.claude-plugin/plugin.json
           git commit -m "Update Claude plugin version to $version"
           
           # Push to the remote claude-snapshot branch forcefully.
@@ -84,7 +84,7 @@ jobs:
                     "source": {
                       "source": "git-subdir",
                       "url": "https://github.com/spring-projects/spring-tools.git",
-                      "path": "claude-plugins/spring-boot",
+                      "path": "claude-plugins/spring-tools",
                       "ref": "claude-snapshot",
                       "sha": $sha
                     }, 

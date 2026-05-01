@@ -71,7 +71,7 @@ jobs:
                     "source": {
                       "source": "git-subdir",
                     "url": "https://github.com/spring-projects/spring-tools.git",
-                    "path": "claude-plugins/spring-boot",
+                    "path": "claude-plugins/spring-tools",
                       "ref": $ref
                     }, 
                     "description": "Spring Boot Language Server", 

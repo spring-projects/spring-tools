@@ -5,9 +5,9 @@
   },
   "plugins": [
     {
-      "name": "spring-boot",
-      "source": "./spring-boot",
-      "description": "Spring Boot Language Server (Local Test)",
+      "name": "spring-tools",
+      "source": "./spring-tools",
+      "description": "Spring Tools Language Server (Local Test)",
       "author": {
         "name": "Spring Tools"
       }

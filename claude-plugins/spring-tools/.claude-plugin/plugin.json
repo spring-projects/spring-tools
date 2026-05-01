@@ -1,6 +1,6 @@
 {
-  "name": "spring-boot",
-  "description": "Spring Boot Language Server — real-time diagnostics, completions, and code navigation for Spring Boot projects. Operates standalone without requiring JDT Language Server.",
+  "name": "spring-tools",
+  "description": "Spring Tools Language Server — real-time diagnostics, completions, and code navigation for Spring Boot projects. Operates standalone without requiring JDT Language Server.",
   "version": "2.2.0",
   "author": {
     "name": "Spring Tools"
@@ -8,7 +8,7 @@
   "homepage": "https://spring.io/tools",
   "repository": "https://github.com/spring-projects/spring-tools",
   "mcpServers": {
-    "spring-boot-mcp": {
+    "spring-tools-mcp": {
       "command": "node",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/launcher.js"
@@ -16,7 +16,7 @@
     }
   },
   "lspServers": {
-    "spring-boot-lsp": {
+    "spring-tools-lsp": {
       "command": "node",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/proxy.js"

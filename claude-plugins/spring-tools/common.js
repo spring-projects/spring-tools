@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const projectDir = process.cwd();
 const projectHash = crypto.createHash('md5').update(projectDir).digest('hex').substring(0, 8);
 
-const portFile = path.join(os.tmpdir(), `spring-boot-lsp-port-${projectHash}`);
+const portFile = path.join(os.tmpdir(), `spring-tools-lsp-port-${projectHash}`);
 
 module.exports = {
     portFile,

@@ -11,17 +11,17 @@ cd ../claude-plugins
 
 echo "Updating local JARs for Claude Code plugins..."
 
-# 1. Update spring-boot plugin
-echo "Updating spring-boot plugin..."
-SPRING_BOOT_JAR_DIR="spring-boot/language-server"
-mkdir -p "$SPRING_BOOT_JAR_DIR"
+# 1. Update spring-tools plugin
+echo "Updating spring-tools plugin..."
+SPRING_TOOLS_JAR_DIR="spring-tools/language-server"
+mkdir -p "$SPRING_TOOLS_JAR_DIR"
 
 # Find and copy the jar
 jar_file=$(ls ../headless-services/spring-boot-language-server-standalone/target/*-standalone-exec.jar | head -n 1)
 
 if [ -f "$jar_file" ]; then
-    cp "$jar_file" "$SPRING_BOOT_JAR_DIR/spring-boot-language-server-standalone-exec.jar"
-    echo "  Successfully copied to $SPRING_BOOT_JAR_DIR/spring-boot-language-server-standalone-exec.jar"
+    cp "$jar_file" "$SPRING_TOOLS_JAR_DIR/spring-boot-language-server-standalone-exec.jar"
+    echo "  Successfully copied to $SPRING_TOOLS_JAR_DIR/spring-boot-language-server-standalone-exec.jar"
 else
     echo "  Error: Could not find the standalone JAR."
     exit 1

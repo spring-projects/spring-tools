@@ -1,6 +1,6 @@
-# Spring Boot Language Server — Claude Code Plugin
+# Spring Tools Language Server — Claude Code Plugin
 
-A [Claude Code](https://code.claude.com) plugin that contributes the Spring Boot Language Server, providing real-time diagnostics, completions, and navigation for Spring Boot projects.
+A [Claude Code](https://code.claude.com) plugin that contributes the Spring Tools Language Server, providing real-time diagnostics, completions, and navigation for Spring Boot projects.
 
 Unlike the VS Code extension, this plugin uses the **standalone** variant of the language server which operates **without** JDT Language Server. Project classpath is computed directly via Maven and Gradle tooling; type indexing uses Jandex.
 
@@ -31,12 +31,12 @@ Once the marketplace is added, install the plugin:
 
 **If you added the stable release marketplace:**
 ```bash
-claude plugin install spring-boot@spring-tools-marketplace
+claude plugin install spring-tools@spring-tools-marketplace
 ```
 
 **If you added the snapshot marketplace:**
 ```bash
-claude plugin install spring-boot@spring-tools-snapshots
+claude plugin install spring-tools@spring-tools-snapshots
 ```
 
 ### 3. Update the Plugin
@@ -45,7 +45,7 @@ When new versions of the plugin are published to the marketplace, update it by r
 
 ```bash
 claude plugin marketplace update
-claude plugin update spring-boot
+claude plugin update spring-tools
 ```
 
 ### 4. Testing the LSP Plugin
@@ -76,7 +76,7 @@ We maintain a local marketplace configuration (`claude-plugins/.claude-plugin/ma
    ```
 3. Install the plugin from your new local marketplace:
    ```bash
-   claude plugin install spring-boot@spring-tools-local
+   claude plugin install spring-tools@spring-tools-local
    ```
 
 ## What the language server provides
@@ -89,14 +89,19 @@ We maintain a local marketplace configuration (`claude-plugins/.claude-plugin/ma
 ## Plugin structure
 
 ```
-spring-boot/
+spring-tools/
 ├── .claude-plugin/
 │   └── plugin.json          # Plugin manifest (includes MCP and LSP server configs)
 ├── proxy.js                 # Node.js script to pipe stdio to the Java LSP socket
 ├── launcher.js              # Node.js script that downloads the JAR (if missing) and starts Java
 ├── install.js               # Node.js script that downloads the JAR
+├── common.js                # Shared Node.js logic
 ├── language-server/         # Populated by install.js on first run (gitignored)
 │   └── spring-boot-language-server-standalone-exec.jar
+├── skills/                  # Claude Code skills
+│   ├── validate/
+│   └── quickfix/
+├── explanations/            # Markdown files with problem explanations and fixes
 └── README.md
 ```
 
@@ -104,5 +109,5 @@ spring-boot/
 
 To eliminate race conditions and avoid booting multiple heavy Java processes, this plugin configures Claude Code to share a single JVM for both MCP and LSP:
 
-1. **MCP starts the server:** Claude Code parses the MCP configuration in `plugin.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Boot Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (port 5007).
-2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses the LSP configuration in `plugin.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on port 5007, avoiding the need to spawn a second JVM.
+1. **MCP starts the server:** Claude Code parses the MCP configuration in `plugin.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Tools Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (randomly allocated port).
+2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses the LSP configuration in `plugin.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on the dynamically allocated port, avoiding the need to spawn a second JVM.

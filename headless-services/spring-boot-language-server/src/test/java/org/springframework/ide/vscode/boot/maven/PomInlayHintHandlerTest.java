@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,6 +24,11 @@ import java.sql.Date;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.ide.vscode.commons.java.IClasspath;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.IProjectBuild;
+import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.InlayHint;
@@ -296,6 +301,66 @@ public class PomInlayHintHandlerTest {
 		
 		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
 		
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
+		assertEquals(0, hints.size());
+	}
+
+	@Test
+	void noInlayHintWhenBuildFileUriIsNull() throws Exception {
+		IClasspath classpath = mock(IClasspath.class);
+		when(classpath.findBinaryLibraryByPrefix(SpringProjectUtil.SPRING_BOOT)).thenReturn(Optional.of(mock(CPE.class)));
+
+		IProjectBuild projectBuild = mock(IProjectBuild.class);
+		when(projectBuild.getBuildFile()).thenReturn(null);
+
+		IJavaProject jp = mock(IJavaProject.class);
+		when(jp.getClasspath()).thenReturn(classpath);
+		when(jp.getProjectBuild()).thenReturn(projectBuild);
+
+		String docUri = "file:///some/project/pom.xml";
+		TextDocument doc = new TextDocument(docUri, LanguageId.XML, 0, "<project></project>");
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		when(projectFinder.find(any())).thenReturn(Optional.of(jp));
+
+		SimpleTextDocumentService documents = mock(SimpleTextDocumentService.class);
+		when(documents.getLatestSnapshot(anyString())).thenReturn(doc);
+
+		SimpleLanguageServer server = mock(SimpleLanguageServer.class);
+		when(server.getTextDocumentService()).thenReturn(documents);
+
+		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
+
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
+		assertEquals(0, hints.size());
+	}
+
+	@Test
+	void noInlayHintWhenNotSpringBootProject() throws Exception {
+		IClasspath classpath = mock(IClasspath.class);
+		when(classpath.findBinaryLibraryByPrefix(SpringProjectUtil.SPRING_BOOT)).thenReturn(Optional.empty());
+
+		IJavaProject jp = mock(IJavaProject.class);
+		when(jp.getClasspath()).thenReturn(classpath);
+
+		String docUri = "file:///some/project/pom.xml";
+		TextDocument doc = new TextDocument(docUri, LanguageId.XML, 0, "<project></project>");
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		when(projectFinder.find(any())).thenReturn(Optional.of(jp));
+
+		SimpleTextDocumentService documents = mock(SimpleTextDocumentService.class);
+		when(documents.getLatestSnapshot(anyString())).thenReturn(doc);
+
+		SimpleLanguageServer server = mock(SimpleLanguageServer.class);
+		when(server.getTextDocumentService()).thenReturn(documents);
+
+		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
+
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider);
+
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
 	}

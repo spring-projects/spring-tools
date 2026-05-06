@@ -105,97 +105,103 @@ public class PomInlayHintHandler implements InlayHintHandler {
 			List<InlayHintWithLazyPosition> inlayHintProviders = new ArrayList<>();
 
 			Optional<IJavaProject> projectOpt = projectFinder.find(doc.getId());
-			if (projectOpt.isPresent()) {
+			if (projectOpt.isEmpty()) {
+				return Collections.emptyList();
+			}
+			
+			IJavaProject jp = projectOpt.get();
+			if (!SpringProjectUtil.isBootProject(jp)) {
+				return Collections.emptyList();
+			}
+			
+			URI buildFileUri = jp.getProjectBuild().getBuildFile();
+			if (buildFileUri == null || !buildFileUri.equals(uri)) {
+				return Collections.emptyList();
+			}				
 
-				IJavaProject jp = projectOpt.get();
-				URI buildFileUri = jp.getProjectBuild().getBuildFile();
+			Version currentVersion = SpringProjectUtil.getSpringBootVersion(jp);
+			if (currentVersion == null) {
+				return Collections.emptyList();
+			}
+			
+			try {
+				ResolvedSpringProject genProject = generationsProvider.getProject(SpringProjectUtil.SPRING_BOOT);
+				if (genProject != null) {
+					Version latestPatch = VersionValidationUtils.getNewerLatestPatchRelease(genProject.getReleases(), currentVersion);
+					if (latestPatch != null) {
+						inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
+							Command command = new Command();
+							command.setTitle("Upgrade to the Latest Patch");
+							command.setCommand(SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT);
+							command.setArguments(List.of(jp.getLocationUri().toASCIIString(), latestPatch.toString(), false));
 
-				if (buildFileUri.equals(uri) && SpringProjectUtil.isBootProject(jp)) {
-					Version currentVersion = SpringProjectUtil.getSpringBootVersion(jp);
-					if (currentVersion != null) {
-						try {
-							ResolvedSpringProject genProject = generationsProvider.getProject(SpringProjectUtil.SPRING_BOOT);
-							if (genProject != null) {
-								Version latestPatch = VersionValidationUtils.getNewerLatestPatchRelease(genProject.getReleases(), currentVersion);
-								if (latestPatch != null) {
-									inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
-										Command command = new Command();
-										command.setTitle("Upgrade to the Latest Patch");
-										command.setCommand(SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT);
-										command.setArguments(List.of(jp.getLocationUri().toASCIIString(), latestPatch.toString(), false));
-										
-										InlayHintLabelPart label = new InlayHintLabelPart("Upgrade to the Latest Patch");
-										label.setCommand(command);
-										
-										InlayHint hint = new InlayHint();
-										hint.setKind(InlayHintKind.Parameter);
-										hint.setPaddingLeft(true);
-										hint.setLabel(List.of(label));
-										return hint;
-									}, (d, e) -> {
-										
-										Optional<String> parentArtifactIdOpt = findChildElement(e, 0, "parent", "artifactId")
-												.flatMap(PomInlayHintHandler::getNodeValue);
+							InlayHintLabelPart label = new InlayHintLabelPart("Upgrade to the Latest Patch");
+							label.setCommand(command);
 
-										if (parentArtifactIdOpt.isPresent() && "spring-boot-starter-parent".equals(parentArtifactIdOpt.get())) {
+							InlayHint hint = new InlayHint();
+							hint.setKind(InlayHintKind.Parameter);
+							hint.setPaddingLeft(true);
+							hint.setLabel(List.of(label));
+							return hint;
+						}, (d, e) -> {
 
-											Optional<DOMElement> parentVersionOpt = findChildElement(e, 0, "parent", "version");
-											if (parentVersionOpt.isPresent()) {
-												DOMElement parentVersion = parentVersionOpt.get();
-												// Get the current version in the POM in case file is not saved
-												
-												Optional<Version> parentVersionValueOpt = getNodeValue(parentVersion)
-														.flatMap(value -> Optionals.ofThrowable((s) -> Version.parse(s), value));
+							Optional<String> parentArtifactIdOpt = findChildElement(e, 0, "parent", "artifactId")
+									.flatMap(PomInlayHintHandler::getNodeValue);
 
-												if (parentVersionValueOpt.isPresent() && parentVersionValueOpt.get().compareTo(latestPatch) < 0) {
-													try {
-														return List.of(d.toPosition(parentVersion.getEndTagCloseOffset() + 1));
-													} catch (Exception ex) {
-														log.error("", ex);
-													}
-												}
-											}
+							if (parentArtifactIdOpt.isPresent() && "spring-boot-starter-parent".equals(parentArtifactIdOpt.get())) {
+
+								Optional<DOMElement> parentVersionOpt = findChildElement(e, 0, "parent", "version");
+								if (parentVersionOpt.isPresent()) {
+									DOMElement parentVersion = parentVersionOpt.get();
+									// Get the current version in the POM in case file is not saved
+
+									Optional<Version> parentVersionValueOpt = getNodeValue(parentVersion)
+											.flatMap(value -> Optionals.ofThrowable((s) -> Version.parse(s), value));
+
+									if (parentVersionValueOpt.isPresent() && parentVersionValueOpt.get().compareTo(latestPatch) < 0) {
+										try {
+											return List.of(d.toPosition(parentVersion.getEndTagCloseOffset() + 1));
+										} catch (Exception ex) {
+											log.error("", ex);
 										}
-										return Collections.emptyList();
-									}));
-								}
-								Generation generation = GenerationsValidator.getGenerationForJavaProject(jp, genProject, genProject.getSlug());
-								if (generation != null && VersionValidationUtils.isOssValid(generation)) {
-
-									inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
-										Command command = new Command();
-										command.setTitle("Add Spring Boot Starters");
-										command.setCommand("spring.initializr.addStarters");
-										
-										InlayHintLabelPart label = new InlayHintLabelPart("Add Spring Boot Starters...");
-										label.setCommand(command);
-										
-										InlayHint hint = new InlayHint();
-										hint.setKind(InlayHintKind.Parameter);
-										hint.setPaddingLeft(true);
-										hint.setLabel(List.of(label));
-										return hint;
-									}, (d, e) -> {
-										Optional<DOMElement> dependenciesOpt = findChildElement(e, 0, "dependencies");
-										if (dependenciesOpt.isPresent()) {
-											DOMElement dependencies = dependenciesOpt.get();
-											try {
-												return List.of(d.toPosition(dependencies.getStartTagCloseOffset() + 1));
-											} catch (BadLocationException ex) {
-												log.error("", ex);
-											}
-										}
-										return Collections.emptyList();
-									}));
+									}
 								}
 							}
-						} catch (Exception e) {
-							log.error("", e);
-						}
+							return Collections.emptyList();
+						}));
+					}
+					Generation generation = GenerationsValidator.getGenerationForJavaProject(jp, genProject, genProject.getSlug());
+					if (generation != null && VersionValidationUtils.isOssValid(generation)) {
+
+						inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
+							Command command = new Command();
+							command.setTitle("Add Spring Boot Starters");
+							command.setCommand("spring.initializr.addStarters");
+
+							InlayHintLabelPart label = new InlayHintLabelPart("Add Spring Boot Starters...");
+							label.setCommand(command);
+
+							InlayHint hint = new InlayHint();
+							hint.setKind(InlayHintKind.Parameter);
+							hint.setPaddingLeft(true);
+							hint.setLabel(List.of(label));
+							return hint;
+						}, (d, e) -> {
+							Optional<DOMElement> dependenciesOpt = findChildElement(e, 0, "dependencies");
+							if (dependenciesOpt.isPresent()) {
+								DOMElement dependencies = dependenciesOpt.get();
+								try {
+									return List.of(d.toPosition(dependencies.getStartTagCloseOffset() + 1));
+								} catch (BadLocationException ex) {
+									log.error("", ex);
+								}
+							}
+							return Collections.emptyList();
+						}));
 					}
 				}
-				
-				
+			} catch (Exception e) {
+				log.error("", e);
 			}
 			
 			if (!inlayHintProviders.isEmpty()) {
@@ -212,6 +218,7 @@ public class PomInlayHintHandler implements InlayHintHandler {
 				}
 			}
 		}
+		
 		return Collections.emptyList();
 	}
 	

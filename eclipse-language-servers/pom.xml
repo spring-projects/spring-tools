@@ -182,6 +182,11 @@
 					<url>https://download.eclipse.org/wildwebdeveloper/releases/latest/</url>
 					<!--					<url>https://download.eclipse.org/wildwebdeveloper/snapshots/</url> -->
 				</repository>
+				<repository>
+					<id>copilot</id>
+					<layout>p2</layout>
+					<url>https://azuredownloads-g3ahgwb5b8bkbxhd.b01.azurefd.net/github-copilot/</url>
+				</repository>
 			</repositories>
 		</profile>
 
@@ -229,6 +234,12 @@
 					<layout>p2</layout>
 					<url>https://download.eclipse.org/wildwebdeveloper/releases/latest/</url>
 					<!--					<url>https://download.eclipse.org/wildwebdeveloper/snapshots/</url> -->
+				</repository>
+
+				<repository>
+					<id>copilot</id>
+					<layout>p2</layout>
+					<url>https://azuredownloads-g3ahgwb5b8bkbxhd.b01.azurefd.net/github-copilot/</url>
 				</repository>
 			</repositories>
 		</profile>

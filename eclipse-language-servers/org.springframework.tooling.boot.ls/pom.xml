@@ -171,6 +171,11 @@
 								<id>org.eclipse.wst.sse.ui</id>
 								<versionRange>0.0.0</versionRange>
 							</requirement>
+							<requirement>
+								<type>eclipse-plugin</type>
+								<id>com.microsoft.copilot.eclipse.ui</id>
+								<versionRange>0.17.0</versionRange>
+							</requirement>
 						</extraRequirements>
 					</dependency-resolution>
 				</configuration>

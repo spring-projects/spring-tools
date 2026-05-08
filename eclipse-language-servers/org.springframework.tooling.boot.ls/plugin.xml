@@ -752,5 +752,10 @@
             name="Spring">
       </category>
    </extension>
+   
+   <extension
+         point="com.microsoft.copilot.eclipse.ui.mcpRegistration">
+     <provider class="org.springframework.tooling.boot.ls.copilot.CopilotMcpServerProvider" id="spring-tools-mcp"/>
+   </extension>
 
 </plugin>

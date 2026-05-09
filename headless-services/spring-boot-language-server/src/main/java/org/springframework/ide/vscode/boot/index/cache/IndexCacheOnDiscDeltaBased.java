@@ -78,6 +78,8 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	private final int compactingCounterBoundary;
 	private final Set<String> categoriesToRemoveAllCacheFiles;
 	
+	private final Gson gson = createGson();
+
 	private static final int DEFAULT_COMPACTING_TRIGGER = 20;
 	private static final Set<String> CATEGORIES_TO_REMOVE_ALL_CACHE_FILES = Set.of("symbols");
 
@@ -344,7 +346,6 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
 		try (Writer writer = new BufferedWriter(new FileWriter(new File(cacheDirectory, cacheKey.toString() + ".json"), append)))
 		{
-			Gson gson = createGson();
 			gson.toJson(deltaStorage, writer);
 			
 			writer.write("\n");
@@ -360,8 +361,6 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
 		File cacheStore = new File(cacheDirectory, cacheKey.toString() + ".json");
 		if (cacheStore.exists()) {
-
-			Gson gson = createGson();
 
 			try (JsonReader reader = new JsonReader(new BufferedReader(new FileReader(cacheStore)))) {
 				reader.setStrictness(Strictness.LENIENT);

@@ -67,6 +67,8 @@ public class IndexCacheOnDisc implements IndexCache {
 	private final File cacheDirectory;
 	private final Map<IndexCacheKey, IndexCacheStore<? extends IndexCacheable>> stores;
 
+	private final Gson gson = createGson();
+
 	private static final Logger log = LoggerFactory.getLogger(IndexCacheOnDisc.class);
 
 	public IndexCacheOnDisc(File cacheDirectory) {
@@ -108,8 +110,6 @@ public class IndexCacheOnDisc implements IndexCache {
 	public <T extends IndexCacheable> Pair<T[], Multimap<SourceJavaFile, QualifiedTypeName>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type) {
 		File cacheStore = new File(cacheDirectory, cacheKey.toString() + ".json");
 		if (cacheStore.exists()) {
-
-			Gson gson = createGson();
 
 			try (JsonReader reader = new JsonReader(new FileReader(cacheStore))) {
 				IndexCacheStore<T> store = gson.fromJson(reader, IndexCacheStore.class);
@@ -301,7 +301,6 @@ public class IndexCacheOnDisc implements IndexCache {
 
 		try (FileWriter writer = new FileWriter(new File(cacheDirectory, cacheKey.toString() + ".json")))
 		{
-			Gson gson = createGson();
 			gson.toJson(store, writer);
 
 			cleanupCache(cacheKey);

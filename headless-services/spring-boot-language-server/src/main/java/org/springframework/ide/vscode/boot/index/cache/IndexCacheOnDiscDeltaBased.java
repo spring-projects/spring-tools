@@ -136,7 +136,6 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 		this.timestamps.put(cacheKey, timestampMap);
 
 		this.compactingCounter.put(cacheKey, 0);
-		deleteOutdatedCacheFiles(cacheKey);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -299,15 +298,19 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 		return true;
 	}
 	
+	public <T extends IndexCacheable> void compactNow(IndexCacheKey cacheKey, Class<T> type) {
+		log.info("compacting...");
+
+		IndexCacheStore<T> compactedData = retrieveStoreFromIncrementalStorage(cacheKey, type).getLeft();
+		persist(cacheKey, new DeltaSnapshot<T>(compactedData), false);
+		this.compactingCounter.put(cacheKey, 0);
+
+		deleteOutdatedCacheFiles(cacheKey);
+	}
+
 	private <T extends IndexCacheable> void compact(IndexCacheKey cacheKey, Class<T> type) {
 		if (this.compactingCounter.get(cacheKey) > this.compactingCounterBoundary) {
-			log.info("compacting...");
-			
-			IndexCacheStore<T> compactedData = retrieveStoreFromIncrementalStorage(cacheKey, type).getLeft();
-			persist(cacheKey, new DeltaSnapshot<T>(compactedData), false);
-			this.compactingCounter.put(cacheKey, 0);
-			
-			deleteOutdatedCacheFiles(cacheKey);
+			compactNow(cacheKey, type);
 		}
 	}
 

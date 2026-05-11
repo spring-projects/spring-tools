@@ -240,6 +240,10 @@ public class IndexCacheOnDiscDeltaBasedTest {
         IndexCacheKey key2 = new IndexCacheKey("someProject", "someIndexer", "someCategory", "2");
         cache.store(key2, new String[0], new ArrayList<>(), null, TestCacheElement.class);
         assertTrue(Files.exists(tempDir.resolve(Paths.get(key2.toString() + STORAGE_FILE_EXTENSION))));
+        // old file is not deleted immediately on store - cleanup is deferred to compaction
+        assertTrue(Files.exists(tempDir.resolve(Paths.get(key1.toString() + STORAGE_FILE_EXTENSION))));
+
+        cache.compactNow(key2, TestCacheElement.class);
         assertFalse(Files.exists(tempDir.resolve(Paths.get(key1.toString() + STORAGE_FILE_EXTENSION))));
     }
 
@@ -253,6 +257,10 @@ public class IndexCacheOnDiscDeltaBasedTest {
         assertNull(cache.retrieve(key2, new String[0], TestCacheElement.class));
 
         cache.store(key2, new String[0], new ArrayList<>(), null, TestCacheElement.class);
+        assertNotNull(cache.retrieve(key2, new String[0], TestCacheElement.class));
+
+        // old cache file is removed during compaction, not immediately on store
+        cache.compactNow(key2, TestCacheElement.class);
         assertNull(cache.retrieve(key1, new String[0], TestCacheElement.class));
         assertNotNull(cache.retrieve(key2, new String[0], TestCacheElement.class));
     }
@@ -266,6 +274,10 @@ public class IndexCacheOnDiscDeltaBasedTest {
         IndexCacheKey key2 = new IndexCacheKey("someProject", "someIndexer", "someCategory", "2");
         cache.store(key2, new String[0], new ArrayList<>(), null, TestCacheElement.class);
         assertTrue(Files.exists(tempDir.resolve(Paths.get(key2.toString() + STORAGE_FILE_EXTENSION))));
+        // old file is not deleted immediately on store - cleanup is deferred to compaction
+        assertTrue(Files.exists(tempDir.resolve(Paths.get(key1.toString() + STORAGE_FILE_EXTENSION))));
+
+        cache.compactNow(key2, TestCacheElement.class);
         assertFalse(Files.exists(tempDir.resolve(Paths.get(key1.toString() + STORAGE_FILE_EXTENSION))));
     }
 
@@ -301,6 +313,9 @@ public class IndexCacheOnDiscDeltaBasedTest {
         IndexCacheKey keyForStore = new IndexCacheKey("projectA", "indexerX", "someCategory", "1");
         cache.store(keyForStore, new String[0], new ArrayList<>(), null, TestCacheElement.class);
 
+        // deprecated category files are cleaned up during compaction, not immediately on store
+        cache.compactNow(keyForStore, TestCacheElement.class);
+
         assertFalse(Files.exists(tempDir.resolve(keyToRemove1.toString() + STORAGE_FILE_EXTENSION)));
         assertFalse(Files.exists(tempDir.resolve(keyToRemove2.toString() + STORAGE_FILE_EXTENSION)));
         assertTrue(Files.exists(tempDir.resolve(keyToKeep.toString() + STORAGE_FILE_EXTENSION)));
@@ -319,6 +334,9 @@ public class IndexCacheOnDiscDeltaBasedTest {
         Files.writeString(tempDir.resolve(keyCurrent.toString() + STORAGE_FILE_EXTENSION), "{}");
 
         cache.store(keyCurrent, new String[0], new ArrayList<>(), null, TestCacheElement.class);
+
+        // deprecated category files are cleaned up during compaction, not immediately on store
+        cache.compactNow(keyCurrent, TestCacheElement.class);
 
         assertFalse(Files.exists(tempDir.resolve(keyOld.toString() + STORAGE_FILE_EXTENSION)));
         assertFalse(Files.exists(tempDir.resolve(keyRemoved.toString() + STORAGE_FILE_EXTENSION)));

@@ -132,6 +132,8 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	@Override
 	public void initializeProject(IJavaProject project, boolean clean) throws Exception {
+		cacheHelper.evictStaleKeys(project);
+
 		String[] files = this.getFiles(project);
 
 		log.info("scan java files for symbols for project: {} - no. of files: {}", project.getElementName(), files.length);
@@ -146,7 +148,6 @@ public class SpringIndexerJava implements SpringIndexer {
 	@Override
 	public void removeProject(IJavaProject project) throws Exception {
 		cacheHelper.removeProjectCaches(project);
-		
 		this.dependencyTracker.removeProject(project);
 	}
 

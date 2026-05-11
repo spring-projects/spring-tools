@@ -13,7 +13,9 @@ package org.springframework.ide.vscode.boot.java.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,6 +48,7 @@ public class SpringIndexerJavaCacheHelper {
 	private final IndexCache cache;
 	private final String generation;
 	private JsonObject validationSeveritySettings;
+	private final Map<IJavaProject, Map<String, IndexCacheKey>> cachedKeys = new ConcurrentHashMap<>();
 
 	public SpringIndexerJavaCacheHelper(IndexCache cache, String generation, JsonObject validationSeveritySettings) {
 		this.cache = cache;
@@ -55,9 +58,16 @@ public class SpringIndexerJavaCacheHelper {
 
 	public void setValidationSeveritySettings(JsonObject validationSeveritySettings) {
 		this.validationSeveritySettings = validationSeveritySettings;
+		this.cachedKeys.clear();
 	}
 
 	public IndexCacheKey getCacheKey(IJavaProject project, String elementType) {
+		return cachedKeys
+				.computeIfAbsent(project, p -> new ConcurrentHashMap<>())
+				.computeIfAbsent(elementType, et -> computeCacheKey(project, et));
+	}
+
+	private IndexCacheKey computeCacheKey(IJavaProject project, String elementType) {
 		IClasspath classpath = project.getClasspath();
 		Stream<File> classpathEntries = IClasspathUtil.getBinaryRoots(classpath, cpe -> !Classpath.ENTRY_KIND_SOURCE.equals(cpe.getKind())).stream();
 
@@ -95,6 +105,18 @@ public class SpringIndexerJavaCacheHelper {
 	public void removeProjectCaches(IJavaProject project) {
 		cache.remove(getCacheKey(project, INDEX_KEY));
 		cache.remove(getCacheKey(project, DIAGNOSTICS_KEY));
+		cachedKeys.remove(project);
+	}
+
+	/**
+	 * Removes cached keys for any stale project instances that share the same element name
+	 * as the given project but are no longer the current instance. This covers the case where
+	 * a classpath change replaces the IJavaProject object without going through removeProjectCaches.
+	 */
+	public void evictStaleKeys(IJavaProject currentProject) {
+		cachedKeys.keySet().removeIf(p ->
+				p != currentProject &&
+				currentProject.getElementName().equals(p.getElementName()));
 	}
 
 	public void removeFilesFromCaches(IJavaProject project, String[] absolutePaths) {

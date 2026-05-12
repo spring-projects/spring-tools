@@ -48,17 +48,6 @@ jobs:
           
           # Run the script to update the changelog
           ./.github/scripts/generate-prerelease-changelog.sh ${{ inputs.extension-name }} "$LABEL"
-          
-          # Commit and push the changes if the changelog was modified
-          if [[ -n $(git status -s vscode-extensions/${{ inputs.extension-name }}/CHANGELOG.md) ]]; then
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git add ./vscode-extensions/${{ inputs.extension-name }}/CHANGELOG.md
-            git commit -m "Update pre-release changelog for ${{ inputs.extension-name }}"
-            git push
-          else
-            echo "No changes to the changelog."
-          fi
       - name: Set up JDK 25
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # 5.2.0
         with:
@@ -82,3 +71,38 @@ jobs:
           vsix_file=`ls ./vsix | head -n 1`
           echo "Open-VSX VSIX pre-release file to publish ${vsix_file}"
           ovsx publish --pre-release -p ${{ secrets.OVSX_PUBLISH_TOKEN }} --packagePath ./vsix/$vsix_file
+          
+      - name: Commit and Push Changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Commit and push the changes if the changelog was modified
+          if [[ -n $(git status -s vscode-extensions/${{ inputs.extension-name }}/CHANGELOG.md) ]]; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add ./vscode-extensions/${{ inputs.extension-name }}/CHANGELOG.md
+            git commit -m "Update pre-release changelog for ${{ inputs.extension-name }}"
+            
+            # Retry loop for git push to handle parallel workflow conflicts
+            max_retries=5
+            retry_count=0
+            while [ $retry_count -lt $max_retries ]; do
+              if git push; then
+                echo "Successfully pushed changelog updates."
+                break
+              else
+                echo "Push failed, attempting to pull and rebase (attempt $((retry_count + 1)) of $max_retries)..."
+                git pull --rebase origin main
+                retry_count=$((retry_count + 1))
+                # Add a small random sleep to prevent perfectly synced retries
+                sleep $((RANDOM % 5 + 1))
+              fi
+            done
+            
+            if [ $retry_count -eq $max_retries ]; then
+              echo "Failed to push changelog updates after $max_retries attempts."
+              exit 1
+            fi
+          else
+            echo "No changes to the changelog."
+          fi

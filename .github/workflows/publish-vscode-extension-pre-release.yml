@@ -86,13 +86,21 @@ jobs:
             # Retry loop for git push to handle parallel workflow conflicts
             max_retries=5
             retry_count=0
+            
+            # Get current branch name
+            CURRENT_BRANCH=$(git branch --show-current)
+            if [ -z "$CURRENT_BRANCH" ]; then
+              # If in detached HEAD (like actions/checkout often is), we push to the ref that triggered the workflow
+              CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
+            fi
+            
             while [ $retry_count -lt $max_retries ]; do
-              if git push; then
+              if git push origin HEAD:$CURRENT_BRANCH; then
                 echo "Successfully pushed changelog updates."
                 break
               else
                 echo "Push failed, attempting to pull and rebase (attempt $((retry_count + 1)) of $max_retries)..."
-                git pull --rebase origin main
+                git pull --rebase origin $CURRENT_BRANCH
                 retry_count=$((retry_count + 1))
                 # Add a small random sleep to prevent perfectly synced retries
                 sleep $((RANDOM % 5 + 1))

@@ -14,6 +14,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   build-vscode-extension:
     runs-on: ubuntu-latest
@@ -21,6 +24,32 @@ jobs:
     steps:
       - name: Checkout vscode-extensions code and workflow scripts
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+      - name: Update Changelog
+        run: |
+          # Determine the label based on the extension name by stripping the 'vscode-' prefix
+          EXTENSION_NAME="${{ inputs.extension-name }}"
+          LABEL_NAME="${EXTENSION_NAME#vscode-}"
+          
+          # Special case for spring-boot which uses "for: vscode" instead of "theme: spring-boot-support"
+          if [ "$EXTENSION_NAME" == "vscode-spring-boot" ]; then
+            LABEL="label:\"for: vscode\""
+          else
+            LABEL="label:\"theme: ${LABEL_NAME}-support\""
+          fi
+          
+          # Run the script to update the changelog
+          ./scripts/generate-prerelease-changelog.sh ${{ inputs.extension-name }} "$LABEL"
+          
+          # Commit and push the changes if the changelog was modified
+          if [[ -n $(git status -s vscode-extensions/${{ inputs.extension-name }}/CHANGELOG.md) ]]; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git add ./vscode-extensions/${{ inputs.extension-name }}/CHANGELOG.md
+            git commit -m "Update pre-release changelog for ${{ inputs.extension-name }}"
+            git push
+          else
+            echo "No changes to the changelog."
+          fi
       - name: Set up JDK 25
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # 5.2.0
         with:

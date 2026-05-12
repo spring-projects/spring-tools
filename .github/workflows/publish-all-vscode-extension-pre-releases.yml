@@ -6,26 +6,33 @@ on:
     - cron: "0 0 * * 2,4,6"
 
 jobs:
-
   vscode-spring-boot:
+    permissions:
+      contents: write
     uses: ./.github/workflows/publish-vscode-extension-pre-release.yml
     with:
       extension-name: vscode-spring-boot
     secrets: inherit
 
   vscode-concourse:
+    permissions:
+      contents: write
     uses: ./.github/workflows/publish-vscode-extension-pre-release.yml
     with:
       extension-name: vscode-concourse
     secrets: inherit
 
   vscode-manifest-yaml:
+    permissions:
+      contents: write
     uses: ./.github/workflows/publish-vscode-extension-pre-release.yml
     with:
       extension-name: vscode-manifest-yaml
     secrets: inherit
 
   vscode-bosh:
+    permissions:
+      contents: write
     uses: ./.github/workflows/publish-vscode-extension-pre-release.yml
     with:
       extension-name: vscode-bosh

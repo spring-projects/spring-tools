@@ -21,10 +21,19 @@ jobs:
   build-vscode-extension:
     runs-on: ubuntu-latest
     name: Publish Pre-Release for VSCode Extension '${{ inputs.extension-name }}'
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout vscode-extensions code and workflow scripts
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # 6.4.0
+        with:
+          node-version: 22
+      - name: Install vsce
+        run: npm install --global @vscode/vsce
       - name: Update Changelog
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Determine the label based on the extension name by stripping the 'vscode-' prefix
           EXTENSION_NAME="${{ inputs.extension-name }}"
@@ -38,7 +47,7 @@ jobs:
           fi
           
           # Run the script to update the changelog
-          ./scripts/generate-prerelease-changelog.sh ${{ inputs.extension-name }} "$LABEL"
+          ./.github/scripts/generate-prerelease-changelog.sh ${{ inputs.extension-name }} "$LABEL"
           
           # Commit and push the changes if the changelog was modified
           if [[ -n $(git status -s vscode-extensions/${{ inputs.extension-name }}/CHANGELOG.md) ]]; then
@@ -55,9 +64,6 @@ jobs:
         with:
           java-version: '25'
           distribution: 'temurin'
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # 6.4.0
-        with:
-          node-version: 22
       - name: Build .VSIX file
         id: build-vsix
         run: |
@@ -66,7 +72,6 @@ jobs:
       - name: Publish to VSCode Marketplace
         id: publish-pre-release
         run: |
-          npm install --global @vscode/vsce
           vsix_file=`ls ./vsix | head -n 1`
           echo "VSCode VSIX pre-release file to publish ${vsix_file}"
           vsce publish --pre-release -p ${{ secrets.VSCE_PUBLISH_TOKEN }} --packagePath ./vsix/$vsix_file

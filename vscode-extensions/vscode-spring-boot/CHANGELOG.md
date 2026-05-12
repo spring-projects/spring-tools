@@ -1,3 +1,14 @@
+## 2026-05-12 (2.2.0 PRE-RELEASE)
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ "Internal error" logged by Spring Boot Language Server [#1886](https://github.com/spring-projects/spring-tools/issues/1886)
+* _(Spring Boot)_ [API Versioning] Spring Language Server Doesn't Recognise useVersionResolver() use for API Versioning [#1880](https://github.com/spring-projects/spring-tools/issues/1880)
+* _(Spring Boot)_ [aot repositories] align position of code lens with method declaration or annotation, not above the javadoc [#1874](https://github.com/spring-projects/spring-tools/issues/1874)
+* _(Spring Boot)_ [spring ai] add overall support for Spring AI [#1857](https://github.com/spring-projects/spring-tools/issues/1857)
+* _(Spring Boot)_ revalidation of OpenFeign config clients does not work all the time [#1804](https://github.com/spring-projects/spring-tools/issues/1804)
+* _(Spring Boot)_ [validation] more false positives for missing configuration validation [#1292](https://github.com/spring-projects/spring-tools/issues/1292)
+
 ## 2026-03-18 (5.1.1 RELEASE, incl. language servers version 2.1.1)
 
 #### all fixes and improvements in detail

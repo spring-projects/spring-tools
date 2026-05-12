@@ -148,6 +148,27 @@ public class IndexCacheOnDisc implements IndexCache {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends IndexCacheable> List<T> retrieveAll(IndexCacheKey cacheKey, Class<T> type) {
+		Gson gson = createGson();
+
+		IndexCacheStore<?> existing = this.stores.get(cacheKey);
+		if (existing != null) {
+			return List.copyOf((List<T>) existing.getSymbols());
+		}
+		File cacheStoreFile = new File(cacheDirectory, cacheKey.toString() + ".json");
+		if (cacheStoreFile.exists()) {
+			try (JsonReader reader = new JsonReader(new FileReader(cacheStoreFile))) {
+				IndexCacheStore<T> store = gson.fromJson(reader, IndexCacheStore.class);
+				return List.copyOf(store.getSymbols());
+			} catch (Exception e) {
+				log.error("error reading cached items", e);
+			}
+		}
+		return List.of();
+	}
+
 	@Override
 	public <T extends IndexCacheable> void removeFile(IndexCacheKey cacheKey, String file, Class<T> type) {
 		@SuppressWarnings("unchecked")

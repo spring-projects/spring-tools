@@ -25,6 +25,12 @@ public interface IndexCache {
 	<T extends IndexCacheable> void store(IndexCacheKey cacheKey, String[] files, List<T> generatedSymbols, Multimap<String, String> dependencies, Class<T> type);
 	<T extends IndexCacheable> Pair<T[], Multimap<String, String>> retrieve(IndexCacheKey cacheKey, String[] files, Class<T> type);
 
+	/**
+	 * Returns all currently cached items for the given cache key without any staleness check.
+	 * Useful for read-only access where best-effort / potentially-stale data is acceptable.
+	 */
+	<T extends IndexCacheable> List<T> retrieveAll(IndexCacheKey cacheKey, Class<T> type);
+
 	<T extends IndexCacheable> void update(IndexCacheKey cacheKey, String file, long lastModified, List<T> generatedSymbols, Set<String> dependencies, Class<T> type);
 	<T extends IndexCacheable> void update(IndexCacheKey cacheKey, String[] files, long[] lastModified, List<T> generatedSymbols, Multimap<String, String> dependencies, Class<T> type);
 

@@ -28,7 +28,8 @@ public class McpConfig {
     		ProjectInformation projectInformation,
     		StereotypeInformation stereotypeInformation,
     		RequestMappingMcpTools requestMappingMcpTools,
-    		ComponentAnalysisMcpTools componentAnalysisMcpTools) {
+    		ComponentAnalysisMcpTools componentAnalysisMcpTools,
+    		DiagnosticsMcpTools diagnosticsMcpTools) {
     	
         return ToolCallbackProvider.from(ToolCallbacks.from(
         		springVersionsAndGenerations,
@@ -36,7 +37,8 @@ public class McpConfig {
         		projectInformation,
         		stereotypeInformation,
         		requestMappingMcpTools,
-        		componentAnalysisMcpTools));
+        		componentAnalysisMcpTools,
+        		diagnosticsMcpTools));
 	}
 	
 //    @Bean

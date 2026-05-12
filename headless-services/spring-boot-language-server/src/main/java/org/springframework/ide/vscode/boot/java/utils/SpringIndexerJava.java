@@ -622,6 +622,10 @@ public class SpringIndexerJava implements SpringIndexer {
 		this.fileScanListener = fileScanListener;
 	}
 
+	public SpringIndexerJavaCacheHelper getCacheHelper() {
+		return cacheHelper;
+	}
+
 	private void fileScannedEvent(String file) {
 		if (fileScanListener != null) {
 			fileScanListener.fileScanned(file);

@@ -133,6 +133,15 @@ public class SpringIndexerJavaCacheHelper {
 		cache.update(getCacheKey(project, DIAGNOSTICS_KEY), javaFiles, modificationTimestamps, diagnostics, allDependencies, CachedDiagnostic.class);
 	}
 
+	/**
+	 * Returns all diagnostics currently held in the cache for the given project
+	 * without any staleness check. This is suitable for on-demand read access
+	 * where best-effort data is acceptable.
+	 */
+	public List<CachedDiagnostic> getAllCachedDiagnostics(IJavaProject project) {
+		return cache.retrieveAll(getCacheKey(project, DIAGNOSTICS_KEY), CachedDiagnostic.class);
+	}
+
 	public record FullScanRetrieveResult(
 			Pair<CachedIndexElement[], Multimap<String, String>> indexElements,
 			Pair<CachedDiagnostic[], Multimap<String, String>> diagnostics) {

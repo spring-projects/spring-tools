@@ -33,8 +33,8 @@ get_last_update_date() {
     # 1. Find the last commit that modified the CHANGELOG_FILE with a commit message starting with "Update pre-release changelog"
     date_changelog=$(git log -1 --grep="^Update pre-release changelog" --format="%aI" -- "$CHANGELOG_FILE")
     
-    # 2. Find the latest git tag that starts with the extension ID
-    local latest_tag=$(git tag -l "${EXTENSION_ID}-*" --sort=-v:refname | head -n 1)
+    # 2. Find the latest git tag that starts with the extension ID (skipping non-zero patch versions)
+    local latest_tag=$(git tag -l "${EXTENSION_ID}-*" --sort=-v:refname | grep -E "^${EXTENSION_ID}-[0-9]+\.[0-9]+\.0(-|$)" | head -n 1)
     if [ -n "$latest_tag" ]; then
         date_tag=$(git log -1 --format="%aI" "$latest_tag")
     fi
@@ -59,7 +59,7 @@ get_last_update_date() {
     local publisher=$(jq -r '.publisher' "$PACKAGE_JSON")
     if [ -n "$publisher" ] && [ "$publisher" != "null" ]; then
         echo "Querying VSCode Marketplace for the last non-prerelease version of ${publisher}.${EXTENSION_ID}..." >&2
-        local date_marketplace=$(npx --yes @vscode/vsce show "${publisher}.${EXTENSION_ID}" --json 2>/dev/null | jq -r '[.versions[] | select(.properties == null or all(.properties[]; .key != "Microsoft.VisualStudio.Code.PreRelease" or .value != "true"))] | .[0] | .lastUpdated')
+        local date_marketplace=$(npx --yes @vscode/vsce show "${publisher}.${EXTENSION_ID}" --json 2>/dev/null | jq -r '[.versions[] | select((.properties == null or all(.properties[]; .key != "Microsoft.VisualStudio.Code.PreRelease" or .value != "true")) and (.version | test("^[0-9]+\\.[0-9]+\\.0$")))] | .[0] | .lastUpdated')
         
         if [ -n "$date_marketplace" ] && [ "$date_marketplace" != "null" ]; then
             echo "$date_marketplace"

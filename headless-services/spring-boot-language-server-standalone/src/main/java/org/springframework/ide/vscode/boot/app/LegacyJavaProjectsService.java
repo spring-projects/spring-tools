@@ -18,7 +18,8 @@ import java.util.Optional;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.ide.vscode.boot.jdt.ls.JavaProjectsService;
 import org.springframework.ide.vscode.commons.gradle.GradleCore;
 import org.springframework.ide.vscode.commons.gradle.GradleProjectCache;
@@ -44,7 +45,7 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
  * Its presence on the classpath causes {@link BootLanguageServerBootApp} to skip creating
  * the JDT-LS-backed {@code JavaProjectsService} bean.
  */
-public class LegacyJavaProjectsService implements JavaProjectsService, InitializingBean {
+public class LegacyJavaProjectsService implements JavaProjectsService, ApplicationListener<ContextRefreshedEvent> {
 
 	private static final Logger log = LoggerFactory.getLogger(LegacyJavaProjectsService.class);
 
@@ -72,9 +73,8 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Initializ
 
 		this.projectObserver = new CompositeProjectOvserver(Arrays.asList(mavenProjectCache, gradleProjectCache));
 	}
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
+	
+	public void onApplicationEvent(ContextRefreshedEvent event) {
 		String projectDir = System.getProperty("spring.boot.ls.project.dir");
 		if (projectDir != null && !projectDir.isEmpty()) {
 			initializeProject(new java.io.File(projectDir));

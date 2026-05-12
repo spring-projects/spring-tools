@@ -1,3 +1,9 @@
+## 2026-05-12 (2.0.0 PRE-RELEASE)
+
+#### all fixes and improvements in detail
+
+* _(Concourse)_ [Concourse] does not handle ytt syntax well [#1631](https://github.com/spring-projects/spring-tools/issues/1631)
+
 ## 2025-04-23 (4.30.0 RELEASE, incl. language servers version 1.56.0)
 
 * _(Concourse)_ Unknown property 'url' for type 'VaultConfig' vscode-concourse(YamlSchemaProblem) [#1534](https://github.com/spring-projects/spring-tools/issues/1534)

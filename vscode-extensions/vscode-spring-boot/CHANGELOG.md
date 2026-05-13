@@ -29,43 +29,6 @@
 * _(Spring Boot)_ Only shows when springboot app runs [#1136](https://github.com/spring-projects/spring-tools/issues/1136)
 * _(Spring Boot)_ CorruptZip: end of central directory record signature not found [#1102](https://github.com/spring-projects/spring-tools/issues/1102)
 
-## 2026-05-12 (2.2.0 PRE-RELEASE)
-
-#### all fixes and improvements in detail
-
-* _(Spring Boot)_ "Internal error" logged by Spring Boot Language Server [#1886](https://github.com/spring-projects/spring-tools/issues/1886)
-* _(Spring Boot)_ [API Versioning] Spring Language Server Doesn't Recognise useVersionResolver() use for API Versioning [#1880](https://github.com/spring-projects/spring-tools/issues/1880)
-* _(Spring Boot)_ [aot repositories] align position of code lens with method declaration or annotation, not above the javadoc [#1874](https://github.com/spring-projects/spring-tools/issues/1874)
-<<<<<<< HEAD
-* _(Spring Boot)_ [spring ai] add overall support for Spring AI [#1857](https://github.com/spring-projects/spring-tools/issues/1857)
-* _(Spring Boot)_ revalidation of OpenFeign config clients does not work all the time [#1804](https://github.com/spring-projects/spring-tools/issues/1804)
-* _(Spring Boot)_ [validation] more false positives for missing configuration validation [#1292](https://github.com/spring-projects/spring-tools/issues/1292)
-=======
-* _(Spring Boot)_ allow validation preferences to include parameter values for the validation [#1869](https://github.com/spring-projects/spring-tools/issues/1869)
-* _(Spring Boot)_ [cleanup] remove outdated vscode ai agent definitions and code from extension [#1868](https://github.com/spring-projects/spring-tools/issues/1868)
-* _(Spring Boot)_ Use JDT Refactoring instead OpenRewrite recipe for AOT generated query [#1865](https://github.com/spring-projects/spring-tools/issues/1865)
-* _(Spring Boot)_ [type-safe property references] deal with multiple references at once [#1860](https://github.com/spring-projects/spring-tools/issues/1860)
-* _(Spring Boot)_ [spring ai] add overall support for Spring AI [#1857](https://github.com/spring-projects/spring-tools/issues/1857)
-* _(Spring Boot)_ improve spring data query symbol label for multi-line text-block queries [#1856](https://github.com/spring-projects/spring-tools/issues/1856)
-* _(Spring Boot)_ NPE thrown inside of updated indexer logic [#1855](https://github.com/spring-projects/spring-tools/issues/1855)
-* _(Spring Boot)_ Native query validation defaults to PostgreSQL when MariaDB and H2 driver in class path [#1839](https://github.com/spring-projects/spring-tools/issues/1839)
-* _(Spring Boot)_ [spring indexer] remove deprecated symbol indexing [#1836](https://github.com/spring-projects/spring-tools/issues/1836)
-* _(Spring Boot)_ AOT Query escape chars [#1833](https://github.com/spring-projects/spring-tools/issues/1833)
-* _(Spring Boot)_ Spring Boot Tools [#1831](https://github.com/spring-projects/spring-tools/issues/1831)
-* _(Spring Boot)_ auto completion of bean names for `@DependsOn` annotation is broken [#1829](https://github.com/spring-projects/spring-tools/issues/1829)
-* _(Spring Boot)_ [type-safe property references] support refactoring string-based to type-safe property references [#1827](https://github.com/spring-projects/spring-tools/issues/1827)
-* _(Spring Boot)_ additional Spring indexer refactorings [#1825](https://github.com/spring-projects/spring-tools/issues/1825)
-* _(Spring Boot)_ improve JDK 25 AOT cache usage [#1824](https://github.com/spring-projects/spring-tools/issues/1824)
-* _(Spring Boot)_ [structure view] sorting of projects get out of sync when projects arrive async [#1821](https://github.com/spring-projects/spring-tools/issues/1821)
-* _(Spring Boot)_ revalidation of OpenFeign config clients does not work all the time [#1804](https://github.com/spring-projects/spring-tools/issues/1804)
-* _(Spring Boot)_ [structure view] initial delay when opening the view [#1690](https://github.com/spring-projects/spring-tools/issues/1690)
-* _(Spring Boot)_ [validation] more false positives for missing configuration validation [#1292](https://github.com/spring-projects/spring-tools/issues/1292)
-* _(Spring Boot)_ Support `@ConfigurationProperties` on bean method for `application.properties` references [#1256](https://github.com/spring-projects/spring-tools/issues/1256)
-* _(Spring Boot)_ couldn't create connection to server [#1167](https://github.com/spring-projects/spring-tools/issues/1167)
-* _(Spring Boot)_ Only shows when springboot app runs [#1136](https://github.com/spring-projects/spring-tools/issues/1136)
-* _(Spring Boot)_ CorruptZip: end of central directory record signature not found [#1102](https://github.com/spring-projects/spring-tools/issues/1102)
->>>>>>> c9436c4ea (Rework)
-
 ## 2026-03-18 (5.1.1 RELEASE, incl. language servers version 2.1.1)
 
 #### all fixes and improvements in detail

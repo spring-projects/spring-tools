@@ -29,6 +29,13 @@
 * _(Spring Boot)_ Only shows when springboot app runs [#1136](https://github.com/spring-projects/spring-tools/issues/1136)
 * _(Spring Boot)_ CorruptZip: end of central directory record signature not found [#1102](https://github.com/spring-projects/spring-tools/issues/1102)
 
+## 2026-03-18 (5.1.2 RELEASE, incl. language servers version 2.1.2)
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ [backport to 5.1.x] [structure view] initial delay when opening the view [#1876](https://github.com/spring-projects/spring-tools/issues/1876)
+* _(Spring Boot)_ [backport to 5.1.x] remove outdated vscode ai agent definitions and code from extension [#1875](https://github.com/spring-projects/spring-tools/issues/1875)
+
 ## 2026-03-18 (5.1.1 RELEASE, incl. language servers version 2.1.1)
 
 #### all fixes and improvements in detail

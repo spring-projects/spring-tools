@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|StrReplace|Delete|Edit|Replace",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "spring-tools-mcp",
+            "tool": "notifyFileChanged",
+            "input": {
+              "filePath": "${tool_input.path}",
+              "fallbackPath": "${tool_input.file_path}",
+              "changeType": "${tool_name}"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

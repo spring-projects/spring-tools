@@ -100,7 +100,7 @@ jobs:
                 break
               else
                 echo "Push failed, attempting to pull and rebase (attempt $((retry_count + 1)) of $max_retries)..."
-                git pull --rebase origin $CURRENT_BRANCH
+                git pull --rebase --autostash origin $CURRENT_BRANCH
                 retry_count=$((retry_count + 1))
                 # Add a small random sleep to prevent perfectly synced retries
                 sleep $((RANDOM % 5 + 1))

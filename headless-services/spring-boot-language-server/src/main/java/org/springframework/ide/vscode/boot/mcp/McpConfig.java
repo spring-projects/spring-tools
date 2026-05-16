@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.ai.support.ToolCallbacks;
@@ -36,9 +38,10 @@ public class McpConfig {
     		StereotypeInformation stereotypeInformation,
     		RequestMappingMcpTools requestMappingMcpTools,
     		ComponentAnalysisMcpTools componentAnalysisMcpTools,
-    		DiagnosticsMcpTools diagnosticsMcpTools) {
+    		DiagnosticsMcpTools diagnosticsMcpTools,
+    		Optional<FileChangesMcpTools> fileChangesMcpTools) {
     	
-        return ToolCallbackProvider.from(ToolCallbacks.from(
+		List<Object> tools = new ArrayList<>(Arrays.asList(
         		springVersionsAndGenerations,
         		springIoApiMcpTools,
         		springIndexAccess,
@@ -47,6 +50,10 @@ public class McpConfig {
         		requestMappingMcpTools,
         		componentAnalysisMcpTools,
         		diagnosticsMcpTools));
+
+		fileChangesMcpTools.ifPresent(tools::add);
+
+        return ToolCallbackProvider.from(ToolCallbacks.from(tools.toArray()));
 	}
 
 	/**

@@ -71,7 +71,7 @@ public class DiagnosticsMcpTools {
 	) {}
 
 	@Tool(description = """
-			Returns all current Spring Tools diagnostics (errors, warnings, hints) for a specific project.
+			Returns all current Spring Tools diagnostics or problems or validations (errors, warnings, infos, hints) for a specific project.
 			Diagnostics are produced by the Spring Tools language server during indexing and validation.
 			Each entry identifies the source file, the exact source location, the severity, and the message.
 			Only diagnostics known to Spring Tools are included; general Java compiler errors are not.

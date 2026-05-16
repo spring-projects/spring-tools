@@ -2,7 +2,7 @@
 description: MUST be used whenever a user or agent asks to find problems, check for issues, or validate changes in a Spring Boot project. Uses the spring-tools LSP plugin to check for validation problems in the project's source files.
 allowed-tools: View
 ---
-CRITICAL REQUIREMENT: Whenever a user asks for problems in the project, or an agent is attempting to check if there are problems with the project, or attempts to validate changes to the project, IF the project is a Spring Boot project, then the `spring-tools` LSP plugin MUST be used to check for validation problems in each source file of the project.
+CRITICAL REQUIREMENT: Whenever a user asks for problems or validations or diagnsotics or problem markers in the project, or an agent is attempting to check if there are problems with the project, or attempts to validate changes to the project, IF the project is a Spring Boot project, then the `spring-tools` LSP plugin MUST be used to check for validation problems in each source file of the project.
 
 To perform this validation:
 

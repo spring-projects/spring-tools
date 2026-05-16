@@ -34,7 +34,7 @@ import com.google.common.cache.CacheBuilder;
  * @param <K> key class
  * @param <P> project class
  */
-public abstract class AbstractJavaProjectCache<K, P extends IJavaProject> implements JavaProjectCache<K, P> {
+public abstract class AbstractJavaProjectCache<K, P extends IJavaProject> implements JavaProjectCache<K, P>, ProjectChangeNotifier {
 
 	private static final Logger log = LoggerFactory.getLogger(AbstractJavaProjectCache.class);
 
@@ -119,6 +119,13 @@ public abstract class AbstractJavaProjectCache<K, P extends IJavaProject> implem
 	final protected void notifyProjectDeleted(P project) {
 		log.debug("project deleted {}", project);
 		listeners.forEach(l -> l.deleted(project));
+	}
+
+	@Override
+	public void notifyProjectsChanged() {
+		for (P project : cache.asMap().values()) {
+			notifyProjectChanged(project);
+		}
 	}
 
 	final protected FileObserver getFileObserver() {

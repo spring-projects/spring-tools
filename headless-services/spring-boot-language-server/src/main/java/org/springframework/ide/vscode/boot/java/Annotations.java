@@ -161,6 +161,12 @@ public class Annotations {
 	public static final String WEB_FLUX_API_VERSION_CONFIGURER_INTERFACE = "org.springframework.web.reactive.config.ApiVersionConfigurer";
 	public static final String WEB_FLUX_PATH_MATCH_CONFIGURER_INTERFACE = "org.springframework.web.reactive.config.PathMatchConfigurer";
 
+	/** Spring Framework 7+ location (spring-web module). */
+	public static final String HANDLER_TYPE_PREDICATE = "org.springframework.web.method.HandlerTypePredicate";
+	/** Spring Framework 5/6 location (spring-webmvc module). */
+	public static final String HANDLER_TYPE_PREDICATE_LEGACY = "org.springframework.web.servlet.handler.HandlerTypePredicate";
+	public static final Set<String> HANDLER_TYPE_PREDICATE_TYPES = Set.of(HANDLER_TYPE_PREDICATE, HANDLER_TYPE_PREDICATE_LEGACY);
+
 	// Boot
 
 	public static final String BOOT_APP = "org.springframework.boot.autoconfigure.SpringBootApplication";

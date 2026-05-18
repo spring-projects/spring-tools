@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -84,26 +84,43 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 		List<WebConfigIndexElement> webConfigFromProperties = new WebConfigPropertiesIndexer().findWebConfigFromProperties(project);
 		
 		Streams.concat(webConfigs.stream(), webConfigFromProperties.stream())
-			.map(webConfig -> createCodeLens(webConfig, node, doc))
+			.map(webConfig -> createCodeLens(webConfig, node, binding, annotationHierarchies, doc))
 			.filter(codeLens -> codeLens != null)
 			.forEach(codeLens -> codeLenses.add(codeLens));
 	}
 
-	private CodeLens createCodeLens(WebConfigIndexElement webConfig, TypeDeclaration node, TextDocument doc) {
+	private CodeLens createCodeLens(WebConfigIndexElement webConfig, TypeDeclaration node,
+			ITypeBinding binding, AnnotationHierarchies annotationHierarchies, TextDocument doc) {
 		Command command = new Command();
 	
+		// Determine whether the path prefix applies to this specific class
+		boolean pathPrefixApplies = webConfig.getPathPrefix() != null
+				&& !webConfig.getPathPrefix().trim().isEmpty();
+		if (pathPrefixApplies && webConfig.getPathPrefixPredicate() != null) {
+			pathPrefixApplies = webConfig.getPathPrefixPredicate().matches(binding, annotationHierarchies);
+		}
+
+		boolean hasVersioning = webConfig.getVersionSupportStrategies() != null
+				&& !webConfig.getVersionSupportStrategies().isEmpty();
+		boolean hasSupportedVersions = webConfig.getSupportedVersions() != null
+				&& !webConfig.getSupportedVersions().isEmpty();
+
+		if (!pathPrefixApplies && !hasVersioning && !hasSupportedVersions) {
+			return null;
+		}
+
 		// Display label
 		String label = webConfig.getConfigType().getLabel();
 
-		if (webConfig.getPathPrefix() != null && webConfig.getPathPrefix().trim().length() > 0) {
+		if (pathPrefixApplies) {
 			label += " - Path Prefix: " + webConfig.getPathPrefix();
 		}
 		
-		if (webConfig.getVersionSupportStrategies() != null && webConfig.getVersionSupportStrategies().size() > 0) {
+		if (hasVersioning) {
 			label += " - Versioning via " + String.join(", ", webConfig.getVersionSupportStrategies());
 		}
 		
-		if (webConfig.getSupportedVersions() != null && webConfig.getSupportedVersions().size() > 0) {
+		if (hasSupportedVersions) {
 			label += " - Supported Versions: " + String.join(", ", webConfig.getSupportedVersions());
 		}
 		

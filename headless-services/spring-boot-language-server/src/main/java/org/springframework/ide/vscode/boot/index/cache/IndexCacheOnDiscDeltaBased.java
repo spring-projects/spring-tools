@@ -588,6 +588,10 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter())
 				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(SpringIndexElement.class, "_internal_node_type")
 						.recognizeSubtypes())
+				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(
+						org.springframework.ide.vscode.boot.java.requestmapping.PathPrefixPredicate.class,
+						"_predicate_type")
+						.recognizeSubtypes())
 				.create();
 	}
 	

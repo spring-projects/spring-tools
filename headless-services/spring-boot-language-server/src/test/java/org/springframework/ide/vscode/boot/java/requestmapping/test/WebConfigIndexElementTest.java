@@ -12,7 +12,7 @@ public class WebConfigIndexElementTest {
 
 	@Test
 	void parserDefault() {
-		WebConfigIndexElement webConfigElement = new WebConfigIndexElement(ConfigType.WEB_CONFIG, "path", List.of(), List.of(), null, null);
+		WebConfigIndexElement webConfigElement = new WebConfigIndexElement(ConfigType.WEB_CONFIG, "path", null, List.of(), List.of(), null, null);
 		assertEquals(WebConfigIndexElement.DEFAULT_VERSION_PARSER, webConfigElement.getVersionParser());
 	}
 

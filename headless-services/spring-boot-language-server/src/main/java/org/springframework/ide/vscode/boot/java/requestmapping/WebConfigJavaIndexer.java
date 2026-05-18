@@ -286,12 +286,29 @@ public class WebConfigJavaIndexer {
 				Annotations.WEB_FLUX_PATH_MATCH_CONFIGURER_INTERFACE
 		);
 		
-		result.put(ADD_PATH_PREFIX, new SingleArgumentExtractor(pathConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
-			String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
-			if (value != null) {
-				webconfigBuilder.pathPrefix(value);
+		result.put(ADD_PATH_PREFIX, new MethodInvocationExtractor() {
+			@Override
+			public Set<String> getTargetInvocationType() {
+				return pathConfigurerInterfaces;
 			}
-		}));
+
+			@Override
+			@SuppressWarnings("unchecked")
+			public void extractParameters(TextDocument doc, MethodInvocation methodInvocation, Builder webconfigBuilder) {
+				List<Expression> arguments = methodInvocation.arguments();
+				if (arguments.isEmpty()) return;
+
+				String pathPrefixValue = ASTUtils.getExpressionValueAsString(arguments.get(0), dep -> {});
+				if (pathPrefixValue != null) {
+					webconfigBuilder.pathPrefix(pathPrefixValue);
+				}
+
+				PathPrefixPredicate predicate = arguments.size() >= 2
+						? PathPrefixPredicateExtractor.extract(arguments.get(1))
+						: new PathPrefixPredicate.AnyPredicate();
+				webconfigBuilder.pathPrefixPredicate(predicate);
+			}
+		});
 
 		
 		return result;

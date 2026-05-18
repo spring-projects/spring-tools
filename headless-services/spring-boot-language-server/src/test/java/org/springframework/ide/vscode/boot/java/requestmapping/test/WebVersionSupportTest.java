@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.requestmapping.test;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,6 +34,7 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.requestmapping.PathPrefixPredicate;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement.VersioningStrategy;
@@ -120,15 +122,16 @@ public class WebVersionSupportTest {
     
     @Test
     void testWebMvcConfigIndexElement() throws Exception {
-    	Bean[] webConfigBean = springIndex.getMatchingBeans(PROJECT_NAME, "org.springframework.web.servlet.config.annotation.WebMvcConfigurer");
-    	assertEquals(1, webConfigBean.length);
+    	Bean[] allWebMvcBeans = springIndex.getMatchingBeans(PROJECT_NAME, "org.springframework.web.servlet.config.annotation.WebMvcConfigurer");
+    	assertEquals(2, allWebMvcBeans.length);
     	
     	Bean[] webConfigBeanViaName = springIndex.getBeansWithName(PROJECT_NAME, "webConfig");
     	assertEquals(1, webConfigBeanViaName.length);
     	
-    	assertSame(webConfigBean[0], webConfigBeanViaName[0]);
+    	Bean webConfigBean = webConfigBeanViaName[0];
+    	assertTrue(java.util.Arrays.stream(allWebMvcBeans).anyMatch(b -> b == webConfigBean));
     	
-    	List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean[0]));
+    	List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean));
     	assertEquals(1, webConfigElements.size());
     	
     	WebConfigIndexElement webConfigElement = webConfigElements.get(0);
@@ -141,10 +144,10 @@ public class WebVersionSupportTest {
     	List<VersioningStrategy> strategiesWithRanges = webConfigElement.getVersionSupportStrategiesWithRanges();
     	assertEquals(2, strategiesWithRanges.size());
     	VersioningStrategy headerVersioningStrategy = strategiesWithRanges.stream().filter(strategy -> strategy.versioningStrategy().contains("Request Header")).findFirst().get();
-    	assertEquals(new Range(new Position(17, 2), new Position(17, 46)), headerVersioningStrategy.range());
+    	assertEquals(new Range(new Position(19, 2), new Position(19, 46)), headerVersioningStrategy.range());
 
     	VersioningStrategy pathVersioningStrategy = strategiesWithRanges.stream().filter(strategy -> strategy.versioningStrategy().contains("Path Segment")).findFirst().get();
-    	assertEquals(new Range(new Position(18, 2), new Position(18, 30)), pathVersioningStrategy.range());
+    	assertEquals(new Range(new Position(20, 2), new Position(20, 30)), pathVersioningStrategy.range());
     	
     	List<String> supportedVersions = webConfigElement.getSupportedVersions();
 		assertEquals(2, supportedVersions.size());
@@ -155,6 +158,61 @@ public class WebVersionSupportTest {
     	
     	assertEquals("org.test.versions.TestApiVersionParser", webConfigElement.getVersionParser());
     }
+
+	@Test
+	void testWebMvcConfigAnnotationPredicate() throws Exception {
+		Bean[] webConfigBeans = springIndex.getBeansWithName(PROJECT_NAME, "webConfig");
+		assertEquals(1, webConfigBeans.length);
+
+		List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBeans[0]));
+		assertEquals(1, webConfigElements.size());
+
+		WebConfigIndexElement webConfigElement = webConfigElements.get(0);
+
+		PathPrefixPredicate predicate = webConfigElement.getPathPrefixPredicate();
+		assertNotNull(predicate);
+		assertTrue(predicate instanceof PathPrefixPredicate.AnnotationPredicate,
+				"Expected AnnotationPredicate but got: " + predicate.getClass().getSimpleName());
+
+		PathPrefixPredicate.AnnotationPredicate annotationPredicate = (PathPrefixPredicate.AnnotationPredicate) predicate;
+		assertEquals(1, annotationPredicate.annotationTypes().size());
+		assertEquals("org.springframework.web.bind.annotation.RestController", annotationPredicate.annotationTypes().get(0));
+	}
+
+	@Test
+	void testWebMvcConfigChainedPredicate() throws Exception {
+		Bean[] webConfigBeans = springIndex.getBeansWithName(PROJECT_NAME, "webConfigWithChainedPredicate");
+		assertEquals(1, webConfigBeans.length);
+
+		List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBeans[0]));
+		assertEquals(1, webConfigElements.size());
+
+		WebConfigIndexElement webConfigElement = webConfigElements.get(0);
+		assertEquals("/api/v{version}", webConfigElement.getPathPrefix());
+
+		PathPrefixPredicate predicate = webConfigElement.getPathPrefixPredicate();
+		assertNotNull(predicate);
+		assertTrue(predicate instanceof PathPrefixPredicate.AndPredicate,
+				"Expected AndPredicate but got: " + predicate.getClass().getSimpleName());
+
+		PathPrefixPredicate.AndPredicate andPredicate = (PathPrefixPredicate.AndPredicate) predicate;
+
+		assertTrue(andPredicate.left() instanceof PathPrefixPredicate.AnnotationPredicate,
+				"Expected left to be AnnotationPredicate but got: " + andPredicate.left().getClass().getSimpleName());
+		PathPrefixPredicate.AnnotationPredicate leftAnnotation = (PathPrefixPredicate.AnnotationPredicate) andPredicate.left();
+		assertEquals(1, leftAnnotation.annotationTypes().size());
+		assertEquals("org.springframework.web.bind.annotation.RestController", leftAnnotation.annotationTypes().get(0));
+
+		assertTrue(andPredicate.right() instanceof PathPrefixPredicate.NegatePredicate,
+				"Expected right to be NegatePredicate but got: " + andPredicate.right().getClass().getSimpleName());
+		PathPrefixPredicate.NegatePredicate negatedRight = (PathPrefixPredicate.NegatePredicate) andPredicate.right();
+
+		assertTrue(negatedRight.inner() instanceof PathPrefixPredicate.BasePackagePredicate,
+				"Expected inner to be BasePackagePredicate but got: " + negatedRight.inner().getClass().getSimpleName());
+		PathPrefixPredicate.BasePackagePredicate basePackage = (PathPrefixPredicate.BasePackagePredicate) negatedRight.inner();
+		assertEquals(1, basePackage.packages().size());
+		assertEquals("org.test.versions", basePackage.packages().get(0));
+	}
 
     @Test
     void testWebFluxConfigIndexElement() throws Exception {

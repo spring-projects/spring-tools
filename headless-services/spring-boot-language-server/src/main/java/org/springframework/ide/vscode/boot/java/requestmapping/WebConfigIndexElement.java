@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -25,6 +25,7 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 	private final ConfigType configType;
 	
 	private final String pathPrefix;
+	private final PathPrefixPredicate pathPrefixPredicate;
 	
 	private final List<VersioningStrategy> versionSupportStrategies;
 	private final List<String> supportedVersions;
@@ -32,11 +33,13 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 
 	private final Location location;
 	
-	public WebConfigIndexElement(ConfigType configType, String pathPrefix, List<VersioningStrategy> versionSupportStrategies,
-			List<String> supportedVersions, String versionParser, Location location) {
+	public WebConfigIndexElement(ConfigType configType, String pathPrefix, PathPrefixPredicate pathPrefixPredicate,
+			List<VersioningStrategy> versionSupportStrategies, List<String> supportedVersions, String versionParser,
+			Location location) {
 		
 		this.configType = configType;
 		this.pathPrefix = pathPrefix;
+		this.pathPrefixPredicate = pathPrefixPredicate;
 		this.versionSupportStrategies = versionSupportStrategies;
 		this.supportedVersions = supportedVersions;
 		this.versionParser = versionParser;
@@ -49,6 +52,10 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 	
 	public String getPathPrefix() {
 		return pathPrefix;
+	}
+
+	public PathPrefixPredicate getPathPrefixPredicate() {
+		return pathPrefixPredicate;
 	}
 	
 	public List<String> getVersionSupportStrategies() {
@@ -82,6 +89,7 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		private ConfigType configType;
 		
 		private String pathPrefix = null;
+		private PathPrefixPredicate pathPrefixPredicate = null;
 		private List<VersioningStrategy> versionSupportStrategies = new ArrayList<>(2);
 		private List<String> supportedVersions = new ArrayList<>(2);
 		private String versionParser;
@@ -92,6 +100,11 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		
 		public Builder pathPrefix(String pathPrefix) {
 			this.pathPrefix = pathPrefix;
+			return this;
+		}
+
+		public Builder pathPrefixPredicate(PathPrefixPredicate predicate) {
+			this.pathPrefixPredicate = predicate;
 			return this;
 		}
 		
@@ -111,7 +124,8 @@ public class WebConfigIndexElement extends AbstractSpringIndexElement {
 		}
 		
 		public WebConfigIndexElement buildFor(Location location) {
-			return new WebConfigIndexElement(this.configType, this.pathPrefix, this.versionSupportStrategies, this.supportedVersions, this.versionParser, location);
+			return new WebConfigIndexElement(this.configType, this.pathPrefix, this.pathPrefixPredicate,
+					this.versionSupportStrategies, this.supportedVersions, this.versionParser, location);
 		}
 
 	}

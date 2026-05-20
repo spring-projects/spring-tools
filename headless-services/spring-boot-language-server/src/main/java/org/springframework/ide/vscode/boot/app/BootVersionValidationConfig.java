@@ -23,6 +23,7 @@ import org.springframework.ide.vscode.boot.common.ProjectReconcileScheduler;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
 import org.springframework.ide.vscode.boot.validation.BootVersionValidationEngine;
 import org.springframework.ide.vscode.boot.validation.generations.GenerationsValidator;
+import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
 import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider;
 import org.springframework.ide.vscode.boot.validation.generations.SpringCloudCompatibilityValidator;
 import org.springframework.ide.vscode.boot.validation.generations.SpringIoProjectsProvider;
@@ -39,8 +40,12 @@ public class BootVersionValidationConfig {
 	
 	private static final Logger log = LoggerFactory.getLogger(BootVersionValidationConfig.class);
 	
-	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider) {
-		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider);
+	@Bean MavenMetadataProvider mavenMetadataProvider(SimpleLanguageServer server) {
+		return new MavenMetadataProvider(server.getWorkspaceService().getFileObserver());
+	}
+	
+	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider, MavenMetadataProvider mavenMetadataProvider) {
+		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider, mavenMetadataProvider);
 	}
 	
 	@Bean SpringIoProjectsProvider springProjectsProvider(SimpleLanguageServer server, BootJavaConfig config, RestTemplateFactory restTemplateFactory) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -43,61 +43,4 @@ public class VersionValidationUtils {
 		return rls.isEmpty() ? null : rls.get(rls.size() - 1);
 	}
 	
-	public static Version getNewestPatchRelease(List<Version> releases, Version version) {
-		Version result = version;
-		
-		for (Version release : releases) {
-			if (release.getMajor() == result.getMajor()
-					&& release.getMinor() == result.getMinor()
-					&& release.getPatch() > result.getPatch()) {
-				result = release;
-			}
-		}
-		
-		return result;
-	}
-
-	public static Version getNewestMinorRelease(List<Version> releases, Version version) {
-		Version result = version;
-		
-		for (Version release : releases) {
-			if (release.getMajor() == result.getMajor()
-					&& (release.getMinor() > result.getMinor()
-					|| (release.getMinor() == result.getMinor() && release.getPatch() > result.getPatch()))) {
-				result = release;
-			}
-		}
-		
-		return result;
-	}
-
-	public static Version getNewestMajorRelease(List<Version> releases, Version version) {
-		Version result = version;
-		
-		for (Version release : releases) {
-			if (release.getMajor() > result.getMajor()
-					|| (release.getMajor() == result.getMajor() && release.getMinor() > result.getMinor())
-					|| (release.getMajor() == result.getMajor() && release.getMinor() == result.getMinor() && release.getPatch() > result.getPatch())) {
-				result = release;
-			}
-		}
-		
-		return result;
-	}
-	
-	public static Version getNewerLatestPatchRelease(List<Version> releases, Version version) {
-		Version newestPatch = getNewestPatchRelease(releases, version);
-		return newestPatch.equals(version) ? null : newestPatch;
-	}
-
-	public static Version getNewerLatestMinorRelease(List<Version> releases, Version version) {
-		Version newestMinor = getNewestMinorRelease(releases, version);
-		return newestMinor.getMinor() == version.getMinor() ? null : newestMinor;
-	}
-
-	public static Version getNewerLatestMajorRelease(List<Version> releases, Version version) {
-		Version newestMajor = getNewestMajorRelease(releases, version);
-		return newestMajor.getMajor() == version.getMajor() ? null : newestMajor;
-	}
-
 }

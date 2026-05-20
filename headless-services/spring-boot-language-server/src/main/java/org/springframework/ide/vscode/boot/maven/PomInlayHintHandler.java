@@ -35,6 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
 import org.springframework.ide.vscode.boot.validation.generations.GenerationsValidator;
+import org.springframework.ide.vscode.boot.validation.generations.MavenMetadata;
+import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
+import org.springframework.ide.vscode.boot.validation.generations.SortedVersions;
 import org.springframework.ide.vscode.boot.validation.generations.SpringProjectsProvider;
 import org.springframework.ide.vscode.boot.validation.generations.VersionValidationUtils;
 import org.springframework.ide.vscode.boot.validation.generations.json.Generation;
@@ -58,10 +61,12 @@ public class PomInlayHintHandler implements InlayHintHandler {
 	
 	final private JavaProjectFinder projectFinder;
 	final private SpringProjectsProvider generationsProvider;
+	final private MavenMetadataProvider mavenMetadataProvider;
 	
-	public PomInlayHintHandler(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider) {
+	public PomInlayHintHandler(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, MavenMetadataProvider mavenMetadataProvider) {
 		this.projectFinder = projectFinder;
 		this.generationsProvider = generationsProvider;
+		this.mavenMetadataProvider = mavenMetadataProvider;
 		
 		projectObserver.addListener(new ProjectObserver.Listener() {
 			
@@ -125,9 +130,25 @@ public class PomInlayHintHandler implements InlayHintHandler {
 			}
 			
 			try {
+				SortedVersions versions = null;
+				if (org.springframework.ide.vscode.commons.protocol.java.ProjectBuild.MAVEN_PROJECT_TYPE.equals(jp.getProjectBuild().getType())) {
+					try {
+						MavenMetadata metadata = mavenMetadataProvider.getMetadata(jp, "org.springframework.boot", "spring-boot");
+						if (metadata != null) {
+							versions = metadata.getReleaseVersions();
+						}
+					} catch (Exception e) {
+						// Logged in provider, fallback will happen below
+					}
+				}
+
 				ResolvedSpringProject genProject = generationsProvider.getProject(SpringProjectUtil.SPRING_BOOT);
-				if (genProject != null) {
-					Version latestPatch = VersionValidationUtils.getNewerLatestPatchRelease(genProject.getReleases(), currentVersion);
+				if (versions == null && genProject != null) {
+					versions = new SortedVersions(genProject.getReleases());
+				}
+
+				if (versions != null) {
+					Version latestPatch = versions.getNewerLatestPatchRelease(currentVersion).orElse(null);
 					if (latestPatch != null) {
 						inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
 							Command command = new Command();
@@ -170,34 +191,37 @@ public class PomInlayHintHandler implements InlayHintHandler {
 							return Collections.emptyList();
 						}));
 					}
-					Generation generation = GenerationsValidator.getGenerationForJavaProject(jp, genProject, genProject.getSlug());
-					if (generation != null && VersionValidationUtils.isOssValid(generation)) {
-
-						inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
-							Command command = new Command();
-							command.setTitle("Add Spring Boot Starters");
-							command.setCommand("spring.initializr.addStarters");
-
-							InlayHintLabelPart label = new InlayHintLabelPart("Add Spring Boot Starters...");
-							label.setCommand(command);
-
-							InlayHint hint = new InlayHint();
-							hint.setKind(InlayHintKind.Parameter);
-							hint.setPaddingLeft(true);
-							hint.setLabel(List.of(label));
-							return hint;
-						}, (d, e) -> {
-							Optional<DOMElement> dependenciesOpt = findChildElement(e, 0, "dependencies");
-							if (dependenciesOpt.isPresent()) {
-								DOMElement dependencies = dependenciesOpt.get();
-								try {
-									return List.of(d.toPosition(dependencies.getStartTagCloseOffset() + 1));
-								} catch (BadLocationException ex) {
-									log.error("", ex);
+					
+					if (genProject != null) {
+						Generation generation = GenerationsValidator.getGenerationForJavaProject(jp, genProject, genProject.getSlug());
+						if (generation != null && VersionValidationUtils.isOssValid(generation)) {
+	
+							inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
+								Command command = new Command();
+								command.setTitle("Add Spring Boot Starters");
+								command.setCommand("spring.initializr.addStarters");
+	
+								InlayHintLabelPart label = new InlayHintLabelPart("Add Spring Boot Starters...");
+								label.setCommand(command);
+	
+								InlayHint hint = new InlayHint();
+								hint.setKind(InlayHintKind.Parameter);
+								hint.setPaddingLeft(true);
+								hint.setLabel(List.of(label));
+								return hint;
+							}, (d, e) -> {
+								Optional<DOMElement> dependenciesOpt = findChildElement(e, 0, "dependencies");
+								if (dependenciesOpt.isPresent()) {
+									DOMElement dependencies = dependenciesOpt.get();
+									try {
+										return List.of(d.toPosition(dependencies.getStartTagCloseOffset() + 1));
+									} catch (BadLocationException ex) {
+										log.error("", ex);
+									}
 								}
-							}
-							return Collections.emptyList();
-						}));
+								return Collections.emptyList();
+							}));
+						}
 					}
 				}
 			} catch (Exception e) {

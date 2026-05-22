@@ -35,12 +35,15 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 
 public class CompositeASTVisitor extends ASTVisitor {
 	
-	List<ASTVisitor> visitors = new ArrayList<>();
+	private List<ASTVisitor> visitors = new ArrayList<>();
 	private int startOffset = -1;
 	private int endOffset = -1;
 
 	public void add(ASTVisitor visitor) {
-		visitors.add(visitor);
+		// Null visitors shouldn't be in the list
+		if (visitor != null) {
+			visitors.add(visitor);
+		}
 	}
 	
 	@Override

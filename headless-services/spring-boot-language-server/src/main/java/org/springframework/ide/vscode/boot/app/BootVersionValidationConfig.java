@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.app;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,7 +70,7 @@ public class BootVersionValidationConfig {
 	@Bean
 	ProjectReconcileScheduler bootVersionValidationScheduler(SimpleLanguageServer server,
 			JavaProjectFinder projectFinder, BootJavaConfig config, ProjectObserver projectObserver,
-			ProjectVersionDiagnosticProvider diagnosticProvider) {
+			ProjectVersionDiagnosticProvider diagnosticProvider, MavenMetadataProvider mavenMetadataProvider) {
 		return new ProjectReconcileScheduler(server,
 				new BootVersionValidationEngine(server, config, projectObserver, projectFinder, diagnosticProvider),
 				projectFinder) {
@@ -78,6 +79,20 @@ public class BootVersionValidationConfig {
 			protected void init() {
 				super.init();
 				config.addListener(evt -> scheduleValidationForAllProjects());
+				
+				mavenMetadataProvider.addListener(uriStr -> {
+					try {
+						URI uri = URI.create(uriStr);
+						for (IJavaProject project : projectFinder.all()) {
+							if (project.getProjectBuild() != null && uri.equals(project.getProjectBuild().getBuildFile())) {
+								scheduleValidation(project);
+							}
+						}
+					} catch (Exception e) {
+						log.error("Failed to process build file change for URI: " + uriStr, e);
+					}
+				});
+				
 				projectObserver.addListener(new ProjectObserver.Listener() {
 
 					@Override

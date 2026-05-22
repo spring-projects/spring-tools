@@ -30,6 +30,7 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
+import org.openrewrite.ExecutionContext;
 import org.openrewrite.Parser.Input;
 import org.openrewrite.Recipe;
 import org.openrewrite.SourceFile;
@@ -126,16 +127,17 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 					log.warn("Code Action failed to resolve. Could not create recipe created with id '" + data.getRecipeId() + "'.");
 				}
 				List<SourceFile> cus = new ArrayList<>();
+				ExecutionContext ctx = ORAstUtils.createDefaultContext();
 				if (projectWide) {
 					JavaParser jp = ORAstUtils.createJavaParserBuilder(project.get()).dependsOn(data.getTypeStubs()).build();
 					List<Input> inputs = ORAstUtils.getParserInputs(server.getTextDocumentService(), project.get());
-					cus.addAll(ORAstUtils.parseInputs(jp, inputs, null));
+					cus.addAll(ORAstUtils.parseInputs(jp, ctx, inputs, null));
 				} else {
 					JavaParser jp = ORAstUtils.createJavaParserBuilder(project.get()).dependsOn(data.getTypeStubs()).build();
 					List<Input> inputs = data.getDocUris().stream().map(URI::create).map(Paths::get).map(p -> ORAstUtils.getParserInput(server.getTextDocumentService(), p)).filter(Objects::nonNull).collect(Collectors.toList());
-					cus.addAll(ORAstUtils.parseInputs(jp, inputs, null));
+					cus.addAll(ORAstUtils.parseInputs(jp, ctx, inputs, null));
 				}
-				return recipeRepo.computeWorkspaceEditAwareOfPreview(r, cus, progress, projectWide).whenComplete((o, t) -> progress.done());
+				return recipeRepo.computeWorkspaceEditAwareOfPreview(r, ctx, cus, progress, projectWide).whenComplete((o, t) -> progress.done());
 			}).exceptionally(t -> {
 				progress.done();
 				return Optional.empty();

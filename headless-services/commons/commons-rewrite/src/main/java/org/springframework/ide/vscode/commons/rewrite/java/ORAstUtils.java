@@ -316,8 +316,11 @@ public class ORAstUtils {
 		});
 	}
 	
-	public static List<SourceFile> parseInputs(JavaParser parser, List<Parser.Input> inputs, Consumer<SourceFile> parseCallback) {
-		ExecutionContext ctx = new InMemoryExecutionContext(ORAstUtils::logExceptionWhileParsing);
+	public static ExecutionContext createDefaultContext() {
+		return new InMemoryExecutionContext(ORAstUtils::logExceptionWhileParsing);
+	}
+	
+	public static List<SourceFile> parseInputs(JavaParser parser, ExecutionContext ctx, List<Parser.Input> inputs, Consumer<SourceFile> parseCallback) {
 		ctx.putMessage(JavaParser.SKIP_SOURCE_SET_TYPE_GENERATION, true);
 		ctx.putMessage(ExecutionContext.REQUIRE_PRINT_EQUALS_INPUT, false);
 		if (parseCallback != null) {

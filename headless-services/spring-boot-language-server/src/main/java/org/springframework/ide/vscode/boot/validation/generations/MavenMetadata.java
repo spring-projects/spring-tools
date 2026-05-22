@@ -13,9 +13,13 @@ package org.springframework.ide.vscode.boot.validation.generations;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.Version;
 
 public class MavenMetadata {
+	
+	private static final Logger log = LoggerFactory.getLogger(MavenMetadata.class);
 
 	private final SortedVersions releaseVersions;
 
@@ -30,7 +34,7 @@ public class MavenMetadata {
 						releases.add(v);
 					}
 				} catch (Exception e) {
-					// Ignore unparseable versions
+					log.warn("Failed to parse %s".formatted(vStr), e);
 				}
 			}
 		}

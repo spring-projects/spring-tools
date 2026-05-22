@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.openrewrite.ExecutionContext;
@@ -33,6 +34,7 @@ import org.openrewrite.maven.tree.MavenResolutionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.util.ListenerList;
 import org.springframework.ide.vscode.commons.util.FileObserver;
 
 public class MavenMetadataProvider {
@@ -40,6 +42,7 @@ public class MavenMetadataProvider {
 	private static final Logger log = LoggerFactory.getLogger(MavenMetadataProvider.class);
 
 	private final Map<String, MavenMetadata> cache = new ConcurrentHashMap<>();
+	private final ListenerList<String> listeners = new ListenerList<>();
 
 	public MavenMetadataProvider(FileObserver fileObserver) {
 		if (fileObserver != null) {
@@ -47,9 +50,14 @@ public class MavenMetadataProvider {
 				for (String file : files) {
 					Path pom = Paths.get(URI.create(file));
 					cache.keySet().removeIf(key -> key.startsWith(pom.toString()));
+					listeners.fire(file);
 				}
 			});
 		}
+	}
+
+	public void addListener(Consumer<String> listener) {
+		listeners.add(listener);
 	}
 
 	private MavenMetadata compute(Path pomPath, String groupId, String artifactId) {
@@ -83,15 +91,9 @@ public class MavenMetadataProvider {
 			Optional<MavenSettings> maybeSettings = Optional.ofNullable(mctx.effectiveSettings(mrr));
 			List<String> activeProfiles = maybeSettings.map(MavenSettings::getActiveProfiles)
 					.map(MavenSettings.ActiveProfiles::getActiveProfiles).orElse(null);
-			org.openrewrite.maven.tree.MavenMetadata rawMetadata = new MavenPomDownloader(mrr.getProjectPoms(), ctx, maybeSettings.orElse(null),
+			return new MavenMetadata(new MavenPomDownloader(mrr.getProjectPoms(), ctx, maybeSettings.orElse(null),
 					activeProfiles)
-					.downloadMetadata(new GroupArtifact(groupId, artifactId), null, mrr.getPom().getRepositories());
-
-			if (rawMetadata != null) {
-				return new MavenMetadata(rawMetadata);
-			}
-			return null;
-
+					.downloadMetadata(new GroupArtifact(groupId, artifactId), null, mrr.getPom().getRepositories()));
 		} catch (Exception e) {
 			log.warn("Failed to fetch Maven metadata for {}:{} in pom {}", groupId, artifactId, pomPath, e);
 			return null;

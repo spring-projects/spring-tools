@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.mcp;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.MarkupContent;
@@ -81,6 +82,8 @@ public class DiagnosticsMcpTools {
 			throws Exception {
 
 		logger.info("get diagnostics for project: {}", projectName);
+
+		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 
 		IJavaProject project = getProject(projectName);
 

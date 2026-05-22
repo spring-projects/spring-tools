@@ -104,4 +104,9 @@ public class IndexCacheTimestampsOnly implements IndexCache {
 		return 0;
 	}
 
+	@Override
+	public <T extends IndexCacheable> List<T> retrieveAll(IndexCacheKey cacheKey, Class<T> type) {
+		return null;
+	}
+
 }

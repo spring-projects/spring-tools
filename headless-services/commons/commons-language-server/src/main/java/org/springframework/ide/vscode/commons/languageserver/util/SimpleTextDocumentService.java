@@ -159,7 +159,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
-		log.info("change arrived: " + params.getTextDocument().getVersion());
+		log.info("doc opened: " + params.getTextDocument().getVersion());
 
 		TextDocumentItem docId = params.getTextDocument();
 
@@ -219,6 +219,8 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 
 	@Override
 	public void didClose(DidCloseTextDocumentParams params) {
+		log.info("doc closed: " + params.getTextDocument().getUri());
+		
 		String url = params.getTextDocument().getUri();
 
 		if (url != null) {

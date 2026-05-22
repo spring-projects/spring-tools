@@ -34,6 +34,11 @@ public class IndexCacheVoid implements IndexCache {
 	}
 
 	@Override
+	public <T extends IndexCacheable> List<T> retrieveAll(IndexCacheKey cacheKey, Class<T> type) {
+		return List.of();
+	}
+
+	@Override
 	public <T extends IndexCacheable> void update(IndexCacheKey cacheKey, String file, long lastModified, List<T> generatedSymbols, Set<QualifiedTypeName> dependencies, Class<T> type) {
 	}
 

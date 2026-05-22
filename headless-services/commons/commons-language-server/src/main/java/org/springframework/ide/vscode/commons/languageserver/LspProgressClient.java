@@ -58,17 +58,16 @@ class LspProgressClient implements ProgressClient {
 		this.clientSupplier = clientSupplier;
 	}
 	
-	private STS4LanguageClient requireClient() {
-		STS4LanguageClient client = clientSupplier.get();
-		if (client == null) {
-			throw new IllegalStateException("Language client is not connected. Progress notifications require an active client connection.");
-		}
-		return client;
+	private STS4LanguageClient getClient() {
+		return clientSupplier.get();
 	}
 	
 	@Override
 	public void begin(String taskId, WorkDoneProgressBegin report) {
-		STS4LanguageClient client = requireClient();
+		STS4LanguageClient client = getClient();
+		if (client == null) {
+			return;
+		}
 		
 		boolean isNew = activeTaskIDs.put(taskId, true) == null;
 		if (!isNew) {
@@ -89,7 +88,10 @@ class LspProgressClient implements ProgressClient {
 	
 	@Override
 	public void report(String taskId, WorkDoneProgressReport report) {
-		STS4LanguageClient client = requireClient();
+		STS4LanguageClient client = getClient();
+		if (client == null) {
+			return;
+		}
 		
 		if (!activeTaskIDs.containsKey(taskId)) {
 			log.error("Progress for task id '{}' does NOT exist!", taskId);
@@ -104,7 +106,10 @@ class LspProgressClient implements ProgressClient {
 	
 	@Override
 	public void end(String taskId, WorkDoneProgressEnd report) {
-		STS4LanguageClient client = requireClient();
+		STS4LanguageClient client = getClient();
+		if (client == null) {
+			return;
+		}
 		if (activeTaskIDs.remove(taskId) == null) {
 			return;
 		}

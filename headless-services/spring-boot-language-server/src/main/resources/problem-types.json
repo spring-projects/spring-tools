@@ -42,7 +42,7 @@
         "code": "JAVA_CONSTRUCTOR_PARAMETER_INJECTION",
         "label": "Use constructor parameter injection",
         "description": "Use constructor parameter injection",
-        "defaultSeverity": "IGNORE"
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_PRECISE_REQUEST_MAPPING",

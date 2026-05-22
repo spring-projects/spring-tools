@@ -15,6 +15,7 @@
 		<module>manifest-yaml-language-server</module>
 		<module>concourse-language-server</module>
 		<module>spring-boot-language-server</module>
+		<module>spring-boot-language-server-standalone</module>
 		<module>bosh-language-server</module>
 		<module>jdt-ls-extension</module>
 		<module>xml-ls-extension</module>

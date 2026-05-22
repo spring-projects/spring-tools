@@ -283,6 +283,11 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 		return 0;
 	}
 	
+	@Override
+	public <T extends IndexCacheable> List<T> retrieveAll(IndexCacheKey cacheKey, Class<T> type) {
+		return List.copyOf(retrieveStoreFromIncrementalStorage(cacheKey, type).getLeft().getSymbols());
+	}
+
 	public int getCompactingCounterBoundary() {
 		return compactingCounterBoundary;
 	}

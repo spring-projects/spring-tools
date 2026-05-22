@@ -26,7 +26,7 @@ public enum Boot2JavaProblemType implements ProblemType {
 	JAVA_AUTOWIRED_CONSTRUCTOR(WARNING, "Unnecessary `@Autowired` over the only constructor", "Unnecessary `@Autowired`", List.of(DiagnosticTag.Unnecessary)),
 	JAVA_PUBLIC_BEAN_METHOD(HINT, "Public modifier on `@Bean` method. They no longer have to be public visibility to be usable by Spring.", "public `@Bean` method", List.of(DiagnosticTag.Unnecessary)),
 	JAVA_TEST_SPRING_EXTENSION(WARNING, "`@SpringBootTest` and all test slice annotations already applies `@SpringExtension` as of Spring Boot 2.1.0.", "Unnecessary `@SpringExtension`", List.of(DiagnosticTag.Unnecessary)),
-	JAVA_CONSTRUCTOR_PARAMETER_INJECTION(IGNORE, "Use constructor parameter injection", "Use constructor parameter injection"),
+	JAVA_CONSTRUCTOR_PARAMETER_INJECTION(WARNING, "Use constructor parameter injection", "Use constructor parameter injection"),
 	JAVA_PRECISE_REQUEST_MAPPING(HINT, "Use precise mapping annotation, i.e. '@GetMapping', '@PostMapping', etc.", "Use precise mapping annotation, i.e. '@GetMapping', '@PostMapping', etc."),
 	JAVA_REPOSITORY(WARNING, "Unnecessary `@Repository`", "Unnecessary `@Repository`", List.of(DiagnosticTag.Unnecessary)),
 	JAVA_LAMBDA_DSL(INFO, "Consider switching to Lambda DSL syntax", "Switch to Lambda DSL syntax"), 

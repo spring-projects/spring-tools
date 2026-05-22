@@ -594,7 +594,7 @@
           },
           "spring-boot.ls.problem.boot2.JAVA_CONSTRUCTOR_PARAMETER_INJECTION": {
             "type": "string",
-            "default": "IGNORE",
+            "default": "WARNING",
             "description": "Use constructor parameter injection",
             "enum": [
               "IGNORE",

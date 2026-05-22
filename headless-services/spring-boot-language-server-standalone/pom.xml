@@ -1,0 +1,66 @@
+<project xmlns="https://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://maven.apache.org/POM/4.0.0 https://maven.apache.org/maven-v4_0_0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>spring-boot-language-server-standalone</artifactId>
+	<packaging>jar</packaging>
+	<name>spring-boot-language-server-standalone</name>
+	<description>Standalone Spring Boot Language Server — operates without JDT Language Server, using Maven/Gradle project caches and Jandex for type indexing.</description>
+
+	<parent>
+		<groupId>org.springframework.ide.vscode</groupId>
+		<artifactId>commons-parent</artifactId>
+		<version>2.2.0-SNAPSHOT</version>
+		<relativePath>../commons/pom.xml</relativePath>
+	</parent>
+
+	<dependencies>
+
+		<!-- Main Boot LS — provides BootLanguageServerBootApp, JavaProjectsService, all Spring wiring.
+		     The thin jar (without -exec classifier) is used here as a library. -->
+		<dependency>
+			<groupId>org.springframework.ide.vscode</groupId>
+			<artifactId>spring-boot-language-server</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<!-- Legacy Maven project cache — scans pom.xml files to discover projects -->
+		<dependency>
+			<groupId>org.springframework.ide.vscode</groupId>
+			<artifactId>commons-maven</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<!-- Legacy Gradle project cache — scans build.gradle files to discover projects -->
+		<dependency>
+			<groupId>org.springframework.ide.vscode</groupId>
+			<artifactId>commons-gradle</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- Produce a self-contained executable fat jar with classifier standalone-exec -->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<layout>ZIP</layout>
+					<classifier>standalone-exec</classifier>
+					<mainClass>org.springframework.ide.vscode.boot.app.StandaloneBootApp</mainClass>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

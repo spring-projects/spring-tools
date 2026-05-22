@@ -59,7 +59,7 @@ public class SpringIndexCommands {
 		this.modulithService = modulithService;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		this.sourceLinks = sourceLinks;
-		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
+		this.messageWorkerThreadPool = Executors.newFixedThreadPool(4);
 	
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
 			return CompletableFuture.supplyAsync(() -> {

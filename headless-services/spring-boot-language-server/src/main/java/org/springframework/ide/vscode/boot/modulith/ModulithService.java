@@ -111,7 +111,7 @@ public class ModulithService {
 		this.springIndexer = springIndexer;
 		this.springIndex = springIndex;
 		this.reconciler = reconciler;
-		this.executor = Executors.newCachedThreadPool();
+		this.executor = Executors.newFixedThreadPool(4);
 		this.autoTrackingProjects = false;
 		
 		this.projectListener = new ProjectObserver.Listener() {

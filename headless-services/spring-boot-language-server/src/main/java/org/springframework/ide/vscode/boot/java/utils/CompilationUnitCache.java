@@ -83,7 +83,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 	private final ReentrantReadWriteLock environmentCacheLock = new ReentrantReadWriteLock(true);
 	private CompletableFuture<Void> debounceClassFileChanges = CompletableFuture.completedFuture(null);
 	
-	private final Executor createCuExecutorThreadPool = Executors.newCachedThreadPool();
+	private final Executor createCuExecutorThreadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
 	public CompilationUnitCache(JavaProjectFinder projectFinder, SimpleLanguageServer server, ProjectObserver projectObserver) {
 		this.projectFinder = projectFinder;

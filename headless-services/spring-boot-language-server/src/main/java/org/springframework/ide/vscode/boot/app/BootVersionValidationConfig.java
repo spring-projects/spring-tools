@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.app;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +24,7 @@ import org.springframework.ide.vscode.boot.common.ProjectReconcileScheduler;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
 import org.springframework.ide.vscode.boot.validation.BootVersionValidationEngine;
 import org.springframework.ide.vscode.boot.validation.generations.GenerationsValidator;
+import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
 import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider;
 import org.springframework.ide.vscode.boot.validation.generations.SpringCloudCompatibilityValidator;
 import org.springframework.ide.vscode.boot.validation.generations.SpringIoProjectsProvider;
@@ -39,8 +41,12 @@ public class BootVersionValidationConfig {
 	
 	private static final Logger log = LoggerFactory.getLogger(BootVersionValidationConfig.class);
 	
-	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider) {
-		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider);
+	@Bean MavenMetadataProvider mavenMetadataProvider(SimpleLanguageServer server) {
+		return new MavenMetadataProvider(server.getWorkspaceService().getFileObserver());
+	}
+	
+	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider, MavenMetadataProvider mavenMetadataProvider) {
+		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider, mavenMetadataProvider);
 	}
 	
 	@Bean SpringIoProjectsProvider springProjectsProvider(SimpleLanguageServer server, BootJavaConfig config, RestTemplateFactory restTemplateFactory) {
@@ -64,7 +70,7 @@ public class BootVersionValidationConfig {
 	@Bean
 	ProjectReconcileScheduler bootVersionValidationScheduler(SimpleLanguageServer server,
 			JavaProjectFinder projectFinder, BootJavaConfig config, ProjectObserver projectObserver,
-			ProjectVersionDiagnosticProvider diagnosticProvider) {
+			ProjectVersionDiagnosticProvider diagnosticProvider, MavenMetadataProvider mavenMetadataProvider) {
 		return new ProjectReconcileScheduler(server,
 				new BootVersionValidationEngine(server, config, projectObserver, projectFinder, diagnosticProvider),
 				projectFinder) {
@@ -73,6 +79,20 @@ public class BootVersionValidationConfig {
 			protected void init() {
 				super.init();
 				config.addListener(evt -> scheduleValidationForAllProjects());
+				
+				mavenMetadataProvider.addListener(uriStr -> {
+					try {
+						URI uri = URI.create(uriStr);
+						for (IJavaProject project : projectFinder.all()) {
+							if (project.getProjectBuild() != null && uri.equals(project.getProjectBuild().getBuildFile())) {
+								scheduleValidation(project);
+							}
+						}
+					} catch (Exception e) {
+						log.error("Failed to process build file change for URI: " + uriStr, e);
+					}
+				});
+				
 				projectObserver.addListener(new ProjectObserver.Listener() {
 
 					@Override

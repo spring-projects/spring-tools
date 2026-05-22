@@ -54,6 +54,15 @@ public final class Version implements Comparable<Version> {
 		return sb.toString();
 	}
 
+	public String toMajorMinorPatchVersionStr() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(major);
+		sb.append('.');
+		sb.append(minor);
+		sb.append('.');
+		sb.append(patch);
+		return sb.toString();
+	}
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

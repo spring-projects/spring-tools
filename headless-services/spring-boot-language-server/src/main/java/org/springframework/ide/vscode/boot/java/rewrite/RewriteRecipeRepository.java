@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ import org.eclipse.lsp4j.ShowMessageRequestParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.WorkspaceEditChangeAnnotationSupportCapabilities;
+import org.openrewrite.ExecutionContext;
 import org.openrewrite.InMemoryExecutionContext;
 import org.openrewrite.ParseExceptionResult;
 import org.openrewrite.Parser;
@@ -40,7 +42,9 @@ import org.openrewrite.SourceFile;
 import org.openrewrite.config.Environment;
 import org.openrewrite.internal.InMemoryLargeSourceSet;
 import org.openrewrite.java.JavaParser;
+import org.openrewrite.maven.MavenExecutionContextView;
 import org.openrewrite.maven.MavenParser;
+import org.openrewrite.maven.MavenSettings;
 import org.openrewrite.tree.ParseError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,18 +113,27 @@ public class RewriteRecipeRepository {
 		return recipes().thenApply(recipes -> Optional.ofNullable(recipes.get(name)));
 	}
 	
+	private MavenExecutionContextView createContext(Consumer<Throwable> onError) {
+		MavenExecutionContextView ctx = MavenExecutionContextView.view(new InMemoryExecutionContext(onError));
+		MavenSettings settings = MavenSettings.readMavenSettingsFromDisk(ctx);
+		String[] profiles = settings.getActiveProfiles() == null ? new String[0] : settings.getActiveProfiles().getActiveProfiles().toArray(String[]::new);
+		ctx.setMavenSettings(settings, profiles);
+		return ctx;
+	}
+	
 	@SuppressWarnings("unchecked")
 	CompletableFuture<Object> applyToBuildFiles(Recipe r, String uri, String progressToken, boolean askForPreview) {
 		return projectFinder.find(new TextDocumentIdentifier(uri)).map(p -> {
 			final IndefiniteProgressTask progressTask = server.getProgressService().createIndefiniteProgressTask(progressToken, r.getDisplayName(), "Initiated...");
 			final IJavaProject project = p;
+			ExecutionContext ctx = createContext(e -> log.error("Project Parsing error:", e));
 			return CompletableFuture.supplyAsync(() -> {
 				Path absoluteProjectDir = Paths.get(project.getLocationUri());
 				progressTask.progressEvent("Parsing files...");
 				ProjectParser projectParser = getProjectParser(project);
-				return (List<SourceFile>) projectParser.parseBuildFiles(absoluteProjectDir, new InMemoryExecutionContext(e -> log.error("Project Parsing error:", e)));
+				return (List<SourceFile>) projectParser.parseBuildFiles(absoluteProjectDir, ctx);
 			})
-			.thenCompose(sources -> computeWorkspaceEditAwareOfPreview(r, sources, progressTask, askForPreview))
+			.thenCompose(sources -> computeWorkspaceEditAwareOfPreview(r, ctx, sources, progressTask, askForPreview))
 			.thenCompose(we -> applyEdit(we, progressTask, r.getDisplayName()))
 			.whenComplete((o,t) -> progressTask.done());
 		}).orElse(CompletableFuture.failedFuture(new IllegalArgumentException("Cannot find Spring Boot project for uri: " + uri)));
@@ -136,9 +149,10 @@ public class RewriteRecipeRepository {
 				Path absoluteProjectDir = Paths.get(project.getLocationUri());
 				progressTask.progressEvent("Parsing files...");
 				ProjectParser projectParser = getProjectParser(project);
-				List<SourceFile> sources = projectParser.parse(absoluteProjectDir, new InMemoryExecutionContext(e -> log.error("Project Parsing error:", e)));
+				ExecutionContext ctx = createContext(e -> log.error("Project Parsing error:", e));
+				List<SourceFile> sources = projectParser.parse(absoluteProjectDir, ctx);
 				
-				return computeWorkspaceEditAwareOfPreview(r, sources, progressTask, askForPreview)
+				return computeWorkspaceEditAwareOfPreview(r, ctx, sources, progressTask, askForPreview)
 					.thenCompose(we -> applyEdit(we, progressTask, r.getDisplayName()));
 			} else {
 				return CompletableFuture.failedFuture(new IllegalArgumentException("Cannot find Spring Boot project for uri: " + uri));
@@ -146,9 +160,9 @@ public class RewriteRecipeRepository {
 		}).whenComplete((o,t) -> progressTask.done());
 	}
 	
-	CompletableFuture<Optional<WorkspaceEdit>> computeWorkspaceEditAwareOfPreview(Recipe r, List<SourceFile> sources, IndefiniteProgressTask progressTask, boolean askForPreview) {
+	CompletableFuture<Optional<WorkspaceEdit>> computeWorkspaceEditAwareOfPreview(Recipe r, ExecutionContext ctx, List<SourceFile> sources, IndefiniteProgressTask progressTask, boolean askForPreview) {
 		String changeAnnotationId = UUID.randomUUID().toString();
-		Optional<WorkspaceEdit> we = computeWorkspaceEdit(r, sources, progressTask, changeAnnotationId);
+		Optional<WorkspaceEdit> we = computeWorkspaceEdit(r, ctx, sources, progressTask, changeAnnotationId);
 		if (we.isPresent()) {
 			return askForPreview ? askForPreview(we.get(), changeAnnotationId) : CompletableFuture.completedFuture(we);
 		}
@@ -204,12 +218,12 @@ public class RewriteRecipeRepository {
 		}
 	}
 	
-	Optional<WorkspaceEdit> computeWorkspaceEdit(Recipe r, List<SourceFile> sources, IndefiniteProgressTask progressTask, String changeAnnotationId) {
+	Optional<WorkspaceEdit> computeWorkspaceEdit(Recipe r, ExecutionContext ctx, List<SourceFile> sources, IndefiniteProgressTask progressTask, String changeAnnotationId) {
 		reportParseErrors(sources.stream().filter(ParseError.class::isInstance).map(ParseError.class::cast).collect(Collectors.toList()));
 		if (progressTask != null) {
 			progressTask.progressEvent("Computing changes...");
 		}
-		RecipeRun reciperun = r.run(new InMemoryLargeSourceSet(sources), new InMemoryExecutionContext(e -> log.error("Recipe execution failed", e)));
+		RecipeRun reciperun = r.run(new InMemoryLargeSourceSet(sources), ctx);
 		List<Result> results = reciperun.getChangeset().getAllResults();
 		return ORDocUtils.createWorkspaceEdit(server.getTextDocumentService(), results, changeAnnotationId).map(we -> {
 			ChangeAnnotation changeAnnotation = new ChangeAnnotation(r.getDisplayName());
@@ -236,7 +250,7 @@ public class RewriteRecipeRepository {
     private static ProjectParser createRewriteProjectParser(IJavaProject jp, Function<Path, Parser.Input> inputProvider) {
 		switch (jp.getProjectBuild().getType()) {
     	case ProjectBuild.MAVEN_PROJECT_TYPE:
-            MavenParser.Builder mavenParserBuilder = MavenParser.builder();
+            MavenParser.Builder mavenParserBuilder = MavenParser.builder().skipDependencyResolution(true);
     		return new MavenIJavaProjectParser(jp, JavaParser.fromJavaVersion(), inputProvider, mavenParserBuilder);
     	default:
     		throw new IllegalStateException("The project is neither Maven nor Gradle!");

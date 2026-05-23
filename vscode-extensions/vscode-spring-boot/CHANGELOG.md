@@ -1,7 +1,8 @@
-## 2026-05-21 (2.2.0 PRE-RELEASE)
+## 2026-05-23 (2.2.0 PRE-RELEASE)
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ add maven repository based version validation [#1892](https://github.com/spring-projects/spring-tools/issues/1892)
 * _(Spring Boot)_ Web Config Path incorrectly annotated in Eclipse [#1891](https://github.com/spring-projects/spring-tools/issues/1891)
 * _(Spring Boot)_ "Internal error" logged by Spring Boot Language Server [#1886](https://github.com/spring-projects/spring-tools/issues/1886)
 * _(Spring Boot)_ [API Versioning] Spring Language Server Doesn't Recognise useVersionResolver() use for API Versioning [#1880](https://github.com/spring-projects/spring-tools/issues/1880)

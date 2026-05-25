@@ -44,7 +44,7 @@ jobs:
             ]
           }"
       - name: Announce Release on `Spring-Releases` space
-        uses: spring-io/spring-release-actions/announce-on-gchat@2420148725bebe44bd59a575a9b1961ca4459b0b # 0.0.4
+        uses: spring-io/spring-release-actions/announce-on-gchat@a1f321783a0769dd2aea4fad6c2ae2f95a52b885 # 0.0.5
         with:
           version: ${{ inputs.version }}
           gchat-webhook-url: ${{ secrets.SPRING_RELEASE_GCHAT_WEBHOOK_URL }}

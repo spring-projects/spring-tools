@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -56,10 +57,10 @@ public class AuthorizeHttpRequestsReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 
 		if (context.isCompleteAst()) {
-			return new ASTVisitor() {
+			return Optional.of(new ASTVisitor() {
 
 				@Override
 				public boolean visit(MethodInvocation node) {
@@ -88,7 +89,7 @@ public class AuthorizeHttpRequestsReconciler implements JdtAstReconciler {
 					return true;
 				}
 
-			};
+			});
 		} else {
 			boolean needsFullAst = ReconcileUtils.isAnyTypeUsed(cu, List.of(
 					FQN_HTTP_SECURITY,
@@ -101,7 +102,7 @@ public class AuthorizeHttpRequestsReconciler implements JdtAstReconciler {
 				throw new RequiredCompleteAstException();
 			}
 
-			return null;
+			return Optional.empty();
 		}
 	}
 

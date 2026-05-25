@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.jspecify.annotations.NonNull;
 import org.springframework.ide.vscode.boot.java.JdtSemanticTokensProvider;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryVisitorUtils.EmbeddedQueryExpression;
@@ -64,7 +65,7 @@ public class JdtDataQuerySemanticTokensProvider implements JdtSemanticTokensProv
 	}
 
 	@Override
-	public ASTVisitor getTokensComputer(IJavaProject jp, TextDocument doc, CompilationUnit cu, Collector<SemanticTokenData> tokensData) {
+	public @NonNull ASTVisitor getTokensComputer(IJavaProject jp, TextDocument doc, CompilationUnit cu, Collector<SemanticTokenData> tokensData) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 		return new ASTVisitor() {
 			@Override

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import java.util.List;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.jspecify.annotations.NonNull;
 import org.springframework.ide.vscode.boot.java.JdtSemanticTokensProvider;
 import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLanguageSnippet;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -50,7 +51,7 @@ public class JdtCronSemanticTokensProvider implements JdtSemanticTokensProvider 
 	}
 
 	@Override
-	public ASTVisitor getTokensComputer(IJavaProject project, TextDocument doc, CompilationUnit cu,
+	public @NonNull ASTVisitor getTokensComputer(IJavaProject project, TextDocument doc, CompilationUnit cu,
 			Collector<SemanticTokenData> collector) {
 		return new ASTVisitor() {
 

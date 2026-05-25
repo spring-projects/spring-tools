@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.spri
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -73,8 +74,8 @@ public class UnnecessarySpringExtensionReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
-		return new ASTVisitor() {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(TypeDeclaration typeDecl) {
@@ -101,7 +102,7 @@ public class UnnecessarySpringExtensionReconciler implements JdtAstReconciler {
 				}
 				return super.visit(typeDecl);
 			}
-		};
+		});
 	}
 	
 	private static boolean isApplicableExtendsWith(Annotation a) {

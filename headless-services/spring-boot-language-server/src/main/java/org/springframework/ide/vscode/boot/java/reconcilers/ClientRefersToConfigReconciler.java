@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -64,8 +65,8 @@ public class ClientRefersToConfigReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
-		return new ASTVisitor() {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(TypeDeclaration node) {
@@ -104,7 +105,7 @@ public class ClientRefersToConfigReconciler implements JdtAstReconciler {
 				return true;
 			}
 
-		};
+		});
 	}
 
 }

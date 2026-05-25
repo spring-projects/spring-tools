@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -53,8 +54,8 @@ abstract class AbstractSpringAiAnnotationReconciler implements JdtAstReconciler 
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
-		return new ASTVisitor() {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(NormalAnnotation node) {
@@ -86,7 +87,7 @@ abstract class AbstractSpringAiAnnotationReconciler implements JdtAstReconciler 
 				return super.visit(node);
 			}
 
-		};
+		});
 	}
 
 	private void checkAnnotation(Annotation node, IProblemCollector problemCollector) {

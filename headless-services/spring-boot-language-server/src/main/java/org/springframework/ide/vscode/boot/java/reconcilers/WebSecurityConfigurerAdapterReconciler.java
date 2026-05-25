@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -84,9 +85,9 @@ public class WebSecurityConfigurerAdapterReconciler implements JdtAstReconciler 
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 			
 			@Override
 			public boolean visit(TypeDeclaration typeDecl) {
@@ -115,7 +116,7 @@ public class WebSecurityConfigurerAdapterReconciler implements JdtAstReconciler 
 				return super.visit(typeDecl);
 			}
 			
-		};
+		});
 	}
 	
 	private static boolean isWebSecurityConfigurerAdapter(CompilationUnit cu, Type type) {

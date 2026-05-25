@@ -16,6 +16,7 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -59,10 +60,10 @@ public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(TypeDeclaration typeDecl) {
@@ -115,7 +116,7 @@ public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 				return super.visit(typeDecl);
 			}
 
-		};
+		});
 	}
 
 }

@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -63,10 +64,10 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			/**
 			 * this in the piece of the reconciler that validates the version attribute of annotations on controllers
@@ -186,7 +187,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 					
 				return super.visit(type);
 			}
-		};
+		});
 	}
 	
 	private String updateVersion(String version) {

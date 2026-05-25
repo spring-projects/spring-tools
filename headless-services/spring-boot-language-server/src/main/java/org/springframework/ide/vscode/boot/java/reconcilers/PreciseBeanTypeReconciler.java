@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.springBootVersionGreaterOrEqual;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -56,10 +57,10 @@ public class PreciseBeanTypeReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		final AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 			
 			private MethodDeclaration currentMethod;
 			
@@ -139,7 +140,7 @@ public class PreciseBeanTypeReconciler implements JdtAstReconciler {
 				return super.visit(node);
 			}
 			
-		};
+		});
 	}
 
 }

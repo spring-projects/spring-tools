@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.data;
 
 import java.net.URI;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -18,7 +19,6 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionKind;
-import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -61,9 +61,9 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(CancelChecker cancelToken, IJavaProject project, URI docURI, CompilationUnit cu, TextDocument doc,
+	public Optional<ASTVisitor> createVisitor(CancelChecker cancelToken, IJavaProject project, URI docURI, CompilationUnit cu, TextDocument doc,
 			IRegion region, ICollector<CodeAction> collector) {
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(MethodDeclaration node) {
@@ -93,7 +93,7 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 				return false;
 			}
 			
-		};
+		});
 	}
 	
 	private CodeAction createCodeAction(IMethodBinding mb, URI docUri, DataRepositoryAotMetadata metadata, IDataRepositoryAotMethodMetadata method) {

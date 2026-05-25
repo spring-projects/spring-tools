@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
+import java.util.Optional;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -142,10 +143,10 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			/**
 			 * this in the piece of the reconciler that validates the version attribute of annotations on controllers
@@ -201,7 +202,7 @@ public class WebApiVersioningReconciler implements JdtAstReconciler {
 					
 				return super.visit(type);
 			}
-		};
+		});
 	}
 	
 	@Override

@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -46,8 +47,8 @@ public class WebApiVersionStrategyPathSegmentReconciler implements JdtAstReconci
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
-		return new ASTVisitor() {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(TypeDeclaration type) {
@@ -75,7 +76,7 @@ public class WebApiVersionStrategyPathSegmentReconciler implements JdtAstReconci
 				return super.visit(type);
 			}
 
-		};
+		});
 	}
 	
 	private void analyzeMethodBody(Block body, ReconcilingContext context) {

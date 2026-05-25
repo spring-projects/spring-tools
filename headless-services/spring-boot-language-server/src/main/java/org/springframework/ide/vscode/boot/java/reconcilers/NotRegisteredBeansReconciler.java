@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.springBootVersionGreaterOrEqual;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -75,9 +76,9 @@ public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(TypeDeclaration node) {
@@ -137,7 +138,7 @@ public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 				}
 				return super.visit(node);
 			}
-		};
+		});
 	}
 
 	protected void createProblemAndQuickFixes(IJavaProject project, IProblemCollector problemCollector, TypeDeclaration node, ITypeBinding type) {

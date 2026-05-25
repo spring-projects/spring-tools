@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -51,7 +52,7 @@ public class ModulithTypeReferenceViolationReconciler implements JdtAstReconcile
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 
 		Path sourceFile = Paths.get(docUri);
 		if (IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(project.getClasspath())
@@ -63,7 +64,7 @@ public class ModulithTypeReferenceViolationReconciler implements JdtAstReconcile
 			if (appModules != null) {
 				final String packageName = cu.getPackage().getName().getFullyQualifiedName();
 
-				return new ASTVisitor() {
+				return Optional.of(new ASTVisitor() {
 
 					@Override
 					public boolean visit(QualifiedName node) {
@@ -87,11 +88,11 @@ public class ModulithTypeReferenceViolationReconciler implements JdtAstReconcile
 						}
 					}
 
-				};
+				});
 			}
 		}
 		
-		return null;
+		return Optional.empty();
 	}
 
 }

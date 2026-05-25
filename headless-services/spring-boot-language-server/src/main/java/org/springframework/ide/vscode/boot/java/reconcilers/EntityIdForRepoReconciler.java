@@ -69,10 +69,10 @@ public class EntityIdForRepoReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			final boolean considerIdField = project.getClasspath().findBinaryLibraryByPrefix("spring-data-mongodb-").isPresent();
 
@@ -244,7 +244,7 @@ public class EntityIdForRepoReconciler implements JdtAstReconciler {
 				return idTypes;
 			}
 
-		};
+		});
 		
 	}
 

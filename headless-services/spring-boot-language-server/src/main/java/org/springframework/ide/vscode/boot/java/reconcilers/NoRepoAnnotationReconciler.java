@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.springBootVersionGreaterOrEqual;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,12 +59,12 @@ public class NoRepoAnnotationReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 
 		List<Integer> problemOffsets = new ArrayList<>();
 		List<ReconcileProblemImpl> problems = new ArrayList<>();
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 			
 			@Override
 			public boolean visit(TypeDeclaration typeDecl) {
@@ -108,7 +109,7 @@ public class NoRepoAnnotationReconciler implements JdtAstReconciler {
 					}
 				}
 			}
-		};
+		});
 	}
 	
 	private static boolean isApplicableRepoAnnotation(Annotation a) {

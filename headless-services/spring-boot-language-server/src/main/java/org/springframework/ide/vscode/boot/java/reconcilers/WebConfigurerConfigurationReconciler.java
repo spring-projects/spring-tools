@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 
 import java.lang.reflect.Modifier;
 import java.net.URI;
+import java.util.Optional;
 import java.util.List;
 import java.util.Set;
 
@@ -62,8 +63,8 @@ public class WebConfigurerConfigurationReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
-		return new ASTVisitor() {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(TypeDeclaration classDecl) {
@@ -86,7 +87,7 @@ public class WebConfigurerConfigurationReconciler implements JdtAstReconciler {
 				return true;
 			}
 
-		};
+		});
 	}
 
 	private boolean isApplicableClass(CompilationUnit cu, TypeDeclaration classDecl) {

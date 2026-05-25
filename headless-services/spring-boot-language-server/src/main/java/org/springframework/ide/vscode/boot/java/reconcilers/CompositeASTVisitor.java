@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
+import org.jspecify.annotations.NonNull;
 
 public class CompositeASTVisitor extends ASTVisitor {
 	
@@ -39,11 +40,15 @@ public class CompositeASTVisitor extends ASTVisitor {
 	private int startOffset = -1;
 	private int endOffset = -1;
 
-	public void add(ASTVisitor visitor) {
-		// Null visitors shouldn't be in the list
-		if (visitor != null) {
-			visitors.add(visitor);
+	public void add(@NonNull ASTVisitor visitor) {
+		if (visitor == null) {
+			throw new IllegalArgumentException("Null visitor is not allowed!");
 		}
+		visitors.add(visitor);
+	}
+	
+	public boolean isEmpty() {
+		return visitors.isEmpty();
 	}
 	
 	@Override

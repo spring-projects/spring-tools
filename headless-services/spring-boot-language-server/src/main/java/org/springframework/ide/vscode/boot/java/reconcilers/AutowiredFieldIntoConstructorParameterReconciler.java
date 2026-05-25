@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -66,14 +67,14 @@ public class AutowiredFieldIntoConstructorParameterReconciler implements JdtAstR
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		Path sourceFile = Paths.get(docUri);
 		// Check if source file belongs to non-test java sources folder
 		if (IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(project.getClasspath())
 				.anyMatch(f -> sourceFile.startsWith(f.toPath()))) {
 			final AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 			
-			return new ASTVisitor() {
+			return Optional.of(new ASTVisitor() {
 
 				@Override
 				public boolean visit(FieldDeclaration field) {
@@ -119,10 +120,10 @@ public class AutowiredFieldIntoConstructorParameterReconciler implements JdtAstR
 					return true;
 				}
 
-			};
+			});
 		}
 		else {
-			return null;
+			return Optional.empty();
 		}
 	}
 	

@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -80,17 +81,17 @@ public class SpringDataPropertyReferenceReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
 		List<SpringDataPropertyReferenceContributor> applicable = contributors.stream()
 				.filter(c -> c.isApplicable(project))
 				.toList();
 
 		if (applicable.isEmpty()) {
-			return null;
+			return Optional.empty();
 		}
 
 		if (context.isCompleteAst()) {
-			return new PropertyReferenceVisitor(applicable, docURI, context);
+			return Optional.of(new PropertyReferenceVisitor(applicable, docURI, context));
 		} else {
 			List<String> allRelevantTypes = applicable.stream()
 					.flatMap(c -> c.getRelevantTypesFqn().stream())
@@ -98,7 +99,7 @@ public class SpringDataPropertyReferenceReconciler implements JdtAstReconciler {
 			if (ReconcileUtils.isAnyTypeUsed(cu, allRelevantTypes)) {
 				throw new RequiredCompleteAstException();
 			}
-			return null;
+			return Optional.empty();
 		}
 	}
 

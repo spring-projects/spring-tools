@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.cron;
 
 import java.net.URI;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -41,8 +42,8 @@ public class JdtCronReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
-		return new ASTVisitor() {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
+		return Optional.of(new ASTVisitor() {
 			@Override
 			public boolean visit(NormalAnnotation node) {
 				EmbeddedLanguageSnippet e = JdtCronVisitorUtils.extractCron(node);
@@ -51,7 +52,7 @@ public class JdtCronReconciler implements JdtAstReconciler {
 				}
 				return super.visit(node);
 			}
-		};
+		});
 	}
 
 }

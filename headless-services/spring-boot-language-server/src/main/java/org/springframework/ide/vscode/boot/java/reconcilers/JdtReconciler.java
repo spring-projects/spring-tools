@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,15 +90,11 @@ public class JdtReconciler implements JavaReconciler {
 		});
 	}
 
-	public ASTVisitor createCompositeVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) throws RequiredCompleteAstException {
+	public CompositeASTVisitor createCompositeVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) throws RequiredCompleteAstException {
 		CompositeASTVisitor compositeVisitor = new CompositeASTVisitor();
 		
 		for (JdtAstReconciler reconciler : getApplicableReconcilers(project)) {
-			ASTVisitor visitor = reconciler.createVisitor(project, docURI, cu, context);
-			
-			if (visitor != null) {
-				compositeVisitor.add(visitor);
-			}
+			reconciler.createVisitor(project, docURI, cu, context).ifPresent(compositeVisitor::add);
 		}
 
 		return compositeVisitor;
@@ -116,8 +111,10 @@ public class JdtReconciler implements JavaReconciler {
 		}
 		
 		try {
-			ASTVisitor compositeVisitor = createCompositeVisitor(project, docUri, cu, context);
-			cu.accept(compositeVisitor);
+			CompositeASTVisitor compositeVisitor = createCompositeVisitor(project, docUri, cu, context);
+			if (!compositeVisitor.isEmpty()) {
+				cu.accept(compositeVisitor);
+			}
 		}
 		finally {
 			long end = System.currentTimeMillis();

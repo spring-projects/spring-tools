@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.springBootVersionGreaterOrEqual;
 
 import java.net.URI;
+import java.util.Optional;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -73,9 +74,9 @@ public class ImplicitWebAnnotationNamesReconciler implements JdtAstReconciler {
 	}
 	
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(NormalAnnotation node) {
@@ -111,7 +112,7 @@ public class ImplicitWebAnnotationNamesReconciler implements JdtAstReconciler {
 					context.getProblemCollector().accept(problem);
 				}
 			}
-		};
+		});
 	}
 	
 	private static boolean isApplicableWebAnnotation(Annotation annotation) {

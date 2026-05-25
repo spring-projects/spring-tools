@@ -54,9 +54,9 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) throws RequiredCompleteAstException {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) throws RequiredCompleteAstException {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(NormalAnnotation node) {
@@ -87,7 +87,7 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 				return super.visit(node);
 			}
 			
-		};
+		});
 	}
 	
 	/*

@@ -15,6 +15,7 @@ import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.spri
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -45,14 +46,14 @@ public class FinalAutowiredFieldReconciler implements JdtAstReconciler {
 	}
 
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		Path sourceFile = Paths.get(docUri);
 		// Check if source file belongs to non-test java sources folder
 		if (IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(project.getClasspath())
 				.anyMatch(f -> sourceFile.startsWith(f.toPath()))) {
 			final AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
 
-			return new ASTVisitor() {
+			return Optional.of(new ASTVisitor() {
 
 				@Override
 				public boolean visit(FieldDeclaration field) {
@@ -68,9 +69,9 @@ public class FinalAutowiredFieldReconciler implements JdtAstReconciler {
 					return true;
 				}
 
-			};
+			});
 		} else {
-			return null;
+			return Optional.empty();
 		}
 	}
 

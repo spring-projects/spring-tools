@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -66,9 +67,9 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 	}
 	
 	@Override
-	public ASTVisitor createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
+	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 
-		return new ASTVisitor() {
+		return Optional.of(new ASTVisitor() {
 			
 			private final List<Integer> problemOffsets = new ArrayList<>();
 			private final List<ReconcileProblemImpl> problems = new ArrayList<>();
@@ -122,7 +123,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 				super.endVisit(node);
 			}
 
-		};
+		});
 	}
 
 	public static final boolean isNotOverridingPublicMethod(IMethodBinding methodBinding) {

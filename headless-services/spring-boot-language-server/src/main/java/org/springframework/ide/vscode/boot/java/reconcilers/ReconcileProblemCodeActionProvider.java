@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -54,7 +55,7 @@ public class ReconcileProblemCodeActionProvider implements JdtAstCodeActionProvi
 	}
 
 	@Override
-	public ASTVisitor createVisitor(CancelChecker cancelToken, IJavaProject project, URI docURI, CompilationUnit cu, TextDocument doc,
+	public Optional<ASTVisitor> createVisitor(CancelChecker cancelToken, IJavaProject project, URI docURI, CompilationUnit cu, TextDocument doc,
 			IRegion region, ICollector<CodeAction> collector) {
 		IProblemCollector problemCollector = new IProblemCollector() {
 			
@@ -81,10 +82,10 @@ public class ReconcileProblemCodeActionProvider implements JdtAstCodeActionProvi
 		ReconcilingContext ctx = new ReconcilingContext(docURI.toASCIIString(), problemCollector, true, true, List.of(), new ReconcilingIndex());
 		for (JdtAstReconciler r : reconciler.reconcilers) {
 			if (r.isApplicable(project) && severityProvider.getDiagnosticSeverity(r.getProblemType()) == null) {
-				v.add(r.createVisitor(project, docURI, cu, ctx));
+				r.createVisitor(project, docURI, cu, ctx).ifPresent(v::add);;
 			}
 		}
-		return v;
+		return v.isEmpty() ? Optional.empty() : Optional.of(v);
 	}
 	
 	private CodeAction createCodeActionFromScope(FixDescriptor d) {

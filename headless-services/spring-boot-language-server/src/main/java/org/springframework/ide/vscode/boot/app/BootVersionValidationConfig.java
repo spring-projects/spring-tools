@@ -42,7 +42,7 @@ public class BootVersionValidationConfig {
 	private static final Logger log = LoggerFactory.getLogger(BootVersionValidationConfig.class);
 	
 	@Bean MavenMetadataProvider mavenMetadataProvider(SimpleLanguageServer server) {
-		return new MavenMetadataProvider(server.getWorkspaceService().getFileObserver());
+		return new MavenMetadataProvider(server.getWorkspaceService().getFileObserver(), server.getProgressService());
 	}
 	
 	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider, MavenMetadataProvider mavenMetadataProvider) {

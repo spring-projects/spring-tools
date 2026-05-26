@@ -34,6 +34,8 @@ import org.openrewrite.maven.tree.MavenResolutionResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.IndefiniteProgressTask;
+import org.springframework.ide.vscode.commons.languageserver.ProgressService;
 import org.springframework.ide.vscode.commons.languageserver.util.ListenerList;
 import org.springframework.ide.vscode.commons.util.FileObserver;
 
@@ -43,8 +45,10 @@ public class MavenMetadataProvider {
 
 	private final Map<String, MavenMetadata> cache = new ConcurrentHashMap<>();
 	private final ListenerList<String> listeners = new ListenerList<>();
+	private final ProgressService progressService;
 
-	public MavenMetadataProvider(FileObserver fileObserver) {
+	public MavenMetadataProvider(FileObserver fileObserver, ProgressService progressService) {
+		this.progressService = progressService != null ? progressService : ProgressService.NO_PROGRESS;
 		if (fileObserver != null) {
 			fileObserver.onAnyChange(List.of("**/pom.xml"), files -> {
 				for (String file : files) {
@@ -61,11 +65,15 @@ public class MavenMetadataProvider {
 	}
 
 	private MavenMetadata compute(Path pomPath, String groupId, String artifactId) {
-		try {
-			if (!Files.exists(pomPath)) {
-				return null;
-			}
+		if (!Files.exists(pomPath)) {
+			return null;
+		}
 
+		IndefiniteProgressTask progress = progressService.createIndefiniteProgressTask(
+				"maven-metadata",
+				"Spring Tools: Fetching Maven release metadata for '" + groupId + ":" + artifactId + "'",
+				null);
+		try {
 			ExecutionContext ctx = new InMemoryExecutionContext();
 			MavenExecutionContextView mvnCtx = MavenExecutionContextView.view(ctx);
 			MavenSettings settings = mvnCtx.getSettings();
@@ -97,6 +105,8 @@ public class MavenMetadataProvider {
 		} catch (Exception e) {
 			log.warn("Failed to fetch Maven metadata for {}:{} in pom {}", groupId, artifactId, pomPath, e);
 			return null;
+		} finally {
+			progress.done();
 		}
 	}
 

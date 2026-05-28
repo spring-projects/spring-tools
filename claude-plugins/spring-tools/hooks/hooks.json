@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "mcp_tool",
-            "server": "spring-tools-mcp",
+            "server": "plugin:spring-tools:spring-tools-mcp",
             "tool": "fileChanged",
             "input": {
               "filePath": "${tool_input.file_path}"
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "mcp_tool",
-            "server": "spring-tools-mcp",
+            "server": "plugin:spring-tools:spring-tools-mcp",
             "tool": "fileDeleted",
             "input": {
               "filePath": "${tool_input.file_path}"
@@ -33,7 +33,7 @@
           {
             "type": "mcp_tool",
             "if": "Bash(git *)",
-            "server": "spring-tools-mcp",
+            "server": "plugin:spring-tools:spring-tools-mcp",
             "tool": "refreshWorkspace",
             "input": {}
           }

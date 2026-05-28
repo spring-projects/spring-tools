@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * This bridges the gap when running in MCP-only mode without full LSP file watching.
  */
 @Component
-@ConditionalOnBean({FileChangeNotifier.class})
+//@ConditionalOnBean({FileChangeNotifier.class})
 public class FileChangesMcpTools {
 
 	private static final Logger logger = LoggerFactory.getLogger(FileChangesMcpTools.class);
@@ -30,6 +30,9 @@ public class FileChangesMcpTools {
 	private final SimpleLanguageServer server;
 
 	public FileChangesMcpTools(FileChangeNotifier fileChangeNotifier, Optional<ProjectChangeNotifier> projectChangeNotifier, SimpleLanguageServer server) {
+
+		logger.info("FileChangesMcpTools constructor called");
+
 		this.fileChangeNotifier = fileChangeNotifier;
 		this.projectChangeNotifier = projectChangeNotifier;
 		this.server = server;

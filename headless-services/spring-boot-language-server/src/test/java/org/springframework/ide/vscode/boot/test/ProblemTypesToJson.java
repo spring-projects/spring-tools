@@ -179,6 +179,7 @@ public class ProblemTypesToJson {
 		private String id;
 		private String label;
 		private Toggle toggle;
+		private List<ProblemTypeParameterData> parameters;
 		private int order;
 		private List<ProblemTypeData> problemTypes;
 		
@@ -188,6 +189,7 @@ public class ProblemTypesToJson {
 			this.toggle = category.getToggle();
 			this.order = category.order;
 			this.problemTypes = problemTypes.stream().map(ProblemTypeData::new).collect(Collectors.toList());
+			this.parameters = category.getParameters().stream().map(ProblemTypeParameterData::new).collect(Collectors.toList());
 		}
 		
 		ProblemCategoryData(ProblemCategory category) {
@@ -208,6 +210,10 @@ public class ProblemTypesToJson {
 
 		public String getId() {
 			return id;
+		}
+
+		public List<ProblemTypeParameterData> getParameters() {
+			return parameters;
 		}
 
 		public List<ProblemTypeData> getProblemTypes() {
@@ -416,12 +422,38 @@ public class ProblemTypesToJson {
 				props.add(propertyPrefix + "." + category.getId() + "." + data.code, schema);
 				addParameterPropertySchemas(props, category, data);
 			}
+			addCategoryParameterPropertySchemas(props, category);
 			configProps.add("properties", props);
 			allProps.add(configProps);
 		}
 			
 		String newContent = gson.toJson(parsed);
 		FileUtils.writeStringToFile(packageJsonFile, newContent);
+	}
+
+	private static void addCategoryParameterPropertySchemas(JsonObject props, ProblemCategoryData category) {
+		if (category.getParameters() == null || category.getParameters().isEmpty()) {
+			return;
+		}
+		String base = PROBLEM_PARAMETERS_PROPERTY_PREFIX + "." + category.getId() + ".";
+		for (ProblemTypeParameterData param : category.getParameters()) {
+			String fullKey = base + param.getKey();
+			JsonObject schema = new JsonObject();
+			String t = param.getType();
+			if ("integer".equals(t)) {
+				schema.addProperty("type", "integer");
+				schema.addProperty("default", Integer.parseInt(param.getDefaultValue()));
+				schema.addProperty("minimum", 1);
+			} else if ("boolean".equals(t)) {
+				schema.addProperty("type", "boolean");
+				schema.addProperty("default", Boolean.parseBoolean(param.getDefaultValue()));
+			} else {
+				schema.addProperty("type", "string");
+				schema.addProperty("default", param.getDefaultValue());
+			}
+			schema.addProperty("description", param.getDescription());
+			props.add(fullKey, schema);
+		}
 	}
 
 	private static void addParameterPropertySchemas(JsonObject props, ProblemCategoryData category, ProblemTypeData data) {

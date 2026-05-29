@@ -40,19 +40,21 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 
 	private SpringProjectsProvider springProjectsProvider;
 	private MavenMetadataProvider mavenMetadataProvider;
+	private org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig;
 
-	public UpdateBootVersion(DiagnosticSeverityProvider diagnosticSeverityProvider, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider springProjectsProvider, MavenMetadataProvider mavenMetadataProvider) {
+	public UpdateBootVersion(DiagnosticSeverityProvider diagnosticSeverityProvider, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider springProjectsProvider, MavenMetadataProvider mavenMetadataProvider, org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig) {
 		super(diagnosticSeverityProvider);
 		this.bootUpgradeOpt = bootUpgradeOpt;
 		this.springProjectsProvider = springProjectsProvider;
 		this.mavenMetadataProvider = mavenMetadataProvider;
+		this.bootJavaConfig = bootJavaConfig;
 	}
 
 	@Override
 	public Collection<Diagnostic> validate(IJavaProject javaProject, Version javaProjectVersion) throws Exception {
 		SortedVersions versions = null;
 		
-		if (ProjectBuild.MAVEN_PROJECT_TYPE.equals(javaProject.getProjectBuild().getType())) {
+		if (bootJavaConfig.isUseProjectBuildFileForVersionValidation() && ProjectBuild.MAVEN_PROJECT_TYPE.equals(javaProject.getProjectBuild().getType())) {
 			try {
 				MavenMetadata metadata = mavenMetadataProvider.getMetadata(javaProject, "org.springframework.boot", "spring-boot");
 				if (metadata != null) {

@@ -28,13 +28,21 @@ public final class ProblemCategory {
 	final private List<ProblemType> problemTypes = new ArrayList<>();;
 	
 	final private Toggle toggle;
+	final private java.util.List<ProblemTypeParameter> parameters = new java.util.ArrayList<>();
 	
 	final public int order;
 		
 	public ProblemCategory(String id, String label, Toggle toggle) {
+		this(id, label, toggle, null);
+	}
+
+	public ProblemCategory(String id, String label, Toggle toggle, java.util.List<ProblemTypeParameter> parameters) {
 		this.id = id;
 		this.label = label;
 		this.toggle = toggle;
+		if (parameters != null) {
+			this.parameters.addAll(parameters);
+		}
 		this.order = counter.getAndIncrement();
 	}
 	
@@ -48,6 +56,10 @@ public final class ProblemCategory {
 
 	public List<ProblemType> getProblemTypes() {
 		return problemTypes;
+	}
+
+	public java.util.List<ProblemTypeParameter> getParameters() {
+		return parameters;
 	}
 
 	public Toggle getToggle() {

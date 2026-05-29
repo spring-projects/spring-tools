@@ -49,6 +49,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 import org.springframework.ide.vscode.commons.languageserver.util.InlayHintHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.Optionals;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -62,11 +63,13 @@ public class PomInlayHintHandler implements InlayHintHandler {
 	final private JavaProjectFinder projectFinder;
 	final private SpringProjectsProvider generationsProvider;
 	final private MavenMetadataProvider mavenMetadataProvider;
+	final private org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig;
 	
-	public PomInlayHintHandler(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, MavenMetadataProvider mavenMetadataProvider) {
+	public PomInlayHintHandler(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, MavenMetadataProvider mavenMetadataProvider, org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig) {
 		this.projectFinder = projectFinder;
 		this.generationsProvider = generationsProvider;
 		this.mavenMetadataProvider = mavenMetadataProvider;
+		this.bootJavaConfig = bootJavaConfig;
 		
 		projectObserver.addListener(new ProjectObserver.Listener() {
 			
@@ -131,7 +134,7 @@ public class PomInlayHintHandler implements InlayHintHandler {
 			
 			try {
 				SortedVersions versions = null;
-				if (org.springframework.ide.vscode.commons.protocol.java.ProjectBuild.MAVEN_PROJECT_TYPE.equals(jp.getProjectBuild().getType())) {
+				if (bootJavaConfig.isUseProjectBuildFileForVersionValidation() && ProjectBuild.MAVEN_PROJECT_TYPE.equals(jp.getProjectBuild().getType())) {
 					try {
 						MavenMetadata metadata = mavenMetadataProvider.getMetadata(jp, "org.springframework.boot", "spring-boot");
 						if (metadata != null) {

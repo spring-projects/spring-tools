@@ -1407,6 +1407,11 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem-parameters.version-validation.use-project-build-file": {
+            "type": "boolean",
+            "default": true,
+            "description": "Use project build file for version validation"
           }
         }
       },

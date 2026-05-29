@@ -25,8 +25,8 @@ public class PomLanguageServerComponents implements LanguageServerComponents{
 	
 	private PomInlayHintHandler inlayHintHandler;
 	
-	public PomLanguageServerComponents(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider mavenMetadataProvider) {
-		this.inlayHintHandler = new PomInlayHintHandler(server, projectFinder, projectObserver, generationsProvider, mavenMetadataProvider);
+	public PomLanguageServerComponents(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider mavenMetadataProvider, org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig) {
+		this.inlayHintHandler = new PomInlayHintHandler(server, projectFinder, projectObserver, generationsProvider, mavenMetadataProvider, bootJavaConfig);
 	}
 
 	@Override

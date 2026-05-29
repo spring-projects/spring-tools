@@ -19,7 +19,7 @@ public class ProblemCategoryData {
 	private CategoryToggleData toggle;
 	private int order;
 	private ProblemTypeData[] problemTypes;
-	private org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData[] parameters;
+	private ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData[] parameters;
 	
 	ProblemCategoryData() {}
 
@@ -43,7 +43,7 @@ public class ProblemCategoryData {
 		return id;
 	}
 
-	public org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData[] getParameters() {
+	public ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData[] getParameters() {
 		return parameters;
 	}
 

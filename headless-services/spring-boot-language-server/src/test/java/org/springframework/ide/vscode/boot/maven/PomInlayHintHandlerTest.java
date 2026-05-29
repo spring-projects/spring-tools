@@ -10,9 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.maven;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -25,28 +25,28 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.ide.vscode.commons.java.IClasspath;
-import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.java.IProjectBuild;
-import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
-
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.InlayHint;
 import org.eclipse.lsp4j.InlayHintLabelPart;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.junit.jupiter.api.Test;
+import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
 import org.springframework.ide.vscode.boot.validation.generations.SpringProjectsProvider;
 import org.springframework.ide.vscode.boot.validation.generations.json.Generation;
 import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
 import org.springframework.ide.vscode.commons.Version;
+import org.springframework.ide.vscode.commons.java.IClasspath;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.IProjectBuild;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleTextDocumentService;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
+import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
@@ -82,7 +82,7 @@ public class PomInlayHintHandlerTest {
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 		
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		
@@ -128,7 +128,7 @@ public class PomInlayHintHandlerTest {
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 		
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
@@ -165,7 +165,7 @@ public class PomInlayHintHandlerTest {
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 		
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(1, hints.size());
@@ -222,7 +222,7 @@ public class PomInlayHintHandlerTest {
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 		
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
@@ -264,7 +264,7 @@ public class PomInlayHintHandlerTest {
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 		
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
@@ -306,7 +306,7 @@ public class PomInlayHintHandlerTest {
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 		
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
@@ -339,7 +339,7 @@ public class PomInlayHintHandlerTest {
 		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
 
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
@@ -368,7 +368,7 @@ public class PomInlayHintHandlerTest {
 		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
 
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());
@@ -403,7 +403,7 @@ public class PomInlayHintHandlerTest {
 		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
 		
 		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
-		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new org.springframework.ide.vscode.boot.app.BootJavaConfig(server));
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(server));
 		
 		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
 		assertEquals(0, hints.size());		

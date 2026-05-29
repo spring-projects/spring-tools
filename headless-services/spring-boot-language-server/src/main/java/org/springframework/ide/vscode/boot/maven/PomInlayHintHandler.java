@@ -33,6 +33,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
 import org.springframework.ide.vscode.boot.validation.generations.GenerationsValidator;
 import org.springframework.ide.vscode.boot.validation.generations.MavenMetadata;
@@ -63,9 +64,9 @@ public class PomInlayHintHandler implements InlayHintHandler {
 	final private JavaProjectFinder projectFinder;
 	final private SpringProjectsProvider generationsProvider;
 	final private MavenMetadataProvider mavenMetadataProvider;
-	final private org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig;
+	final private BootJavaConfig bootJavaConfig;
 	
-	public PomInlayHintHandler(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, MavenMetadataProvider mavenMetadataProvider, org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig) {
+	public PomInlayHintHandler(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
 		this.projectFinder = projectFinder;
 		this.generationsProvider = generationsProvider;
 		this.mavenMetadataProvider = mavenMetadataProvider;

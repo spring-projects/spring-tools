@@ -15,18 +15,17 @@ import java.util.List;
 
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.ComboFieldEditor;
+import org.eclipse.jface.preference.IntegerFieldEditor;
 import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.jface.preference.PreferenceNode;
+import org.eclipse.jface.preference.StringFieldEditor;
 import org.eclipse.ui.PlatformUI;
 import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferencesUtil;
 import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata;
 import org.springframework.tooling.boot.ls.BootLanguageServerPlugin;
 import org.springframework.tooling.boot.ls.prefs.ProblemCategoryData.CategoryToggleData;
-
-import org.eclipse.jface.preference.BooleanFieldEditor;
-import org.eclipse.jface.preference.IntegerFieldEditor;
-import org.eclipse.jface.preference.StringFieldEditor;
 
 import com.google.common.collect.ImmutableList;
 
@@ -63,7 +62,7 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 		}
 		if (category.getParameters() != null) {
 			IEclipsePreferences defaults = DefaultScope.INSTANCE.getNode(getPluginId());
-			for (org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData param : category.getParameters()) {
+			for (ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData param : category.getParameters()) {
 				defaults.put(getProblemParametersPreferencePrefix() + param.getKey(), param.getDefaultValue());
 			}
 		}
@@ -83,7 +82,7 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 			addField(field);
 		}
 		if (category.getParameters() != null) {
-			for (org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData param : category.getParameters()) {
+			for (ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData param : category.getParameters()) {
 				String prefKey = getProblemParametersPreferencePrefix() + param.getKey();
 				if ("boolean".equals(param.getType())) {
 					addField(new BooleanFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));

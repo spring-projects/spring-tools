@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,6 +21,7 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ShowDocumentParams;
+import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
 import org.springframework.ide.vscode.boot.validation.generations.preferences.VersionValidationProblemType;
@@ -40,9 +41,9 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 
 	private SpringProjectsProvider springProjectsProvider;
 	private MavenMetadataProvider mavenMetadataProvider;
-	private org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig;
+	private BootJavaConfig bootJavaConfig;
 
-	public UpdateBootVersion(DiagnosticSeverityProvider diagnosticSeverityProvider, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider springProjectsProvider, MavenMetadataProvider mavenMetadataProvider, org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig) {
+	public UpdateBootVersion(DiagnosticSeverityProvider diagnosticSeverityProvider, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider springProjectsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
 		super(diagnosticSeverityProvider);
 		this.bootUpgradeOpt = bootUpgradeOpt;
 		this.springProjectsProvider = springProjectsProvider;

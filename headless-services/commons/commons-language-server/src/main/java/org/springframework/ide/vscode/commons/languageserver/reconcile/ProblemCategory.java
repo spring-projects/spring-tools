@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,7 +28,7 @@ public final class ProblemCategory {
 	final private List<ProblemType> problemTypes = new ArrayList<>();;
 	
 	final private Toggle toggle;
-	final private java.util.List<ProblemTypeParameter> parameters = new java.util.ArrayList<>();
+	final private List<ProblemTypeParameter> parameters = new ArrayList<>();
 	
 	final public int order;
 		
@@ -36,7 +36,7 @@ public final class ProblemCategory {
 		this(id, label, toggle, null);
 	}
 
-	public ProblemCategory(String id, String label, Toggle toggle, java.util.List<ProblemTypeParameter> parameters) {
+	public ProblemCategory(String id, String label, Toggle toggle, List<ProblemTypeParameter> parameters) {
 		this.id = id;
 		this.label = label;
 		this.toggle = toggle;
@@ -58,7 +58,7 @@ public final class ProblemCategory {
 		return problemTypes;
 	}
 
-	public java.util.List<ProblemTypeParameter> getParameters() {
+	public List<ProblemTypeParameter> getParameters() {
 		return parameters;
 	}
 

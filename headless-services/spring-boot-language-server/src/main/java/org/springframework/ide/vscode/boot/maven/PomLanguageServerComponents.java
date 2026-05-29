@@ -13,6 +13,8 @@ package org.springframework.ide.vscode.boot.maven;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.ide.vscode.boot.app.BootJavaConfig;
+import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
 import org.springframework.ide.vscode.boot.validation.generations.SpringProjectsProvider;
 import org.springframework.ide.vscode.commons.languageserver.composable.LanguageServerComponents;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -25,7 +27,7 @@ public class PomLanguageServerComponents implements LanguageServerComponents{
 	
 	private PomInlayHintHandler inlayHintHandler;
 	
-	public PomLanguageServerComponents(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider mavenMetadataProvider, org.springframework.ide.vscode.boot.app.BootJavaConfig bootJavaConfig) {
+	public PomLanguageServerComponents(SimpleLanguageServer server, JavaProjectFinder projectFinder, ProjectObserver projectObserver, SpringProjectsProvider generationsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
 		this.inlayHintHandler = new PomInlayHintHandler(server, projectFinder, projectObserver, generationsProvider, mavenMetadataProvider, bootJavaConfig);
 	}
 

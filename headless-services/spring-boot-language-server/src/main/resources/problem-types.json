@@ -12,127 +12,109 @@
       "preferenceKey": "boot-java.validation.java.boot2",
       "defaultValue": "AUTO"
     },
-    "parameters": [],
     "order": 1,
     "problemTypes": [
       {
         "code": "PATH_IN_CONTROLLER_ANNOTATION",
         "label": "Controller annotation default attribute might contain a path",
         "description": "Controller annotation default attribute might contain a path",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_AUTOWIRED_CONSTRUCTOR",
         "label": "Unnecessary `@Autowired`",
         "description": "Unnecessary `@Autowired` over the only constructor",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_PUBLIC_BEAN_METHOD",
         "label": "public `@Bean` method",
         "description": "Public modifier on `@Bean` method. They no longer have to be public visibility to be usable by Spring.",
-        "defaultSeverity": "HINT",
-        "parameters": []
+        "defaultSeverity": "HINT"
       },
       {
         "code": "JAVA_TEST_SPRING_EXTENSION",
         "label": "Unnecessary `@SpringExtension`",
         "description": "`@SpringBootTest` and all test slice annotations already applies `@SpringExtension` as of Spring Boot 2.1.0.",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_CONSTRUCTOR_PARAMETER_INJECTION",
         "label": "Use constructor parameter injection",
         "description": "Use constructor parameter injection",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_PRECISE_REQUEST_MAPPING",
         "label": "Use precise mapping annotation, i.e. '@GetMapping', '@PostMapping', etc.",
         "description": "Use precise mapping annotation, i.e. '@GetMapping', '@PostMapping', etc.",
-        "defaultSeverity": "HINT",
-        "parameters": []
+        "defaultSeverity": "HINT"
       },
       {
         "code": "JAVA_REPOSITORY",
         "label": "Unnecessary `@Repository`",
         "description": "Unnecessary `@Repository`",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_LAMBDA_DSL",
         "label": "Switch to Lambda DSL syntax",
         "description": "Consider switching to Lambda DSL syntax",
-        "defaultSeverity": "INFO",
-        "parameters": []
+        "defaultSeverity": "INFO"
       },
       {
         "code": "MISSING_CONFIGURATION_ANNOTATION",
         "label": "Missing '@Configuration'",
         "description": "Class likely missing '@Configuration' annotation, i.e. has Bean methods but no '@Configuration' annotation",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "HTTP_SECURITY_AUTHORIZE_HTTP_REQUESTS",
         "label": "Usage of old 'HttpSecurity.authroizeRequests(...)' API",
         "description": "'HttpSecurity.authroizeRequests(...)' API and related classes are to be deprecated use new `authorizeHttpRequests(...) and related classes",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "WEB_SECURITY_CONFIGURER_ADAPTER",
         "label": "Replace usage of 'WebSecurityConfigurerAdapter' as this class to be removed in Security 6.x",
         "description": "'WebSecurityConfigurerAdapter' is removed in Spring-Security 6.x. Refactor classes extending the 'WebSecurityConfigurerAdapter' into 'Configuration' beans and methods into 'Bean' definitions ",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "DOMAIN_ID_FOR_REPOSITORY",
         "label": "Invalid Domain ID Type for Spring Data Repository",
         "description": "Invalid Domain ID type for Spring Data Repository",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "WEB_ANNOTATION_NAMES",
         "label": "Implicit web annotations names",
         "description": "Web annotation names are unnecessary when it is the same as method parameter name",
-        "defaultSeverity": "HINT",
-        "parameters": []
+        "defaultSeverity": "HINT"
       },
       {
         "code": "VALUE_CLASSPATH_RESOURCE_TYPE",
         "label": "Invalid type for classpath resource in `@Value`",
         "description": "Type is not compatible with classpath resource injection",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "WEB_CONFIGURER_CONFIGURATION",
         "label": "Missing '@Configuration' on web configurer",
         "description": "Class implementing a web configurer interface should be annotated with '@Configuration'",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "MISSING_VALIDATED_ANNOTATION",
         "label": "Missing '@Validated' on component",
         "description": "Component class using bean validation annotations should be annotated with '@Validated'",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_FINAL_AUTOWIRED_FIELD",
         "label": "`final` `@Autowired` field",
         "description": "`@Autowired` field should not be `final`",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       }
     ]
   },
@@ -149,29 +131,25 @@
       "preferenceKey": "boot-java.validation.java.boot3",
       "defaultValue": "AUTO"
     },
-    "parameters": [],
     "order": 2,
     "problemTypes": [
       {
         "code": "JAVA_TYPE_NOT_SUPPORTED",
         "label": "Type not supported as of Spring Boot 3",
         "description": "Type no supported as of Spring Boot 3",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "FACTORIES_KEY_NOT_SUPPORTED",
         "label": "Spring factories key not supported",
         "description": "Spring factories key not supported",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "MODULITH_TYPE_REF_VIOLATION",
         "label": "Modulith restricted type reference",
         "description": "Modulith restricted type reference",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       }
     ]
   },
@@ -188,57 +166,49 @@
       "preferenceKey": "boot-java.validation.java.boot4",
       "defaultValue": "AUTO"
     },
-    "parameters": [],
     "order": 3,
     "problemTypes": [
       {
         "code": "REGISTRAR_BEAN_INVALID_ANNOTATION",
         "label": "Invalid annotation over bean registrar",
         "description": "Bean Registrar cannot be registered as a bean via `@Component` annotations",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "REGISTRAR_BEAN_DECLARATION",
         "label": "Not added to configuration via `@Import`",
         "description": "Bean Registrar should be added to a configuration bean via `@Import`",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "API_VERSIONING_NOT_CONFIGURED",
         "label": "API Versioning not configured anywhere",
         "description": "API Versioning used but not configured anywhere",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "API_VERSION_SYNTAX_ERROR",
         "label": "API version cannot be parsed into a standard semantic version",
         "description": "API version cannot be parsed into a standard semantic version",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION",
         "label": "API versioninig path segment strategy should not be mixed with other strategies",
         "description": "API versioninig path segment strategy should not be mixed with other strategies",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED",
         "label": "API versioninig strategy is configured multiple times with the same strategy",
         "description": "API versioninig strategy is configured multiple times with the same strategy",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "SPRING_DATA_STRING_PROPERTY_REFERENCE",
         "label": "Non type-safe property reference",
         "description": "Non type-safe String-based property reference for a Spring Data domain type",
-        "defaultSeverity": "INFO",
-        "parameters": []
+        "defaultSeverity": "INFO"
       }
     ]
   },
@@ -254,213 +224,183 @@
       "preferenceKey": "boot-java.validation.java.spring-aot",
       "defaultValue": "OFF"
     },
-    "parameters": [],
     "order": 4,
     "problemTypes": [
       {
         "code": "JAVA_CONCRETE_BEAN_TYPE",
         "label": "Not precise bean defintion type",
         "description": "Bean definition should have precise type",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_BEAN_POST_PROCESSOR_IGNORED_IN_AOT",
         "label": "'BeanPostProcessor' behaviour is ignored in AOT",
         "description": "'BeanPostProcessor' behaviour is ignored",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "JAVA_BEAN_NOT_REGISTERED_IN_AOT",
         "label": "Not registered as a Bean",
         "description": "Not registered as Bean",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       }
     ]
   },
   {
     "id": "application-properties",
     "label": "Property Config Files",
-    "parameters": [],
     "order": 5,
     "problemTypes": [
       {
         "code": "PROP_INVALID_BEAN_NAVIGATION",
         "label": "Invalid bean navigation",
         "description": "Accessing a 'bean property' in a type that doesn't have properties (e.g. like String or Integer)",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_INVALID_INDEXED_NAVIGATION",
         "label": "Invalid indexed navigation",
         "description": "Accessing a property using [] in a type that doesn't support that",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_EXPECTED_DOT_OR_LBRACK",
         "label": "Expected dot or lbrack",
         "description": "Unexpected character found where a '.' or '[' was expected",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_NO_MATCHING_RBRACK",
         "label": "No matching rbrack",
         "description": "Found a '[' but no matching ']'",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_NON_INTEGER_IN_BRACKETS",
         "label": "Non integer in brackets",
         "description": "Use of [..] navigation with non-integer value",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_VALUE_TYPE_MISMATCH",
         "label": "Value type mismatch",
         "description": "Expecting a value of a certain type, but value doesn't parse as such",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_INVALID_BEAN_PROPERTY",
         "label": "Invalid bean property",
         "description": "Accessing a named property in a type that doesn't provide a property accessor with that name",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_UNKNOWN_PROPERTY",
         "label": "Unknown property",
         "description": "Property-key not found in any configuration metadata on the project's classpath",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "PROP_DEPRECATED",
         "label": "Deprecated",
         "description": "Property is marked as Deprecated",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "PROP_DUPLICATE_KEY",
         "label": "Duplicate key",
         "description": "Multiple assignments to the same property value",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROP_SYNTAX_ERROR",
         "label": "Syntax error",
         "description": "Syntax Error",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       }
     ]
   },
   {
     "id": "application-yaml",
     "label": "YAML Config Files",
-    "parameters": [],
     "order": 6,
     "problemTypes": [
       {
         "code": "YAML_SYNTAX_ERROR",
         "label": "Syntax error",
         "description": "Error parsing the input using snakeyaml",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_UNKNOWN_PROPERTY",
         "label": "Unknown property",
         "description": "Property-key not found in the configuration metadata on the project's classpath",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "YAML_VALUE_TYPE_MISMATCH",
         "label": "Value type mismatch",
         "description": "Expecting a value of a certain type, but value doesn't parse as such",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_EXPECT_SCALAR",
         "label": "Expect scalar",
         "description": "Expecting a 'scalar' value but found something more complex.",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_EXPECT_TYPE_FOUND_SEQUENCE",
         "label": "Expect type found sequence",
         "description": "Found a 'sequence' node where a non 'list-like' type is expected",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_EXPECT_TYPE_FOUND_MAPPING",
         "label": "Expect type found mapping",
         "description": "Found a 'mapping' node where a type that can't be treated as a 'property map' is expected",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_EXPECT_MAPPING",
         "label": "Expect mapping",
         "description": "Expecting a 'mapping' node but found something else",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_EXPECT_BEAN_PROPERTY_NAME",
         "label": "Expect bean property name",
         "description": "Expecting a 'bean property' name but found something more complex",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_INVALID_BEAN_PROPERTY",
         "label": "Invalid bean property",
         "description": "Accessing a named property in a type that doesn't provide a property accessor with that name",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_DEPRECATED_ERROR",
         "label": "Deprecated error",
         "description": "Property is marked as Deprecated(Error)",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_DEPRECATED_WARNING",
         "label": "Deprecated warning",
         "description": "Property is marked as Deprecated(Warning)",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "YAML_DUPLICATE_KEY",
         "label": "Duplicate key",
         "description": "A mapping node contains multiple entries for the same key",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "YAML_SHOULD_ESCAPE",
         "label": "Should escape",
         "description": "This key contains special characters and should probably be escaped by surrounding it with '[]'",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       }
     ]
   },
@@ -476,22 +416,19 @@
       "preferenceKey": "boot-java.validation.spel.on",
       "defaultValue": "ON"
     },
-    "parameters": [],
     "order": 7,
     "problemTypes": [
       {
         "code": "JAVA_SPEL_EXPRESSION_SYNTAX",
         "label": "SpEL Expression Syntax",
         "description": "SpEL parser raised a ParseException",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "PROPERTY_PLACE_HOLDER_SYNTAX",
         "label": "Property Place Holder Syntax",
         "description": "Property place holder raised a ParseException",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       }
     ]
   },
@@ -522,57 +459,49 @@
         "code": "SUPPORTED_OSS_VERSION",
         "label": "Supported OSS Boot Version",
         "description": "Supported OSS Boot Version",
-        "defaultSeverity": "IGNORE",
-        "parameters": []
+        "defaultSeverity": "IGNORE"
       },
       {
         "code": "UNSUPPORTED_OSS_VERSION",
         "label": "Unsupported OSS Version",
         "description": "Unsupported OSS Version",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "UNSUPPORTED_COMMERCIAL_VERSION",
         "label": "Unsupported Commercial Version",
         "description": "Unsupported Commercial Version",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "SUPPORTED_COMMERCIAL_VERSION",
         "label": "Supported Commercial Version",
         "description": "Supported Commercial Version",
-        "defaultSeverity": "IGNORE",
-        "parameters": []
+        "defaultSeverity": "IGNORE"
       },
       {
         "code": "UPDATE_LATEST_MAJOR_VERSION",
         "label": "Update to Latest Major Version",
         "description": "Update to Latest Major Version",
-        "defaultSeverity": "IGNORE",
-        "parameters": []
+        "defaultSeverity": "IGNORE"
       },
       {
         "code": "UPDATE_LATEST_MINOR_VERSION",
         "label": "Update to Latest Minor Version",
         "description": "Update to Latest Minor Version",
-        "defaultSeverity": "INFO",
-        "parameters": []
+        "defaultSeverity": "INFO"
       },
       {
         "code": "UPDATE_LATEST_PATCH_VERSION",
         "label": "Update to Latest Patch Version",
         "description": "Update to Latest Patch Version",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "SPRING_CLOUD_INCOMPATIBLE_BOOT_VERSION",
         "label": "Incompatible Spring Boot Version for Spring Cloud",
         "description": "Incompatible Spring Boot Version for Spring Cloud",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       }
     ]
   },
@@ -588,29 +517,25 @@
       "preferenceKey": "boot-java.validation.data-query",
       "defaultValue": "ON"
     },
-    "parameters": [],
     "order": 9,
     "problemTypes": [
       {
         "code": "JPQL_SYNTAX",
         "label": "JPQL Query Syntax",
         "description": "Syntax",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "HQL_SYNTAX",
         "label": "HQL Query Syntax",
         "description": "Syntax",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "SQL_SYNTAX",
         "label": "SQL Query Syntax",
         "description": "Syntax",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       }
     ]
   },
@@ -626,22 +551,19 @@
       "preferenceKey": "boot-java.validation.cron",
       "defaultValue": "ON"
     },
-    "parameters": [],
     "order": 10,
     "problemTypes": [
       {
         "code": "SYNTAX",
         "label": "Cron Expression Syntax",
         "description": "Syntax",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       },
       {
         "code": "FIELD",
         "label": "Cron Expression field",
         "description": "Field",
-        "defaultSeverity": "ERROR",
-        "parameters": []
+        "defaultSeverity": "ERROR"
       }
     ]
   },
@@ -657,15 +579,13 @@
       "preferenceKey": "boot-java.validation.spring-ai",
       "defaultValue": "ON"
     },
-    "parameters": [],
     "order": 11,
     "problemTypes": [
       {
         "code": "SPRING_AI_TOOL_MISSING_DESCRIPTION",
         "label": "Missing @Tool description",
         "description": "Spring AI tool/prompt/resource is missing a description. Descriptions are critical for the LLM to correctly select and invoke the tool.",
-        "defaultSeverity": "WARNING",
-        "parameters": []
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT",

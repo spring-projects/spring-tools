@@ -10,8 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.commons.languageserver.reconcile;
 
-import java.util.List;
-
 /**
  * Optional configuration for a {@link ProblemType}, surfaced in client settings and
  * {@code problem-types.json} metadata.
@@ -58,7 +56,4 @@ public final class ProblemTypeParameter {
 		return defaultValue;
 	}
 
-	public static List<ProblemTypeParameter> none() {
-		return List.of();
-	}
 }

@@ -28,7 +28,7 @@ public final class ProblemCategory {
 	final private List<ProblemType> problemTypes = new ArrayList<>();;
 	
 	final private Toggle toggle;
-	final private List<ProblemTypeParameter> parameters = new ArrayList<>();
+	private List<ProblemTypeParameter> parameters;
 	
 	final public int order;
 		
@@ -41,7 +41,7 @@ public final class ProblemCategory {
 		this.label = label;
 		this.toggle = toggle;
 		if (parameters != null) {
-			this.parameters.addAll(parameters);
+			this.parameters = new ArrayList<>(parameters);
 		}
 		this.order = counter.getAndIncrement();
 	}

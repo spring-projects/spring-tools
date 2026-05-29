@@ -129,7 +129,9 @@ public class ProblemTypesToJson {
 			this.description = type.getDescription();
 			this.defaultSeverity =type.getDefaultSeverity().name();
 			this.label = type.getLabel();
-			this.parameters = type.getParameters().stream().map(ProblemTypeParameterData::new).collect(Collectors.toList());
+			if (type.getParameters() != null) {
+				this.parameters = type.getParameters().stream().map(ProblemTypeParameterData::new).collect(Collectors.toList());
+			}
 		}
 		
 		public ProblemTypeData(String defaultSeverity) {
@@ -189,7 +191,9 @@ public class ProblemTypesToJson {
 			this.toggle = category.getToggle();
 			this.order = category.order;
 			this.problemTypes = problemTypes.stream().map(ProblemTypeData::new).collect(Collectors.toList());
-			this.parameters = category.getParameters().stream().map(ProblemTypeParameterData::new).collect(Collectors.toList());
+			if (category.getParameters() != null) {
+				this.parameters = category.getParameters().stream().map(ProblemTypeParameterData::new).collect(Collectors.toList());
+			}
 		}
 		
 		ProblemCategoryData(ProblemCategory category) {

@@ -62,7 +62,7 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 		}
 		if (category.getParameters() != null) {
 			IEclipsePreferences defaults = DefaultScope.INSTANCE.getNode(getPluginId());
-			for (ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData param : category.getParameters()) {
+			for (ProblemParameterData param : category.getParameters()) {
 				defaults.put(getProblemParametersPreferencePrefix() + param.getKey(), param.getDefaultValue());
 			}
 		}
@@ -82,7 +82,7 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 			addField(field);
 		}
 		if (category.getParameters() != null) {
-			for (ProblemSeverityPreferityPageFromMetadata.ProblemTypeParameterData param : category.getParameters()) {
+			for (ProblemParameterData param : category.getParameters()) {
 				String prefKey = getProblemParametersPreferencePrefix() + param.getKey();
 				if ("boolean".equals(param.getType())) {
 					addField(new BooleanFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));

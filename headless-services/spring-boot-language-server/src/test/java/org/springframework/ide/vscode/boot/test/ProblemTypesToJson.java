@@ -320,8 +320,8 @@ public class ProblemTypesToJson {
 		if (md == null) {
 			md = Collections.emptyList();
 		}
-		assertEquals(actual.getParameters().size(), md.size(), "parameter count for " + actual.getCode());
-		List<ProblemTypeParameter> ap = new ArrayList<>(actual.getParameters());
+		List<ProblemTypeParameter> ap = actual.getParameters() == null ? Collections.emptyList() : new ArrayList<>(actual.getParameters());
+		assertEquals(ap.size(), md.size(), "parameter count for " + actual.getCode());
 		ap.sort(Comparator.comparing(ProblemTypeParameter::getKey));
 		List<ProblemTypeParameterData> mdSorted = new ArrayList<>(md);
 		mdSorted.sort(Comparator.comparing(ProblemTypeParameterData::getKey));

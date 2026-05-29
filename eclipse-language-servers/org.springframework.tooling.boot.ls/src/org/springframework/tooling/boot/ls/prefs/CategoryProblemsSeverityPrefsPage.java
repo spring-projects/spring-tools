@@ -15,9 +15,12 @@ import java.util.List;
 
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.ComboFieldEditor;
+import org.eclipse.jface.preference.IntegerFieldEditor;
 import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.jface.preference.PreferenceNode;
+import org.eclipse.jface.preference.StringFieldEditor;
 import org.eclipse.ui.PlatformUI;
 import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferencesUtil;
 import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata;
@@ -57,6 +60,12 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 			defaults.put(PREF_KEY_PREFIX + category.getToggle().getPreferenceKey(), category.getToggle().getDefaultValue());
 
 		}
+		if (category.getParameters() != null) {
+			IEclipsePreferences defaults = DefaultScope.INSTANCE.getNode(getPluginId());
+			for (ProblemParameterData param : category.getParameters()) {
+				defaults.put(getProblemParametersPreferencePrefix() + param.getKey(), param.getDefaultValue());
+			}
+		}
 		super.initializeDefaults();		
 	}
 	
@@ -71,6 +80,18 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 					getFieldEditorParent()
 			);
 			addField(field);
+		}
+		if (category.getParameters() != null) {
+			for (ProblemParameterData param : category.getParameters()) {
+				String prefKey = getProblemParametersPreferencePrefix() + param.getKey();
+				if ("boolean".equals(param.getType())) {
+					addField(new BooleanFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));
+				} else if ("integer".equals(param.getType())) {
+					addField(new IntegerFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));
+				} else {
+					addField(new StringFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));
+				}
+			}
 		}
 		super.createFieldEditors();
 	}

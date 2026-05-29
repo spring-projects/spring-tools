@@ -40,6 +40,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.ResponseMessage;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.Bundle;
+import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata;
 import org.springframework.tooling.boot.ls.prefs.CategoryProblemsSeverityPrefsPage;
 import org.springframework.tooling.boot.ls.prefs.FileListEditor;
 import org.springframework.tooling.boot.ls.prefs.ProblemCategoryData;
@@ -328,6 +329,15 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		try {
 			IEclipsePreferences prefs = BootLanguageServerPlugin.getPreferences();
 			for (ProblemCategoryData category : CategoryProblemsSeverityPrefsPage.ALL_PROBLEM_CATEGORIES) {
+				if (category.getParameters() != null) {
+					for (ProblemSeverityPreferityPageFromMetadata.ProblemParameterData param : category.getParameters()) {
+						String prefKey = "problem-parameters." + category.getId() + "." + param.getKey();
+						String val = prefs.get(prefKey, null);
+						if (val != null) {
+							dotPut(settings, "spring-boot.ls." + prefKey, val);
+						}
+					}
+				}
 				if (category.getToggle() != null) {
 					CategoryToggleData toggle = category.getToggle();
 					String val = prefs.get(toggle.getPreferenceKey(), null);

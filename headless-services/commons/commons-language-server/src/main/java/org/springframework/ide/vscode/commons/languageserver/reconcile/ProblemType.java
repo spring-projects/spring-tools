@@ -40,6 +40,6 @@ public interface ProblemType {
 	 * {@code spring-boot.ls.problem-parameters.&lt;category&gt;.&lt;code&gt;.&lt;key&gt;} in LSP settings.
 	 */
 	default List<ProblemTypeParameter> getParameters() {
-		return ProblemTypeParameter.none();
+		return null;
 	}
 }

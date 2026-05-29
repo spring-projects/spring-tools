@@ -26,7 +26,7 @@ public enum SpringAiProblemType implements ProblemType {
 	SPRING_AI_TOOL_MISSING_DESCRIPTION(WARNING,
 			"Spring AI tool/prompt/resource is missing a description. Descriptions are critical for the LLM to correctly select and invoke the tool.",
 			"Missing @Tool description",
-			ProblemTypeParameter.none()),
+			null),
 
 	SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT(WARNING,
 			"Spring AI tool/prompt/resource description is too short. A meaningful description helps the LLM decide when and how to invoke the tool.",

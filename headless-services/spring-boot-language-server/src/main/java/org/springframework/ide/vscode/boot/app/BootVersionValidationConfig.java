@@ -45,8 +45,8 @@ public class BootVersionValidationConfig {
 		return new MavenMetadataProvider(server.getWorkspaceService().getFileObserver(), server.getProgressService());
 	}
 	
-	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider, MavenMetadataProvider mavenMetadataProvider) {
-		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider, mavenMetadataProvider);
+	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
+		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider, mavenMetadataProvider, bootJavaConfig);
 	}
 	
 	@Bean SpringIoProjectsProvider springProjectsProvider(SimpleLanguageServer server, BootJavaConfig config, RestTemplateFactory restTemplateFactory) {

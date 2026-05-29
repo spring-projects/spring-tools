@@ -137,6 +137,11 @@ public class BootJavaConfig implements InitializingBean {
 		return isProblemCategoryEnabled(categorySwitch);
 	}
 	
+	public boolean isUseProjectBuildFileForVersionValidation() {
+		Boolean enabled = settings.getBoolean("spring-boot", "ls", "problem-parameters", "version-validation", "use-project-build-file");
+		return enabled == null || enabled.booleanValue();
+	}
+
 	public boolean isBootVersionValidationEnabled() {
 		Toggle categorySwitch = SpringProblemCategories.VERSION_VALIDATION.getToggle();
 		return isProblemCategoryEnabled(categorySwitch);

@@ -14,6 +14,8 @@ import java.util.EnumSet;
 
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle;
+import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTypeParameter;
+import java.util.List;
 
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle.Option.*;
 
@@ -39,7 +41,8 @@ public class SpringProblemCategories {
 			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.spel.on"));
 	
 	public static final ProblemCategory VERSION_VALIDATION = new ProblemCategory("version-validation", "Versions and Support Ranges",
-			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.java.version-validation"));
+			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.java.version-validation"),
+			List.of(new ProblemTypeParameter("use-project-build-file", "Use project build file for version validation", "Use project build file for version validation", ProblemTypeParameter.ValueType.BOOLEAN, "true")));
 
 	public static final ProblemCategory DATA_QUERY = new ProblemCategory("data-query", "Data Queries",
 			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.data-query"));

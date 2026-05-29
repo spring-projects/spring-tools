@@ -444,6 +444,15 @@
       "preferenceKey": "boot-java.validation.java.version-validation",
       "defaultValue": "ON"
     },
+    "parameters": [
+      {
+        "key": "use-project-build-file",
+        "label": "Use project build file for version validation",
+        "description": "Use project build file for version validation",
+        "type": "boolean",
+        "defaultValue": "true"
+      }
+    ],
     "order": 8,
     "problemTypes": [
       {

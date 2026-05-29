@@ -50,9 +50,11 @@ public class ProblemParameterProvider {
 		if (v != null) {
 			return v;
 		}
-		for (ProblemTypeParameter p : problem.getParameters()) {
-			if (paramKey.equals(p.getKey()) && p.getType() == ValueType.INTEGER) {
-				return Integer.parseInt(p.getDefaultValue());
+		if (problem.getParameters() != null) {
+			for (ProblemTypeParameter p : problem.getParameters()) {
+				if (paramKey.equals(p.getKey()) && p.getType() == ValueType.INTEGER) {
+					return Integer.parseInt(p.getDefaultValue());
+				}
 			}
 		}
 		throw new IllegalStateException("No integer parameter '" + paramKey + "' for " + problem.getCode());

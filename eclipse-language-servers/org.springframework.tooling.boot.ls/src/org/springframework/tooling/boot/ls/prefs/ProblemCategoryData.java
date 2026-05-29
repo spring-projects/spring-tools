@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.tooling.boot.ls.prefs;
 
+import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata.ProblemParameterData;
 import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata.ProblemTypeData;
 
 public class ProblemCategoryData {
@@ -19,6 +20,7 @@ public class ProblemCategoryData {
 	private CategoryToggleData toggle;
 	private int order;
 	private ProblemTypeData[] problemTypes;
+	private ProblemParameterData[] parameters;
 	
 	ProblemCategoryData() {}
 
@@ -40,6 +42,10 @@ public class ProblemCategoryData {
 	
 	public String getId() {
 		return id;
+	}
+
+	public ProblemParameterData[] getParameters() {
+		return parameters;
 	}
 
 	public ProblemTypeData[] getProblemTypes() {

@@ -42,7 +42,7 @@ public class SpringProblemCategories {
 	
 	public static final ProblemCategory VERSION_VALIDATION = new ProblemCategory("version-validation", "Versions and Support Ranges",
 			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.java.version-validation"),
-			List.of(new ProblemTypeParameter("use-project-build-file", "Use project build file for version validation", "Use project build file for version validation", ProblemTypeParameter.ValueType.BOOLEAN, "true")));
+			List.of(new ProblemTypeParameter("use-project-build-file", "Check project repositories for available versions", "When enabled, uses the Maven repositories configured in the project build file to look up available Spring Boot versions. Falls back to spring.io if the repositories cannot be queried.", ProblemTypeParameter.ValueType.BOOLEAN, "true")));
 
 	public static final ProblemCategory DATA_QUERY = new ProblemCategory("data-query", "Data Queries",
 			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.data-query"));

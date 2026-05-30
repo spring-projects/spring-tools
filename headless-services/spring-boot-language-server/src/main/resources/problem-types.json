@@ -447,8 +447,8 @@
     "parameters": [
       {
         "key": "use-project-build-file",
-        "label": "Use project build file for version validation",
-        "description": "Use project build file for version validation",
+        "label": "Check project repositories for available versions",
+        "description": "When enabled, uses the Maven repositories configured in the project build file to look up available Spring Boot versions. Falls back to spring.io if the repositories cannot be queried.",
         "type": "boolean",
         "defaultValue": "true"
       }

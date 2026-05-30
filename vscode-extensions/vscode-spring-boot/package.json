@@ -1411,7 +1411,8 @@
           "spring-boot.ls.problem-parameters.version-validation.use-project-build-file": {
             "type": "boolean",
             "default": true,
-            "description": "Use project build file for version validation"
+            "description": "Check project repositories for available versions",
+            "markdownDescription": "Check project repositories for available versions - _(when enabled, uses the Maven repositories configured in the project build file to look up available Spring Boot versions. Falls back to spring.io if the repositories cannot be queried.)_"
           }
         }
       },

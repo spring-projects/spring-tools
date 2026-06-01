@@ -114,7 +114,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 		this.lookupEnvCache = CacheBuilder.newBuilder().removalListener(new RemovalListener<URI, Tuple2<List<Classpath>, INameEnvironmentWithProgress>>() {
 			@Override
 			public void onRemoval(RemovalNotification<URI, Tuple2<List<Classpath>, INameEnvironmentWithProgress>> notification) {
-				logger.info("Removing and cleaning up name env for project {}", notification.getKey());
+				logger.debug("Removing and cleaning up name env for project {}", notification.getKey());
 				notification.getValue().getT2().cleanup();
 			}
 			
@@ -213,7 +213,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 	 * for later use. The JDT ASTs are not thread safe!
 	 */
 	public <T> T withCompilationUnit(IJavaProject project, URI uri, Function<CompilationUnit, T> requestor) {
-		logger.info("CU Cache: work item submitted for doc {}", uri.toASCIIString());
+		logger.debug("CU Cache: work item submitted for doc {}", uri.toASCIIString());
 
 		if (project != null) {
 			try {
@@ -235,10 +235,10 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 					ReadLock lock = environmentCacheLock.readLock();
 					lock.lock();
 					try {
-						logger.info("CU Cache: start work on AST for {}", uri.toString());
+						logger.debug("CU Cache: start work on AST for {}", uri.toString());
 						return requestor.apply(cu);
 					} finally {
-						logger.info("CU Cache: end work on AST for {}", uri.toString());
+						logger.debug("CU Cache: end work on AST for {}", uri.toString());
 						lock.unlock();
 					}
 
@@ -261,7 +261,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 			cuFuture = CompletableFuture.supplyAsync(() -> {
 				ReadLock lock = environmentCacheLock.readLock();
 				lock.lock();
-				logger.info("Started parsing CU for " + uri);
+				logger.debug("Started parsing CU for " + uri);
 				
 				try {
 					Tuple2<List<Classpath>, INameEnvironmentWithProgress> lookupEnvTuple = loadLookupEnvTuple(project);
@@ -270,13 +270,13 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 					CompilationUnit cUnit = parse2(fetchContent(uri).toCharArray(), uriStr, unitName, lookupEnvTuple.getT1(), lookupEnvTuple.getT2(),
 							annotationHierarchies.get(project.getLocationUri(), AnnotationHierarchies::new));
 					logger.debug("CU Cache: created new AST for {}", uri.toASCIIString());
-					logger.info("Parsed successfully CU for " + uri);
+					logger.debug("Parsed successfully CU for " + uri);
 					return cUnit;
 				} catch (Throwable t) {
 					// Complete future exceptionally
 					throw new CompletionException(t);
 				} finally {
-					logger.info("Finished parsing CU for {}", uri);
+					logger.debug("Finished parsing CU for {}", uri);
 					lock.unlock();
 				}
 			}, createCuExecutorThreadPool);
@@ -353,7 +353,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 	private Tuple2<List<Classpath>, INameEnvironmentWithProgress> loadLookupEnvTuple(IJavaProject project) {
 		try {
 			return lookupEnvCache.get(project.getLocationUri(), () -> {
-				logger.info("Creating name env for project '{}'", project.getElementName());
+				logger.debug("Creating name env for project '{}'", project.getElementName());
 				List<Classpath> classpaths = createClasspath(getClasspathEntries(project));
 				INameEnvironmentWithProgress environment = CUResolver.createLookupEnvironment(classpaths.toArray(new Classpath[classpaths.size()]));
 				return Tuples.of(classpaths, environment);
@@ -377,7 +377,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 	}
 
 	private synchronized void invalidateCuForJavaFile(String uriStr) {
-		logger.info("Invalidate AST for {}", uriStr);
+		logger.debug("Invalidate AST for {}", uriStr);
 
 		URI uri = URI.create(uriStr);
 		uriToCu.invalidate(uri);

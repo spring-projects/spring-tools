@@ -18,7 +18,7 @@ import java.util.List;
  * @author Alex Boyko
  *
  */
-public class CompositeProjectOvserver implements ProjectObserver {
+public class CompositeProjectOvserver implements ProjectObserver, ProjectChangeNotifier {
 	
 	private List<ProjectObserver> observers;
 	
@@ -39,6 +39,15 @@ public class CompositeProjectOvserver implements ProjectObserver {
 	@Override
 	public boolean isSupported() {
 		return observers.stream().map(o -> o.isSupported()).reduce(false, (a, b) -> a || b);
+	}
+
+	@Override
+	public void notifyProjectsChanged() {
+		for (ProjectObserver o : observers) {
+			if (o instanceof ProjectChangeNotifier) {
+				((ProjectChangeNotifier) o).notifyProjectsChanged();
+			}
+		}
 	}
 
 }

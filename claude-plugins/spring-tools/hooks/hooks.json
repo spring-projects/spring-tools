@@ -1,0 +1,53 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|StrReplace|Edit|Replace",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:spring-tools:spring-tools-mcp",
+            "tool": "fileChanged",
+            "input": {
+              "filePath": "${tool_input.file_path}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "Delete",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:spring-tools:spring-tools-mcp",
+            "tool": "fileDeleted",
+            "input": {
+              "filePath": "${tool_input.file_path}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "if": "Bash(git *)",
+            "server": "plugin:spring-tools:spring-tools-mcp",
+            "tool": "refreshWorkspace",
+            "input": {}
+          }
+        ]
+      },
+      {
+        "matcher": "Write|StrReplace|Delete|Edit|Replace",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"=== PostToolUse Hook Fired ===\" >> hook-debug.log && cat >> hook-debug.log && echo \"\" >> hook-debug.log"
+          }
+        ]
+      }
+    ]
+  }
+}

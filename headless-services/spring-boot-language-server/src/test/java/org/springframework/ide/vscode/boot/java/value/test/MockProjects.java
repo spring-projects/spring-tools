@@ -43,6 +43,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserve
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 import org.springframework.ide.vscode.commons.protocol.java.Jre;
+import org.springframework.ide.vscode.commons.util.FileChangeNotifier;
 import org.springframework.ide.vscode.commons.util.FileObserver;
 import org.springframework.ide.vscode.commons.util.IOUtil;
 
@@ -199,7 +200,7 @@ public class MockProjects {
 		}
 	}
 
-	public class MockProjectObserver implements ProjectObserver {
+	public class MockProjectObserver implements ProjectObserver, org.springframework.ide.vscode.commons.languageserver.java.ProjectChangeNotifier {
 
 		public final LinkedHashSet<Listener> listeners = new LinkedHashSet<>();
 
@@ -211,6 +212,19 @@ public class MockProjects {
 		@Override
 		public void removeListener(Listener l) {
 			listeners.remove(l);
+		}
+
+		@Override
+		public void notifyProjectsChanged() {
+			synchronized (projectsByName) {
+				for (MockProject project : projectsByName.values()) {
+					synchronized (listeners) {
+						for (Listener l : listeners) {
+							l.changed(project);
+						}
+					}
+				}
+			}
 		}
 
 	}
@@ -248,7 +262,7 @@ public class MockProjects {
 		}
 	}
 
-	public class MockFileObserver implements FileObserver {
+	public class MockFileObserver implements FileObserver, FileChangeNotifier {
 
 		final AtomicLong idGen = new AtomicLong();
 
@@ -270,6 +284,21 @@ public class MockProjects {
 
 		public void fileCreated(File target) {
 			notify(create_listeners, target);
+		}
+
+		@Override
+		public void notifyFileCreated(String uri) {
+			try { fileCreated(new File(new URI(uri))); } catch (Exception e) {}
+		}
+
+		@Override
+		public void notifyFileChanged(String uri) {
+			try { fileChanged(new File(new URI(uri))); } catch (Exception e) {}
+		}
+
+		@Override
+		public void notifyFileDeleted(String uri) {
+			try { notify(delete_listeners, new File(new URI(uri))); } catch (Exception e) {}
 		}
 
 		private void notify(Map<String, FileListener> listeners, File target) {

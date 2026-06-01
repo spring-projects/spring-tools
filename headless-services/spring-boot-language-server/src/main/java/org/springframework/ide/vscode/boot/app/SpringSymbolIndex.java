@@ -255,11 +255,12 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			log.info("update settings of spring indexer - done");
 		});
 		
-		server.doOnInitialized(this::serverInitialized);
+//		server.doOnInitialized(this::registerFileListeners);
+		registerFileListeners();
 		server.onShutdown(this::shutdown);
 	}
 
-	public void serverInitialized() {
+	public void registerFileListeners() {
 		List<String> globPattern = Stream.concat(Arrays.stream(springIndexerJava.getFileWatchPatterns()), Arrays.stream(factoriesIndexer.getFileWatchPatterns()))
 				.collect(Collectors.toList());
 

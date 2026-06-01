@@ -8,10 +8,10 @@ You have encountered the Spring Boot diagnostic error code: `$ARGUMENTS[0]`.
 The problem is located in the file: `$ARGUMENTS[1]`.
 The text range of the problem is: `$ARGUMENTS[2]` (if provided).
 
+MUST DO: If the error code includes a prefix like `errorCode=` or `code=`, strip it out before you continue to use it anywhere.
+
 To find the official explanation and potential fixes for this issue, you must read the explanation file located at:
 `${CLAUDE_PLUGIN_ROOT}/explanations/$ARGUMENTS[0].md`
-
-(Note: If the error code includes a prefix like `errorCode=`, strip it out before forming the file path).
 
 If the file does not exist, use your general Spring Boot knowledge to fix the issue.
 

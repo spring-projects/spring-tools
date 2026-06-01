@@ -32,7 +32,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
  * @author Alex Boyko
  *
  */
-public class BasicFileObserver implements FileObserver {
+public class BasicFileObserver implements FileObserver, FileChangeNotifier {
 	
 	protected ConcurrentHashMap<String, ImmutablePair<List<PathMatcher>, Consumer<String[]>>> createRegistry = new ConcurrentHashMap<>(); 
 	protected ConcurrentHashMap<String, ImmutablePair<List<PathMatcher>, Consumer<String[]>>> deleteRegistry = new ConcurrentHashMap<>(); 

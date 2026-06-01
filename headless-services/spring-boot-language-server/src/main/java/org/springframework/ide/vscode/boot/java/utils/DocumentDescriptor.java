@@ -57,7 +57,7 @@ public class DocumentDescriptor {
 		try {
 			File file = new File(new URI(docUri));
 			long lastModified = file.lastModified();
-			return new DocumentDescriptor(file.getAbsolutePath(), docUri, lastModified);
+			return new DocumentDescriptor(file.getAbsolutePath(), UriUtil.toUri(file).toASCIIString(), lastModified);
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		}

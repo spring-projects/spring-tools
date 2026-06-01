@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.utils.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -23,13 +24,20 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
+import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -279,6 +287,175 @@ public class ASTUtilsTest {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	// -----------------------------------------------------------------------
+	// ASTUtils.bodyDeclarationAnchorOffset — method declaration cases
+	// -----------------------------------------------------------------------
+
+	@Test
+	void anchorIsReturnTypeWhenMethodHasJavadocButNoAnnotations() {
+		String source = """
+				package p;
+
+				import java.util.List;
+
+				public interface Repo {
+					/**
+					 * Some javadoc.
+					 */
+					List<String> findCustomers(String id);
+				}
+				""";
+		CompilationUnit cu = parseSource(source);
+		MethodDeclaration method = firstMethod(cu);
+		assertNotNull(method.getJavadoc());
+
+		int anchor = ASTUtils.bodyDeclarationAnchorOffset(method);
+		int javadocEnd = method.getJavadoc().getStartPosition() + method.getJavadoc().getLength();
+		assertTrue(anchor >= javadocEnd, "code lens start must be at or after the closing */");
+		assertEquals(method.getReturnType2().getStartPosition(), anchor);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void anchorIsFirstAnnotationWhenMethodJavadocPrecedesAnnotations() {
+		String source = """
+				package p;
+
+				import java.util.List;
+
+				public interface Repo {
+					/**
+					 * Some javadoc.
+					 */
+					@Deprecated
+					List<String> findCustomers(String id);
+				}
+				""";
+		CompilationUnit cu = parseSource(source);
+		MethodDeclaration method = firstMethod(cu);
+		assertNotNull(method.getJavadoc());
+
+		int anchor = ASTUtils.bodyDeclarationAnchorOffset(method);
+		int javadocEnd = method.getJavadoc().getStartPosition() + method.getJavadoc().getLength();
+		assertTrue(anchor >= javadocEnd, "code lens start must be at or after the closing */");
+
+		List<IExtendedModifier> modifiers = method.modifiers();
+		IExtendedModifier first = modifiers.get(0);
+		assertTrue(first instanceof ASTNode, "first modifier should be an AST node");
+		assertEquals(((ASTNode) first).getStartPosition(), anchor);
+	}
+
+	@Test
+	void anchorMatchesReturnTypeWhenMethodHasNoJavadoc() {
+		String source = """
+				package p;
+
+				import java.util.List;
+
+				public interface Repo {
+					List<String> findCustomers(String id);
+				}
+				""";
+		CompilationUnit cu = parseSource(source);
+		MethodDeclaration method = firstMethod(cu);
+		assertNull(method.getJavadoc());
+
+		int anchor = ASTUtils.bodyDeclarationAnchorOffset(method);
+		assertEquals(method.getReturnType2().getStartPosition(), anchor);
+	}
+
+	// -----------------------------------------------------------------------
+	// ASTUtils.bodyDeclarationAnchorOffset — type declaration cases
+	// -----------------------------------------------------------------------
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void typeAnchorIsFirstAnnotationWhenJavadocPrecedesAnnotations() {
+		String source = """
+				package p;
+
+				/**
+				 * Some javadoc.
+				 */
+				@SuppressWarnings("all")
+				public class MyController {
+				}
+				""";
+		CompilationUnit cu = parseSource(source);
+		TypeDeclaration type = (TypeDeclaration) cu.types().get(0);
+		assertNotNull(type.getJavadoc());
+
+		int anchor = ASTUtils.bodyDeclarationAnchorOffset(type);
+		int javadocEnd = type.getJavadoc().getStartPosition() + type.getJavadoc().getLength();
+		assertTrue(anchor >= javadocEnd, "code lens start must be at or after the closing */");
+
+		List<IExtendedModifier> modifiers = type.modifiers();
+		IExtendedModifier first = modifiers.get(0);
+		assertTrue(first instanceof ASTNode, "first modifier should be an AST node");
+		assertEquals(((ASTNode) first).getStartPosition(), anchor);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void typeAnchorIsFirstModifierKeywordWhenNoAnnotation() {
+		String source = """
+				package p;
+
+				/**
+				 * Some javadoc.
+				 */
+				public class MyController {
+				}
+				""";
+		CompilationUnit cu = parseSource(source);
+		TypeDeclaration type = (TypeDeclaration) cu.types().get(0);
+		assertNotNull(type.getJavadoc());
+
+		int anchor = ASTUtils.bodyDeclarationAnchorOffset(type);
+		int javadocEnd = type.getJavadoc().getStartPosition() + type.getJavadoc().getLength();
+		assertTrue(anchor >= javadocEnd, "code lens start must be at or after the closing */");
+
+		List<IExtendedModifier> modifiers = type.modifiers();
+		IExtendedModifier first = modifiers.get(0);
+		assertTrue(first instanceof ASTNode, "first modifier should be an AST node");
+		assertEquals(((ASTNode) first).getStartPosition(), anchor);
+	}
+
+	@Test
+	void typeAnchorFallsBackToTypeNameWhenNoModifiers() {
+		String source = """
+				package p;
+
+				class PackagePrivate {
+				}
+				""";
+		CompilationUnit cu = parseSource(source);
+		TypeDeclaration type = (TypeDeclaration) cu.types().get(0);
+		assertNull(type.getJavadoc());
+		assertTrue(type.modifiers().isEmpty());
+
+		int anchor = ASTUtils.bodyDeclarationAnchorOffset(type);
+		assertEquals(type.getName().getStartPosition(), anchor);
+	}
+
+	private static CompilationUnit parseSource(String source) {
+		ASTParser parser = ASTParser.newParser(AST.JLS25);
+		parser.setSource(source.toCharArray());
+		parser.setKind(ASTParser.K_COMPILATION_UNIT);
+		parser.setResolveBindings(false);
+		Map<String, String> options = JavaCore.getOptions();
+		JavaCore.setComplianceOptions(JavaCore.VERSION_21, options);
+		parser.setCompilerOptions(options);
+		return (CompilationUnit) parser.createAST(null);
+	}
+
+	private static MethodDeclaration firstMethod(CompilationUnit cu) {
+		TypeDeclaration type = (TypeDeclaration) cu.types().get(0);
+		MethodDeclaration[] methods = type.getMethods();
+		assertTrue(methods.length > 0, "fixture should declare at least one method");
+		return methods[0];
 	}
 
 }

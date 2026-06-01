@@ -35,6 +35,7 @@ import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CastExpression;
+import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ConditionalExpression;
 import org.eclipse.jdt.core.dom.Expression;
@@ -200,6 +201,32 @@ public class ASTUtils {
 			}
 		}
 		return oneFound;
+	}
+
+	/**
+	 * Returns the source offset to use as the start of a code-lens range for a
+	 * body declaration (method or type) so that clients render the lens between
+	 * any Javadoc comment and the first annotation / modifier — i.e. above
+	 * annotations but below Javadoc.
+	 *
+	 * <p>The LSP spec ties the visible position of a code-lens to the line on
+	 * which its range starts, so returning the offset of the first modifier
+	 * (annotation or keyword such as {@code public}) rather than the start of
+	 * the whole node (which includes Javadoc) achieves the desired placement.
+	 */
+	@SuppressWarnings("unchecked")
+	public static int bodyDeclarationAnchorOffset(BodyDeclaration node) {
+		List<IExtendedModifier> modifiers = node.modifiers();
+		if (!modifiers.isEmpty() && modifiers.get(0) instanceof ASTNode first) {
+			return first.getStartPosition();
+		}
+		if (node instanceof MethodDeclaration method && method.getReturnType2() != null) {
+			return method.getReturnType2().getStartPosition();
+		}
+		if (node instanceof AbstractTypeDeclaration type) {
+			return type.getName().getStartPosition();
+		}
+		return node.getStartPosition();
 	}
 
 	public static MethodDeclaration getAnnotatedMethod(Annotation annotation) {

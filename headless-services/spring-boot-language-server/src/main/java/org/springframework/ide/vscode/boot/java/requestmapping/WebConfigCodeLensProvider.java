@@ -22,9 +22,11 @@ import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
@@ -137,14 +139,16 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 			)
 		);
 		
-		// Range
+		// Range — start above the first annotation/modifier (not above Javadoc)
 		
 		SimpleName nameNode = node.getName();
 		if (nameNode == null) return null;
 		
-		Range range;
 		try {
-			range = doc.toRange(node.getStartPosition(), node.getLength());
+			int anchorOffset = ASTUtils.bodyDeclarationAnchorOffset(node);
+			Position startPos = doc.toPosition(anchorOffset);
+			Position endPos = doc.toPosition(nameNode.getStartPosition() + nameNode.getLength());
+			Range range = new Range(startPos, endPos);
 			return new CodeLens(range, command, null);
 
 		} catch (BadLocationException e) {

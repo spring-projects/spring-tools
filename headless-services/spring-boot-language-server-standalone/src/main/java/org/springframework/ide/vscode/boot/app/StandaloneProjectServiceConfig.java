@@ -27,7 +27,7 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
  */
 @Configuration(proxyBeanMethods = false)
 public class StandaloneProjectServiceConfig {
-
+	
 	@Bean
 	JavaProjectsService javaProjectsService(SimpleLanguageServer server) {
 		return new LegacyJavaProjectsService(server);

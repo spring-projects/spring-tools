@@ -29,6 +29,7 @@ import org.springframework.ide.vscode.commons.java.IJavadocProvider;
 import org.springframework.ide.vscode.commons.javadoc.JavaDocProviders;
 import org.springframework.ide.vscode.commons.languageserver.java.CompositeJavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.java.CompositeProjectOvserver;
+import org.springframework.ide.vscode.commons.languageserver.java.ProjectChangeNotifier;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.maven.MavenCore;
@@ -45,7 +46,7 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
  * Its presence on the classpath causes {@link BootLanguageServerBootApp} to skip creating
  * the JDT-LS-backed {@code JavaProjectsService} bean.
  */
-public class LegacyJavaProjectsService implements JavaProjectsService, ApplicationListener<ContextRefreshedEvent> {
+public class LegacyJavaProjectsService implements JavaProjectsService, ApplicationListener<ContextRefreshedEvent>, ProjectChangeNotifier {
 
 	private static final Logger log = LoggerFactory.getLogger(LegacyJavaProjectsService.class);
 
@@ -60,13 +61,13 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 
 	public LegacyJavaProjectsService(SimpleLanguageServer server) {
 		this.mavenProjectCache = new MavenProjectCache(server, MavenCore.getDefault(), false, null,
-				(uri, cpe) -> JavaDocProviders.createFor(cpe));
-		mavenProjectCache.setAlwaysFireEventOnFileChanged(true);
+					(uri, cpe) -> JavaDocProviders.createFor(cpe));
+		this.mavenProjectCache.setAlwaysFireEventOnFileChanged(true);
 
 		this.gradleProjectCache = new GradleProjectCache(server, GradleCore.getDefault(), false, null,
-				(uri, cpe) -> JavaDocProviders.createFor(cpe));
-		gradleProjectCache.setAlwaysFireEventOnFileChanged(true);
-
+					(uri, cpe) -> JavaDocProviders.createFor(cpe));
+		this.gradleProjectCache.setAlwaysFireEventOnFileChanged(true);
+		
 		this.projectFinder = new CompositeJavaProjectFinder();
 		projectFinder.addJavaProjectFinder(new MavenProjectFinder(mavenProjectCache));
 		projectFinder.addJavaProjectFinder(new GradleProjectFinder(gradleProjectCache));
@@ -99,6 +100,11 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 	@Override
 	public void removeListener(ProjectObserver.Listener listener) {
 		projectObserver.removeListener(listener);
+	}
+	
+	@Override
+	public void notifyProjectsChanged() {
+		this.projectObserver.notifyProjectsChanged();
 	}
 
 	@Override

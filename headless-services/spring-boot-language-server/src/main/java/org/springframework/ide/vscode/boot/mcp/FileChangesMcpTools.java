@@ -1,9 +1,17 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Broadcom
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Broadcom - initial API and implementation
+ *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
 import java.io.File;
 import java.net.URI;
-
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,16 +28,16 @@ import org.springframework.stereotype.Component;
  * This bridges the gap when running in MCP-only mode without full LSP file watching.
  */
 @Component
-//@ConditionalOnBean({FileChangeNotifier.class})
+@ConditionalOnBean({FileChangeNotifier.class})
 public class FileChangesMcpTools {
 
 	private static final Logger logger = LoggerFactory.getLogger(FileChangesMcpTools.class);
 
 	private final FileChangeNotifier fileChangeNotifier;
-	private final Optional<ProjectChangeNotifier> projectChangeNotifier;
+	private final ProjectChangeNotifier projectChangeNotifier;
 	private final SimpleLanguageServer server;
 
-	public FileChangesMcpTools(FileChangeNotifier fileChangeNotifier, Optional<ProjectChangeNotifier> projectChangeNotifier, SimpleLanguageServer server) {
+	public FileChangesMcpTools(FileChangeNotifier fileChangeNotifier, ProjectChangeNotifier projectChangeNotifier, SimpleLanguageServer server) {
 
 		logger.info("FileChangesMcpTools constructor called");
 
@@ -95,13 +103,7 @@ public class FileChangesMcpTools {
 			return;
 		}
 
-		projectChangeNotifier.ifPresent(notifier -> {
-			try {
-				notifier.notifyProjectsChanged();
-			} catch (Exception e) {
-				logger.error("Failed to notify workspace refresh", e);
-			}
-		});
+		projectChangeNotifier.notifyProjectsChanged();
 	}
 
 }

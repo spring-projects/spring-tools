@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +23,8 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
+import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider;
+import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider.DiagnosticResult;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.stereotype.Component;
@@ -39,10 +42,13 @@ public class DiagnosticsMcpTools {
 
 	private final JavaProjectFinder projectFinder;
 	private final SpringSymbolIndex symbolIndex;
+	private final ProjectVersionDiagnosticProvider versionDiagnosticProvider;
 
-	public DiagnosticsMcpTools(JavaProjectFinder projectFinder, SpringSymbolIndex symbolIndex) {
+	public DiagnosticsMcpTools(JavaProjectFinder projectFinder, SpringSymbolIndex symbolIndex,
+			ProjectVersionDiagnosticProvider versionDiagnosticProvider) {
 		this.projectFinder = projectFinder;
 		this.symbolIndex = symbolIndex;
+		this.versionDiagnosticProvider = versionDiagnosticProvider;
 	}
 
 	/**
@@ -87,11 +93,19 @@ public class DiagnosticsMcpTools {
 
 		IJavaProject project = getProject(projectName);
 
-		List<CachedDiagnostic> cached = symbolIndex.getJavaIndexer()
-				.getCacheHelper()
-				.getAllCachedDiagnostics(project);
+		List<ProjectDiagnostic> result = new ArrayList<>();
+		addIndexerDiagnostics(project, result);
+		addVersionValidationDiagnostics(project, result);
 
-		List<ProjectDiagnostic> result = cached.stream()
+		logger.info("found {} diagnostics for project: {}", result.size(), projectName);
+		return result;
+	}
+
+	private void addIndexerDiagnostics(IJavaProject project, List<ProjectDiagnostic> result) {
+		symbolIndex.getJavaIndexer()
+				.getCacheHelper()
+				.getAllCachedDiagnostics(project)
+				.stream()
 				.map(cd -> new ProjectDiagnostic(
 						cd.getDocURI(),
 						cd.getDiagnostic().getRange().getStart().getLine(),
@@ -103,10 +117,34 @@ public class DiagnosticsMcpTools {
 						extractCode(cd),
 						cd.getDiagnostic().getSource()
 				))
-				.toList();
+				.forEach(result::add);
+	}
 
-		logger.info("found {} diagnostics for project: {}", result.size(), projectName);
-		return result;
+	private void addVersionValidationDiagnostics(IJavaProject project, List<ProjectDiagnostic> result) {
+		try {
+			DiagnosticResult versionResult = versionDiagnosticProvider.getDiagnostics(project);
+			if (versionResult == null || versionResult.getDiagnostics().isEmpty()) {
+				return;
+			}
+			String buildFileUri = versionResult.getDocumentUri().toASCIIString();
+			versionResult.getDiagnostics().stream()
+					.map(d -> new ProjectDiagnostic(
+							buildFileUri,
+							d.getRange().getStart().getLine(),
+							d.getRange().getStart().getCharacter(),
+							d.getRange().getEnd().getLine(),
+							d.getRange().getEnd().getCharacter(),
+							severityToString(d.getSeverity()),
+							d.getMessage().isLeft() ? d.getMessage().getLeft()
+									: d.getMessage().getRight() != null ? d.getMessage().getRight().getValue() : null,
+							d.getCode() != null && d.getCode().isLeft() ? d.getCode().getLeft()
+									: d.getCode() != null && d.getCode().isRight() ? String.valueOf(d.getCode().getRight()) : null,
+							d.getSource()
+					))
+					.forEach(result::add);
+		} catch (Exception e) {
+			logger.warn("Failed to retrieve version validation diagnostics for project: {}", project.getElementName(), e);
+		}
 	}
 
 	private String severityToString(DiagnosticSeverity severity) {

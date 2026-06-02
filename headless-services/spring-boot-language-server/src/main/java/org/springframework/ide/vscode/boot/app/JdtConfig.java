@@ -39,6 +39,7 @@ import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSemanticTok
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSupportState;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.QueryJdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.handlers.Reconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ApplicationModuleListenerReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.AddConfigurationIfBeansPresentReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.AuthorizeHttpRequestsReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.AutowiredFieldIntoConstructorParameterReconciler;
@@ -151,6 +152,10 @@ public class JdtConfig {
 	
 	@Bean ModulithTypeReferenceViolationReconciler modulithTypeReferenceViolationReconciler() {
 		return new ModulithTypeReferenceViolationReconciler();
+	}
+
+	@Bean ApplicationModuleListenerReconciler applicationModuleListenerReconciler(SimpleLanguageServer server) {
+		return new ApplicationModuleListenerReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Bean NoRepoAnnotationReconciler noRepoAnnotationReconciler(SimpleLanguageServer server) {

@@ -17,13 +17,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ide.vscode.boot.validation.generations.MavenMetadata;
+import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
+import org.springframework.ide.vscode.boot.validation.generations.SortedVersions;
 import org.springframework.ide.vscode.boot.validation.generations.SpringProjectsProvider;
 import org.springframework.ide.vscode.boot.validation.generations.json.Generation;
 import org.springframework.ide.vscode.boot.validation.generations.json.Release;
 import org.springframework.ide.vscode.boot.validation.generations.json.Release.Status;
 import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
 import org.springframework.ide.vscode.commons.Version;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,9 +40,13 @@ public class SpringVersionsAndGenerations {
 	private static final Logger log = LoggerFactory.getLogger(SpringVersionsAndGenerations.class);
 
 	private final SpringProjectsProvider provider;
+	private final MavenMetadataProvider mavenMetadataProvider;
+	private final JavaProjectFinder projectFinder;
 
-	public SpringVersionsAndGenerations(SpringProjectsProvider provider) {
+	public SpringVersionsAndGenerations(SpringProjectsProvider provider, MavenMetadataProvider mavenMetadataProvider, JavaProjectFinder projectFinder) {
 		this.provider = provider;
+		this.mavenMetadataProvider = mavenMetadataProvider;
+		this.projectFinder = projectFinder;
 	}
 
 	public record ReleaseInformation(String projectName, String version, String endOfOssSupport, String endOfCommercialSupport) {}
@@ -86,6 +95,57 @@ public class SpringVersionsAndGenerations {
 		}
 		
 		return null;
+	}
+
+	public record BootVersionsFromMavenRepo(
+			String currentVersion,
+			String latestPatchVersion,
+			String latestMinorVersion,
+			String latestMajorVersion) {}
+
+	@Tool(description = """
+			Returns the latest available Spring Boot versions from the Maven repositories configured in the project's build file (pom.xml).
+			Unlike getLatestReleaseInformation (which queries the Spring IO API), this reflects what is actually resolvable from the project's own configured Maven repositories, including private or enterprise repos.
+			latestPatchVersion, latestMinorVersion, and latestMajorVersion are the newest available versions newer than currentVersion for each respective level (null means already up-to-date at that level).
+			Only works for Maven (pom.xml) projects; returns null for Gradle projects or when Maven metadata cannot be fetched.
+			""")
+	public BootVersionsFromMavenRepo getLatestBootVersionsFromMavenRepo(
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)")
+			String projectName) {
+
+		try {
+			Optional<? extends IJavaProject> found = projectFinder.all().stream()
+					.filter(p -> p.getElementName().equalsIgnoreCase(projectName))
+					.findFirst();
+
+			if (found.isEmpty()) {
+				log.warn("project not found for Maven version lookup: {}", projectName);
+				return null;
+			}
+
+			IJavaProject project = found.get();
+			Version current = SpringProjectUtil.getSpringBootVersion(project);
+			if (current == null) {
+				log.warn("no Spring Boot version found in project: {}", projectName);
+				return null;
+			}
+
+			MavenMetadata metadata = mavenMetadataProvider.getMetadata(project, "org.springframework.boot", "spring-boot");
+			if (metadata == null) {
+				return null;
+			}
+
+			SortedVersions versions = metadata.getReleaseVersions();
+			return new BootVersionsFromMavenRepo(
+					current.toString(),
+					versions.getNewerLatestPatchRelease(current).map(Version::toString).orElse(null),
+					versions.getNewerLatestMinorRelease(current).map(Version::toString).orElse(null),
+					versions.getNewerLatestMajorRelease(current).map(Version::toString).orElse(null));
+		}
+		catch (Exception e) {
+			log.error("error fetching Maven Boot versions for project: {}", projectName, e);
+			return null;
+		}
 	}
 
 	private Generation findCorrespondingGeneration(List<Generation> generations, Version version) throws Exception {

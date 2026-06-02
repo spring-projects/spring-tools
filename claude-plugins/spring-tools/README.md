@@ -79,6 +79,65 @@ We maintain a local marketplace configuration (`claude-plugins/.claude-plugin/ma
    claude plugin install spring-tools@spring-tools-local
    ```
 
+## Configuring language server preferences
+
+You can customize validation severities and other language server settings on a per-project basis by placing a settings file inside the `.claude/` directory of your project. Two formats are supported and may coexist — the properties file provides the base values and the JSON file overrides them.
+
+### Properties format (`.claude/spring-tools.properties`)
+
+Flat `key=value` format where each key is the full dot-separated settings path. This is the simplest format to get started with:
+
+```properties
+# Category enablement toggles (AUTO / ON / OFF)
+boot-java.validation.java.boot2=OFF
+boot-java.validation.java.boot3=ON
+boot-java.validation.spel.on=ON
+boot-java.validation.java.version-validation=OFF
+
+# Per-problem severity overrides (IGNORE / HINT / INFO / WARNING / ERROR)
+spring-boot.ls.problem.boot2.JAVA_PUBLIC_BEAN_METHOD=IGNORE
+spring-boot.ls.problem.boot2.JAVA_AUTOWIRED_CONSTRUCTOR=IGNORE
+```
+
+### JSON format (`.claude/spring-tools.json`)
+
+Nested JSON matching the VSCode `boot-java` / `spring-boot` configuration structure. Useful when you want to express several settings for the same category together:
+
+```json
+{
+  "boot-java": {
+    "validation": {
+      "java": {
+        "boot2": "OFF",
+        "boot3": "ON"
+      },
+      "spel": { "on": "ON" },
+      "version-validation": { "on": "OFF" }
+    }
+  },
+  "spring-boot": {
+    "ls": {
+      "problem": {
+        "boot2": {
+          "JAVA_PUBLIC_BEAN_METHOD": "IGNORE",
+          "JAVA_AUTOWIRED_CONSTRUCTOR": "IGNORE"
+        }
+      }
+    }
+  }
+}
+```
+
+### Available settings
+
+**Category enablement toggles** (`boot-java.validation.*`) accept `AUTO`, `ON`, or `OFF`.
+
+**Per-problem severity overrides** (`spring-boot.ls.problem.<category>.<code>`) accept `IGNORE`, `HINT`, `INFO`, `WARNING`, or `ERROR`.
+
+The full list of available categories and problem codes is embedded in the language server JAR as `problem-types.json`. They are the same keys used in the VSCode extension's settings.
+
+Settings are applied once at startup. You must restart the language server (and therefore Claude Code) for changes to take effect.
+
 ## What the language server provides
 
 - **Diagnostics** — Spring-specific warnings and quick fixes (missing annotations, incorrect bean wiring, etc.)

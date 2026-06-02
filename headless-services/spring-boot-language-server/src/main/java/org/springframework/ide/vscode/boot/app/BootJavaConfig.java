@@ -31,6 +31,7 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleWorkspaceService;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
@@ -286,15 +287,16 @@ public class BootJavaConfig implements InitializingBean {
 	
 	public JsonObject getJavaValidationSettingsJson() {
 		JsonObject javaValidationsJson = new JsonObject();
-		List<String> javaValidationTypes = List.of(
-				SpringProblemCategories.BOOT_2.getId(),
-				SpringProblemCategories.BOOT_3.getId(),
-				SpringProblemCategories.SPEL.getId(),
-				SpringProblemCategories.SPRING_AOT.getId()
-		);
-		for (String type : javaValidationTypes) {
-			javaValidationsJson.add(type, getRawSettings().getRawProperty("spring-boot", "ls", "problem", type));
-		}
+
+		// Capture all per-problem-code severity overrides (spring-boot.ls.problem.*)
+		JsonElement severitySettings = getRawSettings().getRawProperty("spring-boot", "ls", "problem");
+		javaValidationsJson.add("severity", severitySettings != null ? severitySettings : new JsonObject());
+
+		// Capture all validation toggle settings (boot-java.validation.*) so that
+		// ON/OFF/AUTO changes are also reflected in the cache key
+		JsonElement toggleSettings = getRawSettings().getRawProperty("boot-java", "validation");
+		javaValidationsJson.add("toggles", toggleSettings != null ? toggleSettings : new JsonObject());
+
 		return javaValidationsJson;
 	}
 

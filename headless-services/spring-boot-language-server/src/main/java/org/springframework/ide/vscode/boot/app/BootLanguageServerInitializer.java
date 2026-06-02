@@ -206,7 +206,10 @@ public class BootLanguageServerInitializer implements InitializingBean {
 //			ServerUtils.listenToClassFileChanges(server.getWorkspaceService().getFileObserver(), projectFinder, project -> validateAll(components, server, project));
 		});
 		config.addListener(evt -> {
-			server.getClient().refreshInlayHints();
+			if (server.getClient() != null) {
+				server.getClient().refreshInlayHints();
+			}
+			
 			reconcile();
 		});
 		params.projectObserver.addListener(reconcileDocumentsForProjectChange(server, components, params.projectFinder));

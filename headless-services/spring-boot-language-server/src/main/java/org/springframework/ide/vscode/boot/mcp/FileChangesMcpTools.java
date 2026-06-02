@@ -17,18 +17,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectChangeNotifier;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.util.FileChangeNotifier;
-import org.springframework.stereotype.Component;
 
 /**
  * MCP tools for notifying the language server about file changes on disk.
  * This bridges the gap when running in MCP-only mode without full LSP file watching.
  */
-@Component
-@ConditionalOnBean({FileChangeNotifier.class})
 public class FileChangesMcpTools {
 
 	private static final Logger logger = LoggerFactory.getLogger(FileChangesMcpTools.class);

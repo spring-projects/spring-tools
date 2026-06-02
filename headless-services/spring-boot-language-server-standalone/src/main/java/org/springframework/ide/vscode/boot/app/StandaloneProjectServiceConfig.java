@@ -13,7 +13,10 @@ package org.springframework.ide.vscode.boot.app;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.jdt.ls.JavaProjectsService;
+import org.springframework.ide.vscode.boot.mcp.FileChangesMcpTools;
+import org.springframework.ide.vscode.commons.languageserver.java.ProjectChangeNotifier;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.util.FileChangeNotifier;
 
 /**
  * Spring configuration that provides a {@link JavaProjectsService} backed by Maven and
@@ -31,6 +34,11 @@ public class StandaloneProjectServiceConfig {
 	@Bean
 	JavaProjectsService javaProjectsService(SimpleLanguageServer server) {
 		return new LegacyJavaProjectsService(server);
+	}
+	
+	@Bean
+	FileChangesMcpTools fileChangesMcpTools(FileChangeNotifier fileChangeNotifier, ProjectChangeNotifier projectChangeNotifier, SimpleLanguageServer server) {
+		return new FileChangesMcpTools(fileChangeNotifier, projectChangeNotifier, server);
 	}
 
 }

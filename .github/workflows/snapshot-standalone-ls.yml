@@ -71,7 +71,7 @@ jobs:
           sha="${{ steps.update-plugin.outputs.sha }}"
           
           tmp=$(mktemp)
-          jq --arg name "spring-boot" \
+          jq --arg name "spring-tools" \
              --arg version "$version" \
              --arg sha "$sha" \
              '

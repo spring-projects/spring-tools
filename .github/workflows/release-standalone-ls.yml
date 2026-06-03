@@ -58,7 +58,7 @@ jobs:
           ref="v${version}"
           
           tmp=$(mktemp)
-          jq --arg name "spring-boot" \
+          jq --arg name "spring-tools" \
              --arg version "$version" \
              --arg ref "$ref" \
              '

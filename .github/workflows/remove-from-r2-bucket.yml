@@ -3,6 +3,15 @@ name: Remove from the Location in the Bucket
 # configure manual trigger
 on:
   workflow_dispatch:
+    inputs:
+      file_path:
+        description: 'Path of the file or folder to remove (relative to spring-tools/)'
+        required: true
+      recursive:
+        description: 'Delete recursively (Required if the path is a folder)'
+        type: boolean
+        required: false
+        default: false
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.CDN_S3_ACCESS_KEY }}
@@ -19,5 +28,24 @@ jobs:
     steps:
       - name: Remove
         run: |
-          aws s3 mv s3://$AWS_S3_BUCKET/exes-to-sign ./exes --recursive --exclude "*" --include "*.exe" --exclude "*/*"
-
+          file_path="${{ inputs.file_path }}"
+          
+          # Trim leading/trailing whitespace
+          file_path=$(echo "$file_path" | xargs)
+          
+          # Guard against empty, root, or wildcard-only paths
+          if [[ -z "$file_path" || "$file_path" == "/" || "$file_path" == "/*" || "$file_path" == "." || "$file_path" == "./" || "$file_path" == "*" ]]; then
+            echo "Error: Refusing to run operation on dangerous or empty path: '$file_path'"
+            exit 1
+          fi
+          
+          # Remove leading slash if user accidentally provided one (so we don't end up with //)
+          file_path="${file_path#/}"
+          
+          echo "Removing s3://$AWS_S3_BUCKET/${file_path}"
+          
+          if [ "${{ inputs.recursive }}" = "true" ]; then
+            aws s3 rm "s3://$AWS_S3_BUCKET/${file_path}" --recursive
+          else
+            aws s3 rm "s3://$AWS_S3_BUCKET/${file_path}"
+          fi

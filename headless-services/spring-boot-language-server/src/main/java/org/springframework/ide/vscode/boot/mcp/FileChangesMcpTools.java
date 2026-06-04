@@ -99,7 +99,7 @@ public class FileChangesMcpTools {
 			return;
 		}
 
-		projectChangeNotifier.notifyProjectsChanged();
+		projectChangeNotifier.notifyProjectsChanged(true);
 	}
 
 }

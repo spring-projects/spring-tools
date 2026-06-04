@@ -107,7 +107,7 @@ public class BootVersionValidationConfig {
 					}
 
 					@Override
-					public void changed(IJavaProject project) {
+					public void changed(IJavaProject project, boolean clean) {
 						scheduleValidation(project);
 					}
 				});

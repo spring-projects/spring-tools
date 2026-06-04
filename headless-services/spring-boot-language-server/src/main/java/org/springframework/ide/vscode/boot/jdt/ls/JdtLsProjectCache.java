@@ -152,11 +152,11 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 		}
 	}
 
-	private void notifyChanged(IJavaProject newProject) {
+	private void notifyChanged(IJavaProject newProject, boolean clean) {
 		logEvent("Changed", newProject);
 		synchronized (listeners) {
 			for (Listener listener : listeners) {
-				listener.changed(newProject);
+				listener.changed(newProject, clean);
 			}
 		}
 	}
@@ -374,23 +374,25 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 						ClasspathData classpath = new ClasspathData(event.name, event.classpath.getEntries(), event.classpath.getJre());
 						IJavaProject oldProject;
 						AbstractJavaProject newProject;
+
 						synchronized(table) {
 							oldProject = table.get(uri);
 							if (oldProject != null && classpath.equals(oldProject.getClasspath())) {
 								// nothing has changed
 								return;
 							}
-						IProjectBuild projectBuild = from(event.projectBuild);
-						newProject = IS_JANDEX_INDEX
-								? new JavaProject(getFileObserver(), projectUri, classpath,
-										JdtLsProjectCache.this, projectBuild)
-								: new JdtLsJavaProject(server.getClient(), projectUri, classpath, JdtLsProjectCache.this, projectBuild);
-						newProject.setJavaCoreOptions(event.javaCoreOptions);
-						table.put(uri, newProject);
+							IProjectBuild projectBuild = from(event.projectBuild);
+							newProject = IS_JANDEX_INDEX
+									? new JavaProject(getFileObserver(), projectUri, classpath,
+											JdtLsProjectCache.this, projectBuild)
+									: new JdtLsJavaProject(server.getClient(), projectUri, classpath, JdtLsProjectCache.this, projectBuild);
+							newProject.setJavaCoreOptions(event.javaCoreOptions);
+							table.put(uri, newProject);
 						}
+
 						// Notify outside of the lock 
 						if (oldProject != null) {
-							notifyChanged(newProject);
+							notifyChanged(newProject, false);
 						} else {
 							notifyCreated(newProject);
 						}

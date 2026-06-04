@@ -128,9 +128,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		}
 
 		@Override
-		public void changed(IJavaProject project) {
+		public void changed(IJavaProject project, boolean clean) {
 			log.info("project changed event: {}", project.getElementName());
-			initializeProject(project, false);
+			initializeProject(project, clean);
 		}
 
 		@Override

@@ -99,7 +99,7 @@ public class PomInlayHintHandler implements InlayHintHandler {
 			}
 			
 			@Override
-			public void changed(IJavaProject project) {
+			public void changed(IJavaProject project, boolean clean) {
 				refreshOpenDocs(project);
 			}
 		});

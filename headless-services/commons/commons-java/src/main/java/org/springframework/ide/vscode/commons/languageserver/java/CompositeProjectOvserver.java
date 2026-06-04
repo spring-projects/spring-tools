@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2021 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -42,10 +42,10 @@ public class CompositeProjectOvserver implements ProjectObserver, ProjectChangeN
 	}
 
 	@Override
-	public void notifyProjectsChanged() {
+	public void notifyProjectsChanged(boolean clean) {
 		for (ProjectObserver o : observers) {
 			if (o instanceof ProjectChangeNotifier) {
-				((ProjectChangeNotifier) o).notifyProjectsChanged();
+				((ProjectChangeNotifier) o).notifyProjectsChanged(clean);
 			}
 		}
 	}

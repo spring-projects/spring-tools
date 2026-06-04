@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2021 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,7 +24,7 @@ public interface ProjectObserver {
 
 	interface Listener {
 		void created(IJavaProject project);
-		void changed(IJavaProject project);
+		void changed(IJavaProject project, boolean clean);
 		void deleted(IJavaProject project);
 		default void supported() { }
 	}
@@ -60,7 +60,7 @@ public interface ProjectObserver {
 
 
 			@Override
-			public void changed(IJavaProject project) {
+			public void changed(IJavaProject project, boolean clean) {
 				doit.accept(project);
 			}
 

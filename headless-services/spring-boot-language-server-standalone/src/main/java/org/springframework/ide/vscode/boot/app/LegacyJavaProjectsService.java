@@ -103,8 +103,8 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 	}
 	
 	@Override
-	public void notifyProjectsChanged() {
-		this.projectObserver.notifyProjectsChanged();
+	public void notifyProjectsChanged(boolean clean) {
+		this.projectObserver.notifyProjectsChanged(clean);
 	}
 
 	@Override

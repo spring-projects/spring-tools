@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2025 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -128,7 +128,7 @@ public class ModulithService {
 			}
 			
 			@Override
-			public void changed(IJavaProject project) {
+			public void changed(IJavaProject project, boolean clean) {
 				if (!isModulithDependentProject(project)) {
 					removeFromCache(project);
 					stopListening(project);

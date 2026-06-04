@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2020 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -213,7 +213,7 @@ public class CompilationUnitCacheTest {
         CompilationUnit cuAnother = getCompilationUnit(document);
         assertTrue(cu == cuAnother);
 
-        projectObserver.doWithListeners(l -> l.changed(project));
+        projectObserver.doWithListeners(l -> l.changed(project, false));
         cuAnother = getCompilationUnit(document);
         assertNotNull(cuAnother);
         assertNotNull(cuAnother);
@@ -291,7 +291,7 @@ public class CompilationUnitCacheTest {
         assertNotNull(cu);
         AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
         
-        projectObserver.doWithListeners(l -> l.changed(project));
+        projectObserver.doWithListeners(l -> l.changed(project, false));
         CompilationUnit cuAnother = getCompilationUnit(document);
         AnnotationHierarchies anotherAnnotationHierarchies = AnnotationHierarchies.get(cuAnother);
         assertNotNull(cuAnother);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2019 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -111,9 +111,9 @@ public abstract class AbstractJavaProjectCache<K, P extends IJavaProject> implem
 		listeners.forEach(l -> l.created(project));
 	}
 
-	final protected void notifyProjectChanged(P project) {
+	final protected void notifyProjectChanged(P project, boolean clean) {
 		log.debug("project changed {}", project);
-		listeners.forEach(l -> l.changed(project));
+		listeners.forEach(l -> l.changed(project, clean));
 	}
 
 	final protected void notifyProjectDeleted(P project) {
@@ -122,9 +122,9 @@ public abstract class AbstractJavaProjectCache<K, P extends IJavaProject> implem
 	}
 
 	@Override
-	public void notifyProjectsChanged() {
+	public void notifyProjectsChanged(boolean clean) {
 		for (P project : cache.asMap().values()) {
-			notifyProjectChanged(project);
+			notifyProjectChanged(project, clean);
 		}
 	}
 

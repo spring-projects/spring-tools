@@ -15,6 +15,6 @@ package org.springframework.ide.vscode.commons.languageserver.java;
  */
 public interface ProjectChangeNotifier {
 
-	void notifyProjectsChanged();
+	void notifyProjectsChanged(boolean clean);
 
 }

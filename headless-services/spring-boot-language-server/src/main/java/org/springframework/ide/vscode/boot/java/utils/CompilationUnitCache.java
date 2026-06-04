@@ -153,7 +153,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 			}
 			
 			@Override
-			public void changed(IJavaProject project) {
+			public void changed(IJavaProject project, boolean clean) {
 				logger.debug("CU Cache: changed project {}", project.getElementName());
 				invalidateProject(project);
 			}

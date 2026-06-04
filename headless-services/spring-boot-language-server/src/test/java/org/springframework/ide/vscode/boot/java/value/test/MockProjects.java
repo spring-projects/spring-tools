@@ -168,7 +168,7 @@ public class MockProjects {
 			sourceFolders.add(sourceFolder);
 			synchronized (observer.listeners) {
 				for (Listener l : observer.listeners) {
-					l.changed(this);
+					l.changed(this, false);
 				}
 			}
 		}
@@ -215,12 +215,12 @@ public class MockProjects {
 		}
 
 		@Override
-		public void notifyProjectsChanged() {
+		public void notifyProjectsChanged(boolean clean) {
 			synchronized (projectsByName) {
 				for (MockProject project : projectsByName.values()) {
 					synchronized (listeners) {
 						for (Listener l : listeners) {
-							l.changed(project);
+							l.changed(project, false);
 						}
 					}
 				}

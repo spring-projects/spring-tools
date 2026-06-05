@@ -75,13 +75,12 @@ fetch_and_format_issues() {
 update_changelog() {
     local formatted_issues="$1"
     local version=$(jq -r '.version' "$PACKAGE_JSON")
-    local current_date=$(date +"%Y-%m-%d")
-    local new_header="## $current_date ($version PRE-RELEASE)"
+    local new_header="## $version PRE-RELEASE"
     
     local temp_file=$(mktemp)
     
-    # Check if a header for this pre-release version already exists (ignoring the exact date)
-    local existing_header=$(grep -E "^## .* \($version PRE-RELEASE\)$" "$CHANGELOG_FILE" | head -n 1)
+    # Check if a header for this pre-release version already exists
+    local existing_header=$(grep -E "^## $version PRE-RELEASE$" "$CHANGELOG_FILE" | head -n 1)
     
     if [ -n "$existing_header" ]; then
         echo "Pre-release section for $version already exists. Overwriting issues." >&2
@@ -102,7 +101,7 @@ update_changelog() {
             > "$temp_file"
         fi
         
-        # Insert the new header (with current date) and issues
+        # Insert the new header and issues
         echo "$new_header" >> "$temp_file"
         echo "" >> "$temp_file"
         echo "#### all fixes and improvements in detail" >> "$temp_file"
@@ -115,7 +114,7 @@ update_changelog() {
             tail -n +$((end_line + 1)) "$CHANGELOG_FILE" >> "$temp_file"
         fi
     else
-        echo "Creating new pre-release section for $current_date ($version PRE-RELEASE)." >&2
+        echo "Creating new pre-release section for $version PRE-RELEASE." >&2
         # Prepend the new header and the formatted list of issues to CHANGELOG.md
         echo "$new_header" > "$temp_file"
         echo "" >> "$temp_file"

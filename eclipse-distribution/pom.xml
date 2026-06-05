@@ -173,8 +173,8 @@
 				<repository>
 					<id>lsp4e</id>
 					<layout>p2</layout>
-<!--					<url>https://download.eclipse.org/lsp4e/releases/0.29.4/</url> -->
-					<url>https://download.eclipse.org/lsp4e/snapshots/</url>
+                    <url>https://download.eclipse.org/lsp4e/releases/0.30.5/</url>
+<!--                    <url>https://download.eclipse.org/lsp4e/snapshots/</url> -->
 				</repository>
 				<repository>
 					<id>tm4e-snapshots</id>
@@ -206,11 +206,6 @@
                     <layout>p2</layout>
                     <url>https://download.eclipse.org/tools/orbit/simrel/orbit-aggregation/2026-06</url>
                 </repository>
-                <repository>
-                    <id>2026-06-i-builds</id>
-                    <layout>p2</layout>
-                    <url>https://download.eclipse.org/eclipse/updates/4.40-I-builds</url>
-                </repository>
 
                 <!--				<repository>
                                     <id>maven-extras-mirror</id>
@@ -240,8 +235,8 @@
                 <repository>
                     <id>lsp4e</id>
                     <layout>p2</layout>
-                    <!--<url>https://download.eclipse.org/lsp4e/releases/0.29.4/</url> -->
-                    <url>https://download.eclipse.org/lsp4e/snapshots/</url>
+                    <url>https://download.eclipse.org/lsp4e/releases/0.30.5/</url>
+<!--                    <url>https://download.eclipse.org/lsp4e/snapshots/</url> -->
                 </repository>
                 <repository>
                     <id>tm4e-snapshots</id>

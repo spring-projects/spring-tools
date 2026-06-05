@@ -77,6 +77,12 @@ update_changelog() {
     local version=$(jq -r '.version' "$PACKAGE_JSON")
     local new_header="## $version PRE-RELEASE"
     
+    # Check if a release section for this version already exists
+    if grep -q -E "^## .*\($version RELEASE|version $version\)" "$CHANGELOG_FILE"; then
+        echo "Release section for version $version already exists. Skipping pre-release generation." >&2
+        return 0
+    fi
+    
     local temp_file=$(mktemp)
     
     # Check if a header for this pre-release version already exists

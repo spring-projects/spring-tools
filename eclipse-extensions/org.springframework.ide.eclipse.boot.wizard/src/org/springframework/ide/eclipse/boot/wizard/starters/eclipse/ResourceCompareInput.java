@@ -693,7 +693,8 @@ public class ResourceCompareInput extends CompareEditorInput {
 												method = TextMergeViewer.class.getDeclaredMethod("copy", boolean.class);
 											}
 											method.setAccessible(true);
-											method.invoke(contentViewer, true);
+											boolean leftToRight = !getCompareConfiguration().isMirrored();
+											method.invoke(contentViewer, leftToRight);
 											contentViewer.flush(new NullProgressMonitor());
 											n.setState(DiffNodeState.ALL);
 										} catch (Exception e) {
@@ -871,7 +872,7 @@ public class ResourceCompareInput extends CompareEditorInput {
 	public boolean setSelection(ResourceDescriptor left, ResourceDescriptor right) {
 
 		fLeftResource= left;
-		fRightResource= left;
+		fRightResource= right;
 
 		fLeft= getStructure(fLeftResource);
 		fRight= getStructure(right);

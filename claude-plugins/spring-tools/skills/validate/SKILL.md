@@ -1,4 +1,5 @@
 ---
+name: validate
 description: MUST be used whenever a user or agent asks to find problems, check for issues, or validate changes in a Spring Boot project. Uses the spring-tools MCP server to check for validation problems in the project's source files.
 allowed-tools: View
 ---

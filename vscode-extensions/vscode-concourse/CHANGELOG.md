@@ -1,3 +1,9 @@
+## 2.0.0 PRE-RELEASE
+
+#### all fixes and improvements in detail
+
+* _(Concourse)_ [Concourse] does not handle ytt syntax well [#1631](https://github.com/spring-projects/spring-tools/issues/1631)
+
 ## 2026-05-23 (2.0.0 PRE-RELEASE)
 
 #### all fixes and improvements in detail

@@ -72,11 +72,13 @@ public class ExecuteGradleTaskHandler extends AbstractHandler {
 						.getOrCreateRunConfiguration(configurationAttributes);
 
 				DebugUITools.launch(launchConfig, ILaunchManager.RUN_MODE);
+                return null;
 			} catch (Exception e) {
 				throw new ExecutionException("Failed to execute Maven Goal command", e);
 			}
-		}
-		throw new ExecutionException("Maven Goal Execution command is invalid");
+		} else {
+            throw new ExecutionException("Maven Goal Execution command is invalid");
+        }
 	}
 
 	private static GradleRunConfigurationAttributes getRunConfigurationAttributes(File rootDir, File workingDir,

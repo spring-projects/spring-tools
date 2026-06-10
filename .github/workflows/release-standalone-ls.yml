@@ -1,6 +1,13 @@
 name: Release Standalone LS
 
 on:
+  workflow_dispatch:
+    inputs:
+      dist:
+        description: release, pre, snapshot
+        required: false
+        type: string
+        default: snapshot
   workflow_call:
     inputs:
       dist:

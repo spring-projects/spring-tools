@@ -56,13 +56,22 @@ jobs:
           aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive
           aws s3 cp ./standalone-ls-dist/$jar_file s3://$AWS_S3_BUCKET/$s3_path/$jar_file --no-progress
           echo "version=$base_version" >> $GITHUB_OUTPUT
+      - name: Create and Push Tag
+        id: create-tag
+        if: ${{ inputs.dist == 'release' }}
+        run: |
+          version="${{ steps.upload-release.outputs.version }}"
+          tag="v${version}"
+          git tag "$tag"
+          git push origin "$tag"
+          echo "tag=$tag" >> $GITHUB_OUTPUT
       - name: Update Marketplace JSON
         if: ${{ inputs.dist == 'release' }}
         run: |
           aws s3 cp s3://$AWS_S3_BUCKET/${{ inputs.dist }}/claude-plugins/marketplace.json ./marketplace.json || echo '{"name": "spring-tools-marketplace", "description": "Spring Tools Claude Code plugins.", "owner": {"name": "Spring Tools"}, "plugins": []}' > ./marketplace.json
           
-          version=$(cat ./standalone-ls-dist/version.txt)
-          ref="v${version}"
+          version="${{ steps.upload-release.outputs.version }}"
+          ref="${{ steps.create-tag.outputs.tag }}"
           
           tmp=$(mktemp)
           jq --arg name "spring-tools" \

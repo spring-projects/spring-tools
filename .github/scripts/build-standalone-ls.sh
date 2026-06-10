@@ -7,7 +7,7 @@ workdir=$(pwd)
 
 echo "Building standalone LS jar..."
 cd headless-services
-./mvnw -f pom.xml -pl spring-boot-language-server-standalone -am -DskipTests clean package
+./mvnw -f pom.xml -pl spring-boot-language-server-standalone -am -DskipTests -B clean package
 
 # Get the version from Maven using help:evaluate
 base_version=$(./mvnw help:evaluate -Dexpression="project.version" -q -DforceStdout -f spring-boot-language-server-standalone/pom.xml)

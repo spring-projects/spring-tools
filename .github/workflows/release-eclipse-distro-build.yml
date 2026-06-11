@@ -29,10 +29,10 @@ jobs:
 #      java_version: '25'
 #    secrets: inherit
 
-  e439-distro:
+  e441-distro:
     uses: ./.github/workflows/gh-hosted-eclipse-distro-build.yml
     with:
-      eclipse_profile: 'e439'
+      eclipse_profile: 'e441'
       build_type: 'release'
       p2-qualifier: ${{ inputs.qualifier }}
       sts-language-servers-version: ${{ inputs.sts-language-servers-version }}

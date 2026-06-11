@@ -96,9 +96,9 @@
 	<repositories>
 		<!-- composite update site contains http references, using exact https urls instead -->
 		<repository>
-			<id>eclipse-2025-12</id>
+			<id>eclipse-2026-06</id>
 			<layout>p2</layout>
-			<url>https://download.eclipse.org/releases/2025-12</url>
+			<url>https://download.eclipse.org/releases/2026-06</url>
 		</repository>
 
 		<repository>

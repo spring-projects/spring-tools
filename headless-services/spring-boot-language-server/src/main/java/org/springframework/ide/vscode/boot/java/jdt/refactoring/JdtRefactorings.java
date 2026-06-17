@@ -55,8 +55,8 @@ import reactor.core.publisher.Mono;
  *   <li>A reconciler creates a {@link JdtFixDescriptor} containing a
  *       {@link JdtRefactoring} and attaches it as quick fix data</li>
  *   <li>The descriptor is serialized into {@code CodeAction.data} via Gson
- *       (using {@link org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory}
- *       for polymorphic {@link JdtRefactoring} serialization)</li>
+	 *       (using {@link org.springframework.ide.vscode.commons.RegisteredSubtypesTypeAdapterFactory}
+	 *       for polymorphic {@link JdtRefactoring} serialization)</li>
  *   <li>When the user triggers the quick fix, this class deserializes the
  *       descriptor, obtains the {@link CompilationUnit} from
  *       {@link CompilationUnitCache}, creates an {@link ASTRewrite},

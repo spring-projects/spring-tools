@@ -40,13 +40,12 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory;
-import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
-import org.springframework.ide.vscode.commons.util.UriUtil;
-
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.java.utils.JavaDependencyMultimaps;
 import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
 import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
+import org.springframework.ide.vscode.commons.util.UriUtil;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -72,13 +71,17 @@ import com.google.gson.stream.JsonToken;
  */
 public class IndexCacheOnDiscDeltaBased implements IndexCache {
 
+	private static final Set<String> STANDARD_ELEMENT_TYPES = Set.of(
+			CachedIndexElement.class.getName(),
+			CachedDiagnostic.class.getName()
+	);
+
 	private final File cacheDirectory;
 	private final Map<IndexCacheKey, ConcurrentMap<InternalFileIdentifier, Long>> timestamps;
 	private final Map<IndexCacheKey, Integer> compactingCounter;
 	private final int compactingCounterBoundary;
 	private final Set<String> categoriesToRemoveAllCacheFiles;
-	
-	private final Gson gson = createGson();
+	private final Gson gson;
 
 	private static final int DEFAULT_COMPACTING_TRIGGER = 20;
 	private static final Set<String> CATEGORIES_TO_REMOVE_ALL_CACHE_FILES = Set.of("symbols");
@@ -86,15 +89,24 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	private static final Logger log = LoggerFactory.getLogger(IndexCacheOnDiscDeltaBased.class);
 
 	public IndexCacheOnDiscDeltaBased(File cacheDirectory) {
-		this(cacheDirectory, CATEGORIES_TO_REMOVE_ALL_CACHE_FILES);
+		this(cacheDirectory, CATEGORIES_TO_REMOVE_ALL_CACHE_FILES, STANDARD_ELEMENT_TYPES);
 	}
 
 	/**
 	 * Constructor for testing that allows specifying which categories should have all cache files removed.
 	 */
 	public IndexCacheOnDiscDeltaBased(File cacheDirectory, Set<String> categoriesToRemoveAllCacheFiles) {
+		this(cacheDirectory, categoriesToRemoveAllCacheFiles, STANDARD_ELEMENT_TYPES);
+	}
+
+	/**
+	 * Constructor for testing that allows specifying both the categories to remove and the set of
+	 * allowed element types for deserialization.
+	 */
+	public IndexCacheOnDiscDeltaBased(File cacheDirectory, Set<String> categoriesToRemoveAllCacheFiles, Set<String> allowedElementTypes) {
 		this.cacheDirectory = cacheDirectory;
 		this.categoriesToRemoveAllCacheFiles = categoriesToRemoveAllCacheFiles == null ? Collections.emptySet() : categoriesToRemoveAllCacheFiles;
+		this.gson = createGson(allowedElementTypes);
 
 		if (!this.cacheDirectory.exists()) {
 			this.cacheDirectory.mkdirs();
@@ -587,21 +599,29 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	//
 
 	
-	public static Gson createGson() {
+	private static final Set<String> ALLOWED_DELTA_ELEMENT_TYPES = Set.of(
+			DeltaSnapshot.class.getName(),
+			DeltaDelete.class.getName(),
+			DeltaUpdate.class.getName()
+	);
+
+	static Gson createGson(Set<String> allowedElementTypes) {
 		return new GsonBuilder()
 				.registerTypeAdapter(DeltaStorage.class, new DeltaStorageAdapter())
-				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter())
-				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(SpringIndexElement.class, "_internal_node_type")
-						.recognizeSubtypes())
-				.registerTypeAdapterFactory(RuntimeTypeAdapterFactory.of(
-						org.springframework.ide.vscode.boot.java.requestmapping.PathPrefixPredicate.class,
-						"_predicate_type")
-						.recognizeSubtypes())
+				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter(allowedElementTypes))
+				.registerTypeAdapterFactory(IndexGsonTypeFactories.springIndexElements())
+				.registerTypeAdapterFactory(IndexGsonTypeFactories.pathPrefixPredicates())
 				.create();
 	}
 	
 	
 	private static class IndexCacheStoreAdapter implements JsonDeserializer<IndexCacheStore<?>> {
+
+		private final Set<String> allowedElementTypes;
+
+		private IndexCacheStoreAdapter(Set<String> allowedElementTypes) {
+			this.allowedElementTypes = allowedElementTypes;
+		}
 
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		@Override
@@ -610,6 +630,11 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	        JsonObject parsedObject = json.getAsJsonObject();
 
 			String className = parsedObject.get("elementType").getAsString();
+
+			if (!allowedElementTypes.contains(className)) {
+				throw new JsonParseException("cannot parse index cache: element type '" + className
+						+ "' is not in the list of known types");
+			}
 
 			try {
 				Class<?> elementType = Class.forName(className);
@@ -650,6 +675,11 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 	        JsonObject parsedObject = json.getAsJsonObject();
 	        String className = parsedObject.get("type").getAsString();
 	        JsonElement element = parsedObject.get("data");
+
+			if (!ALLOWED_DELTA_ELEMENT_TYPES.contains(className)) {
+				throw new JsonParseException("cannot parse delta storage: type '" + className
+						+ "' is not in the list of known delta element types");
+			}
 
 	        try {
 	            return new DeltaStorage<>(context.deserialize(element, Class.forName(className)));

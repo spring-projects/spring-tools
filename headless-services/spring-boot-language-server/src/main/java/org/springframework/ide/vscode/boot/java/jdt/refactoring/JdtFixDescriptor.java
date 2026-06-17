@@ -19,7 +19,7 @@ import java.util.List;
  * sources, and a human-readable label. This descriptor is stored in
  * {@code CodeAction.data} and travels over the LSP protocol. The
  * {@link JdtRefactoring} is serialized polymorphically via
- * {@link org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory}.
+ * {@link org.springframework.ide.vscode.commons.RegisteredSubtypesTypeAdapterFactory}.
  *
  * @param refactoring the JDT refactoring to execute
  * @param docUris     document URIs of the source files to apply the refactoring to

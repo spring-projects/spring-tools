@@ -18,7 +18,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
  * <p>
  * Implementations must be concrete, named classes (not lambdas or anonymous classes)
  * because they are serialized/deserialized over the LSP protocol using
- * {@link org.springframework.ide.vscode.commons.RuntimeTypeAdapterFactory}.
+ * {@link org.springframework.ide.vscode.commons.RegisteredSubtypesTypeAdapterFactory}.
  * All instance state must be Gson-serializable (records, primitives, collections
  * of serializable types).
  * <p>

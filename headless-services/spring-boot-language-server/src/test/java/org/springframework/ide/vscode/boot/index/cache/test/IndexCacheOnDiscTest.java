@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.index.cache.AbstractIndexCacheable;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDisc;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
 import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
@@ -93,7 +95,11 @@ public class IndexCacheOnDiscTest {
 	@BeforeEach
 	public void setup() throws Exception {
 		tempDir = Files.createTempDirectory("cachetest");
-		cache = new IndexCacheOnDisc(tempDir.toFile());
+		cache = new IndexCacheOnDisc(tempDir.toFile(), Set.of(
+				CachedIndexElement.class.getName(),
+				CachedDiagnostic.class.getName(),
+				TestCacheElement.class.getName()
+		));
 	}
 
 	@AfterEach

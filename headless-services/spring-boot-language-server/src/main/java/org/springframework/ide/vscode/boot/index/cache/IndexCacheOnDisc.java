@@ -33,15 +33,16 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.lsp4j.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
+import org.springframework.ide.vscode.boot.java.utils.JavaDependencyMultimaps;
+import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
+import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.util.UriUtil;
-
-import org.springframework.ide.vscode.boot.java.utils.JavaDependencyMultimaps;
-import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
-import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -64,16 +65,25 @@ import com.google.gson.stream.JsonReader;
  */
 public class IndexCacheOnDisc implements IndexCache {
 
+	private static final Set<String> STANDARD_ELEMENT_TYPES = Set.of(
+			CachedIndexElement.class.getName(),
+			CachedDiagnostic.class.getName()
+	);
+
 	private final File cacheDirectory;
 	private final Map<IndexCacheKey, IndexCacheStore<? extends IndexCacheable>> stores;
-
-	private final Gson gson = createGson();
+	private final Gson gson;
 
 	private static final Logger log = LoggerFactory.getLogger(IndexCacheOnDisc.class);
 
 	public IndexCacheOnDisc(File cacheDirectory) {
+		this(cacheDirectory, STANDARD_ELEMENT_TYPES);
+	}
+
+	public IndexCacheOnDisc(File cacheDirectory, Set<String> allowedElementTypes) {
 		this.cacheDirectory = cacheDirectory;
 		this.stores = new ConcurrentHashMap<>();
+		this.gson = createGson(allowedElementTypes);
 
 		if (!this.cacheDirectory.exists()) {
 			this.cacheDirectory.mkdirs();
@@ -148,8 +158,6 @@ public class IndexCacheOnDisc implements IndexCache {
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends IndexCacheable> List<T> retrieveAll(IndexCacheKey cacheKey, Class<T> type) {
-		Gson gson = createGson();
-
 		IndexCacheStore<?> existing = this.stores.get(cacheKey);
 		if (existing != null) {
 			return List.copyOf((List<T>) existing.getSymbols());
@@ -366,11 +374,11 @@ public class IndexCacheOnDisc implements IndexCache {
 		}
 	}
 
-	public static Gson createGson() {
+	private static Gson createGson(Set<String> allowedElementTypes) {
 		return new GsonBuilder()
 				.registerTypeAdapter(Bean.class, new BeanJsonAdapter())
 				.registerTypeAdapter(InjectionPoint.class, new InjectionPointJsonAdapter())
-				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter())
+				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter(allowedElementTypes))
 				.create();
 	}
 
@@ -410,6 +418,12 @@ public class IndexCacheOnDisc implements IndexCache {
 	
 	private static class IndexCacheStoreAdapter implements JsonDeserializer<IndexCacheStore<?>> {
 
+		private final Set<String> allowedElementTypes;
+
+		private IndexCacheStoreAdapter(Set<String> allowedElementTypes) {
+			this.allowedElementTypes = allowedElementTypes;
+		}
+
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		@Override
 		public IndexCacheStore<?> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
@@ -417,6 +431,11 @@ public class IndexCacheOnDisc implements IndexCache {
 	        JsonObject parsedObject = json.getAsJsonObject();
 
 			String className = parsedObject.get("elementType").getAsString();
+
+			if (!allowedElementTypes.contains(className)) {
+				throw new JsonParseException("cannot parse index cache: element type '" + className
+						+ "' is not in the list of known types");
+			}
 
 			try {
 				Class<?> elementType = Class.forName(className);

@@ -28,7 +28,7 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
-import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
+import org.springframework.ide.vscode.boot.index.cache.IndexGsonTypeFactories;
 import org.springframework.ide.vscode.commons.protocol.spring.AbstractSpringIndexElement;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
@@ -38,6 +38,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class SpringMetamodelIndexTest {
 
@@ -250,7 +251,7 @@ public class SpringMetamodelIndexTest {
 
 		Bean bean1 = new Bean("beanName1", "beanType", locationForDoc1, new InjectionPoint[] {point1, point2}, Set.of("supertype1", "supertype2"), emptyAnnotations, true, "symbolLabel");
 		
-		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
+		Gson gson = createProductionGson();
 		String serialized = gson.toJson(bean1);
 		Bean deserializedBean = gson.fromJson(serialized, Bean.class);
 		
@@ -300,8 +301,8 @@ public class SpringMetamodelIndexTest {
 	@Test
 	void testEmptyInjectionPointsOptimizationWithSerializeDeserializeBeans() {
 		Bean bean1 = new Bean("beanName1", "beanType", locationForDoc1, emptyInjectionPoints, emptySupertypes, emptyAnnotations, false, "symbolLabel");
-		
-		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
+
+		Gson gson = createProductionGson();
 		String serialized = gson.toJson(bean1);
 		Bean deserializedBean = gson.fromJson(serialized, Bean.class);
 		
@@ -411,7 +412,7 @@ public class SpringMetamodelIndexTest {
 		
 	@Test
 	void testSpringIndexStructurePolymorphicSerialization() {
-		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
+		Gson gson = createTestGson();
 		
 		SubType2 subNode = new SubType2();
 		
@@ -444,7 +445,7 @@ public class SpringMetamodelIndexTest {
 	@Test
 	void testSerializeDeserializeBeansWithChildElements() {
 
-		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
+		Gson gson = createProductionGson();
 		
 		Bean bean1 = new Bean("beanName1", "beanType1", locationForDoc1, emptyInjectionPoints, Set.of("supertype1", "supertype2"), emptyAnnotations, false, "symbolLabel");
 		Bean bean2 = new Bean("beanName2", "beanType2", locationForDoc1, emptyInjectionPoints, Set.of("supertype3", "supertype4, supertype5"), emptyAnnotations, false, "symbolLabel");
@@ -468,7 +469,7 @@ public class SpringMetamodelIndexTest {
 	@Test
 	void testSerializeDeserializeIndexElementsWithChildElements() {
 
-		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
+		Gson gson = createTestGson();
 
 		SubType2 childOfChild = new SubType2();
 		SubType1 child1 = new SubType1();
@@ -500,7 +501,7 @@ public class SpringMetamodelIndexTest {
 	@Test
 	void testAddChildAfterDeserialize() {
 
-		Gson gson = IndexCacheOnDiscDeltaBased.createGson();
+		Gson gson = createTestGson();
 
 		SubType1 child1 = new SubType1();
 		Bean bean1 = new Bean("beanName1", "beanType", locationForDoc1, emptyInjectionPoints, emptySupertypes, emptyAnnotations, true, "symbolLabel");
@@ -523,6 +524,21 @@ public class SpringMetamodelIndexTest {
 	}
 
 	static class Root extends AbstractSpringIndexElement {
+	}
+
+	private static Gson createProductionGson() {
+		return new GsonBuilder()
+				.registerTypeAdapterFactory(IndexGsonTypeFactories.springIndexElements())
+				.create();
+	}
+
+	private static Gson createTestGson() {
+		return new GsonBuilder()
+				.registerTypeAdapterFactory(IndexGsonTypeFactories.springIndexElements()
+						.registerSubtype(SubType1.class, SubType1.class.getName())
+						.registerSubtype(SubType2.class, SubType2.class.getName())
+						.registerSubtype(Root.class, Root.class.getName()))
+				.create();
 	}
 		
 }

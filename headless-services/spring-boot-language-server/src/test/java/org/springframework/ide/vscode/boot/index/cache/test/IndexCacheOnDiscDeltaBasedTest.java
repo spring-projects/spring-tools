@@ -34,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.index.cache.AbstractIndexCacheable;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
+import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
 import org.springframework.ide.vscode.boot.java.utils.SourceJavaFile;
@@ -89,13 +91,19 @@ public class IndexCacheOnDiscDeltaBasedTest {
 
 	private static final IndexCacheKey CACHE_KEY_VERSION_1 = new IndexCacheKey("someProject", "someIndexer", "someCategory", "1");
 
+	private static final Set<String> TEST_ALLOWED_ELEMENT_TYPES = Set.of(
+			CachedIndexElement.class.getName(),
+			CachedDiagnostic.class.getName(),
+			TestCacheElement.class.getName()
+	);
+
 	private Path tempDir;
 	private IndexCacheOnDiscDeltaBased cache;
 
 	@BeforeEach
 	public void setup() throws Exception {
 		tempDir = Files.createTempDirectory("cachetest");
-		cache = new IndexCacheOnDiscDeltaBased(tempDir.toFile());
+		cache = new IndexCacheOnDiscDeltaBased(tempDir.toFile(), null, TEST_ALLOWED_ELEMENT_TYPES);
 	}
 
 	@AfterEach
@@ -296,7 +304,7 @@ public class IndexCacheOnDiscDeltaBasedTest {
     @Test
     void testDeleteAllCacheFilesForCategoriesInRemovalSet() throws Exception {
         String deprecatedCategory = "deprecatedCategory";
-        cache = new IndexCacheOnDiscDeltaBased(tempDir.toFile(), Set.of(deprecatedCategory));
+        cache = new IndexCacheOnDiscDeltaBased(tempDir.toFile(), Set.of(deprecatedCategory), TEST_ALLOWED_ELEMENT_TYPES);
 
         IndexCacheKey keyToRemove1 = new IndexCacheKey("projectA", "indexerX", deprecatedCategory, "1");
         IndexCacheKey keyToRemove2 = new IndexCacheKey("projectB", "indexerY", deprecatedCategory, "2");
@@ -323,7 +331,7 @@ public class IndexCacheOnDiscDeltaBasedTest {
 
     @Test
     void testDeleteAllCacheFilesForMultipleCategoriesInRemovalSet() throws Exception {
-        cache = new IndexCacheOnDiscDeltaBased(tempDir.toFile(), Set.of("oldCategory", "removedCategory"));
+        cache = new IndexCacheOnDiscDeltaBased(tempDir.toFile(), Set.of("oldCategory", "removedCategory"), TEST_ALLOWED_ELEMENT_TYPES);
 
         IndexCacheKey keyOld = new IndexCacheKey("p", "i", "oldCategory", "1");
         IndexCacheKey keyRemoved = new IndexCacheKey("p", "i", "removedCategory", "1");

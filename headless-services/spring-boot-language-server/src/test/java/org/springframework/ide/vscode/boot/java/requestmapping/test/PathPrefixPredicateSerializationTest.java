@@ -20,14 +20,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
+import org.springframework.ide.vscode.boot.index.cache.IndexGsonTypeFactories;
 import org.springframework.ide.vscode.boot.java.requestmapping.PathPrefixPredicate;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Verifies that every {@link PathPrefixPredicate} variant round-trips cleanly
- * through the Gson instance produced by {@link IndexCacheOnDiscDeltaBased#createGson()}.
+ * through a Gson instance configured with the {@link PathPrefixPredicate} type adapter.
  */
 public class PathPrefixPredicateSerializationTest {
 
@@ -35,7 +36,9 @@ public class PathPrefixPredicateSerializationTest {
 
 	@BeforeEach
 	void setup() {
-		gson = IndexCacheOnDiscDeltaBased.createGson();
+		gson = new GsonBuilder()
+				.registerTypeAdapterFactory(IndexGsonTypeFactories.pathPrefixPredicates())
+				.create();
 	}
 
 	// -----------------------------------------------------------------------

@@ -10,9 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.reconcilers;
 
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +34,7 @@ import org.springframework.ide.vscode.boot.java.jdt.refactoring.ChangeMethodVisi
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.ChangeMethodVisibilityRefactoring.Visibility;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
@@ -127,7 +128,7 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 	}
 
 	public static final boolean isNotOverridingPublicMethod(IMethodBinding methodBinding) {
-		return !isOverriding(methodBinding) && (methodBinding.getModifiers() & Modifier.PUBLIC) != 0;
+		return methodBinding != null && (methodBinding.getModifiers() & Modifier.PUBLIC) != 0 && !isOverriding(methodBinding);
 	}
 	
 	private void visitAnnotation(IJavaProject project, CompilationUnit cu, URI docUri, Annotation node,	IProblemCollector problemCollector, List<Integer> problemOffsets, List<ReconcileProblemImpl> problems) {
@@ -159,15 +160,18 @@ public class BeanMethodNotPublicReconciler implements JdtAstReconciler {
 	}
 	
 	private static final boolean isOverriding(IMethodBinding binding) {
-		try {
-			if (binding != null) {
-				Field f = binding.getClass().getDeclaredField("binding");
-				f.setAccessible(true);
-				org.eclipse.jdt.internal.compiler.lookup.MethodBinding  value = (org.eclipse.jdt.internal.compiler.lookup.MethodBinding) f.get(binding);
-				return value.isOverriding();
+		ITypeBinding declaringClass = binding.getDeclaringClass();
+		if (declaringClass == null) {
+			return false;
+		}
+		Iterator<ITypeBinding> hierarchy = ASTUtils.getHierarchyTypesBreadthFirstIterator(declaringClass);
+		hierarchy.next();
+		while (hierarchy.hasNext()) {
+			for (IMethodBinding inheritedMethod : hierarchy.next().getDeclaredMethods()) {
+				if (binding.overrides(inheritedMethod)) {
+					return true;
+				}
 			}
-		} catch (Exception e) {
-			log.error("", e);
 		}
 		return false;
 	}

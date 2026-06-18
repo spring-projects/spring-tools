@@ -123,4 +123,15 @@ public class SpringValidationBeanMethodNotPublicTest {
         List<Diagnostic> diagnostics = diagnosticsMessage.getDiagnostics();
         assertEquals(0, diagnostics.size());
     }
+
+    @Test
+    void testDoesNotFlagPublicBeanMethodThatOverridesInterfaceMethod() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/BeanMethodNotPublicOverride.java").toUri().toString();
+
+        PublishDiagnosticsParams diagnosticsMessage = harness.getDiagnostics(docUri);
+        assertNotNull(diagnosticsMessage);
+
+        List<Diagnostic> diagnostics = diagnosticsMessage.getDiagnostics();
+        assertEquals(0, diagnostics.size());
+    }
 }

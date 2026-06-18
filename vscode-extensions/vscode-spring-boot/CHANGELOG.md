@@ -1,3 +1,9 @@
+## 2.3.0 PRE-RELEASE
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ [validation] False positive for [JAVA_PUBLIC_BEAN_METHOD] lint warning [#1911](https://github.com/spring-projects/spring-tools/issues/1911)
+
 ## 2026-06-10 (5.2.0 RELEASE, incl. language servers version 2.2.0)
 
 #### important highlights

@@ -23,7 +23,7 @@ jobs:
     name: Changelog for the release
     steps:
       - name: Checkout wiki code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10    # 6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0    # 7.0.0
         with:
           repository: ${{github.repository}}.wiki
       - name: Extract Changelog
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # 6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # 7.0.0
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # 8.0.1
         with:
           name: changelog-${{ inputs.version }}-${{ github.run_id }}.md

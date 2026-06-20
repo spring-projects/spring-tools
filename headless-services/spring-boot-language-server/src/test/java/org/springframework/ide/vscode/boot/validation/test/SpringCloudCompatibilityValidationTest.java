@@ -161,7 +161,7 @@ public class SpringCloudCompatibilityValidationTest {
 		CPE cpe = mock(CPE.class);
 		when(cpe.getKind()).thenReturn(kind);
 		when(cpe.getPath()).thenReturn(path);
-		when(cpe.getVersion()).thenReturn(Version.parse(version));
+		when(cpe.getVersion()).thenReturn(version);
 		when(cpe.isSystem()).thenReturn(false);
 		when(cpe.getName()).thenReturn(name);
 		return cpe;

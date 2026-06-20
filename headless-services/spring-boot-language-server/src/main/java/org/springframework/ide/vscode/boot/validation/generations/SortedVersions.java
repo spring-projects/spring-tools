@@ -28,23 +28,33 @@ public class SortedVersions {
 				.collect(Collectors.toList());
 	}
 
+	/**
+	 * Returns the newest GA release with the same major.minor that is strictly newer than
+	 * {@code current}. Works correctly when {@code current} is itself a pre-release
+	 * (e.g. {@code 3.3.0-M1} → suggests {@code 3.3.0}).
+	 */
 	public Optional<Version> getNewerLatestPatchRelease(Version current) {
 		return descendingVersions.stream()
+				.filter(Version::isRelease)
 				.filter(v -> v.getMajor() == current.getMajor()
 						&& v.getMinor() == current.getMinor()
-						&& v.getPatch() > current.getPatch())
+						&& v.compareTo(current) > 0)
 				.findFirst();
 	}
 
+	/** Returns the newest GA release with the same major version but a higher minor. */
 	public Optional<Version> getNewerLatestMinorRelease(Version current) {
 		return descendingVersions.stream()
+				.filter(Version::isRelease)
 				.filter(v -> v.getMajor() == current.getMajor()
 						&& v.getMinor() > current.getMinor())
 				.findFirst();
 	}
 
+	/** Returns the newest GA release with a higher major version. */
 	public Optional<Version> getNewerLatestMajorRelease(Version current) {
 		return descendingVersions.stream()
+				.filter(Version::isRelease)
 				.filter(v -> v.getMajor() > current.getMajor())
 				.findFirst();
 	}

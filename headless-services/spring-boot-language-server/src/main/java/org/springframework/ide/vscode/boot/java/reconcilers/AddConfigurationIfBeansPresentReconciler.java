@@ -59,7 +59,7 @@ public class AddConfigurationIfBeansPresentReconciler implements JdtAstReconcile
 	@Override
 	public boolean isApplicable(IJavaProject project) {
 		Version version = SpringProjectUtil.getDependencyVersionByName(project, "spring-context");
-		return version != null && version.compareTo(new Version(3, 0, 0, null)) >= 0;
+		return version != null && version.compareTo(Version.parse("3.0.0")) >= 0;
 	}
 
 	@Override

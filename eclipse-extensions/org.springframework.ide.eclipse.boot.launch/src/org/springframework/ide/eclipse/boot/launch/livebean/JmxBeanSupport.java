@@ -64,9 +64,12 @@ public class JmxBeanSupport {
 		return new String[] {
 				"-Dcom.sun.management.jmxremote", //enable jmx to access the beans
 				"-D"+ JMX_PORT_PROP +"="+jmxPort,
+				"-Djava.rmi.server.hostname=localhost",
 				"-Dcom.sun.management.jmxremote.authenticate=false",
 				"-Dcom.sun.management.jmxremote.ssl=false",
-				"-Djava.rmi.server.hostname=localhost",
+				"-Dcom.sun.management.jmxremote.host=127.0.0.1",
+				"-Dcom.sun.management.jmxremote.local.only=true",
+
 				//
 				// PT 164402781 - For Boot 2.2 and above, jmx is no longer enabled by default.
 				// We explicitly enable it here. Adding this doesn't seem to affect older boot versions

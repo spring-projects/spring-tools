@@ -16,6 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.commons.Version.ReleaseType;
 
@@ -280,5 +285,139 @@ public class VersionTests {
 	@Test
 	void toMajorMinorPatchVersionStr() {
 		assertEquals("3.3.0", Version.parse("3.3.0-M1").toMajorMinorPatchVersionStr());
+	}
+
+	// ---- comprehensive sort-based comparison tests ----
+
+	@Test
+	void sortAllThreePartVersionVariants() {
+		// Covers every qualifier type, both short aliases (A/B/CR) and full names,
+		// numeric progression within a qualifier (M1<M2, RC1<RC2, SP1<SP2).
+		assertSortedOrder(
+			"3.3.0-A1",        // alpha (short alias)
+			"3.3.0-ALPHA1",    // alpha
+			"3.3.0-B1",        // beta (short alias)
+			"3.3.0-BETA1",     // beta
+			"3.3.0-M1",        // milestone
+			"3.3.0-M2",        // milestone, higher qualifier number
+			"3.3.0-CR1",       // rc (alias; CR < RC lexicographically)
+			"3.3.0-RC1",       // rc
+			"3.3.0-RC2",       // rc, higher qualifier number
+			"3.3.0-SNAPSHOT",  // snapshot
+			"3.3.0",           // release (GA)
+			"3.3.0-SP1",       // service pack
+			"3.3.0-SP2"        // service pack, higher qualifier number
+		);
+	}
+
+	@Test
+	void sortAllFourPartVersionVariants() {
+		// Same qualifier coverage as the 3-part test but with a 4th numeric component.
+		assertSortedOrder(
+			"3.3.0.1-A1",
+			"3.3.0.1-ALPHA1",
+			"3.3.0.1-B1",
+			"3.3.0.1-BETA1",
+			"3.3.0.1-M1",
+			"3.3.0.1-M2",
+			"3.3.0.1-CR1",
+			"3.3.0.1-RC1",
+			"3.3.0.1-RC2",
+			"3.3.0.1-SNAPSHOT",
+			"3.3.0.1",
+			"3.3.0.1-SP1",
+			"3.3.0.1-SP2"
+		);
+	}
+
+	@Test
+	void sortThreeAndFourPartVersionsMixed() {
+		// All 3-part and 4-part variants interleaved in one list.
+		// The critical boundary is 3.3.0-SP2 < 3.3.0.1-A1: the 4th numeric
+		// component (build=1 vs 0) dominates even the highest 3-part qualifier.
+		assertSortedOrder(
+			"3.3.0-A1",
+			"3.3.0-ALPHA1",
+			"3.3.0-B1",
+			"3.3.0-BETA1",
+			"3.3.0-M1",
+			"3.3.0-M2",
+			"3.3.0-CR1",
+			"3.3.0-RC1",
+			"3.3.0-RC2",
+			"3.3.0-SNAPSHOT",
+			"3.3.0",
+			"3.3.0-SP1",
+			"3.3.0-SP2",
+			"3.3.0.1-A1",
+			"3.3.0.1-ALPHA1",
+			"3.3.0.1-B1",
+			"3.3.0.1-BETA1",
+			"3.3.0.1-M1",
+			"3.3.0.1-M2",
+			"3.3.0.1-CR1",
+			"3.3.0.1-RC1",
+			"3.3.0.1-RC2",
+			"3.3.0.1-SNAPSHOT",
+			"3.3.0.1",
+			"3.3.0.1-SP1",
+			"3.3.0.1-SP2"
+		);
+	}
+
+	@Test
+	void numericComponentsDominateQualifier() {
+		// A strictly higher numeric component (build, patch, minor, major) always
+		// wins over qualifier, so alpha of the next tier > SP of the prior tier.
+		assertSortedOrder(
+			"3.3.0-SP2",    // highest 3-part qualifier
+			"3.3.0.1-A1",   // 4th numeric component beats any 3-part qualifier
+			"3.3.0.1-SP2",  // highest 4-part qualifier
+			"3.3.1-A1",     // higher patch beats any build/qualifier
+			"3.3.1-SP2",
+			"3.4.0-A1",     // higher minor beats any patch/qualifier
+			"3.4.0-SP2",
+			"4.0.0-A1",     // higher major beats everything
+			"4.0.0-SP2"
+		);
+	}
+
+	@Test
+	void gaAliasesCompareEqualToPlainRelease() {
+		Version plain = Version.parse("3.3.0");
+		assertEquals(0, plain.compareTo(Version.parse("3.3.0.RELEASE")));
+		assertEquals(0, plain.compareTo(Version.parse("3.3.0.GA")));
+		assertEquals(0, plain.compareTo(Version.parse("3.3.0.FINAL")));
+		assertEquals(0, Version.parse("3.3.0.RELEASE").compareTo(Version.parse("3.3.0.GA")));
+		assertEquals(0, Version.parse("3.3.0.GA").compareTo(Version.parse("3.3.0.FINAL")));
+	}
+
+	@Test
+	void dotSeparatorQualifiersRespectPriority() {
+		// Old-style dot-separated qualifiers observe the same priority order.
+		assertTrue(Version.parse("3.3.0.M1").compareTo(Version.parse("3.3.0.RC1")) < 0);
+		assertTrue(Version.parse("3.3.0.RC1").compareTo(Version.parse("3.3.0.SNAPSHOT")) < 0);
+		// Dot separator ('.' = 46) > hyphen ('-' = 45), so when qualifier priority
+		// ties the fallback string comparison puts dot-style after hyphen-style:
+		// "3.3.0.M1" > "3.3.0-M2" even though M2 > M1 numerically.
+		assertTrue(Version.parse("3.3.0-M2").compareTo(Version.parse("3.3.0.M1")) < 0);
+	}
+
+	@Test
+	void caseInsensitiveVersionStringsCompareEqual() {
+		// Identical strings differing only in case short-circuit to 0 without parsing.
+		assertEquals(0, Version.parse("3.3.0-SNAPSHOT").compareTo(Version.parse("3.3.0-snapshot")));
+		assertEquals(0, Version.parse("3.3.0-RC1").compareTo(Version.parse("3.3.0-rc1")));
+		assertEquals(0, Version.parse("3.3.0-M1").compareTo(Version.parse("3.3.0-m1")));
+	}
+
+	private void assertSortedOrder(String... expectedOrder) {
+		List<Version> versions = Arrays.stream(expectedOrder)
+				.map(Version::parse)
+				.collect(Collectors.toList());
+		Collections.reverse(versions);
+		versions.sort(null);
+		List<String> actual = versions.stream().map(Version::toString).collect(Collectors.toList());
+		assertEquals(List.of(expectedOrder), actual);
 	}
 }

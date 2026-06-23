@@ -125,6 +125,18 @@ public class SpringIndexerConfigurationPropertiesTest {
     }
     
     @Test
+    void testInnerRecordIsNotIndexedAsBean() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/com/example/configproperties/ConfigurationPropertiesWithInnerRecords.java").toUri().toString();
+
+        Bean[] beans = springIndex.getBeansOfDocument(docUri);
+        assertEquals(1, beans.length);
+
+        Bean configPropertiesBean = beans[0];
+        assertEquals("configurationPropertiesWithInnerRecords", configPropertiesBean.getName());
+        assertEquals("com.example.configproperties.ConfigurationPropertiesWithInnerRecords", configPropertiesBean.getType());
+    }
+
+    @Test
     void testSimpleConfigPropertiesRecordAndConfigurationAnnotation() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/com/example/configproperties/ConfigurationPropertiesWithRecordsAndConfigurationAnnotation.java").toUri().toString();
 

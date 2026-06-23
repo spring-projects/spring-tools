@@ -136,14 +136,25 @@ public class ComponentIndexer implements SpringComponentIndexer {
 	
 	@Override
 	public void index(RecordDeclaration recordDeclaration, SpringIndexerJavaContext context) throws Exception {
-		Bean beanDefinition = BeanUtils.createBean(recordDeclaration, context.getDoc(), BeanUtils.COMPONENT_LABEL_STRATEGY);
-		if (beanDefinition == null) {
-			return;
-		}
-		TextDocument doc = context.getDoc();
-		indexConfigurationProperties(beanDefinition, recordDeclaration, context, doc);
+		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(recordDeclaration);
+		ITypeBinding typeBinding = recordDeclaration.resolveBinding();
+		if (typeBinding == null) return;
 
-		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+		boolean isComponent = annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.COMPONENT)
+				|| annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.NAMED_JAKARTA)
+				|| annotationHierarchies.isAnnotatedWith(typeBinding, Annotations.NAMED_JAVAX);
+
+		if (isComponent) {
+			Bean beanDefinition = BeanUtils.createBean(recordDeclaration, context.getDoc(), BeanUtils.COMPONENT_LABEL_STRATEGY);
+			if (beanDefinition != null) {
+				indexConfigurationProperties(beanDefinition, recordDeclaration, context, context.getDoc());
+				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
+			}
+		}
+		else {
+			// handles @ConfigurationProperties records that are not @Component
+			indexConfigurationProperties(null, recordDeclaration, context, context.getDoc());
+		}
 	}
 	
 	@Override

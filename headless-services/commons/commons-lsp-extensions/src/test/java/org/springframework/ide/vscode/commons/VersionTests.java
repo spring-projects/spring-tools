@@ -291,16 +291,13 @@ public class VersionTests {
 
 	@Test
 	void sortAllThreePartVersionVariants() {
-		// Covers every qualifier type, both short aliases (A/B/CR) and full names,
-		// numeric progression within a qualifier (M1<M2, RC1<RC2, SP1<SP2).
+		// Covers every qualifier type and numeric progression (M1<M2, RC1<RC2, SP1<SP2).
+		// Aliases (A/ALPHA, B/BETA, CR/RC) compare equal and are tested in aliasesCompareEqual.
 		assertSortedOrder(
-			"3.3.0-A1",        // alpha (short alias)
 			"3.3.0-ALPHA1",    // alpha
-			"3.3.0-B1",        // beta (short alias)
 			"3.3.0-BETA1",     // beta
 			"3.3.0-M1",        // milestone
 			"3.3.0-M2",        // milestone, higher qualifier number
-			"3.3.0-CR1",       // rc (alias; CR < RC lexicographically)
 			"3.3.0-RC1",       // rc
 			"3.3.0-RC2",       // rc, higher qualifier number
 			"3.3.0-SNAPSHOT",  // snapshot
@@ -314,13 +311,10 @@ public class VersionTests {
 	void sortAllFourPartVersionVariants() {
 		// Same qualifier coverage as the 3-part test but with a 4th numeric component.
 		assertSortedOrder(
-			"3.3.0.1-A1",
 			"3.3.0.1-ALPHA1",
-			"3.3.0.1-B1",
 			"3.3.0.1-BETA1",
 			"3.3.0.1-M1",
 			"3.3.0.1-M2",
-			"3.3.0.1-CR1",
 			"3.3.0.1-RC1",
 			"3.3.0.1-RC2",
 			"3.3.0.1-SNAPSHOT",
@@ -333,29 +327,23 @@ public class VersionTests {
 	@Test
 	void sortThreeAndFourPartVersionsMixed() {
 		// All 3-part and 4-part variants interleaved in one list.
-		// The critical boundary is 3.3.0-SP2 < 3.3.0.1-A1: the 4th numeric
+		// The critical boundary is 3.3.0-SP2 < 3.3.0.1-ALPHA1: the 4th numeric
 		// component (build=1 vs 0) dominates even the highest 3-part qualifier.
 		assertSortedOrder(
-			"3.3.0-A1",
 			"3.3.0-ALPHA1",
-			"3.3.0-B1",
 			"3.3.0-BETA1",
 			"3.3.0-M1",
 			"3.3.0-M2",
-			"3.3.0-CR1",
 			"3.3.0-RC1",
 			"3.3.0-RC2",
 			"3.3.0-SNAPSHOT",
 			"3.3.0",
 			"3.3.0-SP1",
 			"3.3.0-SP2",
-			"3.3.0.1-A1",
 			"3.3.0.1-ALPHA1",
-			"3.3.0.1-B1",
 			"3.3.0.1-BETA1",
 			"3.3.0.1-M1",
 			"3.3.0.1-M2",
-			"3.3.0.1-CR1",
 			"3.3.0.1-RC1",
 			"3.3.0.1-RC2",
 			"3.3.0.1-SNAPSHOT",
@@ -383,6 +371,17 @@ public class VersionTests {
 	}
 
 	@Test
+	void timestampedSnapshotTreatedAsSnapshot() {
+		// Maven timestamped snapshots (e.g. from a remote repo) must be < the GA release.
+		Version tsSnap = Version.parse("4.0.2-SNAPSHOT-20250101.123456-1");
+		Version snap   = Version.parse("4.0.2-SNAPSHOT");
+		Version fin    = Version.parse("4.0.2.Final");
+		assertEquals(ReleaseType.SNAPSHOT, tsSnap.getReleaseType());
+		assertTrue(tsSnap.compareTo(fin) < 0,  "timestamped snapshot < Final");
+		assertEquals(0, tsSnap.compareTo(snap), "timestamped snapshot == plain snapshot");
+	}
+
+	@Test
 	void gaAliasesCompareEqualToPlainRelease() {
 		Version plain = Version.parse("3.3.0");
 		assertEquals(0, plain.compareTo(Version.parse("3.3.0.RELEASE")));
@@ -397,15 +396,22 @@ public class VersionTests {
 		// Old-style dot-separated qualifiers observe the same priority order.
 		assertTrue(Version.parse("3.3.0.M1").compareTo(Version.parse("3.3.0.RC1")) < 0);
 		assertTrue(Version.parse("3.3.0.RC1").compareTo(Version.parse("3.3.0.SNAPSHOT")) < 0);
-		// Dot separator ('.' = 46) > hyphen ('-' = 45), so when qualifier priority
-		// ties the fallback string comparison puts dot-style after hyphen-style:
-		// "3.3.0.M1" > "3.3.0-M2" even though M2 > M1 numerically.
-		assertTrue(Version.parse("3.3.0-M2").compareTo(Version.parse("3.3.0.M1")) < 0);
+		// Separator style is irrelevant — only the qualifier number matters,
+		// so "3.3.0-M2" (number=2) > "3.3.0.M1" (number=1).
+		assertTrue(Version.parse("3.3.0-M2").compareTo(Version.parse("3.3.0.M1")) > 0);
+	}
+
+	@Test
+	void aliasesCompareEqual() {
+		// Short and long qualifier aliases have the same ReleaseType and number, so they compare equal.
+		assertEquals(0, Version.parse("3.3.0-A1").compareTo(Version.parse("3.3.0-ALPHA1")));
+		assertEquals(0, Version.parse("3.3.0-B1").compareTo(Version.parse("3.3.0-BETA1")));
+		assertEquals(0, Version.parse("3.3.0-CR1").compareTo(Version.parse("3.3.0-RC1")));
 	}
 
 	@Test
 	void caseInsensitiveVersionStringsCompareEqual() {
-		// Identical strings differing only in case short-circuit to 0 without parsing.
+		// Qualifier parsing is case-insensitive, so mixed-case versions compare equal.
 		assertEquals(0, Version.parse("3.3.0-SNAPSHOT").compareTo(Version.parse("3.3.0-snapshot")));
 		assertEquals(0, Version.parse("3.3.0-RC1").compareTo(Version.parse("3.3.0-rc1")));
 		assertEquals(0, Version.parse("3.3.0-M1").compareTo(Version.parse("3.3.0-m1")));

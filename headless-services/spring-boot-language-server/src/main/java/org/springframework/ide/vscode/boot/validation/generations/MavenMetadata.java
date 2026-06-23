@@ -30,7 +30,7 @@ public class MavenMetadata {
 			for (String vStr : rawMetadata.getVersioning().getVersions()) {
 				try {
 					Version v = Version.parse(vStr);
-					if (isRelease(v)) {
+					if (v != null && v.isRelease()) {
 						releases.add(v);
 					}
 				} catch (Exception e) {
@@ -40,11 +40,6 @@ public class MavenMetadata {
 		}
 
 		this.releaseVersions = new SortedVersions(releases);
-	}
-
-	private boolean isRelease(Version v) {
-		String qualifier = v.getQualifier();
-		return qualifier == null || qualifier.isEmpty() || "RELEASE".equalsIgnoreCase(qualifier);
 	}
 
 	public SortedVersions getReleaseVersions() {

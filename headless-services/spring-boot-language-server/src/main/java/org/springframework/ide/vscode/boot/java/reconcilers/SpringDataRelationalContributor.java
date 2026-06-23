@@ -47,7 +47,7 @@ class SpringDataRelationalContributor implements SpringDataPropertyReferenceCont
 	@Override
 	public boolean isApplicable(IJavaProject project) {
 		Version version = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-data-relational");
-		return version != null && version.compareTo(new Version(4, 1, 0, null)) >= 0;
+		return version != null && version.compareTo(Version.parse("4.1.0-M2")) >= 0;
 	}
 
 	@Override

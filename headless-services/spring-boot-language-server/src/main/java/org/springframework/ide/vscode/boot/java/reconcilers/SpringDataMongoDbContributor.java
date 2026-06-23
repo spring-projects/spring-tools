@@ -53,7 +53,7 @@ class SpringDataMongoDbContributor implements SpringDataPropertyReferenceContrib
 	@Override
 	public boolean isApplicable(IJavaProject project) {
 		Version version = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-data-mongodb");
-		return version != null && version.compareTo(new Version(5, 1, 0, null)) >= 0;
+		return version != null && version.compareTo(Version.parse("5.1.0-M2")) >= 0;
 	}
 
 	@Override

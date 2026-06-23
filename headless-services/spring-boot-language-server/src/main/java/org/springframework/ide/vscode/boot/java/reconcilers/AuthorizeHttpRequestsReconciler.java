@@ -48,7 +48,7 @@ public class AuthorizeHttpRequestsReconciler implements JdtAstReconciler {
 	@Override
 	public boolean isApplicable(IJavaProject project) {
 		Version version = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-security-config");
-		return version != null && version.compareTo(new Version(5, 6, 0, null)) >= 0;
+		return version != null && version.compareTo(Version.parse("5.6.0")) >= 0;
 	}
 
 	@Override

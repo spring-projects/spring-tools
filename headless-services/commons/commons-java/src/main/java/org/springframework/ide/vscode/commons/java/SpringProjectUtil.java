@@ -32,13 +32,13 @@ public class SpringProjectUtil {
 
 	public static final String SPRING_BOOT = "spring-boot";
 	public static final String SPRING_WEB = "spring-web";
-	
+
 	private static final String GENERATION_VERSION_STR = "([0-9]+)";
 
 	public static final Logger log = LoggerFactory.getLogger(SpringProjectUtil.class);
-		
+
 	private static final Pattern GENERATION_VERSION = Pattern.compile(GENERATION_VERSION_STR);
-	
+
 	public static boolean isSpringProject(IJavaProject jp) {
 		return jp.getClasspath().findBinaryLibraryByPrefix("spring-core").isPresent();
 	}
@@ -50,50 +50,43 @@ public class SpringProjectUtil {
 	public static boolean hasBootActuators(IJavaProject jp) {
 		return jp.getClasspath().findBinaryLibraryByPrefix("spring-boot-actuator-").isPresent();
 	}
-	
+
 	/**
-	 *  Parses version from the given generation name (e.g. "2.1.x"
-	 * @param name
-	 * @return Version if valid generation name with major and minor components
-	 * @throws Exception if invalid generation name
+	 * Parses a {@link Version} from the given generation name (e.g. {@code "2.1.x"} → {@code 2.1.0}).
+	 *
+	 * @param name generation name containing at least major and minor numeric components
+	 * @return parsed {@link Version}
+	 * @throws IllegalArgumentException if the name does not contain major and minor components
 	 */
 	public static Version getVersionFromGeneration(String name) throws Exception {
 		Matcher matcher = GENERATION_VERSION.matcher(name);
 		String major = null;
 		String minor = null;
-		
+
 		if (matcher.find()) {
-			int start = matcher.start();
-			int end = matcher.end();
-			major =  name.substring(start, end);
+			major = name.substring(matcher.start(), matcher.end());
 		}
-		
 		if (matcher.find()) {
-			int start = matcher.start();
-			int end = matcher.end();
-			minor =  name.substring(start, end);
+			minor = name.substring(matcher.start(), matcher.end());
 		}
-		
+
 		if (major != null && minor != null) {
-			return new Version(
-					Integer.parseInt(major),
-					Integer.parseInt(minor),
-					0,
-					null
-			);
+			return Version.parse("%s.%s.0".formatted(major, minor));
 		}
 
 		throw new IllegalArgumentException("Invalid semver. Unable to parse major and minor version from: " + name);
 	}
 
 	public static Version getDependencyVersionByPrefix(IJavaProject jp, String dependencyPrefix) {
-		return jp.getClasspath().findBinaryLibraryByPrefix(dependencyPrefix).map(cpe -> cpe.getVersion()).orElse(null);
+		return jp.getClasspath().findBinaryLibraryByPrefix(dependencyPrefix)
+				.map(cpe -> Version.parse(cpe.getVersion())).orElse(null);
 	}
-	
-	public static Version getDependencyVersionByName(IJavaProject jp, String name) {		
-		return jp.getClasspath().findBinaryLibraryByName(name).map(cpe -> cpe.getVersion()).orElse(null);
+
+	public static Version getDependencyVersionByName(IJavaProject jp, String name) {
+		return jp.getClasspath().findBinaryLibraryByName(name)
+				.map(cpe -> Version.parse(cpe.getVersion())).orElse(null);
 	}
-	
+
 	public static boolean hasDependencyStartingWith(IJavaProject jp, String dependency, Predicate<CPE> filter) {
 		IClasspath classpath = jp.getClasspath();
 		return classpath.findBinaryLibraryByPrefix(dependency).or(() -> {
@@ -123,7 +116,7 @@ public class SpringProjectUtil {
 	public static Version getSpringBootVersion(IJavaProject jp) {
 		return getDependencyVersionByName(jp, SPRING_BOOT);
 	}
-	
+
 	public static Predicate<IJavaProject> springBootVersionGreaterOrEqual(int major, int minor, int patch) {
 		return libraryVersionGreaterOrEqual(SPRING_BOOT, major, minor, patch);
 	}
@@ -131,29 +124,15 @@ public class SpringProjectUtil {
 	public static Predicate<IJavaProject> libraryVersionGreaterOrEqual(String libraryName, int major, int minor, int patch) {
 		return project -> {
 			Version version = getDependencyVersionByName(project, libraryName);
-			if (version == null) {
-				return false;
-			}
-			if (major > version.getMajor()) {
-				return false;
-			}
-			if (major == version.getMajor()) {
-				if (minor > version.getMinor()) {
-					return false;
-				}
-				if (minor == version.getMinor()) {
-					return patch <= version.getPatch();
-				}
-			}
-			return true;
+			return version != null && version.compareTo(Version.parse("%d.%d.%d".formatted(major, minor, patch))) >= 0;
 		};
 	}
-	
+
 	/**
 	 * Finds Spring Boot application.properties and application.yml files in the project's resource folders.
 	 * Prioritizes main application.properties/yml files over profile-specific files (application-*.properties/yml).
 	 * Excludes test resources.
-	 * 
+	 *
 	 * @param project the Java project
 	 * @return list of Boot properties/YAML file paths, with main files prioritized over profile-specific files
 	 */
@@ -177,8 +156,6 @@ public class SpringProjectUtil {
 			// ignore
 			return Collections.emptyList();
 		}
-		
 	}
-	
 
 }

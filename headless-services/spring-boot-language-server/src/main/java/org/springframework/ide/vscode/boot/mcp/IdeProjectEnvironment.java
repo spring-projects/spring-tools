@@ -95,7 +95,7 @@ public class IdeProjectEnvironment {
 		// strip version
 		name = name.substring(0, name.lastIndexOf('-'));
 
-		String version = cpe.getVersion() != null ? cpe.getVersion().toString() : "";
+		String version = cpe.getVersion() != null ? cpe.getVersion() : "";
 
 		return new Dependency(name, version);
 	}

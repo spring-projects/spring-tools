@@ -97,7 +97,7 @@ public class ProjectInformation {
 		return classpathEntries.stream()
 			.filter(cpe -> Classpath.ENTRY_KIND_BINARY.equals(cpe.getKind()))
 			.filter(cpe -> !cpe.isSystem())
-			.map(cpe -> new Library(cpe.getPath(), cpe.getVersion().toString()))
+			.map(cpe -> new Library(cpe.getPath(), cpe.getVersion()))
 			.toList();
 	}
 	

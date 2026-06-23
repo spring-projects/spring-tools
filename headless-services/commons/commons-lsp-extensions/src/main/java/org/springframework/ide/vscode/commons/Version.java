@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,20 +14,86 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Represents a parsed artifact version with support for multi-part numeric versions
+ * (major.minor.patch.build) and pre-release qualifiers (M, RC, SNAPSHOT, etc.).
+ * <p>
+ * Sorting follows the same qualifier precedence as OpenRewrite's {@code LatestRelease}:
+ * alpha &lt; beta &lt; milestone &lt; rc &lt; snapshot &lt; release &lt; service-pack.
+ * <p>
+ * The comparison and parsing logic in this class is derived from
+ * {@code org.openrewrite.semver.VersionComparator} and {@code org.openrewrite.semver.LatestRelease}
+ * (Apache License 2.0, Copyright 2021 the OpenRewrite authors).
+ *
+ * @author Alex Boyko
+ */
 public final class Version implements Comparable<Version> {
-	
-	private static final Pattern VERSION_PATTERN = Pattern.compile("(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:(-|\\.)((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?");
-	
-	private int major;
-	private int minor;
-	private int patch;
-	private String qualifier;
-	
-	public Version(int major, int minor, int patch, String qualifier) {
+
+	// Derived from org.openrewrite.semver.VersionComparator (Apache 2.0)
+	// Groups: 1=major, 2=minor, 3=patch, 4=build (4th numeric part), 5=fifth part, 6=qualifier suffix
+	private static final Pattern RELEASE_PATTERN = Pattern.compile(
+			"(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?(?:\\.(\\d+))?(?:\\.(\\d+))?([-.+].*)?");
+	private static final int QUALIFIER_GROUP = 6;
+
+	private static final Pattern QUALIFIER_TYPE_PATTERN =
+			Pattern.compile("^(snapshot|alpha|a|beta|b|milestone|m|rc|cr|sp)(\\d*)$",
+					Pattern.CASE_INSENSITIVE);
+
+	/**
+	 * The release category of a version, ordered from least to most stable.
+	 */
+	public enum ReleaseType {
+		ALPHA(1),
+		BETA(2),
+		MILESTONE(3),
+		RC(4),
+		SNAPSHOT(5),
+		RELEASE(6),
+		SERVICE_PACK(7);
+
+		private final int priority;
+
+		ReleaseType(int priority) {
+			this.priority = priority;
+		}
+
+		/** Numeric ordering value — higher means more stable/newer. */
+		public int getPriority() {
+			return priority;
+		}
+
+		/** True for everything before a GA release (alpha, beta, milestone, rc, snapshot). */
+		public boolean isPreRelease() {
+			return priority < RELEASE.priority;
+		}
+
+		public boolean isSnapshot() {
+			return this == SNAPSHOT;
+		}
+	}
+
+	private final int major;
+	private final int minor;
+	private final int patch;
+	/** Fourth numeric component (e.g. the {@code 1} in {@code 3.3.0.1}); 0 if absent. */
+	private final int build;
+	/** Qualifier text without its leading separator (e.g. {@code "M1"}, {@code "SNAPSHOT"}), or {@code null}. */
+	private final String qualifier;
+	private final ReleaseType releaseType;
+	/** Numeric suffix of the qualifier (e.g. {@code 1} for {@code M1} or {@code RC2→2}); 0 if absent. */
+	private final int qualifierNumber;
+	/** Original parsed string — used for display. */
+	private final String versionString;
+
+	private Version(int major, int minor, int patch, int build, String qualifier, String originalString) {
 		this.major = major;
 		this.minor = minor;
 		this.patch = patch;
+		this.build = build;
 		this.qualifier = qualifier;
+		this.releaseType = toReleaseType(qualifier);
+		this.qualifierNumber = toQualifierNumber(qualifier);
+		this.versionString = originalString;
 	}
 
 	public int getMajor() {
@@ -42,107 +108,181 @@ public final class Version implements Comparable<Version> {
 		return patch;
 	}
 
+	/** Fourth numeric version component; 0 when not present (e.g. {@code 3.3.0} → 0). */
+	public int getBuild() {
+		return build;
+	}
+
+	/**
+	 * Raw qualifier text without its leading separator, or {@code null} for GA releases.
+	 * Examples: {@code "SNAPSHOT"}, {@code "M1"}, {@code "RC2"}.
+	 */
 	public String getQualifier() {
 		return qualifier;
 	}
-	
+
+	public ReleaseType getReleaseType() {
+		return releaseType;
+	}
+
+	/** Numeric suffix of the qualifier; 0 when absent (e.g. {@code SNAPSHOT→0}, {@code M1→1}, {@code RC2→2}). */
+	public int getQualifierNumber() {
+		return qualifierNumber;
+	}
+
+	/** True for GA releases and service packs. */
+	public boolean isRelease() {
+		return releaseType == ReleaseType.RELEASE || releaseType == ReleaseType.SERVICE_PACK;
+	}
+
+	/** True for any version that is not yet a GA release (alpha, beta, M, RC, SNAPSHOT). */
+	public boolean isPreRelease() {
+		return releaseType.isPreRelease();
+	}
+
+	public boolean isSnapshot() {
+		return releaseType == ReleaseType.SNAPSHOT;
+	}
+
 	public String toMajorMinorVersionStr() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(major);
-		sb.append('.');
-		sb.append(minor);
-		return sb.toString();
+		return major + "." + minor;
 	}
 
 	public String toMajorMinorPatchVersionStr() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(major);
-		sb.append('.');
-		sb.append(minor);
-		sb.append('.');
-		sb.append(patch);
-		return sb.toString();
-	}
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(major);
-		sb.append('.');
-		sb.append(minor);
-		sb.append('.');
-		sb.append(patch);
-		if (qualifier != null) {
-			sb.append('.');
-			sb.append(qualifier);
-		}
-		return sb.toString();
+		return major + "." + minor + "." + patch;
 	}
 
+	/** Returns the original parsed version string (e.g. {@code "3.3.0-M1"}, {@code "3.3.0.RELEASE"}). */
+	@Override
+	public String toString() {
+		return versionString;
+	}
+
+	/**
+	 * Compares using qualifier-aware semantic ordering:
+	 * alpha &lt; beta &lt; milestone &lt; rc &lt; snapshot &lt; release &lt; service-pack.
+	 * Four-part numeric versions are handled correctly.
+	 * <p>
+	 * Algorithm derived from {@code org.openrewrite.semver.LatestRelease} (Apache 2.0).
+	 */
 	@Override
 	public int compareTo(Version o) {
-		if (major == o.major) {
-			if (minor == o.minor) {
-				return patch - o.patch;
-			} else {
-				return minor - o.minor;
-			}
-		} else {
-			return major - o.major;
-		}
+		int d;
+		if ((d = Integer.compare(major, o.major)) != 0) return d;
+		if ((d = Integer.compare(minor, o.minor)) != 0) return d;
+		if ((d = Integer.compare(patch, o.patch)) != 0) return d;
+		if ((d = Integer.compare(build, o.build)) != 0) return d;
+		if ((d = Integer.compare(releaseType.getPriority(), o.releaseType.getPriority())) != 0) return d;
+		return Integer.compare(qualifierNumber, o.qualifierNumber);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(major, minor, patch, qualifier);
+		return Objects.hash(major, minor, patch, build, qualifier);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (!(obj instanceof Version)) {
 			return false;
-		if (getClass() != obj.getClass())
-			return false;
+		}
 		Version other = (Version) obj;
 		return major == other.major && minor == other.minor && patch == other.patch
-				&& Objects.equals(qualifier, other.qualifier);
+				&& build == other.build && Objects.equals(qualifier, other.qualifier);
 	}
-	
-	public static Version parse(String version) {
-		Matcher matcher = VERSION_PATTERN.matcher(version);
-		if (matcher.find() && matcher.groupCount() > 4) {
-			String major = matcher.group(1);
-			String minor = matcher.group(2);
-			String patch = matcher.group(3);
-			String qualifier = matcher.group(5);
-			return new Version(
-					Integer.parseInt(major),
-					Integer.parseInt(minor),
-					Integer.parseInt(patch),
-					qualifier
-			);
-		} else {
-			String[] tokens = version.split("\\.");
-			if (tokens.length <= 3) {
-				if (tokens.length >= 1) {
-					int major = Integer.parseInt(tokens[0]);
-					if (tokens.length >= 2) {
-						int minor = Integer.parseInt(tokens[1]);
-						if (tokens.length == 3) {
-							int patch = Integer.parseInt(tokens[2]);
-							return new Version(major, minor, patch, null);
-						} else {
-							return new Version(major, minor, 0, null);
-						}
-					} else {
-						return new Version(major, 0, 0, null);
-					}
-				}
+
+	/**
+	 * Parses a version string into a {@link Version}.
+	 * <p>
+	 * Accepts formats like {@code 3.3.0}, {@code 3.3.0-M1}, {@code 3.3.0-SNAPSHOT},
+	 * {@code 3.3.0.RELEASE}, {@code 3.3.0.1} (four-part), {@code 2.7}, {@code 2}.
+	 *
+	 * @return the parsed version, or {@code null} if the string cannot be parsed
+	 */
+	public static Version parse(String versionStr) {
+		if (versionStr == null || versionStr.isEmpty()) {
+			return null;
+		}
+		Matcher m = RELEASE_PATTERN.matcher(versionStr);
+		if (m.matches()) {
+			int major = parseGroup(m, 1);
+			int minor = parseGroup(m, 2);
+			int patch = parseGroup(m, 3);
+			int build = parseGroup(m, 4);
+			String qualifier = stripSeparator(m.group(QUALIFIER_GROUP));
+			return new Version(major, minor, patch, build, qualifier, versionStr);
+		}
+		// Fallback: simple dot-delimited numeric segments
+		String[] parts = versionStr.split("\\.");
+		try {
+			int major = Integer.parseInt(parts[0]);
+			int minor = parts.length >= 2 ? Integer.parseInt(parts[1]) : 0;
+			int patch = parts.length >= 3 ? Integer.parseInt(parts[2]) : 0;
+			return new Version(major, minor, patch, 0, null, versionStr);
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	// ---- parsing helpers ----
+
+	private static int parseGroup(Matcher m, int group) {
+		String s = m.group(group);
+		return s != null ? Integer.parseInt(s) : 0;
+	}
+
+	private static String stripSeparator(String qualifierWithSep) {
+		if (qualifierWithSep == null || qualifierWithSep.isEmpty()) {
+			return null;
+		}
+		char sep = qualifierWithSep.charAt(0);
+		if (sep == '-' || sep == '.' || sep == '+') {
+			String text = qualifierWithSep.substring(1);
+			return text.isEmpty() ? null : text;
+		}
+		return qualifierWithSep;
+	}
+
+	private static int toQualifierNumber(String qualifier) {
+		if (qualifier == null || qualifier.isEmpty()) {
+			return 0;
+		}
+		Matcher m = QUALIFIER_TYPE_PATTERN.matcher(qualifier);
+		if (m.matches()) {
+			String num = m.group(2);
+			return num.isEmpty() ? 0 : Integer.parseInt(num);
+		}
+		return 0;
+	}
+
+	private static ReleaseType toReleaseType(String qualifier) {
+		if (qualifier == null || qualifier.isEmpty()) {
+			return ReleaseType.RELEASE;
+		}
+		String lower = qualifier.toLowerCase();
+		if (lower.equals("release") || lower.equals("ga") || lower.equals("final")) {
+			return ReleaseType.RELEASE;
+		}
+		if (lower.startsWith("snapshot")) {
+			return ReleaseType.SNAPSHOT;
+		}
+		if (lower.startsWith("sp")) {
+			return ReleaseType.SERVICE_PACK;
+		}
+		Matcher m = QUALIFIER_TYPE_PATTERN.matcher(lower);
+		if (m.matches()) {
+			switch (m.group(1).toLowerCase()) {
+				case "snapshot":               return ReleaseType.SNAPSHOT;
+				case "rc": case "cr":          return ReleaseType.RC;
+				case "milestone": case "m":    return ReleaseType.MILESTONE;
+				case "beta": case "b":         return ReleaseType.BETA;
+				case "alpha": case "a":        return ReleaseType.ALPHA;
+				default:                       break;
 			}
 		}
-		return null;
+		return ReleaseType.RELEASE;
 	}
-
-
 }

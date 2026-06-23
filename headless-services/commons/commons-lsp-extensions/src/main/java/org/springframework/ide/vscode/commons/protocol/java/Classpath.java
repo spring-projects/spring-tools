@@ -19,8 +19,6 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.springframework.ide.vscode.commons.Version;
-
 public class Classpath {
 	
 	// Pattern copied from https://semver.org/
@@ -81,7 +79,7 @@ public class Classpath {
 		
 		private Map<String, String> extra;
 		
-		transient private Version version;
+		transient private String version;
 		transient private String name;
 
 		public CPE() {}
@@ -225,7 +223,7 @@ public class Classpath {
 					&& Objects.equals(path, other.path) && Objects.equals(sourceContainerUrl, other.sourceContainerUrl);
 		}
 		
-		public Version getVersion() {
+		public String getVersion() {
 			if (version == null) {
 				if (ENTRY_KIND_BINARY.equals(getKind()) && !isSystem) {
 					version = getDependencyVersion(new File(getPath()).getName());
@@ -269,14 +267,12 @@ public class Classpath {
 		return isProjectJavaSource(cpe) && cpe.isTest();
 	}
 
-	static Version getDependencyVersion(String fileName) {
+	static String getDependencyVersion(String fileName) {
 		Matcher matcher = VERSION_PATTERN.matcher(fileName);
-		if (matcher.find() && matcher.groupCount() > 5) {
-			String major = matcher.group(1);
-			String minor = matcher.group(2);
-			String patch = matcher.group(3);
-			String qualifier = matcher.group(5);
-			return new Version(Integer.parseInt(major), Integer.parseInt(minor), Integer.parseInt(patch), qualifier);
+		if (matcher.find()) {
+			// Slice out the version string directly from the filename — everything from
+			// the start of the major number up to (not including) ".jar".
+			return fileName.substring(matcher.start(1), fileName.length() - ".jar".length());
 		}
 		return null;
 	}

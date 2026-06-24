@@ -192,6 +192,11 @@ public class BootLanguageServerBootApp {
 				//Avoid NPE
 				appData = new RemoteBootAppData[0];
 			}
+
+			// preference-configured apps require the user to trigger the connection explicitly (secure by default) 
+			for (RemoteBootAppData data : appData) {
+				data.setManualConnection(true);
+			}
 			bean.updateApps(appData);
 		});
 

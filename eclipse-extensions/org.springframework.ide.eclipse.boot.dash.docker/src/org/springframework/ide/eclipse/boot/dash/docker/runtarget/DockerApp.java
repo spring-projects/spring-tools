@@ -325,7 +325,7 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 				int jmxPort = jmx.getPort();
 				labels.put(JMX_PORT, ""+jmxPort);
 
-				portBindings.add(new PortBinding(new Binding("0.0.0.0", ""+jmxPort), ExposedPort.tcp(jmxPort)));
+				portBindings.add(new PortBinding(new Binding("127.0.0.1", ""+jmxPort), ExposedPort.tcp(jmxPort)));
 				exposedPorts.add(ExposedPort.tcp(jmxPort));
 				
 				javaOpts.append(jmx.getJavaOpts());
@@ -337,7 +337,7 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 				int debugPort = PortFinder.findFreePort();
 				labels.put(DockerApp.DEBUG_PORT, ""+debugPort);
 				
-				portBindings.add(new PortBinding(new Binding("0.0.0.0", ""+debugPort), ExposedPort.tcp(debugPort)));
+				portBindings.add(new PortBinding(new Binding("127.0.0.1", ""+debugPort), ExposedPort.tcp(debugPort)));
 				exposedPorts.add(ExposedPort.tcp(debugPort));
 				
 				javaOpts.append(DEBUG_JVM_ARGS(""+debugPort));

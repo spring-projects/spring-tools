@@ -103,6 +103,37 @@ public class SpringIndexerXMLProjectTest {
         assertTrue(containsBean("persistenceExceptionTranslationPostProcessor", "org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor", docUri, beans));
     }
 
+    @Test
+    void testScanFoldersOutsideProjectAreIgnored() throws Exception {
+        // a parent-relative scan folder ('../') would walk outside the project root
+        symbolIndex.configureIndexer(SymbolIndexConfig.builder()
+                .scanXml(true)
+                .xmlScanFolders(new String[] { "../" })
+                .build());
+        assertEquals(0, symbolIndex.getAllSymbols("").size());
+
+        // an absolute scan folder must not escape the project root either
+        symbolIndex.configureIndexer(SymbolIndexConfig.builder()
+                .scanXml(true)
+                .xmlScanFolders(new String[] { directory.getParentFile().getAbsolutePath() })
+                .build());
+        assertEquals(0, symbolIndex.getAllSymbols("").size());
+
+        // a folder that escapes the project root via many '..' segments is still rejected
+        symbolIndex.configureIndexer(SymbolIndexConfig.builder()
+                .scanXml(true)
+                .xmlScanFolders(new String[] { "../../../../../../../../" })
+                .build());
+        assertEquals(0, symbolIndex.getAllSymbols("").size());
+
+        // sanity check: a legitimate in-project folder still indexes as before
+        symbolIndex.configureIndexer(SymbolIndexConfig.builder()
+                .scanXml(true)
+                .xmlScanFolders(new String[] { "config", "src/main" })
+                .build());
+        assertEquals(5, symbolIndex.getAllSymbols("").size());
+    }
+
     private boolean containsBean(String beanName, String beanType, String docURI, Bean[] beans) {
     	for (Bean bean : beans) {
     		if (bean.getName().equals(beanName)

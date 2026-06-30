@@ -276,9 +276,10 @@ public class SpringIndexerXML implements SpringIndexer {
 
 	private String[] getFiles(IJavaProject project) throws Exception {
 		long start = System.currentTimeMillis();
-		Path projectPath = new File(project.getLocationUri()).toPath();
+		Path projectPath = new File(project.getLocationUri()).toPath().normalize();
 		String[] xmlFiles = Arrays.stream(scanFolders)
-			.map(folder -> projectPath.resolve(folder))
+			.map(folder -> projectPath.resolve(folder).normalize())
+			.filter(folder -> isContainedIn(projectPath, folder))
 			.filter(Files::isDirectory)
 			.flatMap(folder -> {
 				try {
@@ -295,6 +296,14 @@ public class SpringIndexerXML implements SpringIndexer {
 		
 		log.info("Found {} XML files to scan in {}ms", xmlFiles.length, System.currentTimeMillis() - start);
 		return xmlFiles;
+	}
+
+	private boolean isContainedIn(Path projectPath, Path resolvedFolder) {
+		if (resolvedFolder.startsWith(projectPath)) {
+			return true;
+		}
+		log.warn("ignoring XML scan folder outside of the project root: {}", resolvedFolder);
+		return false;
 	}
 
 	private IndexCacheKey getCacheKey(IJavaProject project, String elementType) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -356,6 +356,7 @@ class MavenBridge {
 			configuration.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
 			configuration.setRepositorySession(createRepositorySession(request));
 			configuration.setResolveDependencies(resolveDependencies);
+			configuration.setProcessPlugins(false);
 			return lookup(ProjectBuilder.class).build(pomFile, configuration).getProject();
 		} catch (ProjectBuildingException ex) {
 			throw new MavenException(ex);
@@ -391,6 +392,7 @@ class MavenBridge {
 		MavenExecutionResult result = new DefaultMavenExecutionResult();
 		try {
 			configuration.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
+			configuration.setProcessPlugins(false);
 			ProjectBuildingResult projectBuildingResult = lookup(ProjectBuilder.class).build(pomFile, configuration);
 			result.setProject(projectBuildingResult.getProject());
 			result.setDependencyResolutionResult(projectBuildingResult.getDependencyResolutionResult());
@@ -412,6 +414,7 @@ class MavenBridge {
 	/* package */MavenProject resolveParentProject(RepositorySystemSession repositorySession, MavenProject child,
 			ProjectBuildingRequest configuration) throws MavenException {
 		configuration.setValidationLevel(ModelBuildingRequest.VALIDATION_LEVEL_MINIMAL);
+		configuration.setProcessPlugins(false);
 		configuration.setRepositorySession(repositorySession);
 
 		try {

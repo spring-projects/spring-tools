@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,46 +19,89 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import org.eclipse.lsp4j.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.IProjectBuild;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.OS;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 
 import com.google.gson.JsonPrimitive;
 
 public class DefaultBuildCommandProvider implements BuildCommandProvider {
-	
+
+	private static final Logger log = LoggerFactory.getLogger(DefaultBuildCommandProvider.class);
+
 	private static final String CMD_EXEC_MAVEN_GOAL = "sts.maven.goal";
 	private static final String CMD_EXEC_GRADLE_BUILD = "sts.gradle.build";
-	
-	private static final Object MAVEN_LOCK = new Object(); 
-	
-	public DefaultBuildCommandProvider(SimpleLanguageServer server) {
-		
+
+	private static final Object MAVEN_LOCK = new Object();
+
+	private final JavaProjectFinder projectFinder;
+
+	public DefaultBuildCommandProvider(SimpleLanguageServer server, JavaProjectFinder projectFinder) {
+		this.projectFinder = projectFinder;
+
 		// Execute Maven Goal
 		server.onCommand(CMD_EXEC_MAVEN_GOAL, params -> {
 			String pomPath = extractString(params.getArguments().get(0));
 			String goal = extractString(params.getArguments().get(1));
 			return CompletableFuture.runAsync(() -> {
 				try {
-					executeMaven(Paths.get(pomPath), goal.trim().split("\\s+")).get();
+					Path buildFile = validateOpenProjectBuildFile(pomPath, ProjectBuild.MAVEN_PROJECT_TYPE);
+					String[] goals = goal.trim().split("\\s+");
+					executeMaven(buildFile, goals).get();
 				} catch (Exception e) {
 					throw new CompletionException(e);
 				}
 			});
 		});
-		
+
 		// Execute Gradle Build
 		server.onCommand(CMD_EXEC_GRADLE_BUILD, params -> {
 			String gradleBuildPath = extractString(params.getArguments().get(0));
 			String command = extractString(params.getArguments().get(1));
 			return CompletableFuture.runAsync(() -> {
 				try {
-					executeGradle(Paths.get(gradleBuildPath), command.trim().split("\\s+")).get();
+					Path buildFile = validateOpenProjectBuildFile(gradleBuildPath, ProjectBuild.GRADLE_PROJECT_TYPE);
+					String[] tasks = command.trim().split("\\s+");
+					executeGradle(buildFile, tasks).get();
 				} catch (Exception e) {
 					throw new CompletionException(e);
 				}
 			});
 		});
+	}
+
+	/**
+	 * Ensures the requested build-file path belongs to a currently-open project of the
+	 * expected build type and returns the project's own build-file path to be
+	 * used for execution.
+	 */
+	private Path validateOpenProjectBuildFile(String requestedPath, String expectedBuildType) {
+		Path requested = canonicalize(Paths.get(requestedPath));
+		for (IJavaProject project : projectFinder.all()) {
+			IProjectBuild build = project.getProjectBuild();
+			if (build == null || !expectedBuildType.equals(build.getType()) || build.getBuildFile() == null) {
+				continue;
+			}
+			Path projectBuildFile = Paths.get(build.getBuildFile());
+			if (canonicalize(projectBuildFile).equals(requested)) {
+				return projectBuildFile;
+			}
+		}
+		log.warn("Rejected build command for path outside of any open project: {}", requestedPath);
+		throw new SecurityException("Build file does not belong to any open project: " + requestedPath);
+	}
+
+	private static Path canonicalize(Path path) {
+		try {
+			return path.toRealPath();
+		} catch (IOException e) {
+			return path.toAbsolutePath().normalize();
+		}
 	}
 	
 	@Override

@@ -272,7 +272,7 @@ public class JdtConfig {
 		return jdtRefactorings;
 	}
 	
-	@Bean BuildCommandProvider buildCommandProvider(SimpleLanguageServer server) {
+	@Bean BuildCommandProvider buildCommandProvider(SimpleLanguageServer server, JavaProjectFinder projectFinder) {
 		switch(LspClient.currentClient()) {
 		case VSCODE:
 		case THEIA:
@@ -280,7 +280,7 @@ public class JdtConfig {
 		case ECLIPSE:
 			return new VSCodeBuildCommandProvider();
 		default:
-			return new DefaultBuildCommandProvider(server);
+			return new DefaultBuildCommandProvider(server, projectFinder);
 		}
 	}
 	

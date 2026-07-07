@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Broadcom, Inc.
+ * Copyright (c) 2017, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,6 +17,7 @@ import java.util.List;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.Tree;
 import org.openrewrite.TreeVisitor;
@@ -48,11 +49,14 @@ public class AddFieldRecipe extends Recipe {
 		return "Add field desccription.";
 	}
 
+	@Option(description = "Fully qualified name for the field type")
 	String fullyQualifiedName;
 	
+	@Option(description = "Class fully qualified name", required = true)
 	@NonNull
 	String classFqName;
 	
+	@Option(description = "Name of the field")
 	String fieldName;
 	
 	transient JavaType.FullyQualified fullyQualifiedType;

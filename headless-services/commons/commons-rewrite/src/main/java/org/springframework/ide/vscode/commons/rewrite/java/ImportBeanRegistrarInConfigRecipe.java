@@ -15,6 +15,7 @@ import java.util.List;
 
 import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.NlsRewrite.Description;
 import org.openrewrite.NlsRewrite.DisplayName;
 import org.openrewrite.Preconditions;
@@ -46,8 +47,10 @@ public class ImportBeanRegistrarInConfigRecipe extends Recipe {
 	
 	private static final String IMPORT_FQN = "org.springframework.context.annotation.Import";
 	
+	@Option(description = "Configuration bean fully qualified type")
 	private String configBeanFqn;
 	
+	@Option(description = "The bean fully qualified type")
 	private String beanRegFqn;
 	
 	@JsonCreator

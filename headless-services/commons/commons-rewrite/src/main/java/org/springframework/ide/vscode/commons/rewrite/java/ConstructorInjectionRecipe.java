@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.jspecify.annotations.NonNull;
 import org.openrewrite.Cursor;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.NlsRewrite.Description;
 import org.openrewrite.NlsRewrite.DisplayName;
 import org.openrewrite.Recipe;
@@ -67,12 +68,15 @@ public class ConstructorInjectionRecipe extends Recipe {
 		return "Add bean injection.";
 	}
 
+	@Option(description = "Fully qualified type of the field")
 	@NonNull
 	String fullyQualifiedName;
 
+	@Option(description = "Name of the field")
 	@NonNull
 	String fieldName;
 
+	@Option(description = "Fully qualified type of the container class")
 	@NonNull
 	String classFqName;
 

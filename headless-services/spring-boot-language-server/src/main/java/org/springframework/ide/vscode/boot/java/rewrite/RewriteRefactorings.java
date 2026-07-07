@@ -31,6 +31,7 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.Parser.Input;
 import org.openrewrite.Recipe;
 import org.openrewrite.SourceFile;
@@ -150,7 +151,7 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 		return CompletableFuture.supplyAsync(() -> {
 			try {
 				Optional<Class<?>> opt = Optional.of(getClass().getClassLoader().loadClass(className));
-				return opt;
+				return opt.filter(Recipe.class::isAssignableFrom);
 			} catch (Exception e) {
 				// ignore
 				log.info("Didn't find the recipe class '%s' trying recipe repository".formatted(className));
@@ -199,7 +200,7 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 		    	for (Map.Entry<String, Object> entry : converetedParams.entrySet()) {
 					try {
 						Field field = findField(recipe, entry.getKey());
-		                if (field != null) {
+		                if (field != null && field.isAnnotationPresent(Option.class)) {
 		                	field.setAccessible(true);
 	                		field.set(recipe, entry.getValue());
 		                }

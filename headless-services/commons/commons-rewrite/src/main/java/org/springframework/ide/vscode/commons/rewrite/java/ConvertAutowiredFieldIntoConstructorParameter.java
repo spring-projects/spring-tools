@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.commons.rewrite.java;
 
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.Preconditions;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
@@ -18,16 +19,19 @@ import org.openrewrite.java.search.UsesType;
 import org.openrewrite.java.spring.AutowiredFieldIntoConstructorParameterVisitor;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ConvertAutowiredFieldIntoConstructorParameter extends Recipe {
 	
 	private static final String AUTOWIRED = "org.springframework.beans.factory.annotation.Autowired";
 
+	@Option(description = "Class fully qualified name")
 	private String classFqName;
+	@Option(description = "Name of the field")
 	private String fieldName;
 	
 	@JsonCreator
-	public ConvertAutowiredFieldIntoConstructorParameter(String classFqName, String fieldName) {
+	public ConvertAutowiredFieldIntoConstructorParameter(@JsonProperty("classFqName") String classFqName, @JsonProperty("fieldName") String fieldName) {
 		this.classFqName = classFqName;
 		this.fieldName = fieldName;
 	}

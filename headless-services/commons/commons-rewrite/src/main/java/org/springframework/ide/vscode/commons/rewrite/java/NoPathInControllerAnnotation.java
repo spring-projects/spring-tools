@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.NlsRewrite.Description;
 import org.openrewrite.NlsRewrite.DisplayName;
 import org.openrewrite.Recipe;
@@ -48,6 +49,7 @@ public class NoPathInControllerAnnotation extends Recipe implements RangeScopedR
     private static final AnnotationMatcher REQUEST_MAPPING_ANNOTATION_MATCHER = new AnnotationMatcher(
             "@org.springframework.web.bind.annotation.RequestMapping");
 
+	@Option(description = "Text range that contains the controller definition", required = false)
     private Range range;
 
     @Override

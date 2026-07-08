@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2023 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.Recipe;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.java.JavaIsoVisitor;
@@ -26,28 +27,40 @@ import org.openrewrite.java.tree.J;
 import org.openrewrite.java.tree.JavaType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DefineMethod extends Recipe {
 
     private static final String MESSAGE = "methodPresent";
 
+	@Option(description = "Defining class fully qualified name")
     private String targetFqName;
 
+	@Option(description = "Method signature")
     private String signature;
 
+	@Option(description = "Method java template", required = false)
     private String template;
 
+	@Option(description = "Type stubs to help parse the template", required = false)
     private List<String> typeStubs = Collections.emptyList();
 
+	@Option(description = "Imports required for the java template compile", required = false)
     private List<String> imports = Collections.emptyList();
 
+	@Option(description = "Classpath for the java template to compile", required = false)
     private List<String> classpath = Collections.emptyList();
 
     public DefineMethod() {
     }
 
     @JsonCreator
-    public DefineMethod(String targetFqName, String signature, String template, List<String> imports, List<String> typeStubs, List<String> classpath) {
+    public DefineMethod(@JsonProperty("targetFqName") String targetFqName,
+    		@JsonProperty("signature") String signature,
+    		@JsonProperty("template") String template,
+    		@JsonProperty("imports") List<String> imports,
+    		@JsonProperty("typeStubs") List<String> typeStubs,
+    		@JsonProperty("classpath") List<String> classpath) {
         this.targetFqName = targetFqName;
         this.signature = signature;
         this.template = template;

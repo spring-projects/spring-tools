@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,10 +12,11 @@ package org.springframework.ide.vscode.commons.rewrite.java;
 
 import java.util.Optional;
 
+import org.jspecify.annotations.Nullable;
 import org.openrewrite.ExecutionContext;
+import org.openrewrite.Option;
 import org.openrewrite.TreeVisitor;
 import org.openrewrite.internal.ListUtils;
-import org.openrewrite.internal.lang.Nullable;
 import org.openrewrite.java.AnnotationMatcher;
 import org.openrewrite.java.ChangeType;
 import org.openrewrite.java.tree.J;
@@ -27,8 +28,12 @@ public class NoRequestMappingAnnotation extends org.openrewrite.java.spring.NoRe
 	private static final AnnotationMatcher REQUEST_MAPPING_ANNOTATION_MATCHER = new AnnotationMatcher(
 			"@org.springframework.web.bind.annotation.RequestMapping");
 	
+	@Option(description = "Preferred request mapping method if not present", required = false)
+	@Nullable
 	private String preferredMapping;
 	
+	@Option(description = "Text range that contains the request definition", required = false)
+	@Nullable
 	private Range range;
 
 	public String getPreferredMapping() {
@@ -110,7 +115,7 @@ public class NoRequestMappingAnnotation extends org.openrewrite.java.spring.NoRe
 						.map(J.Assignment.class::cast).findFirst();
 			}
 
-			private String requestMethodType(@Nullable J.Assignment assignment) {
+			private String requestMethodType(J.Assignment assignment) {
 				if (assignment.getAssignment() instanceof J.Identifier) {
 					return ((J.Identifier) assignment.getAssignment()).getSimpleName();
 				} else if (assignment.getAssignment() instanceof J.FieldAccess) {

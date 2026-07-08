@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.rewrite;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
@@ -31,12 +30,12 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.openrewrite.ExecutionContext;
-import org.openrewrite.Option;
 import org.openrewrite.Parser.Input;
 import org.openrewrite.Recipe;
 import org.openrewrite.SourceFile;
 import org.openrewrite.config.RecipeIntrospectionException;
 import org.openrewrite.internal.RecipeIntrospectionUtils;
+import org.openrewrite.internal.RecipeLoader;
 import org.openrewrite.java.JavaParser;
 import org.openrewrite.marker.Range;
 import org.slf4j.Logger;
@@ -163,7 +162,7 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 	private CompletableFuture<Recipe> createRecipe(FixDescriptor d) {
 		return findRecipeClass(d.getRecipeId())
 		.thenCompose(optRecipeClass -> optRecipeClass
-				.map(recipeClass -> CompletableFuture.completedFuture(doCreateRecipe(recipeClass, d.getParameters())))
+				.map(recipeClass -> CompletableFuture.completedFuture(new RecipeLoader(null).load(recipeClass, convertRecipeParameters(recipeClass, d.getParameters()))))
 				.orElseGet(() -> recipeRepo.getRecipe(d.getRecipeId()).thenApply(opt -> opt.orElseThrow())))
 		.thenApply(r -> {
 			if (d.getRecipeScope() == RecipeScope.NODE) {
@@ -189,42 +188,6 @@ public class RewriteRefactorings implements CodeActionResolver, QuickfixHandler 
 			return r;
 		});
 	}
-	
-	private Recipe doCreateRecipe(Class<?> recipeClass, Map<String, Object> parameters) {
-		Map<String, Object> converetedParams = convertRecipeParameters(recipeClass, parameters);
-		try {
-			return RecipeIntrospectionUtils.constructRecipe(recipeClass, converetedParams);
-		} catch (RecipeIntrospectionException e) {
-			Recipe recipe = RecipeIntrospectionUtils.constructRecipe(recipeClass);
-			if (parameters != null) {
-		    	for (Map.Entry<String, Object> entry : converetedParams.entrySet()) {
-					try {
-						Field field = findField(recipe, entry.getKey());
-		                if (field != null && field.isAnnotationPresent(Option.class)) {
-		                	field.setAccessible(true);
-	                		field.set(recipe, entry.getValue());
-		                }
-					} catch (Exception ex) {
-						log.error("", ex);
-					}
-				}
-			}
-			return recipe;
-		}
-	}
-	
-	private Field findField(Object obj, String fieldName) {
-	    Class<?> clazz = obj.getClass();
-	    while (clazz != null) {
-	        try {
-	            return clazz.getDeclaredField(fieldName);
-	        } catch (NoSuchFieldException e) {
-	            clazz = clazz.getSuperclass();
-	        }
-	    }
-	    return null;
-	}
-
 	
 	private Map<String, Object> convertRecipeParameters(Class<?> recipeClass, Map<String, Object> parameters) {
 		if (parameters == null) {

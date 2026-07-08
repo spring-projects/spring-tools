@@ -23,6 +23,7 @@
 package org.springframework.ide.eclipse.boot.wizard.starters.eclipse;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -188,20 +189,14 @@ public class ZipFileStructureCreator implements IStructureCreator {
 		void setBytes(byte[] buffer) {
 			fContents= buffer;
 		}
-
-		void appendBytes(byte[] buffer, int length) {
-			if (length > 0) {
-				int oldLen= 0;
-				if (fContents != null)
-					oldLen= fContents.length;
-				byte[] newBuf= new byte[oldLen + length];
-				if (oldLen > 0)
-					System.arraycopy(fContents, 0, newBuf, 0, oldLen);
-				System.arraycopy(buffer, 0, newBuf, oldLen, length);
-				fContents= newBuf;
-			}
-		}
 	}
+
+	/**
+	 * Add Starters: upper bound on the size of a single zip entry that will be
+	 * buffered in memory, to protect against zip entries with a malicious or
+	 * corrupt size declaration (e.g. from a compromised Initializr service).
+	 */
+	private static final long MAX_ENTRY_SIZE = 50L * 1024 * 1024;
 
 	private String fTitle;
 	final private Predicate<String> filter;
@@ -256,25 +251,40 @@ public class ZipFileStructureCreator implements IStructureCreator {
 				if (entry.isDirectory() || filter == null || filter.test(entry.getName())) {
 					ZipFile ze= root.createContainer(entry.getName());
 					if (ze != null) {
-						int length= (int) entry.getSize();
-						if (length >= 0) {
+						long size= entry.getSize();
+						if (size > MAX_ENTRY_SIZE) {
+							throw new IOException("Zip entry '" + entry.getName() //$NON-NLS-1$
+									+ "' declares a size of " + size + " bytes, exceeding the maximum allowed of " //$NON-NLS-1$ //$NON-NLS-2$
+									+ MAX_ENTRY_SIZE + " bytes"); //$NON-NLS-1$
+						} else if (size >= 0) {
+							int length= (int) size;
 							byte[] buffer= new byte[length];
 							int offset= 0;
 
-							do {
-								int n= zip.read(buffer, offset, length);
+							while (offset < length) {
+								int n= zip.read(buffer, offset, length - offset);
+								if (n < 0) {
+									throw new IOException("Unexpected end of stream while reading zip entry '" //$NON-NLS-1$
+											+ entry.getName() + "'"); //$NON-NLS-1$
+								}
 								offset += n;
-								length -= n;
-							} while (length > 0);
+							}
 
 							ze.setBytes(buffer);
 						} else {
-							byte[] buffer= new byte[1024];
+							ByteArrayOutputStream out= new ByteArrayOutputStream();
+							byte[] buffer= new byte[8192];
+							long total= 0;
 							int n;
-							do {
-								n= zip.read(buffer, 0, 1024);
-								ze.appendBytes(buffer, n);
-							} while (n >= 0);
+							while ((n= zip.read(buffer, 0, buffer.length)) >= 0) {
+								total += n;
+								if (total > MAX_ENTRY_SIZE) {
+									throw new IOException("Zip entry '" + entry.getName() //$NON-NLS-1$
+											+ "' exceeds the maximum allowed size of " + MAX_ENTRY_SIZE + " bytes"); //$NON-NLS-1$ //$NON-NLS-2$
+								}
+								out.write(buffer, 0, n);
+							}
+							ze.setBytes(out.toByteArray());
 						}
 					}
 				}

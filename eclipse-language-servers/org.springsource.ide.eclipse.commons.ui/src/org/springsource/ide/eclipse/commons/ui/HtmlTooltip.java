@@ -108,7 +108,7 @@ public class HtmlTooltip extends ToolTip {
 			Color background = getInformationViewerBackgroundColor(parent.getDisplay());
 			browser.setForeground(foreground);
 			browser.setBackground(background);
-			//browser.setJavascriptEnabled(false);
+			browser.setJavascriptEnabled(false);
 
 			browser.addOpenWindowListener(new OpenWindowListener() {
 				@Override

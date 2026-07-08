@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.eclipse.boot.wizard;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.eclipse.core.runtime.CoreException;
@@ -100,10 +102,10 @@ public class DependencyTooltipContent {
 					}
 				}
 			}
-			if (href != null) {
+			if (href != null && isHttpOrHttps(href)) {
 				StringBuilder sb = new StringBuilder();
 				sb.append("<a href=\"");
-				sb.append(href);
+				sb.append(HTMLPrinter.convertToHTMLContent(href));
 				sb.append("\">");
 				if (link.getTitle() != null) {
 					sb.append(HTMLPrinter.convertToHTMLContent(link.getTitle()));
@@ -203,6 +205,15 @@ public class DependencyTooltipContent {
 			//Shouldn't happen... but anyhow.
 			return "??";
 		}
+	}
+
+	private static boolean isHttpOrHttps(String href) {
+	    try {
+	        String scheme = new URI(href).getScheme();
+	        return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+	    } catch (URISyntaxException e) {
+	        return false;
+	    }
 	}
 
 }

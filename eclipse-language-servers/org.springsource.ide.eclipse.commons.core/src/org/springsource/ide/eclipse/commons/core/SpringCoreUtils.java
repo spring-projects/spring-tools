@@ -576,13 +576,14 @@ public final class SpringCoreUtils {
 	}
 
 	/**
-	 * Returns true if Eclipse's runtime bundle has the same or a newer than
-	 * given version.
+	 * Returns true if there is an Eclise bundle with bundleID and its version is the same or newer than the given version.
+	 * @param bundleID TODO
 	 */
-	public static boolean isEclipseSameOrNewer(int majorVersion, int minorVersion) {
-		Bundle bundle = Platform.getBundle(Platform.PI_RUNTIME);
+	public static boolean isEclipseBundleSameOrNewer(String bundleID, int majorVersion, int minorVersion) {
+		Bundle bundle = Platform.getBundle(bundleID);
+
 		if (bundle != null) {
-			String versionString = (String) bundle.getHeaders().get(org.osgi.framework.Constants.BUNDLE_VERSION);
+			String versionString = bundle.getHeaders().get(org.osgi.framework.Constants.BUNDLE_VERSION);
 			try {
 				Version version = new Version(versionString);
 				int major = version.getMajor();

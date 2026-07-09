@@ -47,7 +47,7 @@ public class StringFieldLaunchTabModel extends LaunchTabSelectionModel<String> {
 
 	/////////////////////////////
 
-	private String getAttribute(ILaunchConfiguration conf) {
+	protected String getAttribute(ILaunchConfiguration conf) {
 		try {
 			return conf.getAttribute(attributeId, getDefaultValue());
 		} catch (CoreException e) {
@@ -56,7 +56,7 @@ public class StringFieldLaunchTabModel extends LaunchTabSelectionModel<String> {
 		return getDefaultValue();
 	}
 
-	private void setAttribute(ILaunchConfigurationWorkingCopy conf, String value) {
+	protected void setAttribute(ILaunchConfigurationWorkingCopy conf, String value) {
 		conf.setAttribute(attributeId, value);
 	}
 

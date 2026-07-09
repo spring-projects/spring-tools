@@ -281,6 +281,7 @@ public class DevtoolsUtil {
 				try {
 					ILaunchConfiguration conf = launch.getLaunchConfiguration();
 					if (conf!=null && BootDevtoolsClientLaunchConfigurationDelegate.isManaged(conf)) {
+						BootDevtoolsClientLaunchConfigurationDelegate.clearRemoteSecret(conf);
 						conf.delete();
 					}
 				} catch (Exception e) {
@@ -304,6 +305,7 @@ public class DevtoolsUtil {
 				try {
 					for (ILaunchConfiguration c : DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurations()) {
 						if (BootDevtoolsClientLaunchConfigurationDelegate.isManaged(c)) {
+							BootDevtoolsClientLaunchConfigurationDelegate.clearRemoteSecret(c);
 							c.delete();
 						}
 					}

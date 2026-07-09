@@ -43,7 +43,7 @@ public class BootDevtoolsClientMainTab extends LaunchConfigurationTabWithSection
 		return Arrays.asList(new IPageSection[] {
 				SelectProjectLaunchTabSection.create(this, model.project),
 				StringFieldLaunchTabSection.create(this, model.remoteUrl),
-				StringFieldLaunchTabSection.create(this, model.remoteSecret),
+				StringFieldLaunchTabSection.create(this, model.remoteSecret, true),
 //				new MainTypeLaunchTabSection(this, model.project.selection).readonly(true),
 //				new ProfileLaunchTabSection(this, model.profile),
 //				new HLineSection(this),

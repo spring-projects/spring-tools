@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,7 +18,12 @@ import org.springsource.ide.eclipse.commons.livexp.ui.StringFieldSection;
 public class StringFieldLaunchTabSection {
 
 	public static IPageSection create(LaunchConfigurationTabWithSections owner, StringFieldLaunchTabModel field) {
+		return create(owner, field, false);
+	}
+
+	public static IPageSection create(LaunchConfigurationTabWithSections owner, StringFieldLaunchTabModel field, boolean password) {
 		StringFieldSection ui = new StringFieldSection(owner, field.field);
+		ui.setPassword(password);
 		return new DelegatingLaunchConfigurationTabSection(owner, field, ui);
 	}
 

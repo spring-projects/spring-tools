@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -35,8 +36,8 @@ import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.IVMConnector;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.osgi.util.NLS;
-import org.springframework.ide.eclipse.boot.core.BootActivator;
 import org.springframework.ide.eclipse.boot.launch.AbstractBootLaunchConfigurationDelegate;
+import org.springframework.ide.eclipse.boot.launch.BootLaunchActivator;
 import org.springframework.ide.eclipse.boot.launch.util.WaitFor;
 import org.springframework.ide.eclipse.boot.util.ProcessListenerAdapter;
 import org.springframework.ide.eclipse.boot.util.ProcessTracker;
@@ -53,6 +54,7 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 	public static final String REMOTE_SPRING_APPLICATION = "org.springframework.boot.devtools.RemoteSpringApplication";
 	public static final String REMOTE_URL = "spring.devtools.remote.url";
 	public static final String REMOTE_SECRET = "spring.devtools.remote.secret";
+	public static final String REMOTE_SECRET_ID = "spring.devtools.remote.secret.id";
 	public static final String DEFAULT_REMOTE_SECRET = "";
 	public static final String DEBUG_PORT = "spring.devtools.remote.debug.local-port";
 
@@ -83,12 +85,8 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 	}
 
 	private String getSecret(ILaunchConfiguration conf) {
-		try {
-			return conf.getAttribute(REMOTE_SECRET, DEFAULT_REMOTE_SECRET);
-		} catch (CoreException e) {
-			BootActivator.log(e);
-		}
-		return "";
+		String secret = getRemoteSecret(conf);
+		return secret == null ? DEFAULT_REMOTE_SECRET : secret;
 	}
 
 	@Override
@@ -133,7 +131,7 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 		try {
 			return conf.getAttribute(REMOTE_URL, (String)null);
 		} catch (CoreException e) {
-			BootActivator.log(e);
+			BootLaunchActivator.getInstance().getLog().error("Failed to retrieve remote URL", e);
 		}
 		return null;
 	}
@@ -142,17 +140,56 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 		conf.setAttribute(REMOTE_URL, value);
 	}
 
+	/**
+	 * Stores the remote secret in Eclipse's secure storage rather than as a plain
+	 * launch configuration attribute, so it is never written in cleartext to the
+	 * {@code .launch} XML file (workspace metadata, or the project tree if the
+	 * launch configuration is shared).
+	 */
 	public static void setRemoteSecret(ILaunchConfigurationWorkingCopy conf, String value) {
-		conf.setAttribute(REMOTE_SECRET, value);
+		String oldId = getSecretId(conf);
+		if (StringUtil.hasText(value)) {
+			String id = oldId != null ? oldId : UUID.randomUUID().toString();
+			DevtoolsRemoteSecretStore.put(id, value);
+			conf.setAttribute(REMOTE_SECRET_ID, id);
+		} else {
+			DevtoolsRemoteSecretStore.remove(oldId);
+			conf.setAttribute(REMOTE_SECRET_ID, (String) null);
+		}
+		// Clear out any legacy cleartext copy (from configs saved before this fix).
+		conf.setAttribute(REMOTE_SECRET, (String) null);
 	}
 
 	public static String getRemoteSecret(ILaunchConfiguration conf) {
+		String id = getSecretId(conf);
+		if (id != null) {
+			return DevtoolsRemoteSecretStore.get(id);
+		}
+		// Legacy fallback for configs saved before secure storage was used.
 		try {
-			return conf.getAttribute(REMOTE_SECRET, (String)null);
+			return conf.getAttribute(REMOTE_SECRET, (String) null);
 		} catch (CoreException e) {
-			BootActivator.log(e);
+			BootLaunchActivator.getInstance().getLog().error("", e);
 		}
 		return null;
+	}
+
+	/**
+	 * Removes the secret from secure storage. Callers that delete a devtools
+	 * client launch configuration (e.g. managed configs created for a remote
+	 * debug session) should call this first to avoid leaving an orphaned entry.
+	 */
+	public static void clearRemoteSecret(ILaunchConfiguration conf) {
+		DevtoolsRemoteSecretStore.remove(getSecretId(conf));
+	}
+
+	private static String getSecretId(ILaunchConfiguration conf) {
+		try {
+			return conf.getAttribute(REMOTE_SECRET_ID, (String) null);
+		} catch (CoreException e) {
+			BootLaunchActivator.getInstance().getLog().error("Failed to retrieve DevTools secret id", e);
+			return null;
+		}
 	}
 
 	/**
@@ -256,7 +293,7 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 		    	try {
 		    		target.disconnect();
 		    	} catch (Exception e) {
-		    		BootActivator.log(e);
+		    		BootLaunchActivator.getInstance().getLog().error("Failed to disconnect.", e);
 		    	}
 		    }
 		}
@@ -266,7 +303,7 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 		    	try {
 					process.terminate();
 		    	} catch (Exception e) {
-		    		BootActivator.log(e);
+		    		BootLaunchActivator.getInstance().getLog().error("Failed to terminate.", e);
 		    	}
 			}
 		}

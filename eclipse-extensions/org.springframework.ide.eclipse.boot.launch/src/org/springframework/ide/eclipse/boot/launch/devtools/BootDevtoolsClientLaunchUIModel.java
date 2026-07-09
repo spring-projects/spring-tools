@@ -50,7 +50,7 @@ public class BootDevtoolsClientLaunchUIModel {
 
 	private StringFieldLaunchTabModel createRemoteSecretModel() {
 		StringFieldModel field = new StringFieldModel("Remote Secret", "");
-		return new StringFieldLaunchTabModel(field, BootDevtoolsClientLaunchConfigurationDelegate.REMOTE_SECRET);
+		return new RemoteSecretLaunchTabModel(field);
 	}
 
 

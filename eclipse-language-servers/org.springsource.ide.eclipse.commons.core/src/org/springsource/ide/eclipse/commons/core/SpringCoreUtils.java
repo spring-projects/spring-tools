@@ -17,8 +17,10 @@ import java.net.URI;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.xpath.XPath;
@@ -350,13 +352,33 @@ public final class SpringCoreUtils {
 	public static DocumentBuilder getDocumentBuilder() {
 		try {
 			DocumentBuilderFactory documentBuilderFactory = getDocumentBuilderFactory();
-			documentBuilderFactory.setExpandEntityReferences(false);
+			configureDocumentBuilderFactory(documentBuilderFactory);
 			return documentBuilderFactory.newDocumentBuilder();
 		}
 		catch (Exception e) {
 			StatusHandler.log(new Status(IStatus.ERROR, CorePlugin.PLUGIN_ID, "Error creating DocumentBuilder", e));
 		}
 		return null;
+	}
+
+	/**
+	 * Disables DTD/external-entity resolution to prevent XXE when parsing XML from
+	 * untrusted sources (e.g. workspace files that may originate from cloned repositories).
+	 */
+	private static void configureDocumentBuilderFactory(DocumentBuilderFactory factory) throws ParserConfigurationException {
+		factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+		factory.setXIncludeAware(false);
+		factory.setExpandEntityReferences(false);
+	}
+
+	private static void configureSaxParserFactory(SAXParserFactory factory) throws ParserConfigurationException, SAXException {
+		factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
 	}
 
 	public static DocumentBuilderFactory getDocumentBuilderFactory() {
@@ -486,6 +508,7 @@ public final class SpringCoreUtils {
 			try {
 				SAXParserFactory factory = SAXParserFactory.newInstance();
 				factory.setNamespaceAware(true);
+				configureSaxParserFactory(factory);
 				SAXParser parser = factory.newSAXParser();
 				return parser;
 			}
@@ -502,6 +525,7 @@ public final class SpringCoreUtils {
 			try {
 				synchronized (SAX_PARSER_LOCK) {
 					SAXParserFactory factory = (SAXParserFactory) bundleContext.getService(reference);
+					configureSaxParserFactory(factory);
 					return factory.newSAXParser();
 				}
 			}

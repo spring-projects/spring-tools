@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -94,6 +95,10 @@ public class XMLStructureCreator implements IStructureCreator {
 
 			SAXParserFactory factory= SAXParserFactory.newInstance();
 			factory.setNamespaceAware(true);
+			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
 			SAXParser parser= factory.newSAXParser();
 			SaxToStructureHandler handler = new SaxToStructureHandler(doc, idProviders);
 			if (doc.getLength() == 0) {

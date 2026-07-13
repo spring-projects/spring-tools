@@ -17,7 +17,6 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -31,6 +30,7 @@ import org.eclipse.compare.structuremergeviewer.IStructureCreator;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
+import org.springsource.ide.eclipse.commons.frameworks.core.util.XmlUtils;
 import org.springsource.ide.eclipse.commons.livexp.util.Log;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXParseException;
@@ -95,10 +95,7 @@ public class XMLStructureCreator implements IStructureCreator {
 
 			SAXParserFactory factory= SAXParserFactory.newInstance();
 			factory.setNamespaceAware(true);
-			factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			XmlUtils.configureSaxParserFactory(factory);
 			SAXParser parser= factory.newSAXParser();
 			SaxToStructureHandler handler = new SaxToStructureHandler(doc, idProviders);
 			if (doc.getLength() == 0) {

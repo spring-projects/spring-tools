@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013 Pivotal Software, Inc.
+ * Copyright (c) 2013, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -43,6 +43,7 @@ class PomParser {
 	
 	private void parse(InputStream input) throws ParserConfigurationException, SAXException, IOException {
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		XmlUtils.configureDocumentBuilderFactory(dbFactory);
 		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 		this.doc = dBuilder.parse(input);
 	}

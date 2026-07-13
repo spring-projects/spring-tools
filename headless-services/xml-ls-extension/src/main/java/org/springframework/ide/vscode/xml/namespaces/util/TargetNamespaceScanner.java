@@ -36,12 +36,17 @@ public class TargetNamespaceScanner {
 			
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setValidating(false);
-			
+
 			factory.setFeature("http://xml.org/sax/features/validation", false);
 			factory.setFeature("http://apache.org/xml/features/validation/dynamic", false);
 			factory.setFeature("http://apache.org/xml/features/validation/schema", false);
 			factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			
+			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			factory.setXIncludeAware(false);
+			factory.setExpandEntityReferences(false);
+
 			DocumentBuilder docBuilder = factory.newDocumentBuilder();
 			
 			Document doc = docBuilder.parse(url.openStream());

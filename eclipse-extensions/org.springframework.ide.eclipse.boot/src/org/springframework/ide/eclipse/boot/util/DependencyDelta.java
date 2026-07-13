@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.springframework.ide.eclipse.boot.core.MavenId;
+import org.springsource.ide.eclipse.commons.frameworks.core.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -135,6 +136,7 @@ public class DependencyDelta {
 
 	private static Document parsePom(String pomContents) throws Exception {
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+		XmlUtils.configureDocumentBuilderFactory(dbFactory);
 		return dbFactory.newDocumentBuilder().parse(new InputSource(new StringReader(pomContents)));
 	}
 

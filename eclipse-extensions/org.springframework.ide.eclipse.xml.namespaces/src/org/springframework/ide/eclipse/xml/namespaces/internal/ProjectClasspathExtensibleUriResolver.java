@@ -43,6 +43,7 @@ import org.springframework.ide.eclipse.xml.namespaces.XmlNamespaceUtils;
 import org.springframework.ide.eclipse.xml.namespaces.util.DocumentAccessor;
 import org.springframework.ide.eclipse.xml.namespaces.util.DocumentAccessor.SchemaLocations;
 import org.springsource.ide.eclipse.commons.core.JdtUtils;
+import org.springsource.ide.eclipse.commons.frameworks.core.util.XmlUtils;
 import org.springsource.ide.eclipse.commons.core.SpringCorePreferences;
 import org.w3c.dom.Document;
 
@@ -275,10 +276,10 @@ public class ProjectClasspathExtensibleUriResolver implements
 					.newInstance();
 			builderFactory.setValidating(false);
 			builderFactory.setNamespaceAware(true);
-			
+
 			builderFactory.setFeature("http://xml.org/sax/features/validation", false);
 			builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-			builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			XmlUtils.configureDocumentBuilderFactory(builderFactory);
 
 			DocumentBuilder builder = builderFactory.newDocumentBuilder();
 			Document doc = builder.parse(contents);

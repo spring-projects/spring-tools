@@ -19,6 +19,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.springframework.ide.eclipse.xml.namespaces.SpringXmlNamespacesPlugin;
 import org.springsource.ide.eclipse.commons.core.SpringCoreUtils;
+import org.springsource.ide.eclipse.commons.frameworks.core.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -44,12 +45,12 @@ public class TargetNamespaceScanner {
 			
 			DocumentBuilderFactory factory = SpringCoreUtils.getDocumentBuilderFactory();
 			factory.setValidating(false);
-			
+
 			factory.setFeature("http://xml.org/sax/features/validation", false);
 			factory.setFeature("http://apache.org/xml/features/validation/dynamic", false);
 			factory.setFeature("http://apache.org/xml/features/validation/schema", false);
-			factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			
+			XmlUtils.configureDocumentBuilderFactory(factory);
+
 			DocumentBuilder docBuilder = factory.newDocumentBuilder();
 			Document doc = docBuilder.parse(url.openStream());
 			

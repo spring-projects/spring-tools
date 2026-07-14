@@ -73,18 +73,4 @@ public class ProcessUtils {
 		return null;
 	}
 
-	/**
-	 * Determines whether current JDK supports utilities defined in this class
-	 * @return <code>true</code> for compatible JDK
-	 */
-	public static boolean isLatestJdkForTools() {
-		try {
-			return VirtualMachine.class.getDeclaredMethod("startLocalManagementAgent") != null;
-		}
-		catch (NoSuchMethodException | SecurityException e) {
-			// ignore
-		}
-		return false;
-	}
-
 }

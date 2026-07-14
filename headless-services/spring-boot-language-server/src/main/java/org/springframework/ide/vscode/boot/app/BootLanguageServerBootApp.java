@@ -234,7 +234,7 @@ public class BootLanguageServerBootApp {
 			synchronized(localApps) {
 				RemoteBootAppData[] newAdditions = params.getArguments().stream().map(a -> gson.fromJson((JsonElement) a, RemoteBootAppData.class)).toArray(RemoteBootAppData[]::new);
 				for (RemoteBootAppData app : newAdditions) {
-					localApps.put(app.getJmxurl(), app);
+					localApps.put(SpringProcessConnectorRemote.getProcessKey(app), app);
 				}
 				bean.updateApps(localApps.values().toArray(new RemoteBootAppData[localApps.size()]));
 				return CompletableFuture.completedFuture(null);

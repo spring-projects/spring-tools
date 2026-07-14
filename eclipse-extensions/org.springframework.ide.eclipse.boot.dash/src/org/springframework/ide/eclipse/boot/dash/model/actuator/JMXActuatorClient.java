@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2019 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -62,10 +62,6 @@ public class JMXActuatorClient extends ActuatorClient {
 	};
 
 	private JMXClient client = null;
-
-	public static JMXActuatorClient forPort(TypeLookup typeLookup, Supplier<Integer> jmxPort) {
-		return new JMXActuatorClient(typeLookup, () -> JMXClient.createLocalJmxUrl(jmxPort.get()));
-	}
 
 	public static JMXActuatorClient forUrl(TypeLookup typeLookup, Supplier<String> jmxUrl) {
 		return new JMXActuatorClient(typeLookup, jmxUrl);

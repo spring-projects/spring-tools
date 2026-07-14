@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,6 +18,7 @@ import javax.management.remote.JMXConnector;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.debug.core.ILaunch;
 import org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate;
+import org.springsource.ide.eclipse.commons.core.util.ProcessUtils;
 
 /**
  * Creates and manages an instance of {@link SpringApplicationLifecycleClient}.
@@ -36,10 +37,23 @@ public class SpringApplicationLifeCycleClientManager {
 	}
 
 	/**
-	 * Convenenience method, use ILaunch as the jmxPort provider.
+	 * Convenenience method, use ILaunch as the connection provider. If a fixed JMX port was
+	 * pinned for this launch, connect to it directly. Otherwise (the auto/dynamic port case),
+	 * attach to the child process by its real OS PID and start its local management agent
+	 * on-demand.
 	 */
 	public SpringApplicationLifeCycleClientManager(ILaunch l) {
-		this(() -> createJMXConnection(BootLaunchConfigurationDelegate.getJMXPortAsInt(l)));
+		this(() -> {
+			int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
+			if (port > 0) {
+				return createJMXConnection(port);
+			}
+			String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
+			if (pid == null) {
+				throw new IllegalStateException("Neither a JMX port nor a process id is available for this launch");
+			}
+			return ProcessUtils.createJMXConnector(pid);
+		});
 	}
 
 	private static JMXConnector createJMXConnection(int port) {

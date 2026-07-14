@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 Pivotal Software, Inc.
+ * Copyright (c) 2017, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,6 @@
 package org.springsource.ide.eclipse.commons.core.util;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.List;
 
 import javax.management.remote.JMXConnector;
@@ -30,27 +29,30 @@ import com.sun.tools.attach.VirtualMachineDescriptor;
  * @author Alex Boyko
  *
  */
-@SuppressWarnings("restriction")
 public class ProcessUtils {
 
 	/**
-	 * Retrieves PID of a process
-	 * @param p the process
-	 * @return PID
+	 * Attaches to a local process by its PID and starts (or reuses) its local JMX management
+	 * agent on-demand, returning the JMX service URL the agent bound to. This avoids ever
+	 * having to pick a JMX port before the target process exists: the port is only known once
+	 * the target process has already bound it itself.
+	 * @param pid the PID
+	 * @return the JMX service URL of the process' local management agent, or {@code null} if
+	 * no such process could be found or attached to
 	 */
-	public static long getProcessID(Process p) {
-		long result = -1;
-		try {
-			Field f = p.getClass().getDeclaredField("pid");
-			f.setAccessible(true);
-			result = f.getLong(p);
-			f.setAccessible(false);
+	public static String getLocalManagementAgentUrl(String pid) {
+		List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
+		VirtualMachineDescriptor vmd = vmds.stream().filter(descriptor -> descriptor.id().equals(pid)).findFirst().orElse(null);
+		if (vmd != null) {
+			try {
+				return VirtualMachine.attach(vmd).startLocalManagementAgent();
+			} catch (AttachNotSupportedException e) {
+				CorePlugin.log(e);
+			} catch (IOException e) {
+				CorePlugin.log(e);
+			}
 		}
-		catch (Exception ex) {
-			throw new UnsupportedOperationException("Process PID calculation not supported on the current platform",
-					ex);
-		}
-		return result;
+		return null;
 	}
 
 	/**
@@ -59,17 +61,11 @@ public class ProcessUtils {
 	 * @return JMX connector
 	 */
 	public static JMXConnector createJMXConnector(String pid) {
-		List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
-		VirtualMachineDescriptor vmd = vmds.stream().filter(descriptor -> descriptor.id().equals(pid)).findFirst().orElse(null);
-		if (vmd != null) {
+		String agentUrl = getLocalManagementAgentUrl(pid);
+		if (agentUrl != null) {
 			try {
-				String agentUrl = VirtualMachine.attach(vmd).startLocalManagementAgent();
-				if (agentUrl != null) {
-					JMXServiceURL serviceUrl = new JMXServiceURL(agentUrl);
-					return JMXConnectorFactory.connect(serviceUrl, null);
-				}
-			} catch (AttachNotSupportedException e) {
-				CorePlugin.log(e);
+				JMXServiceURL serviceUrl = new JMXServiceURL(agentUrl);
+				return JMXConnectorFactory.connect(serviceUrl, null);
 			} catch (IOException e) {
 				CorePlugin.log(e);
 			}

@@ -45,7 +45,12 @@ public class ProcessUtils {
 		VirtualMachineDescriptor vmd = vmds.stream().filter(descriptor -> descriptor.id().equals(pid)).findFirst().orElse(null);
 		if (vmd != null) {
 			try {
-				return VirtualMachine.attach(vmd).startLocalManagementAgent();
+				VirtualMachine vm = VirtualMachine.attach(vmd);
+				try {
+					return vm.startLocalManagementAgent();
+				} finally {
+					vm.detach();
+				}
 			} catch (AttachNotSupportedException e) {
 				CorePlugin.log(e);
 			} catch (IOException e) {

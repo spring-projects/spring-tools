@@ -150,12 +150,19 @@ export function activate(
         }),
 
         commands.registerCommand("vscode-spring-boot.live.deactivate", async () => {
-            await commands.executeCommand('sts/livedata/localRemove', getProcessKey(activeBootApp));
-            activeBootApp = undefined;
+            // Fires on every debug/run session termination, not just ones where live-hover was
+            // ever activated, so activeBootApp may be unset here.
+            if (activeBootApp) {
+                await commands.executeCommand('sts/livedata/localRemove', getProcessKey(activeBootApp));
+                activeBootApp = undefined;
+            }
             updateBootAppState("none");
         }),
 
         commands.registerCommand("vscode-spring-boot.live.show.active", async () => {
+            if (!activeBootApp) {
+                return;
+            }
             try {
                 updateBootAppState("connecting");
                 await commands.executeCommand(CONNECT_CMD, {
@@ -169,12 +176,18 @@ export function activate(
         }),
 
         commands.registerCommand("vscode-spring-boot.live.refresh.active", async () => {
+            if (!activeBootApp) {
+                return;
+            }
             await commands.executeCommand(REFRESH_CMD, {
                 processKey: getProcessKey(activeBootApp)
             });
         }),
 
         commands.registerCommand("vscode-spring-boot.live.hide.active", async () => {
+            if (!activeBootApp) {
+                return;
+            }
             try {
                 updateBootAppState("disconnecting");
                 await commands.executeCommand(DISCONNECT_CMD, {

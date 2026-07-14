@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -242,7 +243,12 @@ public class BootLanguageServerBootApp {
 		});
 		server.onCommand("sts/livedata/localRemove", params -> {
 			synchronized(localApps) {
-				List<RemoteBootAppData> removedApps = params.getArguments().stream().map(o -> o instanceof JsonElement ? ((JsonElement) o).getAsString() : (String) o).map(localApps::remove).collect(Collectors.toList());
+				List<RemoteBootAppData> removedApps = params.getArguments().stream()
+						.map(o -> o instanceof JsonElement e ? (e.isJsonNull() ? null : e.getAsString()) : (String) o)
+						.filter(Objects::nonNull)
+						.map(localApps::remove)
+						.filter(Objects::nonNull)
+						.collect(Collectors.toList());
 				if (!removedApps.isEmpty()) {
 					bean.updateApps(localApps.values().toArray(new RemoteBootAppData[localApps.size()]));
 				}

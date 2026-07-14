@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2024 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -218,8 +218,13 @@ public class SpringProcessConnectorRemote {
 		}
 	}
 
+	/**
+	 * Most callers pin a fixed jmxurl, which is a stable and unique identifier on its own. The
+	 * auto/dynamic JMX port case has no jmxurl since no port is picked by the IDE; the process
+	 * id is used as the key instead.
+	 */
 	public static String getProcessKey(RemoteBootAppData appData) {
-		return appData.getJmxurl();
+		return StringUtils.hasText(appData.getJmxurl()) ? appData.getJmxurl() : appData.getProcessID();
 	}
 
 	public CompletableFuture<Void> connectProcess(RemoteBootAppData remoteProcess) {
@@ -232,8 +237,13 @@ public class SpringProcessConnectorRemote {
 		String urlScheme = remoteProcess.getUrlScheme();
 		String projectName = remoteProcess.getProjectName();
 //		boolean keepChecking = _appData.isKeepChecking();
-		
-		if (jmxURL.startsWith("http")) {
+
+		if (jmxURL == null) {
+			// Auto/dynamic JMX port case: no port was picked by the IDE. Attach to the real
+			// child process by its PID and let the JVM start its own local management agent
+			// on-demand.
+			return connectLocalProcessByPid(processKey, processID, processName, projectName, urlScheme);
+		} else if (jmxURL.startsWith("http")) {
 			SpringProcessConnectorOverHttp connector = new SpringProcessConnectorOverHttp(processType, processKey, jmxURL, urlScheme, processID, processName, projectName, host, port);
 			return processConnectorService.connectProcess(processKey, connector);
 		} else {
@@ -241,7 +251,21 @@ public class SpringProcessConnectorRemote {
 			return processConnectorService.connectProcess(processKey, connector);
 		}
 	}
-	
+
+	private CompletableFuture<Void> connectLocalProcessByPid(String processKey, String processID, String processName, String projectName, String urlScheme) {
+		if (processID == null) {
+			return CompletableFuture.failedFuture(new IllegalStateException("No jmxurl or process id available for " + processKey));
+		}
+		try {
+			String jmxAddress = LocalJvmAttach.startLocalManagementAgent(processID);
+			SpringProcessConnectorOverJMX connector = new SpringProcessConnectorOverJMX(processType, processKey, jmxAddress, urlScheme, processID, processName, projectName, null, null);
+			return processConnectorService.connectProcess(processKey, connector);
+		} catch (Exception e) {
+			logger.error("exception while attaching to local process by pid: " + processID, e);
+			return CompletableFuture.failedFuture(e);
+		}
+	}
+
 	public RemoteBootAppData[] getProcesses() {
 		Set<RemoteBootAppData> remoteApps = this.remoteAppInstances.keySet();
 		return (RemoteBootAppData[]) remoteApps.toArray(new RemoteBootAppData[remoteApps.size()]);

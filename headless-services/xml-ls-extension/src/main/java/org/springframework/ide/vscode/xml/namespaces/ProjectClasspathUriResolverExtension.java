@@ -27,6 +27,7 @@ import org.springframework.ide.vscode.xml.IJavaProjectProvider.IJavaProjectData;
 import org.springframework.ide.vscode.xml.namespaces.classpath.ProjectResourceLoaderCache;
 import org.springframework.ide.vscode.xml.namespaces.util.DocumentAccessor;
 import org.springframework.ide.vscode.xml.namespaces.util.DocumentAccessor.SchemaLocations;
+import org.springframework.ide.vscode.xml.namespaces.util.XmlUtils;
 import org.w3c.dom.Document;
 
 import org.springframework.ide.vscode.xml.namespaces.util.Logger;
@@ -201,6 +202,7 @@ public class ProjectClasspathUriResolverExtension implements URIResolverExtensio
 			builderFactory.setFeature("http://xml.org/sax/features/validation", false);
 			builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
 			builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			XmlUtils.configureDocumentBuilderFactory(builderFactory);
 
 			DocumentBuilder builder = builderFactory.newDocumentBuilder();
 			Document doc = builder.parse(contents);

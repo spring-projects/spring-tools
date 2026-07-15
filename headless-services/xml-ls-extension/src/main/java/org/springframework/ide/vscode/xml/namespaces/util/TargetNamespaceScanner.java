@@ -41,11 +41,7 @@ public class TargetNamespaceScanner {
 			factory.setFeature("http://apache.org/xml/features/validation/dynamic", false);
 			factory.setFeature("http://apache.org/xml/features/validation/schema", false);
 			factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-			factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-			factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-			factory.setXIncludeAware(false);
-			factory.setExpandEntityReferences(false);
+			XmlUtils.configureDocumentBuilderFactory(factory);
 
 			DocumentBuilder docBuilder = factory.newDocumentBuilder();
 			

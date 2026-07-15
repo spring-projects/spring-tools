@@ -57,7 +57,6 @@ import org.springframework.ide.eclipse.boot.launch.livebean.JmxBeanSupport;
 import org.springframework.ide.eclipse.boot.launch.livebean.JmxBeanSupport.Feature;
 import org.springframework.ide.eclipse.boot.launch.process.BootProcessFactory;
 import org.springframework.ide.eclipse.boot.launch.profiles.ProfileHistory;
-import org.springframework.ide.eclipse.boot.launch.util.PortFinder;
 import org.springsource.ide.eclipse.commons.core.util.OsUtils;
 import org.springsource.ide.eclipse.commons.core.util.StringUtil;
 import org.springsource.ide.eclipse.commons.livexp.util.ExceptionUtil;
@@ -236,16 +235,20 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 				} catch (Exception e) {
 					//ignore: bad data in launch config.
 				}
-				if (port==0) {
-					port = PortFinder.findFreePort(); //slightly better than calling JmxBeanSupport.randomPort()
-				}
+				// port==0 means 'auto': no port is picked here. The child JVM starts without any
+				// com.sun.management.jmxremote* args, and the JMX agent is started later
+				// on-demand via Attach API against the child's real PID (see BootProcessFactory /
+				// SpringApplicationLifeCycleClientManager). An explicitly pinned nonzero port
+				// keeps using the old fixed-port args.
 				String[] enableLiveBeanArgs = DebugPlugin.parseArguments(JmxBeanSupport.jmxBeanVmArgs(port, enabled));
 				for (int i = 0; i < enableLiveBeanArgs.length; i++) {
 					vmArgs.add(i, enableLiveBeanArgs[i]);
 				}
-				ILaunch currentLaunch = CURRENT_LAUNCH.get();
-				if (currentLaunch!=null) {
-					currentLaunch.setAttribute(JMX_PORT, ""+port);
+				if (port!=0) {
+					ILaunch currentLaunch = CURRENT_LAUNCH.get();
+					if (currentLaunch!=null) {
+						currentLaunch.setAttribute(JMX_PORT, ""+port);
+					}
 				}
 			}
 			// Fast startup VM args

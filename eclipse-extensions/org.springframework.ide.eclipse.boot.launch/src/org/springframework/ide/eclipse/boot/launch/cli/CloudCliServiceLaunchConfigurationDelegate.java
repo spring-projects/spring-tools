@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2020 Pivotal Software, Inc.
+ * Copyright (c) 2017, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -41,7 +41,6 @@ import org.springframework.ide.eclipse.boot.launch.util.PortFinder;
 import org.springframework.ide.eclipse.boot.util.version.Version;
 import org.springframework.ide.eclipse.boot.util.version.VersionParser;
 import org.springframework.ide.eclipse.boot.util.version.VersionRange;
-import org.springsource.ide.eclipse.commons.core.util.ProcessUtils;
 import org.springsource.ide.eclipse.commons.livexp.util.Log;
 
 /**
@@ -60,8 +59,6 @@ public class CloudCliServiceLaunchConfigurationDelegate extends BootCliLaunchCon
 	public final static String ATTR_CLOUD_SERVICE_ID = "local-cloud-service-id";
 
 	private final static String PREF_DONT_SHOW_PLATFORM_WARNING = "org.springframework.ide.eclipse.boot.launch.cloud.cli.NotSupportedPlatform";
-	private final static String PREF_DONT_SHOW_JRE_WARNING = "org.springframework.ide.eclipse.boot.launch.cloud.cli.JRE";
-	private final static String PREF_DONT_SHOW_JDK_WARNING = "org.springframework.ide.eclipse.boot.launch.cloud.cli.JDK";
 
 	private List<String> getCloudCliServiceLifeCycleVmArguments(ILaunchConfiguration configuration, int jmxPort) {
 		List<String> vmArgs = new ArrayList<>();
@@ -240,33 +237,7 @@ public class CloudCliServiceLaunchConfigurationDelegate extends BootCliLaunchCon
 						// Set invalid PID initially thus if PID is failed to be calculated then set PID launch attribute to invalid PID to fallback to default non-JMX process tracking
 						long pid = -1;
 						try {
-							if (ProcessUtils.isLatestJdkForTools()) {
-								pid = ProcessUtils.getProcessID(process);
-							} else {
-								Log.warn("Old JDK version. Need latest JDK to make JMX connection to process using its PID");
-								if (!store.getBoolean(PREF_DONT_SHOW_JDK_WARNING)) {
-									PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
-										MessageDialogWithToggle dialog = MessageDialogWithToggle.openWarning(
-											Display.getCurrent().getActiveShell(), "Cloud CLI Service Info Limitation",
-											"Cloud service process life-cycle data is limited and port data is unavailable because STS runnning on an old JDK version. Point STS to the latest JDK and restart it to have complete service process life-cycle and port data",
-											"Don't show this message again",
-											false, null, null);
-										store.setValue(PREF_DONT_SHOW_JDK_WARNING, dialog.getToggleState());
-									});
-								}
-							}
-						} catch (NoClassDefFoundError e) {
-							Log.warn(e);
-							if (!store.getBoolean(PREF_DONT_SHOW_JRE_WARNING)) {
-								PlatformUI.getWorkbench().getDisplay().asyncExec(() -> {
-									MessageDialogWithToggle dialog = MessageDialogWithToggle.openWarning(
-										Display.getCurrent().getActiveShell(), "Cloud CLI Service Info Limitation",
-										"Cloud service process life-cycle data is limited and port data is unavailable because STS is running on a JRE. Point it to a JDK and restart STS for complete service process life-cycle and port data",
-										"Don't show this message again",
-										false, null, null);
-									store.setValue(PREF_DONT_SHOW_JRE_WARNING, dialog.getToggleState());
-								});
-							}
+							pid = process.pid();
 						} catch (UnsupportedOperationException e) {
 							Log.warn(e);
 							if (!store.getBoolean(PREF_DONT_SHOW_PLATFORM_WARNING)) {

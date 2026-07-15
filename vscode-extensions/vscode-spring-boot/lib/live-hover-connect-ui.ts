@@ -15,7 +15,7 @@ interface ProcessCommandInfo {
 }
 
 export interface RemoteBootApp {
-    jmxurl: string;
+    jmxurl: string | null;
     host: string;
     urlScheme: "https" | "http";
     port: string;
@@ -24,6 +24,16 @@ export interface RemoteBootApp {
     processId: string;
     processName: string;
     projectName?: string;
+}
+
+/**
+ * Most callers pin a fixed jmxurl, which is a stable and unique identifier on its own. The
+ * auto/dynamic JMX port case has no jmxurl since no port is picked by the extension; the
+ * process id is used as the key instead (mirrors SpringProcessConnectorRemote.getProcessKey
+ * on the language server side).
+ */
+function getProcessKey(appData: RemoteBootApp | undefined): string | undefined {
+    return appData?.jmxurl || appData?.processId;
 }
 
 export interface BootAppQuickPick extends QuickPickItem {
@@ -94,7 +104,7 @@ async function liveHoverConnectHandler() {
 }
 
 async function executeLiveProcessAction(commandInfo: ProcessCommandInfo) {
-    if (activeBootApp?.jmxurl === commandInfo.processKey) {
+    if (getProcessKey(activeBootApp) === commandInfo.processKey) {
         switch (commandInfo.action) {
             case CONNECT_CMD:
                 await commands.executeCommand('vscode-spring-boot.live.show.active');
@@ -140,16 +150,23 @@ export function activate(
         }),
 
         commands.registerCommand("vscode-spring-boot.live.deactivate", async () => {
-            await commands.executeCommand('sts/livedata/localRemove', activeBootApp.jmxurl);
-            activeBootApp = undefined;
+            // Fires on every debug/run session termination, not just ones where live-hover was
+            // ever activated, so activeBootApp may be unset here.
+            if (activeBootApp) {
+                await commands.executeCommand('sts/livedata/localRemove', getProcessKey(activeBootApp));
+                activeBootApp = undefined;
+            }
             updateBootAppState("none");
         }),
 
         commands.registerCommand("vscode-spring-boot.live.show.active", async () => {
+            if (!activeBootApp) {
+                return;
+            }
             try {
                 updateBootAppState("connecting");
                 await commands.executeCommand(CONNECT_CMD, {
-                    processKey: activeBootApp.jmxurl
+                    processKey: getProcessKey(activeBootApp)
                 });
                 updateBootAppState("connected");
             } catch (error) {
@@ -159,16 +176,22 @@ export function activate(
         }),
 
         commands.registerCommand("vscode-spring-boot.live.refresh.active", async () => {
+            if (!activeBootApp) {
+                return;
+            }
             await commands.executeCommand(REFRESH_CMD, {
-                processKey: activeBootApp.jmxurl
+                processKey: getProcessKey(activeBootApp)
             });
         }),
 
         commands.registerCommand("vscode-spring-boot.live.hide.active", async () => {
+            if (!activeBootApp) {
+                return;
+            }
             try {
                 updateBootAppState("disconnecting");
                 await commands.executeCommand(DISCONNECT_CMD, {
-                    processKey: activeBootApp.jmxurl
+                    processKey: getProcessKey(activeBootApp)
                 });
                 updateBootAppState("disconnected");
             } catch (error) {

@@ -49,7 +49,6 @@
 		<module>org.springsource.ide.eclipse.commons.frameworks.core</module>
 		<module>org.springsource.ide.eclipse.commons.frameworks.test.util</module>
 		<module>org.springsource.ide.eclipse.commons.frameworks.ui</module>
-		<module>org.springsource.ide.eclipse.commons.jdk_tools</module>
 		<module>org.springsource.ide.eclipse.commons.livexp</module>
 		<module>org.springsource.ide.eclipse.commons.tests.util</module>
 		<module>org.springsource.ide.eclipse.commons.ui</module>

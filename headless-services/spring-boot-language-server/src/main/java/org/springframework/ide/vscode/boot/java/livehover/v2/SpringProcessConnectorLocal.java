@@ -40,9 +40,7 @@ import com.sun.tools.attach.VirtualMachineDescriptor;
 public class SpringProcessConnectorLocal {
 
 	private static final Logger log = LoggerFactory.getLogger(SpringProcessConnectorLocal.class);
-	
-	private static final String LOCAL_CONNECTOR_ADDRESS = "com.sun.management.jmxremote.localConnectorAddress";
-	
+
 
 	private final Map<String, Boolean> projects;
 	private final Set<SpringProcessDescriptor> processes;
@@ -193,53 +191,22 @@ public class SpringProcessConnectorLocal {
 	}
 	
 	public CompletableFuture<Void> connectProcess(SpringProcessDescriptor descriptor) {
-		VirtualMachine vm = null;
 		VirtualMachineDescriptor vmDescriptor = descriptor.getVm();
-		
-		try {
-			String jmxAddress = null;
-			vm = VirtualMachine.attach(vmDescriptor);
-			
-			try {
-				jmxAddress = vm.getAgentProperties().getProperty(LOCAL_CONNECTOR_ADDRESS);
-			} catch (Exception e) {
-				//ignore
-			}
-	
-			if (jmxAddress == null) {
-				try {
-					jmxAddress = vm.startLocalManagementAgent();
-				} catch (Exception e) {
-					log.error("Error starting local management agent", e);
-					return CompletableFuture.failedFuture(e);
-				}
-			}
-			
-			if (jmxAddress != null) {
-				String processID = getProcessID(vmDescriptor);
-				String processName = getProcessName(vmDescriptor);
-				String urlScheme = "http";
-				
-				SpringProcessConnectorOverJMX connector = new SpringProcessConnectorOverJMX(ProcessType.LOCAL,
-						descriptor.getProcessKey(), jmxAddress, urlScheme, processID, processName, descriptor.getProjectName(), null, null);
 
-				return this.processConnectorService.connectProcess(descriptor.getProcessKey(), connector);
-			}
-			return CompletableFuture.failedFuture(new Exception("No JMX URL available!"));
+		try {
+			String jmxAddress = LocalJvmAttach.startLocalManagementAgent(vmDescriptor);
+
+			String processID = getProcessID(vmDescriptor);
+			String processName = getProcessName(vmDescriptor);
+
+			SpringProcessConnectorOverJMX connector = new SpringProcessConnectorOverJMX(ProcessType.LOCAL,
+					descriptor.getProcessKey(), jmxAddress, "http", processID, processName, descriptor.getProjectName(), null, null);
+
+			return this.processConnectorService.connectProcess(descriptor.getProcessKey(), connector);
 		}
 		catch (Exception e) {
 			log.error("exception while connecting to jvm process", e);
 			return CompletableFuture.failedFuture(e);
-		}
-		finally {
-			if (vm != null) {
-				try {
-					vm.detach();
-				}
-				catch (Exception e) {
-					log.error("error detaching from vm: " + vmDescriptor.id(), e);
-				}
-			}
 		}
 	}
 	

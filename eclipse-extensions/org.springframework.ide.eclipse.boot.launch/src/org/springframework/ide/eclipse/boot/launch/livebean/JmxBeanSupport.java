@@ -44,7 +44,8 @@ public class JmxBeanSupport {
 		if (!enabled.isEmpty()) {
 			//At least one feature enabled
 			StringBuilder str = new StringBuilder();
-			for (String a : enableJmxArgs(jmxPort)) {
+			String[] args = "0".equals(jmxPort) ? autoJmxArgs() : enableJmxArgs(jmxPort);
+			for (String a : args) {
 				str.append(a+"\n");
 			}
 			for (Feature feature : enabled) {
@@ -76,6 +77,19 @@ public class JmxBeanSupport {
 				// GH-862: Spring Boot 3 doesn't expose all actuators over JMX anymore by default
 				// therefore we need to set this for live hovers here
 				//
+				"-Dmanagement.endpoints.jmx.exposure.include=*"
+		};
+	}
+
+	/**
+	 * VM args for the auto/dynamic port case (jmxPort == 0). No
+	 * {@code com.sun.management.jmxremote*} args are emitted here: rather than picking a port
+	 * up front, the JMX agent is started on-demand later via the Attach API against the
+	 * child's real OS PID, once the child actually exists and can bind its own port.
+	 */
+	public static String[] autoJmxArgs() {
+		return new String[] {
+				"-Dspring.jmx.enabled=true",
 				"-Dmanagement.endpoints.jmx.exposure.include=*"
 		};
 	}

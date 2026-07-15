@@ -11,6 +11,7 @@
 package org.springframework.ide.eclipse.boot.dash;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.core.net.proxy.IProxyService;
@@ -206,15 +207,21 @@ public class BootDashActivator extends AbstractUIPlugin {
 									for (IProcess p : l.getProcesses()) {
 										String pid = p.getAttribute(IProcess.ATTR_PROCESS_ID);
 										if (pid != null) {
-											CommandInfo cmd = new CommandInfo("sts/livedata/localAdd", Map.of(
-								                    "host", "127.0.0.1",
-								                    "urlScheme", "http",
-								                    "jmxurl", "service:jmx:rmi:///jndi/rmi://127.0.0.1:%s/jmxrmi".formatted(l.getAttribute(BootLaunchConfigurationDelegate.JMX_PORT)),
-								                    "manualConnect", !BootLaunchConfigurationDelegate.getAutoConnect(owner),
-								                    "processId", pid,
-								                    "processName", owner.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, p.getLabel()),
-								                    "projectName", project.getProject().getName()
-											));
+											Map<String, Object> liveDataArgs = new HashMap<>();
+											liveDataArgs.put("host", "127.0.0.1");
+											liveDataArgs.put("urlScheme", "http");
+											// Only a pinned, nonzero JMX port has a stable jmxurl. For the
+											// auto/dynamic port case no port is picked here; the language
+											// server attaches to 'processId' on-demand instead.
+											int jmxPort = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
+											if (jmxPort > 0) {
+												liveDataArgs.put("jmxurl", "service:jmx:rmi:///jndi/rmi://127.0.0.1:%s/jmxrmi".formatted(jmxPort));
+											}
+											liveDataArgs.put("manualConnect", !BootLaunchConfigurationDelegate.getAutoConnect(owner));
+											liveDataArgs.put("processId", pid);
+											liveDataArgs.put("processName", owner.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, p.getLabel()));
+											liveDataArgs.put("projectName", project.getProject().getName());
+											CommandInfo cmd = new CommandInfo("sts/livedata/localAdd", liveDataArgs);
 
 											LiveProcessCommandsExecutor.getDefault().executeCommand(cmd).subscribe();
 										}
@@ -224,9 +231,17 @@ public class BootDashActivator extends AbstractUIPlugin {
 							break;
 						case INACTIVE:
 							for (ILaunch l : DebugPlugin.getDefault().getLaunchManager().getLaunches()) {
-								if (l.getLaunchConfiguration() == owner && l.getAttribute(BootLaunchConfigurationDelegate.JMX_PORT) != null) {
-									String jmxUrl = "service:jmx:rmi:///jndi/rmi://127.0.0.1:%s/jmxrmi".formatted(l.getAttribute(BootLaunchConfigurationDelegate.JMX_PORT));
-									LiveProcessCommandsExecutor.getDefault().executeCommand("sts/livedata/localRemove", jmxUrl).subscribe();
+								if (l.getLaunchConfiguration() == owner) {
+									int jmxPort = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
+									// Must match the key used when the app was added above: jmxurl if a
+									// port was pinned, otherwise the process id (see PROCESS_ID, captured
+									// by BootProcessFactory for the auto/dynamic port case).
+									String processKey = jmxPort > 0
+											? "service:jmx:rmi:///jndi/rmi://127.0.0.1:%s/jmxrmi".formatted(jmxPort)
+											: l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
+									if (processKey != null) {
+										LiveProcessCommandsExecutor.getDefault().executeCommand("sts/livedata/localRemove", processKey).subscribe();
+									}
 								}
 							}
 						default:

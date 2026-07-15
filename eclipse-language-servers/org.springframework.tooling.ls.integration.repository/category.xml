@@ -58,7 +58,6 @@
    <bundle id="org.springsource.ide.eclipse.commons.frameworks.core"/>
    <bundle id="org.springsource.ide.eclipse.commons.frameworks.test.util"/>
    <bundle id="org.springsource.ide.eclipse.commons.frameworks.ui"/>
-   <bundle id="org.springsource.ide.eclipse.commons.jdk_tools"/>
    <bundle id="org.springsource.ide.eclipse.commons.livexp"/>
    <bundle id="org.springsource.ide.eclipse.commons.tests.util"/>
    <bundle id="org.springsource.ide.eclipse.commons.ui"/>

@@ -50,6 +50,7 @@ import org.springframework.ide.eclipse.boot.util.RetryUtil;
 import org.springsource.ide.eclipse.commons.core.pstore.IPropertyStore;
 import org.springsource.ide.eclipse.commons.core.pstore.PropertyStoreApi;
 import org.springsource.ide.eclipse.commons.core.pstore.PropertyStores;
+import org.springsource.ide.eclipse.commons.core.util.ProcessUtils;
 import org.springsource.ide.eclipse.commons.frameworks.core.maintype.MainTypeFinder;
 import org.springsource.ide.eclipse.commons.livexp.core.AsyncLiveExpression;
 import org.springsource.ide.eclipse.commons.livexp.core.DisposeListener;
@@ -518,7 +519,30 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	}
 
 	protected ActuatorClient getActuatorClient() {
-		return JMXActuatorClient.forPort(getTypeLookup(), this::getJmxPort);
+		return JMXActuatorClient.forUrl(getTypeLookup(), this::getJmxUrl);
+	}
+
+	/**
+	 * JMX URL for this element's running process: a fixed jmxurl if a JMX port was pinned,
+	 * otherwise attaches to the process id on-demand to resolve its local management agent's
+	 * URL (see ProcessUtils.getLocalManagementAgentUrl).
+	 */
+	private String getJmxUrl() {
+		for (ILaunchConfiguration c : getLaunchConfigs()) {
+			for (ILaunch l : LaunchUtils.getLaunches(c)) {
+				if (!l.isTerminated()) {
+					int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
+					if (port>0) {
+						return JMXClient.createLocalJmxUrl(port);
+					}
+					String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
+					if (pid!=null) {
+						return ProcessUtils.getLocalManagementAgentUrl(pid);
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -602,13 +626,13 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 			if (liveProfiles == null) {
 				liveProfiles = PollingLiveExp.create(Failable.<ImmutableSet<String>>error(MissingLiveInfoMessages.NOT_YET_COMPUTED), () -> {
 					try {
-						String localJmxUrl = JMXClient.createLocalJmxUrl(getJmxPort());
-						if (localJmxUrl == null) {
+						String processKey = getProcessKey();
+						if (processKey == null) {
 							return Failable.error(getBootDashModel().getRunTarget().getType().getMissingLiveInfoMessages().getMissingInfoMessage(getName(), "profiles"));
 						}
 						String[] o = BootLsCommandUtils.executeCommand(TypeToken.get(String[].class), "sts/livedata/get", Map.of(
 								"endpoint", "profiles",
-								"processKey", localJmxUrl
+								"processKey", processKey
 						)).get().orElse(new String[0]);
 						liveProfiles.refreshOnce();
 						return Failable.of(ImmutableSet.copyOf(o));
@@ -632,18 +656,27 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 		}
 	}
 
-	private int getJmxPort() {
+	/**
+	 * Key identifying this element's running process to the language server's live data
+	 * connections: a jmxurl if a fixed JMX port was pinned, otherwise the process id (the
+	 * language server attaches to it on-demand; see PROCESS_ID / SpringApplicationLifeCycleClientManager).
+	 */
+	private String getProcessKey() {
 		for (ILaunchConfiguration c : getLaunchConfigs()) {
 			for (ILaunch l : LaunchUtils.getLaunches(c)) {
 				if (!l.isTerminated()) {
 					int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
 					if (port>0) {
-						return port;
+						return JMXClient.createLocalJmxUrl(port);
+					}
+					String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
+					if (pid!=null) {
+						return pid;
 					}
 				}
 			}
 		}
-		return -1;
+		return null;
 	}
 
 	private int getLivePort(String propName) {
@@ -659,35 +692,33 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 				for (ILaunch l : BootLaunchUtils.getLaunches(conf)) {
 					if (!l.isTerminated()) {
 						debug("["+this.getName()+"] getLivePort("+propName+") found a launch");
-						int jmxPort = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-						debug("["+this.getName()+"] getLivePort("+propName+") jmxPort = "+jmxPort);
-						if (jmxPort>0) {
-							SpringApplicationLifeCycleClientManager cm = null;
-							try {
-								cm = new SpringApplicationLifeCycleClientManager(jmxPort);
-								SpringApplicationLifecycleClient c = cm.getLifeCycleClient();
-								debug("["+this.getName()+"] getLivePort("+propName+") lifeCycleClient = "+c);
-								if (c!=null) {
-									//Just because lifecycle bean is ready does not mean that the port property has already been set.
-									//To avoid race condition we should wait here until the port is set (some apps aren't web apps and
-									//may never get a port set, so we shouldn't wait indefinitely!)
-									return RetryUtil.retry(100, 1000, () -> {
-										debug("["+this.getName()+"] getLivePort("+propName+") trying to get...");
-										int port = c.getProperty(propName, -1);
-										debug("["+this.getName()+"] getLivePort("+propName+") port = "+ port);
-										if (port<=0) {
-											throw new IllegalStateException("port not (yet) set");
-										}
-										return port;
-									});
-								}
-							} catch (Exception e) {
-								debug(ExceptionUtil.getMessage(e));
-								//most likely this just means the app isn't running so ignore
-							} finally {
-								if (cm!=null) {
-									cm.disposeClient();
-								}
+						// Uses a pinned JMX port directly if one was set, otherwise attaches to
+						// the launch's process id on-demand (see SpringApplicationLifeCycleClientManager).
+						SpringApplicationLifeCycleClientManager cm = null;
+						try {
+							cm = new SpringApplicationLifeCycleClientManager(l);
+							SpringApplicationLifecycleClient c = cm.getLifeCycleClient();
+							debug("["+this.getName()+"] getLivePort("+propName+") lifeCycleClient = "+c);
+							if (c!=null) {
+								//Just because lifecycle bean is ready does not mean that the port property has already been set.
+								//To avoid race condition we should wait here until the port is set (some apps aren't web apps and
+								//may never get a port set, so we shouldn't wait indefinitely!)
+								return RetryUtil.retry(100, 1000, () -> {
+									debug("["+this.getName()+"] getLivePort("+propName+") trying to get...");
+									int port = c.getProperty(propName, -1);
+									debug("["+this.getName()+"] getLivePort("+propName+") port = "+ port);
+									if (port<=0) {
+										throw new IllegalStateException("port not (yet) set");
+									}
+									return port;
+								});
+							}
+						} catch (Exception e) {
+							debug(ExceptionUtil.getMessage(e));
+							//most likely this just means the app isn't running so ignore
+						} finally {
+							if (cm!=null) {
+								cm.disposeClient();
 							}
 						}
 					}

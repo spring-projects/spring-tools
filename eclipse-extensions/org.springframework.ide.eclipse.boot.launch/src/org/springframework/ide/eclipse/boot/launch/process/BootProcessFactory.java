@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,7 +22,6 @@ import org.eclipse.debug.core.IProcessFactory;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.IStreamsProxy;
 import org.eclipse.debug.core.model.RuntimeProcess;
-import org.springframework.ide.eclipse.boot.core.BootActivator;
 import org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate;
 import org.springframework.ide.eclipse.boot.launch.util.SpringApplicationLifeCycleClientManager;
 import org.springframework.ide.eclipse.boot.launch.util.SpringApplicationLifecycleClient;
@@ -67,10 +66,17 @@ public class BootProcessFactory implements IProcessFactory {
 	public IProcess newProcess(ILaunch launch, final Process process, final String label, Map<String, String> attributes) {
 
 		final int jmxPort = getJMXPort(launch);
+		if (jmxPort<=0) {
+			// Auto/dynamic JMX port case: no port was picked at launch time (see
+			// BootLaunchConfigurationDelegate.getVMArguments()). Capture the real child PID now
+			// that the process exists, so the JMX agent can be attached to on-demand later.
+			launch.setAttribute(BootLaunchConfigurationDelegate.PROCESS_ID, String.valueOf(process.pid()));
+		}
+		final boolean hasLifeCycleConnection = jmxPort>0 || launch.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID)!=null;
 		final long timeout = getNiceTerminationTimeout(launch);
 		RuntimeProcess rtProcess = new RuntimeProcess(launch, process, label, attributes) {
 
-			SpringApplicationLifeCycleClientManager clientMgr = new SpringApplicationLifeCycleClientManager(jmxPort);
+			SpringApplicationLifeCycleClientManager clientMgr = new SpringApplicationLifeCycleClientManager(launch);
 
 			@Override
 			public void terminate() throws DebugException {
@@ -108,7 +114,6 @@ public class BootProcessFactory implements IProcessFactory {
 					m.invoke(process);
 					return true;
 				} catch (Exception e) {
-					BootActivator.log(e);
 					//ignore... probably means we are not running on Java 8 VM and so we can't use 'destroyForcibly'.
 				}
 				return false;
@@ -118,7 +123,7 @@ public class BootProcessFactory implements IProcessFactory {
 				if (isTerminated()) {
 					return true;
 				}
-				if (jmxPort>0) {
+				if (hasLifeCycleConnection) {
 					try {
 						debug("Trying to terminate nicely: "+label);
 						SpringApplicationLifecycleClient client = clientMgr.getLifeCycleClient();

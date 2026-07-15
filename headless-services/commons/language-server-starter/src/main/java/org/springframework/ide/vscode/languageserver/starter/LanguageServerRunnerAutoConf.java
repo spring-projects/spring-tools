@@ -17,6 +17,7 @@ import java.util.function.Function;
 import org.eclipse.lsp4j.jsonrpc.MessageConsumer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.ide.vscode.commons.languageserver.LanguageServerRunner;
 import org.springframework.ide.vscode.commons.languageserver.config.LanguageServerProperties;
@@ -38,6 +39,7 @@ public class LanguageServerRunnerAutoConf {
 	}
 	
 	@ConditionalOnMissingClass("org.springframework.ide.vscode.languageserver.testharness.LanguageServerHarness")
+	@ConditionalOnProperty(name = "languageserver.enabled", matchIfMissing = true)
 	@Bean
 	LanguageServerRunner serverApp(
 			LanguageServerProperties properties, 

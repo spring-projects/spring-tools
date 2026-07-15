@@ -1,25 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
-const net = require('net');
-const common = require('./common');
 
 const jarDir = path.join(__dirname, 'language-server');
 const jarPath = path.join(jarDir, 'spring-boot-language-server-standalone-exec.jar');
-
-function getFreePort() {
-    return new Promise((resolve, reject) => {
-        const srv = net.createServer();
-        srv.listen(0, () => {
-            const port = srv.address().port;
-            srv.close((err) => {
-                if (err) reject(err);
-                else resolve(port);
-            });
-        });
-        srv.on('error', reject);
-    });
-}
 
 async function start() {
     // 1. Download the JAR if it doesn't exist
@@ -33,11 +17,8 @@ async function start() {
         }
     }
 
-    // 2. Find a free port and save it for the proxy
-    const port = await getFreePort();
-    fs.writeFileSync(common.portFile, port.toString(), 'utf8');
-
-    // 3. Launch the Java process
+    // 2. Launch the Java process. The plugin only exposes MCP tools over stdio -
+    // the LSP socket transport is disabled since nothing connects to it.
     const javaArgs = [
         "-Xmx1024m",
         "-Djdk.util.zip.disableZip64ExtraFieldValidation=true",
@@ -46,8 +27,7 @@ async function start() {
         `-Dlogging.file.name=${path.join(__dirname, 'boot-ls.log')}`,
         "-Dlogging.level.root=INFO",
         "-Dspring.ai.mcp.server.stdio=true",
-        "-Dlanguageserver.standalone=true",
-        `-Dlanguageserver.standalone-port=${port}`,
+        "-Dlanguageserver.enabled=false",
         `-Dspring.boot.ls.project.dir=${process.cwd()}`,
         "-jar",
         jarPath
@@ -63,21 +43,16 @@ async function start() {
             if (!child.killed) {
                 child.kill('SIGTERM');
             }
-            if (fs.existsSync(common.portFile)) {
-                fs.unlinkSync(common.portFile);
-            }
             process.exit(0);
         });
     });
 
     child.on('error', (err) => {
         console.error('Failed to start Java process:', err);
-        if (fs.existsSync(common.portFile)) fs.unlinkSync(common.portFile);
         process.exit(1);
     });
 
     child.on('close', (code) => {
-        if (fs.existsSync(common.portFile)) fs.unlinkSync(common.portFile);
         process.exit(code);
     });
 }

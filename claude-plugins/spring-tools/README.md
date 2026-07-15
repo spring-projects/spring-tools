@@ -1,6 +1,6 @@
 # Spring Tools Language Server — Claude Code Plugin
 
-A [Claude Code](https://code.claude.com) plugin that contributes the Spring Tools Language Server, providing real-time diagnostics, completions, and navigation for Spring Boot projects.
+A [Claude Code](https://code.claude.com) plugin that contributes the Spring Tools Language Server, exposing Spring Boot diagnostics, bean/request-mapping lookups, and other project insights to Claude Code via MCP tools.
 
 Unlike the VS Code extension, this plugin uses the **standalone** variant of the language server which operates **without** JDT Language Server. Project classpath is computed directly via Maven and Gradle tooling; type indexing uses Jandex.
 
@@ -48,19 +48,19 @@ claude plugin marketplace update
 claude plugin update spring-tools
 ```
 
-### 4. Testing the LSP Plugin
+### 4. Testing the Plugin
 
-To verify that the Spring Boot Language Server is correctly booting up and providing diagnostics to Claude Code, you must run Claude Code **interactively** (don't use the `-p` single-shot flag, as it will kill the CLI before the LSP finishes initializing).
+To verify that the Spring Boot Language Server is correctly booting up and serving MCP tools to Claude Code, you must run Claude Code **interactively** (don't use the `-p` single-shot flag, as it will kill the CLI before the language server finishes initializing).
 
 Open a Spring Boot project and start Claude Code:
 ```bash
 claude
 ```
 
-Then, ask Claude a test query to verify the LSP integration. For example:
-> "Open CoffeeController.java and tell me what the Spring Boot LSP says about the @GetMapping version attribute."
+Then, ask Claude a test query to verify the MCP integration. For example:
+> "Check the project diagnostics for CoffeeController.java."
 
-Claude will wait for the LSP to initialize, read the file, and then summarize the exact Spring Boot warnings and quick fixes provided by the Language Server.
+Claude will wait for the language server to initialize, call the `getProjectDiagnostics` MCP tool, and summarize the exact Spring Boot warnings and quick fixes it reports.
 
 ### 5. Local Testing
 
@@ -140,21 +140,22 @@ Settings are applied once at startup. You must restart the language server (and 
 
 ## What the language server provides
 
-- **Diagnostics** — Spring-specific warnings and quick fixes (missing annotations, incorrect bean wiring, etc.)
-- **Completions** — Spring Boot properties (`application.properties` / `application.yml`), annotation values, bean references
-- **Navigation** — Go to definition for Spring beans, `@Value` expressions, request mappings
-- **Inlay hints** — Cron expressions, JPA/JPQL queries, SpEL expressions
+Via MCP tools:
+
+- **Diagnostics** — Spring-specific warnings and quick fixes (missing annotations, incorrect bean wiring, etc.), including version validation results
+- **Project insight** — bean, component, and request-mapping lookups; resolved project classpath
+
+Via hooks (`hooks/hooks.json`), the plugin also tracks file and project changes on disk to keep its internal index up to date, and exposes a command to refresh the index manually.
 
 ## Plugin structure
 
 ```
 spring-tools/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin manifest (includes MCP and LSP server configs)
-├── proxy.js                 # Node.js script to pipe stdio to the Java LSP socket
+│   └── plugin.json          # Plugin manifest (MCP server config)
 ├── launcher.js              # Node.js script that downloads the JAR (if missing) and starts Java
 ├── install.js               # Node.js script that downloads the JAR
-├── common.js                # Shared Node.js logic
+├── hooks/                   # Hooks that notify the language server of file/project changes
 ├── language-server/         # Populated by install.js on first run (gitignored)
 │   └── spring-boot-language-server-standalone-exec.jar
 ├── skills/                  # Claude Code skills
@@ -166,7 +167,4 @@ spring-tools/
 
 ## How it works
 
-To eliminate race conditions and avoid booting multiple heavy Java processes, this plugin configures Claude Code to share a single JVM for both MCP and LSP:
-
-1. **MCP starts the server:** Claude Code parses the MCP configuration in `plugin.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Tools Language Server, instructing it to expose its MCP tools over `stdio` and its LSP over a local TCP socket (randomly allocated port).
-2. **LSP connects via proxy:** When you open a relevant file (e.g. `.java`, `.properties`), Claude Code parses the LSP configuration in `plugin.json` and starts `proxy.js` as its "LSP process". This lightweight Node.js script simply forwards Claude Code's standard input/output streams to the already-running Java process on the dynamically allocated port, avoiding the need to spawn a second JVM.
+Claude Code parses the MCP configuration in `plugin.json` at startup. This triggers `launcher.js`, which checks if the heavy Java JAR is downloaded. If not, it executes `install.js` to download it from Spring's CDN. Then it boots the standalone Spring Tools Language Server, instructing it to expose its MCP tools over `stdio` (the language server's own LSP socket transport is disabled, since nothing in this plugin connects to it).

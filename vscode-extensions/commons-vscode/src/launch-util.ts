@@ -248,7 +248,7 @@ async function createServerOptionsForPortComm(options: ActivatorOptions, context
                         writer: socket
                     });
                 })
-                    .listen(port, () => {
+                    .listen(port, '127.0.0.1', () => {
                         const processLaunchoptions = {
                             cwd: context.extensionPath
                         };

@@ -36,9 +36,11 @@ jobs:
         id: upload-release
         run: |
           jar_file="spring-boot-language-server-standalone-exec.jar"
+          sha_file="$jar_file.sha256"
           s3_path=snapshot/language-server/spring-boot
           echo "S3 path: ${s3_path}"
           aws s3 cp ./standalone-ls-dist/$jar_file s3://$AWS_S3_BUCKET/$s3_path/$jar_file --no-progress --checksum-algorithm CRC32
+          aws s3 cp ./standalone-ls-dist/$sha_file s3://$AWS_S3_BUCKET/$s3_path/$sha_file --no-progress --checksum-algorithm CRC32
       - name: Update plugin.json for Snapshot
         id: update-plugin
         run: |

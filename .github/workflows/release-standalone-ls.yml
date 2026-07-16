@@ -49,12 +49,14 @@ jobs:
         if: ${{ inputs.dist == 'release' }}
         run: |
           jar_file="spring-boot-language-server-standalone-exec.jar"
+          sha_file="$jar_file.sha256"
           base_version=$(cat ./standalone-ls-dist/version.txt)
-          
+
           s3_path=${{ inputs.dist }}/language-server/spring-boot/$base_version
           echo "S3 path: ${s3_path}"
           aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive
           aws s3 cp ./standalone-ls-dist/$jar_file s3://$AWS_S3_BUCKET/$s3_path/$jar_file --no-progress
+          aws s3 cp ./standalone-ls-dist/$sha_file s3://$AWS_S3_BUCKET/$s3_path/$sha_file --no-progress
           echo "version=$base_version" >> $GITHUB_OUTPUT
       - name: Create and Push Tag
         id: create-tag

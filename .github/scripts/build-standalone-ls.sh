@@ -29,4 +29,6 @@ mkdir -p standalone-ls-dist
 jar_file=$(ls headless-services/spring-boot-language-server-standalone/target/*-standalone-exec.jar | head -n 1)
 cp $jar_file standalone-ls-dist/spring-boot-language-server-standalone-exec.jar
 
+sha256sum standalone-ls-dist/spring-boot-language-server-standalone-exec.jar | awk '{print $1}' > standalone-ls-dist/spring-boot-language-server-standalone-exec.jar.sha256
+
 echo "$base_version" > standalone-ls-dist/version.txt

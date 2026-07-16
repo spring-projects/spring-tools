@@ -49,8 +49,8 @@ public class BootVersionValidationConfig {
 		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider, mavenMetadataProvider, bootJavaConfig);
 	}
 	
-	@Bean SpringIoProjectsProvider springProjectsProvider(SimpleLanguageServer server, BootJavaConfig config, RestTemplateFactory restTemplateFactory) {
-		return new SpringIoProjectsProvider(config, restTemplateFactory, server.getProgressService(), server.getMessageService(), 30_000);
+	@Bean SpringIoProjectsProvider springProjectsProvider(SimpleLanguageServer server, BootJavaConfig config, ClientHttpRequestFactoryProvider requestFactoryProvider) {
+		return new SpringIoProjectsProvider(config, requestFactoryProvider, server.getProgressService(), server.getMessageService(), 30_000);
 	}
 	
 	@Bean GenerationsValidator generationsValidator(SimpleLanguageServer server, SpringProjectsProvider projectsProvider) {

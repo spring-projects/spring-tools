@@ -33,24 +33,24 @@ import java.util.regex.PatternSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 @Component
-public class RestTemplateFactory {
-	
-	private static final Logger log = LoggerFactory.getLogger(RestTemplateFactory.class);
-	
+public class ClientHttpRequestFactoryProvider {
+
+	private static final Logger log = LoggerFactory.getLogger(ClientHttpRequestFactoryProvider.class);
+
 	private BootJavaConfig config;
-	
+
 	private HostExclusions proxyExclusions;
 
-	public RestTemplateFactory(BootJavaConfig config) {
+	public ClientHttpRequestFactoryProvider(BootJavaConfig config) {
 		this.config = config;
 		this.proxyExclusions = null;
 		config.addListener(v -> {
-			synchronized(RestTemplateFactory.this) {
+			synchronized(ClientHttpRequestFactoryProvider.this) {
 				proxyExclusions = null;
 			}
 		});
@@ -96,7 +96,7 @@ public class RestTemplateFactory {
 		return proxyExclusions;
 	}
 		
-	public RestTemplate createRestTemplate(String host) {
+	public ClientHttpRequestFactory createRequestFactory(String host) {
 		String proxyUrlStr = config.getRawSettings().getString("http", "proxy");
 		if (proxyUrlStr == null || proxyUrlStr.isBlank()) {
 			proxyUrlStr = getProxyUrlFromEnv();
@@ -106,7 +106,7 @@ public class RestTemplateFactory {
 		if (proxyUrlStr != null && !proxyUrlStr.isBlank()) {
 			if (!"localhost".equals(host) && !"127.0.0.1".equals(host) && !getProxyExclusions().contains(host)) {
 				try {
-					URL proxyUrl = new URL(proxyUrlStr);
+					URL proxyUrl = URI.create(proxyUrlStr).toURL();
 					clientBuilder.proxy(new ProxySelector() {
 
 						@Override
@@ -161,7 +161,7 @@ public class RestTemplateFactory {
 				}
 			}
 		}
-		return new RestTemplate(new JdkClientHttpRequestFactory(clientBuilder.build()));
+		return new JdkClientHttpRequestFactory(clientBuilder.build());
 	}
 	
 	private static String getProxyUrlFromEnv() {

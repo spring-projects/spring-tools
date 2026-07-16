@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
-import org.springframework.ide.vscode.boot.app.RestTemplateFactory;
+import org.springframework.ide.vscode.boot.app.ClientHttpRequestFactoryProvider;
 import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
 import org.springframework.ide.vscode.boot.validation.generations.json.SpringProject;
 import org.springframework.ide.vscode.boot.validation.generations.json.SpringProjects;
@@ -38,16 +38,16 @@ public class SpringIoProjectsProvider implements SpringProjectsProvider {
 	
 	private SpringProjectsClient client;
 	private Map<String, ResolvedSpringProject> cache;
-	private RestTemplateFactory restTemplateFactory;
+	private ClientHttpRequestFactoryProvider requestFactoryProvider;
 	final private ProgressService progressService;
 	final private MessageService messageService;
 	final private long errorStateCachingTime;
-	
+
 	private long lastErrorTime;
 	private Optional<Throwable> errorState;
 
-	public SpringIoProjectsProvider(BootJavaConfig config, RestTemplateFactory restTemplateFactory, ProgressService progressService, MessageService messageService, long errorStateCachingTime) {
-		this.restTemplateFactory = restTemplateFactory;
+	public SpringIoProjectsProvider(BootJavaConfig config, ClientHttpRequestFactoryProvider requestFactoryProvider, ProgressService progressService, MessageService messageService, long errorStateCachingTime) {
+		this.requestFactoryProvider = requestFactoryProvider;
 		this.progressService = progressService;
 		this.messageService = messageService;
 		this.errorStateCachingTime = errorStateCachingTime;
@@ -58,7 +58,7 @@ public class SpringIoProjectsProvider implements SpringProjectsProvider {
 	
 	public synchronized void updateIoApiUri(String uri) {
 		if (client == null || !uri.equals(client.getUrl())) {
-			this.client = new SpringProjectsClient(uri, restTemplateFactory);
+			this.client = new SpringProjectsClient(uri, requestFactoryProvider);
 			cache = null;
 			clearErrorState();
 		}

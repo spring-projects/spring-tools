@@ -23,7 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
-import org.springframework.ide.vscode.boot.app.RestTemplateFactory;
+import org.springframework.ide.vscode.boot.app.ClientHttpRequestFactoryProvider;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.HoverTestConf;
 import org.springframework.ide.vscode.boot.validation.generations.SpringIoProjectsProvider;
@@ -42,7 +42,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 public class ProjectGenerationsValidationTest {
 	
 	@Autowired private BootLanguageServerHarness harness;
-	@Autowired private RestTemplateFactory restTemplateFactory;
+	@Autowired private ClientHttpRequestFactoryProvider requestFactoryProvider;
 	@Autowired private BootJavaConfig config;
 
 	private ProjectsHarness projects = ProjectsHarness.INSTANCE;
@@ -57,7 +57,7 @@ public class ProjectGenerationsValidationTest {
 
     @Test
     void testProjectsInfoFromSpringIo() throws Exception {
-        SpringProjectsProvider cache = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+        SpringProjectsProvider cache = new SpringIoProjectsProvider(config, requestFactoryProvider, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
 
         SpringProject project = cache.getProject("spring-boot");
         assertNotNull(project);
@@ -85,7 +85,7 @@ public class ProjectGenerationsValidationTest {
 
     @Test
     void testLinkedGenerationsFromSpringIo() throws Exception {
-        SpringProjectsProvider cache = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+        SpringProjectsProvider cache = new SpringIoProjectsProvider(config, requestFactoryProvider, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
 
         ResolvedSpringProject project = cache.getProject("spring-integration");
 		List<Generation> generations = project.getGenerations();

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,16 +13,13 @@ package org.springframework.ide.vscode.boot.validation.generations;
 import java.net.URI;
 import java.util.Map;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.ide.vscode.boot.app.RestTemplateFactory;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.ide.vscode.boot.app.ClientHttpRequestFactoryProvider;
 import org.springframework.ide.vscode.boot.validation.generations.json.Generations;
 import org.springframework.ide.vscode.boot.validation.generations.json.Releases;
 import org.springframework.ide.vscode.boot.validation.generations.json.SpringProjects;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,12 +27,20 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 public class SpringProjectsClient {
 
-	private final String url;
-	private RestTemplateFactory restTemplateFactory;
+	private static final MediaType HAL_JSON = MediaType.parseMediaType("application/hal+json");
 
-	public SpringProjectsClient(String url, RestTemplateFactory restTemplateFactory) {
+	private final String url;
+	private final URI baseUri;
+	private final RestClient restClient;
+
+	public SpringProjectsClient(String url, ClientHttpRequestFactoryProvider requestFactoryProvider) {
 		this.url = url;
-		this.restTemplateFactory = restTemplateFactory;
+		this.baseUri = URI.create(url);
+		ClientHttpRequestFactory requestFactory = requestFactoryProvider.createRequestFactory(baseUri.getHost());
+		this.restClient = RestClient.builder()
+				.baseUrl(baseUri.getScheme() + "://" + baseUri.getAuthority())
+				.requestFactory(requestFactory)
+				.build();
 	}
 
 	public String getUrl() {
@@ -43,48 +48,45 @@ public class SpringProjectsClient {
 	}
 
 	public SpringProjects getSpringProjects() throws Exception {
-		return fromEmbedded(url, SpringProjects.class);
+		return fromEmbedded(baseUri.getRawPath(), baseUri.getRawQuery(), SpringProjects.class);
 	}
 
 	public Generations getGenerations(String generationsUrl) throws Exception {
-		return fromEmbedded(generationsUrl, Generations.class);
+		return fromEmbeddedHref(generationsUrl, Generations.class);
 	}
-	
+
 	public Releases getReleases(String releasesUrl) throws Exception {
-		return fromEmbedded(releasesUrl, Releases.class);
+		return fromEmbeddedHref(releasesUrl, Releases.class);
 	}
-	
-	private <T> T fromEmbedded(String url, Class<T> clazz) throws Exception {
-		if (url != null) {
-			Map<?, ?> result = get(url, Map.class);
-			if (result != null) {
-				Object obj = result.get("_embedded");
-				if (obj != null) {
-					
-					ObjectMapper mapper = JsonMapper.builder()
-						    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-						    .build();
-					
-					return mapper.convertValue(obj, clazz);
-				}
+
+	private <T> T fromEmbeddedHref(String href, Class<T> clazz) throws Exception {
+		if (href == null) {
+			return null;
+		}
+		URI hrefUri = URI.create(href);
+		return fromEmbedded(hrefUri.getRawPath(), hrefUri.getRawQuery(), clazz);
+	}
+
+	private <T> T fromEmbedded(String path, String query, Class<T> clazz) throws Exception {
+		Map<?, ?> result = get(path, query, Map.class);
+		if (result != null) {
+			Object obj = result.get("_embedded");
+			if (obj != null) {
+				ObjectMapper mapper = JsonMapper.builder()
+						.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+						.build();
+				return mapper.convertValue(obj, clazz);
 			}
 		}
 		return null;
 	}
-	
-	private <T> T get(String url, Class<T> clazz) throws Exception {
-		HttpHeaders headers = new HttpHeaders();
 
-		headers.setAccept(MediaType.parseMediaTypes("application/hal+json"));
-
-		@SuppressWarnings({ "rawtypes" })
-		HttpEntity<?> entity = new HttpEntity(headers);
-
-		URI uri = URI.create(url);
-		RestTemplate restTemplate = restTemplateFactory.createRestTemplate(uri.getHost());
-		ResponseEntity<T> response = restTemplate.exchange(uri, HttpMethod.GET, entity, clazz);
-
-		return response.getBody();
+	private <T> T get(String path, String query, Class<T> clazz) throws Exception {
+		return restClient.get()
+				.uri(uriBuilder -> uriBuilder.replacePath(path).replaceQuery(query).build())
+				.accept(HAL_JSON)
+				.retrieve()
+				.body(clazz);
 	}
 
 }

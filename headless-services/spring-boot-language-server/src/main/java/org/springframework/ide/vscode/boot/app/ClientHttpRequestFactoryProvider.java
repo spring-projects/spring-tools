@@ -165,8 +165,6 @@ public class ClientHttpRequestFactoryProvider {
 	}
 	
 	private static String getProxyUrlFromEnv() {
-		log.info("Environment size: " + System.getenv().size());
-		log.info("Env var https_proxy: " + System.getenv("https_proxy"));
 		String proxyUrl = System.getenv("https_proxy");
 		if (proxyUrl == null || proxyUrl.isBlank()) {
 			proxyUrl = System.getenv("HTTPS_PROXY");
@@ -177,7 +175,6 @@ public class ClientHttpRequestFactoryProvider {
 		if (proxyUrl == null || proxyUrl.isBlank()) {
 			proxyUrl = System.getenv("HTTP_PROXY");
 		}
-		log.info("Proxy URL from env: " + proxyUrl);
 		return proxyUrl;
 		
 	}

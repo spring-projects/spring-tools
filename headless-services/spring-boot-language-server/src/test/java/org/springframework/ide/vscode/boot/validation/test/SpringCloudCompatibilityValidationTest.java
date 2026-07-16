@@ -27,7 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
-import org.springframework.ide.vscode.boot.app.RestTemplateFactory;
+import org.springframework.ide.vscode.boot.app.ClientHttpRequestFactoryProvider;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.HoverTestConf;
 import org.springframework.ide.vscode.boot.validation.generations.SpringCloudCompatibilityValidator;
@@ -54,7 +54,7 @@ public class SpringCloudCompatibilityValidationTest {
 	private static final String SPRING_CLOUD_TASK_CORE = "spring-cloud-task-core";
 	
 	@Autowired private BootLanguageServerHarness harness;
-	@Autowired private RestTemplateFactory restTemplateFactory;
+	@Autowired private ClientHttpRequestFactoryProvider requestFactoryProvider;
 	@Autowired private BootJavaConfig config;
 	@Autowired private DiagnosticSeverityProvider severityProvider;
 	
@@ -65,7 +65,7 @@ public class SpringCloudCompatibilityValidationTest {
 
 	@Test
 	void testIncompatibleSpringBootVersionWithSpringCloud() throws Exception {
-        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, requestFactoryProvider, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
 		IJavaProject javaProject = createMockJavaProject("4.3.0", SPRING_CLOUD_COMMONS);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
@@ -80,7 +80,7 @@ public class SpringCloudCompatibilityValidationTest {
 
 	@Test
 	void testIncompatibleSpringBootVersionWithSpringCloudTask() throws Exception {
-        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, requestFactoryProvider, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
 		IJavaProject javaProject = createMockJavaProject("3.3.0", SPRING_CLOUD_TASK_CORE);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
@@ -95,7 +95,7 @@ public class SpringCloudCompatibilityValidationTest {
 
 	@Test
 	void testIncompatibleSpringBootVersionWithSpringCloudFunction() throws Exception {
-        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, requestFactoryProvider, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
 		IJavaProject javaProject = createMockJavaProject("4.3.1", SPRING_CLOUD_FUNCTION_CORE);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
@@ -110,7 +110,7 @@ public class SpringCloudCompatibilityValidationTest {
 
 	@Test
 	void testCompatibleSpringBootVersionWithSpringCloud() throws Exception {
-        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, requestFactoryProvider, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
 		IJavaProject javaProject = createMockJavaProject("5.0.0", SPRING_CLOUD_COMMONS);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);
@@ -123,7 +123,7 @@ public class SpringCloudCompatibilityValidationTest {
 
 	@Test
 	void testNoSpringCloudDependency() throws Exception {
-        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, restTemplateFactory, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
+        SpringProjectsProvider projectsProvider = new SpringIoProjectsProvider(config, requestFactoryProvider, harness.getServer().getProgressService(), harness.getServer().getMessageService(), -1);
 		IJavaProject javaProject = createMockJavaProject(null, SPRING_CLOUD_COMMONS);
 		
 		SpringCloudCompatibilityValidator validator = new SpringCloudCompatibilityValidator(severityProvider, projectsProvider);

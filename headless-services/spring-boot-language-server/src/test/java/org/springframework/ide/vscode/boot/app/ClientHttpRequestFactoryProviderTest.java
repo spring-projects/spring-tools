@@ -19,13 +19,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.ide.vscode.boot.app.RestTemplateFactory.HostExclusions;
+import org.springframework.ide.vscode.boot.app.ClientHttpRequestFactoryProvider.HostExclusions;
 
-public class RestTemplateFactoryTest {
+public class ClientHttpRequestFactoryProviderTest {
 	
 	@Test
 	void testHostExclusionSet() {
-		HostExclusions exclusions = new RestTemplateFactory.HostExclusions(List.of("my-host", "foo-*", "*.bar"));
+		HostExclusions exclusions = new ClientHttpRequestFactoryProvider.HostExclusions(List.of("my-host", "foo-*", "*.bar"));
 		assertEquals(exclusions.hosts(), Set.of("my-host"));
 		assertEquals(exclusions.regexs().stream().map(r -> r.pattern()).collect(Collectors.toList()), List.of("foo-.*", ".*\\.bar"));
 		
@@ -41,7 +41,7 @@ public class RestTemplateFactoryTest {
 		assertFalse(exclusions.contains("foo.bar.baz"));
 		assertFalse(exclusions.contains("bar.foo"));
 
-		exclusions = new RestTemplateFactory.HostExclusions(List.of("*"));
+		exclusions = new ClientHttpRequestFactoryProvider.HostExclusions(List.of("*"));
 		assertTrue(exclusions.contains("my_host"));
 		assertTrue(exclusions.contains("foo.bar.baz"));
 		assertTrue(exclusions.contains("bar.foo"));

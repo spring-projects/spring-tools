@@ -21,7 +21,6 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.core.JavaProject;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.lsp4e.LSPEclipseUtils;
-import org.springsource.ide.eclipse.commons.internal.core.CorePlugin;
 
 @SuppressWarnings("restriction")
 public class BootProjectTester extends PropertyTester {
@@ -77,7 +76,7 @@ public class BootProjectTester extends PropertyTester {
 				}
 			}
 		} catch (Exception e) {
-			CorePlugin.log(e);
+			BootLanguageServerPlugin.getDefault().getLog().error("Failed to resolve classpath for project '%s'".formatted(jp.getElementName()), e);
 		}
 		return false;
 	}

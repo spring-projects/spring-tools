@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2020 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,10 @@
 package org.springframework.ide.vscode.commons.jandex;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -32,6 +36,7 @@ import org.springframework.ide.vscode.commons.util.FileObserver;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import com.google.common.io.BaseEncoding;
 
 import reactor.core.Disposable;
 import reactor.core.Disposables;
@@ -132,7 +137,24 @@ public final class JandexClasspath implements ClasspathIndex {
 		if (indexFolder == null) {
 			return null;
 		}
-		return new File(indexFolder.toString(), jarFile.getName() + "-" + jarFile.lastModified() + ".jdx");
+		String canonicalPath;
+		try {
+			canonicalPath = jarFile.getCanonicalPath();
+		} catch (IOException e) {
+			canonicalPath = jarFile.getAbsolutePath();
+		}
+		return new File(indexFolder, jarFile.getName() + "-" + JandexClasspath.digestPath(canonicalPath) + "-" + jarFile.lastModified() + ".jdx");
+	}
+	
+	static String digestPath(String path) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-1");
+			byte[] bytes = md.digest(path.getBytes(StandardCharsets.UTF_8));
+			return BaseEncoding.base32().encode(bytes).replace('/', '_'); //slashes are trouble in file names.
+		} catch (NoSuchAlgorithmException e) {
+			// shouldn't happen!
+			throw new IllegalStateException(e);
+		}
 	}
 
 	protected File getIndexFolder() {

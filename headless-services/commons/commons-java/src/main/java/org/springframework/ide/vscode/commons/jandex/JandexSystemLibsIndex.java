@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,11 +11,7 @@
 package org.springframework.ide.vscode.commons.jandex;
 
 import java.io.File;
-import java.nio.channels.IllegalSelectorException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
@@ -27,7 +23,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.BaseEncoding;
 
 /**
  * Keeps cache of system libs Jandex Indexes
@@ -64,20 +59,8 @@ public class JandexSystemLibsIndex {
 	}
 
 	private File findIndexFile(Path path) {
-		return Paths.get(System.getProperty("user.home"), ".sts4-jandex", folderNameforPath(path.getParent().toString()), path.getFileName() + ".jdx").toFile();
-	}
-
-	private static String folderNameforPath(String path) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-1");
-			byte[] bytes = md.digest((path).getBytes());
-			String name = new String(BaseEncoding.base32().encode(bytes));
-			name = name.replace('/', '_'); //slashes are trouble in file names.
-			return name;
-		} catch (NoSuchAlgorithmException e) {
-			// shouldn't happen!
-			throw new IllegalSelectorException();
-		}
+		File locationFolder = new File(BasicJandexIndex.getIndexFolder(), JandexClasspath.digestPath(path.getParent().toString()));
+		return new File(locationFolder, path.getFileName() + ".jdx");
 	}
 
 	public ImmutableList<ModuleJandexIndex> index(Path path) {

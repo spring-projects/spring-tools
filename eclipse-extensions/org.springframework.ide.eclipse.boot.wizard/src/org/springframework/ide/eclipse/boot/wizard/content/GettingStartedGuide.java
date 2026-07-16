@@ -124,6 +124,8 @@ public class GettingStartedGuide extends GithubRepoContent {
 						String name = metadata[i].name;
 						String dir = metadata[i].dir;
 						Assert.isLegal(name!=null, ".codesets.json objects must specify at least a 'name'.");
+						Assert.isLegal(isSafeCodeSetSegment(name), "Illegal codeset 'name' in .codesets.json: "+name);
+						Assert.isLegal(dir==null || isSafeCodeSetSegment(dir), "Illegal codeset 'dir' in .codesets.json: "+dir);
 						if (dir==null) {
 							dir = name; //Use the name as the default. The convention is that a codeset is in a sudirectory with the same name as
 							            // the codeset name.
@@ -156,6 +158,14 @@ public class GettingStartedGuide extends GithubRepoContent {
 	@Override
 	public Repo getRepo() {
 		return this.repo;
+	}
+
+	private static boolean isSafeCodeSetSegment(String segment) {
+		return !segment.isEmpty()
+				&& !segment.contains("/")
+				&& !segment.contains("\\")
+				&& !segment.equals("..")
+				&& !segment.equals(".");
 	}
 
 	private String beatify(String name) {

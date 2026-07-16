@@ -102,7 +102,15 @@ public class ImportUtils {
 				return ValidationResult.error("File or directory exists at '"+loc+"'");
 			}
 
-			//3: default file system location in workspace is available. This must
+			//3: Ensure the path is under the workspace root
+			File workspaceRoot = Platform.getLocation().toFile();
+			String canonicalWorkspaceRoot = workspaceRoot.getCanonicalPath()+File.separator;
+			String canonicalLoc = loc.getCanonicalPath();
+			if (!(canonicalLoc+File.separator).startsWith(canonicalWorkspaceRoot)) {
+				return ValidationResult.error("Project location '"+loc+"' is outside of the workspace");
+			}
+
+			//4: default file system location in workspace is available. This must
 			// be true even if that location won't actually be used. Eclipse simply will not allow creating a project
 			// with this name unless the default location is available for use.
 			File defaultLocation = Platform.getLocation().append(name).toFile();

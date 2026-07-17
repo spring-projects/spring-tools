@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -61,7 +61,7 @@ public class PropertyDocUtils {
 		if (je instanceof IMember) {
 			IMember member = (IMember) je;
 			renderableBuilder.add(Renderables.lineBreak());
-			renderableBuilder.add(Renderables.inlineSnippet(Renderables.text(member.signature())));
+			renderableBuilder.add(Renderables.inlineSnippet(member.signature()));
 			IType containingType = je instanceof IType ? (IType) je : ((IMember)je).getDeclaringType();
 			if (je != null) {
 				String type = containingType.getFullyQualifiedName();
@@ -70,7 +70,7 @@ public class PropertyDocUtils {
 				if (url.isPresent()) {
 					renderableBuilder.add(Renderables.link(type, url.get()));
 				} else {
-					renderableBuilder.add(Renderables.inlineSnippet(Renderables.text(type)));
+					renderableBuilder.add(Renderables.inlineSnippet(type));
 				}
 			}
 		}

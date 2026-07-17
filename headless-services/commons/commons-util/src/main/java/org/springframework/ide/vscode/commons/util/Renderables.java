@@ -111,21 +111,28 @@ public class Renderables {
 		};
 	}
 	
-	public static Renderable inlineSnippet(Renderable text) {
+	/**
+	 * A single inline code span wrapping a leaf string (code span content is never
+	 * re-parsed as markdown, so there's nothing to gain by accepting a nested
+	 * {@link Renderable} here). Renders as an escaped markdown code span (a backtick
+	 * fence long enough that embedded backticks in {@code content} can't terminate it
+	 * early, padded with a space where CommonMark requires it), or as an HTML
+	 * {@code <code>} element with HTML-entity escaping.
+	 */
+	public static Renderable inlineSnippet(String content) {
+		String safeContent = content == null ? "null" : content;
 		return new Renderable() {
 
 			@Override
 			public void renderAsMarkdown(StringBuilder buffer) {
-				buffer.append("`");
-				text.renderAsMarkdown(buffer);
-				buffer.append("`");
+				buffer.append(codeSpanMarkdown(safeContent));
 			}
 
 			@Override
 			public void renderAsHtml(HtmlBuffer buffer) {
-				buffer.raw("<pre>");
-				text.renderAsHtml(buffer);
-				buffer.raw("</pre>");
+				buffer.raw("<code>");
+				buffer.text(safeContent);
+				buffer.raw("</code>");
 			}
 		};
 	}
@@ -206,7 +213,9 @@ public class Renderables {
 			@Override
 			public void renderAsMarkdown(StringBuilder buffer) {
 				buffer.append('[');
-				buffer.append(text);
+				// Escape characters that would otherwise prematurely close the link text or
+				// be misread as markdown syntax (e.g. a bean id/type coming from a live process).
+				buffer.append(text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]"));
 				buffer.append(']');
 				if (url != null) {
 					buffer.append('(');
@@ -225,6 +234,41 @@ public class Renderables {
 				buffer.raw("</a>");
 			}
 		};
+	}
+
+	/**
+	 * Wraps {@code content} in a markdown inline code span, choosing a backtick
+	 * fence long enough that embedded backticks in {@code content} can't
+	 * terminate the span early, and padding with a space on each side where
+	 * CommonMark requires it (content that starts/ends with a backtick, or
+	 * that starts and ends with a space but isn't all spaces) so the parser's
+	 * own space-stripping rule doesn't alter {@code content}.
+	 */
+	private static String codeSpanMarkdown(String content) {
+		if (content.isEmpty()) {
+			// An empty code span can't be represented in markdown (e.g. "``" is not
+			// parsed as one); omitting it entirely is the safest fallback.
+			return "";
+		}
+		int maxRun = 0;
+		int run = 0;
+		boolean allSpaces = true;
+		for (int i = 0; i < content.length(); i++) {
+			char c = content.charAt(i);
+			if (c == '`') {
+				run++;
+				maxRun = Math.max(maxRun, run);
+			} else {
+				run = 0;
+			}
+			if (c != ' ') {
+				allSpaces = false;
+			}
+		}
+		String fence = "`".repeat(maxRun + 1);
+		boolean pad = content.startsWith("`") || content.endsWith("`")
+				|| (content.startsWith(" ") && content.endsWith(" ") && !allSpaces);
+		return pad ? fence + " " + content + " " + fence : fence + content + fence;
 	}
 
 	public static Renderable lineBreak() {

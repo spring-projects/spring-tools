@@ -51,7 +51,7 @@ public class LiveHoverUtils {
 		StringBuilder buf = new StringBuilder("Bean [id: " + bean.getId());
 		String type = bean.getType(true);
 		if (type != null) {
-			buf.append(", type: `" + type + "`");
+			buf.append(", type: " + Renderables.inlineSnippet(type).toMarkdown());
 		}
 		buf.append(']');
 		return buf.toString();
@@ -66,9 +66,7 @@ public class LiveHoverUtils {
 			String type = bean.getType(true);
 
 			StringBuilder buf = new StringBuilder("Bean: ");
-			buf.append('`');
-			buf.append(bean.getId());
-			buf.append('`');
+			buf.append(Renderables.inlineSnippet(bean.getId()).toMarkdown());
 			if (type != null) {
 				// Try creating a URL link to open source for the type
 				buf.append(newline);
@@ -77,7 +75,7 @@ public class LiveHoverUtils {
 				if (url.isPresent()) {
 					buf.append(Renderables.link(type, url.get()).toMarkdown());
 				} else {
-					buf.append("`" + type + "`");
+					buf.append(Renderables.inlineSnippet(type).toMarkdown());
 				}
 			}
 			String resource = bean.getResource();
@@ -106,11 +104,7 @@ public class LiveHoverUtils {
 			return CANT_MATCH_PROPER_BEAN.getId();
 		} else {
 			String type = bean.getType(true);
-			StringBuilder sb = new StringBuilder();
-			sb.append('`');
-			sb.append(getShortDisplayType(bean));
-			sb.append('`');
-			String displayId = sb.toString();
+			String displayId = Renderables.inlineSnippet(getShortDisplayType(bean)).toMarkdown();
 			if (type != null && sourceLinks != null) {
 				Optional<String> url = sourceLinks.sourceLinkUrlForFQName(project, type);
 				if (url.isPresent()) {

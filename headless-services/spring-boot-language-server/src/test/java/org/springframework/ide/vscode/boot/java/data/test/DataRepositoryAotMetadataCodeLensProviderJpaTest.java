@@ -88,7 +88,7 @@ public class DataRepositoryAotMetadataCodeLensProviderJpaTest {
 		assertEquals("Go To Implementation", cls.get(0).getCommand().getTitle());
 		assertEquals(1, cls.get(0).getCommand().getArguments().size());
 		assertEquals("Refresh AOT Metadata", cls.get(1).getCommand().getTitle());
-		assertEquals(2, cls.get(1).getCommand().getArguments().size());
+		assertEquals(3, cls.get(1).getCommand().getArguments().size());
 	}
 
 }

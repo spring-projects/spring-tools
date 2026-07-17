@@ -43,6 +43,14 @@ public class Annotations {
 
 	public static final String CONTEXT_CONFIGURATION = "org.springframework.test.context.ContextConfiguration";
 	public static final String SCHEDULED = "org.springframework.scheduling.annotation.Scheduled";
+	public static final String ASYNC = "org.springframework.scheduling.annotation.Async";
+
+	public static final String TRANSACTIONAL = "org.springframework.transaction.annotation.Transactional";
+	public static final String TRANSACTIONAL_EVENT_LISTENER = "org.springframework.transaction.event.TransactionalEventListener";
+
+	// Modulith
+
+	public static final String APPLICATION_MODULE_LISTENER = "org.springframework.modulith.events.ApplicationModuleListener";
 	
 	// Beans
 	

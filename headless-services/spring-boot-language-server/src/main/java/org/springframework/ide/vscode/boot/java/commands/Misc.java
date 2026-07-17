@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,9 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.InputStream;
+import java.net.JarURLConnection;
 import java.net.URI;
+import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
@@ -40,7 +42,15 @@ public class Misc {
 						s = s.replaceFirst(BOOT_LS_URL_PRTOCOL_PREFIX, JAR_URL_PROTOCOL_PREFIX);
 						URI uri = URI.create(URLDecoder.decode(s, StandardCharsets.UTF_8));
 						// Java has support for JAR URLs
-						return IOUtil.toString((InputStream) uri.toURL().getContent());
+						URLConnection connection = uri.toURL().openConnection();
+						if (!(connection instanceof JarURLConnection)) {
+							throw new IllegalArgumentException("Only 'jar' URLs are supported: " + uri);
+						}
+						JarURLConnection jarConnection = (JarURLConnection) connection;
+						if (!"file".equals(jarConnection.getJarFileURL().getProtocol())) {
+							throw new IllegalArgumentException("Only local JAR files are supported: " + uri);
+						}
+						return IOUtil.toString((InputStream) jarConnection.getContent());
 					}
 				}
 				throw new IllegalArgumentException("The command must have one valid URL parameter.");

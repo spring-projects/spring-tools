@@ -10,9 +10,6 @@
  *******************************************************************************/
 package org.springframework.tooling.jdt.ls.commons;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.function.Supplier;
@@ -23,28 +20,19 @@ import org.eclipse.core.runtime.Status;
 
 
 /**
- * Poor man's logger with a default implementation writes log output for jdt.ls extension into a predictable location.
+ * Poor man's logger. The default implementation is only used as a last-resort
+ * fallback when the Eclipse/OSGi logging APIs are unavailable, so it writes to
+ * {@link System#err} rather than a predictable file location.
  */
 public interface Logger {
-	
-	public static Logger DEFAULT = new DefaultLogger(false);
+
+	public static Logger DEFAULT = new DefaultLogger();
 
 	public static class DefaultLogger implements Logger {
 		private PrintWriter printwriter;
-		public DefaultLogger(boolean USE_SYS_ERR) {
-			if (USE_SYS_ERR) {
-				printwriter = new PrintWriter(System.err);
-			} else {
-				File file = new File(System.getProperty("java.io.tmpdir"));
-				file = new File(file, "stsjdt.log");
-				try {
-					printwriter = new PrintWriter(new FileOutputStream(file), true);
-					log("======== "+new Date()+" =======");
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+		public DefaultLogger() {
+			printwriter = new PrintWriter(System.err, true);
+			log("======== "+new Date()+" =======");
 		}
 		@Override
 		public void log(String message) {
@@ -116,7 +104,7 @@ public interface Logger {
 		private Exception firstError;
 
 		public TestLogger() {
-			super(true);
+			super();
 		}
 		
 		@Override

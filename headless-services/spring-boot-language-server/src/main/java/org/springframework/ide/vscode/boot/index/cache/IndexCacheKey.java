@@ -25,10 +25,17 @@ public class IndexCacheKey {
 	private final String version;
 
 	public IndexCacheKey(String project, String indexer, String category, String version) {
-		this.project = project;
-		this.indexer = indexer;
-		this.category = category;
-		this.version = version;
+		this.project = requireNoPathSeparator(project, "project");
+		this.indexer = requireNoPathSeparator(indexer, "indexer");
+		this.category = requireNoPathSeparator(category, "category");
+		this.version = requireNoPathSeparator(version, "version");
+	}
+
+	private static String requireNoPathSeparator(String value, String fieldName) {
+		if (value != null && (value.indexOf('/') >= 0 || value.indexOf('\\') >= 0)) {
+			throw new IllegalArgumentException("Invalid " + fieldName + " for index cache key, must not contain a path separator: " + value);
+		}
+		return value;
 	}
 
 	public String getProject() {

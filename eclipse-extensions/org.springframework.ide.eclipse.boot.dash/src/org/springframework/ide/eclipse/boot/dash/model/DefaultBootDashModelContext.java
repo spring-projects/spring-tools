@@ -50,8 +50,6 @@ public class DefaultBootDashModelContext extends BootDashModelContext {
 
 	private IPropertyStore viewProperties = PropertyStores.backedBy(BootDashActivator.getDefault().getPreferenceStore());
 
-	private IPropertyStore privateProperties = PropertyStores.createPrivateStore(BootDashActivator.getDefault().getStateLocation().append("private.properties"));
-
 	private BootInstallManager bootInstalls = BootInstallManager.getInstance();
 
 	public static BootDashModelContext create() {
@@ -114,11 +112,6 @@ public class DefaultBootDashModelContext extends BootDashModelContext {
 	@Override
 	public IPropertyStore getViewProperties() {
 		return viewProperties;
-	}
-
-	@Override
-	public IPropertyStore getPrivatePropertyStore() {
-		return privateProperties;
 	}
 
 	@Override

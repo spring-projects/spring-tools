@@ -52,13 +52,6 @@ public abstract class BootDashModelContext {
 
 	public abstract SecuredCredentialsStore getSecuredCredentialsStore();
 
-	/**
-	 * A store for properties which is suitable for sensitive data with basic protection.
-	 * I.e. backed by a unencrypted file which is made only accessible to the current user
-	 * and protected by the os. The file is not encrypted in any way.
-	 */
-	public abstract IPropertyStore getPrivatePropertyStore();
-
 	public abstract void log(Exception e);
 
 	/**

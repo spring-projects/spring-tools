@@ -126,8 +126,4 @@ public class PropertyStores {
 		};
 	}
 
-	public static IPropertyStore createPrivateStore(IPath append) {
-		return new PropertyFileStore(append.toFile());
-	}
-
 }

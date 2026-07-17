@@ -25,9 +25,6 @@ import org.springframework.ide.eclipse.boot.dash.test.actuator.ActuatorDataTest;
 //	BootDashDockerTests.class, //50 seconds
 //	SelectDockerDaemonDialogTest.class,
 
-	//New: (move down the chain later based on runtime)
-	PropertyFileStoreTest.class,
-
 	//Really short (less than 2 seconds per suite):
 	JLRMethodParserTest.class,
 	OrderBasedComparatorTest.class,

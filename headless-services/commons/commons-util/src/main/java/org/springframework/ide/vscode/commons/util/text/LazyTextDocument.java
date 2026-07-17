@@ -30,8 +30,13 @@ public class LazyTextDocument extends TextDocument {
 	
 	public LazyTextDocument(String uri, LanguageId languageId) {
 		this(uri, languageId, () -> {
+			URI parsed = URI.create(uri);
+			if (!"file".equalsIgnoreCase(parsed.getScheme())) {
+				// Only local files are loaded this way
+				throw new IllegalArgumentException("Cannot create document for non 'file' URI: " + uri);
+			}
 			try {
-				InputStream stream = URI.create(uri).toURL().openStream();
+				InputStream stream = parsed.toURL().openStream();
 				return IOUtil.toString(stream);
 			} catch (Exception e) {
 				return null;

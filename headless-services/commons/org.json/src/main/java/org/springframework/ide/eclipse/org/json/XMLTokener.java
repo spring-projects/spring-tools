@@ -1,34 +1,16 @@
-package org.springframework.ide.eclipse.org.json;
+package org.json;
 
 /*
-Copyright (c) 2002 JSON.org
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-The Software shall be used for Good, not Evil.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Public Domain.
 */
+
+import java.io.Reader;
 
 /**
  * The XMLTokener extends the JSONTokener to provide additional methods
  * for the parsing of XML texts.
  * @author JSON.org
- * @version 2012-11-13
+ * @version 2015-12-09
  */
 public class XMLTokener extends JSONTokener {
 
@@ -36,16 +18,26 @@ public class XMLTokener extends JSONTokener {
    /** The table of entity values. It initially contains Character values for
     * amp, apos, gt, lt, quot.
     */
-   public static final java.util.HashMap entity;
+   public static final java.util.HashMap<String, Character> entity;
+
+   private XMLParserConfiguration configuration = XMLParserConfiguration.ORIGINAL;
 
    static {
-       entity = new java.util.HashMap(8);
+       entity = new java.util.HashMap<String, Character>(8);
        entity.put("amp",  XML.AMP);
        entity.put("apos", XML.APOS);
        entity.put("gt",   XML.GT);
        entity.put("lt",   XML.LT);
        entity.put("quot", XML.QUOT);
    }
+
+    /**
+     * Construct an XMLTokener from a Reader.
+     * @param r A source reader.
+     */
+    public XMLTokener(Reader r) {
+        super(r);
+    }
 
     /**
      * Construct an XMLTokener from a string.
@@ -56,6 +48,16 @@ public class XMLTokener extends JSONTokener {
     }
 
     /**
+     * Construct an XMLTokener from a Reader and an XMLParserConfiguration.
+     * @param r A source reader.
+     * @param configuration the configuration that can be used to set certain flags
+     */
+    public XMLTokener(Reader r, XMLParserConfiguration configuration) {
+        super(r);
+        this.configuration = configuration;
+    }
+
+    /**
      * Get the text in the CDATA block.
      * @return The string up to the <code>]]&gt;</code>.
      * @throws JSONException If the <code>]]&gt;</code> is not found.
@@ -63,12 +65,9 @@ public class XMLTokener extends JSONTokener {
     public String nextCDATA() throws JSONException {
         char         c;
         int          i;
-        StringBuffer sb = new StringBuffer();
-        for (;;) {
+        StringBuilder sb = new StringBuilder();
+        while (more()) {
             c = next();
-            if (end()) {
-                throw syntaxError("Unclosed CDATA");
-            }
             sb.append(c);
             i = sb.length() - 3;
             if (i >= 0 && sb.charAt(i) == ']' &&
@@ -77,35 +76,42 @@ public class XMLTokener extends JSONTokener {
                 return sb.toString();
             }
         }
+        throw syntaxError("Unclosed CDATA");
     }
 
 
     /**
      * Get the next XML outer token, trimming whitespace. There are two kinds
-     * of tokens: the '<' character which begins a markup tag, and the content
+     * of tokens: the <pre>{@code '<' }</pre> character which begins a markup
+     * tag, and the content
      * text between markup tags.
      *
-     * @return  A string, or a '<' Character, or null if there is no more
-     * source text.
-     * @throws JSONException
+     * @return  A string, or a <pre>{@code '<' }</pre> Character, or null if
+     * there is no more source text.
+     * @throws JSONException if a called function has an error
      */
     public Object nextContent() throws JSONException {
         char         c;
-        StringBuffer sb;
+        StringBuilder sb;
         do {
             c = next();
-        } while (Character.isWhitespace(c));
+        } while (Character.isWhitespace(c) && configuration.shouldTrimWhiteSpace());
         if (c == 0) {
             return null;
         }
         if (c == '<') {
             return XML.LT;
         }
-        sb = new StringBuffer();
+        sb = new StringBuilder();
         for (;;) {
-            if (c == '<' || c == 0) {
-                back();
+            if (c == 0) {
                 return sb.toString().trim();
+            }
+            if (c == '<') {
+                back();
+                if (configuration.shouldTrimWhiteSpace()) {
+                    return sb.toString().trim();
+                } else return sb.toString();
             }
             if (c == '&') {
                 sb.append(nextEntity(c));
@@ -118,14 +124,16 @@ public class XMLTokener extends JSONTokener {
 
 
     /**
+     * <pre>{@code
      * Return the next entity. These entities are translated to Characters:
-     *     <code>&amp;  &apos;  &gt;  &lt;  &quot;</code>.
+     *     &amp;  &apos;  &gt;  &lt;  &quot;.
+     * }</pre>
      * @param ampersand An ampersand character.
      * @return  A Character or an entity String if the entity is not recognized.
      * @throws JSONException If missing ';' in XML entity.
      */
-    public Object nextEntity(char ampersand) throws JSONException {
-        StringBuffer sb = new StringBuffer();
+    public Object nextEntity(@SuppressWarnings("unused") char ampersand) throws JSONException {
+        StringBuilder sb = new StringBuilder();
         for (;;) {
             char c = next();
             if (Character.isLetterOrDigit(c) || c == '#') {
@@ -137,17 +145,127 @@ public class XMLTokener extends JSONTokener {
             }
         }
         String string = sb.toString();
-        Object object = entity.get(string);
-        return object != null ? object : ampersand + string + ";";
+        return unescapeEntity(string);
+    }
+    
+    /**
+     * Unescape an XML entity encoding;
+     * @param e entity (only the actual entity value, not the preceding & or ending ;
+     * @return the unescaped entity string
+     * @throws JSONException if the entity is malformed
+     */
+    static String unescapeEntity(String e) throws JSONException {
+        // validate
+        if (e == null || e.isEmpty()) {
+            return "";
+        }
+        // if our entity is an encoded unicode point, parse it.
+        if (e.charAt(0) == '#') {
+            if (e.length() < 2) {
+                throw new JSONException("Invalid numeric character reference: &#;");
+            }
+            int cp = (e.charAt(1) == 'x' || e.charAt(1) == 'X')
+                ? parseHexEntity(e)
+                : parseDecimalEntity(e);
+            if (XML.mustEscape(cp)) {
+                throw new JSONException("Invalid numeric character reference: &#" + e.substring(1) + ";");
+            }
+            return new String(new int[] {cp}, 0, 1);
+        }
+        Character knownEntity = entity.get(e);
+        if (knownEntity == null) {
+            // we don't know the entity so keep it encoded
+            return '&' + e + ';';
+        }
+        return knownEntity.toString();
+    }
+
+    /**
+     * Parse a hexadecimal numeric character reference (e.g., "&#xABC;").
+     * @param e entity string starting with '#' (e.g., "#x1F4A9")
+     * @return the Unicode code point
+     * @throws JSONException if the format is invalid
+     */
+    private static int parseHexEntity(String e) throws JSONException {
+        // hex encoded unicode - need at least one hex digit after #x
+        if (e.length() < 3) {
+            throw new JSONException("Invalid hex character reference: missing hex digits in &#" + e.substring(1) + ";");
+        }
+        String hex = e.substring(2);
+        if (!isValidHex(hex)) {
+            throw new JSONException("Invalid hex character reference: &#" + e.substring(1) + ";");
+        }
+        try {
+            return Integer.parseInt(hex, 16);
+        } catch (NumberFormatException nfe) {
+            throw new JSONException("Invalid hex character reference: &#" + e.substring(1) + ";", nfe);
+        }
+    }
+
+    /**
+     * Parse a decimal numeric character reference (e.g., "&#123;").
+     * @param e entity string starting with '#' (e.g., "#123")
+     * @return the Unicode code point
+     * @throws JSONException if the format is invalid
+     */
+    private static int parseDecimalEntity(String e) throws JSONException {
+        String decimal = e.substring(1);
+        if (!isValidDecimal(decimal)) {
+            throw new JSONException("Invalid decimal character reference: &#" + decimal + ";");
+        }
+        try {
+            return Integer.parseInt(decimal);
+        } catch (NumberFormatException nfe) {
+            throw new JSONException("Invalid decimal character reference: &#" + decimal + ";", nfe);
+        }
+    }
+
+    /**
+     * Check if a string contains only valid hexadecimal digits.
+     * @param s the string to check
+     * @return true if s is non-empty and contains only hex digits (0-9, a-f, A-F)
+     */
+    private static boolean isValidHex(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if a string contains only valid decimal digits.
+     * @param s the string to check
+     * @return true if s is non-empty and contains only digits (0-9)
+     */
+    private static boolean isValidDecimal(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
 
     /**
+     * <pre>{@code 
      * Returns the next XML meta token. This is used for skipping over <!...>
      * and <?...?> structures.
-     * @return Syntax characters (<code>< > / = ! ?</code>) are returned as
+     *  }</pre>
+     * @return <pre>{@code Syntax characters (< > / = ! ?) are returned as
      *  Character, and strings and names are returned as Boolean. We don't care
      *  what the values actually are.
+     *  }</pre>
      * @throws JSONException If a string is not properly closed or if the XML
      *  is badly structured.
      */
@@ -192,6 +310,7 @@ public class XMLTokener extends JSONTokener {
                 }
                 switch (c) {
                 case 0:
+                    throw syntaxError("Unterminated string");
                 case '<':
                 case '>':
                 case '/':
@@ -209,17 +328,19 @@ public class XMLTokener extends JSONTokener {
 
 
     /**
+     * <pre>{@code
      * Get the next XML Token. These tokens are found inside of angle
-     * brackets. It may be one of these characters: <code>/ > = ! ?</code> or it
+     * brackets. It may be one of these characters: / > = ! ? or it
      * may be a string wrapped in single quotes or double quotes, or it may be a
      * name.
+     * }</pre>
      * @return a String or a Character.
      * @throws JSONException If the XML is not well formed.
      */
     public Object nextToken() throws JSONException {
         char c;
         char q;
-        StringBuffer sb;
+        StringBuilder sb;
         do {
             c = next();
         } while (Character.isWhitespace(c));
@@ -244,7 +365,7 @@ public class XMLTokener extends JSONTokener {
         case '"':
         case '\'':
             q = c;
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             for (;;) {
                 c = next();
                 if (c == 0) {
@@ -263,7 +384,7 @@ public class XMLTokener extends JSONTokener {
 
 // Name
 
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             for (;;) {
                 sb.append(c);
                 c = next();
@@ -296,9 +417,11 @@ public class XMLTokener extends JSONTokener {
      * Skip characters until past the requested string.
      * If it is not found, we are left at the end of the source with a result of false.
      * @param to A string to skip past.
-     * @throws JSONException
      */
-    public boolean skipPast(String to) throws JSONException {
+    // The Android implementation of JSONTokener has a public method of public void skipPast(String to)
+    // even though ours does not have that method, to have API compatibility, our method in the subclass
+    // should match.
+    public void skipPast(String to) {
         boolean b;
         char c;
         int i;
@@ -315,7 +438,7 @@ public class XMLTokener extends JSONTokener {
         for (i = 0; i < length; i += 1) {
             c = next();
             if (c == 0) {
-                return false;
+                return;
             }
             circle[i] = c;
         }
@@ -342,14 +465,14 @@ public class XMLTokener extends JSONTokener {
             /* If we exit the loop with b intact, then victory is ours. */
 
             if (b) {
-                return true;
+                return;
             }
 
             /* Get the next character. If there isn't one, then defeat is ours. */
 
             c = next();
             if (c == 0) {
-                return false;
+                return;
             }
             /*
              * Shove the character in the circle buffer and advance the

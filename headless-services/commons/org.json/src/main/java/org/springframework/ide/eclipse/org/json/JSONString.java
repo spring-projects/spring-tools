@@ -1,4 +1,9 @@
-package org.springframework.ide.eclipse.org.json;
+package org.json;
+
+/*
+Public Domain.
+ */
+
 /**
  * The <code>JSONString</code> interface allows a <code>toJSONString()</code>
  * method so that a class can change the behavior of

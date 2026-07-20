@@ -1,4 +1,4 @@
-Repackaged org.json version 1.0. 
+Repackaged org.json version 20260719. 
 
 There are no changes in this package except for renaming packages to avoid
 confict with the 'original' org.json. 

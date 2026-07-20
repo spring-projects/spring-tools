@@ -174,22 +174,22 @@ public class CFRouteBuilder {
 	}
 
 	public static String findDomain(String hostDomain, Collection<String> domains) {
-		if (hostDomain == null) {
-			return null;
-		}
-		// find exact match
-		for (String name : domains) {
-			if (hostDomain.equals(name)) {
-				return hostDomain;
+		while (hostDomain != null) {
+			// find exact match
+			for (String name : domains) {
+				if (hostDomain.equals(name)) {
+					return hostDomain;
+				}
+			}
+			// Otherwise split on the first "." and try again
+			int dotIndex = hostDomain.indexOf(".");
+			if (dotIndex >= 0 && dotIndex + 1 < hostDomain.length()) {
+				hostDomain = hostDomain.substring(dotIndex + 1);
+			} else {
+				return null;
 			}
 		}
-		// Otherwise split on the first "." and try again
-		if (hostDomain.indexOf(".") >= 0 && hostDomain.indexOf(".") + 1 < hostDomain.length()) {
-			String remaining = hostDomain.substring(hostDomain.indexOf(".") + 1, hostDomain.length());
-			return findDomain(remaining, domains);
-		} else {
-			return null;
-		}
+		return null;
 	}
 
 	/**

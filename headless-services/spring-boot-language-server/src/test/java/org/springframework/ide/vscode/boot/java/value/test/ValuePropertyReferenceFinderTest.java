@@ -12,10 +12,12 @@ package org.springframework.ide.vscode.boot.java.value.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -104,6 +106,25 @@ public class ValuePropertyReferenceFinderTest {
 
         URI docURI = file.toUri();
         assertEquals(new Location(docURI.toString(), new Range(new Position(3, 2), new Position(3, 10))), location);
+    }
+
+    @Test
+    void testFindReferenceInYMLFileWithCyclicAlias() throws Exception {
+        // application.yml also contains a self-referential YAML anchor/alias (`a: &x / b: *x`)
+        // unrelated to the property being searched for. It must not hang the search, and the
+        // unrelated property below it must still be found.
+        ValuePropertyReferencesProvider provider = new ValuePropertyReferencesProvider(projectFinder, springIndex);
+
+        Path file = resourceDir.resolve("cyclic-yml/application.yml");
+        List<? extends Location> locations = assertTimeoutPreemptively(Duration.ofSeconds(5),
+                () -> provider.findReferences(file, "test.property"));
+
+        assertNotNull(locations);
+        assertEquals(1, locations.size());
+        Location location = locations.get(0);
+
+        URI docURI = file.toUri();
+        assertEquals(new Location(docURI.toString(), new Range(new Position(5, 2), new Position(5, 10))), location);
     }
 
     @Test

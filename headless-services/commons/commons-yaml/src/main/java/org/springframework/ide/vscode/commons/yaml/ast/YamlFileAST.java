@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016-2017 Pivotal, Inc.
+ * Copyright (c) 2016-2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -63,7 +63,9 @@ public class YamlFileAST {
 			Node node = nodes.get(i);
 			if (contains(node, offset)) {
 				pathRequestor.accept(new RootRef(this, i) );
-				findPath(node, offset, pathRequestor);
+				Set<Node> onPath = NodeUtil.newIdentitySet();
+				onPath.add(node);
+				findPath(node, offset, pathRequestor, onPath);
 				return;
 			}
 		}
@@ -73,8 +75,12 @@ public class YamlFileAST {
 	 * Find smallest node that is a child of 'n' that contains 'offset'. Each visited
 	 * node containing the offset, from the down to the found node are
 	 * passed to the pathRequestor.
+	 * <p>
+	 * A YAML anchor/alias can make a node its own descendant (see {@link NodeUtil#newIdentitySet()}).
+	 * 'onPath' tracks nodes on the current descent so that case stops instead of recursing forever -
+	 * the node already found is then reported as the smallest match.
 	 */
-	private void findPath(Node n, int offset, IRequestor<NodeRef<?>> pathRequestor) {
+	private void findPath(Node n, int offset, IRequestor<NodeRef<?>> pathRequestor, Set<Node> onPath) {
 		//TODO: avoid lots of garbage production by not using 'getChildren'
 		// but inling getChildren (i.e a switch-case that visits
 		// the children without putting them into temporary collections.)
@@ -84,9 +90,13 @@ public class YamlFileAST {
 		List<NodeRef<?>> children = getChildren(n);
 		for (int i = 0; i < children.size(); i++) {
 			NodeRef<?> c = children.get(i);
-			if (contains(c.get(), offset)) {
+			Node childNode = c.get();
+			if (contains(childNode, offset)) {
+				if (!onPath.add(childNode)) {
+					return;
+				}
 				pathRequestor.accept(c);
-				findPath(c.get(), offset, pathRequestor);
+				findPath(childNode, offset, pathRequestor, onPath);
 				return;
 			}
 		}

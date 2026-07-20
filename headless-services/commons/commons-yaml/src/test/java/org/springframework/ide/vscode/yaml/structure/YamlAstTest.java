@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2016 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.yaml.structure;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -129,6 +130,25 @@ public class YamlAstTest {
 			buf.append(n);
 		}
 		return buf.toString();
+	}
+
+	@Test
+	public void testSelfReferentialAliasDoesNotHang() throws Exception {
+		MockYamlEditor input = new MockYamlEditor(
+				"a: &x\n" +
+				"  b: *x\n" +
+				"c: normal\n"
+		);
+
+		// Sibling content unrelated to the cycle must still resolve normally.
+		assertNodeTextAt(input, input.middleOf("normal"), "normal");
+
+		// Descending into the self-referential anchor must terminate rather than recurse forever.
+		assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+			YamlFileAST ast = input.parse();
+			ast.findNode(input.middleOf("b"));
+			ast.findPath(input.middleOf("b"));
+		});
 	}
 
 }

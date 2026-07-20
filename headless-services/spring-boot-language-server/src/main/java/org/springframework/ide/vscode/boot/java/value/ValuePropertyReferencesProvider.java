@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,6 +53,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
+import org.springframework.ide.vscode.commons.yaml.ast.NodeUtil;
 import org.springframework.ide.vscode.commons.yaml.ast.YamlASTProvider;
 import org.springframework.ide.vscode.commons.yaml.ast.YamlFileAST;
 import org.springframework.ide.vscode.commons.yaml.ast.YamlParser;
@@ -329,22 +331,37 @@ public class ValuePropertyReferencesProvider implements ReferenceProvider {
 	}
 	
 	protected static NodeTuple findNode(Node node, String prefix, String propertyKey) {
-		if (node.getNodeId().equals(NodeId.mapping)) {
-			for (NodeTuple entry : ((MappingNode)node).getValue()) {
-				Node keyNode = entry.getKeyNode();
-				String key = asScalar(keyNode);
+		return findNode(node, prefix, propertyKey, NodeUtil.newIdentitySet());
+	}
 
-				String combinedKey = prefix.length() > 0 ? prefix + "." + key : key;
+	/**
+	 * A YAML anchor/alias can make 'node' its own descendant, so 'onPath' tracks nodes
+	 * (by identity) currently being visited on this descent - if we'd re-enter one, this
+	 * branch can't contain a shorter match than what's already been ruled out, so stop.
+	 * 'node' is freed again once its subtree is fully explored, so a node shared (non-cyclically)
+	 * by more than one sibling is still searched from each reference.
+	 */
+	private static NodeTuple findNode(Node node, String prefix, String propertyKey, Set<Node> onPath) {
+		if (node.getNodeId().equals(NodeId.mapping) && onPath.add(node)) {
+			try {
+				for (NodeTuple entry : ((MappingNode)node).getValue()) {
+					Node keyNode = entry.getKeyNode();
+					String key = asScalar(keyNode);
 
-				if (combinedKey != null && combinedKey.equals(propertyKey)) {
-					return entry;
-				}
-				else {
-					NodeTuple recursive = findNode(entry.getValueNode(), combinedKey, propertyKey);
-					if (recursive != null) {
-						return recursive;
+					String combinedKey = prefix.length() > 0 ? prefix + "." + key : key;
+
+					if (combinedKey != null && combinedKey.equals(propertyKey)) {
+						return entry;
+					}
+					else {
+						NodeTuple recursive = findNode(entry.getValueNode(), combinedKey, propertyKey, onPath);
+						if (recursive != null) {
+							return recursive;
+						}
 					}
 				}
+			} finally {
+				onPath.remove(node);
 			}
 		}
 

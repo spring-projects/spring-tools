@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2008, 2019 https://www.snakeyaml.org and others.
+ * Copyright (c) 2008, 2026 https://www.snakeyaml.org and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.yaml.reconcile.YamlSchemaProblems;
-import org.springframework.ide.vscode.commons.yaml.util.YamlUtil;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.events.Event;
 import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
@@ -53,18 +51,22 @@ public class NodeMergeSupport {
 
 	public void flattenMapping(Node node) {
 		if (node instanceof MappingNode) {
-			flattenMapping((MappingNode)node);
+			flattenMapping((MappingNode)node, NodeUtil.newIdentitySet());
 		}
 	}
 
-	private void flattenMapping(MappingNode node) {
+	private void flattenMapping(MappingNode node, Set<Node> onPath) {
 		// perform merging only on nodes containing merge node(s)
 		//processDuplicateKeys(node);
 
-		if (node.isMerged()) {
-			node.setValue(mergeNode(node, true, new HashMap<Object, Integer>(),
-					new ArrayList<NodeTuple>()));
-			node.setMerged(false);
+		if (node.isMerged() && onPath.add(node)) {
+			try {
+				node.setValue(mergeNode(node, true, new HashMap<Object, Integer>(),
+						new ArrayList<NodeTuple>(), onPath));
+				node.setMerged(false);
+			} finally {
+				onPath.remove(node);
+			}
 		}
 	}
 
@@ -83,7 +85,7 @@ public class NodeMergeSupport {
 	 *         MappingNode)
 	 */
 	private List<NodeTuple> mergeNode(MappingNode node, boolean isPreffered,
-			Map<Object, Integer> key2index, List<NodeTuple> values) {
+			Map<Object, Integer> key2index, List<NodeTuple> values, Set<Node> onPath) {
 		Iterator<NodeTuple> iter = node.getValue().iterator();
 		while (iter.hasNext()) {
 			final NodeTuple nodeTuple = iter.next();
@@ -94,7 +96,13 @@ public class NodeMergeSupport {
 				switch (valueNode.getNodeId()) {
 				case mapping:
 					MappingNode mn = (MappingNode) valueNode;
-					mergeNode(mn, false, key2index, values);
+					if (onPath.add(mn)) {
+						try {
+							mergeNode(mn, false, key2index, values, onPath);
+						} finally {
+							onPath.remove(mn);
+						}
+					}
 					break;
 				case sequence:
 					SequenceNode sn = (SequenceNode) valueNode;
@@ -106,7 +114,13 @@ public class NodeMergeSupport {
 									));
 						} else {
 							MappingNode mnode = (MappingNode) subnode;
-							mergeNode(mnode, false, key2index, values);
+							if (onPath.add(mnode)) {
+								try {
+									mergeNode(mnode, false, key2index, values, onPath);
+								} finally {
+									onPath.remove(mnode);
+								}
+							}
 						}
 					}
 					break;

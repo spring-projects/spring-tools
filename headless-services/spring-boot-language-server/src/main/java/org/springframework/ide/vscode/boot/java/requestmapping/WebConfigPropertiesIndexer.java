@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
@@ -149,21 +150,32 @@ public class WebConfigPropertiesIndexer {
 	}
 
 	private void flattenProperties(String prefix, Node node, List<PropertyKeyValue> props) {
+		flattenProperties(prefix, node, props, NodeUtil.newIdentitySet());
+	}
+
+	private void flattenProperties(String prefix, Node node, List<PropertyKeyValue> props, Set<Node> onPath) {
 		switch (node.getNodeId()) {
-		
+
 		case mapping:
-			if (!prefix.isEmpty()) {
-				prefix = prefix + ".";
+			if (!onPath.add(node)) {
+				break;
 			}
-			MappingNode mapping = (MappingNode)node;
-			for (NodeTuple tup : mapping.getValue()) {
-				String key = NodeUtil.asScalar(tup.getKeyNode());
-				if (key != null) {
-					flattenProperties(prefix + key, tup.getValueNode(), props);
+			try {
+				if (!prefix.isEmpty()) {
+					prefix = prefix + ".";
 				}
+				MappingNode mapping = (MappingNode)node;
+				for (NodeTuple tup : mapping.getValue()) {
+					String key = NodeUtil.asScalar(tup.getKeyNode());
+					if (key != null) {
+						flattenProperties(prefix + key, tup.getValueNode(), props, onPath);
+					}
+				}
+			} finally {
+				onPath.remove(node);
 			}
 			break;
-			
+
 		case scalar:
 			//End of the line.
 			props.add(new PropertyKeyValue(prefix, NodeUtil.asScalar(node)));

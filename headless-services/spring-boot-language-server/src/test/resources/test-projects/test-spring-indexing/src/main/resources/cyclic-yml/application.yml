@@ -1,0 +1,6 @@
+a: &x
+  b: *x
+server:
+  port: 8080
+test:
+  property: mytestproperty

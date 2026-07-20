@@ -76,6 +76,13 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	private final YamlQuickfixes quickfixes;
 	private final NodeMergeSupport nodeMerger;
 
+	/**
+	 * Tracks nodes (by identity) currently being visited during this reconcile pass.
+	 * A YAML anchor/alias can make a node its own descendant; without this, such a
+	 * document would recurse forever instead of just leaving that branch unchecked.
+	 */
+	private final Set<Node> onPath = NodeUtil.newIdentitySet();
+
 	private List<Runnable> delayedConstraints = new ArrayList<>();
 		// keeps track of dynamic constraints discovered during reconciler walk
 		// the constraints are validated at the end of the walk rather than during the walk.
@@ -162,6 +169,17 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	private void reconcile(YamlFileAST ast, YamlPath path, Node parent, Node node, YType _type) {
+		if (!onPath.add(node)) {
+			return;
+		}
+		try {
+			reconcileOnPath(ast, path, parent, node, _type);
+		} finally {
+			onPath.remove(node);
+		}
+	}
+
+	private void reconcileOnPath(YamlFileAST ast, YamlPath path, Node parent, Node node, YType _type) {
 		nodeMerger.flattenMapping(node);
 
 		if (_type!=null && !skipReconciling(node)) {

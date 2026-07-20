@@ -227,6 +227,24 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
     }
 
     @Test
+    void selfReferentialYamlAliasDoesNotHangReconcile() throws Exception {
+        // A self-referential anchor/alias nested under an unknown property must not make
+        // the reconciler (or its quickfix-name-building helpers) recurse forever.
+        data("config.bob", "java.lang.String", null, null);
+
+        assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
+            Editor editor = harness.newEditor(
+                    "config:\n" +
+                    "  bob: bob\n" +
+                    "  inner:\n" +
+                    "    deep: &a\n" +
+                    "      child: *a\n"
+            );
+            editor.assertProblems("inner|Unknown property");
+        });
+    }
+
+    @Test
     void GH_190_tolerate_placeholders_without_quotes_integer() throws Exception {
         data("server.port", "java.lang.Integer", null, null);
         Editor editor = harness.newEditor(

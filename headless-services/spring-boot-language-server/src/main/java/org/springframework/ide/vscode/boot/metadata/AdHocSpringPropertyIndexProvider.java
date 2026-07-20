@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2024 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -184,26 +184,37 @@ public class AdHocSpringPropertyIndexProvider implements ProjectBasedPropertyInd
 	}
 
 	private void flattenProperties(String prefix, Node node, Properties props) {
+		flattenProperties(prefix, node, props, NodeUtil.newIdentitySet());
+	}
+
+	private void flattenProperties(String prefix, Node node, Properties props, Set<Node> onPath) {
 		switch (node.getNodeId()) {
-		
+
 		case mapping:
-			if (!prefix.isEmpty()) {
-				prefix = prefix + ".";
+			if (!onPath.add(node)) {
+				break;
 			}
-			MappingNode mapping = (MappingNode)node;
-			for (NodeTuple tup : mapping.getValue()) {
-				String key = NodeUtil.asScalar(tup.getKeyNode());
-				if (key != null) {
-					flattenProperties(prefix + key, tup.getValueNode(), props);
+			try {
+				if (!prefix.isEmpty()) {
+					prefix = prefix + ".";
 				}
+				MappingNode mapping = (MappingNode)node;
+				for (NodeTuple tup : mapping.getValue()) {
+					String key = NodeUtil.asScalar(tup.getKeyNode());
+					if (key != null) {
+						flattenProperties(prefix + key, tup.getValueNode(), props, onPath);
+					}
+				}
+			} finally {
+				onPath.remove(node);
 			}
 			break;
-			
+
 		case scalar:
 			//End of the line.
 			props.put(prefix, NodeUtil.asScalar(node));
 			break;
-			
+
 		default:
 			if (!prefix.isEmpty()) {
 				props.put(prefix, "<object>");

@@ -77,6 +77,13 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	private final NodeMergeSupport nodeMerger;
 	private AppYamlQuickfixes quickFixes;
 
+	/**
+	 * Tracks nodes (by identity) currently being visited during this reconcile pass.
+	 * A YAML anchor/alias can make a node its own descendant; without this, such a
+	 * document would recurse forever instead of just leaving that branch unchecked.
+	 */
+	private final Set<Node> onPath = NodeUtil.newIdentitySet();
+
 	public ApplicationYamlASTReconciler(IProblemCollector problems, IndexNavigator nav, TypeUtil typeUtil, AppYamlQuickfixes quickFixes) {
 		this.problems = problems;
 		this.typeUtil = typeUtil;
@@ -105,6 +112,17 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	protected void reconcile(YamlFileAST root, Node node, IndexNavigator nav) {
+		if (!onPath.add(node)) {
+			return;
+		}
+		try {
+			reconcileOnPath(root, node, nav);
+		} finally {
+			onPath.remove(node);
+		}
+	}
+
+	private void reconcileOnPath(YamlFileAST root, Node node, IndexNavigator nav) {
 		switch (node.getNodeId()) {
 		case mapping:
 			MappingNode map = (MappingNode) node;
@@ -220,23 +238,31 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	 * Reconcile a node given the type that we expect the node to be.
 	 */
 	private void reconcile(YamlFileAST root, Node node, Type type) {
-		if (type!=null) {
-			switch (node.getNodeId()) {
-			case scalar:
-				reconcile(root, (ScalarNode)node, type);
-				break;
-			case sequence:
-				reconcile(root, (SequenceNode)node, type);
-				break;
-			case mapping:
-				reconcile(root, (MappingNode)node, type);
-				break;
-			case anchor:
-				//TODO: what should we do with anchor nodes
-				break;
-			default:
-				throw new IllegalStateException("Missing switch case");
+		if (type!=null && onPath.add(node)) {
+			try {
+				reconcileOnPath(root, node, type);
+			} finally {
+				onPath.remove(node);
 			}
+		}
+	}
+
+	private void reconcileOnPath(YamlFileAST root, Node node, Type type) {
+		switch (node.getNodeId()) {
+		case scalar:
+			reconcile(root, (ScalarNode)node, type);
+			break;
+		case sequence:
+			reconcile(root, (SequenceNode)node, type);
+			break;
+		case mapping:
+			reconcile(root, (MappingNode)node, type);
+			break;
+		case anchor:
+			//TODO: what should we do with anchor nodes
+			break;
+		default:
+			throw new IllegalStateException("Missing switch case");
 		}
 	}
 
@@ -415,29 +441,41 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	private List<String> getUnknownProperties(String name, Node valueNode, List<String> unknownProps) {
-		if (valueNode instanceof MappingNode) {
-			MappingNode map = (MappingNode) valueNode;
-			for (NodeTuple entry : map.getValue()) {
-				String key = NodeUtil.asScalar(entry.getKeyNode());
-				if (key!=null) {
-					key = StringUtil.camelCaseToHyphens(key);
-					getUnknownProperties(name+"."+key, entry.getValueNode(), unknownProps);
+		return getUnknownProperties(name, valueNode, unknownProps, NodeUtil.newIdentitySet());
+	}
+
+	private List<String> getUnknownProperties(String name, Node valueNode, List<String> unknownProps, Set<Node> onPath) {
+		if (valueNode instanceof MappingNode && onPath.add(valueNode)) {
+			try {
+				MappingNode map = (MappingNode) valueNode;
+				for (NodeTuple entry : map.getValue()) {
+					String key = NodeUtil.asScalar(entry.getKeyNode());
+					if (key!=null) {
+						key = StringUtil.camelCaseToHyphens(key);
+						getUnknownProperties(name+"."+key, entry.getValueNode(), unknownProps, onPath);
+					}
 				}
+			} finally {
+				onPath.remove(valueNode);
 			}
-		} else {
+		} else if (!(valueNode instanceof MappingNode)) {
 			unknownProps.add(name);
 		}
 		return unknownProps;
 	}
 
 	private String extendForQuickfix(String name, Node node) {
-		if (node!=null) {
+		return extendForQuickfix(name, node, NodeUtil.newIdentitySet());
+	}
+
+	private String extendForQuickfix(String name, Node node, Set<Node> onPath) {
+		if (node!=null && onPath.add(node)) {
 			TupleValueRef child = getFirstTupleValue(getChildren(node));
 			if (child!=null) {
 				String extra = NodeUtil.asScalar(child.getKey());
 				if (extra!=null) {
 					return extendForQuickfix(name + "." + StringUtil.camelCaseToHyphens(extra),
-							child.get());
+							child.get(), onPath);
 				}
 			}
 		}

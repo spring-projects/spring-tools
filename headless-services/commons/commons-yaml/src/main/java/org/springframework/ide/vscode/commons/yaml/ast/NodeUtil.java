@@ -12,6 +12,7 @@
 package org.springframework.ide.vscode.commons.yaml.ast;
 
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Set;
 
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
@@ -164,6 +165,18 @@ public class NodeUtil {
 			return v!=null && v.getAnchor()!=null;
 		}
 		return false;
+	}
+
+	/**
+	 * YAML anchors/aliases let SnakeYAML's composer produce a Node graph that is
+	 * self-referential (e.g. {@code a: &x\n  b: *x}), since an anchor is registered
+	 * before its own value finishes composing. Callers that recurse over a composed
+	 * Node graph should track nodes currently being visited (by identity, not
+	 * {@code equals()}) in a set created here, and stop descending rather than
+	 * re-entering a node already on the current path.
+	 */
+	public static Set<Node> newIdentitySet() {
+		return Collections.newSetFromMap(new IdentityHashMap<>());
 	}
 
 }

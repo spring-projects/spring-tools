@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.concourse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 import static org.springframework.ide.vscode.languageserver.testharness.Editor.INDENTED_COMPLETION;
@@ -111,6 +112,23 @@ public class ConcourseEditorTest {
         );
 
         editor.assertHoverContains("on_error", "execute after the parent step if the parent step terminates abnormally");
+    }
+
+    @Test
+    void selfReferentialYamlAliasDoesNotHangReconcile() throws Exception {
+        // See SPRING-TOOLS-24: a self-referential anchor/alias on a recursively-typed
+        // step (here `try:`, which nests another Step) must not make the schema-based
+        // reconciler recurse forever.
+        assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
+            Editor editor = harness.newEditor(
+                    "jobs:\n" +
+                            "- name: myjob\n" +
+                            "  plan:\n" +
+                            "  - try: &x\n" +
+                            "      try: *x\n"
+            );
+            editor.assertProblems(/*NONE*/);
+        });
     }
 
     @Test

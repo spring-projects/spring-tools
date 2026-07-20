@@ -73,7 +73,7 @@ public class XML {
      * which is available in Java8 and above.
      *
      * @see <a href=
-     *      "http://stackoverflow.com/a/21791059/6030888">http://stackoverflow.com/a/21791059/6030888</a>
+     *      "https://stackoverflow.com/a/21791059/6030888">https://stackoverflow.com/a/21791059/6030888</a>
      */
     private static Iterable<Integer> codePointIterator(final String string) {
         return new Iterable<Integer>() {

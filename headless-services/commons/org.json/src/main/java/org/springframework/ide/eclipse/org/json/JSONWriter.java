@@ -1,4 +1,4 @@
-package org.json;
+package org.springframework.ide.eclipse.org.json;
 
 import java.io.IOException;
 import java.util.Collection;

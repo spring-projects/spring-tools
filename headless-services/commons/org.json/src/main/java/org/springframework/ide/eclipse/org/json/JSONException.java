@@ -1,8 +1,4 @@
-package org.json;
-
-/*
-Public Domain.
- */
+package org.springframework.ide.eclipse.org.json;
 
 /**
  * The JSONException is thrown by the JSON.org classes when things are amiss.

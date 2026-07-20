@@ -1,4 +1,4 @@
-package org.json;
+package org.springframework.ide.eclipse.org.json;
 
 /**
  * Configuration object for the JSON parser. The configuration is immutable.

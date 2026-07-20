@@ -679,20 +679,25 @@ public class YamlStructureParser {
 	}
 
 	protected SChildBearingNode parseLine(SChildBearingNode parent, YamlLine line, boolean createRawNode) throws Exception {
-		if (line.matches(DOCUMENT_SEPERATOR)) {
-			parent = createDocNode(parent.getRoot(), line);
-		} else if (line.matches(SIMPLE_KEY_LINE)) {
-			int currentIndent = line.getIndent();
-			parent = dropToLevel(parent, (node) -> node.getIndent()<currentIndent);
-			parent = createKeyNode(parent, line);
-		} else if (line.matches(SEQ_LINE)) {
+		// A single line can carry an unbounded number of nested "- " sequence markers
+		// (e.g. "- - - - ..."); walk them iteratively rather than recursing once per
+		// marker, so a maliciously long line can't blow the stack.
+		while (line.matches(SEQ_LINE)) {
 			int currentIndent = line.getIndent();
 			parent = dropToLevel(parent, (node) -> {
 				int indent = node.getIndent();
 				return indent < currentIndent || node.getNodeType()!=SNodeType.SEQ && indent<=currentIndent;
 			});
 			parent = createSeqNode(parent, line);
-			parent = parseLine(parent, line.moveIndentMark(2), false); //parse from just after "- " for nested seq and key nodes
+			line = line.moveIndentMark(2); //parse from just after "- " for nested seq and key nodes
+			createRawNode = false;
+		}
+		if (line.matches(DOCUMENT_SEPERATOR)) {
+			parent = createDocNode(parent.getRoot(), line);
+		} else if (line.matches(SIMPLE_KEY_LINE)) {
+			int currentIndent = line.getIndent();
+			parent = dropToLevel(parent, (node) -> node.getIndent()<currentIndent);
+			parent = createKeyNode(parent, line);
 		} else if (createRawNode) {
 			createRawNode(parent, line);
 		}

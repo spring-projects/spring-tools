@@ -14,9 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.springframework.ide.vscode.commons.yaml.path.YamlPathSegment.*;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -384,6 +386,21 @@ public class YamlStructureParserTest {
 				"      KEY(4): some.package:"
 		);
 
+	}
+
+	@Test public void testDeeplyNestedSequenceOnSingleLineDoesNotOverflowStack() throws Exception {
+		// A single line packed with many "- " sequence markers must be
+		// parsed iteratively - one recursive call per marker would blow the stack.
+		int depth = 50_000;
+		StringBuilder line = new StringBuilder();
+		for (int i = 0; i < depth; i++) {
+			line.append("- ");
+		}
+		line.append("leaf");
+
+		MockYamlEditor editor = new MockYamlEditor(line.toString());
+		SRootNode root = assertTimeoutPreemptively(Duration.ofSeconds(10), () -> editor.parseStructure());
+		assertNotNull(root);
 	}
 
 	@Test public void testSequenceWithNestedSequence() throws Exception {

@@ -1,31 +1,8 @@
 package org.springframework.ide.eclipse.org.json;
 
 /*
-Copyright (c) 2008 JSON.org
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-The Software shall be used for Good, not Evil.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Public Domain.
 */
-
-import java.util.Iterator;
-
 
 /**
  * This provides static methods to convert an XML text into a JSONArray or
@@ -33,9 +10,45 @@ import java.util.Iterator;
  * the JsonML transform.
  *
  * @author JSON.org
- * @version 2012-03-28
+ * @version 2016-01-30
  */
 public class JSONML {
+
+    /**
+     * Constructs a new JSONML object.
+     * @deprecated (Utility class cannot be instantiated)
+     */
+    @Deprecated
+    public JSONML() {
+    }
+
+    /**
+     * Safely cast parse result to JSONArray with proper type checking.
+     * @param result The result from parse() method
+     * @return JSONArray if result is a JSONArray
+     * @throws JSONException if result is not a JSONArray
+     */
+    private static JSONArray toJSONArraySafe(Object result) throws JSONException {
+        if (result instanceof JSONArray) {
+            return (JSONArray) result;
+        }
+        throw new JSONException("Expected JSONArray but got " +
+            (result == null ? "null" : result.getClass().getSimpleName()));
+    }
+
+    /**
+     * Safely cast parse result to JSONObject with proper type checking.
+     * @param result The result from parse() method
+     * @return JSONObject if result is a JSONObject
+     * @throws JSONException if result is not a JSONObject
+     */
+    private static JSONObject toJSONObjectSafe(Object result) throws JSONException {
+        if (result instanceof JSONObject) {
+            return (JSONObject) result;
+        }
+        throw new JSONException("Expected JSONObject but got " +
+            (result == null ? "null" : result.getClass().getSimpleName()));
+    }
 
     /**
      * Parse XML values and store them in a JSONArray.
@@ -43,22 +56,49 @@ public class JSONML {
      * @param arrayForm true if array form, false if object form.
      * @param ja      The JSONArray that is containing the current tag or null
      *     if we are at the outermost level.
+     * @param keepStrings	Don't type-convert text nodes and attribute values
      * @return A JSONArray if the value is the outermost tag, otherwise null.
-     * @throws JSONException
+     * @throws JSONException if a parsing error occurs
      */
     private static Object parse(
         XMLTokener x,
         boolean    arrayForm,
-        JSONArray  ja
+        JSONArray  ja,
+        boolean keepStrings,
+        int currentNestingDepth
+    ) throws JSONException {
+        return parse(x,arrayForm, ja,
+            keepStrings ? JSONMLParserConfiguration.KEEP_STRINGS : JSONMLParserConfiguration.ORIGINAL,
+            currentNestingDepth);
+    }
+
+    /**
+     * Parse XML values and store them in a JSONArray.
+     * @param x       The XMLTokener containing the source string.
+     * @param arrayForm true if array form, false if object form.
+     * @param ja      The JSONArray that is containing the current tag or null
+     *     if we are at the outermost level.
+     * @param config  The parser configuration:
+     *     JSONMLParserConfiguration.ORIGINAL is the default behaviour;
+     *     JSONMLParserConfiguration.KEEP_STRINGS means Don't type-convert text nodes and attribute values.
+     * @return A JSONArray if the value is the outermost tag, otherwise null.
+     * @throws JSONException if a parsing error occurs
+     */
+    private static Object parse(
+        XMLTokener x,
+        boolean    arrayForm,
+        JSONArray  ja,
+        JSONMLParserConfiguration config,
+        int currentNestingDepth
     ) throws JSONException {
         String     attribute;
         char       c;
-        String       closeTag = null;
+        String     closeTag = null;
         int        i;
         JSONArray  newja = null;
         JSONObject newjo = null;
         Object     token;
-        String       tagName = null;
+        String     tagName = null;
 
 // Test for and skip past these forms:
 //      <!-- ... -->
@@ -101,7 +141,7 @@ public class JSONML {
                             }
                         } else if (c == '[') {
                             token = x.nextToken();
-                            if (token.equals("CDATA") && x.next() == '[') {
+                            if ("CDATA".equals(token) && x.next() == '[') {
                                 if (ja != null) {
                                     ja.put(x.nextCDATA());
                                 }
@@ -174,7 +214,7 @@ public class JSONML {
                             if (!(token instanceof String)) {
                                 throw x.syntaxError("Missing value");
                             }
-                            newjo.accumulate(attribute, XML.stringToValue((String)token));
+                            newjo.accumulate(attribute, config.isKeepStrings() ? ((String)token) :XML.stringToValue((String)token));
                             token = null;
                         } else {
                             newjo.accumulate(attribute, "");
@@ -193,9 +233,8 @@ public class JSONML {
                         if (ja == null) {
                             if (arrayForm) {
                                 return newja;
-                            } else {
-                                return newjo;
                             }
+                            return newjo;
                         }
 
 // Content, between <...> and </...>
@@ -204,7 +243,12 @@ public class JSONML {
                         if (token != XML.GT) {
                             throw x.syntaxError("Misshaped tag");
                         }
-                        closeTag = (String)parse(x, arrayForm, newja);
+
+                        if (currentNestingDepth == config.getMaxNestingDepth()) {
+                            throw x.syntaxError("Maximum nesting depth of " + config.getMaxNestingDepth() + " reached");
+                        }
+
+                        closeTag = (String)parse(x, arrayForm, newja, config, currentNestingDepth + 1);
                         if (closeTag != null) {
                             if (!closeTag.equals(tagName)) {
                                 throw x.syntaxError("Mismatched '" + tagName +
@@ -217,18 +261,29 @@ public class JSONML {
                             if (ja == null) {
                                 if (arrayForm) {
                                     return newja;
-                                } else {
-                                    return newjo;
                                 }
+                                return newjo;
                             }
                         }
                     }
                 }
             } else {
                 if (ja != null) {
-                    ja.put(token instanceof String
-                        ? XML.stringToValue((String)token)
-                        : token);
+                    Object value;
+
+                    if (token instanceof String) {
+                        String strToken = (String) token;
+                        if (config.isKeepStrings()) {
+                            value = XML.unescape(strToken);
+                        } else {
+                            value = XML.stringToValue(strToken);
+                        }
+                    } else {
+                        value = token;
+                    }
+
+                    ja.put(value);
+
                 }
             }
         }
@@ -242,13 +297,60 @@ public class JSONML {
      * attributes, then the second element will be JSONObject containing the
      * name/value pairs. If the tag contains children, then strings and
      * JSONArrays will represent the child tags.
-     * Comments, prologs, DTDs, and <code>&lt;[ [ ]]></code> are ignored.
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
      * @param string The source string.
      * @return A JSONArray containing the structured data from the XML string.
-     * @throws JSONException
+     * @throws JSONException Thrown on error converting to a JSONArray
      */
     public static JSONArray toJSONArray(String string) throws JSONException {
-        return toJSONArray(new XMLTokener(string));
+        return toJSONArraySafe(parse(new XMLTokener(string), true, null, JSONMLParserConfiguration.ORIGINAL, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONArray using the JsonML transform. Each XML tag is represented as
+     * a JSONArray in which the first element is the tag name. If the tag has
+     * attributes, then the second element will be JSONObject containing the
+     * name/value pairs. If the tag contains children, then strings and
+     * JSONArrays will represent the child tags.
+     * As opposed to toJSONArray this method does not attempt to convert
+     * any text node or attribute value to any type
+     * but just leaves it as a string.
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param string The source string.
+     * @param keepStrings If true, then values will not be coerced into boolean
+     *  or numeric values and will instead be left as strings
+     * @return A JSONArray containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONArray
+     */
+    public static JSONArray toJSONArray(String string, boolean keepStrings) throws JSONException {
+        return toJSONArraySafe(parse(new XMLTokener(string), true, null, keepStrings, 0));
+    }
+
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONArray using the JsonML transform. Each XML tag is represented as
+     * a JSONArray in which the first element is the tag name. If the tag has
+     * attributes, then the second element will be JSONObject containing the
+     * name/value pairs. If the tag contains children, then strings and
+     * JSONArrays will represent the child tags.
+     * As opposed to toJSONArray this method does not attempt to convert
+     * any text node or attribute value to any type
+     * but just leaves it as a string.
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param string The source string.
+     * @param config  The parser configuration:
+     *     JSONMLParserConfiguration.ORIGINAL is the default behaviour;
+     *     JSONMLParserConfiguration.KEEP_STRINGS means values will not be coerced into boolean
+     *       or numeric values and will instead be left as strings
+     * @return A JSONArray containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONArray
+     */
+    public static JSONArray toJSONArray(String string, JSONMLParserConfiguration config) throws JSONException {
+        return toJSONArraySafe(parse(new XMLTokener(string), true, null, config, 0));
     }
 
 
@@ -259,13 +361,59 @@ public class JSONML {
      * attributes, then the second element will be JSONObject containing the
      * name/value pairs. If the tag contains children, then strings and
      * JSONArrays will represent the child content and tags.
-     * Comments, prologs, DTDs, and <code>&lt;[ [ ]]></code> are ignored.
+     * As opposed to toJSONArray this method does not attempt to convert
+     * any text node or attribute value to any type
+     * but just leaves it as a string.
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param x An XMLTokener.
+     * @param config  The parser configuration:
+     *     JSONMLParserConfiguration.ORIGINAL is the default behaviour;
+     *     JSONMLParserConfiguration.KEEP_STRINGS means values will not be coerced into boolean
+     *       or numeric values and will instead be left as strings
+     * @return A JSONArray containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONArray
+     */
+    public static JSONArray toJSONArray(XMLTokener x, JSONMLParserConfiguration config) throws JSONException {
+        return toJSONArraySafe(parse(x, true, null, config, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONArray using the JsonML transform. Each XML tag is represented as
+     * a JSONArray in which the first element is the tag name. If the tag has
+     * attributes, then the second element will be JSONObject containing the
+     * name/value pairs. If the tag contains children, then strings and
+     * JSONArrays will represent the child content and tags.
+     * As opposed to toJSONArray this method does not attempt to convert
+     * any text node or attribute value to any type
+     * but just leaves it as a string.
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param x An XMLTokener.
+     * @param keepStrings If true, then values will not be coerced into boolean
+     *  or numeric values and will instead be left as strings
+     * @return A JSONArray containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONArray
+     */
+    public static JSONArray toJSONArray(XMLTokener x, boolean keepStrings) throws JSONException {
+        return toJSONArraySafe(parse(x, true, null, keepStrings, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONArray using the JsonML transform. Each XML tag is represented as
+     * a JSONArray in which the first element is the tag name. If the tag has
+     * attributes, then the second element will be JSONObject containing the
+     * name/value pairs. If the tag contains children, then strings and
+     * JSONArrays will represent the child content and tags.
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
      * @param x An XMLTokener.
      * @return A JSONArray containing the structured data from the XML string.
-     * @throws JSONException
+     * @throws JSONException Thrown on error converting to a JSONArray
      */
     public static JSONArray toJSONArray(XMLTokener x) throws JSONException {
-        return (JSONArray)parse(x, true, null);
+        return toJSONArraySafe(parse(x, true, null, false, 0));
     }
 
 
@@ -277,31 +425,115 @@ public class JSONML {
      * contains children, the object will have a "childNodes" property which
      * will be an array of strings and JsonML JSONObjects.
 
-     * Comments, prologs, DTDs, and <code>&lt;[ [ ]]></code> are ignored.
-     * @param x An XMLTokener of the XML source text.
-     * @return A JSONObject containing the structured data from the XML string.
-     * @throws JSONException
-     */
-    public static JSONObject toJSONObject(XMLTokener x) throws JSONException {
-           return (JSONObject)parse(x, false, null);
-    }
-
-
-    /**
-     * Convert a well-formed (but not necessarily valid) XML string into a
-     * JSONObject using the JsonML transform. Each XML tag is represented as
-     * a JSONObject with a "tagName" property. If the tag has attributes, then
-     * the attributes will be in the JSONObject as properties. If the tag
-     * contains children, the object will have a "childNodes" property which
-     * will be an array of strings and JsonML JSONObjects.
-
-     * Comments, prologs, DTDs, and <code>&lt;[ [ ]]></code> are ignored.
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
      * @param string The XML source text.
      * @return A JSONObject containing the structured data from the XML string.
-     * @throws JSONException
+     * @throws JSONException Thrown on error converting to a JSONObject
      */
     public static JSONObject toJSONObject(String string) throws JSONException {
-        return toJSONObject(new XMLTokener(string));
+        return toJSONObjectSafe(parse(new XMLTokener(string), false, null, false, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONObject using the JsonML transform. Each XML tag is represented as
+     * a JSONObject with a "tagName" property. If the tag has attributes, then
+     * the attributes will be in the JSONObject as properties. If the tag
+     * contains children, the object will have a "childNodes" property which
+     * will be an array of strings and JsonML JSONObjects.
+
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param string The XML source text.
+     * @param keepStrings If true, then values will not be coerced into boolean
+     *  or numeric values and will instead be left as strings
+     * @return A JSONObject containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONObject
+     */
+    public static JSONObject toJSONObject(String string, boolean keepStrings) throws JSONException {
+        return toJSONObjectSafe(parse(new XMLTokener(string), false, null, keepStrings, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONObject using the JsonML transform. Each XML tag is represented as
+     * a JSONObject with a "tagName" property. If the tag has attributes, then
+     * the attributes will be in the JSONObject as properties. If the tag
+     * contains children, the object will have a "childNodes" property which
+     * will be an array of strings and JsonML JSONObjects.
+
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param string The XML source text.
+     * @param config  The parser configuration:
+     *     JSONMLParserConfiguration.ORIGINAL is the default behaviour;
+     *     JSONMLParserConfiguration.KEEP_STRINGS means values will not be coerced into boolean
+     *       or numeric values and will instead be left as strings
+     * @return A JSONObject containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONObject
+     */
+    public static JSONObject toJSONObject(String string, JSONMLParserConfiguration config) throws JSONException {
+        return toJSONObjectSafe(parse(new XMLTokener(string), false, null, config, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONObject using the JsonML transform. Each XML tag is represented as
+     * a JSONObject with a "tagName" property. If the tag has attributes, then
+     * the attributes will be in the JSONObject as properties. If the tag
+     * contains children, the object will have a "childNodes" property which
+     * will be an array of strings and JsonML JSONObjects.
+
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param x An XMLTokener of the XML source text.
+     * @return A JSONObject containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONObject
+     */
+    public static JSONObject toJSONObject(XMLTokener x) throws JSONException {
+           return toJSONObjectSafe(parse(x, false, null, false, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONObject using the JsonML transform. Each XML tag is represented as
+     * a JSONObject with a "tagName" property. If the tag has attributes, then
+     * the attributes will be in the JSONObject as properties. If the tag
+     * contains children, the object will have a "childNodes" property which
+     * will be an array of strings and JsonML JSONObjects.
+
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param x An XMLTokener of the XML source text.
+     * @param keepStrings If true, then values will not be coerced into boolean
+     *  or numeric values and will instead be left as strings
+     * @return A JSONObject containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONObject
+     */
+    public static JSONObject toJSONObject(XMLTokener x, boolean keepStrings) throws JSONException {
+           return toJSONObjectSafe(parse(x, false, null, keepStrings, 0));
+    }
+
+
+    /**
+     * Convert a well-formed (but not necessarily valid) XML string into a
+     * JSONObject using the JsonML transform. Each XML tag is represented as
+     * a JSONObject with a "tagName" property. If the tag has attributes, then
+     * the attributes will be in the JSONObject as properties. If the tag
+     * contains children, the object will have a "childNodes" property which
+     * will be an array of strings and JsonML JSONObjects.
+
+     * Comments, prologs, DTDs, and <pre>{@code &lt;[ [ ]]>}</pre> are ignored.
+     * @param x An XMLTokener of the XML source text.
+     * @param config  The parser configuration:
+     *     JSONMLParserConfiguration.ORIGINAL is the default behaviour;
+     *     JSONMLParserConfiguration.KEEP_STRINGS means values will not be coerced into boolean
+     *       or numeric values and will instead be left as strings
+     * @return A JSONObject containing the structured data from the XML string.
+     * @throws JSONException Thrown on error converting to a JSONObject
+     */
+    public static JSONObject toJSONObject(XMLTokener x, JSONMLParserConfiguration config) throws JSONException {
+        return toJSONObjectSafe(parse(x, false, null, config, 0));
     }
 
 
@@ -309,18 +541,15 @@ public class JSONML {
      * Reverse the JSONML transformation, making an XML text from a JSONArray.
      * @param ja A JSONArray.
      * @return An XML string.
-     * @throws JSONException
+     * @throws JSONException Thrown on error converting to a string
      */
     public static String toString(JSONArray ja) throws JSONException {
-        int             i;
-        JSONObject   jo;
-        String       key;
-        Iterator     keys;
-        int             length;
-        Object         object;
-        StringBuffer sb = new StringBuffer();
-        String       tagName;
-        String       value;
+        int                 i;
+        JSONObject          jo;
+        int                 length;
+        Object              object;
+        StringBuilder        sb = new StringBuilder();
+        String              tagName;
 
 // Emit <tagName
 
@@ -337,17 +566,16 @@ public class JSONML {
 
 // Emit the attributes
 
-            keys = jo.keys();
-            while (keys.hasNext()) {
-                key = keys.next().toString();
+            // Don't use the new entrySet API to maintain Android support
+            for (final String key : jo.keySet()) {
+                final Object value = jo.opt(key);
                 XML.noSpace(key);
-                value = jo.optString(key);
                 if (value != null) {
                     sb.append(' ');
                     sb.append(XML.escape(key));
                     sb.append('=');
                     sb.append('"');
-                    sb.append(XML.escape(value));
+                    sb.append(XML.escape(value.toString()));
                     sb.append('"');
                 }
             }
@@ -355,7 +583,7 @@ public class JSONML {
             i = 1;
         }
 
-//Emit content in body
+// Emit content in body
 
         length = ja.length();
         if (i >= length) {
@@ -373,6 +601,8 @@ public class JSONML {
                         sb.append(toString((JSONObject)object));
                     } else if (object instanceof JSONArray) {
                         sb.append(toString((JSONArray)object));
+                    } else {
+                        sb.append(object.toString());
                     }
                 }
             } while (i < length);
@@ -384,6 +614,7 @@ public class JSONML {
         return sb.toString();
     }
 
+
     /**
      * Reverse the JSONML transformation, making an XML text from a JSONObject.
      * The JSONObject must contain a "tagName" property. If it has children,
@@ -391,18 +622,16 @@ public class JSONML {
      * The other properties are attributes with string values.
      * @param jo A JSONObject.
      * @return An XML string.
-     * @throws JSONException
+     * @throws JSONException Thrown on error converting to a string
      */
     public static String toString(JSONObject jo) throws JSONException {
-        StringBuffer sb = new StringBuffer();
-        int          i;
-        JSONArray    ja;
-        String       key;
-        Iterator     keys;
-        int          length;
-        Object         object;
-        String       tagName;
-        String       value;
+        StringBuilder sb = new StringBuilder();
+        int                 i;
+        JSONArray           ja;
+        int                 length;
+        Object              object;
+        String              tagName;
+        Object              value;
 
 //Emit <tagName
 
@@ -417,18 +646,17 @@ public class JSONML {
 
 //Emit the attributes
 
-        keys = jo.keys();
-        while (keys.hasNext()) {
-            key = keys.next().toString();
+        // Don't use the new entrySet API to maintain Android support
+        for (final String key : jo.keySet()) {
             if (!"tagName".equals(key) && !"childNodes".equals(key)) {
                 XML.noSpace(key);
-                value = jo.optString(key);
+                value = jo.opt(key);
                 if (value != null) {
                     sb.append(' ');
                     sb.append(XML.escape(key));
                     sb.append('=');
                     sb.append('"');
-                    sb.append(XML.escape(value));
+                    sb.append(XML.escape(value.toString()));
                     sb.append('"');
                 }
             }

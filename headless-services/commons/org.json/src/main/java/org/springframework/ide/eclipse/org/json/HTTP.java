@@ -1,37 +1,23 @@
 package org.springframework.ide.eclipse.org.json;
 
 /*
-Copyright (c) 2002 JSON.org
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-The Software shall be used for Good, not Evil.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Public Domain.
 */
 
-import java.util.Iterator;
+import java.util.Locale;
 
 /**
  * Convert an HTTP header to a JSONObject and back.
  * @author JSON.org
- * @version 2010-12-24
+ * @version 2015-12-09
  */
 public class HTTP {
+
+    /**
+     * Constructs a new HTTP object.
+     */
+    public HTTP() {
+    }
 
     /** Carriage return/line feed. */
     public static final String CRLF = "\r\n";
@@ -51,12 +37,12 @@ public class HTTP {
      *    "Reason-Phrase": "OK" (for example)
      * }</pre>
      * In addition, the other parameters in the header will be captured, using
-     * the HTTP field names as JSON names, so that <pre>
+     * the HTTP field names as JSON names, so that <pre>{@code
      *    Date: Sun, 26 May 2002 18:06:04 GMT
      *    Cookie: Q=q2=PPEAsg--; B=677gi6ouf29bn&b=2&f=s
-     *    Cache-Control: no-cache</pre>
+     *    Cache-Control: no-cache}</pre>
      * become
-     * <pre>{...
+     * <pre>{@code
      *    Date: "Sun, 26 May 2002 18:06:04 GMT",
      *    Cookie: "Q=q2=PPEAsg--; B=677gi6ouf29bn&b=2&f=s",
      *    "Cache-Control": "no-cache",
@@ -66,7 +52,7 @@ public class HTTP {
      * @param string An HTTP header string.
      * @return A JSONObject containing the elements and attributes
      * of the XML string.
-     * @throws JSONException
+     * @throws JSONException if a called function fails
      */
     public static JSONObject toJSONObject(String string) throws JSONException {
         JSONObject     jo = new JSONObject();
@@ -74,7 +60,7 @@ public class HTTP {
         String         token;
 
         token = x.nextToken();
-        if (token.toUpperCase().startsWith("HTTP")) {
+        if (token.toUpperCase(Locale.ROOT).startsWith("HTTP")) {
 
 // Response
 
@@ -125,9 +111,7 @@ public class HTTP {
      *  information.
      */
     public static String toString(JSONObject jo) throws JSONException {
-        Iterator     keys = jo.keys();
-        String       string;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder       sb = new StringBuilder();
         if (jo.has("Status-Code") && jo.has("Reason-Phrase")) {
             sb.append(jo.getString("HTTP-Version"));
             sb.append(' ');
@@ -146,14 +130,15 @@ public class HTTP {
             throw new JSONException("Not enough material for an HTTP header.");
         }
         sb.append(CRLF);
-        while (keys.hasNext()) {
-            string = keys.next().toString();
-            if (!"HTTP-Version".equals(string)      && !"Status-Code".equals(string) &&
-                    !"Reason-Phrase".equals(string) && !"Method".equals(string) &&
-                    !"Request-URI".equals(string)   && !jo.isNull(string)) {
-                sb.append(string);
+        // Don't use the new entrySet API to maintain Android support
+        for (final String key : jo.keySet()) {
+            String value = jo.optString(key);
+            if (!"HTTP-Version".equals(key)      && !"Status-Code".equals(key) &&
+                    !"Reason-Phrase".equals(key) && !"Method".equals(key) &&
+                    !"Request-URI".equals(key)   && !JSONObject.NULL.equals(value)) {
+                sb.append(key);
                 sb.append(": ");
-                sb.append(jo.getString(string));
+                sb.append(jo.optString(key));
                 sb.append(CRLF);
             }
         }

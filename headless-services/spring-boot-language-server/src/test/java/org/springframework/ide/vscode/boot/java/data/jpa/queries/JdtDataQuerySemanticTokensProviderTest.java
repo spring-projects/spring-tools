@@ -226,6 +226,48 @@ public class JdtDataQuerySemanticTokensProviderTest {
 	}
 	
 	@Test
+	void limitParamsMySql() throws Exception {
+		String source = """
+		package my.package
+		
+		import org.springframework.data.jpa.repository.Query;
+		
+		public interface OwnerRepository {
+		
+			@Query(value = "select * from user_history h where h.user_id = ?1 order by h.timestamp desc limit ?2", nativeQuery = true)
+			void showHistory(String id, int limit);
+		}
+		""";
+        
+        String uri = Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/OwnerRepository.java").toUri().toASCIIString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, uri);
+		
+		editor.assertSemanticTokensFull(
+				new ExpectedSemanticToken("select", "keyword"),
+				new ExpectedSemanticToken("*", "operator"),
+				new ExpectedSemanticToken("from", "keyword"),
+				new ExpectedSemanticToken("user_history", "variable"),
+				new ExpectedSemanticToken("h", "variable"),
+				new ExpectedSemanticToken("where", "keyword"),
+				new ExpectedSemanticToken("h", "variable"),
+				new ExpectedSemanticToken(".", "operator"),
+				new ExpectedSemanticToken("user_id", "property"),
+				new ExpectedSemanticToken("=", "operator"),
+				new ExpectedSemanticToken("?", "operator"),
+				new ExpectedSemanticToken("1", "parameter"),
+				new ExpectedSemanticToken("order", "keyword"),
+				new ExpectedSemanticToken("by", "keyword"),
+				new ExpectedSemanticToken("h", "variable"),
+				new ExpectedSemanticToken(".", "operator"),
+				new ExpectedSemanticToken("timestamp", "property"),
+				new ExpectedSemanticToken("desc", "keyword"),
+				new ExpectedSemanticToken("limit", "keyword"),
+				new ExpectedSemanticToken("?", "operator"),
+				new ExpectedSemanticToken("2", "parameter")
+		);
+	}
+	
+	@Test
 	void nativeQuery_1() throws Exception {
 		String source = """
 		package my.package

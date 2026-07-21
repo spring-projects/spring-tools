@@ -154,5 +154,33 @@ public class MySqlSemanticTokensTest {
 			new ExpectedSemanticToken("ids", "parameter")
 		);
 	}
+	
+	@Test
+	void limitParameter() {
+		String query = "select * from user_history h where h.user_id = ?1 order by h.timestamp desc limit ?2";
+		assertTokens(query, provider.computeTokens(query),
+				new ExpectedSemanticToken("select", "keyword"),
+				new ExpectedSemanticToken("*", "operator"),
+				new ExpectedSemanticToken("from", "keyword"),
+				new ExpectedSemanticToken("user_history", "variable"),
+				new ExpectedSemanticToken("h", "variable"),
+				new ExpectedSemanticToken("where", "keyword"),
+				new ExpectedSemanticToken("h", "variable"),
+				new ExpectedSemanticToken(".", "operator"),
+				new ExpectedSemanticToken("user_id", "property"),
+				new ExpectedSemanticToken("=", "operator"),
+				new ExpectedSemanticToken("?", "operator"),
+				new ExpectedSemanticToken("1", "parameter"),
+				new ExpectedSemanticToken("order", "keyword"),
+				new ExpectedSemanticToken("by", "keyword"),
+				new ExpectedSemanticToken("h", "variable"),
+				new ExpectedSemanticToken(".", "operator"),
+				new ExpectedSemanticToken("timestamp", "property"),
+				new ExpectedSemanticToken("desc", "keyword"),
+				new ExpectedSemanticToken("limit", "keyword"),
+				new ExpectedSemanticToken("?", "operator"),
+				new ExpectedSemanticToken("2", "parameter")
+		);
+	}
 
 }

@@ -1138,6 +1138,7 @@ limitClauseAtom
     : decimalLiteral
     | mysqlVariable
     | simpleId
+    | parameter
     ;
 
 // Transaction's Statements

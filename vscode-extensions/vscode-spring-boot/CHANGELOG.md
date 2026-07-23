@@ -2,6 +2,7 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ Native query validation does not accept a numbered parameter as `limit` argument [#1938](https://github.com/spring-projects/spring-tools/issues/1938)
 * _(Spring Boot)_ Local process JMX connection should not use socket port [#1931](https://github.com/spring-projects/spring-tools/issues/1931)
 * _(Spring Boot)_ inner records are identified as beans [#1917](https://github.com/spring-projects/spring-tools/issues/1917)
 * _(Spring Boot)_ version validation doesn't take forth segment into account [#1916](https://github.com/spring-projects/spring-tools/issues/1916)

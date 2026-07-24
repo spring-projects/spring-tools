@@ -29,24 +29,29 @@ import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement
 public class SpringMetamodelIndex {
 	
 	private final ConcurrentMap<String, ProjectElement> projectRootElements;
+	private final ConcurrentMap<String, DocumentElement> docUriToDocument;
 
 	public SpringMetamodelIndex() {
 		projectRootElements = new ConcurrentHashMap<>();
+		docUriToDocument = new ConcurrentHashMap<>();
 	}
 	
 	public void updateElements(String projectName, String docURI, SpringIndexElement[] elements) {
 		ProjectElement project = this.projectRootElements.computeIfAbsent(projectName, name -> new ProjectElement(name));
 		project.removeDocument(docURI);
-		
+
 		if (elements != null && elements.length > 0) {
 			DocumentElement document = new DocumentElement(docURI);
 			for (SpringIndexElement bean : elements) {
 				document.addChild(bean);
 			}
-			
+
 			project.addChild(document);
-		}	
-		
+			docUriToDocument.put(docURI, document);
+		} else {
+			docUriToDocument.remove(docURI);
+		}
+
 	}
 
 	public void removeElements(String projectName, String docURI) {
@@ -54,10 +59,18 @@ public class SpringMetamodelIndex {
 		if (project != null) {
 			project.removeDocument(docURI);
 		}
+		docUriToDocument.remove(docURI);
 	}
 	
 	public void removeProject(String projectName) {
-		projectRootElements.remove(projectName);
+		this.projectRootElements.computeIfPresent(projectName, (name, project) -> {
+			for (SpringIndexElement child : project.getChildren()) {
+				if (child instanceof DocumentElement) {
+					docUriToDocument.remove(((DocumentElement) child).getDocURI());
+				}
+			}
+			return null;
+		});
 	}
 	
 	public Collection<ProjectElement> getProjects() {
@@ -65,11 +78,18 @@ public class SpringMetamodelIndex {
 	}
 
 	public DocumentElement getDocument(String docURI) {
+		DocumentElement cached = docUriToDocument.get(docURI);
+		if (cached != null) {
+			return cached;
+		}
+		// Fallback to full traversal if not in cache (e.g. for pre-existing elements)
 		List<SpringIndexElement> rootNodes = new ArrayList<SpringIndexElement>(this.projectRootElements.values());
 		List<DocumentElement> documents = getNodesOfType(DocumentElement.class, rootNodes, document -> document.getDocURI().equals(docURI));
 
 		if (documents.size() == 1) {
-			return documents.get(0);
+			DocumentElement doc = documents.get(0);
+			docUriToDocument.putIfAbsent(docURI, doc);
+			return doc;
 		}
 		else {
 			return null;

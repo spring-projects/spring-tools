@@ -519,7 +519,7 @@ public class PropertyIndexHarness {
 		data("spring.mobile.devicedelegatingviewresolver.tablet-suffix", "java.lang.String", "", "Suffix that gets appended to view names for tablet devices.");
 		data("spring.mobile.sitepreference.enabled", "java.lang.Boolean", "true", "Enable SitePreferenceHandler.");
 		data("spring.mvc.date-format", "java.lang.String", null, "Date format to use (e.g. dd/MM/yyyy)");
-		data("spring.mvc.ignore-default-model-on-redirect", "java.lang.Boolean", "true", "If the the content of the \"default\" model should be ignored during redirect\n scenarios.");
+		data("spring.mvc.ignore-default-model-on-redirect", "java.lang.Boolean", "true", "If the content of the \"default\" model should be ignored during redirect\n scenarios.");
 		data("spring.mvc.locale", "java.lang.String", null, "Locale to use.");
 		data("spring.mvc.message-codes-resolver-format", "org.springframework.validation.DefaultMessageCodesResolver$Format", null, "Formatting strategy for message codes (PREFIX_ERROR_CODE, POSTFIX_ERROR_CODE).");
 		data("spring.profiles.active", "java.lang.String", null, "Comma-separated list of active profiles. Can be overridden by a command line switch.");

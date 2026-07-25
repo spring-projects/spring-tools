@@ -661,7 +661,7 @@
 
 #### important highlights
 
-* _(Spring Boot)_ **Log Levels** viewing and editing is available in VSCode for live running Boot apps if enabled on the the app via Spring Boot Actuators
+* _(Spring Boot)_ **Log Levels** viewing and editing is available in VSCode for live running Boot apps if enabled on the app via Spring Boot Actuators
 * _(Spring Boot)_ Ability to show "Refactor Preview" in VSCode before applying the changes from OpenRewrite recipes
 * _(Spring Boot)_ New content assist proposals available for creating Spring XML config files
 

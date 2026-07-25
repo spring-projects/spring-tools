@@ -92,7 +92,7 @@ public class LiveConditionalParser {
 	}
 
 	/**
-	 * Fetches all the conditionals listed in the the "positiveMatches" element in the autoconfig report.
+	 * Fetches all the conditionals listed in the "positiveMatches" element in the autoconfig report.
 	 *
 	 */
 	private List<LiveConditional> getConditionalsFromPositiveMatches(JSONObject autoConfigReport) {

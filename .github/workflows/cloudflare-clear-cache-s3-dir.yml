@@ -35,7 +35,7 @@ jobs:
           sed_pattern="s/^[ \t]*/$ESCAPED_REPLACE_URL/"
           urls=`aws s3 ls s3://$AWS_S3_BUCKET${{ inputs.s3-url }} --recursive | awk '{$1=$2=$3=""; print $0}' | sed -e "$sed_pattern" | paste -sd' ' -`
           echo "urls=$urls" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # 7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
         with:
           sparse-checkout: |
             .github

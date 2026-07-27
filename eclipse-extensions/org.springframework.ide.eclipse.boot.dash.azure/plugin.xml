@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<?eclipse version="3.4"?>
-<plugin>
-   <extension
-         point="org.springframework.ide.eclipse.boot.dash.injections">
-      <injection class="org.springframework.ide.eclipse.boot.dash.azure.BootDashInjections"/>
-   </extension>
-
-</plugin>

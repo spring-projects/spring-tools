@@ -1,3 +1,0 @@
-- Add connect/disconnect action (probably this should be done by refactoring the existing action for CF to make it
-  'generic'.
-- Persist connected state and try to reconnect automatically 

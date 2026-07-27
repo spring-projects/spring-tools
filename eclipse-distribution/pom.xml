@@ -54,7 +54,6 @@
 		<module>../eclipse-extensions/org.springframework.ide.eclipse.boot.templates</module>
 		<module>../eclipse-extensions/org.springframework.ide.eclipse.boot.validation</module>
 		<module>../eclipse-extensions/org.springframework.ide.eclipse.boot.wizard</module>
-		<module>../eclipse-extensions/org.springframework.ide.eclipse.boot.dash.azure</module>
 		<module>../eclipse-extensions/org.springframework.ide.eclipse.boot.dash.docker</module>
 		<module>../eclipse-extensions/org.springframework.ide.eclipse.boot.dash.feature</module>
 		<module>../eclipse-extensions/org.springframework.ide.eclipse.docker.client</module>

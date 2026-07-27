@@ -702,8 +702,8 @@ public class YTypeFactory {
 
 	/**
 	 * Represents a union of several bean types. It is assumed one primary property
-	 * exists in each of the the sub-bean types that can be used to identify the
-	 * type. In other words the primary property has a unique name so that when
+	 * exists in each of the sub-bean types that can be used to identify the type.
+	 * In other words the primary property has a unique name so that when
 	 * this property is being assigned a value we can infer from that which
 	 * specific bean-type we are dealing with.
 	 */

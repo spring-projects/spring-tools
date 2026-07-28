@@ -1,12 +1,18 @@
-## 2.3.0 PRE-RELEASE
+## 2026-07-29 (5.3.0 RELEASE, incl. language servers version 2.3.0)
 
-#### all fixes and improvements in detail
+#### important highlights
 
+* _(Spring Boot)_ Update org.json embedded into commons and boot LS [#1941](https://github.com/spring-projects/spring-tools/issues/1941)
 * _(Spring Boot)_ Native query validation does not accept a numbered parameter as `limit` argument [#1938](https://github.com/spring-projects/spring-tools/issues/1938)
+* _(Spring Boot)_ Replace `RestTemplate` with `RestClient` [#1935](https://github.com/spring-projects/spring-tools/issues/1935)
+* _(Spring Boot)_ Remove Claude plugin LSP leftovers [#1933](https://github.com/spring-projects/spring-tools/issues/1933)
 * _(Spring Boot)_ Local process JMX connection should not use socket port [#1931](https://github.com/spring-projects/spring-tools/issues/1931)
+* _(Spring Boot)_ OpenRewrite recipe deserialization from json [#1928](https://github.com/spring-projects/spring-tools/issues/1928)
 * _(Spring Boot)_ inner records are identified as beans [#1917](https://github.com/spring-projects/spring-tools/issues/1917)
 * _(Spring Boot)_ version validation doesn't take forth segment into account [#1916](https://github.com/spring-projects/spring-tools/issues/1916)
-* _(Spring Boot)_ [validation] False positive for [JAVA_PUBLIC_BEAN_METHOD] lint warning [#1911](https://github.com/spring-projects/spring-tools/issues/1911)
+* _(Spring Boot)_ NPE in Boot MCP startup [#1912](https://github.com/spring-projects/spring-tools/issues/1912)
+* _(Spring Boot)_ [validation] False positive for [JAVA\_PUBLIC\_BEAN\_METHOD] lint warning [#1911](https://github.com/spring-projects/spring-tools/issues/1911)
+* _(Spring Boot)_ refresh AOT metadata for repository throws error in Eclipse [#1910](https://github.com/spring-projects/spring-tools/issues/1910)
 
 ## 2026-06-10 (5.2.0 RELEASE, incl. language servers version 2.2.0)
 

@@ -2,6 +2,12 @@
 
 #### important highlights
 
+* _(Spring Boot)_ **Accurate Validation:** Fixed false positive lints, inner record bean misdetection, and native query checks.
+* _(Spring Boot)_ **Code Modernization:** Switched from `RestTemplate` to `RestClient` and cleaned up legacy dependencies.
+* _(Spring Boot)_ **Enhanced Stability:** Resolved Boot MCP startup crashes, Eclipse AOT errors, and JMX connection bugs.
+
+#### all fixes and improvements in detail
+
 * _(Spring Boot)_ Update org.json embedded into commons and boot LS [#1941](https://github.com/spring-projects/spring-tools/issues/1941)
 * _(Spring Boot)_ Native query validation does not accept a numbered parameter as `limit` argument [#1938](https://github.com/spring-projects/spring-tools/issues/1938)
 * _(Spring Boot)_ Replace `RestTemplate` with `RestClient` [#1935](https://github.com/spring-projects/spring-tools/issues/1935)

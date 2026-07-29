@@ -167,9 +167,9 @@ GitHub Actions workflows in `.github/workflows/`:
 - **`release-standalone-ls.yml`** — Publishes standalone LS to CDN (`cdn.spring.io/spring-tools`)
 
 **Version numbers:**
-- `headless-services`: `2.3.0-SNAPSHOT` (commons parent POM)
-- `eclipse-language-servers` / `eclipse-distribution`: `5.3.0-SNAPSHOT`
-- VSCode extensions: `2.3.0` (in `package.json`)
+- `headless-services`: `X.Y.Z-SNAPSHOT` (commons parent POM)
+- `eclipse-language-servers` / `eclipse-distribution`: `X.Y.Z-SNAPSHOT`
+- VSCode extensions: `X.Y.Z` (in `package.json`)
 
 ## Contribution Notes
 

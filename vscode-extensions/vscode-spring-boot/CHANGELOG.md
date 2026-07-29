@@ -1,4 +1,4 @@
-## 2026-07-29 (5.3.0 RELEASE, incl. language servers version 2.3.0)
+## 2026-07-29 (5.4.0 RELEASE, incl. language servers version 2.3.0)
 
 #### important highlights
 

@@ -164,7 +164,10 @@ public class DefaultBuildCommandProviderTest {
 	 */
 	private void createBuildWrapper(Path projectDir, String baseName) throws IOException {
 		if (OS.isWindows()) {
-			Path wrapper = projectDir.resolve(baseName + ".cmd");
+			// matches the extension each wrapper generator actually produces:
+			// Maven Wrapper -> mvnw.cmd, Gradle Wrapper -> gradlew.bat
+			String extension = "gradlew".equals(baseName) ? ".bat" : ".cmd";
+			Path wrapper = projectDir.resolve(baseName + extension);
 			Files.writeString(wrapper, "@echo off\r\nexit /b 0\r\n");
 		} else {
 			Path wrapper = projectDir.resolve(baseName);

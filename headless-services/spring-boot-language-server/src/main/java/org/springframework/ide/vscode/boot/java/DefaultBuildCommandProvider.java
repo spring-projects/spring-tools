@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -156,8 +157,8 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 				.redirectErrorStream(true)
 				.start();
 		CompletableFuture<String> output = CompletableFuture.supplyAsync(() -> {
-			try {
-				return new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+			try (InputStream in = process.getInputStream()) {
+				return new String(in.readAllBytes(), StandardCharsets.UTF_8);
 			} catch (IOException e) {
 				return "";
 			}

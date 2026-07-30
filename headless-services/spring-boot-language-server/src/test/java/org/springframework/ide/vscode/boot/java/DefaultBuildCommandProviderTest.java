@@ -85,9 +85,8 @@ public class DefaultBuildCommandProviderTest {
 		// attacker points at a build file that is NOT part of any open project
 		Path evilPom = createBuildFile("evil", "pom.xml");
 
-		ExecutionException ex = assertThrows(ExecutionException.class,
+		assertThrows(SecurityException.class,
 				() -> mavenHandler.handle(params(evilPom, "compile")).get());
-		assertInstanceOf(SecurityException.class, ex.getCause());
 	}
 
 	@Test
@@ -108,9 +107,8 @@ public class DefaultBuildCommandProviderTest {
 		Path gradleBuild = createBuildFile("open-project", "build.gradle");
 		openProject(ProjectBuild.GRADLE_PROJECT_TYPE, gradleBuild);
 
-		ExecutionException ex = assertThrows(ExecutionException.class,
+		assertThrows(SecurityException.class,
 				() -> mavenHandler.handle(params(gradleBuild, "compile")).get());
-		assertInstanceOf(SecurityException.class, ex.getCause());
 	}
 
 	@Test

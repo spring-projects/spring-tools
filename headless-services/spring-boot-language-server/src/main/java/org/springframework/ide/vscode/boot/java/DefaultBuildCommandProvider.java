@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,30 +49,26 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		server.onCommand(CMD_EXEC_MAVEN_GOAL, params -> {
 			String pomPath = extractString(params.getArguments().get(0));
 			String goal = extractString(params.getArguments().get(1));
-			return CompletableFuture.runAsync(() -> {
-				try {
-					Path buildFile = validateOpenProjectBuildFile(pomPath, ProjectBuild.MAVEN_PROJECT_TYPE);
-					String[] goals = goal.trim().split("\\s+");
-					executeMaven(buildFile, goals).get();
-				} catch (Exception e) {
-					throw new CompletionException(e);
-				}
-			});
+			Path buildFile = validateOpenProjectBuildFile(pomPath, ProjectBuild.MAVEN_PROJECT_TYPE);
+			String[] goals = goal.trim().split("\\s+");
+			try {
+				return executeMaven(buildFile, goals);
+			} catch (Exception e) {
+				return CompletableFuture.failedFuture(e);
+			}
 		});
 
 		// Execute Gradle Build
 		server.onCommand(CMD_EXEC_GRADLE_BUILD, params -> {
 			String gradleBuildPath = extractString(params.getArguments().get(0));
 			String command = extractString(params.getArguments().get(1));
-			return CompletableFuture.runAsync(() -> {
-				try {
-					Path buildFile = validateOpenProjectBuildFile(gradleBuildPath, ProjectBuild.GRADLE_PROJECT_TYPE);
-					String[] tasks = command.trim().split("\\s+");
-					executeGradle(buildFile, tasks).get();
-				} catch (Exception e) {
-					throw new CompletionException(e);
-				}
-			});
+			try {
+				Path buildFile = validateOpenProjectBuildFile(gradleBuildPath, ProjectBuild.GRADLE_PROJECT_TYPE);
+				String[] tasks = command.trim().split("\\s+");
+				return executeGradle(buildFile, tasks);
+			} catch (Exception e) {
+				return CompletableFuture.failedFuture(e);
+			}
 		});
 	}
 
@@ -126,39 +123,51 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 		return o instanceof JsonPrimitive ? ((JsonPrimitive) o).getAsString() : o.toString();
 	}
 
-	private CompletableFuture<Void> executeMaven(Path pom, String[] goal) {
+	private CompletableFuture<Void> executeMaven(Path pom, String[] goal) throws IOException {
 		synchronized(MAVEN_LOCK) {
 			String[] cmd = new String[1 + goal.length];
 			Path projectPath = pom.getParent();
 			Path mvnw = projectPath.resolve(OS.isWindows() ? "mvnw.cmd" : "mvnw");
 			cmd[0] = Files.isRegularFile(mvnw) ? mvnw.toFile().toString() : "mvn";
 			System.arraycopy(goal, 0, cmd, 1, goal.length);
-			try {
-				return Runtime.getRuntime().exec(cmd, null, projectPath.toFile()).onExit().thenAccept(process -> {
-					if (process.exitValue() != 0) {
-						throw new CompletionException("Failed to execute Maven goal", new IllegalStateException("Errors running maven command: %s".formatted(String.join(" ", cmd))));
-					}
-				});
-			} catch (IOException e) {
-				throw new CompletionException(e);
-			}
+			return runProcess(cmd, projectPath, "Failed to execute Maven goal");
 		}
 	}
 
-	private CompletableFuture<Void> executeGradle(Path gradleBuildPath, String[] command) {
+	private CompletableFuture<Void> executeGradle(Path gradleBuildPath, String[] command) throws IOException {
 		String[] cmd = new String[1 + command.length];
 		Path projectPath = gradleBuildPath.getParent();
-		Path mvnw = projectPath.resolve(OS.isWindows() ? "gradlew.cmd" : "gradlew");
-		cmd[0] = Files.isRegularFile(mvnw) ? mvnw.toFile().toString() : "gradle";
+		Path gradlew = projectPath.resolve(OS.isWindows() ? "gradlew.bat" : "gradlew");
+		cmd[0] = Files.isRegularFile(gradlew) ? gradlew.toFile().toString() : "gradle";
 		System.arraycopy(command, 0, cmd, 1, command.length);
-		try {
-			return Runtime.getRuntime().exec(cmd, null, projectPath.toFile()).onExit().thenAccept(process -> {
-				if (process.exitValue() != 0) {
-					throw new CompletionException("Failed to execute Gradle build", new IllegalStateException("Errors running gradle command: %s".formatted(String.join(" ", cmd))));
-				}
-			});
-		} catch (IOException e) {
-			throw new CompletionException(e);
-		}
+		return runProcess(cmd, projectPath, "Failed to execute Gradle build");
+	}
+
+	/**
+	 * Starts the given command and continuously drains its combined stdout/stderr on a
+	 * separate thread so the child never blocks on a full pipe buffer. The captured
+	 * output is attached to the resulting exception if the process exits with a
+	 * non-zero status.
+	 */
+	private CompletableFuture<Void> runProcess(String[] cmd, Path workingDir, String failureMessage) throws IOException {
+		Process process = new ProcessBuilder()
+				.command(cmd)
+				.directory(workingDir.toFile())
+				.redirectErrorStream(true)
+				.start();
+		CompletableFuture<String> output = CompletableFuture.supplyAsync(() -> {
+			try {
+				return new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+			} catch (IOException e) {
+				return "";
+			}
+		});
+		return process.onExit().thenCombine(output, (exited, capturedOutput) -> {
+			if (exited.exitValue() != 0) {
+				throw new CompletionException(failureMessage, new IllegalStateException(
+						"Errors running command: %s%n%s".formatted(String.join(" ", cmd), capturedOutput)));
+			}
+			return null;
+		});
 	}
 }

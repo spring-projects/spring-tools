@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.eclipse.lsp4j.Command;
+import org.jspecify.annotations.NonNull;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.java.Jre;
 
@@ -23,7 +24,7 @@ public interface BuildCommandProvider {
 	
 	Command executeGradleBuild(IJavaProject project, String command);
 
-	static Map<String, String> buildEnv(IJavaProject project) {
+	static @NonNull Map<String, String> buildEnv(@NonNull IJavaProject project) {
 		Map<String, String> env = new LinkedHashMap<>();
 		Jre jre = project.getClasspath().getJre();
 		if (jre != null && jre.installationPath() != null) {

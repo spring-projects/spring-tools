@@ -85,9 +85,8 @@ public class DefaultBuildCommandProviderTest {
 		// attacker points at a build file that is NOT part of any open project
 		Path evilPom = createBuildFile("evil", "pom.xml");
 
-		ExecutionException ex = assertThrows(ExecutionException.class,
+		assertThrows(SecurityException.class,
 				() -> mavenHandler.handle(params(evilPom, "compile")).get());
-		assertInstanceOf(SecurityException.class, ex.getCause());
 	}
 
 	@Test
@@ -108,9 +107,8 @@ public class DefaultBuildCommandProviderTest {
 		Path gradleBuild = createBuildFile("open-project", "build.gradle");
 		openProject(ProjectBuild.GRADLE_PROJECT_TYPE, gradleBuild);
 
-		ExecutionException ex = assertThrows(ExecutionException.class,
+		assertThrows(SecurityException.class,
 				() -> mavenHandler.handle(params(gradleBuild, "compile")).get());
-		assertInstanceOf(SecurityException.class, ex.getCause());
 	}
 
 	@Test
@@ -166,7 +164,10 @@ public class DefaultBuildCommandProviderTest {
 	 */
 	private void createBuildWrapper(Path projectDir, String baseName) throws IOException {
 		if (OS.isWindows()) {
-			Path wrapper = projectDir.resolve(baseName + ".cmd");
+			// matches the extension each wrapper generator actually produces:
+			// Maven Wrapper -> mvnw.cmd, Gradle Wrapper -> gradlew.bat
+			String extension = "gradlew".equals(baseName) ? ".bat" : ".cmd";
+			Path wrapper = projectDir.resolve(baseName + extension);
 			Files.writeString(wrapper, "@echo off\r\nexit /b 0\r\n");
 		} else {
 			Path wrapper = projectDir.resolve(baseName);

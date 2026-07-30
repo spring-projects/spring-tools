@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2017 Pivotal Software, Inc.
+ * Copyright (c) 2013, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -519,6 +519,28 @@ public class NewSpringBootWizardModelTest extends TestCase {
 		model.getProjectName().setValue("demo-3");
 		assertEquals("demo-3", model.getProjectName().getValue());
 		assertEquals("demo-3", model.getArtifactId().getValue());
+	}
+
+	public void testProjectNameDefaultsToArtifactIdWhenNameDefaultIsBlank() throws Exception {
+		//When initializr specifies a blank (empty string, not null) default for the 'name'
+		//field, the project name should be seeded from the artifactId's default rather than
+		//starting out blank (which used to cause NameGenerator to produce odd names like
+		//"-1", "-2", ...).
+		NewSpringBootWizardModel model = parseFrom("initializr-blank-name.json");
+
+		assertEquals("demo", model.getArtifactId().getValue());
+		assertEquals("demo", model.getProjectName().getValue());
+		assertEquals(ValidationResult.OK, model.getProjectName().getValidator().getValue());
+	}
+
+	public void testProjectNameDefaultsToArtifactIdWhenNameHasNoDefault() throws Exception {
+		//When initializr doesn't specify a default for the 'name' field at all, the project
+		//name should be seeded from the artifactId's default instead of causing the wizard
+		//model to fail to initialize.
+		NewSpringBootWizardModel model = parseFrom("initializr-no-name-default.json");
+
+		assertEquals("demo", model.getArtifactId().getValue());
+		assertEquals("demo", model.getProjectName().getValue());
 	}
 
 	public void testProjectNameSavedAndRestored() throws Exception {

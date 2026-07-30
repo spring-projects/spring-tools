@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2013, 2023 Pivotal, Inc.
+ * Copyright (c) 2013, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -177,7 +177,7 @@ public class NewSpringBootWizardModel {
 	 * @param toField
 	 */
 	private void syncOneDirectionally(FieldModel<String> fromField, FieldModel<String> toField) {
-		if (fromField!=null && toField!=null) {
+		if (fromField != null && toField != null) {
 			syncOneDirectionally(fromField.getVariable(), toField.getVariable());
 		}
 	}
@@ -186,6 +186,7 @@ public class NewSpringBootWizardModel {
 		ValueListener<String> copyValue = (e, value) -> {
 			toVar.setValue(value);
 		};
+
 		ValueListener<String> enableOrDisableSyncing = (e, value) -> {
 			if (Objects.equal(fromVar.getValue(), toVar.getValue())){
 				fromVar.addListener(copyValue);
@@ -193,6 +194,7 @@ public class NewSpringBootWizardModel {
 				fromVar.removeListener(copyValue);
 			}
 		};
+
 		fromVar.addListener(enableOrDisableSyncing);
 		toVar.addListener(enableOrDisableSyncing);
 	}
@@ -423,10 +425,18 @@ public class NewSpringBootWizardModel {
 		InitializrServiceSpec serviceSpec = parseJsonFrom(new URL(JSON_URL));
 
 		Map<String, String> textInputs = serviceSpec.getTextInputs();
+
 		for (Entry<String, String> e : KNOWN_STRING_INPUTS.entrySet()) {
 			String name = e.getKey();
 			String defaultValue = textInputs.get(name);
-			if (defaultValue!=null) {
+
+			if ((defaultValue == null || defaultValue.isBlank()) && NAME_PROPRTY_ID.equals(name)) {
+				//Initializr didn't specify a default for the 'name' field. Fall back to
+				//whatever default it specified for 'artifactId' instead.
+				defaultValue = textInputs.get(ARTIFACT_PROPERTY_ID);
+			}
+
+			if (defaultValue != null) {
 				fields.add(new StringFieldModel(name, defaultValue).label(e.getValue()));
 			}
 		}

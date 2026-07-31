@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Goto Symbol Tests
+Bundle-SymbolicName: org.springframework.tooling.ls.eclipse.gotosymbol.test
+Bundle-Version: 5.4.0.qualifier
+Fragment-Host: org.springframework.tooling.ls.eclipse.gotosymbol
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.junit

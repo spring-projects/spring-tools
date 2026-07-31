@@ -238,11 +238,16 @@ public class GotoSymbolDialogModel {
 	private FavouritesPreference favourites = null;
 
 	public GotoSymbolDialogModel(String keyBindings, SymbolsProvider... symbolsProviders) {
+		this(keyBindings, 0, symbolsProviders);
+	}
+
+	public GotoSymbolDialogModel(String keyBindings, int initialSymbolsProviderIndex, SymbolsProvider... symbolsProviders) {
 		this.keyBindings = keyBindings;
-		Assert.isLegal(symbolsProviders.length>0);		
+		Assert.isLegal(symbolsProviders.length>0);
+		Assert.isLegal(initialSymbolsProviderIndex >= 0 && initialSymbolsProviderIndex < symbolsProviders.length);
 		this.symbolsProviders = symbolsProviders;
-		this.currentSymbolsProviderIndex = 0;
-		this.currentSymbolsProvider.setValue(symbolsProviders[0]);
+		this.currentSymbolsProviderIndex = initialSymbolsProviderIndex;
+		this.currentSymbolsProvider.setValue(symbolsProviders[initialSymbolsProviderIndex]);
 	}
 	
 	public GotoSymbolDialogModel setFavourites(FavouritesPreference favourites) {
@@ -277,6 +282,10 @@ public class GotoSymbolDialogModel {
 	
 	public SymbolsProvider[] getSymbolsProviders() {
 		return symbolsProviders;
+	}
+
+	public int getCurrentSymbolsProviderIndex() {
+		return currentSymbolsProviderIndex;
 	}
 
 	/**

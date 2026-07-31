@@ -21,8 +21,9 @@ import java.util.regex.Pattern;
 
 public class Classpath {
 	
-	// Pattern copied from https://semver.org/
-	private static final Pattern VERSION_PATTERN = Pattern.compile("^.+-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:(-|\\.)((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\\.jar$");
+	// Pattern adapted from https://semver.org/, with the patch segment made optional
+	// to also match two-part versions (e.g. snakeyaml-2.4.jar).
+	private static final Pattern VERSION_PATTERN = Pattern.compile("^.+-(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:\\.(0|[1-9]\\d*))?(?:(-|\\.)((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?\\.jar$");
 
 	public static final String ENTRY_KIND_SOURCE = "source";
 	public static final String ENTRY_KIND_BINARY = "binary";

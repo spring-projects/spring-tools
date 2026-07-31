@@ -25,6 +25,8 @@ public class ClasspathTests {
         assertEquals("1.2.3.BUILD-SNAPSHOT",  Classpath.getDependencyVersion("spring-boot-1.2.3.BUILD-SNAPSHOT.jar"));
         assertEquals("1.2.3.BUILD-SNAPSHOT",  Classpath.getDependencyVersion("spring-boot-actuator-1.2.3.BUILD-SNAPSHOT.jar"));
         assertNull(Classpath.getDependencyVersion("some-library.jar"));
+        
+        assertEquals("2.4", Classpath.getDependencyVersion("snakeyaml-2.4.jar"));
     }
 
     @Test

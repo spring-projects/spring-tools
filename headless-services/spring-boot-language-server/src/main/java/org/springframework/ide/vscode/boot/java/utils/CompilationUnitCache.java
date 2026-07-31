@@ -294,7 +294,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 					}
 				})
 				.exceptionally(t -> {
-					if (!(t instanceof CancellationException)) {
+					if (!isCancellation(t)) {
 						logger.error("", t);
 					}
 					synchronized(CompilationUnitCache.this) {
@@ -304,6 +304,13 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 				});
 		}
 		return cuFuture;
+	}
+
+	static boolean isCancellation(Throwable t) {
+		while (t instanceof CompletionException && t.getCause() != null) {
+			t = t.getCause();
+		}
+		return t instanceof CancellationException;
 	}
 
 	public static CompilationUnit parse2(char[] source, String docURI, String unitName, IJavaProject project) throws Exception {

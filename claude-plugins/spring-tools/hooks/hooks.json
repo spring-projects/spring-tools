@@ -2,10 +2,53 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Write|StrReplace|Edit|Replace",
+        "matcher": "Write",
         "hooks": [
           {
             "type": "mcp_tool",
+            "if": "Write(**/*.{java,kt,kts,groovy,xml,properties,yml,yaml,gradle})",
+            "server": "plugin:spring-tools:spring-tools-mcp",
+            "tool": "fileChanged",
+            "input": {
+              "filePath": "${tool_input.file_path}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "StrReplace",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "if": "StrReplace(**/*.{java,kt,kts,groovy,xml,properties,yml,yaml,gradle})",
+            "server": "plugin:spring-tools:spring-tools-mcp",
+            "tool": "fileChanged",
+            "input": {
+              "filePath": "${tool_input.file_path}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "if": "Edit(**/*.{java,kt,kts,groovy,xml,properties,yml,yaml,gradle})",
+            "server": "plugin:spring-tools:spring-tools-mcp",
+            "tool": "fileChanged",
+            "input": {
+              "filePath": "${tool_input.file_path}"
+            }
+          }
+        ]
+      },
+      {
+        "matcher": "Replace",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "if": "Replace(**/*.{java,kt,kts,groovy,xml,properties,yml,yaml,gradle})",
             "server": "plugin:spring-tools:spring-tools-mcp",
             "tool": "fileChanged",
             "input": {
@@ -19,6 +62,7 @@
         "hooks": [
           {
             "type": "mcp_tool",
+            "if": "Delete(**/*.{java,kt,kts,groovy,xml,properties,yml,yaml,gradle})",
             "server": "plugin:spring-tools:spring-tools-mcp",
             "tool": "fileDeleted",
             "input": {
@@ -36,15 +80,6 @@
             "server": "plugin:spring-tools:spring-tools-mcp",
             "tool": "refreshWorkspace",
             "input": {}
-          }
-        ]
-      },
-      {
-        "matcher": "Write|StrReplace|Delete|Edit|Replace",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo \"=== PostToolUse Hook Fired ===\" >> hook-debug.log && cat >> hook-debug.log && echo \"\" >> hook-debug.log"
           }
         ]
       }

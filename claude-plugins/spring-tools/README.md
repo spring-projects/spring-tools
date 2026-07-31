@@ -145,7 +145,7 @@ Via MCP tools:
 - **Diagnostics** — Spring-specific warnings and quick fixes (missing annotations, incorrect bean wiring, etc.), including version validation results
 - **Project insight** — bean, component, and request-mapping lookups; resolved project classpath
 
-Via hooks (`hooks/hooks.json`), the plugin also tracks file and project changes on disk to keep its internal index up to date, and exposes a command to refresh the index manually.
+Via hooks (`hooks/hooks.json`), the plugin also tracks file and project changes on disk to keep its internal index up to date, and exposes a command to refresh the index manually. These hooks are gated to Java/Kotlin/Groovy source files and build/config files (`.java`, `.kt`, `.kts`, `.groovy`, `.xml`, `.properties`, `.yml`, `.yaml`, `.gradle`) — edits to unrelated files don't trigger them. The workspace-refresh hook fires only on `git` commands.
 
 ## Plugin structure
 

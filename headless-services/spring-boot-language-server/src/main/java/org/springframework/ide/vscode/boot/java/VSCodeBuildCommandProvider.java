@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,7 +23,11 @@ public class VSCodeBuildCommandProvider implements BuildCommandProvider {
 		Command cmd = new Command();
 		cmd.setCommand("maven.goal.custom");
 		cmd.setTitle("Execute Maven Goal");
-		cmd.setArguments(List.of(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), goal));
+		cmd.setArguments(List.of(
+				Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(),
+				goal,
+				BuildCommandProvider.buildEnv(project)
+		));
 		return cmd;
 	}
 
@@ -32,7 +36,11 @@ public class VSCodeBuildCommandProvider implements BuildCommandProvider {
 		Command cmd = new Command();
 		cmd.setCommand("gradle.runBuild");
 		cmd.setTitle("Execute Gradle Build");
-		cmd.setArguments(List.of(Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(), command));
+		cmd.setArguments(List.of(
+				Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(),
+				command,
+				BuildCommandProvider.buildEnv(project)
+		));
 		return cmd;
 	}
 

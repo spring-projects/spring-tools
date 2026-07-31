@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -22,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.junit.jupiter.api.BeforeEach;
@@ -96,9 +94,8 @@ public class DefaultBuildCommandProviderTest {
 
 		Path evilBuild = createBuildFile("evil", "build.gradle");
 
-		ExecutionException ex = assertThrows(ExecutionException.class,
+		assertThrows(SecurityException.class,
 				() -> gradleHandler.handle(params(evilBuild, "build")).get());
-		assertInstanceOf(SecurityException.class, ex.getCause());
 	}
 
 	@Test

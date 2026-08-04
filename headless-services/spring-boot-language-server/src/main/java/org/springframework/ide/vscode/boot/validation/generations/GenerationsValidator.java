@@ -96,10 +96,11 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 				}
 			}
 			Diagnostic d = createDiagnostic(VersionValidationProblemType.UNSUPPORTED_OSS_VERSION, message.toString());
-			if (validCommercialSupport) {
-				d.setData(List.of(getCommercialSupportCodeAction()));
-			}
 			if (d != null) {
+				if (validCommercialSupport) {
+					d.setData(List.of(getCommercialSupportCodeAction()));
+				}
+
 				b.add(d);
 			}
 		}

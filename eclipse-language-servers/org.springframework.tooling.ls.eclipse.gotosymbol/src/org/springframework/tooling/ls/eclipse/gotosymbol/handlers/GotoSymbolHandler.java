@@ -46,6 +46,7 @@ public class GotoSymbolHandler extends AbstractHandler {
 		}
 	}
 	private static GotoSymbolDialogModel currentDialog = null;
+	private static int lastSymbolsProviderIndex = 0;
 
 	public GotoSymbolHandler() {
 		debug("Creating GotoSymbolHandler");
@@ -63,16 +64,17 @@ public class GotoSymbolHandler extends AbstractHandler {
 				final Shell shell = HandlerUtil.getActiveShell(event);
 				final ITextEditor textEditor = (ITextEditor) part;
 				
-				GotoSymbolDialogModel model = new GotoSymbolDialogModel(getKeybindings(event), InWorkspaceSymbolsProvider.createFor(event), InProjectSymbolsProvider.createFor(event), InFileSymbolsProvider.createFor(textEditor))
+				GotoSymbolDialogModel model = new GotoSymbolDialogModel(getKeybindings(event), lastSymbolsProviderIndex, InWorkspaceSymbolsProvider.createFor(event), InProjectSymbolsProvider.createFor(event), InFileSymbolsProvider.createFor(textEditor))
 				.setOkHandler(GotoSymbolDialogModel.OPEN_IN_EDITOR_OK_HANDLER);
 				GotoSymbolDialog dialog = new GotoSymbolDialog(shell, textEditor, model, /*alignRight*/ false);
 				currentDialog = model;
-				dialog.open();
-				debug("GotoSymbolDialog opened");
 				dialog.getShell().addDisposeListener(de -> {
 					debug("GotoSymbolDialog closed!");
+					lastSymbolsProviderIndex = model.getCurrentSymbolsProviderIndex();
 					currentDialog = null;
 				});
+				dialog.open();
+				debug("GotoSymbolDialog opened");
 			}
 			debug("<<<GotoSymbolHandler.execute");
 		}

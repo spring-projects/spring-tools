@@ -8,9 +8,11 @@ The all-new Spring Tools for Visual Studio Code, Eclipse, and Theia. Learn more 
 
 Depending on your development environment, you can choose between:
 
+- __Visual Studio Code:__ We provide extensions for Visual Studio Code if you prefer this lightweight editor for your development.
+- __Cursor:__ We provide extensions for Cursor if you prefer this lightweight editor for agentic development.
+- __Claude Code:__ The Spring Tools plugin for Claude Code brings more Spring smartness to Claude.
 - __Spring Tools for Eclipse distribution:__ a ready-to-use distribution of the latest Eclipse Desktop IDE, prepackaged with Spring Tools and a few additional third-party extensions. Download, unpack, and start.
 - __Spring Tools for Eclipse extensions:__ you can install the Spring Tools for Eclipse into an existing Eclipse Desktop IDE installation and use it from there.
-- __Visual Studio Code:__ We provide extensions for Visual Studio Code if you prefer this lightweight editor for your development.
 - __Eclipse Theia:__ You can install the same extensions into Theia-based environments like gitpod.
 
 For all those choices, you can find detailed installation instructions from the user guide:

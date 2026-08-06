@@ -2,6 +2,7 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ version validations for supported commercial versions activated on wrong setting [#1959](https://github.com/spring-projects/spring-tools/issues/1959)
 * _(Spring Boot)_ exception thrown around internal compilation unit cache [#1777](https://github.com/spring-projects/spring-tools/issues/1777)
 
 ## 2026-07-29 (5.4.0 RELEASE, incl. language servers version 2.3.0)

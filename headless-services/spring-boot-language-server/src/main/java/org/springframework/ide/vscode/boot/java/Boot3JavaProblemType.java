@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java;
 
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.ERROR;
+import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.WARNING;
 
 import java.util.List;
 
@@ -28,7 +29,10 @@ public enum Boot3JavaProblemType implements ProblemType {
 	
 	JAVA_TYPE_NOT_SUPPORTED(ERROR, "Type no supported as of Spring Boot 3", "Type not supported as of Spring Boot 3"),
 	FACTORIES_KEY_NOT_SUPPORTED(ERROR, "Spring factories key not supported", "Spring factories key not supported"),
-	MODULITH_TYPE_REF_VIOLATION(ERROR, "Modulith restricted type reference", "Modulith restricted type reference");
+	MODULITH_TYPE_REF_VIOLATION(ERROR, "Modulith restricted type reference", "Modulith restricted type reference"),
+	MODULITH_APPLICATION_MODULE_LISTENER(WARNING,
+			"Prefer @ApplicationModuleListener over @Async + @Transactional + @TransactionalEventListener",
+			"Use @ApplicationModuleListener");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

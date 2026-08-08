@@ -79,14 +79,18 @@ public class CompositeASTVisitor extends ASTVisitor {
 	@Override
 	public void endVisit(MethodDeclaration node) {
 		for (ASTVisitor astVisitor : visitors) {
-			astVisitor.endVisit(node);
+			if (astVisitor != null) {
+				astVisitor.endVisit(node);
+			}
 		}
 	}
 
 	@Override
 	public void endVisit(CompilationUnit node) {
 		for (ASTVisitor astVisitor : visitors) {
-			astVisitor.endVisit(node);
+			if (astVisitor != null) {
+				astVisitor.endVisit(node);
+			}
 		}
 	}
 
@@ -149,7 +153,9 @@ public class CompositeASTVisitor extends ASTVisitor {
 		}
 		boolean result = false;
 		for (ASTVisitor visitor : visitors) {
-			result |= visitFn.apply(visitor);
+			if (visitor != null) {
+				result |= visitFn.apply(visitor);
+			}
 		}
 		return result;
 	}

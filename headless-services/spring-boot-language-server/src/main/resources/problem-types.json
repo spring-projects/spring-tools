@@ -150,6 +150,12 @@
         "label": "Modulith restricted type reference",
         "description": "Modulith restricted type reference",
         "defaultSeverity": "ERROR"
+      },
+      {
+        "code": "MODULITH_APPLICATION_MODULE_LISTENER",
+        "label": "Combine into '@ApplicationModuleListener'",
+        "description": "Use '@ApplicationModuleListener' instead of '@Async'/'@Transactional'/'@TransactionalEventListener'",
+        "defaultSeverity": "INFO"
       }
     ]
   },

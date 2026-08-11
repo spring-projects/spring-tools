@@ -248,6 +248,13 @@ public class Annotations {
 			"lombok.AllArgsConstructor"
 	);
 
+	// Modulith / Events
+
+	public static final String ASYNC = "org.springframework.scheduling.annotation.Async";
+	public static final String TRANSACTIONAL = "org.springframework.transaction.annotation.Transactional";
+	public static final String TRANSACTIONAL_EVENT_LISTENER = "org.springframework.transaction.event.TransactionalEventListener";
+	public static final String APPLICATION_MODULE_LISTENER = "org.springframework.modulith.events.ApplicationModuleListener";
+
 	// Spring AI
 
 	public static final String SPRING_AI_TOOL = "org.springframework.ai.tool.annotation.Tool";

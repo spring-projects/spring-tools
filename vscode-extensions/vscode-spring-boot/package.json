@@ -800,6 +800,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot3.MODULITH_APPLICATION_MODULE_LISTENER": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Use '@ApplicationModuleListener' instead of '@Async'/'@Transactional'/'@TransactionalEventListener'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
 import org.springframework.ide.vscode.boot.java.data.QueryMethodCodeActionProvider;
+import org.springframework.ide.vscode.boot.java.data.jpa.queries.ConvertQueryToTextBlockCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcileProblemCodeActionProvider;
@@ -49,6 +50,11 @@ public class RewriteConfig {
 	@ConditionalOnBean(JdtRefactorings.class)
 	@Bean QueryMethodCodeActionProvider queryMethodCodeActionProvider(DataRepositoryAotMetadataService dataRepoAotService, JdtRefactorings jdtRefactorings, BootJavaConfig config) {
 		return new QueryMethodCodeActionProvider(dataRepoAotService, jdtRefactorings, config);
+	}
+
+	@ConditionalOnBean(JdtRefactorings.class)
+	@Bean ConvertQueryToTextBlockCodeActionProvider convertQueryToTextBlockCodeActionProvider(JdtRefactorings jdtRefactorings) {
+		return new ConvertQueryToTextBlockCodeActionProvider(jdtRefactorings);
 	}
 
 }

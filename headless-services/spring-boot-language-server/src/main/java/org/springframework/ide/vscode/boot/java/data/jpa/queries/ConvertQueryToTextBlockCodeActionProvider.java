@@ -49,7 +49,7 @@ import org.springframework.ide.vscode.parser.postgresql.PostgreSqlQueryFormatter
  */
 public class ConvertQueryToTextBlockCodeActionProvider implements JdtAstCodeActionProvider {
 
-	private static final String TITLE = "Convert query to text block";
+	public static final String TITLE = "Convert query to text block";
 
 	private final JdtRefactorings refactorings;
 

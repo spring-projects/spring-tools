@@ -44,8 +44,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Import(IndexerTestConf.class)
 public class ConvertQueryToTextBlockCodeActionProviderTest {
 
-	private static final String TITLE = "Convert to text block";
-
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
@@ -65,7 +63,7 @@ public class ConvertQueryToTextBlockCodeActionProviderTest {
 	}
 
 	private static List<CodeAction> withTitle(List<CodeAction> actions) {
-		return actions.stream().filter(a -> TITLE.equals(a.getLabel())).collect(Collectors.toList());
+		return actions.stream().filter(a -> ConvertQueryToTextBlockCodeActionProvider.TITLE.equals(a.getLabel())).collect(Collectors.toList());
 	}
 
 	@Test

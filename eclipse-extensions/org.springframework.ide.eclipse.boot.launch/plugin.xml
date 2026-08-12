@@ -88,6 +88,7 @@
           name="Spring Boot App"
           delegate="org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate"
           modes="run,debug"
+          allowPrototypes="true"
           sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
           sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
     </launchConfigurationType>
@@ -96,6 +97,7 @@
           name="Spring Boot DevTools Client"
           delegate="org.springframework.ide.eclipse.boot.launch.devtools.BootDevtoolsClientLaunchConfigurationDelegate"
           modes="run,debug"
+          allowPrototypes="true"
           sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
           sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
     </launchConfigurationType>

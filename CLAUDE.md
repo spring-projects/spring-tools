@@ -155,6 +155,11 @@ IDE Client (VSCode/Eclipse) ←—LSP over stdio/socket—→ Java Language Serv
 ### Code Transformations (OpenRewrite)
 
 Quick fixes that transform Java source code are implemented as OpenRewrite recipes in `headless-services/commons/commons-rewrite`. Tests live in `commons-rewrite-test`.
+The overall goal is to move from OpenRewrite recipes to JDT-based refactoring implementation, so new recipes or refactorings should be implemented using JDT.
+
+## Coding Guidelines
+
+- whenever you change a file, make sure the current year is mentioned in the copyright statement at the top of each source file.
 
 ## CI/CD Workflows
 
@@ -176,4 +181,4 @@ GitHub Actions workflows in `.github/workflows/`:
 - **License**: Eclipse Public License v1.0 — add EPL header to all new Java files (see `java-copyright-header.txt`)
 - **DCO**: Commits must include `Signed-off-by` trailer (no CLA required)
 - **HTTPS enforcement**: Run `./nohttp.sh` to verify all URLs in source use HTTPS
-- **Commit messages**: Reference issues as `Fixes gh-XXXX`; add `@author` tag to new Java classes
+- **Commit messages**: Reference issues as `GH-XXXX`; add `@author` tag to new Java classes

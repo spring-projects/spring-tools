@@ -19,6 +19,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.TextEdit;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,13 @@ import org.junit.jupiter.api.Test;
  * Unit tests for {@link ApplicationModuleListenerRefactoring}.
  */
 class ApplicationModuleListenerRefactoringTest {
+
+	private static Map<String, String> defaultFormatterOptions() {
+		Map<String, String> options = JavaCore.getOptions();
+		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_CHAR, JavaCore.TAB);
+		options.put(DefaultCodeFormatterConstants.FORMATTER_TAB_SIZE, "4");
+		return options;
+	}
 
 	private static CompilationUnit parseSource(String source) {
 		ASTParser parser = ASTParser.newParser(AST.JLS25);
@@ -46,7 +54,7 @@ class ApplicationModuleListenerRefactoringTest {
 		ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
 		new ApplicationModuleListenerRefactoring(offsets).apply(rewrite, cu);
 		Document doc = new Document(source);
-		TextEdit edit = rewrite.rewriteAST(doc, JavaCore.getOptions());
+		TextEdit edit = rewrite.rewriteAST(doc, defaultFormatterOptions());
 		edit.apply(doc);
 		return doc.get();
 	}
@@ -84,6 +92,96 @@ class ApplicationModuleListenerRefactoringTest {
 
 				class OrderEventListener {
 
+					@ApplicationModuleListener
+					void on(OrderCompleted event) {
+					}
+
+				}
+				""", result);
+	}
+
+	@Test
+	void lineCommentIsNotRemoved() throws Exception {
+		String source = """
+				package com.example;
+
+				import org.springframework.scheduling.annotation.Async;
+				import org.springframework.transaction.annotation.Transactional;
+				import org.springframework.transaction.event.TransactionalEventListener;
+
+				class OrderEventListener {
+
+					/**
+					 * method comment
+					 */
+					// line comment
+					@Async
+					@Transactional
+					@TransactionalEventListener
+					void on(OrderCompleted event) {
+					}
+
+				}
+				""";
+
+		String result = applyRefactoring(source, offsetOf(source, "void on"));
+
+		assertEquals("""
+				package com.example;
+
+				import org.springframework.modulith.events.ApplicationModuleListener;
+
+				class OrderEventListener {
+
+					/**
+					 * method comment
+					 */
+					// line comment
+					@ApplicationModuleListener
+					void on(OrderCompleted event) {
+					}
+
+				}
+				""", result);
+	}
+
+	@Test
+	void lineCommentIsWrongIndentationDoesNotCauseTrouble() throws Exception {
+		String source = """
+				package com.example;
+
+				import org.springframework.scheduling.annotation.Async;
+				import org.springframework.transaction.annotation.Transactional;
+				import org.springframework.transaction.event.TransactionalEventListener;
+
+				class OrderEventListener {
+
+					/**
+					 * method comment
+					 */
+				// line comment
+					@Async
+					@Transactional
+					@TransactionalEventListener
+					void on(OrderCompleted event) {
+					}
+
+				}
+				""";
+
+		String result = applyRefactoring(source, offsetOf(source, "void on"));
+
+		assertEquals("""
+				package com.example;
+
+				import org.springframework.modulith.events.ApplicationModuleListener;
+
+				class OrderEventListener {
+
+					/**
+					 * method comment
+					 */
+				// line comment
 					@ApplicationModuleListener
 					void on(OrderCompleted event) {
 					}

@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,6 +27,7 @@ import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.dom.rewrite.TargetSourceRangeComputer;
 
 /**
  * A JDT-based refactoring that replaces a method's {@code @Async}, {@code @Transactional}
@@ -66,14 +68,28 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 	@Override
 	public void apply(ASTRewrite rewrite, CompilationUnit cu) {
 		boolean anyConverted = false;
+		Set<ASTNode> exactRangeNodes = new HashSet<>();
 		for (int offset : methodOffsets) {
 			MethodDeclaration method = findMethodAtOffset(cu, offset);
-			if (method != null && convertMethod(rewrite, cu, method)) {
+			if (method != null && convertMethod(rewrite, cu, method, exactRangeNodes)) {
 				anyConverted = true;
 			}
 		}
 
 		if (anyConverted) {
+			// the three merged annotations are direct children of a rewritten list, so JDT's
+			// default target source range would extend onto any unclaimed leading comment
+			// (e.g. a line comment sitting between the Javadoc and the annotations) and delete
+			// it along with the annotation it is replacing/removing
+			rewrite.setTargetSourceRangeComputer(new TargetSourceRangeComputer() {
+				@Override
+				public SourceRange computeSourceRange(ASTNode node) {
+					return exactRangeNodes.contains(node)
+							? new SourceRange(node.getStartPosition(), node.getLength())
+							: super.computeSourceRange(node);
+				}
+			});
+
 			AST ast = cu.getAST();
 			JdtRefactorUtils.addImport(rewrite, ast, cu,
 					new ClassType(JdtRefactorUtils.extractPackageName(APPLICATION_MODULE_LISTENER_FQN),
@@ -82,7 +98,8 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 		}
 	}
 
-	private boolean convertMethod(ASTRewrite rewrite, CompilationUnit cu, MethodDeclaration method) {
+	private boolean convertMethod(ASTRewrite rewrite, CompilationUnit cu, MethodDeclaration method,
+			Set<ASTNode> exactRangeNodes) {
 		AST ast = cu.getAST();
 
 		Annotation asyncAnnotation = findAnnotation(method, ASYNC_FQN);
@@ -120,6 +137,7 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 
 		List<Annotation> merged = List.of(asyncAnnotation, transactionalAnnotation, eventListenerAnnotation);
 		Annotation earliest = merged.stream().min(Comparator.comparingInt(ASTNode::getStartPosition)).orElseThrow();
+		exactRangeNodes.addAll(merged);
 
 		ListRewrite modifiersRewrite = rewrite.getListRewrite(method, MethodDeclaration.MODIFIERS2_PROPERTY);
 		modifiersRewrite.replace(earliest, newAnnotation, null);

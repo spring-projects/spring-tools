@@ -115,6 +115,12 @@
         "label": "`final` `@Autowired` field",
         "description": "`@Autowired` field should not be `final`",
         "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "EXTRACT_REQUEST_MAPPING_PARENT_PATH",
+        "label": "Extract common parent path into class-level `@RequestMapping`",
+        "description": "Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping`",
+        "defaultSeverity": "INFO"
       }
     ]
   },

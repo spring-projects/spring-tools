@@ -747,6 +747,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot2.EXTRACT_REQUEST_MAPPING_PARENT_PATH": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping`",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

@@ -19,6 +19,7 @@ import org.springframework.ide.vscode.boot.java.jdt.refactoring.AddAnnotationRef
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.ApplicationModuleListenerRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.ChangeMethodVisibilityRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.ConvertQueryToTextBlockRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.ExtractRequestMappingParentPathRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.RemoveAnnotationRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.TypeSafePropertyReferenceRefactoring;
@@ -127,6 +128,7 @@ public final class IndexGsonTypeFactories {
 				.registerSubtype(AddAnnotationRefactoring.class, AddAnnotationRefactoring.class.getName())
 				.registerSubtype(TypeSafePropertyReferenceRefactoring.class, TypeSafePropertyReferenceRefactoring.class.getName())
 				.registerSubtype(ConvertQueryToTextBlockRefactoring.class, ConvertQueryToTextBlockRefactoring.class.getName())
-				.registerSubtype(ApplicationModuleListenerRefactoring.class, ApplicationModuleListenerRefactoring.class.getName());
+				.registerSubtype(ApplicationModuleListenerRefactoring.class, ApplicationModuleListenerRefactoring.class.getName())
+				.registerSubtype(ExtractRequestMappingParentPathRefactoring.class, ExtractRequestMappingParentPathRefactoring.class.getName());
 	}
 }

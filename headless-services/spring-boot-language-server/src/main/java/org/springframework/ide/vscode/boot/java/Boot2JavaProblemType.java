@@ -38,7 +38,8 @@ public enum Boot2JavaProblemType implements ProblemType {
 	VALUE_CLASSPATH_RESOURCE_TYPE(WARNING, "Type is not compatible with classpath resource injection", "Invalid type for classpath resource in `@Value`"),
 	WEB_CONFIGURER_CONFIGURATION(WARNING, "Class implementing a web configurer interface should be annotated with '@Configuration'", "Missing '@Configuration' on web configurer"),
 	MISSING_VALIDATED_ANNOTATION(WARNING, "Component class using bean validation annotations should be annotated with '@Validated'", "Missing '@Validated' on component"),
-	JAVA_FINAL_AUTOWIRED_FIELD(WARNING, "`@Autowired` field should not be `final`", "`final` `@Autowired` field");
+	JAVA_FINAL_AUTOWIRED_FIELD(WARNING, "`@Autowired` field should not be `final`", "`final` `@Autowired` field"),
+	EXTRACT_REQUEST_MAPPING_PARENT_PATH(INFO, "Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping`", "Extract common parent path into class-level `@RequestMapping`");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

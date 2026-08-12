@@ -50,6 +50,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.Boot3NotSupportedTyp
 import org.springframework.ide.vscode.boot.java.reconcilers.ClasspathResourceTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.EntityIdForRepoReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ClientRefersToConfigReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.ExtractRequestMappingParentPathReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.FinalAutowiredFieldReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.HttpSecurityLambdaDslReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ImplicitWebAnnotationNamesReconciler;
@@ -121,7 +122,11 @@ public class JdtConfig {
 	@Bean PathInControllerAnnotationReconciler pathInControllerAnnotationReconciler(SimpleLanguageServer server) {
 		return new PathInControllerAnnotationReconciler(server.getQuickfixRegistry());
 	}
-	
+
+	@Bean ExtractRequestMappingParentPathReconciler extractRequestMappingParentPathReconciler(SimpleLanguageServer server) {
+		return new ExtractRequestMappingParentPathReconciler(server.getQuickfixRegistry());
+	}
+
 	@Bean WebApiVersioningReconciler webApiVersioningReconciler(SpringMetamodelIndex springIndex, SimpleLanguageServer server) {
 		return new WebApiVersioningReconciler(springIndex, server.getQuickfixRegistry());
 	}

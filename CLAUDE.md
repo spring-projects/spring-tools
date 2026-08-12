@@ -116,7 +116,7 @@ The language server can be started standalone (port 5007) and connected to from 
 ```bash
 cd headless-services
 ./mvnw clean install -DskipTests -pl spring-boot-language-server -am
-java -Dstandalone-startup=true -jar spring-boot-language-server/target/*-exec.jar
+java -Dlanguageserver.standalone=true -jar spring-boot-language-server/target/*-exec.jar
 ```
 
 **Connect VSCode extension:**

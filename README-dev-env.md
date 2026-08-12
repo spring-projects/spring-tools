@@ -5,7 +5,7 @@
 Import the headless-services modules into your workspace as existing Maven projects.
 Startup the Boot Language Server with:
 Main Class: `org.springframework.ide.vscode.boot.app.BootLanguageServerBootApp` (or a corresponding class for other language servers)
-Vmargs: `-Dstandalone-startup=true`
+Vmargs: `-Dlanguageserver.standalone=true`
 This starts up the language server and it listens on port 5007
 Use STS or a dedicated instance of VSCode to launch `org.springframework.ide.vscode.boot.app.BootLanguageServerBootApp` in run or debug mode (or another Language Server app)
 

@@ -44,7 +44,7 @@ To debug the language server, open `lib/Main.ts` and edit to set the
 `F5`... When it needs a language server it will not launch a process but instead
 try to connect to an already running server on port `5007`. It is up to you
 to ensure a server is running on that port by launching it beforehand 
-with a commandline arguments: `-Dstandalone-startup=true`.
+with a commandline arguments: `-Dlanguageserver.standalone=true`.
 
 ## Packaging as a vscode extension
 

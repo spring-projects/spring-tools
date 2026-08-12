@@ -77,11 +77,11 @@
  
  <extension point="org.eclipse.debug.core.launchConfigurationTypes">
     <launchConfigurationType
-        name="Spring Boot CLI Script"
-        delegate="org.springframework.ide.eclipse.boot.launch.cli.BootGroovyScriptLaunchConfigurationDelegate"
-        category="org.eclipse.ui.externaltools"
-        modes="run"
-        id="org.springsource.ide.eclipse.boot.groovy.script.launch">
+          name="Spring Boot CLI Script"
+          delegate="org.springframework.ide.eclipse.boot.launch.cli.BootGroovyScriptLaunchConfigurationDelegate"
+          category="org.eclipse.ui.externaltools"
+          modes="run"
+          id="org.springsource.ide.eclipse.boot.groovy.script.launch">
     </launchConfigurationType>
     <launchConfigurationType
           id="org.springframework.ide.eclipse.boot.launch"

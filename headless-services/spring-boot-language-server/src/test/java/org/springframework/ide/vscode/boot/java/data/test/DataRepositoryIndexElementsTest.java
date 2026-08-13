@@ -35,6 +35,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -73,7 +74,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepository.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         Bean repositoryElement = children.get(0);
         assertEquals("customerRepository", repositoryElement.getName());
         assertEquals(1, children.size());
@@ -93,7 +94,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithAdditionalRepositoryAnnotation.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         assertEquals(1, children.size());
         
         Bean repositoryElement = children.get(0);
@@ -109,7 +110,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepository.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
@@ -124,7 +125,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithTwoParamsMethod.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
@@ -139,7 +140,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithQuery.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
@@ -155,7 +156,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithQueryTextBlock.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();
@@ -171,7 +172,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryParentInterface.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        assertTrue(document == null || SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document)).size() == 0);
+        assertTrue(document == null || SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document)).size() == 0);
     }
 
     @Test
@@ -180,7 +181,7 @@ public class DataRepositoryIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/CustomerRepositoryWithParentInterfaces.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         Bean repositoryElement = children.get(0);
         
         List<SpringIndexElement> queryMethods = repositoryElement.getChildren();

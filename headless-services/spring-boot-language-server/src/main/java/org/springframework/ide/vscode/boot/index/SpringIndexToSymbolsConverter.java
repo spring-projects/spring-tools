@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,6 +22,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 public class SpringIndexToSymbolsConverter {
@@ -79,7 +80,7 @@ public class SpringIndexToSymbolsConverter {
 	}
 	
 	private static List<WorkspaceSymbol> createWorkspaceSymbols(DocumentElement document, Predicate<DocumentSymbol> symbolPredicate) {
-		return SpringMetamodelIndex.getNodesOfType(SymbolElement.class, List.of(document)).stream()
+		return SpringIndexElementUtils.getNodesOfType(SymbolElement.class, List.of(document)).stream()
 			.map(symbolElement -> symbolElement.getDocumentSymbol())
 			.filter(symbolPredicate)
 			.map(documentSymbol -> createWorkspaceSymbol(documentSymbol, document.getDocURI()))

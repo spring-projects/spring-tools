@@ -36,6 +36,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.BeanRegistrarElement;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -78,7 +79,7 @@ public class SpringIndexerBeanRegistrarTest {
         assertFalse(Arrays.stream(beansOfDoc).anyMatch(bean -> bean.getName().equals("myBeanRegistrar")));
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<BeanRegistrarElement> docChildren = SpringMetamodelIndex.getNodesOfType(BeanRegistrarElement.class, List.of(document));
+        List<BeanRegistrarElement> docChildren = SpringIndexElementUtils.getNodesOfType(BeanRegistrarElement.class, List.of(document));
         assertEquals(1, docChildren.size());
         
         List<SpringIndexElement> children = docChildren.get(0).getChildren();

@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.commons.protocol.spring;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,26 +19,42 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ProjectElement implements SpringIndexElement {
 
 	private String projectName;
-	
+
 	private Map<String, DocumentElement> documents;
 	private List<SpringIndexElement> otherElements;
+
+	private transient volatile List<Bean> cachedBeans;
 
 	public ProjectElement(String projectName) {
 		this.projectName = projectName;
 		this.documents = new ConcurrentHashMap<>();
 		this.otherElements = new ArrayList<>();
 	}
-	
+
 	public String getProjectName() {
 		return projectName;
 	}
 
 	public void removeDocument(String docURI) {
 		this.documents.remove(docURI);
+		this.cachedBeans = null;
 	}
 
 	public DocumentElement getDocument(String docURI) {
 		return this.documents.get(docURI);
+	}
+
+	/**
+	 * Flat list of all {@link Bean} nodes anywhere in this project's element tree,
+	 * lazily computed and cached until the project's children change again.
+	 */
+	public List<Bean> getBeans() {
+		List<Bean> beans = this.cachedBeans;
+		if (beans == null) {
+			beans = Collections.unmodifiableList(SpringIndexElementUtils.getNodesOfType(Bean.class, getChildren()));
+			this.cachedBeans = beans;
+		}
+		return beans;
 	}
 
 	@Override
@@ -46,7 +63,7 @@ public class ProjectElement implements SpringIndexElement {
 
 		result.addAll(documents.values());
 		result.addAll(otherElements);
-		
+
 		return result;
 	}
 
@@ -58,6 +75,7 @@ public class ProjectElement implements SpringIndexElement {
 		else {
 			otherElements.add(child);
 		}
+		this.cachedBeans = null;
 	}
 
 	@Override
@@ -68,6 +86,7 @@ public class ProjectElement implements SpringIndexElement {
 		else {
 			otherElements.remove(doc);
 		}
+		this.cachedBeans = null;
 	}
 
 }

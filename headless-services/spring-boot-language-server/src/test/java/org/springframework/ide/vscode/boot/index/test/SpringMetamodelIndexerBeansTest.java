@@ -46,6 +46,7 @@ import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
@@ -574,7 +575,7 @@ public class SpringMetamodelIndexerBeansTest {
 		String docUri = directory.toPath().resolve("src/main/java/org/test/BeanMethodsWithoutConfiguration.java").toUri().toString();
 		
 		DocumentElement document = springIndex.getDocument(docUri);
-        List<BeanMethodContainerElement> docChildren = SpringMetamodelIndex.getNodesOfType(BeanMethodContainerElement.class, List.of(document));
+        List<BeanMethodContainerElement> docChildren = SpringIndexElementUtils.getNodesOfType(BeanMethodContainerElement.class, List.of(document));
 		assertEquals(1, docChildren.size());
 		
 		BeanMethodContainerElement container = docChildren.get(0);

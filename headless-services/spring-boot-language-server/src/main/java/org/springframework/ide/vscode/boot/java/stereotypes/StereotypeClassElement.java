@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 
 public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 	
@@ -47,7 +48,7 @@ public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 	}
 
 	public List<StereotypeMethodElement> getMethods() {
-		return SpringMetamodelIndex.getNodesOfType(StereotypeMethodElement.class, List.of(this));
+		return SpringIndexElementUtils.getNodesOfType(StereotypeMethodElement.class, List.of(this));
 	}
 
 }

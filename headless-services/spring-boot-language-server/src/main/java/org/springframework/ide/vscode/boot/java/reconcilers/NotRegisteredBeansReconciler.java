@@ -41,6 +41,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Reconcile
 import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElement;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
 import org.springframework.ide.vscode.commons.rewrite.java.DefineMethod;
 import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
@@ -123,7 +124,7 @@ public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 						if (aotProcessors != null && aotProcessors.size() > 0) {
 
 							List<SpringIndexElement> createdIndexElements = context.getCreatedIndexElements();
-							List<Bean> createdBeanElements = SpringMetamodelIndex.getNodesOfType(Bean.class, createdIndexElements);
+							List<Bean> createdBeanElements = SpringIndexElementUtils.getNodesOfType(Bean.class, createdIndexElements);
 							Set<String> beanTypes = createdBeanElements.stream()
 									.filter(bean -> context.getDocURI().equals(bean.getLocation().getUri()))
 									.map(bean -> bean.getType())

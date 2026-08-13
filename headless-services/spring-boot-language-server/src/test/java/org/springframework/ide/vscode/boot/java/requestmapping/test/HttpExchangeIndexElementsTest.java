@@ -35,6 +35,7 @@ import org.springframework.ide.vscode.boot.java.utils.test.SpringIndexerTest;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -85,7 +86,7 @@ public class HttpExchangeIndexElementsTest {
         assertEquals(0, beans.length);
 
         DocumentElement document = springIndex.getDocument(docUri);
-        List<HttpExchangeIndexElement> mappingElements = SpringMetamodelIndex.getNodesOfType(HttpExchangeIndexElement.class, List.of(document));
+        List<HttpExchangeIndexElement> mappingElements = SpringIndexElementUtils.getNodesOfType(HttpExchangeIndexElement.class, List.of(document));
 
         assertEquals(1, mappingElements.size());
         HttpExchangeIndexElement mappingElement = mappingElements.get(0);
@@ -113,7 +114,7 @@ public class HttpExchangeIndexElementsTest {
         assertEquals(0, beans.length);
 
         DocumentElement document = springIndex.getDocument(docUri);
-        List<HttpExchangeIndexElement> mappingElements = SpringMetamodelIndex.getNodesOfType(HttpExchangeIndexElement.class, List.of(document));
+        List<HttpExchangeIndexElement> mappingElements = SpringIndexElementUtils.getNodesOfType(HttpExchangeIndexElement.class, List.of(document));
 
         assertEquals(1, mappingElements.size());
         HttpExchangeIndexElement mappingElement = mappingElements.get(0);

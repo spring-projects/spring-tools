@@ -42,6 +42,7 @@ import org.springframework.ide.vscode.boot.java.utils.test.SpringIndexerTest;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -131,7 +132,7 @@ public class WebVersionSupportTest {
     	Bean webConfigBean = webConfigBeanViaName[0];
     	assertTrue(java.util.Arrays.stream(allWebMvcBeans).anyMatch(b -> b == webConfigBean));
     	
-    	List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean));
+    	List<WebConfigIndexElement> webConfigElements = SpringIndexElementUtils.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean));
     	assertEquals(1, webConfigElements.size());
     	
     	WebConfigIndexElement webConfigElement = webConfigElements.get(0);
@@ -164,7 +165,7 @@ public class WebVersionSupportTest {
 		Bean[] webConfigBeans = springIndex.getBeansWithName(PROJECT_NAME, "webConfig");
 		assertEquals(1, webConfigBeans.length);
 
-		List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBeans[0]));
+		List<WebConfigIndexElement> webConfigElements = SpringIndexElementUtils.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBeans[0]));
 		assertEquals(1, webConfigElements.size());
 
 		WebConfigIndexElement webConfigElement = webConfigElements.get(0);
@@ -184,7 +185,7 @@ public class WebVersionSupportTest {
 		Bean[] webConfigBeans = springIndex.getBeansWithName(PROJECT_NAME, "webConfigWithChainedPredicate");
 		assertEquals(1, webConfigBeans.length);
 
-		List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBeans[0]));
+		List<WebConfigIndexElement> webConfigElements = SpringIndexElementUtils.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBeans[0]));
 		assertEquals(1, webConfigElements.size());
 
 		WebConfigIndexElement webConfigElement = webConfigElements.get(0);
@@ -224,7 +225,7 @@ public class WebVersionSupportTest {
     	
     	assertSame(webConfigBean[0], webConfigBeanViaName[0]);
     	
-    	List<WebConfigIndexElement> webConfigElements = SpringMetamodelIndex.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean[0]));
+    	List<WebConfigIndexElement> webConfigElements = SpringIndexElementUtils.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBean[0]));
     	assertEquals(1, webConfigElements.size());
     	
     	WebConfigIndexElement webConfigElement = webConfigElements.get(0);

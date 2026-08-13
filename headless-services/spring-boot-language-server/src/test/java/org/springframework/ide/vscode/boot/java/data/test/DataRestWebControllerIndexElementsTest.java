@@ -31,6 +31,7 @@ import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingInd
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -69,12 +70,12 @@ public class DataRestWebControllerIndexElementsTest {
         String docUri = directory.toPath().resolve("src/main/java/org/test/web/DataRestController.java").toUri().toString();
         
         DocumentElement document = springIndex.getDocument(docUri);
-        List<Bean> children = SpringMetamodelIndex.getNodesOfType(Bean.class, List.of(document));
+        List<Bean> children = SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document));
         Bean dataRestControllerElement = children.get(0);
         assertEquals("dataRestController", dataRestControllerElement.getName());
         assertEquals(1, children.size());
         
-        List<RequestMappingIndexElement> mappingNodes = SpringMetamodelIndex.getNodesOfType(RequestMappingIndexElement.class, List.of(dataRestControllerElement));
+        List<RequestMappingIndexElement> mappingNodes = SpringIndexElementUtils.getNodesOfType(RequestMappingIndexElement.class, List.of(dataRestControllerElement));
         assertEquals(1, mappingNodes.size());
         
         assertEquals("/something", mappingNodes.get(0).getPath());

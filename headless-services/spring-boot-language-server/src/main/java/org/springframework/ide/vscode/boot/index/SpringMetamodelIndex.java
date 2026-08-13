@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.index;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,12 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Predicate;
 
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 
 public class SpringMetamodelIndex {
 	
@@ -45,8 +44,7 @@ public class SpringMetamodelIndex {
 			}
 			
 			project.addChild(document);
-		}	
-		
+		}
 	}
 
 	public void removeElements(String projectName, String docURI) {
@@ -77,23 +75,26 @@ public class SpringMetamodelIndex {
 
 	public <T extends SpringIndexElement> List<T> getNodesOfType(Class<T> type) {
 		List<SpringIndexElement> rootNodes = new ArrayList<SpringIndexElement>(this.projectRootElements.values());
-		return getNodesOfType(type, rootNodes);
+		return SpringIndexElementUtils.getNodesOfType(type, rootNodes);
 	}
 
 	public <T extends SpringIndexElement> List<T> getNodesOfType(String projectName, Class<T> type) {
 		ProjectElement project = this.projectRootElements.get(projectName);
-		return project == null ? List.of() : getNodesOfType(type, List.of(project));
+		return project == null ? List.of() : SpringIndexElementUtils.getNodesOfType(type, List.of(project));
 	}
 	
 	public Bean[] getBeans() {
-		List<SpringIndexElement> rootNodes = new ArrayList<SpringIndexElement>(this.projectRootElements.values());
-		return getNodesOfType(Bean.class, rootNodes).toArray(Bean[]::new);
+		List<Bean> result = new ArrayList<>();
+		for (ProjectElement project : this.projectRootElements.values()) {
+			result.addAll(project.getBeans());
+		}
+		return result.toArray(Bean[]::new);
 	}
 
 	public Bean[] getBeansOfProject(String projectName) {
 		ProjectElement project = this.projectRootElements.get(projectName);
 		if (project != null) {
-			return getNodesOfType(Bean.class, List.of(project)).toArray(Bean[]::new);
+			return project.getBeans().toArray(Bean[]::new);
 		}
 		else {
 			return new Bean[0];
@@ -103,7 +104,7 @@ public class SpringMetamodelIndex {
 	public Bean[] getBeansOfDocument(String docURI) {
 		DocumentElement document = getDocument(docURI);
 		if (document != null) {
-			return getNodesOfType(Bean.class, List.of(document)).toArray(Bean[]::new);
+			return SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document)).toArray(Bean[]::new);
 		}
 		else {
 			return new Bean[0];
@@ -113,7 +114,7 @@ public class SpringMetamodelIndex {
 	public Bean[] getBeansOfDocument(String docURI, String name) {
 		DocumentElement document = getDocument(docURI);
 		if (document != null) {
-			return getNodesOfType(Bean.class, List.of(document), bean -> bean.getName().equals(name)).toArray(Bean[]::new);
+			return SpringIndexElementUtils.getNodesOfType(Bean.class, List.of(document), bean -> bean.getName().equals(name)).toArray(Bean[]::new);
 		}
 		else {
 			return new Bean[0];
@@ -123,7 +124,7 @@ public class SpringMetamodelIndex {
 	public Bean[] getBeansWithName(String projectName, String name) {
 		ProjectElement project = this.projectRootElements.get(projectName);
 		if (project != null) {
-			return getNodesOfType(Bean.class, List.of(project), bean -> bean.getName().equals(name)).toArray(Bean[]::new);
+			return project.getBeans().stream().filter(bean -> bean.getName().equals(name)).toArray(Bean[]::new);
 		}
 		else {
 			return new Bean[0];
@@ -133,7 +134,7 @@ public class SpringMetamodelIndex {
 	public Bean[] getBeansWithType(String projectName, String type) {
 		ProjectElement project = this.projectRootElements.get(projectName);
 		if (project != null) {
-			return getNodesOfType(Bean.class, List.of(project), bean -> bean.getType().equals(type)).toArray(Bean[]::new);
+			return project.getBeans().stream().filter(bean -> bean.getType().equals(type)).toArray(Bean[]::new);
 		}
 		else {
 			return new Bean[0];
@@ -155,36 +156,13 @@ public class SpringMetamodelIndex {
 	public Bean[] getMatchingBeans(String projectName, String matchType) {
 		ProjectElement project = this.projectRootElements.get(projectName);
 		if (project != null) {
-			return getNodesOfType(Bean.class, List.of(project), bean -> bean.isTypeCompatibleWith(matchType)).toArray(Bean[]::new);
+			return project.getBeans().stream().filter(bean -> bean.isTypeCompatibleWith(matchType)).toArray(Bean[]::new);
 		}
 		else {
 			return new Bean[0];
 		}
 	}
 
-	public static <T extends SpringIndexElement> List<T> getNodesOfType(Class<T> type, Collection<SpringIndexElement> rootNodes) {
-		return getNodesOfType(type, rootNodes, element -> true);
-	}
-
-	public static <T extends SpringIndexElement> List<T> getNodesOfType(Class<T> type, Collection<SpringIndexElement> rootNodes, Predicate<T> predicate) {
-		List<T> result = new ArrayList<>();
-		
-		ArrayDeque<SpringIndexElement> elementsToVisit = new ArrayDeque<>();
-		elementsToVisit.addAll(rootNodes);
-		
-		while (!elementsToVisit.isEmpty()) {
-			SpringIndexElement element = elementsToVisit.pop();
-
-			if (type.isInstance(element) && predicate.test(type.cast(element))) {
-				result.add(type.cast(element));
-			}
-			
-			elementsToVisit.addAll(element.getChildren());
-		}
-		
-		return result;
-	}
-	
 	//
 	// for test purposes
 	//

@@ -75,26 +75,25 @@ public class WebConfigJavaIndexer {
 		if (webConfigType == null) {
 			return;
 		}
-		
-		if (!context.isFullAst()) { // needs full method bodies to continue
-			throw new RequiredCompleteAstException();
-		}
-		
+
 		MethodDeclaration configureVersioningMethod = findMethod(type, webConfigType, CONFIGURE_API_VERSIONING_METHOD);
 		MethodDeclaration configurePathMethod = findMethod(type, webConfigType, Set.of(CONFIGURE_MVC_PATH_MATCHING_METHOD, CONFIGURE_FLUX_PATH_MATCHING_METHOD));
 
-		if (configureVersioningMethod != null || configurePathMethod != null) {
+		if (configureVersioningMethod == null && configurePathMethod == null) {
+			// no summary to compute -- surface the web config class right away, without needing a full AST
+			beanDefinition.addChild(new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG).buildFor(beanDefinition.getLocation()));
+		}
+		else {
+			if (!context.isFullAst()) { // needs full method bodies to compute the summary
+				throw new RequiredCompleteAstException();
+			}
+
 			Builder builder = new WebConfigIndexElement.Builder(ConfigType.WEB_CONFIG);
-			
 			if (configureVersioningMethod != null) scanMethodBody(builder, configureVersioningMethod.getBody(), context, doc);
 			if (configurePathMethod != null) scanMethodBody(builder, configurePathMethod.getBody(), context, doc);
-		
-			WebConfigIndexElement webConfigIndexElement = builder.buildFor(beanDefinition.getLocation());
-			if (webConfigIndexElement != null) {
-				beanDefinition.addChild(webConfigIndexElement);
-			}
+
+			beanDefinition.addChild(builder.buildFor(beanDefinition.getLocation()));
 		}
-		
 	}
 
 	public static ITypeBinding getWebConfig(TypeDeclaration type) {

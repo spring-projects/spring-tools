@@ -170,6 +170,20 @@ public class WebConfigCodeLensProviderTest {
 				"@RestController should receive the MVC path prefix and versioning from WebConfig");
 	}
 
+	@Test
+	void codeLensShowsForWebConfigWithoutSummary() throws Exception {
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/org/test/versions/SomePlainController.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
+
+		List<CodeLens> cls = editor.getCodeLenses("SomePlainController", 1);
+		// EmptyWebConfig has no configurePathMatch/configureApiVersioning overrides, so it has
+		// no summary to report, but it's still a web config class, so the navigation shortcut
+		// to it should show up regardless
+		assertTrue(contains(cls, "Web Config"),
+				"a web config class without a summary should still get a bare navigation shortcut");
+	}
+
 	private boolean contains(List<CodeLens> cls, String title) {
 		return cls.stream().filter(cl -> cl.getCommand().getTitle().equals(title)).findAny().isPresent();
 	}

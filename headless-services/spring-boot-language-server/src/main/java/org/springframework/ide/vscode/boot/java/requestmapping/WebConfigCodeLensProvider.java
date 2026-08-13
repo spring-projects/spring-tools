@@ -150,7 +150,9 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 		boolean hasSupportedVersions = webConfig.getSupportedVersions() != null
 				&& !webConfig.getSupportedVersions().isEmpty();
 
-		if (!pathPrefixApplies && !hasVersioning && !hasSupportedVersions) {
+		// once a web config class is detected, still offer the navigation shortcut even if
+		// its summary hasn't been computed (or has nothing to report) yet
+		if (!webConfig.isEmpty() && !pathPrefixApplies && !hasVersioning && !hasSupportedVersions) {
 			return null;
 		}
 

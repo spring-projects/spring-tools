@@ -65,15 +65,14 @@ public class SpringMetamodelIndex {
 	}
 
 	public DocumentElement getDocument(String docURI) {
-		List<SpringIndexElement> rootNodes = new ArrayList<SpringIndexElement>(this.projectRootElements.values());
-		List<DocumentElement> documents = getNodesOfType(DocumentElement.class, rootNodes, document -> document.getDocURI().equals(docURI));
+		for (ProjectElement project : this.projectRootElements.values()) {
+			DocumentElement document = project.getDocument(docURI);
+			if (document != null) {
+				return document;
+			}
+		}
 
-		if (documents.size() == 1) {
-			return documents.get(0);
-		}
-		else {
-			return null;
-		}
+		return null;
 	}
 
 	public <T extends SpringIndexElement> List<T> getNodesOfType(Class<T> type) {

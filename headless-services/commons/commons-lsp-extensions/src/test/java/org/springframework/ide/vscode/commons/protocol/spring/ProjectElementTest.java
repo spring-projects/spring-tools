@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,8 @@ package org.springframework.ide.vscode.commons.protocol.spring;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -125,5 +127,38 @@ class ProjectElementTest {
 		assertFalse(children.contains(doc1));
 		assertTrue(children.contains(doc2));
 	}
-	
+
+	@Test
+	void testGetDocument() {
+		ProjectElement project = new ProjectElement("projectName");
+
+		var doc1 = new DocumentElement("docUri1");
+		var doc2 = new DocumentElement("docUri2");
+
+		project.addChild(doc1);
+		project.addChild(doc2);
+
+		assertSame(doc1, project.getDocument("docUri1"));
+		assertSame(doc2, project.getDocument("docUri2"));
+	}
+
+	@Test
+	void testGetDocumentNotFound() {
+		ProjectElement project = new ProjectElement("projectName");
+
+		project.addChild(new DocumentElement("docUri1"));
+
+		assertNull(project.getDocument("docDoesNotExist"));
+	}
+
+	@Test
+	void testGetDocumentAfterRemoval() {
+		ProjectElement project = new ProjectElement("projectName");
+
+		project.addChild(new DocumentElement("docUri1"));
+		project.removeDocument("docUri1");
+
+		assertNull(project.getDocument("docUri1"));
+	}
+
 }

@@ -124,7 +124,7 @@ public class WebVersionSupportTest {
     @Test
     void testWebMvcConfigIndexElement() throws Exception {
     	Bean[] allWebMvcBeans = springIndex.getMatchingBeans(PROJECT_NAME, "org.springframework.web.servlet.config.annotation.WebMvcConfigurer");
-    	assertEquals(2, allWebMvcBeans.length);
+    	assertEquals(3, allWebMvcBeans.length);
     	
     	Bean[] webConfigBeanViaName = springIndex.getBeansWithName(PROJECT_NAME, "webConfig");
     	assertEquals(1, webConfigBeanViaName.length);

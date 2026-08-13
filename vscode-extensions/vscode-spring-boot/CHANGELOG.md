@@ -3,6 +3,9 @@
 #### all fixes and improvements in detail
 
 * _(Spring Boot)_ version validations for supported commercial versions activated on wrong setting [#1959](https://github.com/spring-projects/spring-tools/issues/1959)
+* _(Spring Boot)_ extract parent path in controllers [#1924](https://github.com/spring-projects/spring-tools/issues/1924)
+* _(Spring Boot)_ add action to convert sql statements in query annotations from string literals into text blocks [#1923](https://github.com/spring-projects/spring-tools/issues/1923)
+* _(Spring Boot)_ add validation + quickfix to adopt `@ApplicationModuleListener` [#1800](https://github.com/spring-projects/spring-tools/issues/1800)
 * _(Spring Boot)_ exception thrown around internal compilation unit cache [#1777](https://github.com/spring-projects/spring-tools/issues/1777)
 
 ## 2026-07-29 (5.4.0 RELEASE, incl. language servers version 2.3.0)

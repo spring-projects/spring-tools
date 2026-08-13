@@ -13,6 +13,10 @@ package org.springframework.ide.vscode.boot.java.requestmapping;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -26,6 +30,7 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
+import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -33,6 +38,7 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.handlers.CodeLensProvider;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -42,14 +48,51 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 
 //	private static final Logger log = LoggerFactory.getLogger(WebConfigCodeLensProvider.class);
 
+	private static final long REFRESH_DEBOUNCE_MILLIS = 500;
+
 	private final SpringMetamodelIndex springIndex;
 	private final BootJavaConfig config;
 	private final JavaProjectFinder projectFinder;
 
-	public WebConfigCodeLensProvider(JavaProjectFinder projectFinder, SpringMetamodelIndex springIndex, BootJavaConfig config) {
+	private final ScheduledExecutorService refreshScheduler = Executors.newSingleThreadScheduledExecutor(
+			r -> new Thread(r, "WebConfigCodeLensProvider-refresh"));
+	private ScheduledFuture<?> pendingRefresh;
+
+	public WebConfigCodeLensProvider(JavaProjectFinder projectFinder, SpringMetamodelIndex springIndex, BootJavaConfig config,
+			SimpleLanguageServer server, SpringSymbolIndex springSymbolIndex) {
 		this.projectFinder = projectFinder;
 		this.springIndex = springIndex;
 		this.config = config;
+
+		listenForIndexUpdates(server, springSymbolIndex);
+		server.onShutdown(refreshScheduler::shutdownNow);
+	}
+
+	/**
+	 * Web config data (path prefixes, API versioning strategies) is derived from the
+	 * Spring index, which gets updated asynchronously (e.g. after a quick fix creates or
+	 * modifies a web config class, or a properties file). Once that indexing finishes, ask
+	 * the client to refresh code lenses so open controllers pick up the new data.
+	 * <p>
+	 * Indexing can complete many times in short succession (e.g. saving several files in
+	 * a row, or a burst of file-watcher events from a branch switch), so the actual refresh
+	 * request is debounced to collapse a burst of updates into a single refresh.
+	 */
+	private void listenForIndexUpdates(SimpleLanguageServer server, SpringSymbolIndex springSymbolIndex) {
+		springSymbolIndex.onUpdate(v -> {
+			if (config.isEnabledCodeLensForWebConfigs() && server.getWorkspaceService().supportsCodeLensRefresh()) {
+				scheduleCodeLensRefresh(server);
+			}
+		});
+	}
+
+	private synchronized void scheduleCodeLensRefresh(SimpleLanguageServer server) {
+		// Cancel the previous, still pending request to debounce the refresh.
+		if (pendingRefresh != null) {
+			pendingRefresh.cancel(false);
+		}
+		pendingRefresh = refreshScheduler.schedule(() -> server.getClient().refreshCodeLenses(),
+				REFRESH_DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS);
 	}
 
 	@Override

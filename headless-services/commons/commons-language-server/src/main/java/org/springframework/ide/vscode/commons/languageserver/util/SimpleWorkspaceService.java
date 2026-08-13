@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2022 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.eclipse.lsp4j.CodeLensWorkspaceCapabilities;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams;
@@ -200,6 +201,16 @@ public class SimpleWorkspaceService implements WorkspaceService {
 			SemanticTokensWorkspaceCapabilities semanticTokensCapability = clientCapabilities.getSemanticTokens();
 			if (semanticTokensCapability != null) {
 				return semanticTokensCapability.getRefreshSupport() != null && semanticTokensCapability.getRefreshSupport().booleanValue();
+			}
+		}
+		return false;
+	}
+
+	public boolean supportsCodeLensRefresh() {
+		if (clientCapabilities != null) {
+			CodeLensWorkspaceCapabilities codeLensCapability = clientCapabilities.getCodeLens();
+			if (codeLensCapability != null) {
+				return codeLensCapability.getRefreshSupport() != null && codeLensCapability.getRefreshSupport().booleanValue();
 			}
 		}
 		return false;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -177,7 +177,7 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 		spelSemanticTokens = appContext.getBean(SpelSemanticTokens.class);
 		dataRepositoryAotMetadataService = appContext.getBean(DataRepositoryAotMetadataService.class);
 		codeLensHandler = createCodeLensEngine(springIndex, projectFinder, server, spelSemanticTokens, dataRepositoryAotMetadataService,
-				appContext.getBean(JdtRefactorings.class), config);
+				appContext.getBean(JdtRefactorings.class), config, springSymbolIndex);
 
 		highlightsEngine = createDocumentHighlightEngine(appContext);
 		documents.onDocumentHighlight(highlightsEngine);
@@ -313,14 +313,14 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 
 	protected BootJavaCodeLensEngine createCodeLensEngine(SpringMetamodelIndex springIndex, JavaProjectFinder projectFinder, SimpleLanguageServer server,
 			SpelSemanticTokens spelSemanticTokens, DataRepositoryAotMetadataService repositoryAotMetadataService, JdtRefactorings jdtRefactorings,
-			BootJavaConfig config) {
+			BootJavaConfig config, SpringSymbolIndex springSymbolIndex) {
 
 		Collection<CodeLensProvider> codeLensProvider = new ArrayList<>();
 		codeLensProvider.add(new WebfluxHandlerCodeLensProvider(springIndex));
 		codeLensProvider.add(new CopilotCodeLensProvider(projectFinder, server, spelSemanticTokens));
 		codeLensProvider.add(new RouterFunctionCodeLensProvider());
 		codeLensProvider.add(new DataRepositoryAotMetadataCodeLensProvider(server, projectFinder, repositoryAotMetadataService, jdtRefactorings, config));
-		codeLensProvider.add(new WebConfigCodeLensProvider(projectFinder, springIndex, config));
+		codeLensProvider.add(new WebConfigCodeLensProvider(projectFinder, springIndex, config, server, springSymbolIndex));
 
 		return new BootJavaCodeLensEngine(this, codeLensProvider);
 	}

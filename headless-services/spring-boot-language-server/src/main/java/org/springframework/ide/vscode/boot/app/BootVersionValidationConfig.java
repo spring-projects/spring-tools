@@ -72,7 +72,7 @@ public class BootVersionValidationConfig {
 			JavaProjectFinder projectFinder, BootJavaConfig config, ProjectObserver projectObserver,
 			ProjectVersionDiagnosticProvider diagnosticProvider, MavenMetadataProvider mavenMetadataProvider) {
 		return new ProjectReconcileScheduler(server,
-				new BootVersionValidationEngine(server, config, projectObserver, projectFinder, diagnosticProvider),
+				new BootVersionValidationEngine(server.getTextDocumentService(), config, projectObserver, projectFinder, diagnosticProvider),
 				projectFinder) {
 
 			@Override

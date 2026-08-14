@@ -29,6 +29,7 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.mcp.ProjectLookup;
 import org.springframework.ide.vscode.boot.mcp.RequestMappingMcpTools;
 import org.springframework.ide.vscode.boot.mcp.RequestMappingMcpTools.RequestMappingInfo;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -70,7 +71,7 @@ public class RequestMappingMcpToolsTest {
 		initProject.get(5, TimeUnit.SECONDS);
 		
 		// Create the MCP tools instance
-		requestMappingMcpTools = new RequestMappingMcpTools(projectFinder, springIndex);
+		requestMappingMcpTools = new RequestMappingMcpTools(new ProjectLookup(projectFinder), springIndex);
 	}
 
 	@Test

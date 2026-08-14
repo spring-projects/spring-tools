@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.mcp;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -23,7 +22,6 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebEndpointIndexElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.stereotype.Component;
 
@@ -37,11 +35,11 @@ public class RequestMappingMcpTools {
 
 	private static final Logger logger = LoggerFactory.getLogger(RequestMappingMcpTools.class);
 	
-	private final JavaProjectFinder projectFinder;
+	private final ProjectLookup projects;
 	private final SpringMetamodelIndex springIndex;
 
-	public RequestMappingMcpTools(JavaProjectFinder projectFinder, SpringMetamodelIndex springIndex) {
-		this.projectFinder = projectFinder;
+	public RequestMappingMcpTools(ProjectLookup projects, SpringMetamodelIndex springIndex) {
+		this.projects = projects;
 		this.springIndex = springIndex;
 	}
 
@@ -74,7 +72,7 @@ public class RequestMappingMcpTools {
 		
 		logger.info("get request mappings for project: {}", projectName);
 		
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		
 		// Get all WebEndpointIndexElement objects directly from the index
 		List<WebEndpointIndexElement> webEndpoints = springIndex.getNodesOfType(
@@ -162,17 +160,6 @@ public class RequestMappingMcpTools {
 		return null;
 	}
 
-	private IJavaProject getProject(String projectName) throws Exception {
-		Optional<? extends IJavaProject> found = projectFinder.all().stream()
-				.filter(project -> project.getElementName().toLowerCase().equals(projectName.toLowerCase()))
-				.findFirst();
-
-		if (found.isEmpty()) {
-			throw new Exception("project with name " + projectName + " not found");
-		} else {
-			return found.get();
-		}
-	}
 
 }
 

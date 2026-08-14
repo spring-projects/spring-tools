@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.mcp;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.jmolecules.stereotype.api.Stereotypes;
@@ -25,7 +24,6 @@ import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotype
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,13 +32,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class StereotypeInformation {
 
-	private final JavaProjectFinder projectFinder;
+	private final ProjectLookup projects;
 	private final SpringMetamodelIndex springIndex;
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
 
-	public StereotypeInformation(JavaProjectFinder projectFinder, SpringMetamodelIndex springIndex,
+	public StereotypeInformation(ProjectLookup projects, SpringMetamodelIndex springIndex,
 			StereotypeCatalogRegistry stereotypeCatalogRegistry) {
-		this.projectFinder = projectFinder;
+		this.projects = projects;
 		this.springIndex = springIndex;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 	}
@@ -52,7 +50,7 @@ public class StereotypeInformation {
 			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
 			throws Exception {
 
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		AbstractStereotypeCatalog catalog = this.stereotypeCatalogRegistry.getCatalogOf(project);
 
 		return catalog.getDefinitions();
@@ -66,7 +64,7 @@ public class StereotypeInformation {
 			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
 			throws Exception {
 
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 		var cachedIndex = new CachedSpringMetamodelIndex(springIndex);
@@ -90,7 +88,7 @@ public class StereotypeInformation {
 			@ToolParam(description = "the stereotype name to filter by (e.g., 'Controller', 'Service', 'Repository', 'Entity')") String stereotypeName)
 			throws Exception {
 
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 		var cachedIndex = new CachedSpringMetamodelIndex(springIndex);
@@ -125,16 +123,5 @@ public class StereotypeInformation {
 	//
 	//
 
-	private IJavaProject getProject(String projectName) throws Exception {
-		Optional<? extends IJavaProject> found = projectFinder.all().stream()
-				.filter(project -> project.getElementName().toLowerCase().equals(projectName.toLowerCase()))
-				.findFirst();
-
-		if (found.isEmpty()) {
-			throw new Exception("project with name " + projectName + " not found");
-		} else {
-			return found.get();
-		}
-	}
 
 }

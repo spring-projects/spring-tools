@@ -28,7 +28,6 @@ import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedS
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,12 +40,12 @@ public class SpringVersionsAndGenerations {
 
 	private final SpringProjectsProvider provider;
 	private final MavenMetadataProvider mavenMetadataProvider;
-	private final JavaProjectFinder projectFinder;
+	private final ProjectLookup projects;
 
-	public SpringVersionsAndGenerations(SpringProjectsProvider provider, MavenMetadataProvider mavenMetadataProvider, JavaProjectFinder projectFinder) {
+	public SpringVersionsAndGenerations(SpringProjectsProvider provider, MavenMetadataProvider mavenMetadataProvider, ProjectLookup projects) {
 		this.provider = provider;
 		this.mavenMetadataProvider = mavenMetadataProvider;
-		this.projectFinder = projectFinder;
+		this.projects = projects;
 	}
 
 	public record ReleaseInformation(String projectName, String version, String endOfOssSupport, String endOfCommercialSupport) {}
@@ -114,9 +113,7 @@ public class SpringVersionsAndGenerations {
 			String projectName) {
 
 		try {
-			Optional<? extends IJavaProject> found = projectFinder.all().stream()
-					.filter(p -> p.getElementName().equalsIgnoreCase(projectName))
-					.findFirst();
+			Optional<? extends IJavaProject> found = projects.find(projectName);
 
 			if (found.isEmpty()) {
 				log.warn("project not found for Maven version lookup: {}", projectName);

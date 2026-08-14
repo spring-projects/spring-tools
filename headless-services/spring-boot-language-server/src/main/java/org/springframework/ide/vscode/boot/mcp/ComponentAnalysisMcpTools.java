@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.mcp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -22,7 +21,6 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.stereotype.Component;
@@ -37,11 +35,11 @@ public class ComponentAnalysisMcpTools {
 
 	private static final Logger logger = LoggerFactory.getLogger(ComponentAnalysisMcpTools.class);
 	
-	private final JavaProjectFinder projectFinder;
+	private final ProjectLookup projects;
 	private final SpringMetamodelIndex springIndex;
 
-	public ComponentAnalysisMcpTools(JavaProjectFinder projectFinder, SpringMetamodelIndex springIndex) {
-		this.projectFinder = projectFinder;
+	public ComponentAnalysisMcpTools(ProjectLookup projects, SpringMetamodelIndex springIndex) {
+		this.projects = projects;
 		this.springIndex = springIndex;
 	}
 
@@ -95,7 +93,7 @@ public class ComponentAnalysisMcpTools {
 		
 		logger.info("get bean usage info for: {} in project: {}", beanName, projectName);
 		
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		
 		// Find all beans with this name (there may be multiple)
 		Bean[] beans = springIndex.getBeansWithName(project.getElementName(), beanName);
@@ -138,7 +136,7 @@ public class ComponentAnalysisMcpTools {
 		
 		logger.info("find beans by type: {} for project: {}", typeName, projectName);
 		
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		
 		// Find beans with matching type
 		Bean[] beans = springIndex.getBeansWithType(project.getElementName(), typeName);
@@ -208,17 +206,6 @@ public class ComponentAnalysisMcpTools {
 		return injectionPoints;
 	}
 
-	private IJavaProject getProject(String projectName) throws Exception {
-		Optional<? extends IJavaProject> found = projectFinder.all().stream()
-				.filter(project -> project.getElementName().toLowerCase().equals(projectName.toLowerCase()))
-				.findFirst();
-
-		if (found.isEmpty()) {
-			throw new Exception("project with name " + projectName + " not found");
-		} else {
-			return found.get();
-		}
-	}
 
 }
 

@@ -31,6 +31,7 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.mcp.ComponentAnalysisMcpTools;
 import org.springframework.ide.vscode.boot.mcp.ComponentAnalysisMcpTools.BeanUsageInfo;
 import org.springframework.ide.vscode.boot.mcp.ComponentAnalysisMcpTools.ComponentInfo;
+import org.springframework.ide.vscode.boot.mcp.ProjectLookup;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -70,7 +71,7 @@ public class ComponentAnalysisMcpToolsTest {
 		initProject.get(5, TimeUnit.SECONDS);
 		
 		// Create the MCP tools instance
-		componentAnalysisMcpTools = new ComponentAnalysisMcpTools(projectFinder, springIndex);
+		componentAnalysisMcpTools = new ComponentAnalysisMcpTools(new ProjectLookup(projectFinder), springIndex);
 	}
 
 	@Test

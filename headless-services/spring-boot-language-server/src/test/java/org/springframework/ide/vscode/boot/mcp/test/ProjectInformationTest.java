@@ -34,6 +34,7 @@ import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.mcp.ProjectInformation;
 import org.springframework.ide.vscode.boot.mcp.ProjectInformation.Library;
 import org.springframework.ide.vscode.boot.mcp.ProjectInformation.Project;
+import org.springframework.ide.vscode.boot.mcp.ProjectLookup;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -73,7 +74,7 @@ public class ProjectInformationTest {
 		initProject.get(5, TimeUnit.SECONDS);
 
 		// Create the MCP tools instance
-		projectInformation = new ProjectInformation(projectFinder);
+		projectInformation = new ProjectInformation(new ProjectLookup(projectFinder));
 	}
 
 	@Test

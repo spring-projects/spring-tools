@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.mcp;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.lsp4j.DiagnosticSeverity;
@@ -26,7 +25,6 @@ import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider;
 import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider.DiagnosticResult;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,13 +38,13 @@ public class DiagnosticsMcpTools {
 
 	private static final Logger logger = LoggerFactory.getLogger(DiagnosticsMcpTools.class);
 
-	private final JavaProjectFinder projectFinder;
+	private final ProjectLookup projects;
 	private final SpringSymbolIndex symbolIndex;
 	private final ProjectVersionDiagnosticProvider versionDiagnosticProvider;
 
-	public DiagnosticsMcpTools(JavaProjectFinder projectFinder, SpringSymbolIndex symbolIndex,
+	public DiagnosticsMcpTools(ProjectLookup projects, SpringSymbolIndex symbolIndex,
 			ProjectVersionDiagnosticProvider versionDiagnosticProvider) {
-		this.projectFinder = projectFinder;
+		this.projects = projects;
 		this.symbolIndex = symbolIndex;
 		this.versionDiagnosticProvider = versionDiagnosticProvider;
 	}
@@ -91,7 +89,7 @@ public class DiagnosticsMcpTools {
 
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 
 		List<ProjectDiagnostic> result = new ArrayList<>();
 		addIndexerDiagnostics(project, result);
@@ -183,17 +181,6 @@ public class DiagnosticsMcpTools {
 			return String.valueOf(code.getRight());
 		}
 		return null;
-	}
-
-	private IJavaProject getProject(String projectName) throws Exception {
-		Optional<? extends IJavaProject> found = projectFinder.all().stream()
-				.filter(project -> project.getElementName().equalsIgnoreCase(projectName))
-				.findFirst();
-
-		if (found.isEmpty()) {
-			throw new Exception("project with name " + projectName + " not found");
-		}
-		return found.get();
 	}
 
 }

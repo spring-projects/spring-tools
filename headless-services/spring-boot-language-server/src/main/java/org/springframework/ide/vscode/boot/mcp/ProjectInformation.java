@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.mcp;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -20,7 +19,6 @@ import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 import org.springframework.stereotype.Component;
@@ -31,10 +29,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProjectInformation {
 
-	private final JavaProjectFinder projectFinder;
+	private final ProjectLookup projects;
 
-	public ProjectInformation(JavaProjectFinder projectFinder) {
-		this.projectFinder = projectFinder;;
+	public ProjectInformation(ProjectLookup projects) {
+		this.projects = projects;
 	}
 
 
@@ -43,7 +41,7 @@ public class ProjectInformation {
 			Use each Project.projectName when calling other tools; those tools match this name case-insensitively.
 			""")
 	public List<Project> getProjectList() throws Exception {
-		return projectFinder.all()
+		return projects.all()
 				.stream()
 				.map(project -> new Project(project.getElementName(), SpringProjectUtil.isBootProject(project), project.getClasspath().getJre() == null ? null : project.getClasspath().getJre().version()))
 				.toList();
@@ -58,7 +56,7 @@ public class ProjectInformation {
 	public Version getSpringBootVersion(
 			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 
 		Version version = SpringProjectUtil.getSpringBootVersion(project);
 		if (version == null) {
@@ -75,7 +73,7 @@ public class ProjectInformation {
 	public String getJavaVersion(
 			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		IClasspath classpath = project.getClasspath();
 		
 		return classpath.getJre().version();
@@ -89,7 +87,7 @@ public class ProjectInformation {
 	public List<Library> getResolvedProjectClasspath(
 			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
-		IJavaProject project = getProject(projectName);
+		IJavaProject project = projects.get(projectName);
 		
 		IClasspath classpath = project.getClasspath();
 		Collection<CPE> classpathEntries = classpath.getClasspathEntries();
@@ -102,25 +100,5 @@ public class ProjectInformation {
 	}
 	
 	public static record Library(String name, String version) {};
-	
-	
-	//
-	//
-	//
-
-
-	private IJavaProject getProject(String projectName) throws Exception {
-		Optional<? extends IJavaProject> found = projectFinder.all()
-				.stream()
-				.filter(project -> project.getElementName().toLowerCase().equals(projectName.toLowerCase()))
-				.findFirst();
-
-		if (found.isEmpty()) {
-			throw new Exception("project with name " + projectName + " not found");
-		}
-		else {
-			return found.get();
-		}
-	}
 
 }

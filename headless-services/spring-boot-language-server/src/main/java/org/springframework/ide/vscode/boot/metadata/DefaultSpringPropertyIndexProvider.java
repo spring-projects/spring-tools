@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,7 +12,6 @@
 package org.springframework.ide.vscode.boot.metadata;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
@@ -20,7 +19,7 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.ProgressService;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.util.FileObserver;
 import org.springframework.ide.vscode.commons.util.text.IDocument;
 
 public class DefaultSpringPropertyIndexProvider implements SpringPropertyIndexProvider {
@@ -32,15 +31,14 @@ public class DefaultSpringPropertyIndexProvider implements SpringPropertyIndexPr
 
 	private ProgressService progressService = ProgressService.NO_PROGRESS;
 
-	public DefaultSpringPropertyIndexProvider(JavaProjectFinder javaProjectFinder, ProjectObserver projectObserver, SimpleLanguageServer server, ValueProviderRegistry valueProviders, BootJavaConfig config) {
+	public DefaultSpringPropertyIndexProvider(JavaProjectFinder javaProjectFinder, ProjectObserver projectObserver, FileObserver fileObserver, ValueProviderRegistry valueProviders, BootJavaConfig config) {
 		this.javaProjectFinder = javaProjectFinder;
-		this.indexManager = new SpringPropertiesIndexManager(valueProviders, projectObserver, server.getWorkspaceService().getFileObserver());
+		this.indexManager = new SpringPropertiesIndexManager(valueProviders, projectObserver, fileObserver);
 		this.indexManager.addListener(info -> {
 			if (changeHandler != null) {
 				changeHandler.run();
 			}
 		});
-		server.onCommand("sts/common-properties/reload", params -> CompletableFuture.completedFuture(indexManager.reloadCommonProperties()));
 		if (config != null) {
 			config.addListener(v -> indexManager.setCommonPropertiesFile(config.getCommonPropertiesFile()));
 		}
@@ -62,6 +60,15 @@ public class DefaultSpringPropertyIndexProvider implements SpringPropertyIndexPr
 
 	public void setProgressService(ProgressService progressService) {
 		this.progressService = progressService;
+	}
+
+	/**
+	 * Reloads the common Spring properties metadata, discarding whatever was cached before.
+	 *
+	 * @return true if the common properties were reloaded
+	 */
+	public boolean reloadCommonProperties() {
+		return indexManager.reloadCommonProperties();
 	}
 
 	@Override

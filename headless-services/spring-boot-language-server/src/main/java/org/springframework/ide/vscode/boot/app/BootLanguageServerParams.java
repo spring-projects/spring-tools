@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,6 +9,8 @@
  * Pivotal, Inc. - initial API and implementation
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.app;
+
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
@@ -64,8 +66,9 @@ public class BootLanguageServerParams {
 
 	public static BootLanguageServerParams createDefault(SimpleLanguageServer server, ValueProviderRegistry valueProviders, JavaProjectsService javaProjectService, BootJavaConfig config) {
 		// Initialize project finders, project caches and project observers
-		DefaultSpringPropertyIndexProvider indexProvider = new DefaultSpringPropertyIndexProvider(javaProjectService, javaProjectService, server, valueProviders, config);
+		DefaultSpringPropertyIndexProvider indexProvider = new DefaultSpringPropertyIndexProvider(javaProjectService, javaProjectService, server.getWorkspaceService().getFileObserver(), valueProviders, config);
 		indexProvider.setProgressService(server.getProgressService());
+		server.onCommand("sts/common-properties/reload", params -> CompletableFuture.completedFuture(indexProvider.reloadCommonProperties()));
 
 		return new BootLanguageServerParams(
 				javaProjectService.filter(project -> SpringProjectUtil.isBootProject(project) || SpringProjectUtil.isSpringProject(project)),

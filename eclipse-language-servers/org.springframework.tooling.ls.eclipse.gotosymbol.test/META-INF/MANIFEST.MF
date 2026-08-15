@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Goto Symbol Popup Tests
+Bundle-SymbolicName: org.springframework.tooling.ls.eclipse.gotosymbol.test
+Bundle-Version: 5.4.0.qualifier
+Import-Package: org.springframework.tooling.ls.eclipse.gotosymbol,
+ org.springframework.tooling.ls.eclipse.gotosymbol.dialogs,
+ org.springframework.tooling.ls.eclipse.gotosymbol.favourites,
+ org.springframework.tooling.ls.eclipse.gotosymbol.handlers,
+ org.springframework.tooling.ls.eclipse.gotosymbol.view
+Automatic-Module-Name: org.springframework.tooling.ls.eclipse.gotosymbol.test
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.junit,
+ org.eclipse.core.runtime,
+ org.springsource.ide.eclipse.commons.core
+Bundle-Vendor: Broadcom

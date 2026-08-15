@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2021 Rogue Wave Software Inc. and others.
+ * Copyright (c) 2016, 2026 Rogue Wave Software Inc. and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -34,6 +34,7 @@ import org.springframework.tooling.ls.eclipse.gotosymbol.dialogs.GotoSymbolDialo
 import org.springframework.tooling.ls.eclipse.gotosymbol.dialogs.InFileSymbolsProvider;
 import org.springframework.tooling.ls.eclipse.gotosymbol.dialogs.InProjectSymbolsProvider;
 import org.springframework.tooling.ls.eclipse.gotosymbol.dialogs.InWorkspaceSymbolsProvider;
+import org.springframework.tooling.ls.eclipse.gotosymbol.dialogs.SymbolsProviderScopePreference;
 
 @SuppressWarnings("restriction")
 public class GotoSymbolHandler extends AbstractHandler {
@@ -62,8 +63,9 @@ public class GotoSymbolHandler extends AbstractHandler {
 			if (part instanceof ITextEditor) {
 				final Shell shell = HandlerUtil.getActiveShell(event);
 				final ITextEditor textEditor = (ITextEditor) part;
-				
-				GotoSymbolDialogModel model = new GotoSymbolDialogModel(getKeybindings(event), InWorkspaceSymbolsProvider.createFor(event), InProjectSymbolsProvider.createFor(event), InFileSymbolsProvider.createFor(textEditor))
+
+				int lastSymbolsProviderIndex = SymbolsProviderScopePreference.INSTANCE.getIndex();
+				GotoSymbolDialogModel model = new GotoSymbolDialogModel(getKeybindings(event), lastSymbolsProviderIndex, InWorkspaceSymbolsProvider.createFor(event), InProjectSymbolsProvider.createFor(event), InFileSymbolsProvider.createFor(textEditor))
 				.setOkHandler(GotoSymbolDialogModel.OPEN_IN_EDITOR_OK_HANDLER);
 				GotoSymbolDialog dialog = new GotoSymbolDialog(shell, textEditor, model, /*alignRight*/ false);
 				currentDialog = model;
@@ -71,6 +73,7 @@ public class GotoSymbolHandler extends AbstractHandler {
 				debug("GotoSymbolDialog opened");
 				dialog.getShell().addDisposeListener(de -> {
 					debug("GotoSymbolDialog closed!");
+					SymbolsProviderScopePreference.INSTANCE.setIndex(model.getCurrentSymbolsProviderIndex());
 					currentDialog = null;
 				});
 			}

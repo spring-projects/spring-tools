@@ -29,3 +29,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-Activator: org.springframework.tooling.ls.eclipse.gotosymbol.GotoSymbolPlugin
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: Broadcom
+Export-Package: org.springframework.tooling.ls.eclipse.gotosymbol,
+ org.springframework.tooling.ls.eclipse.gotosymbol.dialogs,
+ org.springframework.tooling.ls.eclipse.gotosymbol.favourites,
+ org.springframework.tooling.ls.eclipse.gotosymbol.handlers,
+ org.springframework.tooling.ls.eclipse.gotosymbol.view

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2022 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -238,11 +238,20 @@ public class GotoSymbolDialogModel {
 	private FavouritesPreference favourites = null;
 
 	public GotoSymbolDialogModel(String keyBindings, SymbolsProvider... symbolsProviders) {
+		this(keyBindings, 0, symbolsProviders);
+	}
+
+	/**
+	 * @param initialSymbolsProviderIndex the index of the symbols provider to select initially.
+	 * Out-of-range values (for example a stale value persisted by an older version of the plugin) are
+	 * wrapped around instead of failing.
+	 */
+	public GotoSymbolDialogModel(String keyBindings, int initialSymbolsProviderIndex, SymbolsProvider... symbolsProviders) {
 		this.keyBindings = keyBindings;
-		Assert.isLegal(symbolsProviders.length>0);		
+		Assert.isLegal(symbolsProviders.length>0);
 		this.symbolsProviders = symbolsProviders;
-		this.currentSymbolsProviderIndex = 0;
-		this.currentSymbolsProvider.setValue(symbolsProviders[0]);
+		this.currentSymbolsProviderIndex = Math.floorMod(initialSymbolsProviderIndex, symbolsProviders.length);
+		this.currentSymbolsProvider.setValue(symbolsProviders[this.currentSymbolsProviderIndex]);
 	}
 	
 	public GotoSymbolDialogModel setFavourites(FavouritesPreference favourites) {
@@ -274,7 +283,11 @@ public class GotoSymbolDialogModel {
 		currentSymbolsProviderIndex = (currentSymbolsProviderIndex+1)%symbolsProviders.length;
 		currentSymbolsProvider.setValue(symbolsProviders[currentSymbolsProviderIndex]);
 	}
-	
+
+	public synchronized int getCurrentSymbolsProviderIndex() {
+		return currentSymbolsProviderIndex;
+	}
+
 	public SymbolsProvider[] getSymbolsProviders() {
 		return symbolsProviders;
 	}

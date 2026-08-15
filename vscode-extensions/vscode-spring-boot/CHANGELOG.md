@@ -3,6 +3,8 @@
 #### all fixes and improvements in detail
 
 * _(Spring Boot)_ version validations for supported commercial versions activated on wrong setting [#1959](https://github.com/spring-projects/spring-tools/issues/1959)
+* _(Spring Boot)_ show web config summary code lens in general [#1926](https://github.com/spring-projects/spring-tools/issues/1926)
+* _(Spring Boot)_ web config codelens does not appear immediately [#1925](https://github.com/spring-projects/spring-tools/issues/1925)
 * _(Spring Boot)_ extract parent path in controllers [#1924](https://github.com/spring-projects/spring-tools/issues/1924)
 * _(Spring Boot)_ add action to convert sql statements in query annotations from string literals into text blocks [#1923](https://github.com/spring-projects/spring-tools/issues/1923)
 * _(Spring Boot)_ add validation + quickfix to adopt `@ApplicationModuleListener` [#1800](https://github.com/spring-projects/spring-tools/issues/1800)

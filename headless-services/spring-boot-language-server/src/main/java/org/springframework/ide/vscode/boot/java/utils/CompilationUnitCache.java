@@ -50,8 +50,8 @@ import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleTextDocumentService;
+import org.springframework.ide.vscode.commons.util.FileObserver;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
 import com.google.common.cache.Cache;
@@ -73,7 +73,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 	private final ProjectObserver projectObserver;
 	
 	private final ProjectObserver.Listener projectListener;
-	private final SimpleTextDocumentService documentService;
+	private final SimpleTextDocumentService documentsService;
 
 	private final Cache<URI, CompletableFuture<CompilationUnit>> uriToCu;
 	private final Cache<URI, Set<URI>> projectToDocs;
@@ -85,7 +85,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 	
 	private final Executor createCuExecutorThreadPool = Executors.newCachedThreadPool();
 
-	public CompilationUnitCache(JavaProjectFinder projectFinder, SimpleLanguageServer server, ProjectObserver projectObserver) {
+	public CompilationUnitCache(JavaProjectFinder projectFinder, SimpleTextDocumentService documentsService, FileObserver fileObserver, ProjectObserver projectObserver) {
 		this.projectFinder = projectFinder;
 		this.projectObserver = projectObserver;
 		
@@ -122,13 +122,13 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 		
 		this.annotationHierarchies = CacheBuilder.newBuilder().build();
 
-		this.documentService = server == null ? null : server.getTextDocumentService();
+		this.documentsService = documentsService;
 
 		// IMPORTANT ===> these notifications arrive within the lsp message loop, so reactions to them have to be fast
 		// and not be blocked by waiting for anything
-		if (this.documentService != null) {
-			this.documentService.onDidChangeContent(doc -> invalidateCuForJavaFile(doc.getDocument().getId().getUri()));
-			this.documentService.onDidClose(doc -> invalidateCuForJavaFile(doc.getId().getUri()));
+		if (this.documentsService != null) {
+			this.documentsService.onDidChangeContent(doc -> invalidateCuForJavaFile(doc.getDocument().getId().getUri()));
+			this.documentsService.onDidClose(doc -> invalidateCuForJavaFile(doc.getId().getUri()));
 		}
 
 		if (this.projectFinder != null) {
@@ -163,8 +163,8 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 			this.projectObserver.addListener(this.projectListener);
 		}
 		
-		if (server != null) {
-			ServerUtils.listenToClassFileCreateAndChange(server.getWorkspaceService().getFileObserver(), projectFinder, jp -> {
+		if (fileObserver != null) {
+			ServerUtils.listenToClassFileCreateAndChange(fileObserver, projectFinder, jp -> {
 				if (!debounceClassFileChanges.isDone()) {
 					debounceClassFileChanges.cancel(false);
 				}
@@ -409,8 +409,8 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 
 	@Override
 	public String fetchContent(URI uri) throws Exception {
-		if (documentService != null) {
-			TextDocument document = documentService.getLatestSnapshot(uri.toASCIIString());
+		if (documentsService != null) {
+			TextDocument document = documentsService.getLatestSnapshot(uri.toASCIIString());
 			if (document != null) {
 				return document.get();
 			}

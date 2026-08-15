@@ -300,7 +300,7 @@ public class BootLanguageServerBootApp {
 	}
 
 	@Bean CompilationUnitCache cuCache(SimpleLanguageServer server, BootLanguageServerParams params) {
-		return new CompilationUnitCache(params.projectFinder, server, params.projectObserver);
+		return new CompilationUnitCache(params.projectFinder, server.getTextDocumentService(), server.getWorkspaceService().getFileObserver(), params.projectObserver);
 	}
 
 	@Bean JdtReconciler jdtReconciler(CompilationUnitCache cuCache, BootJavaConfig config, SimpleLanguageServer server, JdtAstReconciler[] reconcilers, ProjectObserver projectObserver) {

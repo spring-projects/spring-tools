@@ -18,11 +18,11 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Properties;
 
-import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
+import org.springframework.ide.vscode.commons.languageserver.util.SettingsStore;
 import org.springframework.stereotype.Component;
 
 import com.google.gson.JsonElement;
@@ -56,9 +56,10 @@ import com.google.gson.JsonPrimitive;
  *
  * <p>When both files are present they are merged: the properties file provides the base
  * and the JSON file overrides it (JSON takes precedence). Settings are applied once at
- * startup via the same {@code workspace/didChangeConfiguration} code path that the VSCode
- * client uses, so all existing preference consumers ({@link BootJavaConfig}, etc.) react
- * to them automatically.
+ * startup by pushing them straight into the {@link SettingsStore}, which is the same store
+ * the VSCode client feeds via {@code workspace/didChangeConfiguration}, so all existing
+ * preference consumers ({@link BootJavaConfig}, etc.) react to them automatically without
+ * this class having to imitate an LSP client.
  *
  * <p>This component lives in the standalone module and is therefore only active when the
  * language server runs outside of an IDE (e.g. via the Claude Code plugin).
@@ -71,10 +72,10 @@ public class StandaloneSettingsLoader implements SmartInitializingSingleton {
 	static final String JSON_SETTINGS_FILE = ".claude/spring-tools.json";
 	static final String PROPERTIES_SETTINGS_FILE = ".claude/spring-tools.properties";
 
-	private final SimpleLanguageServer server;
+	private final SettingsStore settingsStore;
 
-	public StandaloneSettingsLoader(SimpleLanguageServer server) {
-		this.server = server;
+	public StandaloneSettingsLoader(SettingsStore settingsStore) {
+		this.settingsStore = settingsStore;
 	}
 
 	@Override
@@ -108,9 +109,7 @@ public class StandaloneSettingsLoader implements SmartInitializingSingleton {
 		}
 
 		if (anyLoaded) {
-			DidChangeConfigurationParams params = new DidChangeConfigurationParams();
-			params.setSettings(merged);
-			server.getWorkspaceService().didChangeConfiguration(params);
+			settingsStore.update(new Settings(merged));
 		}
 	}
 

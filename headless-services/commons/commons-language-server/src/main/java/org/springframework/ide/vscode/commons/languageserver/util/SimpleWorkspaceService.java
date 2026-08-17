@@ -56,7 +56,7 @@ public class SimpleWorkspaceService implements WorkspaceService {
 
 	private Set<WorkspaceFolder> workspaceRoots = new HashSet<>();
 
-	private ListenerList<Settings> configurationListeners = new ListenerList<>();
+	private final SettingsStore settingsStore = new SettingsStore();
 	private ExecuteCommandHandler executeCommandHandler;
 	private WorkspaceSymbolHandler workspaceSymbolHandler;
 	private SimpleServerFileObserver fileObserver;
@@ -94,7 +94,7 @@ public class SimpleWorkspaceService implements WorkspaceService {
 
 	@Override
 	public void didChangeConfiguration(DidChangeConfigurationParams params) {
-		asyncRunner.execute(() -> configurationListeners.fire(new Settings((JsonElement) params.getSettings())));
+		asyncRunner.execute(() -> settingsStore.update(new Settings((JsonElement) params.getSettings())));
 	}
 
 	@Override
@@ -161,7 +161,16 @@ public class SimpleWorkspaceService implements WorkspaceService {
 	}
 
 	public void onDidChangeConfiguraton(Consumer<Settings> l) {
-		configurationListeners.add(l);
+		settingsStore.onDidChange(l);
+	}
+
+	/**
+	 * The settings this service feeds from {@code workspace/didChangeConfiguration}. Prefer
+	 * depending on the store directly over depending on this service, so that settings consumers do
+	 * not need a running language server session.
+	 */
+	public SettingsStore getSettingsStore() {
+		return settingsStore;
 	}
 
 	public void onExecuteCommand(ExecuteCommandHandler handler) {

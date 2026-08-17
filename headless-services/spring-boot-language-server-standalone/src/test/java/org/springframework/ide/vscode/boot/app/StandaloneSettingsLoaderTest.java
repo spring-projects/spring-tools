@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,16 +27,15 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleWorkspaceService;
+import org.springframework.ide.vscode.commons.languageserver.util.Settings;
+import org.springframework.ide.vscode.commons.languageserver.util.SettingsStore;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 class StandaloneSettingsLoaderTest {
 
-	@Mock SimpleLanguageServer server;
-	@Mock SimpleWorkspaceService workspaceService;
+	@Mock SettingsStore settingsStore;
 
 	@TempDir Path projectDir;
 
@@ -46,7 +44,6 @@ class StandaloneSettingsLoaderTest {
 	@BeforeEach
 	void setup() {
 		mocks = MockitoAnnotations.openMocks(this);
-		when(server.getWorkspaceService()).thenReturn(workspaceService);
 	}
 
 	@AfterEach
@@ -164,15 +161,15 @@ class StandaloneSettingsLoaderTest {
 	@Test
 	void noProjectDirProperty_doesNotFireConfigChange() {
 		System.clearProperty("spring.boot.ls.project.dir");
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
-		verify(workspaceService, never()).didChangeConfiguration(any());
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
+		verify(settingsStore, never()).update(any());
 	}
 
 	@Test
 	void noSettingsFiles_doesNotFireConfigChange() {
 		System.setProperty("spring.boot.ls.project.dir", projectDir.toString());
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
-		verify(workspaceService, never()).didChangeConfiguration(any());
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
+		verify(settingsStore, never()).update(any());
 	}
 
 	@Test
@@ -184,7 +181,7 @@ class StandaloneSettingsLoaderTest {
 				}
 				""");
 
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
 
 		JsonObject settings = captureSettings();
 		assertThat(settings
@@ -202,7 +199,7 @@ class StandaloneSettingsLoaderTest {
 				"boot-java.validation.java.boot2=OFF\n" +
 				"spring-boot.ls.problem.boot2.JAVA_PUBLIC_BEAN_METHOD=IGNORE\n");
 
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
 
 		JsonObject settings = captureSettings();
 		assertThat(settings
@@ -230,7 +227,7 @@ class StandaloneSettingsLoaderTest {
 				"# Another comment\n" +
 				"boot-java.validation.spel.on=ON\n");
 
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
 
 		JsonObject settings = captureSettings();
 		JsonObject validation = settings.getAsJsonObject("boot-java").getAsJsonObject("validation");
@@ -250,7 +247,7 @@ class StandaloneSettingsLoaderTest {
 				{ "boot-java": { "validation": { "java": { "boot2": "OFF" } } } }
 				""");
 
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
 
 		// didChangeConfiguration must be called exactly once (merged, not twice)
 		JsonObject settings = captureSettings();
@@ -265,16 +262,16 @@ class StandaloneSettingsLoaderTest {
 	void invalidJsonFile_doesNotFireConfigChange() throws IOException {
 		System.setProperty("spring.boot.ls.project.dir", projectDir.toString());
 		writeClaudeFile("spring-tools.json", "not { valid } json");
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
-		verify(workspaceService, never()).didChangeConfiguration(any());
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
+		verify(settingsStore, never()).update(any());
 	}
 
 	@Test
 	void jsonFileWithNonObjectTopLevel_doesNotFireConfigChange() throws IOException {
 		System.setProperty("spring.boot.ls.project.dir", projectDir.toString());
 		writeClaudeFile("spring-tools.json", "[1, 2, 3]");
-		new StandaloneSettingsLoader(server).afterSingletonsInstantiated();
-		verify(workspaceService, never()).didChangeConfiguration(any());
+		new StandaloneSettingsLoader(settingsStore).afterSingletonsInstantiated();
+		verify(settingsStore, never()).update(any());
 	}
 
 	// -----------------------------------------------------------------------
@@ -288,10 +285,9 @@ class StandaloneSettingsLoaderTest {
 	}
 
 	private JsonObject captureSettings() {
-		ArgumentCaptor<DidChangeConfigurationParams> captor =
-				ArgumentCaptor.forClass(DidChangeConfigurationParams.class);
-		verify(workspaceService).didChangeConfiguration(captor.capture());
-		return (JsonObject) captor.getValue().getSettings();
+		ArgumentCaptor<Settings> captor = ArgumentCaptor.forClass(Settings.class);
+		verify(settingsStore).update(captor.capture());
+		return (JsonObject) captor.getValue().getRawSettings();
 	}
 
 }

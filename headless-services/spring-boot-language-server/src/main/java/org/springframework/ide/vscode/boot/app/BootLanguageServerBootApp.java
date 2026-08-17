@@ -104,8 +104,8 @@ import org.springframework.ide.vscode.commons.languageserver.util.DocumentEventL
 import org.springframework.ide.vscode.commons.languageserver.util.LanguageComputer;
 import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
 import org.springframework.ide.vscode.commons.languageserver.util.ServerCapabilityInitializer;
+import org.springframework.ide.vscode.commons.languageserver.util.SettingsStore;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleWorkspaceService;
 import org.springframework.ide.vscode.commons.util.FileObserver;
 import org.springframework.ide.vscode.commons.util.text.IDocument;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
@@ -271,8 +271,8 @@ public class BootLanguageServerBootApp {
 		return server.getWorkspaceService().getFileObserver();
 	}
 
-	@Bean SimpleWorkspaceService workspaceService(SimpleLanguageServer server) {
-		return server.getWorkspaceService();
+	@Bean SettingsStore settingsStore(SimpleLanguageServer server) {
+		return server.getWorkspaceService().getSettingsStore();
 	}
 
 	@Bean ValueProviderRegistry valueProviders() {

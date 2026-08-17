@@ -24,6 +24,7 @@ import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.metadata.DefaultSpringPropertyIndexProvider;
 import org.springframework.ide.vscode.boot.metadata.ValueProviderRegistry;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.SettingsStore;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -60,8 +61,8 @@ public class IndexerTestConf {
 		return SourceLinkFactory.NO_SOURCE_LINKS;
 	}
 
-	@Bean ProblemParameterProvider problemParameterProvider(SimpleLanguageServer server) {
-		return new ProblemParameterProvider(new BootJavaConfig(server.getWorkspaceService()));
+	@Bean ProblemParameterProvider problemParameterProvider(SettingsStore settingsStore) {
+		return new ProblemParameterProvider(new BootJavaConfig(settingsStore));
 	}
 
 }

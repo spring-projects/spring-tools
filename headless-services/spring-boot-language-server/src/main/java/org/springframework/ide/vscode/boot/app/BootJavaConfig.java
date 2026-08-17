@@ -27,7 +27,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCa
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.util.ListenerList;
 import org.springframework.ide.vscode.commons.languageserver.util.Settings;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleWorkspaceService;
+import org.springframework.ide.vscode.commons.languageserver.util.SettingsStore;
 import org.springframework.stereotype.Component;
 
 import com.google.gson.JsonElement;
@@ -52,12 +52,12 @@ public class BootJavaConfig implements InitializingBean {
 	
 	public static final boolean VALIDAITON_SPEL_EXPRESSIONS_ENABLED_DEFAULT = true;
 
-	private final SimpleWorkspaceService workspace;
+	private final SettingsStore settingsStore;
 	private Settings settings = new Settings(null);
 	private ListenerList<Void> listeners = new ListenerList<Void>();
 
-	public BootJavaConfig(SimpleWorkspaceService workspace) {
-		this.workspace = workspace;
+	public BootJavaConfig(SettingsStore settingsStore) {
+		this.settingsStore = settingsStore;
 	}
 
 	public int getLiveInformationFetchDataMaxRetryCount() {
@@ -205,7 +205,7 @@ public class BootJavaConfig implements InitializingBean {
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		workspace.onDidChangeConfiguraton(this::handleConfigurationChange);
+		settingsStore.onDidChange(this::handleConfigurationChange);
 	}
 	
 	public Set<String> getRecipeDirectories() {

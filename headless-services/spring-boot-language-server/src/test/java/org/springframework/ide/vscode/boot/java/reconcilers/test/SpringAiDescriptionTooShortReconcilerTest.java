@@ -47,7 +47,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 	@Override
 	protected JdtAstReconciler getReconciler() {
 		return new SpringAiDescriptionTooShortReconciler(
-				new ProblemParameterProvider(new BootJavaConfig(languageServer.getWorkspaceService())));
+				new ProblemParameterProvider(new BootJavaConfig(languageServer.getWorkspaceService().getSettingsStore())));
 	}
 
 	@BeforeEach
@@ -291,7 +291,7 @@ public class SpringAiDescriptionTooShortReconcilerTest extends BaseReconcilerTes
 		JsonObject root = new JsonObject();
 		root.add("spring-boot", springBoot);
 
-		BootJavaConfig config = new BootJavaConfig(languageServer.getWorkspaceService());
+		BootJavaConfig config = new BootJavaConfig(languageServer.getWorkspaceService().getSettingsStore());
 		config.handleConfigurationChange(new Settings(root));
 		return config;
 	}

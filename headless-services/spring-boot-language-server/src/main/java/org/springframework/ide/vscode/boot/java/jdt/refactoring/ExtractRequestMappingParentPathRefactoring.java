@@ -24,7 +24,6 @@ import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
@@ -112,13 +111,13 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 				return false;
 			}
 			if (suffix.isEmpty()) {
-				rewrite.replace(mapping, markerAnnotationLike(ast, mapping), null);
+				rewrite.replace(mapping, JdtRefactorUtils.markerAnnotationLike(ast, mapping), null);
 			} else {
-				rewrite.replace(sma.getValue(), newStringLiteral(ast, suffix), null);
+				rewrite.replace(sma.getValue(), JdtRefactorUtils.newStringLiteral(ast, suffix), null);
 			}
 			return true;
 		} else if (mapping instanceof NormalAnnotation na) {
-			MemberValuePair pathPair = findPathValuePair(na);
+			MemberValuePair pathPair = JdtRefactorUtils.findValueOrPathMemberValuePair(na);
 			if (pathPair == null) {
 				return false;
 			}
@@ -128,12 +127,12 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 			}
 			if (suffix.isEmpty()) {
 				if (na.values().size() == 1) {
-					rewrite.replace(mapping, markerAnnotationLike(ast, mapping), null);
+					rewrite.replace(mapping, JdtRefactorUtils.markerAnnotationLike(ast, mapping), null);
 				} else {
 					rewrite.getListRewrite(na, NormalAnnotation.VALUES_PROPERTY).remove(pathPair, null);
 				}
 			} else {
-				rewrite.replace(pathPair.getValue(), newStringLiteral(ast, suffix), null);
+				rewrite.replace(pathPair.getValue(), JdtRefactorUtils.newStringLiteral(ast, suffix), null);
 			}
 			return true;
 		}
@@ -166,20 +165,20 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 		if (existing == null) {
 			SingleMemberAnnotation newAnnotation = ast.newSingleMemberAnnotation();
 			newAnnotation.setTypeName(ast.newSimpleName(JdtRefactorUtils.extractSimpleName(Annotations.SPRING_REQUEST_MAPPING)));
-			newAnnotation.setValue(newStringLiteral(ast, classAnnotationPath));
+			newAnnotation.setValue(JdtRefactorUtils.newStringLiteral(ast, classAnnotationPath));
 
 			ListRewrite modifiersRewrite = rewrite.getListRewrite(type, TypeDeclaration.MODIFIERS2_PROPERTY);
 			modifiersRewrite.insertFirst(newAnnotation, null);
 		} else if (existing instanceof SingleMemberAnnotation sma) {
-			rewrite.replace(sma.getValue(), newStringLiteral(ast, classAnnotationPath), null);
+			rewrite.replace(sma.getValue(), JdtRefactorUtils.newStringLiteral(ast, classAnnotationPath), null);
 		} else if (existing instanceof NormalAnnotation na) {
-			MemberValuePair pathPair = findPathValuePair(na);
+			MemberValuePair pathPair = JdtRefactorUtils.findValueOrPathMemberValuePair(na);
 			if (pathPair != null) {
-				rewrite.replace(pathPair.getValue(), newStringLiteral(ast, classAnnotationPath), null);
+				rewrite.replace(pathPair.getValue(), JdtRefactorUtils.newStringLiteral(ast, classAnnotationPath), null);
 			} else {
 				MemberValuePair newPair = ast.newMemberValuePair();
 				newPair.setName(ast.newSimpleName("value"));
-				newPair.setValue(newStringLiteral(ast, classAnnotationPath));
+				newPair.setValue(JdtRefactorUtils.newStringLiteral(ast, classAnnotationPath));
 				rewrite.getListRewrite(na, NormalAnnotation.VALUES_PROPERTY).insertFirst(newPair, null);
 			}
 		} else if (existing instanceof MarkerAnnotation) {
@@ -199,34 +198,11 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 		return null;
 	}
 
-	private static StringLiteral newStringLiteral(AST ast, String value) {
-		StringLiteral literal = ast.newStringLiteral();
-		literal.setLiteralValue(value);
-		return literal;
-	}
-
-	private static MarkerAnnotation markerAnnotationLike(AST ast, Annotation original) {
-		MarkerAnnotation marker = ast.newMarkerAnnotation();
-		marker.setTypeName((Name) ASTNode.copySubtree(ast, original.getTypeName()));
-		return marker;
-	}
-
 	private static SingleMemberAnnotation singleMemberAnnotationLike(AST ast, Annotation original, String value) {
 		SingleMemberAnnotation sma = ast.newSingleMemberAnnotation();
 		sma.setTypeName((Name) ASTNode.copySubtree(ast, original.getTypeName()));
-		sma.setValue(newStringLiteral(ast, value));
+		sma.setValue(JdtRefactorUtils.newStringLiteral(ast, value));
 		return sma;
-	}
-
-	private static MemberValuePair findPathValuePair(NormalAnnotation na) {
-		for (Object o : na.values()) {
-			MemberValuePair pair = (MemberValuePair) o;
-			String name = pair.getName().getIdentifier();
-			if ("value".equals(name) || "path".equals(name)) {
-				return pair;
-			}
-		}
-		return null;
 	}
 
 	private static Annotation findMappingAnnotation(MethodDeclaration method) {

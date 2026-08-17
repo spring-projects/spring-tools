@@ -20,14 +20,19 @@ import java.util.Set;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.MarkerAnnotation;
+import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
@@ -256,6 +261,41 @@ public final class JdtRefactorUtils {
 		} else {
 			importsRewrite.insertLast(importDecl, null);
 		}
+	}
+
+	/**
+	 * Returns the {@code value} or {@code path} member of the given annotation,
+	 * whichever is present, or {@code null} if neither is set.
+	 */
+	public static MemberValuePair findValueOrPathMemberValuePair(NormalAnnotation annotation) {
+		for (Object o : annotation.values()) {
+			MemberValuePair pair = (MemberValuePair) o;
+			String name = pair.getName().getIdentifier();
+			if ("value".equals(name) || "path".equals(name)) {
+				return pair;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Creates a {@link MarkerAnnotation} (no arguments) with the same type name as
+	 * {@code original}, e.g. to replace a {@link org.eclipse.jdt.core.dom.SingleMemberAnnotation}
+	 * or {@link NormalAnnotation} once its only argument has been stripped.
+	 */
+	public static MarkerAnnotation markerAnnotationLike(AST ast, Annotation original) {
+		MarkerAnnotation marker = ast.newMarkerAnnotation();
+		marker.setTypeName((Name) ASTNode.copySubtree(ast, original.getTypeName()));
+		return marker;
+	}
+
+	/**
+	 * Creates a {@link StringLiteral} with the given raw (unescaped) value.
+	 */
+	public static StringLiteral newStringLiteral(AST ast, String value) {
+		StringLiteral literal = ast.newStringLiteral();
+		literal.setLiteralValue(value);
+		return literal;
 	}
 
 	/**

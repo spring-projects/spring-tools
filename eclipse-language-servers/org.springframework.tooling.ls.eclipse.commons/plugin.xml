@@ -202,6 +202,26 @@
                name="projectName"
                optional="false">
          </commandParameter>
+         <commandParameter
+               id="startLine"
+               name="startLine"
+               optional="true">
+         </commandParameter>
+         <commandParameter
+               id="startChar"
+               name="startChar"
+               optional="true">
+         </commandParameter>
+         <commandParameter
+               id="endLine"
+               name="endLine"
+               optional="true">
+         </commandParameter>
+         <commandParameter
+               id="endChar"
+               name="endChar"
+               optional="true">
+         </commandParameter>
       </command>
       <command
             id="maven.goal.custom"

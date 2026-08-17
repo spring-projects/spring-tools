@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2025 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.eclipse.lsp4j.Range;
 import org.springframework.ide.vscode.boot.java.commands.Misc;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -72,10 +73,15 @@ public class JavaServerSourceLinks extends AbstractSourceLinks {
 
 	@Override
 	public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri) {
+		return sourceLinkForJarEntry(contextProject, uri, null);
+	}
+
+	@Override
+	public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri, Range selection) {
 		// Ideally client should be asked for a URI for a JAR entry that it can deal with.
 		// It feels a bit too much adding this message to STS Client at the moment hence we check if the client is Eclipse here
 		return super.sourceLinkForJarEntry(contextProject, uri).map(u -> LspClient.currentClient() == Client.ECLIPSE
-				? EclipseSourceLinks.eclipseIntroUriForJarEntry(contextProject.getElementName(), uri)
+				? EclipseSourceLinks.eclipseIntroUriForJarEntry(contextProject.getElementName(), uri, selection)
 				: URI.create(uri.toString().replace(Misc.JAR_URL_PROTOCOL_PREFIX, Misc.BOOT_LS_URL_PRTOCOL_PREFIX)));
 	}
 

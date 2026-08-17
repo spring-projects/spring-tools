@@ -29,6 +29,7 @@ import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -50,15 +51,17 @@ public class SpringIndexCommands {
 	private final ModulithService modulithService;
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
 	private final SourceLinks sourceLinks;
-	
+	private final StereotypeDefinitionLocator definitionLocator;
+
 	private final Executor messageWorkerThreadPool;
-	
+
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex, ModulithService modulithService,
 			JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks) {
 
 		this.modulithService = modulithService;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		this.sourceLinks = sourceLinks;
+		this.definitionLocator = new StereotypeDefinitionLocator();
 		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
 	
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
@@ -132,10 +135,10 @@ public class SpringIndexCommands {
 		}
 		
 		if (ModulithService.isModulithDependentProject(project) && StructureViewUtil.hasModulithStructureViewEnabled()) {
-			return new ModulithStructureView(catalog, springIndex, sourceLinks, modulithService).createTree(project, factory, selectedGroups, updateMetadata);
+			return new ModulithStructureView(catalog, springIndex, sourceLinks, definitionLocator, modulithService).createTree(project, factory, selectedGroups, updateMetadata);
 		}
 		else {
-			return new JMoleculesStructureView(catalog, springIndex, sourceLinks).createTree(project, factory, selectedGroups);
+			return new JMoleculesStructureView(catalog, springIndex, sourceLinks, definitionLocator).createTree(project, factory, selectedGroups);
 		}
 	}
 	

@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -42,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -74,17 +77,20 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private final BiConsumer<Node, C> customHandler;
 	private final CachedSpringMetamodelIndex springIndex;
 	private final SourceLinks sourceLinks;
+	private final StereotypeDefinitionLocator definitionLocator;
 	private final IJavaProject project;
 
 	private Node current;
 	private StereotypeCatalog catalog;
 
 	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler,
-			CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks, StereotypeCatalog catalog, IJavaProject project) {
+			CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks, StereotypeDefinitionLocator definitionLocator,
+			StereotypeCatalog catalog, IJavaProject project) {
 		this.labels = labels;
 		this.springIndex = springIndex;
 		this.customHandler = customHandler;
 		this.sourceLinks = sourceLinks;
+		this.definitionLocator = definitionLocator;
 		this.project = project;
 
 		this.root = new Node(null);
@@ -103,28 +109,8 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		} else {
 			var definition = catalog.getDefinition(stereotype);
 			var sources = definition.getSources();
-			
-			Location reference = null;
-			for (Object source : sources) {
-				if (source instanceof URL) {
-					URL url = (URL) source;
-					
-					try {
-						URI uri = url.toURI();
-						reference = new Location(uri.toASCIIString(), new Range(new Position(0,0), new Position(0,0)));
-						if (Misc.JAR.equals(uri.getScheme())) {
-							sourceLinks.sourceLinkForJarEntry(project, uri).map(u -> u.toASCIIString()).ifPresent(reference::setUri);
-						}
-					} catch (URISyntaxException e) {
-						log.error("", e);
-					}
-				}
-				else if (source instanceof Location) {
-					reference = (Location) source;
-				}
-			}
-			
-			final Location referenceLocation = reference;
+
+			final Location referenceLocation = referenceFor(stereotype, sources);
 			addChild(node -> node
 				.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
 				.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
@@ -133,7 +119,63 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			);
 		}
 	}
-	
+
+	/**
+	 * Identifies where the given stereotype is defined. Stereotypes that are defined in the source code
+	 * of the project come with their exact location attached already, for stereotypes that are defined in
+	 * a catalog file the exact position of the definition within that catalog file is looked up.
+	 */
+	private Location referenceFor(Stereotype stereotype, Set<Object> sources) {
+		for (Object source : sources) {
+			if (source instanceof Location location) {
+				return location;
+			}
+		}
+
+		Location catalogFileWithoutDefinitionRange = null;
+
+		for (Object source : sources) {
+			if (source instanceof URL url) {
+				Optional<Range> definitionRange = definitionLocator.findDefinition(url, stereotype.getIdentifier());
+				Location location = locationFor(url, definitionRange.orElseGet(JsonNodeHandler::startOfFile));
+
+				if (location == null) {
+					continue;
+				}
+
+				// a catalog file that we could pinpoint the definition in wins over one that we could not
+				if (definitionRange.isPresent()) {
+					return location;
+				}
+				else if (catalogFileWithoutDefinitionRange == null) {
+					catalogFileWithoutDefinitionRange = location;
+				}
+			}
+		}
+
+		return catalogFileWithoutDefinitionRange;
+	}
+
+	private static Range startOfFile() {
+		return new Range(new Position(0, 0), new Position(0, 0));
+	}
+
+	private Location locationFor(URL catalogFile, Range definitionRange) {
+		try {
+			URI uri = catalogFile.toURI();
+			Location location = new Location(uri.toASCIIString(), definitionRange);
+
+			if (Misc.JAR.equals(uri.getScheme())) {
+				sourceLinks.sourceLinkForJarEntry(project, uri, definitionRange).map(u -> u.toASCIIString()).ifPresent(location::setUri);
+			}
+
+			return location;
+		} catch (URISyntaxException e) {
+			log.error("", e);
+			return null;
+		}
+	}
+
 	@Override
 	public void handleApplication(A application) {
 		this.root
@@ -230,7 +272,8 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		Location location = (Location) n.attributes.get(LOCATION);
 		String locationId = location == null ? "" : "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter());
 		
-		String referenceId = n.attributes.containsKey(REFERENCE) ? ((Location) n.attributes.get(REFERENCE)).getUri() : "";
+		Location reference = (Location) n.attributes.get(REFERENCE);
+		String referenceId = reference == null ? "" : reference.getUri();
 		
 		String nodeSpecificId = "%s|%s|%s".formatted(textId, locationId, referenceId).replaceAll("\\|+$", "");
 		

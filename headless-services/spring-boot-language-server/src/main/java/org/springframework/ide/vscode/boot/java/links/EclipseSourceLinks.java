@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2019 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,7 @@ import java.net.URLEncoder;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import org.eclipse.lsp4j.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -46,6 +47,10 @@ public class EclipseSourceLinks extends AbstractSourceLinks {
 
 	private static final String JAR_ENTRY_COMMAND = "org.springframework.tooling.ls.eclipse.commons.commands.OpenJarEntryInEditor";
 	private static final String JAR_URI_PARAM = "jarUri";
+	private static final String START_LINE_PARAM = "startLine";
+	private static final String START_CHAR_PARAM = "startChar";
+	private static final String END_LINE_PARAM = "endLine";
+	private static final String END_CHAR_PARAM = "endChar";
 
 	private static final Logger log = LoggerFactory.getLogger(EclipseSourceLinks.class);
 
@@ -135,6 +140,10 @@ public class EclipseSourceLinks extends AbstractSourceLinks {
 	}
 	
 	static URI eclipseIntroUriForJarEntry(String projectName, URI jarEntryUri) {
+		return eclipseIntroUriForJarEntry(projectName, jarEntryUri, null);
+	}
+
+	static URI eclipseIntroUriForJarEntry(String projectName, URI jarEntryUri, Range selection) {
 		try {
 			StringBuilder paramBuilder = new StringBuilder(JAR_ENTRY_COMMAND);
 
@@ -148,6 +157,15 @@ public class EclipseSourceLinks extends AbstractSourceLinks {
 			paramBuilder.append(EQUALS);
 			paramBuilder.append(projectName);
 
+			// the Eclipse client cannot get the selection from the LSP location, since it has to navigate
+			// to the intro URI instead of the JAR entry itself, therefore the selection is passed on here
+			if (selection != null && selection.getStart() != null && selection.getEnd() != null) {
+				appendParameter(paramBuilder, START_LINE_PARAM, selection.getStart().getLine());
+				appendParameter(paramBuilder, START_CHAR_PARAM, selection.getStart().getCharacter());
+				appendParameter(paramBuilder, END_LINE_PARAM, selection.getEnd().getLine());
+				appendParameter(paramBuilder, END_CHAR_PARAM, selection.getEnd().getCharacter());
+			}
+
 			paramBuilder.append(PARAMETERS_END);
 
 			StringBuilder urlBuilder = new StringBuilder(URL_PREFIX);
@@ -159,10 +177,22 @@ public class EclipseSourceLinks extends AbstractSourceLinks {
 		return null;
 	}
 
+	private static void appendParameter(StringBuilder paramBuilder, String parameterId, int value) {
+		paramBuilder.append(PARAMETERS_SEPARATOR);
+		paramBuilder.append(parameterId);
+		paramBuilder.append(EQUALS);
+		paramBuilder.append(value);
+	}
+
 	@Override
 	public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri) {
+		return sourceLinkForJarEntry(contextProject, uri, null);
+	}
+
+	@Override
+	public Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri, Range selection) {
 		return super.sourceLinkForJarEntry(contextProject, uri)
-				.map(u -> eclipseIntroUriForJarEntry(contextProject.getElementName(), u));
+				.map(u -> eclipseIntroUriForJarEntry(contextProject.getElementName(), u, selection));
 	}
 
 }

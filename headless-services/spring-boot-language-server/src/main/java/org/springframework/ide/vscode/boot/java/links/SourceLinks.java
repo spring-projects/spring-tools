@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2024 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,4 +202,18 @@ public interface SourceLinks {
 	 * @return
 	 */
 	Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri);
+
+	/**
+	 * From URI produces a source link compatible with the client that reveals the given selection
+	 * within the JAR entry. Clients that navigate to the URI itself get the selection from the
+	 * enclosing {@link org.eclipse.lsp4j.Location} instead, for those the selection is irrelevant here.
+	 *
+	 * @param contextProject
+	 * @param uri
+	 * @param selection the range to reveal, may be <code>null</code>
+	 * @return
+	 */
+	default Optional<URI> sourceLinkForJarEntry(IJavaProject contextProject, URI uri, Range selection) {
+		return sourceLinkForJarEntry(contextProject, uri);
+	}
 }

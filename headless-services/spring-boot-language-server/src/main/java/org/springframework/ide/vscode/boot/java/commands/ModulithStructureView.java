@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,6 +26,7 @@ import org.springframework.ide.vscode.boot.java.commands.ApplicationModulesStruc
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
 import org.springframework.ide.vscode.boot.modulith.AppModules;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -38,11 +39,14 @@ public class ModulithStructureView {
 	private final CachedSpringMetamodelIndex springIndex;
 	private final ModulithService modulithService;
 	private SourceLinks sourceLinks;
+	private final StereotypeDefinitionLocator definitionLocator;
 
-	public ModulithStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks, ModulithService modulithService) {
+	public ModulithStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks,
+			StereotypeDefinitionLocator definitionLocator, ModulithService modulithService) {
 		this.catalog = catalog;
 		this.springIndex = springIndex;
 		this.sourceLinks = sourceLinks;
+		this.definitionLocator = definitionLocator;
 		this.modulithService = modulithService;
 	}
 
@@ -78,7 +82,7 @@ public class ModulithStructureView {
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, springIndex, sourceLinks, catalog, project);
+		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, springIndex, sourceLinks, definitionLocator, catalog, project);
 
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI

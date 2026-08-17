@@ -27,7 +27,6 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCa
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.util.ListenerList;
 import org.springframework.ide.vscode.commons.languageserver.util.Settings;
-import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleWorkspaceService;
 import org.springframework.stereotype.Component;
 
@@ -57,8 +56,8 @@ public class BootJavaConfig implements InitializingBean {
 	private Settings settings = new Settings(null);
 	private ListenerList<Void> listeners = new ListenerList<Void>();
 
-	public BootJavaConfig(SimpleLanguageServer server) {
-		this.workspace = server.getWorkspaceService();
+	public BootJavaConfig(SimpleWorkspaceService workspace) {
+		this.workspace = workspace;
 	}
 
 	public int getLiveInformationFetchDataMaxRetryCount() {

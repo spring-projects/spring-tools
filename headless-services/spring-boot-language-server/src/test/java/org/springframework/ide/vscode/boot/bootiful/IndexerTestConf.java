@@ -61,7 +61,7 @@ public class IndexerTestConf {
 	}
 
 	@Bean ProblemParameterProvider problemParameterProvider(SimpleLanguageServer server) {
-		return new ProblemParameterProvider(new BootJavaConfig(server));
+		return new ProblemParameterProvider(new BootJavaConfig(server.getWorkspaceService()));
 	}
 
 }

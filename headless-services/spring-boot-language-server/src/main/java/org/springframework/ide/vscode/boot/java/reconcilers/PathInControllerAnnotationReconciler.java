@@ -22,20 +22,24 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.MemberValuePair;
+import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.MovePathToRequestMappingRefactoring;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
+import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblemImpl;
-import org.springframework.ide.vscode.commons.rewrite.config.RecipeScope;
-import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
-import org.springframework.ide.vscode.commons.rewrite.java.NoPathInControllerAnnotation;
 
 public class PathInControllerAnnotationReconciler implements JdtAstReconciler {
 
@@ -84,34 +88,54 @@ public class PathInControllerAnnotationReconciler implements JdtAstReconciler {
 				}
 					
 				Annotation controllerAnnotation = ReconcileUtils.findAnnotation(annotationHierarchies, typeDecl, annotatedWith.get(), true);
-				if (controllerAnnotation.isSingleMemberAnnotation()) {
-					SingleMemberAnnotation sma = (SingleMemberAnnotation) controllerAnnotation;
-					Expression value = sma.getValue();
-					String stringValue = ASTUtils.getExpressionValueAsString(value, (t) -> {});
-					
-					if (stringValue.contains("/")) {
-
-						ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
-								value.getStartPosition(), value.getLength());
-						
-						String strUri = docUri.toASCIIString();
-						ReconcileUtils.setRewriteFixes(registry, problem, List.of(
-								// Assume node scope is just the whole file for this reconciler and quick fix only
-								new FixDescriptor(NoPathInControllerAnnotation.class.getName(), List.of(strUri), ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.NODE))
-									.withRecipeScope(RecipeScope.FILE),
-								new FixDescriptor(NoPathInControllerAnnotation.class.getName(), List.of(strUri), ReconcileUtils.buildLabel(FIX_LABEL, RecipeScope.PROJECT))
-									.withRecipeScope(RecipeScope.PROJECT)
-									
-						));
-
-						context.getProblemCollector().accept(problem);
-					}
+				Expression value = findPathValueExpression(controllerAnnotation);
+				if (value == null) {
+					return super.visit(typeDecl);
 				}
-				
+
+				String stringValue = ASTUtils.getExpressionValueAsString(value, (t) -> {});
+				if (stringValue != null && stringValue.contains("/")) {
+
+					ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,
+							value.getStartPosition(), value.getLength());
+
+					if (registry != null) {
+						QuickfixType quickfixType = registry.getQuickfixType(JdtRefactorings.JDT_QUICKFIX);
+						if (quickfixType != null) {
+							String strUri = docUri.toASCIIString();
+							String label = FIX_LABEL + " in file";
+							JdtFixDescriptor descriptor = new JdtFixDescriptor(
+									new MovePathToRequestMappingRefactoring(), List.of(strUri), label);
+							problem.addQuickfix(new QuickfixData<>(quickfixType, descriptor, label, true));
+						}
+					}
+
+					context.getProblemCollector().accept(problem);
+				}
+
 				return super.visit(typeDecl);
 			}
 
 		});
+	}
+
+	/**
+	 * Extracts the path-candidate value expression from either the bare-literal
+	 * shorthand ({@code @Controller("/path")}) or the keyword form
+	 * ({@code @Controller(value = "/path")}).
+	 */
+	private static Expression findPathValueExpression(Annotation annotation) {
+		if (annotation instanceof SingleMemberAnnotation sma) {
+			return sma.getValue();
+		} else if (annotation instanceof NormalAnnotation na) {
+			for (Object o : na.values()) {
+				MemberValuePair pair = (MemberValuePair) o;
+				if ("value".equals(pair.getName().getIdentifier())) {
+					return pair.getValue();
+				}
+			}
+		}
+		return null;
 	}
 
 }

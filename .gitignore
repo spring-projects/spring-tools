@@ -48,4 +48,4 @@ nohttp-cli-*.jar
 unpack/
 
 # Claude Code
-.claude/
+.claude/settings.*

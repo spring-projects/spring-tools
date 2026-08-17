@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom
+ * Copyright (c) 2025, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -72,7 +72,7 @@ public class PathInControllerAnnotationReconcilerTest extends BaseReconcilerTest
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("\"/mypath\"", markedStr);
 
-		assertEquals(2, problem.getQuickfixes().size());
+		assertEquals(1, problem.getQuickfixes().size());
 	}
 
 	@Test
@@ -97,9 +97,59 @@ public class PathInControllerAnnotationReconcilerTest extends BaseReconcilerTest
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("\"/mypath\"", markedStr);
 
-		assertEquals(2, problem.getQuickfixes().size());
+		assertEquals(1, problem.getQuickfixes().size());
 	}
 	
+	@Test
+	void restControllerWithPathAsValueAttribute() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.web.bind.annotation.RestController;
+
+				@RestController(value = "/mypath")
+				public class A {
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, false);
+
+		assertEquals(1, problems.size());
+
+		ReconcileProblem problem = problems.get(0);
+
+		assertEquals(Boot2JavaProblemType.PATH_IN_CONTROLLER_ANNOTATION, problem.getType());
+
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("\"/mypath\"", markedStr);
+
+		assertEquals(1, problem.getQuickfixes().size());
+	}
+
+	@Test
+	void controllerWithPathAsValueAttribute() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.stereotype.Controller;
+
+				@Controller(value = "/mypath")
+				public class A {
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, false);
+
+		assertEquals(1, problems.size());
+
+		ReconcileProblem problem = problems.get(0);
+
+		assertEquals(Boot2JavaProblemType.PATH_IN_CONTROLLER_ANNOTATION, problem.getType());
+
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("\"/mypath\"", markedStr);
+
+		assertEquals(1, problem.getQuickfixes().size());
+	}
+
 	@Test
 	void restControllerWithoutPath() throws Exception {
 		String source = """

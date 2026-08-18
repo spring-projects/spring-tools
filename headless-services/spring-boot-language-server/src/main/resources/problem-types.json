@@ -51,6 +51,12 @@
         "defaultSeverity": "HINT"
       },
       {
+        "code": "JAVA_PRECISE_SCOPE",
+        "label": "Use precise scope annotation, i.e. '@RequestScope', '@SessionScope', '@ApplicationScope'",
+        "description": "Use precise scope annotation, i.e. '@RequestScope', '@SessionScope', '@ApplicationScope'",
+        "defaultSeverity": "HINT"
+      },
+      {
         "code": "JAVA_REPOSITORY",
         "label": "Unnecessary `@Repository`",
         "description": "Unnecessary `@Repository`",

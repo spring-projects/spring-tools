@@ -28,6 +28,7 @@ public enum Boot2JavaProblemType implements ProblemType {
 	JAVA_TEST_SPRING_EXTENSION(WARNING, "`@SpringBootTest` and all test slice annotations already applies `@SpringExtension` as of Spring Boot 2.1.0.", "Unnecessary `@SpringExtension`", List.of(DiagnosticTag.Unnecessary)),
 	JAVA_CONSTRUCTOR_PARAMETER_INJECTION(WARNING, "Use constructor parameter injection", "Use constructor parameter injection"),
 	JAVA_PRECISE_REQUEST_MAPPING(HINT, "Use precise mapping annotation, i.e. '@GetMapping', '@PostMapping', etc.", "Use precise mapping annotation, i.e. '@GetMapping', '@PostMapping', etc."),
+	JAVA_PRECISE_SCOPE(HINT, "Use precise scope annotation, i.e. '@RequestScope', '@SessionScope', '@ApplicationScope'", "Use precise scope annotation, i.e. '@RequestScope', '@SessionScope', '@ApplicationScope'"),
 	JAVA_REPOSITORY(WARNING, "Unnecessary `@Repository`", "Unnecessary `@Repository`", List.of(DiagnosticTag.Unnecessary)),
 	JAVA_LAMBDA_DSL(INFO, "Consider switching to Lambda DSL syntax", "Switch to Lambda DSL syntax"), 
 	MISSING_CONFIGURATION_ANNOTATION(WARNING, "Class likely missing '@Configuration' annotation, i.e. has Bean methods but no '@Configuration' annotation", "Missing '@Configuration'"),

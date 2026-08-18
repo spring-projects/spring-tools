@@ -18,7 +18,6 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 
@@ -46,7 +45,7 @@ public class RemoveAnnotationRefactoring implements JdtRefactoring {
 		Set<String> fqnsToCheck = new HashSet<>();
 		
 		for (int offset : annotationOffsets) {
-			Annotation annotation = findAnnotationAtOffset(cu, offset);
+			Annotation annotation = JdtRefactorUtils.findAncestorAtOffset(cu, offset, Annotation.class);
 			if (annotation != null) {
 				ASTNode parent = annotation.getParent();
 				ChildListPropertyDescriptor property = (ChildListPropertyDescriptor) annotation.getLocationInParent();
@@ -63,22 +62,6 @@ public class RemoveAnnotationRefactoring implements JdtRefactoring {
 		if (!fqnsToCheck.isEmpty()) {
 			JdtRefactorUtils.removeImports(cu, rewrite, fqnsToCheck.toArray(new String[fqnsToCheck.size()]));
 		}
-	}
-
-	private static Annotation findAnnotationAtOffset(CompilationUnit cu, int offset) {
-		ASTNode node = NodeFinder.perform(cu, offset, 0);
-		while (node != null) {
-			if (node instanceof Annotation a) {
-				int start = a.getStartPosition();
-				int end = a.getTypeName().getStartPosition() + a.getTypeName().getLength();
-				if (offset >= start && offset <= end) {
-					return a;
-				}
-				return null;
-			}
-			node = node.getParent();
-		}
-		return null;
 	}
 
 }

@@ -34,7 +34,12 @@ public class Annotations {
 	public static final String REPOSITORY = "org.springframework.stereotype.Repository";
 	
 	public static final String SCOPE = "org.springframework.context.annotation.Scope";
+	public static final String SCOPED_PROXY_MODE = "org.springframework.context.annotation.ScopedProxyMode";
 	public static final String DEPENDS_ON = "org.springframework.context.annotation.DependsOn";
+
+	public static final String SPRING_REQUEST_SCOPE = "org.springframework.web.context.annotation.RequestScope";
+	public static final String SPRING_SESSION_SCOPE = "org.springframework.web.context.annotation.SessionScope";
+	public static final String SPRING_APPLICATION_SCOPE = "org.springframework.web.context.annotation.ApplicationScope";
 
 	public static final String EVENT_LISTENER = "org.springframework.context.event.EventListener";
 

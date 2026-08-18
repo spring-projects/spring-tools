@@ -21,7 +21,6 @@ import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
-import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
@@ -76,7 +75,7 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 
 	@Override
 	public void apply(ASTRewrite rewrite, CompilationUnit cu) {
-		TypeDeclaration type = findTypeAtOffset(cu, classOffset);
+		TypeDeclaration type = JdtRefactorUtils.findAncestorAtOffset(cu, classOffset, TypeDeclaration.class);
 		if (type == null) {
 			return;
 		}
@@ -85,7 +84,7 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 		boolean anyChanged = false;
 
 		for (int offset : methodOffsets) {
-			MethodDeclaration method = findMethodAtOffset(cu, offset);
+			MethodDeclaration method = JdtRefactorUtils.findAncestorAtOffset(cu, offset, MethodDeclaration.class);
 			if (method == null) {
 				continue;
 			}
@@ -215,22 +214,6 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 			}
 		}
 		return null;
-	}
-
-	private static TypeDeclaration findTypeAtOffset(CompilationUnit cu, int offset) {
-		ASTNode node = NodeFinder.perform(cu, offset, 0);
-		while (node != null && !(node instanceof TypeDeclaration)) {
-			node = node.getParent();
-		}
-		return (TypeDeclaration) node;
-	}
-
-	private static MethodDeclaration findMethodAtOffset(CompilationUnit cu, int offset) {
-		ASTNode node = NodeFinder.perform(cu, offset, 0);
-		while (node != null && !(node instanceof MethodDeclaration)) {
-			node = node.getParent();
-		}
-		return (MethodDeclaration) node;
 	}
 
 }

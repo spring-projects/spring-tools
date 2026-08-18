@@ -616,6 +616,18 @@
               "ERROR"
             ]
           },
+          "spring-boot.ls.problem.boot2.JAVA_PRECISE_SCOPE": {
+            "type": "string",
+            "default": "HINT",
+            "description": "Use precise scope annotation, i.e. '@RequestScope', '@SessionScope', '@ApplicationScope'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
           "spring-boot.ls.problem.boot2.JAVA_REPOSITORY": {
             "type": "string",
             "default": "WARNING",

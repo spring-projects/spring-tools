@@ -9,6 +9,10 @@
 * _(Spring Boot)_ add action to convert sql statements in query annotations from string literals into text blocks [#1923](https://github.com/spring-projects/spring-tools/issues/1923)
 * _(Spring Boot)_ add validation + quickfix to adopt `@ApplicationModuleListener` [#1800](https://github.com/spring-projects/spring-tools/issues/1800)
 * _(Spring Boot)_ exception thrown around internal compilation unit cache [#1777](https://github.com/spring-projects/spring-tools/issues/1777)
+* _(Spring Boot)_ refactoring recipe doesn't work with compile errors [#1064](https://github.com/spring-projects/spring-tools/issues/1064)
+* _(Spring Boot)_ Java tooling in VSCode doesn't re-validate Java sources after migrating to newer Spring Boot [#1061](https://github.com/spring-projects/spring-tools/issues/1061)
+* _(Spring Boot)_ decouple concrete upgrade recipes and mechanics from tools releases [#1052](https://github.com/spring-projects/spring-tools/issues/1052)
+* _(Spring Boot)_ Use OpenRewrite Properties AST and Parser [#949](https://github.com/spring-projects/spring-tools/issues/949)
 
 ## 2026-07-29 (5.4.0 RELEASE, incl. language servers version 2.3.0)
 

@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,21 +22,26 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jdt.core.dom.rewrite.TargetSourceRangeComputer;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
@@ -375,6 +381,116 @@ public final class JdtRefactorUtils {
 	 */
 	public static String escapeForTextBlock(String value) {
 		return value.replace("\\", "\\\\");
+	}
+
+	/**
+	 * Finds the nearest enclosing node of the given {@code type} at {@code offset},
+	 * e.g. the {@link org.eclipse.jdt.core.dom.MethodDeclaration} or
+	 * {@link org.eclipse.jdt.core.dom.TypeDeclaration} a quickfix offset was recorded against.
+	 */
+	public static <T extends ASTNode> T findAncestorAtOffset(CompilationUnit cu, int offset, Class<T> type) {
+		ASTNode node = NodeFinder.perform(cu, offset, 0);
+		while (node != null && !type.isInstance(node)) {
+			node = node.getParent();
+		}
+		return type.cast(node);
+	}
+
+	/**
+	 * Finds an annotation among {@code declaration}'s modifiers whose type name matches
+	 * {@code annotationFqn}, either fully qualified or as a simple name (e.g. when imported).
+	 * Matches by name rather than resolved binding so this also works against ASTs parsed
+	 * without a classpath (as JDT refactoring unit tests typically do).
+	 */
+	public static Annotation findAnnotationByName(BodyDeclaration declaration, String annotationFqn) {
+		String simpleName = extractSimpleName(annotationFqn);
+		for (Object mod : declaration.modifiers()) {
+			if (mod instanceof Annotation a) {
+				String name = a.getTypeName().getFullyQualifiedName();
+				if (name.equals(annotationFqn) || name.equals(simpleName)) {
+					return a;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Creates a copy of {@code original} with the same argument list (marker, single-member
+	 * or normal annotation) but a different simple type name. Useful when merging several
+	 * annotations into one that still needs to carry over a value from one of the originals,
+	 * e.g. a bean-name attribute.
+	 */
+	public static Annotation copyAnnotationWithNewTypeName(AST ast, Annotation original, String newSimpleTypeName) {
+		Annotation copy;
+		if (original.isMarkerAnnotation()) {
+			copy = ast.newMarkerAnnotation();
+		} else if (original.isSingleMemberAnnotation()) {
+			SingleMemberAnnotation sma = ast.newSingleMemberAnnotation();
+			sma.setValue((Expression) ASTNode.copySubtree(ast, ((SingleMemberAnnotation) original).getValue()));
+			copy = sma;
+		} else {
+			NormalAnnotation source = (NormalAnnotation) original;
+			if (source.values().isEmpty()) {
+				copy = ast.newMarkerAnnotation();
+			} else {
+				NormalAnnotation normal = ast.newNormalAnnotation();
+				@SuppressWarnings("unchecked")
+				List<MemberValuePair> values = normal.values();
+				for (Object o : source.values()) {
+					MemberValuePair pair = (MemberValuePair) o;
+					MemberValuePair newPair = ast.newMemberValuePair();
+					newPair.setName(ast.newSimpleName(pair.getName().getIdentifier()));
+					newPair.setValue((Expression) ASTNode.copySubtree(ast, pair.getValue()));
+					values.add(newPair);
+				}
+				copy = normal;
+			}
+		}
+		copy.setTypeName(ast.newSimpleName(newSimpleTypeName));
+		return copy;
+	}
+
+	/**
+	 * Replaces the earliest of {@code toMerge} (by source position) with {@code newAnnotation}
+	 * and removes the rest, all within the same {@code modifiersProperty} list on
+	 * {@code declaration}. Every node in {@code toMerge} is added to {@code exactRangeNodes},
+	 * so that a {@link TargetSourceRangeComputer} obtained from
+	 * {@link #exactRangeSourceComputer(Set)} treats their source ranges as exact (not
+	 * extending onto adjacent, unclaimed comments).
+	 */
+	public static void replaceWithMergedAnnotation(ASTRewrite rewrite, BodyDeclaration declaration,
+			ChildListPropertyDescriptor modifiersProperty, List<Annotation> toMerge, Annotation newAnnotation,
+			Set<ASTNode> exactRangeNodes) {
+		Annotation earliest = toMerge.stream().min(Comparator.comparingInt(ASTNode::getStartPosition)).orElseThrow();
+		exactRangeNodes.addAll(toMerge);
+
+		ListRewrite modifiersRewrite = rewrite.getListRewrite(declaration, modifiersProperty);
+		modifiersRewrite.replace(earliest, newAnnotation, null);
+		for (Annotation a : toMerge) {
+			if (a != earliest) {
+				modifiersRewrite.remove(a, null);
+			}
+		}
+	}
+
+	/**
+	 * A {@link TargetSourceRangeComputer} that treats the source range of any node in
+	 * {@code exactRangeNodes} as exactly its own start position and length, rather than
+	 * JDT's default of extending onto adjacent, unclaimed leading comments (e.g. a line
+	 * comment sitting between a Javadoc and the annotations it documents). Without this,
+	 * replacing/removing one of several merged annotations can delete such a comment along
+	 * with it.
+	 */
+	public static TargetSourceRangeComputer exactRangeSourceComputer(Set<ASTNode> exactRangeNodes) {
+		return new TargetSourceRangeComputer() {
+			@Override
+			public SourceRange computeSourceRange(ASTNode node) {
+				return exactRangeNodes.contains(node)
+						? new SourceRange(node.getStartPosition(), node.getLength())
+						: super.computeSourceRange(node);
+			}
+		};
 	}
 
 }

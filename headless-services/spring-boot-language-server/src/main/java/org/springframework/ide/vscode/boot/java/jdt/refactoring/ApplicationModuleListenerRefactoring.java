@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.jdt.refactoring;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,11 +22,8 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
-import org.eclipse.jdt.core.dom.rewrite.TargetSourceRangeComputer;
 
 /**
  * A JDT-based refactoring that replaces a method's {@code @Async}, {@code @Transactional}
@@ -70,7 +66,7 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 		boolean anyConverted = false;
 		Set<ASTNode> exactRangeNodes = new HashSet<>();
 		for (int offset : methodOffsets) {
-			MethodDeclaration method = findMethodAtOffset(cu, offset);
+			MethodDeclaration method = JdtRefactorUtils.findAncestorAtOffset(cu, offset, MethodDeclaration.class);
 			if (method != null && convertMethod(rewrite, cu, method, exactRangeNodes)) {
 				anyConverted = true;
 			}
@@ -81,14 +77,7 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 			// default target source range would extend onto any unclaimed leading comment
 			// (e.g. a line comment sitting between the Javadoc and the annotations) and delete
 			// it along with the annotation it is replacing/removing
-			rewrite.setTargetSourceRangeComputer(new TargetSourceRangeComputer() {
-				@Override
-				public SourceRange computeSourceRange(ASTNode node) {
-					return exactRangeNodes.contains(node)
-							? new SourceRange(node.getStartPosition(), node.getLength())
-							: super.computeSourceRange(node);
-				}
-			});
+			rewrite.setTargetSourceRangeComputer(JdtRefactorUtils.exactRangeSourceComputer(exactRangeNodes));
 
 			AST ast = cu.getAST();
 			JdtRefactorUtils.addImport(rewrite, ast, cu,
@@ -102,9 +91,9 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 			Set<ASTNode> exactRangeNodes) {
 		AST ast = cu.getAST();
 
-		Annotation asyncAnnotation = findAnnotation(method, ASYNC_FQN);
-		Annotation transactionalAnnotation = findAnnotation(method, TRANSACTIONAL_FQN);
-		Annotation eventListenerAnnotation = findAnnotation(method, TRANSACTIONAL_EVENT_LISTENER_FQN);
+		Annotation asyncAnnotation = JdtRefactorUtils.findAnnotationByName(method, ASYNC_FQN);
+		Annotation transactionalAnnotation = JdtRefactorUtils.findAnnotationByName(method, TRANSACTIONAL_FQN);
+		Annotation eventListenerAnnotation = JdtRefactorUtils.findAnnotationByName(method, TRANSACTIONAL_EVENT_LISTENER_FQN);
 
 		if (asyncAnnotation == null || transactionalAnnotation == null || eventListenerAnnotation == null) {
 			return false;
@@ -136,16 +125,8 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 		newAnnotation.setTypeName(ast.newSimpleName(JdtRefactorUtils.extractSimpleName(APPLICATION_MODULE_LISTENER_FQN)));
 
 		List<Annotation> merged = List.of(asyncAnnotation, transactionalAnnotation, eventListenerAnnotation);
-		Annotation earliest = merged.stream().min(Comparator.comparingInt(ASTNode::getStartPosition)).orElseThrow();
-		exactRangeNodes.addAll(merged);
-
-		ListRewrite modifiersRewrite = rewrite.getListRewrite(method, MethodDeclaration.MODIFIERS2_PROPERTY);
-		modifiersRewrite.replace(earliest, newAnnotation, null);
-		for (Annotation a : merged) {
-			if (a != earliest) {
-				modifiersRewrite.remove(a, null);
-			}
-		}
+		JdtRefactorUtils.replaceWithMergedAnnotation(rewrite, method, MethodDeclaration.MODIFIERS2_PROPERTY, merged,
+				newAnnotation, exactRangeNodes);
 
 		return true;
 	}
@@ -187,27 +168,6 @@ public class ApplicationModuleListenerRefactoring implements JdtRefactoring {
 			return !((NormalAnnotation) a).values().isEmpty();
 		}
 		return true;
-	}
-
-	private Annotation findAnnotation(MethodDeclaration method, String annotationFqn) {
-		String simpleName = JdtRefactorUtils.extractSimpleName(annotationFqn);
-		for (Object mod : method.modifiers()) {
-			if (mod instanceof Annotation a) {
-				String name = a.getTypeName().getFullyQualifiedName();
-				if (name.equals(annotationFqn) || name.equals(simpleName)) {
-					return a;
-				}
-			}
-		}
-		return null;
-	}
-
-	private static MethodDeclaration findMethodAtOffset(CompilationUnit cu, int offset) {
-		ASTNode node = NodeFinder.perform(cu, offset, 0);
-		while (node != null && !(node instanceof MethodDeclaration)) {
-			node = node.getParent();
-		}
-		return (MethodDeclaration) node;
 	}
 
 }

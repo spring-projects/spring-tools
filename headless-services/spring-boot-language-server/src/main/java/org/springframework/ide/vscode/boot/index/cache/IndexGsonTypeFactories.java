@@ -23,6 +23,7 @@ import org.springframework.ide.vscode.boot.java.jdt.refactoring.ExtractRequestMa
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.MovePathToRequestMappingRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.RemoveAnnotationRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.RestControllerRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.TypeSafePropertyReferenceRefactoring;
 import org.springframework.ide.vscode.boot.java.requestmapping.HttpExchangeIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.PathPrefixPredicate;
@@ -131,6 +132,7 @@ public final class IndexGsonTypeFactories {
 				.registerSubtype(ConvertQueryToTextBlockRefactoring.class, ConvertQueryToTextBlockRefactoring.class.getName())
 				.registerSubtype(ApplicationModuleListenerRefactoring.class, ApplicationModuleListenerRefactoring.class.getName())
 				.registerSubtype(ExtractRequestMappingParentPathRefactoring.class, ExtractRequestMappingParentPathRefactoring.class.getName())
-				.registerSubtype(MovePathToRequestMappingRefactoring.class, MovePathToRequestMappingRefactoring.class.getName());
+				.registerSubtype(MovePathToRequestMappingRefactoring.class, MovePathToRequestMappingRefactoring.class.getName())
+				.registerSubtype(RestControllerRefactoring.class, RestControllerRefactoring.class.getName());
 	}
 }

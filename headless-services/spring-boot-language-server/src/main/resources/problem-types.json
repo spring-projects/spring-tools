@@ -121,6 +121,12 @@
         "label": "Extract common parent path into class-level `@RequestMapping`",
         "description": "Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping`",
         "defaultSeverity": "INFO"
+      },
+      {
+        "code": "REST_CONTROLLER_COMBINATION",
+        "label": "Combine into `@RestController`",
+        "description": "Class annotated with both `@Controller` and `@ResponseBody` could use `@RestController` instead",
+        "defaultSeverity": "INFO"
       }
     ]
   },

@@ -759,6 +759,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot2.REST_CONTROLLER_COMBINATION": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Class annotated with both `@Controller` and `@ResponseBody` could use `@RestController` instead",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

@@ -129,6 +129,7 @@ public class Annotations {
 	// Web
 	
 	public static final String REST_CONTROLLER = "org.springframework.web.bind.annotation.RestController";
+	public static final String RESPONSE_BODY = "org.springframework.web.bind.annotation.ResponseBody";
 
 	public static final String SPRING_REQUEST_MAPPING = "org.springframework.web.bind.annotation.RequestMapping";
 	public static final String SPRING_GET_MAPPING = "org.springframework.web.bind.annotation.GetMapping";

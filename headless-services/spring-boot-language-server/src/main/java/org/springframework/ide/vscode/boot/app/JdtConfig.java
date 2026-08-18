@@ -61,6 +61,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.NoRequestMappingAnno
 import org.springframework.ide.vscode.boot.java.reconcilers.NotRegisteredBeansReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.PathInControllerAnnotationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.PreciseBeanTypeReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.RestControllerReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ServerHttpSecurityLambdaDslReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.UnnecessarySpringExtensionReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrategyDuplicatedReconciler;
@@ -165,6 +166,10 @@ public class JdtConfig {
 
 	@Bean NoRepoAnnotationReconciler noRepoAnnotationReconciler(SimpleLanguageServer server) {
 		return new NoRepoAnnotationReconciler(server.getQuickfixRegistry());
+	}
+
+	@Bean RestControllerReconciler restControllerReconciler(SimpleLanguageServer server) {
+		return new RestControllerReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Bean UnnecessarySpringExtensionReconciler unnecessarySpringExtensionReconciler(SimpleLanguageServer server) {

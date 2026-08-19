@@ -113,7 +113,10 @@ public class QueryReconcilerTest {
 		String docUri = directory.toPath().resolve("src/main/resources/jpa-named-queries.properties").toUri()
 				.toString();
 		Editor editor = harness.newEditor(LanguageId.JPA_QUERY_PROPERTIES, source, docUri);
-		editor.assertProblems("WHERE|JPQL: no viable alternative");
+		editor.assertProblems(
+				".|JPQL: mismatched input '.' expecting",
+				"WHERE|JPQL: no viable alternative"
+		);
 	}
 	
 	@Test

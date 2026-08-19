@@ -245,4 +245,211 @@ public class SpelDefinitionProviderTest {
 		editor.assertDefinitionLinkTargets("concat", List.of(expectedLocation2));
 	}
 
+	@Test
+	public void testDefinitionLinksInPreAuthorize() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.security.access.prepost.PreAuthorize;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@PreAuthorize("@visitService.isValidVersion('3.0.0')")
+					public void restricted() {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testDefinitionLinksInPreAuthorizeTextBlock() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.security.access.prepost.PreAuthorize;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@PreAuthorize(\"""
+							@visitService.isValidVersion('3.0.0')\""")
+					public void restricted() {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testDefinitionLinksInPostAuthorize() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.security.access.prepost.PostAuthorize;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@PostAuthorize(value = "@visitService.isValidVersion('3.0.0')")
+					public void restricted() {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testDefinitionLinksInCacheable() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.cache.annotation.Cacheable;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@Cacheable(cacheNames = "versions", key = "@visitService.isValidVersion(#version)")
+					public String cached(String version) {
+						return version;
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testDefinitionLinksInCacheEvictCondition() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.cache.annotation.CacheEvict;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@CacheEvict(cacheNames = "versions", condition = "@visitService.isValidVersion(#version)")
+					public void evict(String version) {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testDefinitionLinksInEventListenerCondition() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.context.event.EventListener;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@EventListener(condition = "@visitService.isValidVersion('3.0.0')")
+					public void handleEvent(Object event) {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testDefinitionLinksInConditionalOnExpression() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+				import org.springframework.context.annotation.Configuration;
+
+				@Configuration
+				@ConditionalOnExpression("#{@visitService.isValidVersion('3.0.0')}")
+				public class SpelExpressionsClass {
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testBeanDefinitionLinkInScheduledCron() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.scheduling.annotation.Scheduled;
+				import org.springframework.stereotype.Component;
+
+				@Component
+				public class SpelExpressionsClass {
+
+					@Scheduled(cron = "#{@visitService.cronExpression}")
+					public void scheduled() {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+	}
+
+	@Test
+	public void testNoDefinitionLinksInAnnotationWithoutSpel() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.stereotype.Controller;
+				import org.springframework.web.bind.annotation.GetMapping;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@GetMapping("/@visitService.isValidVersion('3.0.0')")
+					public void mapped() {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of());
+	}
+
+	private LocationLink beanLink(Bean bean) {
+		Bean[] beans = springIndex.getBeansWithName(project.getElementName(), bean.getName());
+		assertEquals(1, beans.length);
+		return new LocationLink(beans[0].getLocation().getUri(), beans[0].getLocation().getRange(),
+				beans[0].getLocation().getRange(), null);
+	}
+
+	private LocationLink isValidVersionMethodLink() {
+		Range range = new Range(new Position(7, 23), new Position(7, 37));
+		return new LocationLink(expectedDefinitionUriVisitService, range, range, null);
+	}
+
 }

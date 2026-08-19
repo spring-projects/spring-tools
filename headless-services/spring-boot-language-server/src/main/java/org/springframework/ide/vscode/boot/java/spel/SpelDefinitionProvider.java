@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 Broadcom, Inc.
+ * Copyright (c) 2017, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -27,12 +27,12 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.TextBlock;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
@@ -49,7 +49,6 @@ import org.springframework.expression.spel.ast.TypeReference;
 import org.springframework.expression.spel.standard.SpelExpression;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
-import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.IJavaLocationLinksProvider;
 import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLanguageSnippet;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
@@ -94,17 +93,12 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 	@Override
 	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
 			TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
-		if (n instanceof StringLiteral) {
-			StringLiteral valueNode = (StringLiteral) n;
-			ASTNode parent = ASTUtils.getNearestAnnotationParent(valueNode);
-			if (parent != null && parent instanceof Annotation) {
-
-				Annotation a = (Annotation) parent;
-				IAnnotationBinding binding = a.resolveAnnotationBinding();
-				if (binding != null && binding.getAnnotationType() != null
-						&& Annotations.VALUE.equals(binding.getAnnotationType().getQualifiedName())) {
-					return getLocationLinks(project, offset, a);
-				}
+		if (n instanceof StringLiteral || n instanceof TextBlock) {
+			ASTNode parent = ASTUtils.getNearestAnnotationParent(n);
+			if (parent instanceof Annotation a) {
+				// the extractors know which annotations and which of their attributes contain
+				// SpEL expressions, so no additional filtering on the annotation type here
+				return getLocationLinks(project, offset, a);
 			}
 		}
 		return Collections.emptyList();
@@ -146,7 +140,7 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 			IJavaProject project) {
 		URI docUri = null;
 		try {
-			if (className.startsWith("T")) {
+			if (className.startsWith("T(") && className.endsWith(")")) {
 				String classFqName = className.substring(2, className.length() - 1);
 				Optional<URI> sourceUriOpt = SourceLinks.source(project, classFqName);
 				if (sourceUriOpt.isPresent()) {
@@ -265,7 +259,9 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 			SpelNode rootNode = spelExpressionAST.getAST();
 			return extractMethodClassPairFromSpelNodes(rootNode, null, snippet, offset);
 		} catch (ParseException e) {
-			logger.error("", e);
+			// invalid or incomplete SpEL expressions are a normal situation while editing,
+			// the reconciler takes care of reporting those to the user
+			logger.debug("cannot parse SpEL expression", e);
 		}
 		return Optional.empty();
 	}

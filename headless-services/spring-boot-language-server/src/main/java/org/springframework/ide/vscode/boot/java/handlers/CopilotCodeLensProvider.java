@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Broadcom, Inc.
+ * Copyright (c) 2017, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -99,11 +99,10 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 
 			@Override
 			public boolean visit(SingleMemberAnnotation node) {
-				Arrays.stream(spelExtractors).map(e -> e.getSpelRegion(node)).filter(o -> o.isPresent())
-						.map(o -> o.get()).forEach(snippet -> {
-							String additionalContext = parseSpelAndFetchContext(cu, snippet.getText());
-							provideCodeLensForSpelExpression(cancelToken, node, document, snippet, additionalContext, resultAccumulator);
-						});
+				Arrays.stream(spelExtractors).flatMap(e -> e.getSpelRegions(node).stream()).forEach(snippet -> {
+					String additionalContext = parseSpelAndFetchContext(cu, snippet.getText());
+					provideCodeLensForSpelExpression(cancelToken, node, document, snippet, additionalContext, resultAccumulator);
+				});
 
 				if (isQueryAnnotation(node)) {
 					QueryType queryType = determineQueryType(document);
@@ -119,11 +118,10 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 			@Override
 			public boolean visit(NormalAnnotation node) {
 
-				Arrays.stream(spelExtractors).map(e -> e.getSpelRegion(node)).filter(o -> o.isPresent())
-						.map(o -> o.get()).forEach(snippet -> {
-							String additionalContext = parseSpelAndFetchContext(cu, snippet.getText());
-							provideCodeLensForSpelExpression(cancelToken, node, document, snippet, additionalContext, resultAccumulator);
-						});
+				Arrays.stream(spelExtractors).flatMap(e -> e.getSpelRegions(node).stream()).forEach(snippet -> {
+					String additionalContext = parseSpelAndFetchContext(cu, snippet.getText());
+					provideCodeLensForSpelExpression(cancelToken, node, document, snippet, additionalContext, resultAccumulator);
+				});
 
 				if (isQueryAnnotation(node)) {
 					QueryType queryType = determineQueryType(document);

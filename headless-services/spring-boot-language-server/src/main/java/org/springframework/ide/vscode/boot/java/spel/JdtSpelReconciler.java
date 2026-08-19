@@ -50,9 +50,7 @@ public class JdtSpelReconciler implements JdtAstReconciler {
 			@Override
 			public boolean visit(SingleMemberAnnotation node) {
 				Arrays.stream(spelExtractors)
-					.map(e -> e.getSpelRegion(node))
-					.filter(o -> o.isPresent())
-					.map(o -> o.get())
+					.flatMap(e -> e.getSpelRegions(node).stream())
 					.forEach(snippet -> spelReconciler.reconcile(snippet.getText(), snippet::toSingleJavaRange, context.getProblemCollector()));
 				return super.visit(node);
 			}
@@ -60,9 +58,7 @@ public class JdtSpelReconciler implements JdtAstReconciler {
 			@Override
 			public boolean visit(NormalAnnotation node) {
 				Arrays.stream(spelExtractors)
-					.map(e -> e.getSpelRegion(node))
-					.filter(o -> o.isPresent())
-					.map(o -> o.get())
+					.flatMap(e -> e.getSpelRegions(node).stream())
 					.forEach(snippet -> spelReconciler.reconcile(snippet.getText(), snippet::toSingleJavaRange, context.getProblemCollector()));
 				return super.visit(node);
 			}

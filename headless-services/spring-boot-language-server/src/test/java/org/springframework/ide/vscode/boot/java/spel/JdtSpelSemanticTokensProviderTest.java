@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -244,6 +244,34 @@ public class JdtSpelSemanticTokensProviderTest {
         token = tokens.get(6);
         assertThat(token).isEqualTo(new SemanticTokenData(178, 186, "string", new String[0]));
         assertThat(source.substring(token.getStart(), token.getEnd())).isEqualTo("A-Z\\s]+'");
+	}
+
+	@Test
+	void severalExpressionsInOneValue() throws Exception {
+		String source = """
+		package my.package
+
+		import org.springframework.beans.factory.annotation.Value;
+
+		public class Owner {
+
+			@Value("#{demo.first}-#{demo.second}")
+			String s;
+
+		}
+		""";
+
+        String uri = Paths.get(jp.getLocationUri()).resolve("src/main/resource/my/package/OwnerRepository.java").toUri().toASCIIString();
+		CompilationUnit cu = CompilationUnitCache.parse2(source.toCharArray(), uri, "OwnerRepository.java", jp);
+
+        assertThat(cu).isNotNull();
+
+        List<SemanticTokenData> tokens = computeTokens(cu);
+
+        // both embedded expressions are tokenized and every token has to map back
+        // onto the matching piece of the Java source
+        assertThat(tokens.stream().map(t -> source.substring(t.getStart(), t.getEnd())).toList())
+        		.containsExactly("demo", ".", "first", "demo", ".", "second");
 	}
 
 	@Test

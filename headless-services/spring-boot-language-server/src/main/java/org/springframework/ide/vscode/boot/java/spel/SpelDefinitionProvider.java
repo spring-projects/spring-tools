@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -106,13 +107,13 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 
 	private List<LocationLink> getLocationLinks(IJavaProject project, int offset, Annotation a) {
 		List<LocationLink> locationLink = new ArrayList<>();
-		Arrays.stream(spelExtractors).map(e -> {
-			if (a instanceof SingleMemberAnnotation)
-				return e.getSpelRegion((SingleMemberAnnotation) a);
-			else if (a instanceof NormalAnnotation)
-				return e.getSpelRegion((NormalAnnotation) a);
-			return Optional.<EmbeddedLanguageSnippet>empty();
-		}).filter(o -> o.isPresent()).map(o -> o.get())
+		Arrays.stream(spelExtractors).flatMap(e -> {
+			if (a instanceof SingleMemberAnnotation singleMember)
+				return e.getSpelRegions(singleMember).stream();
+			else if (a instanceof NormalAnnotation normal)
+				return e.getSpelRegions(normal).stream();
+			return Stream.<EmbeddedLanguageSnippet>empty();
+		})
 		.filter(snippet -> {
 			IRegion snippetRegion = snippet.getTotalRange();
 			return snippetRegion.getStart() <= (offset) && (offset) <= snippetRegion.getEnd();

@@ -58,22 +58,18 @@ public class JdtSpelSemanticTokensProvider implements JdtSemanticTokensProvider 
 			@Override
 			public boolean visit(SingleMemberAnnotation node) {
 				Arrays.stream(spelExtractors)
-					.map(e -> e.getSpelRegion(node))
-					.filter(o -> o.isPresent())
-					.map(o -> o.get())
-						.forEach(snippet -> tokensProvider.computeTokens(snippet.getText()).stream()
-								.flatMap(td -> snippet.toJavaRanges(td.range()).stream().map(r -> new SemanticTokenData(r,
-										td.type(), td.modifiers())))
-								.forEach(collector::accept));
+					.flatMap(e -> e.getSpelRegions(node).stream())
+					.forEach(snippet -> tokensProvider.computeTokens(snippet.getText()).stream()
+							.flatMap(td -> snippet.toJavaRanges(td.range()).stream().map(r -> new SemanticTokenData(r,
+									td.type(), td.modifiers())))
+							.forEach(collector::accept));
 				return super.visit(node);
 			}
 			
 			@Override
 			public boolean visit(NormalAnnotation node) {
 				Arrays.stream(spelExtractors)
-					.map(e -> e.getSpelRegion(node))
-					.filter(o -> o.isPresent())
-					.map(o -> o.get())
+					.flatMap(e -> e.getSpelRegions(node).stream())
 					.forEach(snippet -> tokensProvider.computeTokens(snippet.getText()).stream()
 							.flatMap(td -> snippet.toJavaRanges(td.range()).stream().map(r -> new SemanticTokenData(r,
 									td.type(), td.modifiers())))

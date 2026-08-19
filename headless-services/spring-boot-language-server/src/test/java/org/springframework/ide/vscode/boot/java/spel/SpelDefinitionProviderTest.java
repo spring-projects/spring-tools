@@ -358,6 +358,51 @@ public class SpelDefinitionProviderTest {
 	}
 
 	@Test
+	public void testDefinitionLinksInCachePut() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.cache.annotation.CachePut;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					@CachePut(cacheNames = "versions", unless = "@visitService.isValidVersion(#version)")
+					public String put(String version) {
+						return version;
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
+	public void testDefinitionLinksInAuthenticationPrincipal() throws Exception {
+		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.security.core.annotation.AuthenticationPrincipal;
+				import org.springframework.stereotype.Controller;
+
+				@Controller
+				public class SpelExpressionsClass {
+
+					public void principal(
+							@AuthenticationPrincipal(expression = "@visitService.isValidVersion('3.0.0')") Object user) {
+					}
+				}""", tempJavaDocUri);
+
+		editor.assertDefinitionLinkTargets("visitService", List.of(beanLink(visitService)));
+		editor.assertDefinitionLinkTargets("isValidVersion", List.of(isValidVersionMethodLink()));
+	}
+
+	@Test
 	public void testDefinitionLinksInEventListenerCondition() throws Exception {
 		String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
 

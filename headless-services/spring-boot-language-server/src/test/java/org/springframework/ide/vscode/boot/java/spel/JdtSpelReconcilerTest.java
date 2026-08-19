@@ -101,6 +101,52 @@ public class JdtSpelReconcilerTest {
 	}
 	
 	@Test
+	void noErrors_ConditionalOnExpression_plainValues() throws Exception {
+		// attributes that take a SpEL expression as a whole are also allowed to hold a
+		// plain value or a property placeholder, neither of which is a syntax error
+		String source = """
+				package example.demo;
+
+				import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+
+				public class A {
+
+					@ConditionalOnExpression("5000")
+					class B {}
+
+					@ConditionalOnExpression("${my.timeout}")
+					class C {}
+
+					@ConditionalOnExpression("-1")
+					class D {}
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/A.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems();
+	}
+
+	@Test
+	void noErrors_severalExpressionsInOneValue() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.beans.factory.annotation.Value;
+
+				public class A {
+
+					@Value("#{demo.first}-#{demo.second}")
+					String s;
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/A.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems();
+	}
+
+	@Test
 	void errors_ConditionalOnExpression_1() throws Exception {
 		String source = """
 				package example.demo;

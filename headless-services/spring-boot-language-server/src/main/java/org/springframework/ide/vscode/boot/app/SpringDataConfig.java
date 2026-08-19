@@ -43,12 +43,12 @@ public class SpringDataConfig {
 	
 	@Bean("hqlReconciler")
 	AntlrReconcilerWithSpel hqlReconciler(Optional<SpelReconciler> spelReconciler) {
-		return new AntlrReconcilerWithSpel("HQL", HqlParser.class, HqlLexer.class, "ql_statement", QueryProblemType.HQL_SYNTAX, spelReconciler, HqlLexer.SPEL);
+		return new AntlrReconcilerWithSpel("HQL", HqlParser.class, HqlLexer.class, "start", QueryProblemType.HQL_SYNTAX, spelReconciler, HqlLexer.SPEL);
 	}
 	
 	@Bean("jpqlReconciler")
 	AntlrReconcilerWithSpel jpqlReconciler(Optional<SpelReconciler> spelReconciler) {
-		return new AntlrReconcilerWithSpel("JPQL", JpqlParser.class, JpqlLexer.class, "ql_statement", QueryProblemType.JPQL_SYNTAX, spelReconciler, JpqlLexer.SPEL);
+		return new AntlrReconcilerWithSpel("JPQL", JpqlParser.class, JpqlLexer.class, "start", QueryProblemType.JPQL_SYNTAX, spelReconciler, JpqlLexer.SPEL);
 	}
 	
 	@Bean

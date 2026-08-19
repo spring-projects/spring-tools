@@ -138,7 +138,7 @@ public class QueryReconcilerTest {
 	}
 
 	@Test
-	void errorReported() throws Exception {
+	void errorReported_1() throws Exception {
 		String source = """
 				package example.demo;
 
@@ -156,6 +156,27 @@ public class QueryReconcilerTest {
 				.toString();
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
 		editor.assertProblems("SELECTX|HQL: mismatched input 'SELECTX'");
+	}
+
+	@Test
+	void errorReported_2() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jpa.repository.Query;
+				import org.springframework.data.repository.Repository;
+
+				public interface OwnerRepository extends Repository<Object, Integer> {
+
+					@Query("SELECT ptype FROMX PetType ptype ORDER BY ptype.name")
+					List<Object> findPetTypes();
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems("PetType|HQL: mismatched input 'PetType'");
 	}
 
 	@Test

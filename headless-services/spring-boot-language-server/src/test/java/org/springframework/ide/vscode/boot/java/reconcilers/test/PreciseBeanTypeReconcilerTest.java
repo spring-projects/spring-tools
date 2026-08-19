@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,9 +22,9 @@ import org.springframework.ide.vscode.boot.java.SpringAotJavaProblemType;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.PreciseBeanTypeReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixRegistry;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
-import org.springframework.ide.vscode.commons.rewrite.java.FixDescriptor;
 
 public class PreciseBeanTypeReconcilerTest extends BaseReconcilerTest {
 
@@ -105,7 +105,7 @@ public class PreciseBeanTypeReconcilerTest extends BaseReconcilerTest {
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("Number", markedStr);
 
-		assertEquals(3, problem.getQuickfixes().size());
+		assertEquals(1, problem.getQuickfixes().size());
 		
 	}
 
@@ -136,7 +136,7 @@ public class PreciseBeanTypeReconcilerTest extends BaseReconcilerTest {
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("Number", markedStr);
 
-		assertEquals(3, problem.getQuickfixes().size());
+		assertEquals(1, problem.getQuickfixes().size());
 		
 	}
 	
@@ -173,7 +173,7 @@ public class PreciseBeanTypeReconcilerTest extends BaseReconcilerTest {
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("Number", markedStr);
 
-		assertEquals(3, problem.getQuickfixes().size());
+		assertEquals(1, problem.getQuickfixes().size());
 		
 	}
 	
@@ -249,11 +249,11 @@ public class PreciseBeanTypeReconcilerTest extends BaseReconcilerTest {
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("Collection<Integer>", markedStr);
 
-		assertEquals(3, problem.getQuickfixes().size());
+		assertEquals(1, problem.getQuickfixes().size());
 		
-		FixDescriptor d = (FixDescriptor) problem.getQuickfixes().get(0).params;
-		
-		assertEquals("Replace return type with 'List<Integer>'", d.getLabel());
+		JdtFixDescriptor d = (JdtFixDescriptor) problem.getQuickfixes().get(0).params;
+
+		assertEquals("Replace return type with 'List<Integer>'", d.label());
 		
 	}
 	
@@ -314,6 +314,42 @@ public class PreciseBeanTypeReconcilerTest extends BaseReconcilerTest {
 
 		assertEquals(0, problem.getQuickfixes().size());
 
+	}
+
+	@Test
+	void twoMismatchedBeanMethodsOfferFileWideFixOnBoth() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.context.annotation.Bean;
+
+				class A {
+
+					@Bean
+					Number bean1() {
+						return Integer.valueOf(5);
+					};
+
+					@Bean
+					Number bean2() {
+						return Integer.valueOf(6);
+					};
+
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, true);
+
+		assertEquals(2, problems.size());
+
+		for (ReconcileProblem problem : problems) {
+			assertEquals(2, problem.getQuickfixes().size());
+
+			JdtFixDescriptor nodeFix = (JdtFixDescriptor) problem.getQuickfixes().get(0).params;
+			assertEquals("Replace return type with 'Integer'", nodeFix.label());
+
+			JdtFixDescriptor fileFix = (JdtFixDescriptor) problem.getQuickfixes().get(1).params;
+			assertEquals("Ensure concrete bean type in file", fileFix.label());
+		}
 	}
 
 	@Test

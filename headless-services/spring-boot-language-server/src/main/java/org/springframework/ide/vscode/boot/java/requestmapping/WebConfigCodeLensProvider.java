@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.requestmapping;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,8 +27,10 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.ShowDocumentParams;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
+import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
@@ -173,16 +174,13 @@ public class WebConfigCodeLensProvider implements CodeLensProvider {
 		
 		Location targetLocation = webConfig.getLocation();
 		Range targetRange = targetLocation.getRange();
-		
+
+		ShowDocumentParams showDocParams = new ShowDocumentParams(targetLocation.getUri());
+		showDocParams.setSelection(targetRange);
+
 		command.setTitle(label);
-		command.setCommand("vscode.open");
-		command.setArguments(List.of(targetLocation.getUri(),
-				Map.of("selection", Map.of(
-						"start", Map.of("line", targetRange.getStart().getLine(), "character", targetRange.getStart().getCharacter()),
-						"end", Map.of("line", targetRange.getEnd().getLine(), "character", targetRange.getEnd().getCharacter()))
-				)
-			)
-		);
+		command.setCommand(BootLanguageServerInitializer.CMD_SHOW_DOC);
+		command.setArguments(List.of(showDocParams));
 		
 		// Range — start above the first annotation/modifier (not above Javadoc)
 		

@@ -10,7 +10,10 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.requestmapping.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -23,12 +26,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.lsp4j.CodeLens;
+import org.eclipse.lsp4j.Command;
+import org.eclipse.lsp4j.ShowDocumentParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
@@ -182,6 +188,32 @@ public class WebConfigCodeLensProviderTest {
 		// to it should show up regardless
 		assertTrue(contains(cls, "Web Config"),
 				"a web config class without a summary should still get a bare navigation shortcut");
+	}
+
+	@Test
+	void codeLensNavigationCommandUsesCrossClientShowDocument() throws Exception {
+		// the navigation command must be the generic sts/show/document command
+		// (backed by the standard LSP window/showDocument request), not the VSCode-only
+		// "vscode.open" command, so navigation also works from Eclipse.
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/org/test/versions/MappingClassWithMultipleVersions.java");
+		Editor editor = harness.newEditor(LanguageId.JAVA, new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8), filePath.toUri().toASCIIString());
+
+		List<CodeLens> cls = editor.getCodeLenses("MappingClassWithMultipleVersions", 1);
+		Command command = cls.stream()
+				.map(CodeLens::getCommand)
+				.filter(cmd -> cmd.getTitle().startsWith("Web Config"))
+				.findAny()
+				.orElseThrow();
+
+		assertEquals(BootLanguageServerInitializer.CMD_SHOW_DOC, command.getCommand());
+		assertEquals(1, command.getArguments().size());
+		Object argument = command.getArguments().get(0);
+		assertInstanceOf(ShowDocumentParams.class, argument);
+
+		ShowDocumentParams showDocParams = (ShowDocumentParams) argument;
+		assertNotNull(showDocParams.getUri());
+		assertNotNull(showDocParams.getSelection());
 	}
 
 	private boolean contains(List<CodeLens> cls, String title) {

@@ -15,6 +15,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,14 +27,20 @@ import org.antlr.v4.runtime.ConsoleErrorListener;
 import org.antlr.v4.runtime.Token;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.AnonymousClassDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.EnumDeclaration;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
+import org.eclipse.jdt.core.dom.RecordDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TextBlock;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
@@ -139,24 +146,24 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 
 	private List<LocationLink> findLocationLinksForMethodRef(String methodName, String className,
 			IJavaProject project) {
-		URI docUri = null;
 		try {
 			if (className.startsWith("T(") && className.endsWith(")")) {
 				String classFqName = className.substring(2, className.length() - 1);
-				Optional<URI> sourceUriOpt = SourceLinks.source(project, classFqName);
-				if (sourceUriOpt.isPresent()) {
-					docUri = sourceUriOpt.get();
-				}
+				return findMethodInTypeHierarchy(project, classFqName, methodName);
 			} else if (className.startsWith("@")) {
-				String bean = className.substring(1);
-				List<LocationLink> beanLoc = findBeansWithName(project, bean);
-				if (beanLoc != null && beanLoc.size() > 0) {
-					docUri = new URI(beanLoc.get(0).getTargetUri());
+				String beanName = className.substring(1);
+				for (Bean bean : this.springIndex.getBeansWithName(project.getElementName(), beanName)) {
+					List<LocationLink> links = findMethodInTypeHierarchy(project, bean.getType(), methodName);
+					if (links.isEmpty() && bean.getLocation() != null) {
+						// the type of the bean might not be resolvable, in that case look at
+						// the document that defines the bean at least
+						links = findMethodPositionInDoc(URI.create(bean.getLocation().getUri()), null, methodName,
+								project);
+					}
+					if (!links.isEmpty()) {
+						return links;
+					}
 				}
-			}
-
-			if (docUri != null) {
-				return findMethodPositionInDoc(docUri, methodName, project);
 			}
 		} catch (Exception e) {
 			logger.error("", e);
@@ -164,7 +171,112 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 		return Collections.emptyList();
 	}
 
-	private List<LocationLink> findMethodPositionInDoc(URI docUrl, String methodName, IJavaProject project) {
+	/**
+	 * Looks for the method in the given type and, if the method isn't declared there, in
+	 * the super types of that type. The declaration closest to the given type wins, so
+	 * that an overridden method leads to the override and not to the super declaration.
+	 */
+	private List<LocationLink> findMethodInTypeHierarchy(IJavaProject project, String typeFqName, String methodName) {
+		String fqName = withoutTypeParameters(typeFqName);
+		if (fqName == null || fqName.isBlank()) {
+			return Collections.emptyList();
+		}
+
+		Optional<URI> source = SourceLinks.source(project, fqName);
+		if (source.isEmpty()) {
+			return Collections.emptyList();
+		}
+
+		List<LocationLink> links = findMethodPositionInDoc(source.get(), fqName, methodName, project);
+		if (!links.isEmpty()) {
+			return links;
+		}
+
+		// only when the method isn't declared in the type itself, walk up to its super
+		// types. The hierarchy comes from the type bindings of the compilation unit that
+		// was looked at already, no need to query the classpath index for it.
+		for (String superType : findSuperTypeFqNames(source.get(), fqName, project)) {
+			Optional<URI> superTypeSource = SourceLinks.source(project, superType);
+			if (superTypeSource.isPresent()) {
+				links = findMethodPositionInDoc(superTypeSource.get(), superType, methodName, project);
+				if (!links.isEmpty()) {
+					return links;
+				}
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * The super types of the given type, the closest ones first.
+	 */
+	private List<String> findSuperTypeFqNames(URI docUri, String typeFqName, IJavaProject project) {
+		return cuCache.withCompilationUnit(project, docUri, cu -> {
+			if (cu == null) {
+				return Collections.<String>emptyList();
+			}
+
+			ITypeBinding binding = findTypeBinding(cu, typeFqName);
+			if (binding == null) {
+				return Collections.<String>emptyList();
+			}
+
+			List<String> superTypes = new ArrayList<>();
+			for (Iterator<String> itr = ASTUtils.getHierarchyTypesFqNamesBreadthFirstIterator(binding); itr.hasNext();) {
+				String superTypeFqName = itr.next();
+				if (!typeFqName.equals(superTypeFqName)) {
+					superTypes.add(superTypeFqName);
+				}
+			}
+			return superTypes;
+		});
+	}
+
+	private static ITypeBinding findTypeBinding(CompilationUnit cu, String typeFqName) {
+		ITypeBinding[] binding = new ITypeBinding[1];
+
+		cu.accept(new ASTVisitor() {
+
+			private boolean visitType(AbstractTypeDeclaration node) {
+				if (binding[0] == null && hasSimpleNameOf(node, typeFqName)) {
+					binding[0] = node.resolveBinding();
+				}
+				return binding[0] == null;
+			}
+
+			@Override
+			public boolean visit(TypeDeclaration node) {
+				return visitType(node);
+			}
+
+			@Override
+			public boolean visit(EnumDeclaration node) {
+				return visitType(node);
+			}
+
+			@Override
+			public boolean visit(RecordDeclaration node) {
+				return visitType(node);
+			}
+
+		});
+		return binding[0];
+	}
+
+	private static String withoutTypeParameters(String typeFqName) {
+		if (typeFqName == null) {
+			return null;
+		}
+		int idx = typeFqName.indexOf('<');
+		return idx < 0 ? typeFqName : typeFqName.substring(0, idx);
+	}
+
+	/**
+	 * @param typeFqName the type the method is expected to be declared in, or null to
+	 *                   accept a matching method declaration anywhere in the document
+	 */
+	private List<LocationLink> findMethodPositionInDoc(URI docUrl, String typeFqName, String methodName,
+			IJavaProject project) {
 
 		return cuCache.withCompilationUnit(project, docUrl, cu -> {
 			List<LocationLink> locationLinks = new ArrayList<>();
@@ -177,7 +289,7 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 						@Override
 						public boolean visit(MethodDeclaration node) {
 							SimpleName nameNode = node.getName();
-							if (nameNode.getIdentifier().equals(methodName)) {
+							if (nameNode.getIdentifier().equals(methodName) && isDeclaredIn(node, typeFqName)) {
 								int start = nameNode.getStartPosition();
 								int end = start + nameNode.getLength();
 								DocumentRegion region = new DocumentRegion(document, start, end);
@@ -199,6 +311,35 @@ public class SpelDefinitionProvider implements IJavaLocationLinksProvider {
 			}
 			return locationLinks;
 		});
+	}
+
+	/**
+	 * A document can contain more than one type, so make sure the method really belongs
+	 * to the type that is being looked at.
+	 */
+	private static boolean isDeclaredIn(MethodDeclaration method, String typeFqName) {
+		if (typeFqName == null) {
+			return true;
+		}
+
+		for (ASTNode parent = method.getParent(); parent != null; parent = parent.getParent()) {
+			if (parent instanceof AnonymousClassDeclaration) {
+				// a method of an anonymous class is not a member of the enclosing type
+				return false;
+			}
+			if (parent instanceof AbstractTypeDeclaration type) {
+				return hasSimpleNameOf(type, typeFqName);
+			}
+		}
+		return false;
+	}
+
+	private static boolean hasSimpleNameOf(AbstractTypeDeclaration type, String typeFqName) {
+		String simpleName = typeFqName.substring(typeFqName.lastIndexOf('.') + 1);
+		// nested types are separated by '$' within fully qualified names
+		simpleName = simpleName.substring(simpleName.lastIndexOf('$') + 1);
+
+		return simpleName.equals(type.getName().getIdentifier());
 	}
 
 	private List<LocationLink> findBeansWithName(IJavaProject project, String beanName) {

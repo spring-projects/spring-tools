@@ -22,7 +22,10 @@ import org.springframework.ide.vscode.boot.java.jdt.refactoring.ConvertQueryToTe
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.ExtractRequestMappingParentPathRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.MovePathToRequestMappingRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.PreciseBeanTypeRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.RemoveAnnotationRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.ReplaceScopeAnnotationRefactoring;
+import org.springframework.ide.vscode.boot.java.jdt.refactoring.RestControllerRefactoring;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.TypeSafePropertyReferenceRefactoring;
 import org.springframework.ide.vscode.boot.java.requestmapping.HttpExchangeIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.PathPrefixPredicate;

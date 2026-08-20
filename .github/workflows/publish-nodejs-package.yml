@@ -1,0 +1,55 @@
+name: Publish NodeJS Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      package-name:
+        description: name of the package directory under nodejs-packages, e.g. jvm-launch-utils
+        required: true
+        type: string
+      tag:
+        description: tag the git repo if value is 'true'
+        required: true
+        type: boolean
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  publish-nodejs-package:
+    runs-on: ubuntu-latest
+    name: Publish '${{ inputs.package-name }}'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - name: Record package version
+        id: version
+        run: |
+          version=`jq -r .version nodejs-packages/${{ inputs.package-name }}/package.json`
+          echo "Version: ${version}"
+          echo "version=$version" >> $GITHUB_OUTPUT
+      - name: Create tag
+        if: ${{ inputs.tag }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # 9.0.0
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ inputs.package-name }}@${{ steps.version.outputs.version }}',
+              sha: context.sha
+            })
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22.x
+          registry-url: https://registry.npmjs.org
+      - name: Upgrade npm for trusted publishing support
+        run: npm install -g npm@latest
+      - name: Install dependencies
+        run: npm ci
+        working-directory: nodejs-packages/${{ inputs.package-name }}
+      - name: Publish to npm
+        run: npm publish --access public
+        working-directory: nodejs-packages/${{ inputs.package-name }}

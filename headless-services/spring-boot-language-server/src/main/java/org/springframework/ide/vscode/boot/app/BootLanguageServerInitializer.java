@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.app;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.MessageType;
@@ -169,7 +170,11 @@ public class BootLanguageServerInitializer implements InitializingBean {
 		startListening();
 
 		server.onCommand(CMD_SHOW_DOC, p -> {
-			ShowDocumentParams showDocParams = new Gson().fromJson((JsonElement)p.getArguments().get(0), ShowDocumentParams.class);
+			if (p.getArguments() == null || p.getArguments().isEmpty()) {
+				return CompletableFuture.failedFuture(
+						new IllegalArgumentException("Missing " + CMD_SHOW_DOC + " parameters"));
+			}
+			ShowDocumentParams showDocParams = new Gson().fromJson((JsonElement) p.getArguments().get(0), ShowDocumentParams.class);
 			return server.getClient().showDocument(showDocParams).thenApply(r -> {
 				if (!r.isSuccess()) {
 					MessageParams messageParams = new MessageParams(MessageType.Error, "Failed to open: " + showDocParams.getUri());

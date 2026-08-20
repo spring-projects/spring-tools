@@ -315,8 +315,9 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 				if (!supported) {
 					throw new IllegalStateException("Classpath listening not supported.");
 				} else {
-					if (params.getArguments().get(0) instanceof JsonPrimitive) {
-						boolean classpathListeningEnabled = ((JsonPrimitive)params.getArguments().get(0)).getAsBoolean();
+					if (params.getArguments() != null && !params.getArguments().isEmpty()
+							&& params.getArguments().get(0) instanceof JsonPrimitive) {
+						boolean classpathListeningEnabled = ((JsonPrimitive) params.getArguments().get(0)).getAsBoolean();
 						log.info("CMD - Enable classpath listening: " + classpathListeningEnabled);
 						enableClasspathListener(classpathListeningEnabled);
 					}

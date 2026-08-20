@@ -211,6 +211,9 @@ public class BootLanguageServerBootApp {
 		final Gson gson = new Gson();
 		server.onCommand("sts/livedata/remoteConnect", params -> {
 			List<Object> args = params.getArguments();
+			if (args == null || args.size() < 2) {
+				return CompletableFuture.completedFuture(null);
+			}
 			String owner = ((JsonElement) args.get(0)).getAsString();
 			RemoteBootAppData[] data = gson.fromJson((JsonElement) args.get(1), RemoteBootAppData[].class);
 			if (data.length > 0) {
@@ -237,7 +240,8 @@ public class BootLanguageServerBootApp {
 		final Gson gson = new Gson();
 		server.onCommand("sts/livedata/localAdd", params -> {
 			synchronized(localApps) {
-				RemoteBootAppData[] newAdditions = params.getArguments().stream().map(a -> gson.fromJson((JsonElement) a, RemoteBootAppData.class)).toArray(RemoteBootAppData[]::new);
+				List<Object> args = params.getArguments() != null ? params.getArguments() : List.of();
+				RemoteBootAppData[] newAdditions = args.stream().map(a -> gson.fromJson((JsonElement) a, RemoteBootAppData.class)).toArray(RemoteBootAppData[]::new);
 				for (RemoteBootAppData app : newAdditions) {
 					localApps.put(SpringProcessConnectorRemote.getProcessKey(app), app);
 				}
@@ -247,7 +251,8 @@ public class BootLanguageServerBootApp {
 		});
 		server.onCommand("sts/livedata/localRemove", params -> {
 			synchronized(localApps) {
-				List<RemoteBootAppData> removedApps = params.getArguments().stream()
+				List<Object> args = params.getArguments() != null ? params.getArguments() : List.of();
+				List<RemoteBootAppData> removedApps = args.stream()
 						.map(o -> o instanceof JsonElement e ? (e.isJsonNull() ? null : e.getAsString()) : (String) o)
 						.filter(Objects::nonNull)
 						.map(localApps::remove)

@@ -211,6 +211,9 @@ public class GenAotQueryMethodImplProvider implements IJavaLocationLinksProvider
 	
 	private void registerCommands(SimpleLanguageServer server) {
 		server.onCommand(CMD_NAVIGATE_TO_IMPL, params -> {
+			if (params.getArguments() == null || params.getArguments().isEmpty()) {
+				return CompletableFuture.completedFuture(null);
+			}
 			return CompletableFuture.supplyAsync(() -> {
 				GoToImplParams implParams = new Gson().fromJson((JsonElement) params.getArguments().get(0), GoToImplParams.class);
 				Optional<IJavaProject> project = projectFinder.find(implParams.docId());

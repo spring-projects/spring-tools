@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,12 +66,26 @@ class YamlToPropertiesCommand {
 	}
 	
 	private CompletableFuture<ShowDocumentResult> execute(List<Object> arguments) {
+		if (arguments == null || arguments.size() < 3) {
+			return CompletableFuture
+					.failedFuture(new IllegalArgumentException("Command requires 3 arguments: yamlUri, propsUri, replace"));
+		}
 		String yamlUri = arguments.get(0) instanceof JsonElement ? ((JsonElement) arguments.get(0)).getAsString() : (String) arguments.get(0);
 		String propsUri = arguments.get(1) instanceof JsonElement ? ((JsonElement) arguments.get(1)).getAsString() : (String) arguments.get(1);
-		Boolean replace = arguments.get(2) instanceof JsonElement ? ((JsonElement) arguments.get(2)).getAsBoolean() : (Boolean) arguments.get(2);
+		final boolean doReplace;
+		Object replaceArg = arguments.get(2);
+		if (replaceArg == null) {
+			return CompletableFuture.failedFuture(new IllegalArgumentException("Argument 'replace' must not be null"));
+		} else if (replaceArg instanceof JsonElement) {
+			doReplace = ((JsonElement) replaceArg).getAsBoolean();
+		} else if (replaceArg instanceof Boolean) {
+			doReplace = (Boolean) replaceArg;
+		} else {
+			return CompletableFuture.failedFuture(new IllegalArgumentException("Argument 'replace' must be a boolean"));
+		}
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				return createWorkspaceEdit(yamlUri, propsUri, replace);
+				return createWorkspaceEdit(yamlUri, propsUri, doReplace);
 			} catch (IOException | BadLocationException e) {
 				throw new CompletionException(e);
 			}
@@ -110,7 +125,7 @@ class YamlToPropertiesCommand {
 					addReportHeaderComment(propsContent, errors, warnings);
 				}
 				// Skip over the date header. Comments are not present but date header is.
-				if (write.getBuffer().charAt(0) == '#') {
+				if (write.getBuffer().length() > 0 && write.getBuffer().charAt(0) == '#') {
 					int idx = write.getBuffer().indexOf("\n");
 					propsContent.append(idx >= 0 && idx < write.getBuffer().length() ? write.getBuffer().substring(idx + 1) : write.getBuffer().toString());
 				} else {

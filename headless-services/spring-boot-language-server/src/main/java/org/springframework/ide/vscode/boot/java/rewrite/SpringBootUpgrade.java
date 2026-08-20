@@ -11,8 +11,10 @@
 package org.springframework.ide.vscode.boot.java.rewrite;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.openrewrite.Recipe;
@@ -34,11 +36,16 @@ public class SpringBootUpgrade {
 
 	public SpringBootUpgrade(SimpleLanguageServer server, RewriteRecipeRepository recipeRepo, JavaProjectFinder projectFinder) {
 		server.onCommand(CMD_UPGRADE_SPRING_BOOT, params -> {
-			String uri = ((JsonElement) params.getArguments().get(0)).getAsString();
+			List<?> args = params.getArguments();
+			if (args == null || args.size() < 2) {
+				return CompletableFuture.failedFuture(
+						new IllegalArgumentException("Command requires project URI and target Spring Boot version"));
+			}
+			String uri = ((JsonElement) args.get(0)).getAsString();
 			Assert.isLegal(uri != null, "Project URI parameter must not be 'null'");
-			Version targetVersion = Version.parse(((JsonElement) params.getArguments().get(1)).getAsString());
+			Version targetVersion = Version.parse(((JsonElement) args.get(1)).getAsString());
 			Assert.isLegal(targetVersion != null, "Target Spring Boot version must not be 'null'");
-			boolean askForPreview = params.getArguments().size() > 2 ? ((JsonElement) params.getArguments().get(2)).getAsBoolean() : false;
+			boolean askForPreview = args.size() > 2 ? ((JsonElement) args.get(2)).getAsBoolean() : false;
 			
 			IJavaProject project = projectFinder.find(new TextDocumentIdentifier(uri)).orElse(null);
 			Assert.isLegal(project != null, "No Spring Boot project found for uri: " + uri);

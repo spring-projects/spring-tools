@@ -79,7 +79,8 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 		this.spelSemanticTokens = spelSemanticTokens;
 		
 		server.onCommand(CMD_ENABLE_COPILOT_FEATURES, params -> {
-			if (params.getArguments().get(0) instanceof JsonPrimitive) {
+			if (params.getArguments() != null && !params.getArguments().isEmpty()
+					&& params.getArguments().get(0) instanceof JsonPrimitive) {
 				CopilotCodeLensProvider.showCodeLenses = ((JsonPrimitive) params.getArguments().get(0)).getAsBoolean();
 			}
 			return CompletableFuture.completedFuture(showCodeLenses);

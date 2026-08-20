@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -67,7 +67,10 @@ public class XMLElementReconciler {
 		
 		String value = attributeNode.getNodeValue();
 		
-		if (value != null && value.startsWith(prefix) && value.endsWith(postfix)) {
+		// startsWith+endsWith alone does not ensure a non-negative "inner" range (e.g. "x" with
+		// prefix "x" and postfix "x" would use substring(1, 0) and throw)
+		if (value != null && value.length() >= prefix.length() + postfix.length()
+				&& value.startsWith(prefix) && value.endsWith(postfix)) {
 			String valueToReconcile = value.substring(prefix.length(), value.length() - postfix.length());
 			reconciler.reconcile(valueToReconcile, r -> new Region(r.getOffset() + start + prefix.length() + 1, r.getLength()), problemCollector);
 		}

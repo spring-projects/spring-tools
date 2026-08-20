@@ -270,6 +270,9 @@ public class SpringProcessCommandHandler {
 	
 	private String getArgumentByKey(ExecuteCommandParams params, String name) {
 		List<Object> arguments = params.getArguments();
+		if (arguments == null) {
+			return null;
+		}
 		for (Object arg : arguments) {
 			if (arg instanceof Map<?, ?>) {
 				Object value = ((Map<?, ?>) arg).get(name);

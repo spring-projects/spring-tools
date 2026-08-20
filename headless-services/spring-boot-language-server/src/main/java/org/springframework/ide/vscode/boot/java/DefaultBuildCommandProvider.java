@@ -53,10 +53,14 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 
 		// Execute Maven Goal
 		server.onCommand(CMD_EXEC_MAVEN_GOAL, params -> {
-			String pomPath = extractString(params.getArguments().get(0));
-			String goal = extractString(params.getArguments().get(1));
-			Map<String, String> env = params.getArguments().size() > 2 ? extractEnv(params.getArguments().get(2))
-					: Collections.emptyMap();
+			List<?> args = params.getArguments();
+			if (args == null || args.size() < 2) {
+				return CompletableFuture.failedFuture(
+						new IllegalArgumentException("Command requires pom path and Maven goal arguments"));
+			}
+			String pomPath = extractString(args.get(0));
+			String goal = extractString(args.get(1));
+			Map<String, String> env = args.size() > 2 ? extractEnv(args.get(2)) : Collections.emptyMap();
 			Path buildFile = validateOpenProjectBuildFile(pomPath, ProjectBuild.MAVEN_PROJECT_TYPE);
 			String[] goals = goal.trim().split("\\s+");
 			try {
@@ -68,10 +72,14 @@ public class DefaultBuildCommandProvider implements BuildCommandProvider {
 
 		// Execute Gradle Build
 		server.onCommand(CMD_EXEC_GRADLE_BUILD, params -> {
-			String gradleBuildPath = extractString(params.getArguments().get(0));
-			String command = extractString(params.getArguments().get(1));
-			Map<String, String> env = params.getArguments().size() > 2 ? extractEnv(params.getArguments().get(2))
-					: Collections.emptyMap();
+			List<?> args = params.getArguments();
+			if (args == null || args.size() < 2) {
+				return CompletableFuture.failedFuture(
+						new IllegalArgumentException("Command requires Gradle build file path and command arguments"));
+			}
+			String gradleBuildPath = extractString(args.get(0));
+			String command = extractString(args.get(1));
+			Map<String, String> env = args.size() > 2 ? extractEnv(args.get(2)) : Collections.emptyMap();
 			Path buildFile = validateOpenProjectBuildFile(gradleBuildPath, ProjectBuild.GRADLE_PROJECT_TYPE);
 			String[] tasks = command.trim().split("\\s+");
 			try {

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,12 +56,26 @@ public class PropertiesToYamlCommand {
 	}
 
 	private CompletableFuture<ShowDocumentResult> execute(List<Object> arguments) {
+		if (arguments == null || arguments.size() < 3) {
+			return CompletableFuture
+					.failedFuture(new IllegalArgumentException("Command requires 3 arguments: propsUri, yamlUri, replace"));
+		}
 		String propsUri = arguments.get(0) instanceof JsonElement ? ((JsonElement) arguments.get(0)).getAsString() : (String) arguments.get(0);
 		String yamlUri = arguments.get(1) instanceof JsonElement ? ((JsonElement) arguments.get(1)).getAsString() : (String) arguments.get(1);
-		Boolean replace = arguments.get(2) instanceof JsonElement ? ((JsonElement) arguments.get(2)).getAsBoolean() : (Boolean) arguments.get(2);
+		final boolean doReplace;
+		Object replaceArg = arguments.get(2);
+		if (replaceArg == null) {
+			return CompletableFuture.failedFuture(new IllegalArgumentException("Argument 'replace' must not be null"));
+		} else if (replaceArg instanceof JsonElement) {
+			doReplace = ((JsonElement) replaceArg).getAsBoolean();
+		} else if (replaceArg instanceof Boolean) {
+			doReplace = (Boolean) replaceArg;
+		} else {
+			return CompletableFuture.failedFuture(new IllegalArgumentException("Argument 'replace' must be a boolean"));
+		}
 		return CompletableFuture.supplyAsync(() -> {
 			try {
-				return createWorkspaceEdit(propsUri, yamlUri, replace);
+				return createWorkspaceEdit(propsUri, yamlUri, doReplace);
 			} catch (IOException | BadLocationException e) {
 				throw new CompletionException(e);
 			}

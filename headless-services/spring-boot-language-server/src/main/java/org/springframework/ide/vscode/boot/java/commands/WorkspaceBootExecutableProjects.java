@@ -151,9 +151,14 @@ public class WorkspaceBootExecutableProjects {
 	}
 
 	private CompletableFuture<BootProjectInfo> getBootProjectInfo(ExecuteCommandParams params) {
+		if (params.getArguments() == null || params.getArguments().isEmpty()) {
+			return CompletableFuture.completedFuture(null);
+		}
 		String projectUri = ((JsonElement) params.getArguments().get(0)).getAsString();
 		IJavaProject project = projectFinder.find(new TextDocumentIdentifier(projectUri)).orElse(null);
-
+		if (project == null) {
+			return CompletableFuture.completedFuture(null);
+		}
 		return mapToBootProjectInfo(project).thenApply(opt -> opt.orElse(null));
 	}
 	

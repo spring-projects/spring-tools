@@ -132,7 +132,9 @@ public class ModulithService {
 				if (!isModulithDependentProject(project)) {
 					removeFromCache(project);
 					stopListening(project);
-				} else if (anyClassFilesPresent(project)) {
+				} else {
+					// Keep in sync with projectAdded: when there is nothing to read yet, still
+					// attach listeners; when output exists, refresh metadata first.
 					if (anyClassFilesPresent(project)) {
 						requestMetadata(project, DEBOUNCE_TIME).thenAccept(res -> startListening(project));
 					} else {
@@ -143,6 +145,9 @@ public class ModulithService {
 		};
 		
 		server.onCommand(CMD_MODULITH_REFRESH, params -> {
+			if (params.getArguments() == null || params.getArguments().isEmpty()) {
+				return CompletableFuture.completedFuture("false");
+			}
 			String uri = ((JsonElement) params.getArguments().get(0)).getAsString();
 			return projectFinder.find(new TextDocumentIdentifier(uri)).map(this::refreshMetadata).orElse(CompletableFuture.completedFuture(false)).thenApply(String::valueOf);
 		});

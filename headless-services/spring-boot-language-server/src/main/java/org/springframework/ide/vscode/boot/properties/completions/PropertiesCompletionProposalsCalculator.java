@@ -253,7 +253,7 @@ public class PropertiesCompletionProposalsCalculator {
 	 */
 	protected EnumCaseMode caseMode(String prefix) {
 		EnumCaseMode caseMode;
-		if ("".equals(prefix)) {
+		if (prefix == null || prefix.isEmpty()) {
 			caseMode = preferLowerCaseEnums?EnumCaseMode.LOWER_CASE:EnumCaseMode.ORIGNAL;
 		} else {
 			caseMode = Character.isLowerCase(prefix.charAt(0))?EnumCaseMode.LOWER_CASE:EnumCaseMode.ORIGNAL;

@@ -181,4 +181,5 @@ GitHub Actions workflows in `.github/workflows/`:
 - **License**: Eclipse Public License v1.0 — add EPL header to all new Java files (see `java-copyright-header.txt`)
 - **DCO**: Commits must include `Signed-off-by` trailer (no CLA required)
 - **HTTPS enforcement**: Run `./nohttp.sh` to verify all URLs in source use HTTPS
-- **Commit messages**: Reference issues as `GH-XXXX`; add `@author` tag to new Java classes
+- **Commit messages**: Reference issues as `GH-XXXX`; add `@author` tag to new Java classes; create a one-line commit message (not a long description) and do not include co-authored or signed-off tags
+

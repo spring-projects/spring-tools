@@ -43,6 +43,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.ide.vscode.boot.common.PropertyCompletionFactory;
 import org.springframework.ide.vscode.boot.common.RelaxedNameConfig;
+import org.springframework.ide.vscode.boot.factories.SpringFactoriesDefinitionHandler;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
@@ -455,6 +456,12 @@ public class BootLanguageServerBootApp {
 			));
 	}
 	
+	@Bean
+	SpringFactoriesDefinitionHandler springFactoriesDefinitionHandler(SimpleLanguageServer server,
+			JavaProjectFinder projectFinder, JavaElementLocationProvider javaElementLocationProvider) {
+		return new SpringFactoriesDefinitionHandler(server.getTextDocumentService(), projectFinder, javaElementLocationProvider);
+	}
+
 	@Bean
 	ModulithService modulithService(SimpleLanguageServer server, JavaProjectFinder projectFinder,
 			ProjectObserver projectObserver, SpringSymbolIndex springIndexer, SpringMetamodelIndex springIndex,

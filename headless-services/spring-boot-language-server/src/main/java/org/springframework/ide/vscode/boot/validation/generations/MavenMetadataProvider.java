@@ -28,6 +28,8 @@ import org.openrewrite.SourceFile;
 import org.openrewrite.maven.MavenExecutionContextView;
 import org.openrewrite.maven.MavenParser;
 import org.openrewrite.maven.MavenSettings;
+import org.openrewrite.maven.cache.InMemoryMavenPomCache;
+import org.openrewrite.maven.cache.MavenPomCache;
 import org.openrewrite.maven.internal.MavenPomDownloader;
 import org.openrewrite.maven.tree.GroupArtifact;
 import org.openrewrite.maven.tree.MavenResolutionResult;
@@ -46,6 +48,10 @@ public class MavenMetadataProvider {
 	private final Map<String, MavenMetadata> cache = new ConcurrentHashMap<>();
 	private final ListenerList<String> listeners = new ListenerList<>();
 	private final ProgressService progressService;
+	// Shared across all pom resolutions so that parent/BOM poms downloaded for one project
+	// (most Spring Boot projects share spring-boot-starter-parent/spring-boot-dependencies)
+	// don't get re-downloaded and re-parsed on every lookup.
+	private final MavenPomCache pomCache = new InMemoryMavenPomCache();
 
 	public MavenMetadataProvider(FileObserver fileObserver, ProgressService progressService) {
 		this.progressService = progressService != null ? progressService : ProgressService.NO_PROGRESS;
@@ -76,6 +82,7 @@ public class MavenMetadataProvider {
 		try {
 			ExecutionContext ctx = new InMemoryExecutionContext();
 			MavenExecutionContextView mvnCtx = MavenExecutionContextView.view(ctx);
+			mvnCtx.setPomCache(pomCache);
 			MavenSettings settings = mvnCtx.getSettings();
 			if (settings == null) {
 				mvnCtx.setMavenSettings(MavenSettings.readMavenSettingsFromDisk(ctx));

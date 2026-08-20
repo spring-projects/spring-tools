@@ -25,7 +25,7 @@
     "prepack": "tsc -p ./ && npm run lint"
   },
   "dependencies": {
-    "@pivotal-tools/jvm-launch-utils": "0.0.23",
+    "@pivotal-tools/jvm-launch-utils": "0.0.24",
     "deep-equal": "^2.2.3",
     "portfinder": "^1.0.38"
   },

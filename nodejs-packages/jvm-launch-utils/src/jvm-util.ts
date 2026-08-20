@@ -4,6 +4,15 @@ import * as ChildProcess from 'child_process';
 
 'use strict';
 
+/**
+ * Modules that a plain JRE typically does not provide, but that clients of this
+ * package rely on:
+ *
+ * - `jdk.attach`: attach to locally running JVMs (`com.sun.tools.attach`)
+ * - `jdk.management`: platform management extensions used along with the attach API
+ */
+export const REQUIRED_JDK_MODULES = [ 'jdk.attach', 'jdk.management' ];
+
 export interface JVM {
     /**
      * 8 = Java 1.8.x, 9 = Java 9.x, etc
@@ -21,9 +30,16 @@ export interface JVM {
     getJavaHome() : string
 
     /**
-     * Detect whether this JVM is a JDK
+     * Detect whether this JVM is a JDK, i.e. whether it provides the JDK-only
+     * modules the language server needs (see REQUIRED_JDK_MODULES).
      */
     isJdk() : boolean
+
+    /**
+     * The JDK-only modules from REQUIRED_JDK_MODULES that this JVM does not provide.
+     * An empty array means the JVM is usable as a JDK.
+     */
+    getMissingJdkModules() : string[]
 
     /**
      * Launch an executable jar with this jvm.
@@ -164,6 +180,9 @@ class JVMImpl implements JVM {
     javaHome : string
     javaExe : string
     version : number
+    private listModules : Getter<string> = memoize(() =>
+        ChildProcess.execFileSync(this.getJavaExecutable(), ['--list-modules'], {windowsHide: true, encoding: 'utf8'})
+    );
     constructor(javaHome : string, javaExe : string, version : number) {
         this.javaHome = javaHome;
         this.javaExe = javaExe;
@@ -181,12 +200,16 @@ class JVMImpl implements JVM {
         return this.javaExe;
     }
     isJdk(): boolean {
-        const javaExecutable = this.getJavaExecutable();
-        const str = ChildProcess.execFileSync(javaExecutable, ['--list-modules'], {windowsHide: true, encoding: 'utf8'});
-        return str.search(/^jdk.management@.*$/m) >= 0;
+        return this.getMissingJdkModules().length === 0;
+    }
+    getMissingJdkModules(): string[] {
+        const modules = this.listModules();
+        return REQUIRED_JDK_MODULES.filter(module =>
+            modules.search(new RegExp(`^${module.replace(/\./g, '\\.')}@`, 'm')) < 0
+        );
     }
     jarLaunch(jar: string, vmargs?: string[], execFileOptions?: ChildProcess.ExecFileOptions, pargs?: string[]): ChildProcess.ChildProcess {
-        let args = [];
+        const args: string[] = [];
         if (vmargs) {
             args.push(...vmargs);
         }
@@ -194,7 +217,9 @@ class JVMImpl implements JVM {
         if (pargs) {
             args.push(...pargs);
         }
-        return ChildProcess.execFile(this.getJavaExecutable(), args, execFileOptions);
+        // explicit 'null' callback: the (file, args, options) overload without a callback
+        // only exists for options that pin down the encoding
+        return ChildProcess.execFile(this.getJavaExecutable(), args, execFileOptions, null);
     }
 
     mainClassLaunch(mainClass: string, classpath: string[], jvmArgs: string[], execFileOptions?: ChildProcess.ExecFileOptions): ChildProcess.ChildProcess {
@@ -211,7 +236,9 @@ class JVMImpl implements JVM {
         // Main class
         args.push(mainClass);
 
-        return ChildProcess.execFile(this.getJavaExecutable(), args, execFileOptions);
+        // explicit 'null' callback: the (file, args, options) overload without a callback
+        // only exists for options that pin down the encoding
+        return ChildProcess.execFile(this.getJavaExecutable(), args, execFileOptions, null);
     }
 }
 

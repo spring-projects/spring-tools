@@ -1,3 +1,3 @@
-import {JVM, findJdk, findJvm} from './jvm-util';
+import {JVM, findJdk, findJvm, REQUIRED_JDK_MODULES} from './jvm-util';
 
-export {JVM, findJdk, findJvm};
+export {JVM, findJdk, findJvm, REQUIRED_JDK_MODULES};

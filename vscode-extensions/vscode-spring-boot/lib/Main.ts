@@ -70,9 +70,11 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
                 throw Error(`Spring Tools Language Server requires Java 21 or higher to be launched. Current Java version is ${version}`);
             }
 
-            if (!jvm.isJdk()) {
+            const missingModules = jvm.getMissingJdkModules();
+            if (missingModules.length > 0) {
                 window.showWarningMessage(
-                    'JAVA_HOME or PATH environment variable seems to point to a JRE. A JDK is required, hence Boot Hints are unavailable.',
+                    `The Java runtime used by Spring Tools (${jvm.getJavaHome()}) does not provide the ${missingModules.join(' and ')} module${missingModules.length > 1 ? 's' : ''}. `
+                        + 'A full JDK is required to attach to locally running Spring Boot apps, hence live process information (live hovers and live metrics) is unavailable. All other features work as usual.',
                     STOP_ASKING).then(selection => {
                         if (selection === STOP_ASKING) {
                             options.workspaceOptions.update('checkJVM', false);

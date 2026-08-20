@@ -48,7 +48,7 @@ jobs:
       - name: Upgrade npm for trusted publishing support
         run: npm install -g npm@latest
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         working-directory: nodejs-packages/${{ inputs.package-name }}
       - name: Publish to npm
         run: npm publish --access public

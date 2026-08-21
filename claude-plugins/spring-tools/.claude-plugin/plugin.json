@@ -1,7 +1,7 @@
 {
   "name": "spring-tools",
   "description": "Spring Tools Language Server — real-time diagnostics, completions, and code navigation for Spring Boot projects. Operates standalone without requiring JDT Language Server. On first run, downloads the language server JAR (checksum-verified) from cdn.spring.io and launches it as a local Java process; requires Java 21+ on PATH.",
-  "version": "2.4.0",
+  "version": "2.4.0-202608211432",
   "author": {
     "name": "Spring Tools"
   },

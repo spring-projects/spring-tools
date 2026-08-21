@@ -34,7 +34,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
-import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
+import org.springframework.ide.vscode.boot.java.rewrite.SpringBootPatchUpgrade;
 import org.springframework.ide.vscode.boot.validation.generations.GenerationsValidator;
 import org.springframework.ide.vscode.boot.validation.generations.MavenMetadata;
 import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
@@ -157,7 +157,7 @@ public class PomInlayHintHandler implements InlayHintHandler {
 						inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
 							Command command = new Command();
 							command.setTitle("Upgrade to the Latest Patch");
-							command.setCommand(SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT);
+							command.setCommand(SpringBootPatchUpgrade.CMD_UPGRADE_SPRING_BOOT_PATCH);
 							command.setArguments(List.of(jp.getLocationUri().toASCIIString(), latestPatch.toString(), false));
 
 							InlayHintLabelPart label = new InlayHintLabelPart("Upgrade to the Latest Patch");

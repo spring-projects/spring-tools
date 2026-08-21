@@ -21,9 +21,11 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ShowDocumentParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
-import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
+import org.springframework.ide.vscode.boot.java.rewrite.SpringBootPatchUpgrade;
 import org.springframework.ide.vscode.boot.validation.generations.preferences.VersionValidationProblemType;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -35,15 +37,17 @@ import com.google.common.collect.ImmutableList;
 
 public class UpdateBootVersion extends AbstractDiagnosticValidator {
 	
+	private static final Logger log = LoggerFactory.getLogger(UpdateBootVersion.class);
+	
 	private static final String RELEASE_NOTES_URL_PREFIX = "https://github.com/spring-projects/spring-boot/releases/tag/v";
 
-	private Optional<SpringBootUpgrade> bootUpgradeOpt;
+	private Optional<SpringBootPatchUpgrade> bootUpgradeOpt;
 
 	private SpringProjectsProvider springProjectsProvider;
 	private MavenMetadataProvider mavenMetadataProvider;
 	private BootJavaConfig bootJavaConfig;
 
-	public UpdateBootVersion(DiagnosticSeverityProvider diagnosticSeverityProvider, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider springProjectsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
+	public UpdateBootVersion(DiagnosticSeverityProvider diagnosticSeverityProvider, Optional<SpringBootPatchUpgrade> bootUpgradeOpt, SpringProjectsProvider springProjectsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
 		super(diagnosticSeverityProvider);
 		this.bootUpgradeOpt = bootUpgradeOpt;
 		this.springProjectsProvider = springProjectsProvider;
@@ -53,39 +57,44 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 
 	@Override
 	public Collection<Diagnostic> validate(IJavaProject javaProject, Version javaProjectVersion) throws Exception {
-		SortedVersions versions = null;
-		
-		if (bootJavaConfig.isUseProjectBuildFileForVersionValidation() && ProjectBuild.MAVEN_PROJECT_TYPE.equals(javaProject.getProjectBuild().getType())) {
-			try {
-				MavenMetadata metadata = mavenMetadataProvider.getMetadata(javaProject, "org.springframework.boot", "spring-boot");
-				if (metadata != null) {
-					versions = metadata.getReleaseVersions();
+		long start = System.currentTimeMillis();
+		try {
+			SortedVersions versions = null;
+			
+			if (bootJavaConfig.isUseProjectBuildFileForVersionValidation() && ProjectBuild.MAVEN_PROJECT_TYPE.equals(javaProject.getProjectBuild().getType())) {
+				try {
+					MavenMetadata metadata = mavenMetadataProvider.getMetadata(javaProject, "org.springframework.boot", "spring-boot");
+					if (metadata != null) {
+						versions = metadata.getReleaseVersions();
+					}
+				} catch (Exception e) {
+					// Logged in provider, fallback will happen below
 				}
-			} catch (Exception e) {
-				// Logged in provider, fallback will happen below
 			}
+			
+			if (versions == null) {
+				List<Version> rawReleases = springProjectsProvider.getProject(SpringProjectUtil.SPRING_BOOT).getReleases();
+				versions = new SortedVersions(rawReleases);
+			}
+			
+			ImmutableList.Builder<Diagnostic> builder = ImmutableList.builder();
+			
+			versions.getNewerLatestMajorRelease(javaProjectVersion)
+					.flatMap(latest -> validateMajorVersion(javaProject, javaProjectVersion, latest))
+					.ifPresent(builder::add);
+					
+			versions.getNewerLatestMinorRelease(javaProjectVersion)
+					.flatMap(latest -> validateMinorVersion(javaProject, javaProjectVersion, latest))
+					.ifPresent(builder::add);
+					
+			versions.getNewerLatestPatchRelease(javaProjectVersion)
+					.flatMap(latest -> validatePatchVersion(javaProject, javaProjectVersion, latest))
+					.ifPresent(builder::add);
+					
+			return builder.build();
+		} finally {
+			log.info("boot major/mibor/patch version validation for `%s` took: %d".formatted(javaProject.getElementName(), System.currentTimeMillis() - start));
 		}
-		
-		if (versions == null) {
-			List<Version> rawReleases = springProjectsProvider.getProject(SpringProjectUtil.SPRING_BOOT).getReleases();
-			versions = new SortedVersions(rawReleases);
-		}
-		
-		ImmutableList.Builder<Diagnostic> builder = ImmutableList.builder();
-		
-		versions.getNewerLatestMajorRelease(javaProjectVersion)
-				.flatMap(latest -> validateMajorVersion(javaProject, javaProjectVersion, latest))
-				.ifPresent(builder::add);
-				
-		versions.getNewerLatestMinorRelease(javaProjectVersion)
-				.flatMap(latest -> validateMinorVersion(javaProject, javaProjectVersion, latest))
-				.ifPresent(builder::add);
-				
-		versions.getNewerLatestPatchRelease(javaProjectVersion)
-				.flatMap(latest -> validatePatchVersion(javaProject, javaProjectVersion, latest))
-				.ifPresent(builder::add);
-				
-		return builder.build();
 	}
 	
 	private boolean canProvideQuickfix(IJavaProject jp) {
@@ -93,69 +102,37 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 	}
 	
 	private Optional<Diagnostic> validateMajorVersion(IJavaProject javaProject, Version javaProjectVersion, Version latest) {
-		List<CodeAction> actions = new ArrayList<>(2);
+		List<CodeAction> actions = new ArrayList<>(1);
 
-		if (canProvideQuickfix(javaProject)) {
-			bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
-				Version upgradeVersion = Version.parse(targetVersion);
-				if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
-					return null;
-				}
-				CodeAction c = new CodeAction();
-				c.setKind(CodeActionKind.QuickFix);
-				c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
-				String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
-				c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
-						ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
-				return c;
-			}).ifPresent(actions::add);
-		}
-		
 		actions.add(openReleaseNotesCodeAction(latest));
 
 		return Optional.ofNullable(createDiagnostic(actions, VersionValidationProblemType.UPDATE_LATEST_MAJOR_VERSION, "Newer major version of Spring Boot available: %s".formatted(latest.toString()).toString()));
 	}
 
 	private Optional<Diagnostic> validateMinorVersion(IJavaProject javaProject, Version javaProjectVersion, Version latest) {
-		List<CodeAction> actions = new ArrayList<>(2);
+		List<CodeAction> actions = new ArrayList<>(1);
 
-		if (canProvideQuickfix(javaProject)) {
-			bootUpgradeOpt.flatMap(bu -> bu.getNearestAvailableMinorVersion(latest)).map(targetVersion -> {
-				Version upgradeVersion = Version.parse(targetVersion);
-				if (javaProjectVersion.compareTo(upgradeVersion) >= 0) {
-					return null;
-				}
-				CodeAction c = new CodeAction();
-				c.setKind(CodeActionKind.QuickFix);
-				c.setTitle("Upgrade to Spring Boot " + targetVersion + " (executes the full project conversion recipe from OpenRewrite)");
-				String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
-				c.setCommand(new Command("Upgrade to Version " + targetVersion, commandId,
-						ImmutableList.of(javaProject.getLocationUri().toASCIIString(), targetVersion, true)));
-				return c;
-			}).ifPresent(actions::add);
-		}
-					
 		actions.add(openReleaseNotesCodeAction(latest));
-		
+
 		return Optional.ofNullable(createDiagnostic(actions, VersionValidationProblemType.UPDATE_LATEST_MINOR_VERSION, "Newer minor version of Spring Boot available: %s".formatted(latest.toString())));
 	}
 
 	private Optional<Diagnostic> validatePatchVersion(IJavaProject javaProject, Version javaProjectVersion, Version latest) {
-		List<CodeAction> actions = new ArrayList<>(2);		
+		List<CodeAction> actions = new ArrayList<>(2);
 		if (canProvideQuickfix(javaProject)) {
 			bootUpgradeOpt.map(bu -> {
 				CodeAction c = new CodeAction();
 				c.setKind(CodeActionKind.QuickFix);
 				c.setTitle("Upgrade to Spring Boot " + latest.toString() + " (Maven dependency version changes only)");
-				String commandId = SpringBootUpgrade.CMD_UPGRADE_SPRING_BOOT;
+				String commandId = SpringBootPatchUpgrade.CMD_UPGRADE_SPRING_BOOT_PATCH;
 				c.setCommand(new Command("Upgrade to Version " + latest.toString(), commandId,
 						ImmutableList.of(javaProject.getLocationUri().toASCIIString(), latest.toString(), false)));
 				return c;
 			}).ifPresent(actions::add);
 		}
-		
+
 		actions.add(openReleaseNotesCodeAction(latest));
-		
+
 		return Optional.ofNullable(createDiagnostic(actions, VersionValidationProblemType.UPDATE_LATEST_PATCH_VERSION, "Newer patch version of Spring Boot available: %s".formatted(latest.toString())));
 	}
 	

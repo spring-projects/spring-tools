@@ -21,7 +21,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcileProblemCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRecipeRepository;
 import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
-import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
+import org.springframework.ide.vscode.boot.java.rewrite.SpringBootPatchUpgrade;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
@@ -43,8 +43,8 @@ public class RewriteConfig {
 	}
 	
 	@ConditionalOnBean(RewriteRecipeRepository.class)
-	@Bean SpringBootUpgrade springBootUpgrade(SimpleLanguageServer server, RewriteRecipeRepository recipeRepo, JavaProjectFinder projectFinder) {
-		return new SpringBootUpgrade(server, recipeRepo, projectFinder);
+	@Bean SpringBootPatchUpgrade springBootPatchUpgrade(SimpleLanguageServer server, RewriteRecipeRepository recipeRepo, JavaProjectFinder projectFinder) {
+		return new SpringBootPatchUpgrade(server, recipeRepo, projectFinder);
 	}
 	
 	@ConditionalOnBean(JdtRefactorings.class)

@@ -182,7 +182,7 @@ public class PomInlayHintHandlerTest {
 		Command cmd = labelPart.getCommand();
 		
 		assertNotNull(cmd);
-		assertEquals("sts/upgrade/spring-boot", cmd.getCommand());
+		assertEquals("sts/upgrade/spring-boot-patch", cmd.getCommand());
 		assertEquals(jp.getLocationUri().toASCIIString(), cmd.getArguments().get(0));
 		assertEquals("1.5.10", cmd.getArguments().get(1));
 	}

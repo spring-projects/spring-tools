@@ -11,6 +11,9 @@
 package org.springframework.ide.vscode.boot.java.rewrite;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -46,6 +49,7 @@ import org.openrewrite.maven.MavenExecutionContextView;
 import org.openrewrite.maven.MavenParser;
 import org.openrewrite.maven.MavenSettings;
 import org.openrewrite.tree.ParseError;
+import org.openrewrite.xml.XmlParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
@@ -121,22 +125,44 @@ public class RewriteRecipeRepository {
 		return ctx;
 	}
 	
-	@SuppressWarnings("unchecked")
+	/**
+	 * Applies {@code r} to the given project's build file, parsed as plain XML rather
+	 * than as an OpenRewrite Maven model - i.e. no ancestor/BOM-import resolution, no
+	 * network. Only suitable for recipes (like {@code LightUpgradeDependencyVersion})
+	 * that don't need a {@code MavenResolutionResult} marker to do their work.
+	 */
 	CompletableFuture<Object> applyToBuildFiles(Recipe r, String uri, String progressToken, boolean askForPreview) {
 		return projectFinder.find(new TextDocumentIdentifier(uri)).map(p -> {
 			final IndefiniteProgressTask progressTask = server.getProgressService().createIndefiniteProgressTask(progressToken, r.getDisplayName(), "Initiated...");
 			final IJavaProject project = p;
-			ExecutionContext ctx = createContext(e -> log.error("Project Parsing error:", e));
+			ExecutionContext ctx = new InMemoryExecutionContext(e -> log.error("Project Parsing error:", e));
 			return CompletableFuture.supplyAsync(() -> {
-				Path absoluteProjectDir = Paths.get(project.getLocationUri());
 				progressTask.progressEvent("Parsing files...");
-				ProjectParser projectParser = getProjectParser(project);
-				return (List<SourceFile>) projectParser.parseBuildFiles(absoluteProjectDir, ctx);
+				return parseBuildFileAsXml(project, ctx);
 			})
 			.thenCompose(sources -> computeWorkspaceEditAwareOfPreview(r, ctx, sources, progressTask, askForPreview))
 			.thenCompose(we -> applyEdit(we, progressTask, r.getDisplayName()))
 			.whenComplete((o,t) -> progressTask.done());
 		}).orElse(CompletableFuture.failedFuture(new IllegalArgumentException("Cannot find Spring Boot project for uri: " + uri)));
+	}
+
+	private List<SourceFile> parseBuildFileAsXml(IJavaProject project, ExecutionContext ctx) {
+		URI buildFileUri = project.getProjectBuild() == null ? null : project.getProjectBuild().getBuildFile();
+		if (buildFileUri == null) {
+			return List.of();
+		}
+		Path pomPath = Paths.get(buildFileUri);
+		TextDocument openDoc = server.getTextDocumentService().getLatestSnapshot(buildFileUri.toASCIIString());
+		String content;
+		try {
+			content = openDoc != null ? openDoc.get() : Files.readString(pomPath);
+		} catch (IOException e) {
+			log.error("Failed to read build file '{}'", pomPath, e);
+			return List.of();
+		}
+		return new XmlParser()
+				.parseInputs(List.of(new Parser.Input(pomPath, () -> new ByteArrayInputStream(content.getBytes()))), null, ctx)
+				.collect(Collectors.toList());
 	}
 	
 	CompletableFuture<Object> apply(Recipe r, String uri, String progressToken, boolean askForPreview) {

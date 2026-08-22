@@ -12,10 +12,15 @@
 * _(Spring Boot)_ improve validation for Spring Data queries [#1516](https://github.com/spring-projects/spring-tools/issues/1516)
 * _(Spring Boot)_ introduce validation and quick fix for conversion to `@RestController` [#1402](https://github.com/spring-projects/spring-tools/issues/1402)
 * _(Spring Boot)_ introduce validation and quick fixes for specific scope annotations [#1401](https://github.com/spring-projects/spring-tools/issues/1401)
+* _(Spring Boot)_ Go To Definition in SpEL expressions should work for other annotations [#1371](https://github.com/spring-projects/spring-tools/issues/1371)
+* _(Spring Boot)_ Go To Definition in SpEL expressions does not find methods in type hierarchy [#1370](https://github.com/spring-projects/spring-tools/issues/1370)
+* _(Spring Boot)_ additional quick fix to split request mapping method [#1110](https://github.com/spring-projects/spring-tools/issues/1110)
 * _(Spring Boot)_ refactoring recipe doesn't work with compile errors [#1064](https://github.com/spring-projects/spring-tools/issues/1064)
 * _(Spring Boot)_ Java tooling in VSCode doesn't re-validate Java sources after migrating to newer Spring Boot [#1061](https://github.com/spring-projects/spring-tools/issues/1061)
 * _(Spring Boot)_ decouple concrete upgrade recipes and mechanics from tools releases [#1052](https://github.com/spring-projects/spring-tools/issues/1052)
 * _(Spring Boot)_ Use OpenRewrite Properties AST and Parser [#949](https://github.com/spring-projects/spring-tools/issues/949)
+* _(Spring Boot)_ The configuration in the "spring.factories" file cannot be accessed by Ctrl+left mouse button. [#686](https://github.com/spring-projects/spring-tools/issues/686)
+* _(Spring Boot)_ Spring Boot Tools for VS Code shows unhelpful/incorrect warning [#621](https://github.com/spring-projects/spring-tools/issues/621)
 
 ## 2026-07-29 (5.4.0 RELEASE, incl. language servers version 2.3.0)
 

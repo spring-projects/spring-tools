@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -47,6 +48,10 @@ public class Annotations {
 	public static final String EVENT_PUBLISHER = "org.springframework.context.ApplicationEventPublisher";
 
 	public static final String CONTEXT_CONFIGURATION = "org.springframework.test.context.ContextConfiguration";
+	public static final String SPRING_JUNIT_CONFIG = "org.springframework.test.context.junit.jupiter.SpringJUnitConfig";
+	public static final String SPRING_EXTENSION = "org.springframework.test.context.junit.jupiter.SpringExtension";
+	public static final String JUNIT_EXTEND_WITH = "org.junit.jupiter.api.extension.ExtendWith";
+
 	public static final String SCHEDULED = "org.springframework.scheduling.annotation.Scheduled";
 	
 	// Beans
@@ -199,6 +204,29 @@ public class Annotations {
 	public static final String CONFIGURATION_PROPERTIES = "org.springframework.boot.context.properties.ConfigurationProperties";
 	
 	public static final String SPRING_BOOT_TEST = "org.springframework.boot.test.context.SpringBootTest";
+
+	/**
+	 * '@SpringBootTest' and the Spring Boot test slice annotations. Each of these is
+	 * meta-annotated with '@ExtendWith(SpringExtension.class)' as of Spring Boot 2.1.0.
+	 */
+	public static final List<String> SPRING_BOOT_TEST_ANNOTATIONS = List.of(
+			SPRING_BOOT_TEST,
+			"org.springframework.boot.test.autoconfigure.jdbc.JdbcTest",
+			"org.springframework.boot.test.autoconfigure.web.client.RestClientTest",
+			"org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
+			"org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest",
+			"org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest",
+			"org.springframework.boot.test.autoconfigure.webservices.client.WebServiceClientTest",
+			"org.springframework.boot.test.autoconfigure.jooq.JooqTest",
+			"org.springframework.boot.test.autoconfigure.json.JsonTest",
+			"org.springframework.boot.test.autoconfigure.data.cassandra.DataCassandraTest",
+			"org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest",
+			"org.springframework.boot.test.autoconfigure.data.ldap.DataLdapTest",
+			"org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest",
+			"org.springframework.boot.test.autoconfigure.data.neo4j.DataNeo4jTest",
+			"org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest",
+			"org.springframework.boot.test.autoconfigure.data.redis.DataRedisTest"
+	);
 
 	// Data
 

@@ -133,6 +133,12 @@
         "label": "Combine into `@RestController`",
         "description": "Class annotated with both `@Controller` and `@ResponseBody` could use `@RestController` instead",
         "defaultSeverity": "INFO"
+      },
+      {
+        "code": "SPRING_JUNIT_CONFIG_COMBINATION",
+        "label": "Combine into `@SpringJUnitConfig`",
+        "description": "Test class annotated with both `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration` could use `@SpringJUnitConfig` instead",
+        "defaultSeverity": "INFO"
       }
     ]
   },

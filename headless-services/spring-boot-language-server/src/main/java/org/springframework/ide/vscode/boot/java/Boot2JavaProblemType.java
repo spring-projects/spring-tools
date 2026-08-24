@@ -41,7 +41,8 @@ public enum Boot2JavaProblemType implements ProblemType {
 	MISSING_VALIDATED_ANNOTATION(WARNING, "Component class using bean validation annotations should be annotated with '@Validated'", "Missing '@Validated' on component"),
 	JAVA_FINAL_AUTOWIRED_FIELD(WARNING, "`@Autowired` field should not be `final`", "`final` `@Autowired` field"),
 	EXTRACT_REQUEST_MAPPING_PARENT_PATH(INFO, "Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping`", "Extract common parent path into class-level `@RequestMapping`"),
-	REST_CONTROLLER_COMBINATION(INFO, "Class annotated with both `@Controller` and `@ResponseBody` could use `@RestController` instead", "Combine into `@RestController`");
+	REST_CONTROLLER_COMBINATION(INFO, "Class annotated with both `@Controller` and `@ResponseBody` could use `@RestController` instead", "Combine into `@RestController`"),
+	SPRING_JUNIT_CONFIG_COMBINATION(INFO, "Test class annotated with both `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration` could use `@SpringJUnitConfig` instead", "Combine into `@SpringJUnitConfig`");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

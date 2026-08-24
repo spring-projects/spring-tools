@@ -64,6 +64,7 @@ import org.springframework.ide.vscode.boot.java.reconcilers.PreciseBeanTypeRecon
 import org.springframework.ide.vscode.boot.java.reconcilers.RestControllerReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ScopeAnnotationReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ServerHttpSecurityLambdaDslReconciler;
+import org.springframework.ide.vscode.boot.java.reconcilers.SpringJUnitConfigReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.UnnecessarySpringExtensionReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrategyDuplicatedReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.WebApiVersionStrategyPathSegmentReconciler;
@@ -179,6 +180,10 @@ public class JdtConfig {
 	
 	@Bean UnnecessarySpringExtensionReconciler unnecessarySpringExtensionReconciler(SimpleLanguageServer server) {
 		return new UnnecessarySpringExtensionReconciler(server.getQuickfixRegistry());
+	}
+
+	@Bean SpringJUnitConfigReconciler springJUnitConfigReconciler(SimpleLanguageServer server) {
+		return new SpringJUnitConfigReconciler(server.getQuickfixRegistry());
 	}
 	
 	@Bean HttpSecurityLambdaDslReconciler httpSecurityLamdaDslReconciler(SimpleLanguageServer server) {

@@ -783,6 +783,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.boot2.SPRING_JUNIT_CONFIG_COMBINATION": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Test class annotated with both `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration` could use `@SpringJUnitConfig` instead",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

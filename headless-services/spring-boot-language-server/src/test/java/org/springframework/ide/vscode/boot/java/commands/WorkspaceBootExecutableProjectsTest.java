@@ -81,6 +81,27 @@ public class WorkspaceBootExecutableProjectsTest {
 	
 	@SuppressWarnings("unchecked")
 	@Test
+	void ignoresBootAppInTestSources() throws Exception {
+		// the test sources of the project contain a second @SpringBootApplication class,
+		// which is not a candidate for being launched as the app of the project
+		harness.changeConfiguration("{\"boot-java\": {\"scan-java-test-sources\": {\"on\": true}}}");
+
+		MavenJavaProject project = ProjectsHarness.INSTANCE.mavenProject(PROJECT_NAME);
+
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(project.getProjectBuild().getBuildFile().toASCIIString())).get();
+
+		CompletableFuture<Void> initProject = symbolIndex.waitOperation();
+		initProject.get(5, TimeUnit.SECONDS);
+
+		List<WorkspaceBootExecutableProjects.ExecutableProject> res = (List<WorkspaceBootExecutableProjects.ExecutableProject>) harness.getServer().getWorkspaceService().executeCommand(new ExecuteCommandParams(WorkspaceBootExecutableProjects.CMD, Collections.emptyList())).get();
+		assertNotNull(res);
+		assertEquals(1,  res.size());
+		assertEquals("org.test.MainClass", res.get(0).mainClass());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
 	void multipleProjects() throws Exception {
 		MavenJavaProject project1 = ProjectsHarness.INSTANCE.mavenProject(PROJECT_NAME);
 		MavenJavaProject project2 = ProjectsHarness.INSTANCE.mavenProject("test-spring-data-symbols");

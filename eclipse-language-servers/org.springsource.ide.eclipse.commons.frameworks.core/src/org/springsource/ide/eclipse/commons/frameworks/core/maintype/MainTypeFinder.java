@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2025 Pivotal Software, Inc.
+ * Copyright (c) 2012, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -233,6 +233,10 @@ public class MainTypeFinder {
 
 		private boolean isInteresting(IClasspathEntry cpe) {
 			if (cpe==null) {
+				return false;
+			}
+			if (cpe.isTest()) {
+				// main types in test sources are not meant to be launched as the app of the project
 				return false;
 			}
 			int e_kind = cpe.getEntryKind();

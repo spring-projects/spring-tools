@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,10 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.io.File;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -68,10 +73,7 @@ public class WorkspaceBootExecutableProjects {
 		BeansParams params = new BeansParams();
 		params.setProjectName(project.getElementName());
 		return symbolIndex.beans(params).thenApply(beans -> {
-			List<Bean> bootAppBeans = beans.stream()
-					.filter(b -> hasAnnotation(b, Annotations.BOOT_APP))
-					.limit(2)
-					.collect(Collectors.toList());
+			List<Bean> bootAppBeans = findBootAppBeans(project, beans);
 			if (bootAppBeans.size() == 1) {
 				try {
 					Bean appBean = bootAppBeans.get(0);
@@ -88,6 +90,42 @@ public class WorkspaceBootExecutableProjects {
 		});
 	}
 	
+	/**
+	 * Identifies the <code>@SpringBootApplication</code> beans of the project that are
+	 * candidates for being launched as the application of that project.
+	 * <p>
+	 * Boot app classes that live in test source folders (like test application classes
+	 * that use <code>SpringApplication.from(...)</code>) are not candidates, they are
+	 * meant to be run as tests instead.
+	 * <p>
+	 * At most two candidates are returned, the callers only care about "none", "exactly
+	 * one" and "more than one".
+	 */
+	private List<Bean> findBootAppBeans(IJavaProject project, List<Bean> beans) {
+		List<Path> testSourceFolders = IClasspathUtil.getProjectTestJavaSources(project.getClasspath())
+				.map(File::toPath)
+				.collect(Collectors.toList());
+
+		return beans.stream()
+				.filter(b -> hasAnnotation(b, Annotations.BOOT_APP))
+				.filter(b -> !isInSourceFolders(b, testSourceFolders))
+				.limit(2)
+				.collect(Collectors.toList());
+	}
+
+	private boolean isInSourceFolders(Bean bean, List<Path> sourceFolders) {
+		if (sourceFolders.isEmpty() || bean.getLocation() == null || bean.getLocation().getUri() == null) {
+			return false;
+		}
+		try {
+			Path beanPath = Paths.get(URI.create(bean.getLocation().getUri()));
+			return sourceFolders.stream().anyMatch(beanPath::startsWith);
+		} catch (Exception e) {
+			log.error("cannot identify source folder of bean: " + bean.getType(), e);
+			return false;
+		}
+	}
+
 	private boolean hasAnnotation(Bean bean, String annotationType) {
 		AnnotationMetadata[] annotations = bean.getAnnotations();
 		for (int i = 0; i < annotations.length; i++) {
@@ -129,10 +167,7 @@ public class WorkspaceBootExecutableProjects {
 		BeansParams params = new BeansParams();
 		params.setProjectName(project.getElementName());
 		return symbolIndex.beans(params).thenApply(beans -> {
-			List<Bean> bootAppBeans = beans.stream()
-					  .filter(b -> hasAnnotation(b, Annotations.BOOT_APP))
-					  .limit(2)
-					  .collect(Collectors.toList());
+			List<Bean> bootAppBeans = findBootAppBeans(project, beans);
 			if (bootAppBeans.size() > 0) {
 				try {
 					String appBean = bootAppBeans.get(0) != null ? bootAppBeans.get(0).getType() : null;

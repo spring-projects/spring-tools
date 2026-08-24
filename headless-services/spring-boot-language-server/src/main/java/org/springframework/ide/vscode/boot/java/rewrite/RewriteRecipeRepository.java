@@ -48,6 +48,7 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.maven.MavenExecutionContextView;
 import org.openrewrite.maven.MavenParser;
 import org.openrewrite.maven.MavenSettings;
+import org.openrewrite.maven.cache.MavenPomCache;
 import org.openrewrite.tree.ParseError;
 import org.openrewrite.xml.XmlParser;
 import org.slf4j.Logger;
@@ -68,14 +69,17 @@ public class RewriteRecipeRepository {
 	private static final Logger log = LoggerFactory.getLogger(RewriteRecipeRepository.class);
 	
 	final private SimpleLanguageServer server;
-	
+
 	final private JavaProjectFinder projectFinder;
-	
+
+	final private MavenPomCache pomCache;
+
 	private CompletableFuture<Map<String, Recipe>> recipesFuture = null;
-	
-	public RewriteRecipeRepository(SimpleLanguageServer server, JavaProjectFinder projectFinder, BootJavaConfig config) {
+
+	public RewriteRecipeRepository(SimpleLanguageServer server, JavaProjectFinder projectFinder, BootJavaConfig config, MavenPomCache pomCache) {
 		this.server = server;
 		this.projectFinder = projectFinder;
+		this.pomCache = pomCache;
 	}
 		
 	private synchronized Map<String, Recipe> loadRecipes() {
@@ -119,6 +123,7 @@ public class RewriteRecipeRepository {
 	
 	private MavenExecutionContextView createContext(Consumer<Throwable> onError) {
 		MavenExecutionContextView ctx = MavenExecutionContextView.view(new InMemoryExecutionContext(onError));
+		ctx.setPomCache(pomCache);
 		MavenSettings settings = MavenSettings.readMavenSettingsFromDisk(ctx);
 		String[] profiles = settings.getActiveProfiles() == null ? new String[0] : settings.getActiveProfiles().getActiveProfiles().toArray(String[]::new);
 		ctx.setMavenSettings(settings, profiles);
@@ -126,10 +131,9 @@ public class RewriteRecipeRepository {
 	}
 	
 	/**
-	 * Applies {@code r} to the given project's build file, parsed as plain XML rather
-	 * than as an OpenRewrite Maven model - i.e. no ancestor/BOM-import resolution, no
-	 * network. Only suitable for recipes (like {@code LightUpgradeDependencyVersion})
-	 * that don't need a {@code MavenResolutionResult} marker to do their work.
+	 * Applies {@code r} to the project's build file, parsed as plain XML rather than as
+	 * an OpenRewrite Maven model. Only suitable for recipes that don't need a
+	 * {@code MavenResolutionResult} marker (e.g. {@code LightUpgradeDependencyVersion}).
 	 */
 	CompletableFuture<Object> applyToBuildFiles(Recipe r, String uri, String progressToken, boolean askForPreview) {
 		return projectFinder.find(new TextDocumentIdentifier(uri)).map(p -> {

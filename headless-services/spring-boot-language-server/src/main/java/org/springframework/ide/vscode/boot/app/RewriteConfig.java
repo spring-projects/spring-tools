@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.app;
 
+import org.openrewrite.maven.cache.InMemoryMavenPomCache;
+import org.openrewrite.maven.cache.MavenPomCache;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,12 +26,20 @@ import org.springframework.ide.vscode.boot.java.rewrite.RewriteRefactorings;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootPatchUpgrade;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.rewrite.maven.ConcurrentMavenPomCache;
 
 @Configuration(proxyBeanMethods = false)
 public class RewriteConfig {
 
-	@Bean RewriteRecipeRepository rewriteRecipesRepository(SimpleLanguageServer server, JavaProjectFinder projectFinder, BootJavaConfig config) {
-		return new RewriteRecipeRepository(server, projectFinder, config);
+	// Shared by every OpenRewrite Maven parse/resolve in this process (MavenMetadataProvider,
+	// RewriteRecipeRepository) so parent/BOM poms fetched for one project aren't re-fetched
+	// for another, and concurrent first-touches of the same artifact share one fetch.
+	@Bean MavenPomCache mavenPomCache() {
+		return new ConcurrentMavenPomCache(new InMemoryMavenPomCache());
+	}
+
+	@Bean RewriteRecipeRepository rewriteRecipesRepository(SimpleLanguageServer server, JavaProjectFinder projectFinder, BootJavaConfig config, MavenPomCache pomCache) {
+		return new RewriteRecipeRepository(server, projectFinder, config, pomCache);
 	}
 	
 	@ConditionalOnBean(RewriteRecipeRepository.class)

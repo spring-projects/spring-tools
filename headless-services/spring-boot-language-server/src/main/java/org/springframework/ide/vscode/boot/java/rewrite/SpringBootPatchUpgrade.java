@@ -29,10 +29,8 @@ import com.google.gson.JsonElement;
 
 /**
  * LSP command wiring for {@link LightUpgradeDependencyVersion}: bumps a Spring Boot
- * project to a newer patch version (same major.minor), applied via
- * {@link RewriteRecipeRepository#applyToBuildFiles(Recipe, String, String, boolean)} -
- * which, for this recipe, parses the project's pom.xml as plain XML rather than as an
- * OpenRewrite Maven model, so there's no ancestor/BOM-import resolution and no network.
+ * project to a newer patch version (same major.minor) via
+ * {@link RewriteRecipeRepository#applyToBuildFiles(Recipe, String, String, boolean)}.
  */
 public class SpringBootPatchUpgrade {
 

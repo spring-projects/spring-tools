@@ -93,7 +93,7 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 					
 			return builder.build();
 		} finally {
-			log.info("boot major/mibor/patch version validation for `%s` took: %d".formatted(javaProject.getElementName(), System.currentTimeMillis() - start));
+			log.info("boot major/minor/patch version validation for `%s` took: %d".formatted(javaProject.getElementName(), System.currentTimeMillis() - start));
 		}
 	}
 	

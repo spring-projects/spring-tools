@@ -25,21 +25,14 @@ import org.openrewrite.xml.XmlIsoVisitor;
 import org.openrewrite.xml.tree.Xml;
 
 /**
- * A light-weight counterpart to rewrite-maven's {@code UpgradeDependencyVersion} and
- * {@code UpgradeParentVersion}: rewrites the version of a matching Maven parent,
- * imported BOM, or dependency (managed or direct) to {@code newVersion}.
+ * Light-weight counterpart to rewrite-maven's {@code UpgradeDependencyVersion}/
+ * {@code UpgradeParentVersion}: rewrites a matching parent, imported BOM, or dependency
+ * version to {@code newVersion}, treating the pom as plain XML rather than parsing it as
+ * a Maven model - the caller is expected to have already validated the version, so there's
+ * no need to re-resolve the ancestor/BOM chain or hit the network.
  * <p>
- * Deliberately does not use OpenRewrite's Maven model (`MavenParser`/`Pom.resolve()`)
- * the way those two recipes do - the caller is expected to have already validated
- * {@code newVersion} against real Maven metadata, so there's no need to re-resolve the
- * project's ancestor/BOM chain or hit the network again (which is what those recipes do
- * internally to validate/select a version). This only needs to find and rewrite a
- * handful of version tags in the project's own pom.xml, treated as plain XML.
- * <p>
- * Out of scope: a version expressed via a `${property}` defined in a <i>different</i>
- * (reactor-local parent) pom file, and removing now-redundant explicit version
- * overrides that duplicate the newly-bumped managed version - both are edge/polish
- * cases relative to the dominant case of a single-module, Initializr-generated project.
+ * Out of scope: a version expressed via a {@code ${property}} defined in a different
+ * (reactor-local parent) pom file, and removing now-redundant explicit version overrides.
  */
 public class LightUpgradeDependencyVersion extends Recipe {
 
@@ -83,12 +76,8 @@ public class LightUpgradeDependencyVersion extends Recipe {
 	public TreeVisitor<?, ExecutionContext> getVisitor() {
 		return new XmlIsoVisitor<ExecutionContext>() {
 
-			// Version tags expressed as a `${property}` reference can't be fixed up in place
-			// (the property they refer to lives elsewhere in the document, under
-			// `<properties>`) - so matches found while walking parent/dependency tags are
-			// recorded here and applied in a follow-up pass over `<properties>` once the
-			// main walk completes. A fresh visitor instance (and so a fresh, empty set) is
-			// handed out per source file by the recipe scheduler, so no per-file reset is needed.
+			// ${property}-valued versions live under <properties>, not the tag itself - record
+			// the names here and fix them up in a follow-up pass once the main walk completes.
 			private final Set<String> propertiesToUpdate = new LinkedHashSet<>();
 
 			@Override
@@ -127,8 +116,7 @@ public class LightUpgradeDependencyVersion extends Recipe {
 					propertiesToUpdate.add(value.substring(2, value.length() - 1));
 					return gavTag;
 				}
-				// Scoped to `gavTag` itself, not the whole document: a document can contain
-				// many matching dependencies, and each only needs its own small subtree walked.
+				// Scoped to gavTag, not the whole document - each match only needs its own subtree walked.
 				return (Xml.Tag) new ChangeTagValueVisitor<ExecutionContext>(versionTag.get(), newVersion).visitNonNull(gavTag, ctx);
 			}
 

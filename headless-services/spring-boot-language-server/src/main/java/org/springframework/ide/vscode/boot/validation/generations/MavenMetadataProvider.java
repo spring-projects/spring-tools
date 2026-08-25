@@ -28,6 +28,7 @@ import org.openrewrite.SourceFile;
 import org.openrewrite.maven.MavenExecutionContextView;
 import org.openrewrite.maven.MavenParser;
 import org.openrewrite.maven.MavenSettings;
+import org.openrewrite.maven.cache.MavenPomCache;
 import org.openrewrite.maven.internal.MavenPomDownloader;
 import org.openrewrite.maven.tree.GroupArtifact;
 import org.openrewrite.maven.tree.MavenResolutionResult;
@@ -46,9 +47,11 @@ public class MavenMetadataProvider {
 	private final Map<String, MavenMetadata> cache = new ConcurrentHashMap<>();
 	private final ListenerList<String> listeners = new ListenerList<>();
 	private final ProgressService progressService;
+	private final MavenPomCache pomCache;
 
-	public MavenMetadataProvider(FileObserver fileObserver, ProgressService progressService) {
+	public MavenMetadataProvider(FileObserver fileObserver, ProgressService progressService, MavenPomCache pomCache) {
 		this.progressService = progressService != null ? progressService : ProgressService.NO_PROGRESS;
+		this.pomCache = pomCache;
 		if (fileObserver != null) {
 			fileObserver.onAnyChange(List.of("**/pom.xml"), files -> {
 				for (String file : files) {
@@ -76,6 +79,7 @@ public class MavenMetadataProvider {
 		try {
 			ExecutionContext ctx = new InMemoryExecutionContext();
 			MavenExecutionContextView mvnCtx = MavenExecutionContextView.view(ctx);
+			mvnCtx.setPomCache(pomCache);
 			MavenSettings settings = mvnCtx.getSettings();
 			if (settings == null) {
 				mvnCtx.setMavenSettings(MavenSettings.readMavenSettingsFromDisk(ctx));

@@ -14,6 +14,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
+import org.openrewrite.maven.cache.MavenPomCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
@@ -21,7 +22,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.common.ProjectReconcileScheduler;
-import org.springframework.ide.vscode.boot.java.rewrite.SpringBootUpgrade;
+import org.springframework.ide.vscode.boot.java.rewrite.SpringBootPatchUpgrade;
 import org.springframework.ide.vscode.boot.validation.BootVersionValidationEngine;
 import org.springframework.ide.vscode.boot.validation.generations.GenerationsValidator;
 import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
@@ -41,11 +42,11 @@ public class BootVersionValidationConfig {
 	
 	private static final Logger log = LoggerFactory.getLogger(BootVersionValidationConfig.class);
 	
-	@Bean MavenMetadataProvider mavenMetadataProvider(SimpleLanguageServer server) {
-		return new MavenMetadataProvider(server.getWorkspaceService().getFileObserver(), server.getProgressService());
+	@Bean MavenMetadataProvider mavenMetadataProvider(SimpleLanguageServer server, MavenPomCache pomCache) {
+		return new MavenMetadataProvider(server.getWorkspaceService().getFileObserver(), server.getProgressService(), pomCache);
 	}
 	
-	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
+	@Bean UpdateBootVersion updateBootVersion(SimpleLanguageServer server, Optional<SpringBootPatchUpgrade> bootUpgradeOpt, SpringProjectsProvider projectsProvider, MavenMetadataProvider mavenMetadataProvider, BootJavaConfig bootJavaConfig) {
 		return new UpdateBootVersion(server.getDiagnosticSeverityProvider(), bootUpgradeOpt, projectsProvider, mavenMetadataProvider, bootJavaConfig);
 	}
 	

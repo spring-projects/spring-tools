@@ -11,6 +11,9 @@
 package org.springframework.ide.vscode.boot.java.rewrite;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -45,7 +48,9 @@ import org.openrewrite.java.JavaParser;
 import org.openrewrite.maven.MavenExecutionContextView;
 import org.openrewrite.maven.MavenParser;
 import org.openrewrite.maven.MavenSettings;
+import org.openrewrite.maven.cache.MavenPomCache;
 import org.openrewrite.tree.ParseError;
+import org.openrewrite.xml.XmlParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
@@ -64,14 +69,17 @@ public class RewriteRecipeRepository {
 	private static final Logger log = LoggerFactory.getLogger(RewriteRecipeRepository.class);
 	
 	final private SimpleLanguageServer server;
-	
+
 	final private JavaProjectFinder projectFinder;
-	
+
+	final private MavenPomCache pomCache;
+
 	private CompletableFuture<Map<String, Recipe>> recipesFuture = null;
-	
-	public RewriteRecipeRepository(SimpleLanguageServer server, JavaProjectFinder projectFinder, BootJavaConfig config) {
+
+	public RewriteRecipeRepository(SimpleLanguageServer server, JavaProjectFinder projectFinder, BootJavaConfig config, MavenPomCache pomCache) {
 		this.server = server;
 		this.projectFinder = projectFinder;
+		this.pomCache = pomCache;
 	}
 		
 	private synchronized Map<String, Recipe> loadRecipes() {
@@ -115,28 +123,50 @@ public class RewriteRecipeRepository {
 	
 	private MavenExecutionContextView createContext(Consumer<Throwable> onError) {
 		MavenExecutionContextView ctx = MavenExecutionContextView.view(new InMemoryExecutionContext(onError));
+		ctx.setPomCache(pomCache);
 		MavenSettings settings = MavenSettings.readMavenSettingsFromDisk(ctx);
 		String[] profiles = settings.getActiveProfiles() == null ? new String[0] : settings.getActiveProfiles().getActiveProfiles().toArray(String[]::new);
 		ctx.setMavenSettings(settings, profiles);
 		return ctx;
 	}
 	
-	@SuppressWarnings("unchecked")
+	/**
+	 * Applies {@code r} to the project's build file, parsed as plain XML rather than as
+	 * an OpenRewrite Maven model. Only suitable for recipes that don't need a
+	 * {@code MavenResolutionResult} marker (e.g. {@code LightUpgradeDependencyVersion}).
+	 */
 	CompletableFuture<Object> applyToBuildFiles(Recipe r, String uri, String progressToken, boolean askForPreview) {
 		return projectFinder.find(new TextDocumentIdentifier(uri)).map(p -> {
 			final IndefiniteProgressTask progressTask = server.getProgressService().createIndefiniteProgressTask(progressToken, r.getDisplayName(), "Initiated...");
 			final IJavaProject project = p;
-			ExecutionContext ctx = createContext(e -> log.error("Project Parsing error:", e));
+			ExecutionContext ctx = new InMemoryExecutionContext(e -> log.error("Project Parsing error:", e));
 			return CompletableFuture.supplyAsync(() -> {
-				Path absoluteProjectDir = Paths.get(project.getLocationUri());
 				progressTask.progressEvent("Parsing files...");
-				ProjectParser projectParser = getProjectParser(project);
-				return (List<SourceFile>) projectParser.parseBuildFiles(absoluteProjectDir, ctx);
+				return parseBuildFileAsXml(project, ctx);
 			})
 			.thenCompose(sources -> computeWorkspaceEditAwareOfPreview(r, ctx, sources, progressTask, askForPreview))
 			.thenCompose(we -> applyEdit(we, progressTask, r.getDisplayName()))
 			.whenComplete((o,t) -> progressTask.done());
 		}).orElse(CompletableFuture.failedFuture(new IllegalArgumentException("Cannot find Spring Boot project for uri: " + uri)));
+	}
+
+	private List<SourceFile> parseBuildFileAsXml(IJavaProject project, ExecutionContext ctx) {
+		URI buildFileUri = project.getProjectBuild() == null ? null : project.getProjectBuild().getBuildFile();
+		if (buildFileUri == null) {
+			return List.of();
+		}
+		Path pomPath = Paths.get(buildFileUri);
+		TextDocument openDoc = server.getTextDocumentService().getLatestSnapshot(buildFileUri.toASCIIString());
+		String content;
+		try {
+			content = openDoc != null ? openDoc.get() : Files.readString(pomPath);
+		} catch (IOException e) {
+			log.error("Failed to read build file '{}'", pomPath, e);
+			return List.of();
+		}
+		return new XmlParser()
+				.parseInputs(List.of(new Parser.Input(pomPath, () -> new ByteArrayInputStream(content.getBytes()))), null, ctx)
+				.collect(Collectors.toList());
 	}
 	
 	CompletableFuture<Object> apply(Recipe r, String uri, String progressToken, boolean askForPreview) {

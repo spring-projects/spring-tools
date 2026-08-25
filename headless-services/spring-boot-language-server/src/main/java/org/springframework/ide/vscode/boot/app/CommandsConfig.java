@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.Misc;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
+import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider;
 import org.springframework.ide.vscode.boot.java.commands.WorkspaceBootExecutableProjects;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
@@ -30,10 +31,15 @@ public class CommandsConfig {
 	}
 	
 	@Bean
+	StructureViewProvider structureViewProvider(SpringMetamodelIndex symbolIndex, ModulithService modulithService,
+			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks) {
+		return new StructureViewProvider(symbolIndex, modulithService, stereotypeCatalogRegistry, sourceLinks);
+	}
+
+	@Bean
 	SpringIndexCommands springIndexCommands(SimpleLanguageServer server, JavaProjectFinder projectFinder,
-			SpringMetamodelIndex symbolIndex, ModulithService modulithService, StereotypeCatalogRegistry stereotypeCatalogRegistry,
-			SourceLinks sourceLinks) {
-		return new SpringIndexCommands(server, symbolIndex, modulithService, projectFinder, stereotypeCatalogRegistry, sourceLinks);
+			SpringMetamodelIndex symbolIndex, StructureViewProvider structureViewProvider) {
+		return new SpringIndexCommands(server, symbolIndex, projectFinder, structureViewProvider);
 	}
 	
 	@Bean

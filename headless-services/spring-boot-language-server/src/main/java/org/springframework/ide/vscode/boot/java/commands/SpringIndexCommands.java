@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,15 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
-import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
-import org.springframework.ide.vscode.boot.java.links.SourceLinks;
-import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
-import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
-import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
-import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
@@ -46,22 +37,14 @@ public class SpringIndexCommands {
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 	private static final String SPRING_STRUCTURE_GROUPS_CMD = "sts/spring-boot/structure/groups";
 
-	private static final Logger log = LoggerFactory.getLogger(SpringIndexCommands.class);
-	
-	private final ModulithService modulithService;
-	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
-	private final SourceLinks sourceLinks;
-	private final StereotypeDefinitionLocator definitionLocator;
+	private final StructureViewProvider structureViewProvider;
 
 	private final Executor messageWorkerThreadPool;
 
-	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex, ModulithService modulithService,
-			JavaProjectFinder projectFinder, StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks) {
+	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
+			JavaProjectFinder projectFinder, StructureViewProvider structureViewProvider) {
 
-		this.modulithService = modulithService;
-		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
-		this.sourceLinks = sourceLinks;
-		this.definitionLocator = new StereotypeDefinitionLocator();
+		this.structureViewProvider = structureViewProvider;
 		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
 	
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
@@ -77,7 +60,7 @@ public class SpringIndexCommands {
 
 				return projects
 						.parallel()
-						.map(project -> nodeFrom(project, cachedIndex, args.updateMetadata,
+						.map(project -> structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
 								args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))
 						.filter(Objects::nonNull)
 						.collect(Collectors.toList());
@@ -96,52 +79,15 @@ public class SpringIndexCommands {
 					}
 					if (name != null) {
 						final String projectName = name;
-						return projectFinder.all().stream().filter(p -> projectName.equals(p.getElementName())).findFirst().map(this::getGroups).orElseThrow();
+						return projectFinder.all().stream().filter(p -> projectName.equals(p.getElementName())).findFirst().map(structureViewProvider::getGroups).orElseThrow();
 					}
 				}
-				return projectFinder.all().stream().map(this::getGroups).toList();
+				return projectFinder.all().stream().map(structureViewProvider::getGroups).toList();
 
 			}, messageWorkerThreadPool);
 		});
 	}
-	
-	private Groups getGroups(IJavaProject project) {
-		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
-		
-		List<Group> groups = catalog.getGroups().stream()
-			.map(group -> new Group(group.getIdentifier(), group.getDisplayName()))
-			.toList();
-		
-		return new Groups(project.getElementName(), groups);
-	}
-	
-	private Node nodeFrom(IJavaProject project, CachedSpringMetamodelIndex springIndex, boolean updateMetadata, Collection<String> selectedGroups) {
-		log.info("create structural view tree information for project: " + project.getElementName());
-		
-		if (updateMetadata) {
-			stereotypeCatalogRegistry.reset(project);
-			log.info("stereotype registry reset for project: " + project.getElementName());
-		}
-		
-		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, project, springIndex);
-		
-		if (StructureViewUtil.hasSourceDefinedStereotypesEnabled()) {
-			factory.registerStereotypeDefinitions();
-		}
-		
-		if (selectedGroups == null) {
-			selectedGroups = catalog.getGroups().stream().map(group -> group.getIdentifier()).toList();
-		}
-		
-		if (ModulithService.isModulithDependentProject(project) && StructureViewUtil.hasModulithStructureViewEnabled()) {
-			return new ModulithStructureView(catalog, springIndex, sourceLinks, definitionLocator, modulithService).createTree(project, factory, selectedGroups, updateMetadata);
-		}
-		else {
-			return new JMoleculesStructureView(catalog, springIndex, sourceLinks, definitionLocator).createTree(project, factory, selectedGroups);
-		}
-	}
-	
+
 	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups) {
 		
 		public static StructureCommandArgs parseFrom(ExecuteCommandParams params) {
@@ -171,10 +117,7 @@ public class SpringIndexCommands {
 			}
 			
 			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups);
-		}		
+		}
 	}
-	
-	private static record Groups (String projectName, List<Group> groups) {}
-	private static record Group (String identifier, String displayName) {}
 
 }

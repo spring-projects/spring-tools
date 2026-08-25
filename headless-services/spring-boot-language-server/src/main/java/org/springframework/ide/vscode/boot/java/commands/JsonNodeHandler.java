@@ -61,16 +61,16 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	
 	private static final Logger log = LoggerFactory.getLogger(JsonNodeHandler.class);
 
-	private static final String PROJECT_ID = "projectId";
-	
-	private static final String LOCATION = "location";
-	private static final String REFERENCE = "reference";
-	
+	public static final String PROJECT_ID = "projectId";
+
+	public static final String LOCATION = "location";
+	public static final String REFERENCE = "reference";
+
 	public static final String ICON = "icon";
 	public static final String TEXT = "text";
 	public static final String HOVER = "hover";
-	
-	private static final String NODE_ID = "nodeId";
+
+	public static final String NODE_ID = "nodeId";
 
 	private final Node root;
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
@@ -344,7 +344,22 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			this.children.addAll(children);
 			return this;
 		}
-		
+
+		/**
+		 * The attributes of this node, keyed by the constants of {@link JsonNodeHandler}.
+		 */
+		public Map<String, Object> getAttributes() {
+			return Collections.unmodifiableMap(attributes);
+		}
+
+		public Object getAttribute(String key) {
+			return attributes.get(key);
+		}
+
+		public List<Node> getChildren() {
+			return Collections.unmodifiableList(children);
+		}
+
 	}
 
 

@@ -33,7 +33,7 @@ public abstract class AbstractLaunchHandler extends AbstractHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		LaunchList.Item l = getLaunchItem();
 		IWorkbenchWindow window = PlatformUI.isWorkbenchRunning() ? PlatformUI.getWorkbench().getActiveWorkbenchWindow() : null;
-		if (l!=null) {
+		if (l != null) {
 			try {
 				performOperation(l);
 			} catch (DebugException e) {

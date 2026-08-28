@@ -62,8 +62,8 @@ public class ClasspathListenerHandlerTest {
 			for (CPE cpe : cp.getEntries()) {
 				assertTrue(new File(cpe.getPath()).isAbsolute());
 			}
-			assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count()==1); //has 1 source entry
-			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count()>=1); //has some system libraries
+			assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count() == 1); //has 1 source entry
+			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count() >= 1); //has some system libraries
 		});
 	}
 
@@ -80,8 +80,8 @@ public class ClasspathListenerHandlerTest {
 			for (CPE cpe : cp.getEntries()) {
 				assertTrue(new File(cpe.getPath()).isAbsolute());
 			}
-			assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count()==1); //has 1 source entry
-			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count()>=1); //has some system libraries
+			assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count() == 1); //has 1 source entry
+			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count() >= 1); //has some system libraries
 		});
 		logger.log("=== Deleteing project");
 		project.delete(false, true, null);
@@ -105,8 +105,8 @@ public class ClasspathListenerHandlerTest {
 				for (CPE cpe : cp.getEntries()) {
 					assertTrue(new File(cpe.getPath()).isAbsolute());
 				}
-				assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count()==1); //has 1 source entry
-				assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count()>=1); //has some system libraries
+				assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count() == 1); //has 1 source entry
+				assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count() >= 1); //has some system libraries
 			});
 
 			FileUtils.deleteQuietly(loc);
@@ -139,8 +139,8 @@ public class ClasspathListenerHandlerTest {
 			for (CPE cpe : cp.getEntries()) {
 				assertTrue(new File(cpe.getPath()).isAbsolute());
 			}
-			assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count()==1); //has 1 source entry
-			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count()>=1); //has some system libraries
+			assertTrue(cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count() == 1); //has 1 source entry
+			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isBinary(cpe) && cpe.isSystem()).count() >= 1); //has some system libraries
 		});
 
 		FileUtils.deleteQuietly(loc);
@@ -165,12 +165,12 @@ public class ClasspathListenerHandlerTest {
 			for (CPE cpe : cp.getEntries()) {
 				assertTrue(new File(cpe.getPath()).isAbsolute());
 			}
-			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count()>=1); //has source entries
+			assertClasspath(cp, cp.getEntries().stream().filter(cpe -> Classpath.isSource(cpe)).count() >= 1); //has source entries
 			CPE dependency = cp.getEntries().stream()
 				.filter(Classpath::isBinary)
 				.filter(cpe -> new File(cpe.getPath()).getName().startsWith("commons-io"))
 				.findFirst().orElse(null);
-			assertClasspath(cp, dependency!=null);
+			assertClasspath(cp, dependency != null);
 			assertTrue(new File(dependency.getSourceContainerUrl().toURI()).exists());
 		});
 	}
@@ -197,7 +197,7 @@ public class ClasspathListenerHandlerTest {
 		@Override
 		public synchronized Object executeClientCommand(String id, Object... params) throws Exception {
 			ClientCommandExecutor handler = handlers.get(id);
-			if (handler!=null) {
+			if (handler != null) {
 				return handler.executeClientCommand(id, params);
 			}
 			throw new IllegalStateException("No handler for "+id);

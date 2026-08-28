@@ -49,7 +49,7 @@ public class JmxBeanSupport {
 				str.append(a+"\n");
 			}
 			for (Feature feature : enabled) {
-				if (feature.vmArg!=null) {
+				if (feature.vmArg != null) {
 					str.append(feature.vmArg+"\n");
 				}
 			}

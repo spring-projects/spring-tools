@@ -54,7 +54,7 @@ public class BootPropertyTester extends PropertyTester {
 	//@Override
 	@Override
 	public boolean test(Object rsrc, String property, Object[] args, Object expectedValue) {
-		if (expectedValue==null) {
+		if (expectedValue == null) {
 			expectedValue = true;
 		}
 //		System.out.println(">>> BootPropertyTester");
@@ -80,7 +80,7 @@ public class BootPropertyTester extends PropertyTester {
 	}
 
 	public static boolean isDevtoolsJar(IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_LIBRARY) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.endsWith(".jar") && name.startsWith("spring-boot-devtools");
@@ -89,7 +89,7 @@ public class BootPropertyTester extends PropertyTester {
 	}
 
 	public static boolean isActuatorJar(IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_LIBRARY) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.endsWith(".jar") && name.startsWith("spring-boot-actuator-");
@@ -100,11 +100,11 @@ public class BootPropertyTester extends PropertyTester {
 
 	public static boolean hasDevtools(IProject p) {
 		try {
-			if (p!=null && p.isAccessible()) {
+			if (p != null && p.isAccessible()) {
 				IJavaProject jp = JavaCore.create(p);
 				if (jp.exists()) {
 					IClasspathEntry[] classpath = jp.getResolvedClasspath(true);
-					if (classpath!=null) {
+					if (classpath != null) {
 						for (IClasspathEntry e : classpath) {
 							if (BootPropertyTester.isDevtoolsJar(e)) {
 								return true;
@@ -120,7 +120,7 @@ public class BootPropertyTester extends PropertyTester {
 	}
 
 	public static boolean isBootProject(IProject project) {
-		if (project==null || ! project.isAccessible()) {
+		if (project == null || ! project.isAccessible()) {
 			return false;
 		}
 		try {
@@ -144,7 +144,7 @@ public class BootPropertyTester extends PropertyTester {
 	}
 
 	public static boolean isBoot2Project(IProject project) {
-		if (project==null || ! project.isAccessible()) {
+		if (project == null || ! project.isAccessible()) {
 			return false;
 		}
 		try {
@@ -193,7 +193,7 @@ public class BootPropertyTester extends PropertyTester {
 	 * process to complete.
 	 */
 	public static boolean fastHasDevTools(IProject bootProject) throws TimeoutException, InterruptedException, ExecutionException {
-		if (bootProject==null) return false;
+		if (bootProject == null) return false;
 		CompletableFuture<Boolean> result = new CompletableFuture<>();
 		Job job = new Job("Check for devtools") {
 			@Override
@@ -241,7 +241,7 @@ public class BootPropertyTester extends PropertyTester {
 	public static boolean hasDevTools(ISpringBootProject bootProject) {
 		try {
 			List<IMavenCoordinates> deps = bootProject.getDependencies();
-			if (deps!=null) {
+			if (deps != null) {
 				for (IMavenCoordinates d : deps) {
 					if (SPRING_BOOT_DEVTOOLS_AID.equals(d.getArtifactId())) {
 						return true;
@@ -263,7 +263,7 @@ public class BootPropertyTester extends PropertyTester {
 	 * @return whether given resource is either Spring Boot IProject or nested inside one.
 	 */
 	public static boolean isBootResource(IResource rsrc) {
-		if (rsrc==null || ! rsrc.isAccessible()) {
+		if (rsrc == null || ! rsrc.isAccessible()) {
 			return false;
 		}
 		boolean result = isBootProject(rsrc.getProject());
@@ -271,7 +271,7 @@ public class BootPropertyTester extends PropertyTester {
 	}
 
 	private Object isBoot2Resource(IResource rsrc) {
-		if (rsrc==null || ! rsrc.isAccessible()) {
+		if (rsrc == null || ! rsrc.isAccessible()) {
 			return false;
 		}
 		boolean result = isBoot2Project(rsrc.getProject());
@@ -279,7 +279,7 @@ public class BootPropertyTester extends PropertyTester {
 	}
 
 	public static boolean isBootProject(IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_PROJECT) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.startsWith("spring-boot");
@@ -298,7 +298,7 @@ public class BootPropertyTester extends PropertyTester {
 	}
 
 	public static boolean isBootJar(IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_LIBRARY) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.endsWith(".jar") && name.startsWith("spring-boot");
@@ -319,7 +319,7 @@ public class BootPropertyTester extends PropertyTester {
 				for (IClasspathEntry e : cp) {
 					if (isBootJar(e)) {
 						String version = getJarVersion(e);
-						if (version!=null) {
+						if (version != null) {
 							return VersionParser.DEFAULT.parse(version);
 						}
 					}
@@ -355,7 +355,7 @@ public class BootPropertyTester extends PropertyTester {
 	public static boolean supportsLifeCycleManagement(IProject project) {
 		try {
 			Version version = BootPropertyTester.getBootVersion(project);
-			if (version!=null) {
+			if (version != null) {
 				return VersionParser.DEFAULT.parseRange("1.3.0").match(version);
 			}
 		} catch (Exception e) {

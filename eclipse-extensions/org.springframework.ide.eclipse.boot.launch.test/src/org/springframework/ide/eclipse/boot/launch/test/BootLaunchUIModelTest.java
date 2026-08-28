@@ -49,7 +49,7 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 		@Override
 		public String[] getHistory(IProject project) {
 			String[] h = map.get(project.getName());
-			if (h!=null) {
+			if (h != null) {
 				return h;
 			}
 			return NO_PROFILES;

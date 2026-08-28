@@ -49,7 +49,7 @@ public class TreeElementWrappingContentProvider implements ITreeContentProvider 
 		}
 
 		public TreeNode[] getChildren() {
-			if (children==null) {
+			if (children == null) {
 				children = wrap(base.getChildren(value), this);
 			}
 			return children;
@@ -64,11 +64,11 @@ public class TreeElementWrappingContentProvider implements ITreeContentProvider 
 		}
 
 		public boolean hasChildren() {
-			if (children==null) {
+			if (children == null) {
 				//Try to avoid creating children just to check if they exist.
 				return base.hasChildren(value);
 			} else {
-				return children.length>0;
+				return children.length > 0;
 			}
 		}
 	}
@@ -83,7 +83,7 @@ public class TreeElementWrappingContentProvider implements ITreeContentProvider 
 		// to reuse the root node wrappers if the root elements are the same as last time.
 		
 		Object[] objects = base.getElements(inputElement);
-		if (objects==null || objects.length==0) {
+		if (objects == null || objects.length == 0) {
 			rootNodes.clear();
 			return NO_NODES;
 		}
@@ -92,7 +92,7 @@ public class TreeElementWrappingContentProvider implements ITreeContentProvider 
 		for (int i = 0; i < nodes.length; i++) {
 			Object object = objects[i];
 			nodes[i] = rootNodes.get(object);
-			if (nodes[i]==null) {
+			if (nodes[i] == null) {
 				rootNodes.put(object, nodes[i] = new TreeNode(object, null));
 			}
 		}
@@ -101,7 +101,7 @@ public class TreeElementWrappingContentProvider implements ITreeContentProvider 
 	}
 
 	private TreeNode[] wrap(Object[] elements, TreeNode parent) {
-		if (elements!=null && elements.length>0) {
+		if (elements != null && elements.length > 0) {
 			TreeNode[] wrapped = new TreeNode[elements.length];
 			for (int i = 0; i < elements.length; i++) {
 				wrapped[i] = new TreeNode(elements[i], parent);

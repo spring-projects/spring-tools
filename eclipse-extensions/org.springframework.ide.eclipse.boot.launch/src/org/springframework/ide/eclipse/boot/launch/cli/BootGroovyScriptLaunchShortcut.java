@@ -40,7 +40,7 @@ public class BootGroovyScriptLaunchShortcut implements ILaunchShortcut {
 	}
 
 	public void launch(IResource rsrc, String mode) throws CoreException {
-		if (rsrc!=null && rsrc.getType()==IResource.FILE) {
+		if (rsrc != null && rsrc.getType() == IResource.FILE) {
 			ILaunchConfiguration conf = createConfiguration((IFile) rsrc);
 			DebugUITools.launch(conf, mode);
 		}
@@ -90,7 +90,7 @@ public class BootGroovyScriptLaunchShortcut implements ILaunchShortcut {
 		try {
 			IEditorInput input = editor.getEditorInput();
 			IResource rsrc = (IResource) input.getAdapter(IResource.class);
-			if (rsrc!=null) {
+			if (rsrc != null) {
 				launch(rsrc, mode);
 			}
 			System.out.println(input);

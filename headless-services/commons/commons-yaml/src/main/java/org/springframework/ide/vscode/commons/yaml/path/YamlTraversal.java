@@ -44,7 +44,7 @@ public interface YamlTraversal {
 	<T extends YamlNavigable<T>> T traverse(T startNode);
 
 	default Node traverseNode(Node root) {
-		if (root!=null) {
+		if (root != null) {
 			ASTCursor cursor = traverse(new NodeCursor(root));
 			if (cursor instanceof NodeCursor) {
 				return ((NodeCursor)cursor).getNode();
@@ -62,7 +62,7 @@ public interface YamlTraversal {
 	}
 
 	default Stream<Node> traverseAmbiguously(YamlFileAST ast) {
-		if (ast!=null) {
+		if (ast != null) {
 			return traverseAmbiguously(new ASTRootCursor(ast))
 			.filter(cursor -> cursor.getNode() instanceof Node)
 			.map((ASTCursor cursor) -> (Node)cursor.getNode());
@@ -71,7 +71,7 @@ public interface YamlTraversal {
 	}
 
 	default Stream<Node> traverseAmbiguously(Node startNode) {
-		if (startNode!=null) {
+		if (startNode != null) {
 			return traverseAmbiguously(new NodeCursor(startNode))
 			.map((ASTCursor cursor) -> (Node)cursor.getNode());
 		}
@@ -117,7 +117,7 @@ public interface YamlTraversal {
 	default YamlTraversal repeatAtLeast(int howMany) {
 		if (isEmpty()) {
 			return this;
-		} else if (howMany>0) {
+		} else if (howMany > 0) {
 			return this.then(this.repeatAtLeast(howMany-1));
 		} else {
 			return this.repeat();

@@ -28,7 +28,7 @@ public class DevtoolsEnabledValidator extends Validator {
 	@Override
 	protected ValidationResult compute() {
 		IProject p = project.getValue();
-		if (p!=null) {
+		if (p != null) {
 			if (!BootPropertyTester.hasDevtools(p)) {
 				return ValidationResult.error("Project '"+p.getName()+"' does not have spring-boot-devtools on its classpath");
 			}

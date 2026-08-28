@@ -140,7 +140,7 @@ public class FluxConstructorSearch {
 
 	public Flux<JavaConstructorHint> search() {
 		validate();
-		if (scope==null) {
+		if (scope == null) {
 			return Flux.empty();
 		}
 		final FluxSearchRequestor requestor = new FluxSearchRequestor();

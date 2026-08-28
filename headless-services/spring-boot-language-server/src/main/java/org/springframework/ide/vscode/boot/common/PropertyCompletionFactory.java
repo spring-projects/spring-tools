@@ -142,7 +142,7 @@ public class PropertyCompletionFactory {
 
 		@Override
 		protected Type getType() {
-			if (type==null) {
+			if (type == null) {
 				type = TypeParser.parse(match.data.getType());
 			}
 			return type;

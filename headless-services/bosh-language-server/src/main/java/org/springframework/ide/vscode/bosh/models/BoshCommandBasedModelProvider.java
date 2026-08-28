@@ -83,24 +83,24 @@ public abstract class BoshCommandBasedModelProvider<T> implements DynamicModelPr
 		String out = executeCommand(getCommand());
 		BoshCommandResponse response = gson.fromJson(out, BoshCommandResponse.class);
 		String[] blocks = response.getBlocks();
-		Assert.isLegal(blocks!=null);
-		Assert.isLegal(blocks.length==1);
+		Assert.isLegal(blocks != null);
+		Assert.isLegal(blocks.length == 1);
 		return blocks[0];
 	}
 
 	protected final ExternalCommand getCommand() {
 		List<String> commandAndArgs = new ArrayList<>();
 		String command = config.getCommand();
-		if (command==null) {
+		if (command == null) {
 			return null;
 		}
 		commandAndArgs.add(command);
 		String target = config.getTarget();
-		if (target==null && !StringUtil.hasText(System.getenv("BOSH_ENVIRONMENT"))) {
+		if (target == null && !StringUtil.hasText(System.getenv("BOSH_ENVIRONMENT"))) {
 			//See https://www.pivotaltracker.com/story/show/150309966
 			return null;
 		}
-		if (target!=null) {
+		if (target != null) {
 			commandAndArgs.add("-e");
 			commandAndArgs.add(target);
 		}
@@ -117,7 +117,7 @@ public abstract class BoshCommandBasedModelProvider<T> implements DynamicModelPr
 	}
 
 	protected String executeCommand(ExternalCommand command) throws Exception {
-		if (command==null) {
+		if (command == null) {
 			log.warn("bosh cli based editor features are disabled");
 			throw new IOException("bosh cli based editor features are disabled. "
 					+ "Consult the atom/vscode extension's readme for detailed "

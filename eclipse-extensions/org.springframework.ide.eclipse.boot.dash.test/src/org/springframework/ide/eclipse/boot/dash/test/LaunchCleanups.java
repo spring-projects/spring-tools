@@ -59,7 +59,7 @@ public class LaunchCleanups implements TestRule {
 
 	private String nicerToString(ILaunch l) {
 		ILaunchConfiguration c = l.getLaunchConfiguration();
-		if (c!=null) {
+		if (c != null) {
 			return c.getName();
 		}
 		return l.toString();

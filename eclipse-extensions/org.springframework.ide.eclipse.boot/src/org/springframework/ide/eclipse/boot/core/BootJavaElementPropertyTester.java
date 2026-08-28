@@ -38,9 +38,9 @@ public class BootJavaElementPropertyTester extends PropertyTester {
 	}
 
 	private boolean isInBoot2Project(IJavaElement je) {
-		if (je!=null) {
+		if (je != null) {
 			IJavaProject jp = je.getJavaProject();
-			if (jp!=null) {
+			if (jp != null) {
 				return BootPropertyTester.isBoot2Project(jp.getProject());
 			}
 		}
@@ -48,9 +48,9 @@ public class BootJavaElementPropertyTester extends PropertyTester {
 	}
 
 	private boolean isInBootProject(IJavaElement je) {
-		if (je!=null) {
+		if (je != null) {
 			IJavaProject jp = je.getJavaProject();
-			if (jp!=null) {
+			if (jp != null) {
 				return BootPropertyTester.isBootProject(jp.getProject());
 			}
 		}

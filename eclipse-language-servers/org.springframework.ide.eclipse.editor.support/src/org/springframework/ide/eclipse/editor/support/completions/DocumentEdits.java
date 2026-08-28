@@ -165,14 +165,14 @@ public class DocumentEdits implements ProposalApplier {
 		public void insert(int start, final String text) throws BadLocationException {
 			final int tStart = org2new.trasform(start);
 			if (!text.isEmpty()) {
-				if (doc!=null) {
+				if (doc != null) {
 					doc.replace(tStart, 0, text);
 				}
 				final OffsetTransformer parent = org2new;
 				org2new = new OffsetTransformer() {
 					public int trasform(int org) {
 						int tOffset = parent.trasform(org);
-						if (tOffset<tStart) {
+						if (tOffset < tStart) {
 							return tOffset;
 						} else {
 							return tOffset + text.length();
@@ -185,10 +185,10 @@ public class DocumentEdits implements ProposalApplier {
 
 		public void delete(final int start, final int end) throws BadLocationException {
 			final int tStart = org2new.trasform(start);
-			if (end>start) { // skip work for 'delete nothing' op
+			if (end > start) { // skip work for 'delete nothing' op
 				final int tEnd = org2new.trasform(end);
-				if (tEnd>tStart) { // skip work for 'delete nothing' op
-					if (doc!=null) {
+				if (tEnd > tStart) { // skip work for 'delete nothing' op
+					if (doc != null) {
 						doc.replace(tStart, tEnd-tStart, "");
 					}
 
@@ -196,9 +196,9 @@ public class DocumentEdits implements ProposalApplier {
 					org2new = new OffsetTransformer() {
 						public int trasform(int org) {
 							int tOffset = parent.trasform(org);
-							if (tOffset<=tStart) {
+							if (tOffset <= tStart) {
 								return tOffset;
-							} else if (tOffset>=tEnd) {
+							} else if (tOffset >= tEnd) {
 								return tOffset - tEnd + tStart;
 							} else {
 								return start;
@@ -212,7 +212,7 @@ public class DocumentEdits implements ProposalApplier {
 
 		@Override
 		public String toString() {
-			if (doc==null) {
+			if (doc == null) {
 				return super.toString();
 			}
 			StringBuilder buf = new StringBuilder();
@@ -231,7 +231,7 @@ public class DocumentEdits implements ProposalApplier {
 	}
 
 	public void delete(int start, int end) {
-		Assert.isLegal(start<=end);
+		Assert.isLegal(start <= end);
 		edits.add(new Deletion(start, end));
 	}
 
@@ -249,7 +249,7 @@ public class DocumentEdits implements ProposalApplier {
 		for (Edit edit : edits) {
 			edit.apply(selectionState);
 		}
-		if (selectionState.selection>=0) {
+		if (selectionState.selection >= 0) {
 			return new Point(selectionState.selection, 0);
 		}
 		return null;
@@ -297,11 +297,11 @@ public class DocumentEdits implements ProposalApplier {
 		IRegion line = doc.getLineInformation(lineNumber);
 		int startOfDeletion;
 		int endOfDeletion;
-		if (lineNumber>0) {
+		if (lineNumber > 0) {
 			IRegion previousLine = doc.getLineInformation(lineNumber-1);
 			startOfDeletion = endOf(previousLine);
 			endOfDeletion = endOf(line);
-		} else if (lineNumber<doc.getNumberOfLines()-1) {
+		} else if (lineNumber < doc.getNumberOfLines()-1) {
 			IRegion nextLine = doc.getLineInformation(lineNumber+1);
 			startOfDeletion = line.getOffset();
 			endOfDeletion = nextLine.getOffset();

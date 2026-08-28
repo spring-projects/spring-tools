@@ -53,7 +53,7 @@ public abstract class LiveRequestMappingAbstractImpl implements LiveRequestMappi
 	@Override
 	public final String getFullyQualifiedClassName() {
 		JLRMethod m = getMethodData();
-		if (m!=null) {
+		if (m != null) {
 			return m.getFQClassName();
 		}
 		return null;
@@ -66,7 +66,7 @@ public abstract class LiveRequestMappingAbstractImpl implements LiveRequestMappi
 	@Override
 	public final String getMethodName() {
 		JLRMethod m = getMethodData();
-		if (m!=null) {
+		if (m != null) {
 			return m.getMethodName();
 		}
 		return null;
@@ -88,7 +88,7 @@ public abstract class LiveRequestMappingAbstractImpl implements LiveRequestMappi
 			//use org.json or jackson Mapper to properly parse this.
 			int start = 2; //right after first '['
 			int end = predicate.indexOf(']');
-			if (end>=2) {
+			if (end >= 2) {
 				String pathString = predicate.substring(start, end);
 				return splitPaths(pathString);
 			}

@@ -98,10 +98,10 @@ public class ReadOnlyStringPropertyControl<T extends BootDashElement> extends Ab
 
 	private boolean shouldShow() {
 		BootDashElement element = getBootDashElement();
-		if (element!=null && type.isAssignableFrom(element.getClass())) {
+		if (element != null && type.isAssignableFrom(element.getClass())) {
 			@SuppressWarnings("unchecked")
 			Boolean val = visibleWhen.apply((T)element);
-			if (val!=null) {
+			if (val != null) {
 				return val;
 			}
 		}
@@ -109,10 +109,10 @@ public class ReadOnlyStringPropertyControl<T extends BootDashElement> extends Ab
 	}
 
 	protected String fetchValue(BootDashElement element) {
-		if (element!=null && type.isAssignableFrom(element.getClass())) {
+		if (element != null && type.isAssignableFrom(element.getClass())) {
 			@SuppressWarnings("unchecked")
 			String val = getter.apply((T)element);
-			if (val!=null) {
+			if (val != null) {
 				return val;
 			}
 		}

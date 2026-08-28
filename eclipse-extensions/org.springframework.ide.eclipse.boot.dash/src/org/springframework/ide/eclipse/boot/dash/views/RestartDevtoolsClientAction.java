@@ -67,7 +67,7 @@ public class RestartDevtoolsClientAction extends AbstractBootDashElementsAction 
 	private boolean visibleForElement(BootDashElement e) {
 		if (e instanceof GenericRemoteAppElement) {
 			App data = ((GenericRemoteAppElement) e).getAppData();
-			return ((DevtoolsConnectable)data).isDevtoolsConnectable()!=TemporalBoolean.NEVER;
+			return ((DevtoolsConnectable)data).isDevtoolsConnectable() != TemporalBoolean.NEVER;
 		}
 		return false;
 	}
@@ -90,7 +90,7 @@ public class RestartDevtoolsClientAction extends AbstractBootDashElementsAction 
 	private boolean enableForElement(BootDashElement bde) {
 		try {
 			IProject project = bde.getProject();
-			if (bde instanceof GenericRemoteAppElement && project!=null && bde.getRunState().isActive()) {
+			if (bde instanceof GenericRemoteAppElement && project != null && bde.getRunState().isActive()) {
 				if (BootPropertyTester.fastHasDevTools(project)) {
 					App data = ((GenericRemoteAppElement)bde).getAppData();
 					if (data instanceof DevtoolsConnectable) {

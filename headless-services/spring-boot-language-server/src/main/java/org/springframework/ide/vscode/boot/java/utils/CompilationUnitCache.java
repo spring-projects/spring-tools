@@ -124,7 +124,7 @@ public final class CompilationUnitCache implements DocumentContentProvider {
 
 		this.documentsService = documentsService;
 
-		// IMPORTANT ===> these notifications arrive within the lsp message loop, so reactions to them have to be fast
+		// IMPORTANT == => these notifications arrive within the lsp message loop, so reactions to them have to be fast
 		// and not be blocked by waiting for anything
 		if (this.documentsService != null) {
 			this.documentsService.onDidChangeContent(doc -> invalidateCuForJavaFile(doc.getDocument().getId().getUri()));

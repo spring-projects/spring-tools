@@ -44,7 +44,7 @@ public class RemoveRunTargetAction extends AbstractBootDashModelAction {
 	@Override
 	public void updateEnablement() {
 		RunTarget runTargetToRemove = getRunTargetToRemove();
-		this.setEnabled(runTargetToRemove!=null && runTargetToRemove.canRemove());
+		this.setEnabled(runTargetToRemove != null && runTargetToRemove.canRemove());
 	}
 
 	@Override
@@ -55,7 +55,7 @@ public class RemoveRunTargetAction extends AbstractBootDashModelAction {
 
 	private RunTarget getRunTargetToRemove() {
 		BootDashModel section = sectionSelection.getValue();
-		if (section!=null) {
+		if (section != null) {
 			return section.getRunTarget();
 		}
 		return null;

@@ -80,10 +80,10 @@ public class ExpandableSection extends ReflowableSection implements Disposable {
 		});
 		expansionState.addListener(new ValueListener<Boolean>() {
 			public void gotValue(LiveExpression<Boolean> exp, Boolean value) {
-				if (value!=null && comp!=null && !comp.isDisposed()) {
+				if (value != null && comp != null && !comp.isDisposed()) {
 					boolean newState = value;
 					boolean currentState = comp.isExpanded();
-					if (currentState!=newState) {
+					if (currentState != newState) {
 						comp.setExpanded(newState);
 						reflow(owner, comp);
 					}
@@ -94,7 +94,7 @@ public class ExpandableSection extends ReflowableSection implements Disposable {
 		visibleState.addListener(new ValueListener<Boolean>() {
 			@Override
 			public void gotValue(LiveExpression<Boolean> exp, Boolean value) {
-				if (value!=null && comp!=null && !comp.isDisposed()) {
+				if (value != null && comp != null && !comp.isDisposed()) {
 					boolean newState = value;
 					comp.setVisible(newState);
 					GridData data = (GridData) comp.getLayoutData();
@@ -117,7 +117,7 @@ public class ExpandableSection extends ReflowableSection implements Disposable {
 
 	@Override
 	public void dispose() {
-		if (child!=null) {
+		if (child != null) {
 			if (child instanceof Disposable) {
 				((Disposable) child).dispose();
 			}

@@ -86,7 +86,7 @@ public abstract class PollingLiveExp<T> extends LiveExpression<T> {
 	 */
 	public void refreshFor(Duration duration) {
 		Job job = refreshJob;
-		if (job!=null) {
+		if (job != null) {
 			long stopRefrestingAfter = System.currentTimeMillis() + duration.toMillis();
 			this.continueRefreshing = () -> System.currentTimeMillis() <= stopRefrestingAfter;
 			job.schedule();
@@ -98,7 +98,7 @@ public abstract class PollingLiveExp<T> extends LiveExpression<T> {
 	 */
 	public PollingLiveExp<T> refreshForever() {
 		Job job = refreshJob;
-		if (job!=null) {
+		if (job != null) {
 			continueRefreshing = () -> true;
 			job.schedule();
 		}
@@ -107,7 +107,7 @@ public abstract class PollingLiveExp<T> extends LiveExpression<T> {
 
 	public PollingLiveExp<T> refreshOnce() {
 		Job job = refreshJob;
-		if (job!=null) {
+		if (job != null) {
 			continueRefreshing = new Supplier<Boolean>() {
 
 				boolean firstTime = true;

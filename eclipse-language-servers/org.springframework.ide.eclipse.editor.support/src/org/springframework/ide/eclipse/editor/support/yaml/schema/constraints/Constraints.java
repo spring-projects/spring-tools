@@ -54,7 +54,7 @@ public class Constraints {
 		private boolean allowFewer = false;
 
 		public RequireOneOf(String[] properties) {
-			Assert.isLegal(properties.length>1);
+			Assert.isLegal(properties.length > 1);
 			this._requiredProps = properties;
 		}
 
@@ -73,16 +73,16 @@ public class Constraints {
 				long foundPropsCount = requiredProps.stream()
 					.filter(foundProps::contains)
 					.count();
-				if (foundPropsCount==0) {
+				if (foundPropsCount == 0) {
 					if (!allowFewer) {
 						problems.accept(missingProperty(
 								"One of "+requiredProps+" is required for '"+type+"'", doc, parent, map));
 					}
-				} else if (foundPropsCount>1) {
+				} else if (foundPropsCount > 1) {
 					//Mark each of the found keys as a violation:
 					for (NodeTuple entry : map.getValue()) {
 						String key = NodeUtil.asScalar(entry.getKeyNode());
-						if (key!=null && requiredProps.contains(key)) {
+						if (key != null && requiredProps.contains(key)) {
 							problems.accept(problem(EXTRA_PROPERTY,
 									"Only one of "+requiredProps+" should be defined for '"+type+"'",  entry.getKeyNode()));
 						}

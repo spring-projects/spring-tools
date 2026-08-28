@@ -54,7 +54,7 @@ public class LimitedTimeCache<K,V> implements Cache<K, V> {
 		protected IStatus run(IProgressMonitor monitor) {
 			long oldest = clearExpired();
 			//Reschedule job to again run when the next entry expires.
-			if (oldest>=0) {
+			if (oldest >= 0) {
 				clearExpiredJob.schedule(MAX_AGE - oldest + AGE_MARGIN);
 			}
 			return Status.OK_STATUS;
@@ -81,7 +81,7 @@ public class LimitedTimeCache<K,V> implements Cache<K, V> {
 	@Override
 	public synchronized V get(K key) {
 		Entry e = cache.get(key);
-		if (e!=null) {
+		if (e != null) {
 			e.lastUsed = System.currentTimeMillis();
 			return e.value;
 		}
@@ -91,7 +91,7 @@ public class LimitedTimeCache<K,V> implements Cache<K, V> {
 	@Override
 	public synchronized void put(K key, V value) {
 		boolean wasEmpty = cache.isEmpty();
-		if (value==null) {
+		if (value == null) {
 			cache.remove(key);
 		} else {
 			cache.put(key, new Entry(value));
@@ -123,7 +123,7 @@ public class LimitedTimeCache<K,V> implements Cache<K, V> {
 			java.util.Map.Entry<K, LimitedTimeCache<K, V>.Entry> me = iter.next();
 			Entry e = me.getValue();
 			long age = e.age();
-			if (age>=MAX_AGE) {
+			if (age >= MAX_AGE) {
 				debug("Expired: "+me.getKey() +" age: "+e.age());
 				iter.remove();
 			} else {
@@ -145,7 +145,7 @@ public class LimitedTimeCache<K,V> implements Cache<K, V> {
 		LimitedTimeCache<K, V> cache = new LimitedTimeCache<>(duration);
 		return (k) -> {
 			V v = cache.get(k);
-			if (v==null) {
+			if (v == null) {
 				cache.put(k, v=func.apply(k));
 			}
 			return v;

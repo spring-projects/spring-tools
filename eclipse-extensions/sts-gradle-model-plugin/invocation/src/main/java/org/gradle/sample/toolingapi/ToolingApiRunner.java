@@ -32,7 +32,7 @@ public class ToolingApiRunner {
             System.out.println("Group=" + model.group() + " artifact=" + model.artifact() + " version=" + model.version());
             assert model.version() != null;
         } finally {
-            if(connection != null) {
+            if (connection != null) {
                 connection.close();
             }
         }

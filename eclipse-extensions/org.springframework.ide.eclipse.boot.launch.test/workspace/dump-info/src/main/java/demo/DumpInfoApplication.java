@@ -53,7 +53,7 @@ public class DumpInfoApplication implements CommandLineRunner {
 	}
 
 	private String render(String propertyValue) {
-		if (propertyValue==null) {
+		if (propertyValue == null) {
 			return "null";
 		} else {
 			return "'"+propertyValue+"'";

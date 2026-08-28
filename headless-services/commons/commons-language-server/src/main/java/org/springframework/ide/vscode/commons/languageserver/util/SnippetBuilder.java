@@ -91,7 +91,7 @@ public class SnippetBuilder {
 			value = Optional.empty();
 		} else {
 			id = idMap.get(name);
-			if (id==null) {
+			if (id == null) {
 				id = nextPlaceHolderId++;
 				idMap.put(name, id);
 			}
@@ -127,7 +127,7 @@ public class SnippetBuilder {
 	@Override
 	public String toString() {
 		String str = buf.toString();
-		if (getPlaceholderCount()==1 ) {
+		if (getPlaceholderCount() == 1 ) {
 			String placeHolder = createPlaceHolder(FIRST_PLACE_HOLDER_ID, Optional.empty());
 			if (str.endsWith(placeHolder)) {
 				str = str.substring(0, str.length()-placeHolder.length());
@@ -144,7 +144,7 @@ public class SnippetBuilder {
 	}
 
 	public void ensureSpace() {
-		if (buf.length()>0 && !Character.isWhitespace(buf.charAt(buf.length()-1))) {
+		if (buf.length() > 0 && !Character.isWhitespace(buf.charAt(buf.length()-1))) {
 			buf.append(' ');
 		}
 	}

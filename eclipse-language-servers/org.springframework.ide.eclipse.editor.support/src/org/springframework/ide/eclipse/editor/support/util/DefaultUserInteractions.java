@@ -48,7 +48,7 @@ public class DefaultUserInteractions implements UserInteractions {
 		dialog.setElements(options);
 		dialog.setBlockOnOpen(true);
 		dialog.setMultipleSelection(false);
-		if (preferred!=null) {
+		if (preferred != null) {
 			dialog.setInitialSelections(new Object[] {preferred});
 		}
 		int code = dialog.open();

@@ -62,7 +62,7 @@ public class AnnotationHierarchyAwareLookup<T> {
 	 * @param value
 	 */
 	private void put(String bindingKey,  boolean overrideSuperTypes, T value) {
-		Assert.isLegal(bindings.get(bindingKey)==null, "Multiple bindings to the same fqName are not supported");
+		Assert.isLegal(bindings.get(bindingKey) == null, "Multiple bindings to the same fqName are not supported");
 		bindings.put(bindingKey, new Binding<>(value, overrideSuperTypes));
 	}
 

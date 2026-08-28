@@ -79,7 +79,7 @@ public class ReferenceApp extends GithubRepoContent {
 	@Override
 	public String getName() {
 		String name = metadata.getName();
-		if (name!=null) {
+		if (name != null) {
 			return name;
 		}
 		return metadata.getRepo();
@@ -87,14 +87,14 @@ public class ReferenceApp extends GithubRepoContent {
 
 	@Override
 	public Repo getRepo() {
-		if (this.repo==null) {
+		if (this.repo == null) {
 			this.repo = github.getRepo(metadata.getOwner(), metadata.getRepo());
 		}
 		return this.repo;
 	}
 
 	public CodeSet getCodeSet() throws UIThreadDownloadDisallowed {
-		if (codeset==null) {
+		if (codeset == null) {
 			codeset = CodeSet.fromZip(getName(), getZip(), getRootPath());
 		}
 		return codeset;

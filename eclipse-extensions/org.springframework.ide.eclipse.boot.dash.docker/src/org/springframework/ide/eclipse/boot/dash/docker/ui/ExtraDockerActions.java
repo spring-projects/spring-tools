@@ -28,8 +28,8 @@ public class ExtraDockerActions implements BootDashActions.Factory {
 			SimpleDIContext context,
 			LiveProcessCommandsExecutor liveProcessCmds) {
 		Builder<AbstractBootDashAction> contributions = ImmutableList.builder();
-		if (section!=null) {
-			if (Platform.getBundle("org.eclipse.linuxtools.docker.ui")!=null) {
+		if (section != null) {
+			if (Platform.getBundle("org.eclipse.linuxtools.docker.ui") != null) {
 				contributions.add(new OpenDockerExplorerAction(section, context));
 			}
 		}

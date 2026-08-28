@@ -48,9 +48,9 @@ public class TargetProperties {
 
 	public TargetProperties(TargetProperties targetProperties, RunTargetType runTargetType) {
 		this(
-				targetProperties==null
-					?new HashMap<>()
-					:targetProperties.getAllProperties(),
+				targetProperties == null
+					? new HashMap<>()
+					: targetProperties.getAllProperties(),
 				runTargetType
 		);
 	}

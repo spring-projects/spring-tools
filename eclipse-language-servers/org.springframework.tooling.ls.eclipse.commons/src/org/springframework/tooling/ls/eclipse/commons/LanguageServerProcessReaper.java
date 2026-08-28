@@ -68,10 +68,10 @@ public class LanguageServerProcessReaper extends Thread {
 
 	public synchronized void addProcess(String id, Process process) {
 		debug("added process: "+process);
-		if (process!=null) {
+		if (process != null) {
 			Process existingProcess = processes.get(id);
 			//workaround for this bug: https://bugs.eclipse.org/bugs/show_bug.cgi?id=549904
-			if (existingProcess!=null) {
+			if (existingProcess != null) {
 				if (existingProcess.isAlive()) {
 					debug("Destroying leaked process: "+process);
 					existingProcess.destroyForcibly();

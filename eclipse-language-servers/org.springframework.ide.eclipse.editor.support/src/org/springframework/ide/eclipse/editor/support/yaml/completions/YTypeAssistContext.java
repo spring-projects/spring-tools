@@ -78,7 +78,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 			for (YTypedProperty p : properties) {
 				String name = p.getName();
 				double score = FuzzyMatcher.matchScore(query, name);
-				if (score!=0) {
+				if (score != 0) {
 					YamlPath relativePath = YamlPath.fromSimpleProperty(name);
 					YamlPathEdits edits = new YamlPathEdits(doc);
 					if (!definedProps.contains(name)) {
@@ -118,7 +118,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 		//Note that proper indentation after each \n" is added automatically
 		//to align with the parent. The strings created here only need to contain
 		//indentation spaces to indent *more* than the parent node.
-		if (type==null) {
+		if (type == null) {
 			//Assume its some kind of pojo bean
 			return "\n"+YamlIndentUtil.INDENT_STR;
 		} else if (typeUtil.isMap(type)) {
@@ -158,11 +158,11 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 
 	private List<ICompletionProposal> getValueCompletions(YamlDocument doc, int offset, String query) {
 		YValueHint[] values = typeUtil.getHintValues(type);
-		if (values!=null) {
+		if (values != null) {
 			ArrayList<ICompletionProposal> completions = new ArrayList<>();
 			for (YValueHint value : values) {
 				double score = FuzzyMatcher.matchScore(query, value.getValue());
-				if (score!=0 && !value.equals(query)) {
+				if (score != 0 && !value.equals(query)) {
 					DocumentEdits edits = new DocumentEdits(doc.getDocument());
 					edits.delete(offset-query.length(), offset);
 					edits.insert(offset, value.getValue());
@@ -176,16 +176,16 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 
 	@Override
 	public YamlAssistContext traverse(YamlPathSegment s) {
-		if (s.getType()==YamlPathSegmentType.VAL_AT_KEY) {
+		if (s.getType() == YamlPathSegmentType.VAL_AT_KEY) {
 			if (typeUtil.isSequencable(type) || typeUtil.isMap(type)) {
 				return contextWith(s, typeUtil.getDomainType(type));
 			}
 			String key = s.toPropString();
 			Map<String, YTypedProperty> subproperties = typeUtil.getPropertiesMap(type);
-			if (subproperties!=null) {
+			if (subproperties != null) {
 				return contextWith(s, getType(subproperties.get(key)));
 			}
-		} else if (s.getType()==YamlPathSegmentType.VAL_AT_INDEX) {
+		} else if (s.getType() == YamlPathSegmentType.VAL_AT_INDEX) {
 			if (typeUtil.isSequencable(type)) {
 				return contextWith(s, typeUtil.getDomainType(type));
 			}
@@ -194,14 +194,14 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 	}
 
 	private YType getType(YTypedProperty prop) {
-		if (prop!=null) {
+		if (prop != null) {
 			return prop.getType();
 		}
 		return null;
 	}
 
 	private YamlAssistContext contextWith(YamlPathSegment s, YType nextType) {
-		if (nextType!=null) {
+		if (nextType != null) {
 			return new YTypeAssistContext(this, contextPath.append(s), nextType, typeUtil);
 		}
 		return null;
@@ -216,7 +216,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 
 	@Override
 	public HoverInfo getHoverInfo() {
-		if (parent!=null) {
+		if (parent != null) {
 			return parent.getHoverInfo(contextPath.getLastSegment());
 		}
 		return null;
@@ -233,7 +233,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 		case VAL_AT_KEY:
 		case KEY_AT_KEY:
 			YTypedProperty prop = getProperty(lastSegment.toPropString());
-			if (prop!=null) {
+			if (prop != null) {
 				return new YPropertyHoverInfo(contextPath.toPropString(), getType(), prop);
 			}
 			break;

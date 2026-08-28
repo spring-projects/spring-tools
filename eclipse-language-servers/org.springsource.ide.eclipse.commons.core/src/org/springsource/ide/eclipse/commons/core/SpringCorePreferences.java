@@ -54,7 +54,7 @@ public class SpringCorePreferences {
 	}
 
 	private IEclipsePreferences getEclipsePreferences(IProject project, String qualifier) {
-		IScopeContext context = project!=null
+		IScopeContext context = project != null
 				? new ProjectScope(project)
 				: InstanceScope.INSTANCE;
 		IEclipsePreferences node = context.getNode(qualifier);

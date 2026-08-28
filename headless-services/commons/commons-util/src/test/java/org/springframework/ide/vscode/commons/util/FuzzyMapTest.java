@@ -102,7 +102,7 @@ public class FuzzyMapTest {
 		for (int focusOn = 0; focusOn < entries.length; focusOn++) {
 			TestMap map = new TestMap();
 			for (int other = 0; other < entries.length; other++) {
-				if (focusOn!=other) {
+				if (focusOn != other) {
 					map.add(entries[other]);
 				}
 			}
@@ -110,7 +110,7 @@ public class FuzzyMapTest {
 			String prefixEntry = map.findLongestCommonPrefixEntry(entries[focusOn]);
 			assertEquals(expectPrefix[focusOn], prefix);
 			assertTrue(prefixEntry.startsWith(prefixEntry));
-			assertTrue(prefixEntry.length()>prefix.length());
+			assertTrue(prefixEntry.length() > prefix.length());
 		}
 	}
 
@@ -160,17 +160,17 @@ public class FuzzyMapTest {
 
 		// also check that scores are decreasing.
 		double previousScore = found.get(0).score;
-		assertTrue(previousScore!=0.0);
+		assertTrue(previousScore != 0.0);
 		for (int i = 1; i < datas.length; i++) {
 			String data = datas[i];
 			double score = found.get(i).score;
-			assertTrue(previousScore>=score, "Wrong score order: '"+datas[i-1]+"'["+previousScore+"] '"+data+"' ["+score+"]");
+			assertTrue(previousScore >= score, "Wrong score order: '"+datas[i-1]+"'["+previousScore+"] '"+data+"' ["+score+"]");
 			previousScore = score;
 		}
 	}
 
 	private void assertMatch(boolean expect, String pattern, String data) {
-		boolean actual = FuzzyMatcher.matchScore(pattern, data)!=0.0;
+		boolean actual = FuzzyMatcher.matchScore(pattern, data) != 0.0;
 		assertEquals(expect, actual);
 	}
 

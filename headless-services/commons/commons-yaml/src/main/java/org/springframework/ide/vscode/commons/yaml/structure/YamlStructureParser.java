@@ -131,7 +131,7 @@ public class YamlStructureParser {
 		//         start
 
 		public static YamlLine atLineNumber(YamlDocument doc, int line) throws Exception {
-			if (line<doc.getDocument().getNumberOfLines()) {
+			if (line < doc.getDocument().getNumberOfLines()) {
 				IRegion l = doc.getLineInformation(line);
 				int start = l.getOffset();
 				int end = start + l.getLength();
@@ -161,7 +161,7 @@ public class YamlStructureParser {
 			return start;
 		}
 		public boolean matches(Pattern pat, boolean stripiIndentation) throws Exception {
-			CharSequence text = stripiIndentation ? getTextWithoutIndent():getText();
+			CharSequence text = stripiIndentation ? getTextWithoutIndent() : getText();
 			return pat.matcher(text).matches();
 		}
 		public boolean matches(Pattern pat) throws Exception {
@@ -241,13 +241,13 @@ public class YamlStructureParser {
 		protected final YamlDocument doc;
 
 		public SNode(SChildBearingNode parent, YamlDocument doc, int indent, int start, int end) {
-			Assert.isLegal(this instanceof SRootNode || parent!=null);
+			Assert.isLegal(this instanceof SRootNode || parent != null);
 			this.parent = parent;
 			this.doc = doc;
 			this.indent = indent;
 			this.start = start;
 			this.end = end;
-			if (parent!=null) {
+			if (parent != null) {
 				parent.addChild(this);
 			}
 		}
@@ -280,11 +280,11 @@ public class YamlStructureParser {
 		public abstract SNode find(int offset);
 
 		public boolean nodeContains(int offset) {
-			return getStart()+Math.max(0, getIndent())<=offset && offset<=getNodeEnd();
+			return getStart()+Math.max(0, getIndent()) <= offset && offset <= getNodeEnd();
 		}
 
 		public boolean treeContains(int offset) {
-			return getStart()<=offset && offset<=getTreeEnd();
+			return getStart() <= offset && offset <= getTreeEnd();
 		}
 
 		public IDocument getDocument() {
@@ -323,7 +323,7 @@ public class YamlStructureParser {
 		}
 
 		private static void buildPath(SNode node, Builder<SNode> nodes) {
-			if (node!=null) {
+			if (node != null) {
 				buildPath(node.getParent(), nodes);
 				nodes.add(node);
 			}
@@ -333,7 +333,7 @@ public class YamlStructureParser {
 			List<YamlPathSegment> path = new ArrayList<>();
 			for (SNode node : getPathNodes()) {
 				YamlPathSegment segment = node.getSegment();
-				if (segment!=null) {
+				if (segment != null) {
 					path.add(segment);
 				}
 			}
@@ -348,15 +348,15 @@ public class YamlStructureParser {
 		public YamlPathSegment getSegment() {
 			try {
 				SNode node = this;
-				if (node!=null) {
+				if (node != null) {
 					SNodeType nodeType = node.getNodeType();
-					if (nodeType==SNodeType.KEY) {
+					if (nodeType == SNodeType.KEY) {
 						String key = ((SKeyNode)node).getKey();
 						return YamlPathSegment.valueAt(key);
-					} else if (nodeType==SNodeType.SEQ) {
+					} else if (nodeType == SNodeType.SEQ) {
 						int index = ((SSeqNode)node).getIndex();
 						return YamlPathSegment.valueAt(index);
-					} else if (nodeType==SNodeType.DOC) {
+					} else if (nodeType == SNodeType.DOC) {
 						int index = ((SDocNode)node).getIndex();
 						return YamlPathSegment.valueAt(index);
 					}
@@ -368,7 +368,7 @@ public class YamlStructureParser {
 		}
 
 		public SRootNode getRoot() {
-			if (parent==null) {
+			if (parent == null) {
 				return (SRootNode) this;
 			}
 			return parent.getRoot();
@@ -376,7 +376,7 @@ public class YamlStructureParser {
 
 		public SDocNode getDocNode() {
 			SNode it = this;
-			while (it!=null && !(it instanceof SDocNode)) {
+			while (it != null && !(it instanceof SDocNode)) {
 				it = it.getParent();
 			}
 			return (SDocNode) it;
@@ -396,16 +396,16 @@ public class YamlStructureParser {
 
 		@Override
 		public void addChild(SNode c) {
-			Assert.isLegal(c.getNodeType()==SNodeType.DOC, ""+c.getNodeType());
+			Assert.isLegal(c.getNodeType() == SNodeType.DOC, ""+c.getNodeType());
 			super.addChild(c);
 		}
 
 		@Override
 		public Stream<SNode> traverseAmbiguously(YamlPathSegment s) {
 			Integer index = s.toIndex();
-			if (index!=null) {
+			if (index != null) {
 				List<SNode> cs = getChildren();
-				if (index>=0 && index<cs.size()) {
+				if (index >= 0 && index < cs.size()) {
 					return Streams.fromNullable(cs.get(index));
 				}
 			}
@@ -454,13 +454,13 @@ public class YamlStructureParser {
 		}
 
 		public List<SNode> getChildren() {
-			if (children!=null) {
+			if (children != null) {
 				return Collections.unmodifiableList(children);
 			}
 			return Collections.emptyList();
 		}
 		public void addChild(SNode c) {
-			if (children==null) {
+			if (children == null) {
 				children = new ArrayList<SNode>();
 			}
 			children.add(c);
@@ -504,7 +504,7 @@ public class YamlStructureParser {
 			}
 			for (SNode c : getChildren()) {
 				SNode fromChild = c.find(offset);
-				if (fromChild!=null) {
+				if (fromChild != null) {
 					return fromChild;
 				}
 			}
@@ -525,7 +525,7 @@ public class YamlStructureParser {
 
 
 		private SSeqNode getSeqChildWithIndex(int index) {
-			if (index>=0) {
+			if (index >= 0) {
 				Collection<SNode> children = keyMap().get(index);
 				if (!children.isEmpty()) {
 					SNode child = children.iterator().next();
@@ -545,7 +545,7 @@ public class YamlStructureParser {
 					allChildren = plainChildren.stream();
 				}
 				Iterable<String> keyAliases = getKeyAliases(key);
-				if (keyAliases!=null) {
+				if (keyAliases != null) {
 					for (String keyAlias : keyAliases) {
 						Collection<SNode> aliasChildren = keyMap().get(keyAlias);
 						if (CollectionUtil.hasElements(aliasChildren)) {
@@ -563,15 +563,15 @@ public class YamlStructureParser {
 		}
 
 		private Multimap<Object, SNode> keyMap() {
-			if (keyMap==null) {
+			if (keyMap == null) {
 				ListMultimap<Object, SNode> index = MultimapBuilder.hashKeys().arrayListValues().build();
 				for (SNode node: getChildren()) {
 					try {
-						if (node.getNodeType()==SNodeType.KEY) {
+						if (node.getNodeType() == SNodeType.KEY) {
 							SKeyNode keyNode = (SKeyNode)node;
 							String key = keyNode.getKey();
 							index.put(key, keyNode);
-						} else if (node.getNodeType()==SNodeType.SEQ) {
+						} else if (node.getNodeType() == SNodeType.SEQ) {
 							SSeqNode seqNode = (SSeqNode) node;
 							int key = seqNode.index;
 							index.put(key, seqNode);
@@ -587,7 +587,7 @@ public class YamlStructureParser {
 
 		public SNode getFirstRealChild() {
 			for (SNode c : getChildren()) {
-				if (c.getIndent()>=0) {
+				if (c.getIndent() >= 0) {
 					return c;
 				}
 			}
@@ -596,7 +596,7 @@ public class YamlStructureParser {
 
 		public SNode getLastRealChild() {
 			for (SNode c : Lists.reverse(getChildren())) {
-				if (c.getIndent()>=0) {
+				if (c.getIndent() >= 0) {
 					return c;
 				}
 			}
@@ -659,17 +659,17 @@ public class YamlStructureParser {
 		SRootNode root = new SRootNode(input.getDocument());
 		SChildBearingNode parent = root;
 		YamlLine line = input.peek();
-		while (line!=null && line.matches(SKIP_AT_START_OF_DOC, false)) {
+		while (line != null && line.matches(SKIP_AT_START_OF_DOC, false)) {
 			input.read();
 			line = input.peek();
 		}
-		if (line!=null && !line.matches(DOCUMENT_SEPERATOR)) {
+		if (line != null && !line.matches(DOCUMENT_SEPERATOR)) {
 			//document separator missing, create document implicitly
 			parent = new SDocNode(root,0,0);
 		}
-		while (null!=(line=input.read())) {
+		while (null != (line=input.read())) {
 			int indent = line.getIndent();
-			if (indent==-1) {
+			if (indent == -1) {
 				createRawNode(parent, line);
 			} else {
 				parent = parseLine(parent, line, true);
@@ -686,7 +686,7 @@ public class YamlStructureParser {
 			int currentIndent = line.getIndent();
 			parent = dropToLevel(parent, (node) -> {
 				int indent = node.getIndent();
-				return indent < currentIndent || node.getNodeType()!=SNodeType.SEQ && indent<=currentIndent;
+				return indent < currentIndent || node.getNodeType() != SNodeType.SEQ && indent <= currentIndent;
 			});
 			parent = createSeqNode(parent, line);
 			line = line.moveIndentMark(2); //parse from just after "- " for nested seq and key nodes
@@ -696,7 +696,7 @@ public class YamlStructureParser {
 			parent = createDocNode(parent.getRoot(), line);
 		} else if (line.matches(SIMPLE_KEY_LINE)) {
 			int currentIndent = line.getIndent();
-			parent = dropToLevel(parent, (node) -> node.getIndent()<currentIndent);
+			parent = dropToLevel(parent, (node) -> node.getIndent() < currentIndent);
 			parent = createKeyNode(parent, line);
 		} else if (createRawNode) {
 			createRawNode(parent, line);
@@ -705,7 +705,7 @@ public class YamlStructureParser {
 	}
 
 	private SChildBearingNode dropToLevel(SChildBearingNode parent, Predicate<SNode> level) {
-		while (parent.getNodeType()!=SNodeType.DOC && parent.getSegment()!=null && !level.test(parent)) {
+		while (parent.getNodeType() != SNodeType.DOC && parent.getSegment() != null && !level.test(parent)) {
 			parent = parent.getParent();
 		}
 		return parent;
@@ -765,8 +765,8 @@ public class YamlStructureParser {
 			int len = getNodeEnd() - getStart();
 			//Careful, generally a seq node starts with a "- ". But... there's a special case
 			// if the node text is only lenght 1. Thne its just a "-" alone (no space).
-			int dashLen = len==1 ? 1 : 2;
-			return offset>=getStart()+dashLen
+			int dashLen = len == 1 ? 1 : 2;
+			return offset >= getStart()+dashLen
 					&& offset <= getTreeEnd();
 		}
 
@@ -787,7 +787,7 @@ public class YamlStructureParser {
 		public SKeyNode(SChildBearingNode parent, YamlDocument doc, int indent, int start, int end) throws Exception {
 			super(parent, doc, indent, start, end);
 			int relativeColonOffset = doc.textBetween(start, end).indexOf(':');
-			Assert.isLegal(relativeColonOffset>=0);
+			Assert.isLegal(relativeColonOffset >= 0);
 			this.colonOffset = relativeColonOffset + start;
 		}
 
@@ -813,11 +813,11 @@ public class YamlStructureParser {
 		}
 
 		public boolean isInKey(int offset) throws Exception {
-			return getStart()<=offset && offset <= getColonOffset();
+			return getStart() <= offset && offset <= getColonOffset();
 		}
 
 		public boolean isInValue(int offset) {
-			return offset> getColonOffset() && offset<=getTreeEnd();
+			return offset > getColonOffset() && offset <= getTreeEnd();
 		}
 
 		/**
@@ -830,7 +830,7 @@ public class YamlStructureParser {
 			int end = getTreeEnd();
 			String indentedText = StringUtil.trimEnd(doc.textBetween(start, end));
 			int indent = getIndent();
-			if (indent>0) {
+			if (indent > 0) {
 				return StringUtil.stripIndentation(indent, indentedText);
 			}
 			return indentedText;

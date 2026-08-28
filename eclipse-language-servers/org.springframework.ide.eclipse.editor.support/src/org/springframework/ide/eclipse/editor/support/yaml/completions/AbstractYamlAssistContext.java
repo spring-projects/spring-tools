@@ -55,21 +55,21 @@ public abstract class AbstractYamlAssistContext implements YamlAssistContext {
 		// corresponding to the value, so a simplistic backwards scan isn't good enough.
 		// instead we should use offset in current node / structure to determine the
 		// the start of the current value.
-		if (node.getNodeType()==SNodeType.KEY) {
+		if (node.getNodeType() == SNodeType.KEY) {
 			SKeyNode keyNode = (SKeyNode) node;
 			if (keyNode.isInValue(offset)) {
 				int valueStart = keyNode.getColonOffset()+1;
-				while (valueStart<=offset && Character.isWhitespace(doc.getChar(valueStart))) {
+				while (valueStart <= offset && Character.isWhitespace(doc.getChar(valueStart))) {
 					valueStart++;
 				}
-				if (offset>=valueStart) {
+				if (offset >= valueStart) {
 					return doc.textBetween(valueStart, offset);
 				} else {
 					//only whitespace, or nothing found upto the cursor
 					return "";
 				}
 			}
-//		} else if (node.getNodeType()==SNodeType.RAW) {
+//		} else if (node.getNodeType() == SNodeType.RAW) {
 //			TODO: Handle this as we could be in a value that's on the next line instead of right behind the node
 		}
 

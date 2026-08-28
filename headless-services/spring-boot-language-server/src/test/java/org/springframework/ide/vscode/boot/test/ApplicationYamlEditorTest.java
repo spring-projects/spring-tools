@@ -167,7 +167,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "      <*>"
         );
         editor.assertContextualCompletions("<*>",
-                // ==>
+                // == >
                 "age: <*>",
                 "name: <*>"
         );
@@ -300,7 +300,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  - <*>"
         );
         editor.assertContextualCompletions("<*>"
-        , // ==>
+        , // == >
                 "bar: <*>",
                 "foo: <*>"
         );
@@ -739,7 +739,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                 "server:\n" +
                         "  address: bark\n" +
                         "port<*>\n"
-        , // ==>
+        , // == >
                 "server:\n" +
                         "  address: bark\n" +
                         "  port: <*>\n"
@@ -755,7 +755,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  group:\n" +
                         "    whatever:\n" +
                         "    - demo<*>"
-        , //==============
+        , // == == == == == == ==
                 "com.example.demo",
                 //=>
                 "logging:\n" +
@@ -768,7 +768,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                 "logging:\n" +
                         "  group:\n" +
                         "    whatever: demo<*>"
-        , //==============
+        , // == == == == == == ==
                 "com.example.demo",
                 //=>
                 "logging:\n" +
@@ -780,7 +780,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                 "logging:\n" +
                         "  group:\n" +
                         "    whatever: stuff,demo<*>"
-        , //==============
+        , // == == == == == == ==
                 "com.example.demo",
                 //=>
                 "logging:\n" +
@@ -888,9 +888,9 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  jackson:\n" +
                         "    serialization:\n" +
                         "      ind<*>"
-        , // ==========
+        , // == == == == ==
                 "indent-output"
-        , // ==>
+        , // == >
                 "boolean",
                 "allows enabling (or disabling) indentation"
         );
@@ -906,9 +906,9 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletionDetails(
                 "my:\n" +
                         "  bonus: l<*>"
-        , // ==========
+        , // == == == == ==
                 "large"
-        , // ==>
+        , // == >
                 "String",
                 "For the ones who deserve it"
         );
@@ -2526,7 +2526,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletions(
                 "foo:\n" +
                         "  nam<*>",
-                //==>
+                // == >
                 "foo:\n" +
                         "  name-colors:\n" +
                         "    <*>",
@@ -3215,7 +3215,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "          repos:\n" +
                         "            my-repo:\n" +
                         "              <*>\n",
-                // ==>
+                // == >
                 "name : String",
                 "pattern : String[]"
         );
@@ -3236,7 +3236,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "          repos:\n" +
                         "            my-repo:\n" +
                         "              p<*>\n",
-                // ==>
+                // == >
                 "info:\n" +
                         "  component: Config Server\n" +
                         "spring:\n" +
@@ -4012,7 +4012,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletions(
                 "foobar:\n" +
                         "  enco<*>"
-        , // ==>
+        , // == >
                 "foobar:\n" +
                         "  encoding: <*>"
         );
@@ -4035,7 +4035,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletions(
                 "foobar:\n" +
                         "  loca<*>"
-        , // ==>
+        , // == >
                 "foobar:\n" +
                         "  locale: <*>"
         );
@@ -4058,7 +4058,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletions(
                 "foobar:\n" +
                         "  mi<*>"
-        , // ==>
+        , // == >
                 "foobar:\n" +
                         "  mime: <*>"
         );
@@ -4435,7 +4435,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  nice:\n" +
                         "    list:\n" +
                         "    - classpath:<*>\n"
-        , // ==========
+        , // == == == == ==
                 "application.yml"
         , // =>
                 "my:\n" +
@@ -4483,7 +4483,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  nice:\n" +
                         "    list:\n" +
                         "    - classpath:app<*>\n"
-        , // ==========
+        , // == == == == ==
                 "application.yml"
         , // =>
                 "my:\n" +
@@ -4497,7 +4497,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  nice:\n" +
                         "    list:\n" +
                         "    - classpath:<*>\n"
-        , // ==========
+        , // == == == == ==
                 "application.yml"
         , // =>
                 "my:\n" +
@@ -4523,7 +4523,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  nice:\n" +
                         "    resource:\n" +
                         "      classpath:app<*>\n"
-        , //===============
+        , // == == == == == == == =
                 "application.properties"
         , // =>
                 "my:\n" +
@@ -4537,7 +4537,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  nice:\n" +
                         "    resource:\n" +
                         "      classpath:<*>\n"
-        , //===============
+        , // == == == == == == == =
                 "application.properties"
         , // =>
                 "my:\n" +
@@ -4552,7 +4552,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  nice:\n" +
                         "    resource:\n" +
                         "      classpath:word<*>\n"
-        , //===============
+        , // == == == == == == == =
                 "stuff/wordlist.txt"
         , // =>
                 "my:\n" +
@@ -4574,7 +4574,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "spring:\n" +
                         "  activemq:\n" +
                         "    broker-u<*>"
-        , // ==>
+        , // == >
                 "spring:\n" +
                         "  application:\n" +
                         "    name: my-app\n" +
@@ -4619,7 +4619,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
                         "  data:\n" +
                         "    mongodb:\n" +
                         "      field-naming-strategy: <*>"
-        , //=====
+        , // == == =
                 "org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy"
         , //=>
                 "spring:\n" +
@@ -4839,9 +4839,9 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletionDetails(
                 "my:\n" +
                         "  background: <*>"
-        , // ==========
+        , // == == == == ==
                 "red"
-        , // ==>
+        , // == >
                 "demo.Color[BLUE, GREEN, RED]",
                 "Hot and delicious"
         );
@@ -4936,7 +4936,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletions(
                 "color:\n" +
                         "  next:<*>"
-        ,  //==>
+        ,  // == >
                 "color:\n" +
                         "  next: blue<*>"
         , // ==
@@ -4954,7 +4954,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletions(
                 "flyway:\n" +
                         "  enabled:<*>"
-        , // ==>
+        , // == >
                 "flyway:\n" +
                         "  enabled: false<*>"
         , // ==
@@ -5202,7 +5202,7 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
 	}
 
 	private void generateNestedProperties(int levels, String[] names, String prefix) {
-		if (levels==0) {
+		if (levels == 0) {
 			data(prefix, "java.lang.String", null, "Property "+prefix);
 		} else if (levels > 0) {
 			for (int i = 0; i < names.length; i++) {

@@ -139,7 +139,7 @@ public class CloudCliServiceLaunchConfigurationDelegate extends BootCliLaunchCon
 
 	public static boolean isLocalCloudServiceLaunch(ILaunchConfiguration conf) {
 		try {
-			if (conf!=null) {
+			if (conf != null) {
 					String type = conf.getType().getIdentifier();
 				return TYPE_ID.equals(type);
 			}
@@ -166,7 +166,7 @@ public class CloudCliServiceLaunchConfigurationDelegate extends BootCliLaunchCon
 
 	public static boolean canUseLifeCycle(ILaunch launch) {
 		ILaunchConfiguration conf = launch.getLaunchConfiguration();
-		return conf!=null && canUseLifeCycle(conf);
+		return conf != null && canUseLifeCycle(conf);
 	}
 
 	public static boolean isSingleProcessServiceConfig(ILaunchConfiguration conf) {

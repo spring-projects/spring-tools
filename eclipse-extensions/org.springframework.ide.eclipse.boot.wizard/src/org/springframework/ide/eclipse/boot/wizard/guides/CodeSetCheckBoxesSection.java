@@ -54,7 +54,7 @@ public class CodeSetCheckBoxesSection extends WizardPageSection {
 
 		@Override
 		public void createContents(Composite page) {
-			if (page!=null && !page.isDisposed()) {
+			if (page != null && !page.isDisposed()) {
 				this.cb = new Button(page, SWT.CHECK);
 				cb.setText(name);
 				cb.setSelection(model.selecteds.contains(name));
@@ -84,7 +84,7 @@ public class CodeSetCheckBoxesSection extends WizardPageSection {
 
 		@Override
 		public void dispose() {
-			if (cb!=null && !cb.isDisposed()) {
+			if (cb != null && !cb.isDisposed()) {
 				cb.dispose();
 				cb = null;
 			}
@@ -126,16 +126,16 @@ public class CodeSetCheckBoxesSection extends WizardPageSection {
 		options.addListener(new UIValueListener<String[]>() {
 			@Override
 			public void uiGotValue(LiveExpression<String[]> exp, String[] names) {
-				if (group==null || group.isDisposed()) {
+				if (group == null || group.isDisposed()) {
 					//Don't bother. The UI is already gone.
 					options.removeListener(this);
 					return;
 				}
-				if (names==null) {
+				if (names == null) {
 					names = new String[0];
 				}
 				//Dispose the checkboxes and create new ones.
-				if (subsections!=null) {
+				if (subsections != null) {
 					for (WizardPageSection subsection : subsections) {
 						subsection.dispose();
 					}
@@ -146,13 +146,13 @@ public class CodeSetCheckBoxesSection extends WizardPageSection {
 //				boolean visible = checkboxes.length>0;
 //				gd.exclude = !visible;
 
-				if (names.length==0) {
+				if (names.length == 0) {
 					//don't leave section empty it looks ugly
 					subsections[0] = new CommentSection(owner, "No codesets");
 					subsections[0].createContents(group);
 				}
 				GridLayout newLayout = createLayout();
-				newLayout.numColumns = names.length>2 ? 3 : 2;
+				newLayout.numColumns = names.length > 2 ? 3 : 2;
 				group.setLayout(newLayout);
 				for (int i = 0; i < names.length; i++) {
 					subsections[i] = new CheckBox(owner, names[i], model);

@@ -20,7 +20,7 @@ import java.util.Arrays;
 public class ArrayUtils {
 
 	public static <T> boolean hasElements(T[] arr) {
-		return arr!=null && arr.length>0;
+		return arr != null && arr.length > 0;
 	}
 
 	public static <T> T lastElement(T[] arr) {

@@ -74,7 +74,7 @@ public abstract class MappedValuesSet<T, R> extends ObservableSet<R> {
 		ImmutableSet.Builder<R> builder = immutableSetBuilder();
 		for (LiveExpression<T> exp : target.getValues()) {
 			R val = applyFun(exp.getValue());
-			if (val!=null) {
+			if (val != null) {
 				builder.add(val);
 			}
 		}
@@ -95,13 +95,13 @@ public abstract class MappedValuesSet<T, R> extends ObservableSet<R> {
 	@Override
 	public void dispose() {
 		synchronized (this) {
-			if (listenersAttached!=null) {
+			if (listenersAttached != null) {
 				for (LiveExpression<T> exp : listenersAttached) {
 					exp.removeListener(valueListener);
 				}
 				listenersAttached = null;
 			}
-			if (setListener!=null) {
+			if (setListener != null) {
 				target.removeListener(setListener);
 				setListener = null;
 			}

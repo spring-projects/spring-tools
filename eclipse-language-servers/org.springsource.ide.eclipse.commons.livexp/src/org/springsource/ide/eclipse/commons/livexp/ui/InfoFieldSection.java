@@ -80,7 +80,7 @@ public class InfoFieldSection extends WizardPageSection {
 
 	private String getInfoText() {
 		String v = infoTextExp.getValue();
-		return v==null ? "" : v;
+		return v == null ? "" : v;
 	}
 
 }

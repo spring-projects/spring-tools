@@ -31,7 +31,7 @@ public class ExternalCommand {
 	public ExternalCommand(String... command) {
 		ArrayList<String> pieces = new ArrayList<String>(command.length);
 		for (String piece : command) {
-			if (piece!=null) {
+			if (piece != null) {
 				pieces.add(piece);
 			}
 		}

@@ -139,7 +139,7 @@ public class CloudAppLogManager extends BootDashModelConsoleManager implements A
 		}
 		if (element instanceof LegacyLogSource) {
 			Disposable existingToken = logConsole.getLogStreamingToken();
-			if (existingToken==null) {
+			if (existingToken == null) {
 				LegacyLogSource source = (LegacyLogSource) element;
 				logConsole.setLogStreamingToken(source.connectLog(logConsole));
 			}
@@ -152,7 +152,7 @@ public class CloudAppLogManager extends BootDashModelConsoleManager implements A
 
 	public static String getConsoleDisplayName(App element) {
 		String displayName = element.getConsoleDisplayName();
-		return displayName!=null ? displayName :element.getName() +" @ "+ element.getTarget().getDisplayName();
+		return displayName != null ? displayName : element.getName() +" @ "+ element.getTarget().getDisplayName();
 	}
 
 	@Override

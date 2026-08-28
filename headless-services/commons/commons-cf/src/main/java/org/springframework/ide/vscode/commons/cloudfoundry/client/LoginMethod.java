@@ -17,7 +17,7 @@ public enum LoginMethod  {
 		String[] pieces = name().split("_");
 		StringBuilder label = new StringBuilder();
 		for (int i = 0; i < pieces.length; i++) {
-			if (i>0) {
+			if (i > 0) {
 				label.append(" ");
 			}
 			label.append(pieces[i].toLowerCase());

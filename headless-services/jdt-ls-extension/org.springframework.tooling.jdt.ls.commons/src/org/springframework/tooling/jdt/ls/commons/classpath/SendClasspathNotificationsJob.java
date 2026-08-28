@@ -69,7 +69,7 @@ public class SendClasspathNotificationsJob extends Job {
 	
 	private URI getProjectLocation(IJavaProject jp) {
 		URI loc = jp.getProject().getLocationURI();
-		if (loc!=null) {
+		if (loc != null) {
 			return loc;
 		} else {
 			synchronized (projectLocations) {
@@ -89,7 +89,7 @@ public class SendClasspathNotificationsJob extends Job {
 		if (jp.exists()) {
 			try {
 				URI loc = getProjectLocation(jp);
-				if (loc!=null) {
+				if (loc != null) {
 					File f = new File(loc);
 					return f.isDirectory() && jp.getProject().hasNature(JavaCore.NATURE_ID);
 				}
@@ -106,11 +106,11 @@ public class SendClasspathNotificationsJob extends Job {
 		notificationsSentForProjects = null;
 		synchronized (projectLocations) { //Could use some Eclipse job rule. But its really a bit of a PITA to create the right one.
 			try {
-				for (IJavaProject jp = queue.poll(); jp!=null; jp = queue.poll()) {
+				for (IJavaProject jp = queue.poll(); jp != null; jp = queue.poll()) {
 					// Project wasn't ready before but now it's about to be processed for Classpath again.
 					// Remove it from the set of not readt projects
 					URI projectLoc = getProjectLocation(jp);
-					if (projectLoc==null) {
+					if (projectLoc == null) {
 						logger.log("Could not send event for project because no project location: "+jp.getElementName());
 					} else {
 						boolean exists = projectExists(jp);
@@ -169,7 +169,7 @@ public class SendClasspathNotificationsJob extends Job {
 	}
 
 	protected void bufferMessage(URI projectLoc, boolean deleted, String projectName, Classpath classpath, ProjectBuild projectBuild, Map<String, String> javaCoreOptions) {
-		if (buffer!=null) {
+		if (buffer != null) {
 			logger.debug("buffering callback "+callbackCommandId+" "+projectName+" "+deleted+" "+ classpath.getEntries().size());
 			buffer.add(ImmutableList.of(projectLoc.toASCIIString(), projectName, deleted, classpath, projectBuild, javaCoreOptions));
 		} else {
@@ -186,7 +186,7 @@ public class SendClasspathNotificationsJob extends Job {
 	}
 	
 	protected void flush() {
-		if (buffer!=null && !buffer.isEmpty()) {
+		if (buffer != null && !buffer.isEmpty()) {
 			try {
 				logger.debug("executing callback "+callbackCommandId+" "+buffer.size()+" batched events");
 				Object r = conn.executeClientCommand(callbackCommandId, buffer.toArray(new Object[buffer.size()]));

@@ -46,15 +46,15 @@ public class ProjectDeletionListenerManager implements IResourceChangeListener {
 	@Override
 	public void resourceChanged(IResourceChangeEvent event) {
 		IResourceDelta _delta = event.getDelta();
-		if (_delta!=null) {
+		if (_delta != null) {
 			IResourceDelta[] children = _delta.getAffectedChildren();
-			if (children!=null) {
+			if (children != null) {
 				for (IResourceDelta delta : children) {
-					if (delta!=null) {
+					if (delta != null) {
 						IResource rsrc = delta.getResource();
 						if (rsrc instanceof IProject) {
 							int kind = delta.getKind();
-							if (kind==IResourceDelta.REMOVED) {
+							if (kind == IResourceDelta.REMOVED) {
 								if (!isRename(delta)) {
 									listener.projectWasDeleted((IProject) rsrc);
 								}
@@ -67,11 +67,11 @@ public class ProjectDeletionListenerManager implements IResourceChangeListener {
 	}
 
 	private boolean isRename(IResourceDelta delta) {
-		return 0!=(delta.getFlags()&IResourceDelta.MOVED_TO);
+		return 0 != (delta.getFlags()&IResourceDelta.MOVED_TO);
 	}
 
 	public void dispose() {
-		if (listener!=null) {
+		if (listener != null) {
 			workspace.removeResourceChangeListener(this);
 			listener = null;
 		}

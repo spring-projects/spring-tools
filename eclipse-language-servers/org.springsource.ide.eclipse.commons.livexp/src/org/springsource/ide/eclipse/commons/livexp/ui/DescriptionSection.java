@@ -61,7 +61,7 @@ public class DescriptionSection extends WizardPageSection {
 	@Override
 	public void createContents(Composite page) {
 		Composite composite;
-		if (label!=null) {
+		if (label != null) {
 			composite = new Composite(page, SWT.NONE);
 			GridLayout layout = GridLayoutFactory.fillDefaults().numColumns(2).margins(0, 0).create();
 			composite.setLayout(layout);
@@ -115,7 +115,7 @@ public class DescriptionSection extends WizardPageSection {
 					if (!text.isDisposed()) {
 						String oldText = text.getText();
 						if (!oldText.equals(value)) {
-							text.setText(value==null?"":value);
+							text.setText(value == null ? "" : value);
 						}
 					} else {
 						exp.removeListener(this);

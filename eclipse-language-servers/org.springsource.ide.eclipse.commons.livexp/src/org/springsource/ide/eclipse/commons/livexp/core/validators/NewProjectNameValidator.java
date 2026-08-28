@@ -36,17 +36,17 @@ public class NewProjectNameValidator extends Validator implements ValueListener<
 
 	private boolean isAllowedChar(char c) {
 		return Character.isLetterOrDigit(c) 
-			|| "-_.".indexOf(c)>=0;
+			|| "-_.".indexOf(c) >= 0;
 	}
 	
 	@Override
 	protected ValidationResult compute() {
 		String projectName = projectNameField.getValue();
-		if (projectName==null) {
+		if (projectName == null) {
 			return error("Project name is undefined");
 		} else if ("".equals(projectName)) {
 			return error("Project name is empty");
-		} else if (projectName.indexOf(' ')>=0) {
+		} else if (projectName.indexOf(' ') >= 0) {
 			return error("Project name contains spaces");
 		} else if (existsInWorkspace(projectName)) {
 			return error("A project with name '"+projectName+"' already exists in the workspace.");
@@ -75,7 +75,7 @@ public class NewProjectNameValidator extends Validator implements ValueListener<
 	 * Called when the projectName is changed.
 	 */
 	public void gotValue(LiveExpression<String> exp, String value) {
-		Assert.isLegal(exp==projectNameField);
+		Assert.isLegal(exp == projectNameField);
 		refresh();
 	}
 

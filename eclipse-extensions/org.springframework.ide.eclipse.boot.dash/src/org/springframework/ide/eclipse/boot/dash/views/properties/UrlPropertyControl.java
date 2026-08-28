@@ -77,10 +77,10 @@ public class UrlPropertyControl<T extends BootDashElement> extends AbstractBdePr
 	}
 
 	protected String getUrl(BootDashElement element) {
-		if (element!=null && type.isAssignableFrom(element.getClass())) {
+		if (element != null && type.isAssignableFrom(element.getClass())) {
 			@SuppressWarnings("unchecked")
 			String url = getter.apply((T)element);
-			if (url!=null) {
+			if (url != null) {
 				return url;
 			}
 		}

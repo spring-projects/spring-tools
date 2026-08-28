@@ -45,7 +45,7 @@ public class CommentSection extends PrefsPageSection {
 	
 	@Override
 	public void dispose() {
-		if (l!=null && !l.isDisposed()) {
+		if (l != null && !l.isDisposed()) {
 			l.dispose();
 			l = null;
 		}

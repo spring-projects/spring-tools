@@ -111,7 +111,7 @@ public class YamlToPropertiesCommandTest {
 			"my:\n" +
 			"  goodbye: 'See ya # later'\n" +
 			"  hello: Good morning!\n"
-			, // ==>
+			, // == >
 			"my.goodbye=See ya \\# later\n" +
 			"my.hello=Good morning\\!\n",
 			true
@@ -126,7 +126,7 @@ public class YamlToPropertiesCommandTest {
 				"    b: first-b\n" +
 				"  - a: second-a\n" +
 				"    b: second-b\n"
-				, // ==>
+				, // == >
 				"some.thing[0].a=first-a\n" +
 				"some.thing[0].b=first-b\n" +
 				"some.thing[1].a=second-a\n" +
@@ -141,7 +141,7 @@ public class YamlToPropertiesCommandTest {
 				"  property:\n" +
 				"  - something\n" +
 				"  - something-else\n"
-				, // ==>
+				, // == >
 				"some.property[0]=something\n" +
 				"some.property[1]=something-else\n",
 				true
@@ -183,7 +183,7 @@ public class YamlToPropertiesCommandTest {
 				"  other:\n" +
 				"    thing: blah\n" +
 				"  thing: vvvv\n"
-				, // ==>
+				, // == >
 				"some.other.thing=blah\n" +
 				"some.thing=vvvv\n" +
 				"#---\n" +

@@ -29,7 +29,7 @@ public class RunStateImages {
 
 	public synchronized Image[] getAnimation(RunState state) throws Exception {
 		Image[] anim = animations.get(state);
-		if (anim==null) {
+		if (anim == null) {
 			String url = state.getImageUrl();
 			animations.put(state, anim = createAnimation(url));
 		}
@@ -59,7 +59,7 @@ public class RunStateImages {
 		else {
 			ImageDescriptor imageDescriptor = BootDashActivator.getImageDescriptor(urlString);
 			Image image;
-			if (imageDescriptor!=null) {
+			if (imageDescriptor != null) {
 				image = imageDescriptor.createImage();
 			} else {
 				image = BootDashActivator.getImageDescriptor("/icons/rs_unknown.gif").createImage();
@@ -82,9 +82,9 @@ public class RunStateImages {
 	}
 
 	public void dispose() {
-		if (animations!=null) {
+		if (animations != null) {
 			for (Image[] anim : animations.values()) {
-				if (anim!=null) {
+				if (anim != null) {
 					for (Image image : anim) {
 						image.dispose();
 					}

@@ -72,7 +72,7 @@ public abstract class AbstractActionDelegate implements IObjectActionDelegate,
 	}
 
 	public void selectionChanged(IAction action, ISelection sel) {
-		if (sel==null) return; //ignore spurrious null selections
+		if (sel == null) return; //ignore spurrious null selections
 		
 		List<IProject> newSelectedProjects = SelectionUtils.getProjects(sel, new ProjectFilter() {
 			@Override
@@ -87,7 +87,7 @@ public abstract class AbstractActionDelegate implements IObjectActionDelegate,
 			debug(this + ":" + newSelectedProjects.toString());
 			selectedProjects = newSelectedProjects; 
 		}
-		if (selectedProjects==null || selectedProjects.isEmpty()) {
+		if (selectedProjects == null || selectedProjects.isEmpty()) {
 			action.setEnabled(false);
 		} else {
 			action.setEnabled(true);

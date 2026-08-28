@@ -57,7 +57,7 @@ public class RemoteJavaLaunchUtil {
 			 if (app.hasClasspathProperty(ClasspathPropertyTester.HAS_DEVTOOLS)) {
 				 l.setAttribute(DISABLE_HCR_LAUNCH_ATTRIBUTE, "true");
 			 }
-			 if (l!=null) {
+			 if (l != null) {
 				 terminationListener().add(l, app);
 			 }
 		}
@@ -75,7 +75,7 @@ public class RemoteJavaLaunchUtil {
 				if (_l instanceof Launch) {
 					Launch l = (Launch) _l;
 					ILaunchConfiguration conf = l.getLaunchConfiguration();
-					if (conf!=null) {
+					if (conf != null) {
 						if (app.getName().equals(conf.getAttribute(APP_NAME, ((String)null)))) {
 							if (!l.isTerminated()) {
 								if (((Launch)l).canDisconnect()) {
@@ -94,7 +94,7 @@ public class RemoteJavaLaunchUtil {
 	private static DebugLaunchTerminationListener terminationListener;
 
 	private synchronized static DebugLaunchTerminationListener terminationListener() {
-		if (terminationListener==null) {
+		if (terminationListener == null) {
 			terminationListener = new DebugLaunchTerminationListener();
 			DebugPlugin.getDefault().getLaunchManager().addLaunchListener(terminationListener);
 		}
@@ -104,7 +104,7 @@ public class RemoteJavaLaunchUtil {
 	private static ILaunch ensureDebuggerAttached(GenericRemoteAppElement app) {
 		try {
 			ILaunchConfiguration conf = getLaunchConfig(app);
-			if (conf==null) {
+			if (conf == null) {
 				conf = createLaunchConfig(app);
 			}
 			return ensureActiveLaunch(conf);
@@ -186,7 +186,7 @@ public class RemoteJavaLaunchUtil {
 		try {
 			int debugPort = app.getDebugPort();
 			IProject project = app.getProject();
-			return debugPort>0 && project!=null && project.isAccessible() && project.hasNature(JavaCore.NATURE_ID);
+			return debugPort > 0 && project != null && project.isAccessible() && project.hasNature(JavaCore.NATURE_ID);
 		} catch (Exception e) {
 			Log.log(e);
 		}
@@ -199,7 +199,7 @@ public class RemoteJavaLaunchUtil {
 			ILaunchManager lm = DebugPlugin.getDefault().getLaunchManager();
 			ILaunchConfigurationType type = lm.getLaunchConfigurationType(IJavaLaunchConfigurationConstants.ID_REMOTE_JAVA_APPLICATION);
 			ILaunchConfiguration[] confs = lm.getLaunchConfigurations(type);
-			if (confs!=null) {
+			if (confs != null) {
 				ImmutableSet.Builder<ILaunchConfiguration> found = ImmutableSet.builder();
 				for (ILaunchConfiguration c : confs) {
 					if (appName.equals(c.getAttribute(APP_NAME, (String)null))) {

@@ -24,7 +24,7 @@ public class MultiplexingOutputStream extends OutputStream {
 	
 	public MultiplexingOutputStream(OutputStream... streams) {
 		super();
-		if (streams==null) {
+		if (streams == null) {
 			this.streams = new OutputStream[0];
 		} else {
 			this.streams = streams;
@@ -78,7 +78,7 @@ public class MultiplexingOutputStream extends OutputStream {
 				caught = e;
 			}
 		}
-		if (caught!=null) {
+		if (caught != null) {
 			if (caught instanceof IOException) {
 				throw (IOException)caught;
 			} else {

@@ -43,7 +43,7 @@ public class ZippedBootInstall extends BootInstall {
 
 	@Override
 	public File getHome() throws Exception {
-		if (home==null) {
+		if (home == null) {
 			File unzipped = zip.getFile();
 			//Assumes that unzipped will contain one directory 'spring-<version>'
 			for (File dir : unzipped.listFiles()) {
@@ -67,7 +67,7 @@ public class ZippedBootInstall extends BootInstall {
 	public boolean mayRequireDownload() {
 		//We can do better than just looking at the url (as the super method does).
 		//We can see whether or not the zip file was dowloaded already or not.
-		if (zip!=null) {
+		if (zip != null) {
 			return !zip.isDownloaded();
 		} else {
 			return super.mayRequireDownload();
@@ -76,7 +76,7 @@ public class ZippedBootInstall extends BootInstall {
 
 	@Override
 	public void clearCache() {
-		if (zip!=null) {
+		if (zip != null) {
 			zip.clearCache();
 		}
 	}
@@ -96,7 +96,7 @@ public class ZippedBootInstall extends BootInstall {
 
 	@Override
 	public void refreshExtension(Class<? extends IBootInstallExtension> extensionType) {
-		if (extensionType==CloudCliInstall.class) {
+		if (extensionType == CloudCliInstall.class) {
 			cloudCliInstall = Suppliers.memoize(this::initCloudCliInstall);
 		}
 		super.refreshExtension(extensionType);

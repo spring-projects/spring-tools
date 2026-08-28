@@ -20,18 +20,18 @@ import java.util.regex.Pattern;
 public class StringUtil {
 
 	public static boolean hasText(String name) {
-		return name!=null && !name.trim().equals("");
+		return name != null && !name.trim().equals("");
 	}
 
 	public static String trim(String s) {
-		if (s!=null) {
+		if (s != null) {
 			return s.trim();
 		}
 		return null;
 	}
 
 	public static String trimEnd(String s) {
-		if (s!=null) {
+		if (s != null) {
 			return s.replaceAll("\\s+\\z", "");
 		}
 		return null;
@@ -40,7 +40,7 @@ public class StringUtil {
 	public static int commonPrefixLength(CharSequence s, CharSequence t) {
 		int shortestStringLen = Math.min(s.length(), t.length());
 		for (int i = 0; i < shortestStringLen; i++) {
-			if (s.charAt(i)!=t.charAt(i)) {
+			if (s.charAt(i) != t.charAt(i)) {
 				return i;
 			}
 		}
@@ -53,7 +53,7 @@ public class StringUtil {
 	 */
 	public static String commonPrefix(CharSequence s, CharSequence t) {
 		int len = commonPrefixLength(s, t);
-		if (len>0) {
+		if (len > 0) {
 			return s.subSequence(0,len).toString();
 		}
 		return "";
@@ -102,14 +102,14 @@ public class StringUtil {
 	}
 
 	public static String upperCaseToHyphens(String v) {
-		if (v!=null) {
+		if (v != null) {
 			return v.toLowerCase().replace('_', '-');
 		}
 		return null;
 	}
 
 	public static String hyphensToUpperCase(String v) {
-		if (v!=null) {
+		if (v != null) {
 			return v.toUpperCase().replace('-', '_');
 		}
 		return null;

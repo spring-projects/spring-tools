@@ -80,7 +80,7 @@ public class GradleProjectClasspath implements IClasspath {
 			}
 /**			for (EclipseProjectDependency dep : project.getProjectDependencies()) {
 				EclipseProject peer = findPeer(root, dep.getTargetProject().getName());
-				if (peer!=null) {
+				if (peer != null) {
 					for (EclipseSourceDirectory sf : peer.getSourceDirectories()) {
 						entries.add(createSourceCPE(peer, sf));
 					}

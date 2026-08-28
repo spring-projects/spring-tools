@@ -57,7 +57,7 @@ public class BootConsolePageParticipant implements IConsolePageParticipant {
 		public void run() {
 			try {
 				final IProcess process = console.getProcess();
-				if (process!=null && process.canTerminate()) {
+				if (process != null && process.canTerminate()) {
 					Job job = new Job("Terminate process") {
 						protected IStatus run(IProgressMonitor monitor) {
 							try {
@@ -90,7 +90,7 @@ public class BootConsolePageParticipant implements IConsolePageParticipant {
 	}
 
 	public void dispose() {
-		if (processTracker!=null) {
+		if (processTracker != null) {
 			processTracker.dispose();
 			processTracker = null;
 		}
@@ -117,7 +117,7 @@ public class BootConsolePageParticipant implements IConsolePageParticipant {
 			}
 			IToolBarManager toolbar = page.getSite().getActionBars().getToolBarManager();
 			IContributionItem replace = findReplacementItem(toolbar);
-			if (replace!=null) {
+			if (replace != null) {
 		 		toolbar.appendToGroup(IConsoleConstants.LAUNCH_GROUP, terminateAction);
 		 		toolbar.remove(replace);
 			}
@@ -143,7 +143,7 @@ public class BootConsolePageParticipant implements IConsolePageParticipant {
 	}
 
 	private IProcess getConsoleProcess() {
-		if (console!=null) {
+		if (console != null) {
 			return console.getProcess();
 		}
 		return null;
@@ -173,11 +173,11 @@ public class BootConsolePageParticipant implements IConsolePageParticipant {
 
 	private static boolean isLaunchType(IProcess process, String launchTypeId) {
 		try {
-			if (process!=null) {
+			if (process != null) {
 				ILaunch launch = process.getLaunch();
-				if (launch!=null) {
+				if (launch != null) {
 					ILaunchConfiguration conf = launch.getLaunchConfiguration();
-					if (conf!=null) {
+					if (conf != null) {
 						return launchTypeId.equals(conf.getType().getIdentifier());
 					}
 				}

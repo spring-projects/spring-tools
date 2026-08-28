@@ -315,7 +315,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 			for (String key : prefs.keys()) {
 				if (key.startsWith("problem.") || key.startsWith("problem-parameters.")) {
 					String val = prefs.get(key, null);
-					if (val!=null) {
+					if (val != null) {
 						dotPut(settings, "spring-boot.ls."+key, val);
 					}
 				}
@@ -356,11 +356,11 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		if (_settings instanceof Map) {
 			Map<String, Object> settings = (Map<String, Object>) _settings;
 			int dot = dottedProperty.indexOf('.');
-			if (dot>=0) {
+			if (dot >= 0) {
 				String first = dottedProperty.substring(0, dot);
 				String rest = dottedProperty.substring(dot+1);
 				Object nested = settings.getOrDefault(first, null);
-				if (nested==null) {
+				if (nested == null) {
 					nested = new HashMap<>();
 					settings.put(first, nested);
 				}

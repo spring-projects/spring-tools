@@ -58,7 +58,7 @@ public class SimpleDefinitionFinder implements DefinitionHandler {
 				String word = doc.textBetween(start, end);
 				String text = doc.get();
 				int def = text.indexOf(word);
-				if (def>=0) {
+				if (def >= 0) {
 					Range targetRange = doc.toRange(def, word.length());
 					LocationLink link = new LocationLink(params.getTextDocument().getUri(),
 						targetRange, targetRange, doc.toRange(start, end - start)

@@ -64,7 +64,7 @@ public class EnableRemoteDevtoolsAction extends AbstractBootDashElementsAction {
 	@Override
 	public void updateVisibility() {
 		boolean visible = false;
-		if (getSelectedElements().size()==1) {
+		if (getSelectedElements().size() == 1) {
 			visible = true;
 			for (BootDashElement e : getSelectedElements()) {
 				if (!visibleForElement(e)) {
@@ -102,12 +102,12 @@ public class EnableRemoteDevtoolsAction extends AbstractBootDashElementsAction {
 	private boolean enableForElement(BootDashElement bde) {
 		try {
 			IProject project = bde.getProject();
-			if (visibleForElement(bde) && project!=null) {
+			if (visibleForElement(bde) && project != null) {
 				if (BootPropertyTester.fastHasDevTools(bde.getProject())) {
 					App data = ((GenericRemoteAppElement)bde).getAppData();
 					if (data instanceof SystemPropertySupport) {
 						String secret = ((SystemPropertySupport)data).getSystemProperty(DevtoolsUtil.REMOTE_SECRET_PROP);
-						this.enable = secret==null;
+						this.enable = secret == null;
 						if (enable) {
 							this.setText("Enable Remote DevTools Server");
 							this.setToolTipText("Enables server-side Remote DevTools support for remote application.");

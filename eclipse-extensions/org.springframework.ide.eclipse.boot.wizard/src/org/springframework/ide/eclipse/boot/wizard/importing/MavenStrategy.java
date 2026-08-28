@@ -81,7 +81,7 @@ public class MavenStrategy extends ImportStrategy {
 				//2..4: materialize eclipse project from pom.xml
 				File pomFile = new File(location, "pom.xml");
 				Assert.isTrue(pomFile.isFile(), "No pom file found: "+pomFile);
-				Assert.isTrue(pomFile.length()>0, "Pom file contains no data: "+pomFile);
+				Assert.isTrue(pomFile.length() > 0, "Pom file contains no data: "+pomFile);
 				return createEclipseProjectFromExistingMavenProject(pomFile, new SubProgressMonitor(mon, 3));
 			} catch (InterruptedException e) {
 				throw e;

@@ -121,7 +121,7 @@ public interface BootDashModel {
 				return bde;
 			}
 			BootDashElement found = findNameIn(appName, bde.getChildren().getValues());
-			if (found!=null) {
+			if (found != null) {
 				return found;
 			}
 		}

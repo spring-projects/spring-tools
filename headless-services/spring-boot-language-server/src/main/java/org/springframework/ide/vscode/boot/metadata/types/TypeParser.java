@@ -40,7 +40,7 @@ public class TypeParser {
 		 * Fetch next token. Returns null if there are no more tokens.
 		 */
 		public String nextToken() {
-			if (lookahead!=null) {
+			if (lookahead != null) {
 				try {
 					return lookahead;
 				} finally {
@@ -56,7 +56,7 @@ public class TypeParser {
 		 * Returns null if there are no more tokens.
 		 */
 		public String peekToken() {
-			if (lookahead!=null) {
+			if (lookahead != null) {
 				return lookahead;
 			} else if (tokens.hasMoreTokens()) {
 				lookahead = tokens.nextToken();
@@ -126,15 +126,15 @@ public class TypeParser {
 	}
 
 	public boolean isIdent(String token) {
-		return token!=null && !isSeparator(token);
+		return token != null && !isSeparator(token);
 	}
 
 	private boolean isSeparator(String token) {
-		if (token!=null && token.length()==1) {
+		if (token != null && token.length() == 1) {
 			int len = DELIM.length();
 			char c = token.charAt(0);
 			for (int i = 0; i < len; i++) {
-				if (DELIM.charAt(i)==c) {
+				if (DELIM.charAt(i) == c) {
 					return true;
 				}
 			}

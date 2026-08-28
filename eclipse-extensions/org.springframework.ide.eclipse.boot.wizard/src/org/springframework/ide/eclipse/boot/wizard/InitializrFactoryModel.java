@@ -97,7 +97,7 @@ public final class InitializrFactoryModel<M> implements OkButtonHandler {
 	@Override
 	public void performOk() throws Exception {
 		M model = getModel().getValue();
-		if (model!=null && model instanceof OkButtonHandler) {
+		if (model != null && model instanceof OkButtonHandler) {
 			BootPreferences.addInitializrUrl(serviceUrlField.getValue());
 			((OkButtonHandler)model).performOk();
 		}

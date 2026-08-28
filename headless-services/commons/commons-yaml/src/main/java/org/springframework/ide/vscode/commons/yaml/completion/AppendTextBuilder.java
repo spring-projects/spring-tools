@@ -45,7 +45,7 @@ public class AppendTextBuilder {
 	}
 
 	private void build(YType type, int indent, StringBuilder text, YamlDocument doc) {
-		if (type==null) {
+		if (type == null) {
 			//Assume its some kind of pojo bean
 			newline(text, indent+YamlIndentUtil.INDENT_BY, doc);
 		} else if (typeUtil.isMap(type)) {
@@ -68,14 +68,14 @@ public class AppendTextBuilder {
 	}
 
 	private void singleMostImportantProperty(YType type, int indent, StringBuilder text, YamlDocument doc) {
-		if (type!=null) {
+		if (type != null) {
 			YTypedProperty singleProp = Streams.getSingle(typeUtil.getProperties(type).stream()
 					.filter(p -> p.isPrimary()));
-			if (singleProp==null) {
+			if (singleProp == null) {
 				singleProp = Streams.getSingle(typeUtil.getProperties(type).stream()
 					.filter(p -> p.isRequired()));
 			}
-			if (singleProp!=null) {
+			if (singleProp != null) {
 				text.append(singleProp.getName());
 				text.append(':');
 				build(singleProp.getType(), indent+YamlIndentUtil.INDENT_BY, text, doc);

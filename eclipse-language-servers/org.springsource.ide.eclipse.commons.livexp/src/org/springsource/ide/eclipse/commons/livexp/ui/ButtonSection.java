@@ -52,7 +52,7 @@ public class ButtonSection extends WizardPageSection {
 	public void createContents(Composite page) {
 		Button button = new Button(page, SWT.PUSH);
 		button.setText(label);
-		if (tooltip!=null) {
+		if (tooltip != null) {
 			button.setToolTipText(tooltip);
 		}
 		applyLayoutData(button);

@@ -44,8 +44,8 @@ public class ReconcileException extends ValueParseException implements ProblemTy
 
 	public ReconcileException fixWith(ReplacementQuickfix replacement) {
 		//Silently ignore if the fix is either null or doesn't provide a proper replacement text.
-		if (replacement!=null && StringUtil.hasText(replacement.replacement)) {
-			Assert.isLegal(this.replacement==null, "Multiple fixes not yet supported");
+		if (replacement != null && StringUtil.hasText(replacement.replacement)) {
+			Assert.isLegal(this.replacement == null, "Multiple fixes not yet supported");
 			this.replacement = replacement;
 		}
 		return this;

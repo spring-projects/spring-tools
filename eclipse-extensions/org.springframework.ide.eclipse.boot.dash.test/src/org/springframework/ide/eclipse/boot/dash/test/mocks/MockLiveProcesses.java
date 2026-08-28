@@ -141,7 +141,7 @@ public class MockLiveProcesses {
 	};
 
 	public MockProcess newLocalProcess(String processKey, IProject project, int pid) {
-		if (project!=null) {
+		if (project != null) {
 			return new MockProcess(ImmutableMap.of(
 					"processKey", processKey,
 					"projectName", project.getName(),

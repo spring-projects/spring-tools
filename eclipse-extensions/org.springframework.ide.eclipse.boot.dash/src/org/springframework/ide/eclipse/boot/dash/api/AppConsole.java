@@ -30,7 +30,7 @@ public interface AppConsole {
 				if (closed) {
 					throw new IOException("AppConsole closed");
 				}
-				if (b=='\n') {
+				if (b == '\n') {
 					try {
 						AppConsole.this.write(line.toString(), type);
 						line.delete(0, line.length());
@@ -39,7 +39,7 @@ public interface AppConsole {
 					} catch (Exception e) {
 						Log.log(e);
 					}
-				} else if (b=='\r') {
+				} else if (b == '\r') {
 				} else {
 					line.append((char)b);
 				}
@@ -60,7 +60,7 @@ public interface AppConsole {
 		try {
 			String[] pieces = string.split("\\n");
 			for (int i = 0; i < pieces.length; i++) {
-				write((i==0?"$ ":"> ")+pieces[i], LogType.STDOUT);
+				write((i == 0 ? "$ " : "> ")+pieces[i], LogType.STDOUT);
 			}
 		} catch (Exception e) {
 			Log.log(e);

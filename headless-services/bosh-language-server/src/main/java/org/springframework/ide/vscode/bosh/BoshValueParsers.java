@@ -28,11 +28,11 @@ public class BoshValueParsers {
 			public Object parse(String s) throws Exception {
 				URI uri = new URI(s);
 				String scheme = uri.getScheme();
-				if (scheme==null) {
+				if (scheme == null) {
 					throw new ValueParseException(message());
 				} else if (!validSchemes.contains(scheme.toLowerCase())) {
 					int start = s.indexOf(scheme);
-					if (start>=0) {
+					if (start >= 0) {
 						int end = start + scheme.length();
 						throw new ValueParseException(message(), start, end);
 					} else {
@@ -53,11 +53,11 @@ public class BoshValueParsers {
 
 		private int findDash(String s) throws ValueParseException {
 			int firstDash = s.indexOf('-');
-			if (firstDash<0) {
+			if (firstDash < 0) {
 				return firstDash; //no dash... and that's okay!
 			}
 			int secondDash = s.indexOf('-', firstDash+1);
-			if (secondDash>=0) {
+			if (secondDash >= 0) {
 				//Only one dash is expected!
 				throw new ValueParseException("Should be either a Integer, or a range (of the form '<integer>-<integer>')");
 			}
@@ -67,7 +67,7 @@ public class BoshValueParsers {
 		@Override
 		public Object parse(String s) throws Exception {
 			int dash = findDash(s);
-			if (dash>=0) {
+			if (dash >= 0) {
 				int low, high;
 				//range
 				try {
@@ -80,7 +80,7 @@ public class BoshValueParsers {
 				} catch (Exception e) {
 					throw new ValueParseException("Should be a Integer", dash+1, s.length());
 				}
-				if (low>high) {
+				if (low > high) {
 					throw new ValueParseException(low + " should be smaller than "+high);
 				}
 			} else {

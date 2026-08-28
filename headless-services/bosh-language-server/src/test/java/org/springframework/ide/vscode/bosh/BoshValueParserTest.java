@@ -58,9 +58,9 @@ public class BoshValueParserTest {
 	private void assertProblem(ValueParser parser, String input, String expectedMessage) throws Exception {
 		String unmarkedInput = input.replace(MARKER, "");
 		int firstMarker = input.indexOf(MARKER);
-		assertTrue(firstMarker>=0);
+		assertTrue(firstMarker >= 0);
 		int secondMarker = input.indexOf(MARKER, firstMarker+1)-MARKER.length();
-		assertTrue(secondMarker>=firstMarker);
+		assertTrue(secondMarker >= firstMarker);
 		try {
 			parser.parse(unmarkedInput);
 		} catch (ValueParseException e) {
@@ -79,7 +79,7 @@ public class BoshValueParserTest {
 
 	private int endIndex(String unmarkedInput, ValueParseException e) {
 		int i = e.getEndIndex();
-		if (i>=0) {
+		if (i >= 0) {
 			return i;
 		} else {
 			return unmarkedInput.length();
@@ -88,7 +88,7 @@ public class BoshValueParserTest {
 
 	private int startIndex(String unarkedInput, ValueParseException e) {
 		int i = e.getStartIndex();
-		if (i>=0) {
+		if (i >= 0) {
 			return i;
 		} else {
 			return 0;

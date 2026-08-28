@@ -106,7 +106,7 @@ public class MavenStartersHarness {
 		for (Element depEl : depNodes) {
 			String dep = getGroupId(depEl) + ":" + getArtifactId(depEl);
 			String scope = getScope(depEl) ;
-			if (scope!=null) {
+			if (scope != null) {
 				dep = dep + "@" + scope;
 			}
 			actualDeps.add(dep);
@@ -164,7 +164,7 @@ public class MavenStartersHarness {
 		for (SpringBootStarter starter : knownStarters) {
 			String id = starter.getId();
 			Integer expectedCountOrNull = expect.get(id);
-			int expectedCount = expectedCountOrNull==null ? 0 : expectedCountOrNull;
+			int expectedCount = expectedCountOrNull == null ? 0 : expectedCountOrNull;
 			assertEquals("Usage count for '"+id+"'", expectedCount, popularities.getUsageCount(id));
 			expect.remove(id);
 		}
@@ -176,7 +176,7 @@ public class MavenStartersHarness {
 		try {
 			SpringBootStarters starters = project.getStarterInfos();
 			MavenId mid = starters.getMavenId(id);
-			if (mid!=null) {
+			if (mid != null) {
 				return findDependency(pom, mid);
 			}
 		} catch (Exception e) {

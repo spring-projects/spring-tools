@@ -53,7 +53,7 @@ public class SelectionTracker extends AbstractDisposable {
 	
 	private static synchronized void disposeInstance(IWorkbenchWindow wbw) {
 		SelectionTracker removed = INSTANCES.remove(wbw);
-		if (removed!=null) {
+		if (removed != null) {
 			removed.dispose();
 		}
 	}
@@ -147,7 +147,7 @@ public class SelectionTracker extends AbstractDisposable {
 		});
 	}
 	
-	public final LiveExpression<IProject> currentProject = currentResource.apply(r -> r==null ? null : r.getProject()); 
+	public final LiveExpression<IProject> currentProject = currentResource.apply(r -> r == null ? null : r.getProject()); 
 
 	private SelectionTracker(IWorkbenchWindow wbw) {
 		ISelectionService selectionService = wbw.getSelectionService();
@@ -159,14 +159,14 @@ public class SelectionTracker extends AbstractDisposable {
 					IStructuredSelection ss = (IStructuredSelection) selection;
 					Object element = ss.getFirstElement();
 					IResource rsrc = getResource(element);
-					if (rsrc!=null) {
+					if (rsrc != null) {
 						currentResource.setValue(rsrc);
 					}
 				} else if (selection instanceof ITextSelection) {
 					//Let's assume the selection is in the active editor
 					try {
 						IEditorPart editor = wbw.getActivePage().getActiveEditor();
-						if (editor!=null) {
+						if (editor != null) {
 							IEditorInput input = editor.getEditorInput();
 							currentResource.setValue(input.getAdapter(IResource.class));
 						}
@@ -197,7 +197,7 @@ public class SelectionTracker extends AbstractDisposable {
 		//Unfortunately, doesn't work. Mostly just getting null here, seems to be no way to get
 		// 'initial' selection reliably.
 		ISelection initialSelection = selectionService.getSelection();
-		if (initialSelection!=null) {
+		if (initialSelection != null) {
 			selectionListener.selectionChanged(null, initialSelection);
 		}
 	}

@@ -83,7 +83,7 @@ public class CloudFoundryManifestLanguageServer extends STS4LanguageServerProces
 	@Override
 	public Object getInitializationOptions(URI rootUri) {
 		Object opts = cfTargetOptionSettings;
-		return opts!=null?opts:ImmutableMap.of();
+		return opts != null ? opts : ImmutableMap.of();
 	}
 	
 	private void updateLanguageServer() {

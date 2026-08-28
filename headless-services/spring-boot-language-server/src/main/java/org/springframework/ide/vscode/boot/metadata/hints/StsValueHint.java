@@ -55,7 +55,7 @@ public class StsValueHint {
 	 * static 'create' methods instead.
 	 */
 	private StsValueHint(String value, Renderable description, Supplier<Deprecation> deprecation) {
-		this.value = value==null?"null":value.toString();
+		this.value = value == null ? "null" : value.toString();
 		Assert.isLegal(!this.value.startsWith("StsValueHint"));
 		this.description = description;
 		this.deprecation = deprecation;
@@ -96,9 +96,9 @@ public class StsValueHint {
 	public static StsValueHint className(String fqName, TypeUtil typeUtil) {
 		try {
 			IJavaProject jp = typeUtil.getJavaProject();
-			if (jp!=null) {
+			if (jp != null) {
 				IType type = jp.getIndex().findType(fqName);
-				if (type!=null) {
+				if (type != null) {
 					return create(typeUtil.getSourceLinks(), jp, type);
 				}
 			}

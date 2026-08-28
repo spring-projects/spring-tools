@@ -176,7 +176,7 @@ public class LiveHoverUtils {
 	
 	public static String niceAppName(String processId, String processName) {
 		int pidLen = processId.length();
-		if (pidLen>32 && HEX_HASH.matcher(processId).matches()) {
+		if (pidLen > 32 && HEX_HASH.matcher(processId).matches()) {
 			//looks like a long hash. Shorten it for display purposes
 			processId = processId.substring(0, 12);
 		}

@@ -182,7 +182,7 @@ public abstract class NodeRef<Parent> {
 		@Override
 		public String toString() {
 			String keyString = NodeUtil.asScalar(getTuple().getKeyNode());
-			if (keyString!=null) {
+			if (keyString != null) {
 				//more readable to use the key value than the index of the tuple
 				return "@val['"+keyString+"']";
 			}

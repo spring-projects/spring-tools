@@ -60,11 +60,11 @@ public class DownloadManager {
 	private long retryInterval = 0; //no wait between retries by default.
 
 	public DownloadManager(DownloadService downloader, File cacheDir) throws IOException {
-		if (cacheDir==null) {
+		if (cacheDir == null) {
 			cacheDir = FileUtil.createTempDirectoryWithTimestamp("downloadCache");
 			this.deleteCacheOnDispose = true; // This dir can not be used by anynone after this DLM is diposed so better delete it.
 		}
-		if (downloader==null) {
+		if (downloader == null) {
 			downloader = new SimpleDownloadService();
 		}
 		this.downloader = downloader;
@@ -116,7 +116,7 @@ public class DownloadManager {
 			return target;
 		}
 
-		if (!allowUIThread && Display.getCurrent()!=null) {
+		if (!allowUIThread && Display.getCurrent() != null) {
 			throw new UIThreadDownloadDisallowed("Don't call download manager from the UI Thread unless the data is already cached.");
 		}
 //
@@ -201,16 +201,16 @@ public class DownloadManager {
 				FrameworkCoreActivator.log(caught);
 				//Presume the cache may be corrupt!
 				//System.out.println("Delete corrupt download: "+downloadedFile);
-				if (downloadedFile!=null) {
+				if (downloadedFile != null) {
 					downloadedFile.delete();
 					downloadedFile = null;
 				}
 				e = caught;
-				if (tries>0 && retryInterval>0) {
+				if (tries > 0 && retryInterval > 0) {
 					Thread.sleep(retryInterval);
 				}
 			}
-		} while (tries>0);
+		} while (tries > 0);
 		//Can only get here if action failed to execute on downloaded file...
 		//thus, e can not be null.
 		throw ExceptionUtil.exception(e);
@@ -233,7 +233,7 @@ public class DownloadManager {
 	 */
 	public DownloadManager setTries(int r) {
 		//Setting to 0 is not sensible because it would mean to just fail without even trying.
-		Assert.isLegal(r>1);
+		Assert.isLegal(r > 1);
 		this.tries = r;
 		return this;
 	}
@@ -245,7 +245,7 @@ public class DownloadManager {
 	 * @since 3.6.3
 	 */
 	public void setRetryInterval(long retryInterval) {
-		Assert.isLegal(retryInterval>=0);
+		Assert.isLegal(retryInterval >= 0);
 		this.retryInterval = retryInterval;
 	}
 
@@ -262,7 +262,7 @@ public class DownloadManager {
 
 	public boolean isDownloaded(DownloadableItem item) {
 		File target = getLocalLocation(item);
-		return target!=null && target.exists();
+		return target != null && target.exists();
 	}
 
 	/**

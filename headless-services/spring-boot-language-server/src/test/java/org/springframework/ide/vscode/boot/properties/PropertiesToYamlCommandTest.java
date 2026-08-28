@@ -111,7 +111,7 @@ public class PropertiesToYamlCommandTest {
 		assertConversion(
 			"my.hello=Good morning!\n" +
 			"my.goodbye=See ya # later\n"
-			, // ==>
+			, // == >
 			"my:\n" +
 			"  hello: Good morning!\n" +
 			"  goodbye: 'See ya # later'\n",
@@ -126,7 +126,7 @@ public class PropertiesToYamlCommandTest {
 				"some.thing[0].b=first-b\n" +
 				"some.thing[1].a=second-a\n" +
 				"some.thing[1].b=second-b\n"
-				, // ==>
+				, // == >
 				"some:\n" +
 				"  thing:\n" +
 				"  - a: first-a\n" +
@@ -141,7 +141,7 @@ public class PropertiesToYamlCommandTest {
 		assertConversion(
 				"some.thing=vvvv\n" +
 				"some.other.thing=blah\n"
-				, // ==>
+				, // == >
 				"some:\n" +
 				"  thing: vvvv\n" +
 				"  other:\n" +
@@ -154,7 +154,7 @@ public class PropertiesToYamlCommandTest {
 		assertConversion(
 				"some.thing=vvvv\n" +
 				"some.other.thing=blah\n"
-				, // ==>
+				, // == >
 				"some:\n" +
 				"  thing: vvvv\n" +
 				"  other:\n" +
@@ -174,7 +174,7 @@ public class PropertiesToYamlCommandTest {
 				"fractional=0.78\n" +
 				"largenumber=989898989898989898989898989898989898989898989898989898989898\n" +
 				"longfractional=-0.989898989898989898989898989898989898989898989898989898989898\n"
-				, // ==>
+				, // == >
 				"exponated: '123.4E-12'\n" + //quotes are added because conversion to number changes the string value
 				"server:\n" +
 				"  port: 8888\n" +
@@ -191,7 +191,7 @@ public class PropertiesToYamlCommandTest {
 	@Test void emptyFileConversion() throws Exception {
 		assertConversion(
 				""
-				, // ==>
+				, // == >
 				"",
 				true
 		);
@@ -201,7 +201,7 @@ public class PropertiesToYamlCommandTest {
 		assertConversion(
 				"some.property=something\n" +
 				"some.property=something-else"
-				, // ==>
+				, // == >
 				"# Conversion to YAML from Properties formar report\n" +
 				"# Warnings:\n" +
 				"# - Multiple values [something, something-else] assigned to 'some.property'. Values are merged into a yaml sequence node.\n" +
@@ -298,7 +298,7 @@ public class PropertiesToYamlCommandTest {
 				"some.thing=vvvv\n" +
 				"# Line comment\n" +
 				"some.other.thing=blah\n"
-				, // ==>
+				, // == >
 				"# Conversion to YAML from Properties formar report\n" +
 				"# Warnings:\n" +
 				"# - The yaml file had comments which are lost in the refactoring!\n" +

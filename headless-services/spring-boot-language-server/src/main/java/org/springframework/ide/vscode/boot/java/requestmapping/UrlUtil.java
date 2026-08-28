@@ -23,10 +23,10 @@ public class UrlUtil {
 	 * @return the resultant URL
 	 */
 	public static String createUrl(String urlScheme, String host, String port, String path, String contextPath) {
-		if (path==null) {
+		if (path == null) {
 			path = "";
 		}
-		if (host!=null) {
+		if (host != null) {
 			if (port != null) {
 				if (!path.startsWith("/")) {
 					path = "/" +path;

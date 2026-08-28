@@ -91,7 +91,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			int nodeIndent = current.getIndent();
 			int baseIndent = YamlIndentUtil.minIndent(cursorIndent, nodeIndent);
 			List<SNode> contextNodes = getContextNodes(doc, current, offset, baseIndent);
-			if (current.getNodeType()==SNodeType.RAW) {
+			if (current.getNodeType() == SNodeType.RAW) {
 				//relaxed indentation
 				List<ICompletionProposal> completions = new ArrayList<>();
 				double deempasizeBy = 0.0;
@@ -102,7 +102,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 				return new InternalCompletionList(completions, false);
 			} else {
 				//precise indentation only
-				Assert.isLegal(contextNodes.size()<=1);
+				Assert.isLegal(contextNodes.size() <= 1);
 				for (SNode contextNode : contextNodes) {
 					return new InternalCompletionList(getBaseCompletions(offset, doc, current, contextNode), false);
 				}
@@ -130,7 +130,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			for (ICompletionProposal p : completions) {
 				int targetIndent = p.getLabel().startsWith("- ") ? dashyIndent : plainIndent;
 				AbstractScoreableProposal p_fixed = indentFix((AbstractScoreableProposal)p, targetIndent - baseIndent, currentNode, contextNode, doc);
-				if (p_fixed!=null) {
+				if (p_fixed != null) {
 					p_fixed.deemphasize(deempasizeBy);
 					transformed.add(p_fixed);
 				}
@@ -141,9 +141,9 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	}
 
 	protected AbstractScoreableProposal indentFix(AbstractScoreableProposal p, int fixIndentBy, SNode currentNode, SNode contextNode, YamlDocument doc) {
-		if (fixIndentBy==0) {
+		if (fixIndentBy == 0) {
 			return p;
-		} else if (fixIndentBy>0) {
+		} else if (fixIndentBy > 0) {
 			if (isExtraIndentRelaxable(contextNode, fixIndentBy)) {
 				return indented(p, Strings.repeat(" ", fixIndentBy), doc);
 			}
@@ -160,9 +160,9 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			return false;
 		}
 		SChildBearingNode parent = currentNode.getParent();
-		while (parent!=null && parent!=contextNode) {
+		while (parent != null && parent != contextNode) {
 			SNode lastChild = parent.getLastRealChild();
-			if (lastChild!=null && lastChild.getStart()>=currentNode.getNodeEnd()) {
+			if (lastChild != null && lastChild.getStart() >= currentNode.getNodeEnd()) {
 				return false;
 			}
 			parent = parent.getParent();
@@ -179,25 +179,25 @@ public class YamlCompletionEngine implements ICompletionEngine {
 		Optional<SNode> child = Optional.empty();
 		if (contextNode instanceof SChildBearingNode) {
 			child = ((SChildBearingNode)contextNode).getChildren().stream()
-					.filter(c -> c!=currentNode && c.getIndent()>=0)
+					.filter(c -> c != currentNode && c.getIndent() >= 0)
 					.max((c1, c2) -> Integer.compare(c1.getIndent(), c2.getIndent()));
 		}
 		if (child.isPresent()) {
 			return child.get().getIndent();
 		}
-		return (dashy || contextNode.getNodeType()==SNodeType.DOC)
+		return (dashy || contextNode.getNodeType() == SNodeType.DOC)
 				? contextNode.getIndent()
 				: contextNode.getIndent() + YamlIndentUtil.INDENT_BY;
 	}
 
 	public AbstractScoreableProposal dedented(ICompletionProposal proposal, int numSpacesToRemove, IDocument doc) {
-		Assert.isLegal(numSpacesToRemove>0);
+		Assert.isLegal(numSpacesToRemove > 0);
 		int spacesEnd = proposal.getTextEdit().getFirstEditStart();
 		int spacesStart = spacesEnd-numSpacesToRemove;
 		int numArrows = numSpacesToRemove / YamlIndentUtil.INDENT_BY;
 		String spaces = new DocumentRegion(doc, spacesStart, spacesEnd).toString();
 		YamlIndentUtil indenter = new YamlIndentUtil(doc);
-		if (spaces.length()==numSpacesToRemove && SPACES.matcher(spaces).matches()) {
+		if (spaces.length() == numSpacesToRemove && SPACES.matcher(spaces).matches()) {
 			AbstractScoreableProposal transformed = new TransformedCompletion(proposal) {
 				@Override public String tranformLabel(String originalLabel) {
 					return Strings.repeat(Unicodes.LEFT_ARROW+" ", numArrows)  + originalLabel;
@@ -258,7 +258,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	}
 
 	private boolean isExtraIndentRelaxable(SNode contextNode, int fixIndentBy) {
-		return contextNode!=null && /* fixIndentBy<=2 && */ (
+		return contextNode != null && /* fixIndentBy <= 2 && */ (
 				isBarrenKey(contextNode) ||
 				isBarrenSeq(contextNode)
 		);
@@ -266,7 +266,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 
 	private boolean isBarrenSeq(SNode node) {
 		try {
-			if (node.getNodeType()==SNodeType.SEQ) {
+			if (node.getNodeType() == SNodeType.SEQ) {
 				SSeqNode seqNode = (SSeqNode) node;
 				String value = seqNode.getTextWithoutChildren();
 				return "-".equals(value.trim());
@@ -279,7 +279,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 
 	private boolean isBarrenKey(SNode node) {
 		try {
-			if (node.getNodeType()==SNodeType.KEY) {
+			if (node.getNodeType() == SNodeType.KEY) {
 				SKeyNode keyNode = (SKeyNode) node;
 				String value = keyNode.getSimpleValue();
 				return value.trim().isEmpty();
@@ -291,14 +291,14 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	}
 
 	private Collection<ICompletionProposal> getBaseCompletions(int offset, YamlDocument doc, SNode current, SNode contextNode) throws Exception {
-		if (contextNode!=null) {
+		if (contextNode != null) {
 			YamlAssistContext context = getContext(doc, contextNode);
-			if (context==null && isDubiousKey(contextNode, offset)) {
+			if (context == null && isDubiousKey(contextNode, offset)) {
 				current = current.getParent();
 				contextNode = contextNode.getParent();
 				context = getContext(doc, contextNode);
 			}
-			if (context!=null) {
+			if (context != null) {
 				return context.getCompletions(doc, current, offset);
 			}
 		}
@@ -311,16 +311,16 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	 * then that key is no longer a key but parses as a 'value' instead.
 	 */
 	private boolean isDubiousKey(SNode node, int offset) {
-		if (node.getNodeType()==SNodeType.KEY) {
+		if (node.getNodeType() == SNodeType.KEY) {
 			SKeyNode key = (SKeyNode)node;
-			return key.getColonOffset()+1==offset;
+			return key.getColonOffset()+1 == offset;
 		}
 		return false;
 	}
 
 	protected YamlAssistContext getContext(YamlDocument doc, SNode contextNode) {
 		try {
-			if (contextNode!=null) {
+			if (contextNode != null) {
 				YamlPath contextPath = contextNode.getPath();
 				return contextPath.traverse(getGlobalContext(doc));
 			}
@@ -339,9 +339,9 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	 * @param baseIndent
 	 */
 	protected List<SNode> getContextNodes(YamlDocument doc, SNode node, int offset, int baseIndent) {
-		if (node==null) {
+		if (node == null) {
 			return null;
-		} else if (node.getNodeType()==SNodeType.KEY) {
+		} else if (node.getNodeType() == SNodeType.KEY) {
 			//slight complication. The area in the key and value of a key node represent different
 			// contexts for content assistance
 			SKeyNode keyNode = (SKeyNode)node;
@@ -350,21 +350,21 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			} else {
 				return ImmutableList.of(keyNode.getParent());
 			}
-		} else if (node.getNodeType()==SNodeType.SEQ) {
+		} else if (node.getNodeType() == SNodeType.SEQ) {
 			SSeqNode seqNode = (SSeqNode)node;
 			if (seqNode.isInValue(offset)) {
 				return ImmutableList.of(seqNode);
 			} else {
 				return ImmutableList.of(seqNode.getParent());
 			}
-		} else if (node.getNodeType()==SNodeType.DOC) {
+		} else if (node.getNodeType() == SNodeType.DOC) {
 			return ImmutableList.of(node);
-		} else if (node.getNodeType()==SNodeType.RAW) {
+		} else if (node.getNodeType() == SNodeType.RAW) {
 			//This node has flexibility around indentation. So this is where me need to build a list of candidates!
 			ImmutableList.Builder<SNode> contextNodes = ImmutableList.builder();
-			while (node!=null ) {
+			while (node != null ) {
 				//Any node that represents a 'step' between contexts and is not too deeply nested is kept.
-				if (node.getSegment()!=null && node.getIndent()<=baseIndent) {
+				if (node.getSegment() != null && node.getIndent() <= baseIndent) {
 					contextNodes.add(node);
 				}
 				node = node.getParent();
@@ -375,9 +375,9 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	}
 
 //	protected SNode getContextNode(YamlDocument doc, SNode node, int offset, String adjustIndentStr) throws Exception {
-//		if (node==null) {
+//		if (node == null) {
 //			return null;
-//		} else if (node.getNodeType()==SNodeType.KEY) {
+//		} else if (node.getNodeType() == SNodeType.KEY) {
 //			//slight complication. The area in the key and value of a key node represent different
 //			// contexts for content assistance
 //			SKeyNode keyNode = (SKeyNode)node;
@@ -386,7 +386,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 //			} else {
 //				return keyNode.getParent();
 //			}
-//		} else if (node.getNodeType()==SNodeType.RAW) {
+//		} else if (node.getNodeType() == SNodeType.RAW) {
 //			if (adjustIndentStr.startsWith("- ")) {
 //				// We are trying to determine context node for a completion that starts with a '- '.
 //				// Yaml indentation rules means we have to treat this differently because '-' doesn't
@@ -394,10 +394,10 @@ public class YamlCompletionEngine implements ICompletionEngine {
 //				int cursorIndent = doc.getColumn(offset);
 //				int nodeIndent = node.getIndent();
 //				int currentIndent = YamlIndentUtil.minIndent(cursorIndent, nodeIndent);
-//				while (node.getNodeType()!=SNodeType.DOC && (
-//					nodeIndent==-1 ||
+//				while (node.getNodeType() != SNodeType.DOC && (
+//					nodeIndent == -1 ||
 //					nodeIndent>currentIndent ||
-//					nodeIndent==currentIndent && (node.getNodeType()==SNodeType.SEQ || node.getNodeType() == SNodeType.RAW)
+//					nodeIndent == currentIndent && (node.getNodeType() == SNodeType.SEQ || node.getNodeType() == SNodeType.RAW)
 //				)) {
 //					node = node.getParent();
 //					nodeIndent = node.getIndent();
@@ -412,24 +412,24 @@ public class YamlCompletionEngine implements ICompletionEngine {
 //				// the correct context depends on text the user has not typed yet.(which will change the
 //				// indentation level of the current line. So we must use the cursorIndentation
 //				// rather than the structure-tree to determine the 'context' node.
-//				int adjustIndent = adjustIndentStr==null? 0 : adjustIndentStr.length();
+//				int adjustIndent = adjustIndentStr == null? 0 : adjustIndentStr.length();
 //				int cursorIndent = YamlIndentUtil.add(doc.getColumn(offset), adjustIndent);
 //				int nodeIndent = YamlIndentUtil.add(node.getIndent(), adjustIndent);
 //				int currentIndent = YamlIndentUtil.minIndent(cursorIndent, nodeIndent);
-//				while (nodeIndent==-1 || (nodeIndent>=currentIndent && node.getNodeType()!=SNodeType.DOC)) {
+//				while (nodeIndent == -1 || (nodeIndent >= currentIndent && node.getNodeType() != SNodeType.DOC)) {
 //					node = node.getParent();
 //					nodeIndent = node.getIndent();
 //				}
 //				return node;
 //			}
-//		} else if (node.getNodeType()==SNodeType.SEQ) {
+//		} else if (node.getNodeType() == SNodeType.SEQ) {
 //			SSeqNode seqNode = (SSeqNode)node;
 //			if (seqNode.isInValue(offset)) {
 //				return seqNode;
 //			} else {
 //				return seqNode.getParent();
 //			}
-//		} else if (node.getNodeType()==SNodeType.DOC) {
+//		} else if (node.getNodeType() == SNodeType.DOC) {
 //			return node;
 //		}
 //		return null;
@@ -440,9 +440,9 @@ public class YamlCompletionEngine implements ICompletionEngine {
 //	}
 
 	protected YamlPath getContextPath(YamlDocument doc, SNode node, int offset) throws Exception {
-		if (node==null) {
+		if (node == null) {
 			return YamlPath.EMPTY;
-		} else if (node.getNodeType()==SNodeType.KEY) {
+		} else if (node.getNodeType() == SNodeType.KEY) {
 			//slight complication. The area in the key and value of a key node represent different
 			// contexts for content assistance
 			SKeyNode keyNode = (SKeyNode)node;
@@ -451,7 +451,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			} else {
 				return keyNode.getParent().getPath();
 			}
-		} else if (node.getNodeType()==SNodeType.RAW) {
+		} else if (node.getNodeType() == SNodeType.RAW) {
 			//Treat raw node as a 'key node'. This is basically assuming that is misclasified
 			// by structure parser because the ':' was not yet typed into the document.
 
@@ -463,18 +463,18 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			int cursorIndent = doc.getColumn(offset);
 			int nodeIndent = node.getIndent();
 			int currentIndent = YamlIndentUtil.minIndent(cursorIndent, nodeIndent);
-			while (node.getIndent()==-1 || (node.getIndent()>=currentIndent && node.getNodeType()!=SNodeType.DOC)) {
+			while (node.getIndent() == -1 || (node.getIndent() >= currentIndent && node.getNodeType() != SNodeType.DOC)) {
 				node = node.getParent();
 			}
 			return node.getPath();
-		} else if (node.getNodeType()==SNodeType.SEQ) {
+		} else if (node.getNodeType() == SNodeType.SEQ) {
 			SSeqNode seqNode = (SSeqNode)node;
 			if (seqNode.isInValue(offset)) {
 				return seqNode.getPath();
 			} else {
 				return seqNode.getParent().getPath();
 			}
-		} else if (node.getNodeType()==SNodeType.DOC) {
+		} else if (node.getNodeType() == SNodeType.DOC) {
 			return node.getPath();
 		} else {
 			throw new IllegalStateException("Missing case");

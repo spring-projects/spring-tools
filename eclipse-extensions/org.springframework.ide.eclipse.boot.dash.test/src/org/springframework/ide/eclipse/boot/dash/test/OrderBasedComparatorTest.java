@@ -39,7 +39,7 @@ public class OrderBasedComparatorTest {
 		String[] elements = {"bar", "foo", "zor"};
 		String[] sortedElements = {"foo", "bar", "zor"};
 
-		assertTrue(elements!=sortedElements); // if this is not the case test will pass even if comparator
+		assertTrue(elements != sortedElements); // if this is not the case test will pass even if comparator
 		                                       // causes incorrect sorting!
 		Arrays.sort(elements, comparator);
 		assertArrayEquals(sortedElements, elements);

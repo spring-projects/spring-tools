@@ -87,14 +87,14 @@ class PropertiesHoverCalculator {
 				//Special case. We want to provide hoverinfos more liberally than what's suggested for completions (i.e. even class names
 				//that are not suggested by the hints because they do not meet subtyping constraints should be hoverable and linkable!
 				StsValueHint hint = StsValueHint.className(valueString, typeUtil);
-				if (hint!=null) {
+				if (hint != null) {
 					return Tuples.of(createRenderable(hint), valueRegion.asRegion());
 				}
 			}
 			//Hack: pretend to invoke content-assist at the end of the value text. This should provide hints applicable to that value
 			// then show hoverinfo based on that. That way we can avoid duplication a lot of similar logic to compute hoverinfos and hyperlinks.
 			Collection<StsValueHint> hints = getValueHints(propertyFinder.index, typeUtil, valueString, propertyName, EnumCaseMode.ALIASED);
-			if (hints!=null) {
+			if (hints != null) {
 				Optional<StsValueHint> hint = hints.stream().filter(h -> valueString.equals(h.getValue())).findFirst();
 				if (hint.isPresent()) {
 					return Tuples.of(createRenderable(hint.get()), valueRegion.asRegion());

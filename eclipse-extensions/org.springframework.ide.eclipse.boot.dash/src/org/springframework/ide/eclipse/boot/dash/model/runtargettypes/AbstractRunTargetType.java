@@ -35,7 +35,7 @@ public abstract class AbstractRunTargetType<Params> implements RunTargetType<Par
 		//TODO: there shouldn't be any exceptions to allow for target types that don't provide a context.
 		// However this requires a bunch of refactoring to get rid of the global constants related to the
 		// 'LOCAL' runtarget and type.
-		if (injections!=null) {
+		if (injections != null) {
 			BootDashModelContext context = injections.getBean(BootDashModelContext.class);
 			this.propertyStore = PropertyStores.createSubStore(name, context.getViewProperties());
 		}
@@ -84,7 +84,7 @@ public abstract class AbstractRunTargetType<Params> implements RunTargetType<Par
 	@Override
 	public PropertyStoreApi getPersistentProperties() {
 		IPropertyStore store = getPropertyStore();
-		if (store!=null) {
+		if (store != null) {
 			return new PropertyStoreApi(store);
 		}
 		return null;
@@ -103,9 +103,9 @@ public abstract class AbstractRunTargetType<Params> implements RunTargetType<Par
 	@Override
 	public String getNameTemplate() {
 		PropertyStoreApi props = getPersistentProperties();
-		if (props!=null) {
+		if (props != null) {
 			String customTemplate = props.get(NAME_TEMPLATE);
-			if (customTemplate!=null) {
+			if (customTemplate != null) {
 				return customTemplate;
 			}
 		}

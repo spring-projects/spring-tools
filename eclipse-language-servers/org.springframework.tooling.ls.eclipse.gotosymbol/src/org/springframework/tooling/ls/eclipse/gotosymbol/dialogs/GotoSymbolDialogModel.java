@@ -162,11 +162,11 @@ public class GotoSymbolDialogModel {
 			status.setValue(HighlightedText.plain("Fetching symbols..."));
 			try {
 				SymbolsProvider sp = currentSymbolsProvider.getValue();
-				if (sp!=null) {
+				if (sp != null) {
 					String currentProviderName = sp.getName();
 					String query = searchBox.getValue();
 					Collection<SymbolContainer> fetched = sp.fetchFor(query);
-					if (keyBindings==null) {
+					if (keyBindings == null) {
 						status.setValue(HighlightedText.plain(currentProviderName));
 					} else {
 						status.setValue(HighlightedText
@@ -248,7 +248,7 @@ public class GotoSymbolDialogModel {
 	 */
 	public GotoSymbolDialogModel(String keyBindings, int initialSymbolsProviderIndex, SymbolsProvider... symbolsProviders) {
 		this.keyBindings = keyBindings;
-		Assert.isLegal(symbolsProviders.length>0);
+		Assert.isLegal(symbolsProviders.length > 0);
 		this.symbolsProviders = symbolsProviders;
 		this.currentSymbolsProviderIndex = Math.floorMod(initialSymbolsProviderIndex, symbolsProviders.length);
 		this.currentSymbolsProvider.setValue(symbolsProviders[this.currentSymbolsProviderIndex]);

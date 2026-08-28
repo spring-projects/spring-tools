@@ -76,7 +76,7 @@ public abstract class RemoteBootDashModel extends AbstractBootDashModel implemen
 			try {
 				getRunTarget().connect(mode);
 			} catch (Exception e) {
-				if (mode==ConnectMode.INTERACTIVE) {
+				if (mode == ConnectMode.INTERACTIVE) {
 					ui().errorPopup("Failed to connect to " + getDisplayName() + ". ", ExceptionUtil.getMessage(e));
 				}
 				throw e;

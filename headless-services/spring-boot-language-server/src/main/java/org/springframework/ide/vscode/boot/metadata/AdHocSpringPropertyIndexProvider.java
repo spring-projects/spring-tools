@@ -67,7 +67,7 @@ public class AdHocSpringPropertyIndexProvider implements ProjectBasedPropertyInd
 		if (projectObserver != null) {
 			projectObserver.addListener(ProjectObserver.onAny(project -> indexes.invalidate(project)));
 		}
-		if (fileObserver!=null) {
+		if (fileObserver != null) {
 			fileObserver.onAnyChange(ImmutableList.of(
 					"**/application*.properties",
 					"**/application*.yaml",

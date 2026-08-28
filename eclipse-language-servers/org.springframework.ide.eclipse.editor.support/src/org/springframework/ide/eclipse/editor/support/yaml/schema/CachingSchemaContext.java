@@ -20,7 +20,7 @@ public abstract class CachingSchemaContext implements DynamicSchemaContext {
 
 	@Override
 	final public Set<String> getDefinedProperties() {
-		if (definedProps==null) {
+		if (definedProps == null) {
 			definedProps = computeDefinedProperties();
 		}
 		return definedProps;

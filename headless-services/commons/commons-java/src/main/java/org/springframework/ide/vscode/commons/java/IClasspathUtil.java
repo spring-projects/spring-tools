@@ -56,7 +56,7 @@ public class IClasspathUtil {
 			for (CPE cpe : cp.getClasspathEntries()) {
 				if (filter == null || filter.test(cpe)) {
 					File loc = binaryLocation(cpe);
-					if (loc!=null) {
+					if (loc != null) {
 						roots.add(loc);
 					}
 				}

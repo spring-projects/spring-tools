@@ -61,7 +61,7 @@ class PomParser {
 		} catch (Exception e) {
 			throw ExceptionUtil.coreException(e);
 		} finally {
-			if (input!=null) {
+			if (input != null) {
 				try {
 					input.close();
 				} catch (IOException e) {
@@ -77,7 +77,7 @@ class PomParser {
 
 
 	private Map<String, String> getProperties() {
-		if (properties==null) {
+		if (properties == null) {
 			properties = new HashMap<String,String>();
 			NodeList propLists = doc.getElementsByTagName("properties");
 			//There should really only be one propList but anyhoo!
@@ -87,7 +87,7 @@ class PomParser {
 				for (int j = 0; j < propNodes.getLength(); j++) {
 					Node propNode = propNodes.item(j);
 					String name = XmlUtils.getTagName(propNode);
-					if (name!=null) {
+					if (name != null) {
 						String value = propNode.getTextContent();
 						properties.put(name, value);
 					}

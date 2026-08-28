@@ -75,7 +75,7 @@ public class StyledCommentSection extends WizardPageSection {
 			Assert.isLegal(hasNext());
 			if (matcher.find(pos)) {
 				int nextTag = matcher.start();
-				if (nextTag==pos) {
+				if (nextTag == pos) {
 					//tag found at current inpit position
 					token = input.substring(nextTag, matcher.end());
 					pos = matcher.end();
@@ -155,7 +155,7 @@ public class StyledCommentSection extends WizardPageSection {
 		label.addDisposeListener(new DisposeListener() {
 			@Override
 			public void widgetDisposed(DisposeEvent e) {
-				if (fBoldFont!=null) {
+				if (fBoldFont != null) {
 					fBoldFont.dispose();
 				}
 			}

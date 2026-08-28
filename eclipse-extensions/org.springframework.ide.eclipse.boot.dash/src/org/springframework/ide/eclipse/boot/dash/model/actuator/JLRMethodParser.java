@@ -46,17 +46,17 @@ public class JLRMethodParser {
 			methodString = methodString.replaceAll(",\\s", ",");
 			String[] pieces = methodString.split("\\s");
 			int modifiersEnd = 0;
-			while (modifiersEnd<pieces.length && isModifier(pieces[modifiersEnd])) {
+			while (modifiersEnd < pieces.length && isModifier(pieces[modifiersEnd])) {
 				modifiersEnd++;
 			}
-			if (pieces.length>=modifiersEnd+2) {
+			if (pieces.length >= modifiersEnd+2) {
 				methodString = pieces[modifiersEnd+1];
 				int methodNameEnd = methodString.indexOf('(');
-				if (methodNameEnd>=0) {
+				if (methodNameEnd >= 0) {
 					int methodNameStart = methodString.lastIndexOf('.', methodNameEnd);
-					if (methodNameStart>=0) {
+					if (methodNameStart >= 0) {
 						fqClass = methodString.substring(0, methodNameStart);
-						if (methodNameStart>=0) {
+						if (methodNameStart >= 0) {
 							methodNameStart = methodNameStart +1; //+1 because actauly pointing at the '.', not the name start
 						}
 						methodName = methodString.substring(methodNameStart, methodNameEnd);
@@ -90,7 +90,7 @@ public class JLRMethodParser {
 	}
 
 	public static JLRMethod parse(String method) {
-		if (method!=null) {
+		if (method != null) {
 			return new JLRMethod(method);
 		}
 		return null;
@@ -98,7 +98,7 @@ public class JLRMethodParser {
 
 	public static String parseFQClassName(String data) {
 		JLRMethod m = parse(data);
-		if (m!=null) {
+		if (m != null) {
 			return m.getFQClassName();
 		}
 		return null;
@@ -106,7 +106,7 @@ public class JLRMethodParser {
 
 	public static String parseMethodName(String data) {
 		JLRMethod m = parse(data);
-		if (m!=null) {
+		if (m != null) {
 			return m.getMethodName();
 		}
 		return null;

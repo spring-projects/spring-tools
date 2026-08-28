@@ -65,7 +65,7 @@ public abstract class AbstractJavaProjectCache<K, P extends IJavaProject> implem
 						}
 					});
 				} finally {
-					if (createdProject.get()!=null) {
+					if (createdProject.get() != null) {
 						notifyProjectCreated(createdProject.get());
 					}
 				}

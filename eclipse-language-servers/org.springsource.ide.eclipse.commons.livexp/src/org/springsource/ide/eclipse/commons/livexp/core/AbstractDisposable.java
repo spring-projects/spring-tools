@@ -18,12 +18,12 @@ public abstract class AbstractDisposable implements Disposable, OnDispose {
 	private ListenerList<DisposeListener> disposeListeners = new ListenerList<>();
 
 	public boolean isDisposed() {
-		return disposeListeners==null;
+		return disposeListeners == null;
 	}
 
 	@Override
 	public synchronized void onDispose(DisposeListener l) {
-		if (disposeListeners!=null) {
+		if (disposeListeners != null) {
 			this.disposeListeners.add(l);
 		} else {
 			//already disposed. Call listener right away!
@@ -38,7 +38,7 @@ public abstract class AbstractDisposable implements Disposable, OnDispose {
 			listeners = disposeListeners;
 			disposeListeners = null;
 		}
-		if (listeners!=null) {
+		if (listeners != null) {
 			for (Object _l : listeners.getListeners()) {
 				DisposeListener l = (DisposeListener)_l;
 				l.disposed(this);

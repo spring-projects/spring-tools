@@ -50,7 +50,7 @@ public abstract class SpringBootProject implements ISpringBootProject {
 	@Override
 	public List<SpringBootStarter> getKnownStarters() throws Exception {
 		SpringBootStarters infos = getStarterInfos();
-		if (infos!=null) {
+		if (infos != null) {
 			List<String> knownIds = infos.getStarterIds();
 			List<SpringBootStarter> starters = new ArrayList<>(knownIds.size());
 			for (String id : knownIds) {
@@ -66,7 +66,7 @@ public abstract class SpringBootProject implements ISpringBootProject {
 	public SpringBootStarters getStarterInfos() throws Exception {
 		boolean firstAccess = false;
 		synchronized (this) {
-			if (cachedStarterInfos==null) {
+			if (cachedStarterInfos == null) {
 				firstAccess = true;
 				cachedStarterInfos = new CompletableFuture<>();
 			}
@@ -83,7 +83,7 @@ public abstract class SpringBootProject implements ISpringBootProject {
 
 	private SpringBootStarters fetchStarterInfos() throws Exception {
 		String bootVersion = getBootVersion();
-		if (bootVersion!=null) {
+		if (bootVersion != null) {
 			return initializr.getStarters(bootVersion);
 		}
 		throw new IllegalStateException("Couldn't determine boot version for '"+project.getName()+"'");
@@ -97,10 +97,10 @@ public abstract class SpringBootProject implements ISpringBootProject {
 		for (IMavenCoordinates dep : deps) {
 			String aid = dep.getArtifactId();
 			String gid = dep.getGroupId();
-			if (aid!=null && gid!=null) {
+			if (aid != null && gid != null) {
 				MavenId mavenId = new MavenId(gid, aid);
 				SpringBootStarter starter = infos.getStarter(mavenId);
-				if (starter!=null) {
+				if (starter != null) {
 					starters.add(starter);
 				}
 			}
@@ -125,7 +125,7 @@ public abstract class SpringBootProject implements ISpringBootProject {
 		for (Dependency dep : initialDependencies) {
 			String id = dep.getId();
 			//ignore unkown deps
-			if (knownStarters.getStarter(id)!=null) {
+			if (knownStarters.getStarter(id) != null) {
 				starterIds.add(id);
 			}
 		}
@@ -135,13 +135,13 @@ public abstract class SpringBootProject implements ISpringBootProject {
 	}
 
 	public boolean isKnownStarter(MavenId mavenId) {
-		return getStarter(mavenId)!=null;
+		return getStarter(mavenId) != null;
 	}
 
 	protected SpringBootStarter getStarter(MavenId mavenId) {
 		try {
 			SpringBootStarters infos = getStarterInfos();
-			if (infos!=null) {
+			if (infos != null) {
 				return infos.getStarter(mavenId);
 			}
 		} catch (Exception e) {

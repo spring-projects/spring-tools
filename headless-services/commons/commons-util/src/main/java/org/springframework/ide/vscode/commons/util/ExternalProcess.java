@@ -61,10 +61,10 @@ public class ExternalProcess {
 		@Override
 		public void run() {
 			byte[] buf = new byte[256];
-			while (toRead!=null) {
+			while (toRead != null) {
 				try {
 					int i = toRead.read(buf);
-					if (i==-1) {
+					if (i == -1) {
 						//EOF
 						toRead = null; //Done!
 					} else {
@@ -84,7 +84,7 @@ public class ExternalProcess {
 		}
 
 		private void append(byte[] buf, int len) {
-			if (echo!=null) {
+			if (echo != null) {
 				try {
 					echo.write(buf, 0, len);
 				} catch (IOException e) {
@@ -131,7 +131,7 @@ public class ExternalProcess {
 		process = processBuilder.start();
 		err = new StreamGobler(process.getErrorStream(), errStream);
 		out = new StreamGobler(process.getInputStream(), outStream);
-		if (timeout==null) {
+		if (timeout == null) {
 			exitValue = process.waitFor();
 		} else {
 			if (process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
@@ -142,7 +142,7 @@ public class ExternalProcess {
 				throw new TimeoutException("Command timed out: "+this);
 			}
 		}
-		if (exitValue!=0) {
+		if (exitValue != 0) {
 			throw new IOException("Command execution failed:\n"+this);
 		}
 	}
@@ -177,12 +177,12 @@ public class ExternalProcess {
 			result.append(cmd+"\n");
 			result.append("exitValue = "+exitValue+"\n");
 			String strOut = getOut();
-			if (strOut!=null) {
+			if (strOut != null) {
 				result.append("------- System-out -------\n");
 				result.append(strOut);
 			}
 			String strErr = getErr();
-			if (strErr!=null) {
+			if (strErr != null) {
 				result.append("------- System-err -------\n");
 				result.append(strErr);
 			}

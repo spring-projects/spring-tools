@@ -97,7 +97,7 @@ public class ConvertPropertiesToYamlRefactoring extends Refactoring {
 		} catch (Exception e) {
 			status.merge(RefactoringStatus.create(ExceptionUtil.status(e, "Problems parsing as a .properties file: "+propsFile.getFullPath())));
 		}
-		if (properties!=null) {
+		if (properties != null) {
 			PropertiesToYamlConverter converter = new PropertiesToYamlConverter(properties);
 			this.yamlContent = converter.getYaml();
 			status.merge(converter.getStatus());

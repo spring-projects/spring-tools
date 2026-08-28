@@ -114,7 +114,7 @@ public class YamlSchemaProblems {
 		DocumentRegion underline = NodeUtil.region(doc, map);
 		if (parent instanceof MappingNode) {
 			for (NodeTuple prop : ((MappingNode) parent).getValue()) {
-				if (prop.getValueNode()==map) {
+				if (prop.getValueNode() == map) {
 					underline = NodeUtil.region(doc, prop.getKeyNode());
 				}
 			}
@@ -140,7 +140,7 @@ public class YamlSchemaProblems {
 				.map(YamlPathSegment::encode)
 				.collect(Collectors.toList());
 
-		String fixTitle = missingProps.size()==1
+		String fixTitle = missingProps.size() == 1
 				? "Add property '"+CollectionUtil.getAny(missingProps)+"'"
 				: "Add properties: "+missingProps;
 		QuickfixData<MissingPropertiesData> fix = new QuickfixData<MissingPropertiesData>(

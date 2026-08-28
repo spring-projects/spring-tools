@@ -174,7 +174,7 @@ public class ReactorUtils {
 		)
 		.then(Mono.defer(() -> {
 			Throwable error = failure.get();
-			if (error!=null) {
+			if (error != null) {
 				return Mono.error(error);
 			} else {
 				return Mono.empty();
@@ -218,7 +218,7 @@ public class ReactorUtils {
 					synchronized (holdingPen) {
 						nxt = holdingPen.peek();
 					}
-					return nxt!=null && isOldEnough(nxt);
+					return nxt != null && isOldEnough(nxt);
 				}
 
 				private boolean isOldEnough(Tuple2<T, Long> nxt) {

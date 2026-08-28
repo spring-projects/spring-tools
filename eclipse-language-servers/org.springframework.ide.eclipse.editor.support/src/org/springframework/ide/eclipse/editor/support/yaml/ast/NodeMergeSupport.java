@@ -140,7 +140,7 @@ public class NodeMergeSupport {
             } else {
                 // we need to construct keys to avoid duplications
                 String key = NodeUtil.asScalar(keyNode);
-                if (key!=null) {
+                if (key != null) {
 	                if (!key2index.containsKey(key)) { // 1st time merging key
 	                    values.add(nodeTuple);
 	                    // keep track where tuple for the key is

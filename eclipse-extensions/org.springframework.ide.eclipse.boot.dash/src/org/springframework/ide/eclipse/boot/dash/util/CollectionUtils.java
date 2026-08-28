@@ -17,7 +17,7 @@ import com.google.common.collect.ImmutableSet;
 public class CollectionUtils {
 
 	public static <T> T getSingle(Collection<T> configs) {
-		if (configs.size()==1) {
+		if (configs.size() == 1) {
 			for (T t : configs) {
 				return t;
 			}
@@ -26,7 +26,7 @@ public class CollectionUtils {
 	}
 
 	public static <T> T getAny(Collection<T> c) {
-		if (c!=null && !c.isEmpty()) {
+		if (c != null && !c.isEmpty()) {
 			for (T t : c) {
 				return t;
 			}
@@ -36,6 +36,6 @@ public class CollectionUtils {
 
 	public static <T> T getAnyOr(Collection<T> c, T orElse) {
 		T it = getAny(c);
-		return it==null?orElse:it;
+		return it == null ? orElse : it;
 	}
 }

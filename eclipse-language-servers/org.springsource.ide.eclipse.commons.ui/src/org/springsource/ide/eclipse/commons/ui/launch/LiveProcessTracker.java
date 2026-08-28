@@ -39,7 +39,7 @@ public class LiveProcessTracker extends LaunchList {
 	 * since they are all just tracking the same set of active processes).
 	 */
 	public synchronized static LiveProcessTracker getInstance() {
-		if (instance==null) {
+		if (instance == null) {
 			instance = new LiveProcessTracker();
 		}
 		return instance;
@@ -50,7 +50,7 @@ public class LiveProcessTracker extends LaunchList {
 	}
 
 //	private void dispose() {
-//		if (debugListener!=null) {
+//		if (debugListener != null) {
 //			DebugPlugin.getDefault().removeDebugEventListener(debugListener);
 //			debugListener = null;
 //		}
@@ -87,7 +87,7 @@ public class LiveProcessTracker extends LaunchList {
 		if (!processes.isEmpty()) {
 			ILaunch l = processes.getLast().getLaunch();
 			ILaunchConfiguration c = l.getLaunchConfiguration();
-			if (l!=null && c!=null) {
+			if (l != null && c != null) {
 				return new Item(c, l.getLaunchMode());
 			}
 		}
@@ -99,9 +99,9 @@ public class LiveProcessTracker extends LaunchList {
 		LinkedHashMap<String, Item> launches = new LinkedHashMap<String, LaunchList.Item>();
 		for (IProcess p : processes) {
 			ILaunch l = p.getLaunch();
-			if (l!=null) {
+			if (l != null) {
 				ILaunchConfiguration c = l.getLaunchConfiguration();
-				if (c!=null) {
+				if (c != null) {
 					launches.put(c.getName(), new Item(c, l.getLaunchMode()));
 				}
 			}

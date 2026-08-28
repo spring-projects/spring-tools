@@ -118,7 +118,7 @@ public class MethodImpl implements IMethod {
 
 	@Override
 	public List<String> getParameterNames() {
-		if (testDataProvider!=null) {
+		if (testDataProvider != null) {
 			return testDataProvider.getParameterNames(this);
 		} else {
 			throw new UnsupportedOperationException("Not supported with jandex");

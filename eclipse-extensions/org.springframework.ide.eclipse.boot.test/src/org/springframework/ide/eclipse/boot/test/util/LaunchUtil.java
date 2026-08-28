@@ -98,7 +98,7 @@ public class LaunchUtil {
 			mgr.getLaunchManager().addLaunchListener(listener);
 			return listener.waitForProcess(timeout);
 		} finally {
-			if (listener!=null) {
+			if (listener != null) {
 				mgr.getLaunchManager().removeLaunchListener(listener);
 			}
 		}
@@ -110,8 +110,8 @@ public class LaunchUtil {
 
 	public static IProcess findProcess(ILaunch launch) {
 		IProcess[] processes = launch.getProcesses();
-		if (processes!=null && processes.length>0) {
-			Assert.isTrue(processes.length==1);
+		if (processes != null && processes.length > 0) {
+			Assert.isTrue(processes.length == 1);
 			return processes[0];
 		}
 		return null;

@@ -50,7 +50,7 @@ public abstract class ImportStrategy {
 	}
 
 	public String displayName() {
-		if (buildType.getImportStrategies().size()>1) {
+		if (buildType.getImportStrategies().size() > 1) {
 			return buildType.displayName() + " ("+name+")";
 		}
 		return buildType.displayName();
@@ -66,7 +66,7 @@ public abstract class ImportStrategy {
 
 	@Override
 	public String toString() {
-		if (buildType.getImportStrategies().size()>1) {
+		if (buildType.getImportStrategies().size() > 1) {
 			return buildType + "-"+name;
 		}
 		return buildType.toString();
@@ -74,7 +74,7 @@ public abstract class ImportStrategy {
 
 	public String getId() {
 		String id = buildType.toString();
-		if (buildType.getImportStrategies().size()>1) {
+		if (buildType.getImportStrategies().size() > 1) {
 			id += "-" + name;
 		}
 		return id;

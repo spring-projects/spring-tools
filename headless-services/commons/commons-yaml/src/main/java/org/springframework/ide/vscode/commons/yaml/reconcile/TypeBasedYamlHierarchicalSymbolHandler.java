@@ -74,10 +74,10 @@ public class TypeBasedYamlHierarchicalSymbolHandler implements DocumentSymbolHan
 		public DocumentSymbol createSymbol(YamlFileAST currentAst, Node node, YType type, YamlPath path) {
 			try {
 				IDocument doc = currentAst.getDocument();
-				if (namePath!=null) {
+				if (namePath != null) {
 					Node nameNode = namePath.traverseNode(node);
 					// VSCode throws for DocumentSymbols having null or empty name hence do not create the symbol
-					if (nameNode!=null && !NodeUtil.asScalar(nameNode).isEmpty()) {
+					if (nameNode != null && !NodeUtil.asScalar(nameNode).isEmpty()) {
 						DocumentRegion nodeRegion = NodeUtil.region(doc, node);
 						DocumentRegion nameRegion = NodeUtil.region(doc, nameNode);
 						if (!nodeRegion.contains(nameRegion)) {
@@ -95,9 +95,9 @@ public class TypeBasedYamlHierarchicalSymbolHandler implements DocumentSymbolHan
 					//If there's no 'namePath' then we will assume the node we found is the value of a map entry...
 					//and use the map's key as the symbol's name
 					MappingNode map = NodeUtil.asMapping(path.dropLast().traverseToNode(currentAst));
-					if (map!=null) {
+					if (map != null) {
 						YamlPathSegment segment = path.getLastSegment();
-						if (segment.getType()==YamlPathSegmentType.VAL_AT_KEY) {
+						if (segment.getType() == YamlPathSegmentType.VAL_AT_KEY) {
 							String key = segment.toPropString();
 							for (NodeTuple entry : map.getValue()) {
 								if (key.equals(NodeUtil.asScalar(entry.getKeyNode()))) {
@@ -127,7 +127,7 @@ public class TypeBasedYamlHierarchicalSymbolHandler implements DocumentSymbolHan
 			this.symbol = symbol;
 		}
 		public void addChild(DocumentSymbol sym) {
-			if (symbol.getChildren()==null) {
+			if (symbol.getChildren() == null) {
 				symbol.setChildren(new ArrayList<DocumentSymbol>());
 			}
 			symbol.getChildren().add(sym);
@@ -176,11 +176,11 @@ public class TypeBasedYamlHierarchicalSymbolHandler implements DocumentSymbolHan
 	@Override
 	public void accept(Node node, YType type, YamlPath path) {
 		HierarchicalDefType def = hierarchicalDefinitionTypes.get(type);
-		if (def!=null) {
+		if (def != null) {
 			Item parent = findParent(path);
 			DocumentSymbol sym = def.createSymbol(currentAst, node, type, path);
-			if (sym!=null) {
-				if (parent!=null) {
+			if (sym != null) {
+				if (parent != null) {
 					parent.addChild(sym);
 				} else {
 					rootSymbols.add(sym);

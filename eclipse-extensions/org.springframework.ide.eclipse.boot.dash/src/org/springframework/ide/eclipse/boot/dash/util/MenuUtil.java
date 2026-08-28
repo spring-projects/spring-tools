@@ -39,7 +39,7 @@ public class MenuUtil {
 	 * is computed on demand when the submenu is about to show.
 	 */
 	public static void addDynamicSubmenu(IMenuManager parent, DynamicSubMenuSupplier lazyActions) {
-		if (lazyActions!=null && lazyActions.isVisible()) {
+		if (lazyActions != null && lazyActions.isVisible()) {
 			MenuManager submenu = new MenuManager(lazyActions.getLabel()) {
 				public boolean isEnabled() {
 					return lazyActions.isEnabled().getValue();
@@ -52,7 +52,7 @@ public class MenuUtil {
 						Field f = MenuManager.class.getDeclaredField("menuItem");
 						f.setAccessible(true);
 						MenuItem mi = (MenuItem) f.get(this);
-						if (mi!=null) {
+						if (mi != null) {
 							Disposable enablementUpdater = lazyActions.isEnabled().onChange(UIValueListener.from((e, v) -> {
 								if (!mi.isDisposed()) {
 									mi.setEnabled(e.getValue());
@@ -78,7 +78,7 @@ public class MenuUtil {
 	}
 
 	public static void addDynamicSubmenu(IToolBarManager toolbar, DynamicSubMenuSupplier lazyActions) {
-		if (lazyActions!=null) {
+		if (lazyActions != null) {
 			String label = lazyActions.getLabel();
 			ImageDescriptor imageDescriptor = lazyActions.getImageDescriptor();
 			ImageDescriptor imageDescriptorDisabled = lazyActions.getDisabledImageDescriptor();
@@ -95,7 +95,7 @@ public class MenuUtil {
 
 				@Override
 				public Menu getMenu(Control parent) {
-					if (theMenu==null) {
+					if (theMenu == null) {
 						final MenuManager menu = createDynamicPulldownMenuManager(label, imageDescriptor, () -> lazyActions.getActions());
 						theMenu = menu.createContextMenu(parent);
 						theMenu.addDisposeListener(new DisposeListener() {

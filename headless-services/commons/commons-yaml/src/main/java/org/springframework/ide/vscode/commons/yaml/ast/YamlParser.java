@@ -56,14 +56,14 @@ public class YamlParser implements YamlASTProvider {
 		}
 
 		public void copyUpto(int upto) {
-			if (upto>offset) {
+			if (upto > offset) {
 				output.append(input.substring(offset, upto));
 				offset = upto;
 			}
 		}
 
 		public void replace(int len) {
-			if (len>=3) {
+			if (len >= 3) {
 				offset+=len;
 				len-=2;
 				output.append('"');
@@ -94,7 +94,7 @@ public class YamlParser implements YamlASTProvider {
 		}
 		transformed.copyUpto(input.length());
 		String out = transformed.output.toString();
-		Assert.isTrue(out.length()==input.length());
+		Assert.isTrue(out.length() == input.length());
 		return out;
 	}
 

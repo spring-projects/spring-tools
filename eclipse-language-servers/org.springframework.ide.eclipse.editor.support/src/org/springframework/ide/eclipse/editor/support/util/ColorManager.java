@@ -35,7 +35,7 @@ public class ColorManager {
 	}
 
 	public static ColorManager getInstance() {
-		if (instance==null) {
+		if (instance == null) {
 			instance = new ColorManager();
 		}
 		return instance;

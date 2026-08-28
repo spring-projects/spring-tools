@@ -227,7 +227,7 @@ public class SpringProcessConnectorService {
 		return CompletableFuture.runAsync(() -> {
 			try {
 				progressTask.progressEvent(progressMessage);
-				if(METRICS.equals(endpoint) && (MEMORY.equals(metricName))) {
+				if (METRICS.equals(endpoint) && (MEMORY.equals(metricName))) {
 					SpringProcessMemoryMetricsLiveData newMetricsLiveData = connector.refreshMemoryMetrics(this.liveDataProvider.getCurrent(processKey), metricName, springProcessParams.getTags());
 					
 					if (newMetricsLiveData != null) {
@@ -238,7 +238,7 @@ public class SpringProcessConnectorService {
 						this.connectedSuccess.put(processKey, true);
 					}
 					
-				} else if(METRICS.equals(endpoint) && GC_PAUSES.equals(metricName)) {
+				} else if (METRICS.equals(endpoint) && GC_PAUSES.equals(metricName)) {
 					SpringProcessGcPausesMetricsLiveData newMetricsLiveData = connector.refreshGcPausesMetrics(this.liveDataProvider.getCurrent(processKey), metricName, springProcessParams.getTags());
 					
 					if (newMetricsLiveData != null) {
@@ -323,7 +323,7 @@ public class SpringProcessConnectorService {
 
 			try {
 				progressTask.progressEvent(progressMessage);
-				if(LOGGERS.equals(endpoint)) {
+				if (LOGGERS.equals(endpoint)) {
 					SpringProcessLoggersData loggersData = connector.getLoggers(this.liveDataProvider.getCurrent(processKey));
 
 					if (loggersData != null) {
@@ -386,7 +386,7 @@ public class SpringProcessConnectorService {
 				progressTask.progressEvent(progressMessage);
 				SpringProcessUpdatedLogLevelData springProcessUpdatedLoggersData = connector.configureLogLevel(this.liveDataProvider.getCurrent(processKey), springProcessParams.getArgs());
 
-				if(springProcessUpdatedLoggersData != null) {
+				if (springProcessUpdatedLoggersData != null) {
 					this.liveDataProvider.updateLogLevel(processKey, springProcessUpdatedLoggersData);
 					this.connectedSuccess.put(processKey, true);
 				}	

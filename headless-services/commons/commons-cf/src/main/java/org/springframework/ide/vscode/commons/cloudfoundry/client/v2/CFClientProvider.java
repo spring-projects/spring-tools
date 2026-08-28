@@ -63,10 +63,10 @@ public class CFClientProvider {
 //							String proxyHost = data.getHost();
 //							String user = data.getUserId();
 //							String password = data.getPassword();
-//							if (proxyHost!=null) {
+//							if (proxyHost != null) {
 //								return ProxyConfiguration.builder()
 //										.host(proxyHost)
-//										.port(proxyPort==-1?Optional.empty():Optional.of(proxyPort))
+//										.port(proxyPort == -1?Optional.empty():Optional.of(proxyPort))
 //										.username(Optional.ofNullable(user))
 //										.password(Optional.ofNullable(password))
 //										.build();
@@ -135,7 +135,7 @@ public class CFClientProvider {
 
 		private Optional<Boolean> getBooleanSystemProp(String name) {
 			String str = System.getProperty(name);
-			if (str!=null) {
+			if (str != null) {
 				return Optional.of(Boolean.valueOf(str));
 			}
 			return Optional.empty();

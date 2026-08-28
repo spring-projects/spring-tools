@@ -62,7 +62,7 @@ public class SpringDataMongoDbReconcilerTest {
 		projectFinder.find(new TextDocumentIdentifier(testProject.getLocationUri().toASCIIString())).get();
 	}
 
-	// ========== Criteria.where — Fluent API (Tier 1, Pattern 2) ==========
+	// == == == == == Criteria.where — Fluent API (Tier 1, Pattern 2) == == == == ==
 
 	@Test
 	void fluentQueryApi_criteriaWhere() throws Exception {
@@ -146,7 +146,7 @@ public class SpringDataMongoDbReconcilerTest {
 		);
 	}
 
-	// ========== Template find/findAll with Class parameter (Pattern 3) ==========
+	// == == == == == Template find/findAll with Class parameter (Pattern 3) == == == == ==
 
 	@Test
 	void templateFind_withClassParam() throws Exception {
@@ -172,7 +172,7 @@ public class SpringDataMongoDbReconcilerTest {
 		);
 	}
 
-	// ========== Aggregation — newAggregation(X.class, ...) (Pattern 4) ==========
+	// == == == == == Aggregation — newAggregation(X.class, ...) (Pattern 4) == == == == ==
 
 	@Test
 	void aggregation_withClassParam() throws Exception {
@@ -196,7 +196,7 @@ public class SpringDataMongoDbReconcilerTest {
 		);
 	}
 
-	// ========== Field.include / Field.exclude (projections) ==========
+	// == == == == == Field.include / Field.exclude (projections) == == == == ==
 
 	@Test
 	void fieldInclude_singleProperty() throws Exception {
@@ -274,7 +274,7 @@ public class SpringDataMongoDbReconcilerTest {
 		);
 	}
 
-	// ========== Quick fix tests ==========
+	// == == == == == Quick fix tests == == == == ==
 
 	@Test
 	void quickfix_exactMatch_dottedChain() throws Exception {
@@ -412,7 +412,7 @@ public class SpringDataMongoDbReconcilerTest {
 		assertEquals("Replace all exact matches with type-safe property references in file", actions1.get(1).getLabel());
 	}
 
-	// ========== @Field annotation-aware matching ==========
+	// == == == == == @Field annotation-aware matching == == == == ==
 
 	@Test
 	void annotatedField_exactMatch_viaFieldAnnotation() throws Exception {

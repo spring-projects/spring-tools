@@ -46,7 +46,7 @@ public class CommonLanguageTools {
 	);
 
 	public static boolean isValuePrefixChar(char c) {
-		return !Character.isWhitespace(c) && c!=',';
+		return !Character.isWhitespace(c) && c != ',';
 	}
 
 	/**
@@ -55,11 +55,11 @@ public class CommonLanguageTools {
 	public static Type getValueType(FuzzyMap<PropertyInfo> index, TypeUtil typeUtil, String propertyName) {
 		try {
 			PropertyInfo prop = index.get(propertyName);
-			if (prop!=null) {
+			if (prop != null) {
 				return TypeParser.parse(prop.getType());
 			} else {
 				prop = CommonLanguageTools.findLongestValidProperty(index, propertyName);
-				if (prop!=null) {
+				if (prop != null) {
 					TextDocument doc = new TextDocument(null, LanguageId.PLAINTEXT);
 					doc.setText(propertyName);
 					PropertyNavigator navigator = new PropertyNavigator(doc, null, typeUtil, new DocumentRegion(doc, 0, doc.getLength()));
@@ -87,9 +87,9 @@ public class CommonLanguageTools {
 		}
 		{
 			PropertyInfo prop = index.findLongestCommonPrefixEntry(propertyName);
-			if (prop!=null) {
+			if (prop != null) {
 				HintProvider hintProvider = prop.getHints(typeUtil);
-				if (prop.getId().length()<propertyName.length()) {
+				if (prop.getId().length() < propertyName.length()) {
 					//true prefix
 					//TODO: properly process remaining portion of property name
 					try {
@@ -113,18 +113,18 @@ public class CommonLanguageTools {
 	 */
 	public static PropertyInfo findLongestValidProperty(FuzzyMap<PropertyInfo> index, String name) {
 		int bracketPos = name.indexOf('[');
-		int endPos = bracketPos>=0?bracketPos:name.length();
+		int endPos = bracketPos >= 0 ? bracketPos : name.length();
 		PropertyInfo prop = null;
 		String prefix = null;
-		while (endPos>0 && prop==null) {
+		while (endPos > 0 && prop == null) {
 			prefix = name.substring(0, endPos);
 			String canonicalPrefix = camelCaseToHyphens(prefix);
 			prop = index.get(canonicalPrefix);
-			if (prop==null) {
+			if (prop == null) {
 				endPos = name.lastIndexOf('.', endPos-1);
 			}
 		}
-		if (prop!=null) {
+		if (prop != null) {
 			//We should meet caller's expectation that matched properties returned by this method
 			// match the names exactly even if we found them using relaxed name matching.
 			return prop.withId(prefix);

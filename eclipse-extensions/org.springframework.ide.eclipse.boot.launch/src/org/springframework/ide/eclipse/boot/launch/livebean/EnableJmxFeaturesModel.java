@@ -93,9 +93,9 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 					}
 					try {
 						int portValue = Integer.parseInt(portStr.trim());
-						if (portValue<0) {
+						if (portValue < 0) {
 							return error(portFieldName + " should be a positive integer or 0");
-						} else if (portValue>MAX_PORT) {
+						} else if (portValue > MAX_PORT) {
 							return error(portFieldName + " should be smaller than "+MAX_PORT);
 						}
 					} catch (NumberFormatException e) {
@@ -140,7 +140,7 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 	}
 
 	private boolean hasText(String portStr) {
-		return portStr!=null && !portStr.trim().equals("");
+		return portStr != null && !portStr.trim().equals("");
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -193,7 +193,7 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 
 	public boolean isLiveBeanSupported() {
 		BootLaunchActivator activator = BootLaunchActivator.getInstance();
-		if (activator!=null) {
+		if (activator != null) {
 			return activator.isLiveBeanSupported();
 		}
 		return false;

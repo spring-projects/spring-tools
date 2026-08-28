@@ -103,7 +103,7 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 						syntaxError.getLength()));
 			});
 
-			if (index==null || index.isEmpty()) {
+			if (index == null || index.isEmpty()) {
 				//don't report errors when index is empty, simply don't check (otherwise we will just reprot
 				// all properties as errors, but this not really useful information since the cause is
 				// some problem putting information about properties into the index.
@@ -124,7 +124,7 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 						String keyName = PropertiesFileEscapes.unescape(propertyNameRegion.toString());
 						duplicateNameChecker.check(propertyNameRegion);
 						PropertyInfo validProperty = SpringPropertyIndex.findLongestValidProperty(index, keyName);
-						if (validProperty!=null) {
+						if (validProperty != null) {
 							//TODO: Remove last remnants of 'IRegion trimmedRegion' here and replace
 							// it all with just passing around 'fullName' DocumentRegion. This may require changes
 							// in PropertyNavigator (probably these changes are also for the better making it simpler as well)
@@ -134,15 +134,15 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 							int offset = validProperty.getId().length() + propertyNameRegion.getStart();
 							PropertyNavigator navigator = new PropertyNavigator(doc, problemCollector, typeUtilProvider.getTypeUtil(sourceLinks, doc), propertyNameRegion);
 							Type valueType = navigator.navigate(offset, TypeParser.parse(validProperty.getType()));
-							if (valueType!=null) {
+							if (valueType != null) {
 								reconcileType(doc, valueType, pair.getValue(), problemCollector);
 							}
-						} else { //validProperty==null
+						} else { //validProperty == null
 							//The name is invalid, with no 'prefix' of the name being a valid property name.
 							PropertyInfo similarEntry = index.findLongestCommonPrefixEntry(propertyNameRegion.toString());
 							CharSequence validPrefix = commonPrefix(similarEntry.getId(), keyName);
 							problemCollector.accept(problemUnkownProperty(propertyNameRegion, similarEntry, validPrefix, quickFixes.MISSING_PROPERTY));
-						} //end: validProperty==null
+						} //end: validProperty == null
 					}
 				} catch (Exception e) {
 					log.error("", e);
@@ -263,7 +263,7 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 	private void reconcileType(DocumentRegion escapedValue, Type expectType, IProblemCollector problems) {
 		TypeUtil typeUtil = typeUtilProvider.getTypeUtil(sourceLinks, escapedValue.getDocument());
 		ValueParser parser = typeUtil.getValueParser(expectType);
-		if (parser!=null) {
+		if (parser != null) {
 			try {
 				String valueStr = PropertiesFileEscapes.unescape(escapedValue.toString());
 				if (!valueStr.contains("${")) {
@@ -286,7 +286,7 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 	private String suggestSimilar(PropertyInfo similarEntry, CharSequence validPrefix, CharSequence fullName) {
 		int matchedChars = validPrefix.length();
 		int wrongChars = fullName.length()-matchedChars;
-		if (wrongChars<matchedChars) {
+		if (wrongChars < matchedChars) {
 			return " Did you mean '"+similarEntry.getId()+"'?";
 		} else {
 			return "";

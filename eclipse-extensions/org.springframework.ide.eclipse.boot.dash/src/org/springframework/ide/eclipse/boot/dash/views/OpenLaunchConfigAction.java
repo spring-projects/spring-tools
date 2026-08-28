@@ -53,7 +53,7 @@ public class OpenLaunchConfigAction extends AbstractBootDashElementsAction {
 		if (element instanceof BootProjectDashElement) {
 			BootProjectDashElement projectEl = (BootProjectDashElement) element;
 			ObservableSet<BootDashElement> confs = projectEl.getChildren();
-			return confs.getValues().size()<=1;
+			return confs.getValues().size() <= 1;
 		} else if (element instanceof LaunchConfDashElement) {
 			return true;
 		}

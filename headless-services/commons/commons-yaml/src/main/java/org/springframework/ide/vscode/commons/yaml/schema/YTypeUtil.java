@@ -91,7 +91,7 @@ public interface YTypeUtil {
 	 */
 	default boolean isTrueUnion(YType type) {
 		Collection<YType> subtypes = getUnionSubTypes(type);
-		if (subtypes!=null) {
+		if (subtypes != null) {
 			for (YType subType : subtypes) {
 				if (subType.equals(type)) {
 					return false;

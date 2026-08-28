@@ -232,7 +232,7 @@ public class MainTypeFinder {
 		}
 
 		private boolean isInteresting(IClasspathEntry cpe) {
-			if (cpe==null) {
+			if (cpe == null) {
 				return false;
 			}
 			if (cpe.isTest()) {

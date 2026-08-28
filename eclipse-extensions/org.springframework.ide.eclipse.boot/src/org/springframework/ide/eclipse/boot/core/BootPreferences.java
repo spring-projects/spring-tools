@@ -66,7 +66,7 @@ public class BootPreferences implements IPreferenceChangeListener {
 	}
 
 	public synchronized static BootPreferences getInstance() {
-		if (INSTANCE==null) {
+		if (INSTANCE == null) {
 			INSTANCE = new BootPreferences();
 		}
 		return INSTANCE;
@@ -103,7 +103,7 @@ public class BootPreferences implements IPreferenceChangeListener {
 
 
 	public void setThinWrapper(File thinWrapper) {
-		if (thinWrapper!=null) {
+		if (thinWrapper != null) {
 			prefs.put(PREF_BOOT_THIN_WRAPPER, thinWrapper.getAbsolutePath());
 		} else {
 			prefs.remove(PREF_BOOT_THIN_WRAPPER);
@@ -117,7 +117,7 @@ public class BootPreferences implements IPreferenceChangeListener {
 
 	private Pattern compileProjectExclude() {
 		try {
-			if (prefs!=null) {
+			if (prefs != null) {
 				String patternString = prefs.get(PREF_BOOT_PROJECT_EXCLUDE, null);
 				if (StringUtils.isNotBlank(patternString)) {
 					return Pattern.compile(patternString);
@@ -136,7 +136,7 @@ public class BootPreferences implements IPreferenceChangeListener {
 
 	public static String getInitializrUrl() {
 		String[] urls = getInitializrUrls();
-		if (urls!=null && urls.length>0) {
+		if (urls != null && urls.length > 0) {
 			return urls[0];
 		}
 		return null;
@@ -144,7 +144,7 @@ public class BootPreferences implements IPreferenceChangeListener {
 
 	public static String getDefaultInitializrUrl() {
 		String[] urls = getDefaultInitializrUrls();
-		if (urls!=null && urls.length>0) {
+		if (urls != null && urls.length > 0) {
 			return urls[0];
 		}
 		return null;
@@ -152,7 +152,7 @@ public class BootPreferences implements IPreferenceChangeListener {
 
 	public static String[] getDefaultInitializrUrls() {
 		String encodedUrls = BootActivator.getDefault().getPreferenceStore().getDefaultString(PREF_INITIALIZR_URL);
-		if (encodedUrls!=null) {
+		if (encodedUrls != null) {
 			return decodeUrl(encodedUrls);
 		}
 		return new String[] {};
@@ -176,7 +176,7 @@ public class BootPreferences implements IPreferenceChangeListener {
 
 	public static String[] getInitializrUrls() {
 		String encodedUrls = BootActivator.getDefault().getPreferenceStore().getString(PREF_INITIALIZR_URL);
-		if (encodedUrls!=null) {
+		if (encodedUrls != null) {
 			return decodeUrl(encodedUrls);
 		}
 		return new String[] {};

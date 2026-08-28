@@ -49,7 +49,7 @@ public class GithubRepoContentAssistant implements ISubCompletionEngine {
 		//If uri prefix is not yet there, maybe we can suggest it (if it matches the query)
 		List<ICompletionProposal> proposals = new ArrayList<>(URI_PREFIXES.length);
 		for (String uriPrefix : URI_PREFIXES) {
-			if (FuzzyMatcher.matchScore(query, uriPrefix)!=0.0) {
+			if (FuzzyMatcher.matchScore(query, uriPrefix) != 0.0) {
 				proposals.add(SimpleCompletionFactory.simpleProposal(query, CompletionItemKind.Text, uriPrefix, null, null));
 			}
 		}
@@ -59,7 +59,7 @@ public class GithubRepoContentAssistant implements ISubCompletionEngine {
 	private List<ICompletionProposal> getOwnerOrRepoCompletions(CompletionFactory f, DocumentRegion ownerAndRepoRegion) {
 		try {
 			int slash = ownerAndRepoRegion.indexOf('/');
-			if (slash>=0) {
+			if (slash >= 0) {
 				DocumentRegion owner = ownerAndRepoRegion.subSequence(0, slash);
 				return getRepoCompletions(f, owner, ownerAndRepoRegion.subSequence(slash+1));
 			} else {
@@ -68,7 +68,7 @@ public class GithubRepoContentAssistant implements ISubCompletionEngine {
 				if (!owners.isEmpty()) {
 					List<ICompletionProposal> proposals = new ArrayList<>(owners.size());
 					for (String owner : owners) {
-						if (FuzzyMatcher.matchScore(query, owner)!=0.0) {
+						if (FuzzyMatcher.matchScore(query, owner) != 0.0) {
 							proposals.add(SimpleCompletionFactory.simpleProposal(query, CompletionItemKind.Text, owner+"/", null, null));
 						}
 					}
@@ -85,10 +85,10 @@ public class GithubRepoContentAssistant implements ISubCompletionEngine {
 	private List<ICompletionProposal> getRepoCompletions(CompletionFactory f, DocumentRegion owner, DocumentRegion query) {
 		try {
 			Collection<String> repos = github.getReposForOwner(owner.toString());
-			if (repos!=null && !repos.isEmpty()) {
+			if (repos != null && !repos.isEmpty()) {
 				List<ICompletionProposal> proposals = new ArrayList<>(repos.size());
 				for (String repo : repos) {
-					if (FuzzyMatcher.matchScore(query, repo)!=0.0) {
+					if (FuzzyMatcher.matchScore(query, repo) != 0.0) {
 						proposals.add(SimpleCompletionFactory.simpleProposal(query, CompletionItemKind.Text, repo+".git", null, null));
 					}
 				}

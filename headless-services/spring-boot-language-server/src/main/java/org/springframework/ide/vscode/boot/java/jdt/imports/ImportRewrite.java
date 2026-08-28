@@ -541,7 +541,7 @@ public final class ImportRewrite {
 		StringBuffer buffer = new StringBuffer();
 
 		String[] createdImprts = getAddedImports();
-		if (createdImprts != null && createdImprts.length >0) {
+		if (createdImprts != null && createdImprts.length > 0) {
 			edits =new DocumentEdits(doc, false);
 			buffer.append('\n');
 			for (String imp : createdImprts) {

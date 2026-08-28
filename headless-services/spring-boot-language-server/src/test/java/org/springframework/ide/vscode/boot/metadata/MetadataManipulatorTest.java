@@ -63,7 +63,7 @@ public class MetadataManipulatorTest {
                         "  \"type\": \"java.lang.String\",\n" +
                         "  \"description\": \"A description for 'test.property'\"\n" +
                         "}]}",
-                //================
+                // == == == == == == == ==
                 content.toString());
 
         md.addDefaultInfo("another.property");
@@ -82,7 +82,7 @@ public class MetadataManipulatorTest {
                         "    \"description\": \"A description for 'another.property'\"\n" +
                         "  }\n" +
                         "]}",
-                //================
+                // == == == == == == == ==
                 content.toString());
 
         assertTrue(md.isReliable());
@@ -103,7 +103,7 @@ public class MetadataManipulatorTest {
                         "  \"type\": \"java.lang.String\",\n" +
                         "  \"description\": \"A description for 'test.property'\"\n" +
                         "}\n",
-                //================
+                // == == == == == == == ==
                 content.toString());
 
         md.addDefaultInfo("another.property");
@@ -120,7 +120,7 @@ public class MetadataManipulatorTest {
                         "  \"type\": \"java.lang.String\",\n" +
                         "  \"description\": \"A description for 'another.property'\"\n" +
                         "}\n",
-                //================
+                // == == == == == == == ==
                 content.toString());
 
         assertFalse(md.isReliable());
@@ -167,7 +167,7 @@ public class MetadataManipulatorTest {
                         "  \"description\": \"A description for 'foo.bar'\"\n" +
                         "}\n" +
                         "]}",
-                //================
+                // == == == == == == == ==
                 content.toString());
 
         assertFalse(md.isReliable());
@@ -191,7 +191,7 @@ public class MetadataManipulatorTest {
                         "  \"type\": \"java.lang.String\",\n" +
                         "  \"description\": \"A description for 'test.property'\"\n" +
                         "}]}",
-                //================
+                // == == == == == == == ==
                 content.toString());
     }
 

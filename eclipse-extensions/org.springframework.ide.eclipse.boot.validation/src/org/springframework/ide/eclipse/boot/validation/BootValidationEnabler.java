@@ -95,7 +95,7 @@ public class BootValidationEnabler implements org.eclipse.ui.IStartup {
 		
 		private boolean hasBuilder(IProject p, String builderId) throws CoreException {
 			ICommand[] builderCommands = p.getDescription().getBuildSpec();
-			if (builderCommands!=null) {
+			if (builderCommands != null) {
 				for (ICommand cmd : builderCommands) {
 					if (cmd.getBuilderName().equals(builderId)) {
 						return true;

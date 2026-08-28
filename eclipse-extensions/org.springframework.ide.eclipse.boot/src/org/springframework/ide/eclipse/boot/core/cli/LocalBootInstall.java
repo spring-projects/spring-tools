@@ -39,7 +39,7 @@ public class LocalBootInstall extends BootInstall {
 	@Override
 	public String getVersion() {
 		try {
-			if (version==null) {
+			if (version == null) {
 				File[] jars = getBootLibJars();
 				for (File file : jars) {
 					//Looking for a jar of the form "spring-boot-*-${version}.jar
@@ -55,7 +55,7 @@ public class LocalBootInstall extends BootInstall {
 			Log.log(e);
 		} finally {
 			//No matter what, set the version before proceeding from here.
-			if (version==null) {
+			if (version == null) {
 				version = super.getVersion();
 			}
 		}
@@ -82,7 +82,7 @@ public class LocalBootInstall extends BootInstall {
 		if (fileName.startsWith("spring-") && fileName.endsWith(".jar")) {
 			int end = fileName.length()-4; //4 chars in ".jar"
 			int start = fileName.lastIndexOf("-");
-			if (start>=0) {
+			if (start >= 0) {
 				version = fileName.substring(start+1, end);
 			}
 		}

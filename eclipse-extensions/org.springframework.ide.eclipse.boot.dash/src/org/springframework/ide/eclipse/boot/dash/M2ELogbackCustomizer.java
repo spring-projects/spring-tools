@@ -39,12 +39,12 @@ public class M2ELogbackCustomizer extends Job {
 	int retries = 120;
 
 	private boolean isStateLocationInitialized() {
-		if(!Platform.isRunning()) {
+		if (!Platform.isRunning()) {
 			return false;
 		}
 
 		Bundle resourcesBundle = Platform.getBundle("org.eclipse.core.resources");
-		if(resourcesBundle == null) {
+		if (resourcesBundle == null) {
 			return false;
 		}
 
@@ -65,7 +65,7 @@ public class M2ELogbackCustomizer extends Job {
 				IPath statelocationPath = Platform.getStateLocation(logbackConfigBundle);
 //				Log.info("M2ELogbackCustomizer statelocationPath = "+statelocationPath);
 
-				if (statelocationPath!=null) {
+				if (statelocationPath != null) {
 					File stateDir = statelocationPath.toFile();
 					File logbackFile = new File(stateDir, "logback."+version+".xml");
 //					Log.info("M2ELogbackCustomizer logbackFile = "+logbackFile);
@@ -75,7 +75,7 @@ public class M2ELogbackCustomizer extends Job {
 						String logbackConf = IOUtil.toString(new FileInputStream(logbackFile));
 						int insertionPoint = logbackConf.indexOf("</configuration>");
 //						Log.info("M2ELogbackCustomizer inseertionPoint = "+insertionPoint);
-						if (insertionPoint>=0) {
+						if (insertionPoint >= 0) {
 							if (logbackConf.contains(SNIPPET)) {
 								//nothing to do
 //								Log.info("M2ELogbackCustomizer snippet already present, DONE");

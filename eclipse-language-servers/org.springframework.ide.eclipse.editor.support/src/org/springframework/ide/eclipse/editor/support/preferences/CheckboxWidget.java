@@ -37,7 +37,7 @@ public class CheckboxWidget {
 				//since uivalue listener may be called 'later' the value may have changed since
 				// the event. So get its current state.
 				Boolean value = selected.getValue();
-				if (value!=null) {
+				if (value != null) {
 					if (widget.isDisposed()) {
 						selected.removeListener(this);
 					} else {

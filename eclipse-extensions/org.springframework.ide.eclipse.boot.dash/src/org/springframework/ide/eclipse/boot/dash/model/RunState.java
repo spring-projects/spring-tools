@@ -29,7 +29,7 @@ public enum RunState {
 	 * by multiple instances that can have a RunState (e.g. launches, lattice LRPs, CF instances etc)
 	 */
 	public RunState merge(RunState other) {
-		if (this.ordinal()>other.ordinal()) {
+		if (this.ordinal() > other.ordinal()) {
 			return this;
 		} else {
 			return other;

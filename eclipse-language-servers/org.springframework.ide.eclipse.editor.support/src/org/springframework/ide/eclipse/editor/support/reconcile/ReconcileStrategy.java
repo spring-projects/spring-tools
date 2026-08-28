@@ -154,7 +154,7 @@ public class ReconcileStrategy implements IReconcilingStrategy, IReconcilingStra
 		public void accept(ReconcileProblem problem) {
 			ProblemSeverity severity = getSeverities().getSeverity(problem);
 			String annotationType = ReconcileProblemAnnotation.getAnnotationType(severity);
-			if (annotationType!=null) {
+			if (annotationType != null) {
 				fAddAnnotations.put(new ReconcileProblemAnnotation(annotationType, problem), new Position(problem.getOffset(), problem.getLength()));
 			}
 		}

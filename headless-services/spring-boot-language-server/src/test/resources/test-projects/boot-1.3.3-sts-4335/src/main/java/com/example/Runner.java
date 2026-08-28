@@ -20,7 +20,7 @@ public class Runner implements CommandLineRunner {
 		for (Entry<String, TestObjectWithList> e : props.getTestMap().entrySet()) {
 			p(e.getKey() + " -> ");
 			String[] strings = e.getValue().getStringList();
-			if (strings==null) {
+			if (strings == null) {
 				p("  null");
 			} else {
 				for (String string : strings) {

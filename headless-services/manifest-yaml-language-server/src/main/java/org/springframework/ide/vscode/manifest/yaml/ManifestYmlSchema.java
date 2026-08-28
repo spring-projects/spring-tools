@@ -68,7 +68,7 @@ public final class ManifestYmlSchema implements YamlSchema {
 
 	private void verify_heatth_check_http_end_point_constraint(DynamicSchemaContext dc, Node parent, Node node, YType type, IProblemCollector problems) {
 		YamlFileAST ast = dc.getAST();
-		if (ast!=null) {
+		if (ast != null) {
 			Node markerNode = YamlPathSegment.keyAt(HEALTH_CHECK_HTTP_ENDPOINT_PROP).traverseNode(node);
 			if (markerNode != null) {
 				String healthCheckType = getEffectiveHealthCheckType(ast, dc.getPath(), node);
@@ -86,15 +86,15 @@ public final class ManifestYmlSchema implements YamlSchema {
 	 */
 	private String getEffectiveHealthCheckType(YamlFileAST ast, YamlPath path, Node node) {
 		String explicit = NodeUtil.getScalarProperty(node, HEALTH_CHECK_TYPE_PROP);
-		if (explicit!=null) {
+		if (explicit != null) {
 			return explicit;
 		}
-		if (path.size()>2) {
+		if (path.size() > 2) {
 			//Must consider inherited props!
 			YamlPath parentPath = path.dropLast(2);
 			Node parent = parentPath.traverseToNode(ast);
 			String inherited = NodeUtil.getScalarProperty(parent, HEALTH_CHECK_TYPE_PROP);
-			if (inherited!=null) {
+			if (inherited != null) {
 				return inherited;
 			}
 		}
@@ -130,7 +130,7 @@ public final class ManifestYmlSchema implements YamlSchema {
 		}
 
 		YAtomicType t_stack = f.yatomic("Stack");
-		if (stacksProvider!=null) {
+		if (stacksProvider != null) {
 			t_stack.setHintProvider(stacksProvider);
 			t_stack.parseWith(ManifestYmlValueParsers.fromCFValueHints(stacksProvider, t_stack, ManifestYamlSchemaProblemsTypes.UNKNOWN_STACK_PROBLEM));
 		}
@@ -258,7 +258,7 @@ public final class ManifestYmlSchema implements YamlSchema {
 
 	public Collection<YType> getDefinitionTypes() {
 		// These are the types of "interest" for symbol navigation.
-		if (definitionTypes==null) {
+		if (definitionTypes == null) {
 			definitionTypes = ImmutableList.of(t_application_name);
 		}
 		return definitionTypes;

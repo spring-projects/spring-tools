@@ -85,16 +85,16 @@ public class PropertiesCompletionProposalsCalculator {
 			//Check if character before looks like 'navigation'.. otherwise don't
 			// return a navigationPrefix.
 			char charBefore = getCharBefore(doc, prefix, offset);
-			if (charBefore=='.' || charBefore==']') {
+			if (charBefore == '.' || charBefore == ']') {
 				return prefix;
 			}
 			return null;
 		}
 		private char getCharBefore(IDocument doc, String prefix, int offset) {
 			try {
-				if (prefix!=null) {
+				if (prefix != null) {
 					int offsetBefore = offset-prefix.length()-1;
-					if (offsetBefore>=0) {
+					if (offsetBefore >= 0) {
 						return doc.getChar(offsetBefore);
 					}
 				}
@@ -105,7 +105,7 @@ public class PropertiesCompletionProposalsCalculator {
 		}
 		@Override
 		protected boolean isPrefixChar(char c) {
-			return !Character.isWhitespace(c) && c!=']' && c!=']' && c!='.';
+			return !Character.isWhitespace(c) && c != ']' && c != ']' && c != '.';
 		}
 	};
 
@@ -147,12 +147,12 @@ public class PropertiesCompletionProposalsCalculator {
 	private Collection<ICompletionProposal> getNavigationProposals() {
 		String navPrefix = navigationPrefixFinder.getPrefix(doc, offset);
 		try {
-			if (navPrefix!=null) {
+			if (navPrefix != null) {
 				int navOffset = offset-navPrefix.length()-1; //offset of 'nav' operator char (i.e. '.' or ']').
 				navPrefix = fuzzySearchPrefix.getPrefix(doc, navOffset);
-				if (navPrefix!=null && !navPrefix.isEmpty()) {
+				if (navPrefix != null && !navPrefix.isEmpty()) {
 					PropertyInfo prop = findLongestValidProperty(index, navPrefix);
-					if (prop!=null) {
+					if (prop != null) {
 						int regionStart = navOffset-navPrefix.length();
 						Collection<ICompletionProposal> hintProposals = getKeyHintProposals(prop, regionStart + prop.getId().length());
 						if (CollectionUtil.hasElements(hintProposals)) {
@@ -160,7 +160,7 @@ public class PropertiesCompletionProposalsCalculator {
 						}
 						PropertyNavigator navigator = new PropertyNavigator(doc, null, typeUtil, new DocumentRegion(doc, regionStart, navOffset));
 						Type type = navigator.navigate(regionStart+prop.getId().length(), TypeParser.parse(prop.getType()));
-						if (type!=null) {
+						if (type != null) {
 							return getNavigationProposals(type, navOffset);
 						}
 					}
@@ -188,16 +188,16 @@ public class PropertiesCompletionProposalsCalculator {
 		if (end > doc.getLength()) {
 			end = doc.getLength();
 		}
-		if (start>doc.getLength()) {
+		if (start > doc.getLength()) {
 			start = doc.getLength();
 		}
-		if (start<0) {
+		if (start < 0) {
 			start = 0;
 		}
 		if (end < 0) {
 			end = 0;
 		}
-		if (start<end) {
+		if (start < end) {
 			try {
 				return doc.get(start, end-start);
 			} catch (BadLocationException e) {
@@ -214,12 +214,12 @@ public class PropertiesCompletionProposalsCalculator {
 	private Collection<ICompletionProposal> getNavigationProposals(Type type, int navOffset) {
 		try {
 			char navOp = doc.getChar(navOffset);
-			if (navOp=='.') {
+			if (navOp == '.') {
 				String prefix = doc.get(navOffset+1, offset-(navOffset+1));
 				EnumCaseMode caseMode = caseMode(prefix);
 				List<TypedProperty> objectProperties = typeUtil.getProperties(type, caseMode, BeanPropertyNameMode.HYPHENATED);
 				   //Note: properties editor itself deals with relaxed names. So it expects the properties here to be returned in hyphenated form only.
-				if (objectProperties!=null && !objectProperties.isEmpty()) {
+				if (objectProperties != null && !objectProperties.isEmpty()) {
 					return createPropertyProposals(type, navOffset, prefix, objectProperties);
 				}
 			} else {
@@ -236,7 +236,7 @@ public class PropertiesCompletionProposalsCalculator {
 		ArrayList<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 		for (TypedProperty prop : objectProperties) {
 			double score = FuzzyMatcher.matchScore(prefix, prop.getName());
-			if (score!=0) {
+			if (score != 0) {
 				DocumentEdits edits = new DocumentEdits(doc, false);
 				edits.delete(navOffset+1, offset);
 				edits.lazyInsert(offset, prop.getName(), () -> prop.getName() + propertyCompletionPostfix(typeUtil, prop.getType()));
@@ -254,16 +254,16 @@ public class PropertiesCompletionProposalsCalculator {
 	protected EnumCaseMode caseMode(String prefix) {
 		EnumCaseMode caseMode;
 		if (prefix == null || prefix.isEmpty()) {
-			caseMode = preferLowerCaseEnums?EnumCaseMode.LOWER_CASE:EnumCaseMode.ORIGNAL;
+			caseMode = preferLowerCaseEnums ? EnumCaseMode.LOWER_CASE : EnumCaseMode.ORIGNAL;
 		} else {
-			caseMode = Character.isLowerCase(prefix.charAt(0))?EnumCaseMode.LOWER_CASE:EnumCaseMode.ORIGNAL;
+			caseMode = Character.isLowerCase(prefix.charAt(0)) ? EnumCaseMode.LOWER_CASE : EnumCaseMode.ORIGNAL;
 		}
 		return caseMode;
 	}
 
 	protected static String propertyCompletionPostfix(TypeUtil typeUtil, Type type) {
 		String postfix = "";
-		if (type!=null) {
+		if (type != null) {
 			if (typeUtil.isAssignableType(type)) {
 				postfix = "=";
 			} else if (typeUtil.isIndexable(type)) {
@@ -337,7 +337,7 @@ public class PropertiesCompletionProposalsCalculator {
 		final String prefix = fuzzySearchPrefix.getPrefix(doc, offset);
 		if (prefix != null) {
 			Collection<Match<PropertyInfo>> matches = findMatches(prefix);
-			if (matches!=null && !matches.isEmpty()) {
+			if (matches != null && !matches.isEmpty()) {
 				ArrayList<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>(matches.size());
 				matches.stream().forEach(match -> {
 					DocumentEdits docEdits;
@@ -371,7 +371,7 @@ public class PropertiesCompletionProposalsCalculator {
 		if (propertyCompletionSettings.elidePrefix()) {
 			String prefix = StringUtil.commonPrefix(Stream.concat(Stream.of(basePrefix), proposals.stream().map(ICompletionProposal::getLabel)));
 			int lastDot = prefix.lastIndexOf('.');
-			if (lastDot>=0) {
+			if (lastDot >= 0) {
 				for (int i = 0; i < proposals.size(); i++) {
 					ICompletionProposal p = proposals.get(i);
 					proposals.set(i, p.dropLabelPrefix(lastDot+1));

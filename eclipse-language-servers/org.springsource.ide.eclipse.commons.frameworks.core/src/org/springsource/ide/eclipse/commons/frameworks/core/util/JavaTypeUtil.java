@@ -71,7 +71,7 @@ public class JavaTypeUtil {
 	
 	public static Set<IContainer> getOutputFolders(IJavaProject jp) {
 		IContainer defaultOutput = getDefaultOutputFolder(jp);
-		if (defaultOutput!=null) {
+		if (defaultOutput != null) {
 			return Collections.singleton(getDefaultOutputFolder(jp));
 		} else {
 			return Collections.emptySet();
@@ -83,7 +83,7 @@ public class JavaTypeUtil {
 		try {
 			IPath loc = jp.getOutputLocation();
 			String pname = loc.segment(0);
-			if (loc.segmentCount()==1) {
+			if (loc.segmentCount() == 1) {
 				//project is its own output folder. Discouraged... but possible
 				return ResourcesPlugin.getWorkspace().getRoot().getProject(pname);
 			} else {

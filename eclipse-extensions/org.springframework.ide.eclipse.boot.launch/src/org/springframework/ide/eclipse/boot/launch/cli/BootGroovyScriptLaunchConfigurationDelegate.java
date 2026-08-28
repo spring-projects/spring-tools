@@ -47,9 +47,9 @@ public class BootGroovyScriptLaunchConfigurationDelegate extends BootCliLaunchCo
 
 	private static IFile getScript(ILaunchConfiguration conf) throws CoreException {
 		String fullPathStr = conf.getAttribute(SCRIPT_RSRC, (String)null);
-		if (fullPathStr!=null) {
+		if (fullPathStr != null) {
 			IPath fullPath = new Path(fullPathStr);
-			Assert.isLegal(fullPath.segmentCount()>=2);
+			Assert.isLegal(fullPath.segmentCount() >= 2);
 			String projectName = fullPath.segment(0);
 			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 			return project.getFile(fullPath.removeFirstSegments(1));
@@ -59,7 +59,7 @@ public class BootGroovyScriptLaunchConfigurationDelegate extends BootCliLaunchCo
 
 	private static String getProjectName(ILaunchConfiguration conf) throws CoreException {
 		String fullPathStr = conf.getAttribute(SCRIPT_RSRC, (String)null);
-		if (fullPathStr!=null) {
+		if (fullPathStr != null) {
 			IPath fullPath = new Path(fullPathStr);
 			return fullPath.segment(0);
 		}
@@ -68,7 +68,7 @@ public class BootGroovyScriptLaunchConfigurationDelegate extends BootCliLaunchCo
 
 	private static IProject getProject(ILaunchConfiguration conf) throws CoreException {
 		String name = getProjectName(conf);
-		if (name!=null) {
+		if (name != null) {
 			return ResourcesPlugin.getWorkspace().getRoot().getProject(name);
 		}
 		return null;

@@ -64,7 +64,7 @@ public class JmxRunStateTracker extends AbstractDisposable {
 				Exception error = null;
 				try {
 					SpringApplicationLifecycleClient client = clientMgr.getLifeCycleClient();
-					if (client==null || client.isReady()) {
+					if (client == null || client.isReady()) {
 						debug("jmxClient.isReady() => true");
 						return baseRunState;
 					}
@@ -119,7 +119,7 @@ public class JmxRunStateTracker extends AbstractDisposable {
 			if (data instanceof JmxConnectable) {
 				String url = ((JmxConnectable) data).getJmxUrl();
 				debug("jmxUrl = "+url);
-				if (url!=null) {
+				if (url != null) {
 					return JMXClient.createJmxConnectorFromUrl(url);
 				}
 			}

@@ -23,7 +23,7 @@ public class IOUtil {
 	public static void consume(InputStream stream) throws IOException {
 		try {
 			byte[] buf = new byte[BUF_SIZE];
-			while (stream.read(buf)>=0) {}
+			while (stream.read(buf) >= 0) {}
 		} finally {
 			try {
 				stream.close();

@@ -56,7 +56,7 @@ public class ClasspathUtil {
 	
 	private static Set<String> getSystemLibraryPaths(IJavaProject javaProject, IClasspathEntry jreContainer) {
 		try {
-			if (jreContainer!=null) {
+			if (jreContainer != null) {
 				IClasspathEntry[] resolvedJreEntries = ((JavaProject)javaProject).resolveClasspath(new IClasspathEntry[] {jreContainer});
 				Set<String> paths = new HashSet<>();
 				for (IClasspathEntry systemEntry : resolvedJreEntries) {
@@ -71,9 +71,9 @@ public class ClasspathUtil {
 	}
 	
 	private static IClasspathEntry getJreContainer(IClasspathEntry[] rawClasspath) {
-		if (rawClasspath!=null) {
+		if (rawClasspath != null) {
 			for (IClasspathEntry cpe : rawClasspath) {
-				if (cpe.getEntryKind()==IClasspathEntry.CPE_CONTAINER) {
+				if (cpe.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
 					if (cpe.getPath().segment(0).equals(JRE_CONTAINER_ID)) {
 						return cpe;
 					}
@@ -136,7 +136,7 @@ public class ClasspathUtil {
 				cpe.setSourceContainerUrl(sp.toFile().getAbsoluteFile().toURI().toURL());
 				// TODO:
 //					IPath srp = entry.getSourceAttachmentRootPath();
-//					if (srp!=null) {
+//					if (srp != null) {
 //						
 //					}
 			}
@@ -209,11 +209,11 @@ public class ClasspathUtil {
 	}
 	
 	private static IPath resolveWorkspacePath(IPath path) {
-		if (path.segmentCount()>0) {
+		if (path.segmentCount() > 0) {
 			String projectName = path.segment(0);
 			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 			IPath projectRoot = project.getLocation();
-			if (projectRoot!=null) {
+			if (projectRoot != null) {
 				return projectRoot.append(path.removeFirstSegments(1));
 			}
 		}

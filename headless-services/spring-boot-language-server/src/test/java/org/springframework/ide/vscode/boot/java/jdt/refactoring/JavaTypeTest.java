@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
  */
 class JavaTypeTest {
 
-	// ========== Simple class types ==========
+	// == == == == == Simple class types == == == == ==
 
 	@Test
 	void parseSimpleTopLevelClass() {
@@ -75,7 +75,7 @@ class JavaTypeTest {
 		assertEquals("MyService", jt.getDisplayName());
 	}
 
-	// ========== Inner class types ==========
+	// == == == == == Inner class types == == == == ==
 
 	@Test
 	void parseInnerClassType() {
@@ -116,7 +116,7 @@ class JavaTypeTest {
 		assertNull(outer.getDeclaringClass());
 	}
 
-	// ========== getAllClassNames for simple types ==========
+	// == == == == == getAllClassNames for simple types == == == == ==
 
 	@Test
 	void allClassNamesForSimpleType() {
@@ -136,7 +136,7 @@ class JavaTypeTest {
 		assertEquals("java.util.Map.Entry", names.get(0).getFullyQualifiedName());
 	}
 
-	// ========== Simple parameterized types ==========
+	// == == == == == Simple parameterized types == == == == ==
 
 	@Test
 	void parseSimpleParameterizedType() {
@@ -177,7 +177,7 @@ class JavaTypeTest {
 		assertEquals("java.util.Map<java.lang.String, java.lang.Integer>", ((FullyQualifiedType) jt).getFullyQualifiedName());
 	}
 
-	// ========== Nested parameterized types ==========
+	// == == == == == Nested parameterized types == == == == ==
 
 	@Test
 	void parseNestedParameterizedType() {
@@ -231,7 +231,7 @@ class JavaTypeTest {
 		assertEquals("Map<String, List<Map.Entry<String, ?>>>", jt.getDisplayName());
 	}
 
-	// ========== getAllClassNames for parameterized types ==========
+	// == == == == == getAllClassNames for parameterized types == == == == ==
 
 	@Test
 	void allClassNamesForParameterizedType() {
@@ -274,7 +274,7 @@ class JavaTypeTest {
 		assertEquals("java.util.List", fqNames.get(0));
 	}
 
-	// ========== Wildcard types ==========
+	// == == == == == Wildcard types == == == == ==
 
 	@Test
 	void parseUnboundedWildcard() {
@@ -329,7 +329,7 @@ class JavaTypeTest {
 		assertEquals("com.example.BaseDto", fqNames.get(0));
 	}
 
-	// ========== Wildcard inside parameterized type ==========
+	// == == == == == Wildcard inside parameterized type == == == == ==
 
 	@Test
 	void parseParameterizedWithWildcardExtends() {
@@ -370,7 +370,7 @@ class JavaTypeTest {
 		assertNull(wn.getBound());
 	}
 
-	// ========== ClassName field type name ==========
+	// == == == == == ClassName field type name == == == == ==
 
 	@Test
 	void fieldTypeNameForTopLevelClass() {
@@ -393,7 +393,7 @@ class JavaTypeTest {
 		assertEquals("Outer.Middle.Inner", inner.getFieldTypeName());
 	}
 
-	// ========== Round-trip: parse then getFullyQualifiedName ==========
+	// == == == == == Round-trip: parse then getFullyQualifiedName == == == == ==
 
 	@Test
 	void roundTripSimpleType() {
@@ -448,7 +448,7 @@ class JavaTypeTest {
 		assertEquals(expected, JavaType.parse(input).toString());
 	}
 
-	// ========== Primitive types ==========
+	// == == == == == Primitive types == == == == ==
 
 	@Test
 	void parsePrimitiveInt() {
@@ -492,7 +492,7 @@ class JavaTypeTest {
 		assertEquals("void", ptn.getKeyword());
 	}
 
-	// ========== Array types ==========
+	// == == == == == Array types == == == == ==
 
 	@Test
 	void parsePrimitiveArray() {
@@ -588,7 +588,7 @@ class JavaTypeTest {
 		assertEquals("Map.Entry[]", jt.getDisplayName());
 	}
 
-	// ========== Round-trip for arrays and primitives ==========
+	// == == == == == Round-trip for arrays and primitives == == == == ==
 
 	@Test
 	void roundTripPrimitive() {

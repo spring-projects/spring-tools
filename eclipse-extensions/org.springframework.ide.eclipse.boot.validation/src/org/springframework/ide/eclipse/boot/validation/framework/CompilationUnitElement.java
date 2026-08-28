@@ -50,7 +50,7 @@ public class CompilationUnitElement implements IModelElement {
 	 */
 	public IClasspathEntry[] getClasspath() {
 		try {
-			if (classpath==null) {
+			if (classpath == null) {
 					classpath = cu.getJavaProject().getResolvedClasspath(false);
 			}
 			} catch (Exception e) {

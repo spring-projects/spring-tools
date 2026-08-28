@@ -46,7 +46,7 @@ public class OpenDockerTerminal extends AbstractBootDashElementsAction {
 	 */
 	public void updateEnablement() {
 		DockerContainer c = getDockerContainer();
-		this.setEnabled(c!=null && c.fetchRunState().isActive());
+		this.setEnabled(c != null && c.fetchRunState().isActive());
 	}
 
 	private DockerContainer getDockerContainer() {
@@ -61,7 +61,7 @@ public class OpenDockerTerminal extends AbstractBootDashElementsAction {
 	}
 
 	public void updateVisibility() {
-		this.setVisible(getDockerContainer()!=null);
+		this.setVisible(getDockerContainer() != null);
 	}
 
 	

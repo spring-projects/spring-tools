@@ -38,7 +38,7 @@ public class RequestMappingLabelProvider extends StyledCellLabelProvider {
 	public void update(ViewerCell cell) {
 		Object o = cell.getElement();
 		if (o instanceof String) {
-			if (column==RequestMappingsColumn.SRC) {
+			if (column == RequestMappingsColumn.SRC) {
 				cell.setText((String) o);
 				cell.setStyleRanges(null);
 			} else {
@@ -46,7 +46,7 @@ public class RequestMappingLabelProvider extends StyledCellLabelProvider {
 			}
 		} else if (o instanceof RequestMapping) {
 			StyledString styledText = getStyledText((RequestMapping)o);
-			if (styledText!=null) {
+			if (styledText != null) {
 				cell.setText(styledText.getString());
 				cell.setStyleRanges(styledText.getStyleRanges());
 			} else {
@@ -75,7 +75,7 @@ public class RequestMappingLabelProvider extends StyledCellLabelProvider {
 			}
 		case SRC:
 			String m = rm.getMethodString();
-			if (m!=null) {
+			if (m != null) {
 				return new StyledString(m, deemphasize);
 			}
 		default:
@@ -85,9 +85,9 @@ public class RequestMappingLabelProvider extends StyledCellLabelProvider {
 	}
 
 	private String getDefaultPath(BootDashElement value) {
-		if (value!=null) {
+		if (value != null) {
 			String path = value.getDefaultRequestMappingPath();
-			if (path!=null) {
+			if (path != null) {
 				return path;
 			}
 		}

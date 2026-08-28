@@ -47,7 +47,7 @@ public class FavouritesPreference  {
 	public Favourite[] getFavourites() {
 		try {
 			String[] strings = prefs.get(KEY, NO_STRINGS);
-			if (strings!=null && strings.length>0) {
+			if (strings != null && strings.length > 0) {
 				Favourite[] favs = new Favourite[strings.length/2];
 				for (int i = 0; i < strings.length; i+=2) {
 					favs[i/2] = new Favourite(strings[i], strings[i+1]);

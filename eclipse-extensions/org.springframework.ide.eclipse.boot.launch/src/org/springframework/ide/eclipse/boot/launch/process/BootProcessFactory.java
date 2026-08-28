@@ -46,7 +46,7 @@ public class BootProcessFactory implements IProcessFactory {
 
 	public static Disposable addStreamsProxyListener(StreamsProxyListener listener) {
 		synchronized (BootProcessFactory.class) {
-			if (streamsProxyListeners==null) {
+			if (streamsProxyListeners == null) {
 				streamsProxyListeners = new ListenerList<>();
 			}
 		}
@@ -66,13 +66,13 @@ public class BootProcessFactory implements IProcessFactory {
 	public IProcess newProcess(ILaunch launch, final Process process, final String label, Map<String, String> attributes) {
 
 		final int jmxPort = getJMXPort(launch);
-		if (jmxPort<=0) {
+		if (jmxPort <= 0) {
 			// Auto/dynamic JMX port case: no port was picked at launch time (see
 			// BootLaunchConfigurationDelegate.getVMArguments()). Capture the real child PID now
 			// that the process exists, so the JMX agent can be attached to on-demand later.
 			launch.setAttribute(BootLaunchConfigurationDelegate.PROCESS_ID, String.valueOf(process.pid()));
 		}
-		final boolean hasLifeCycleConnection = jmxPort>0 || launch.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID)!=null;
+		final boolean hasLifeCycleConnection = jmxPort > 0 || launch.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID) != null;
 		final long timeout = getNiceTerminationTimeout(launch);
 		RuntimeProcess rtProcess = new RuntimeProcess(launch, process, label, attributes) {
 
@@ -100,7 +100,7 @@ public class BootProcessFactory implements IProcessFactory {
 					streams.getOutputStreamMonitor().addListener(new DumpOutput("%out: "));
 					streams.getErrorStreamMonitor().addListener(new DumpOutput("%err: "));
 				}
-				if (streamsProxyListeners!=null) {
+				if (streamsProxyListeners != null) {
 					for (StreamsProxyListener streamsProxyListener : streamsProxyListeners) {
 						streamsProxyListener.streamsProxyCreated(streams, launch);
 					}
@@ -127,7 +127,7 @@ public class BootProcessFactory implements IProcessFactory {
 					try {
 						debug("Trying to terminate nicely: "+label);
 						SpringApplicationLifecycleClient client = clientMgr.getLifeCycleClient();
-						if (client!=null) {
+						if (client != null) {
 							debug("Asking JMX client to 'stop'");
 							client.stop();
 							debug("Asking JMX client to 'stop' -> SUCCESS");

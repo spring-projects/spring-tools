@@ -43,11 +43,11 @@ public class MarkerResolutionRegistry {
 	 * NULL_GENERATOR instead
 	 */
 	public synchronized IMarkerResolutionGenerator2 generator(IMarker marker) {
-		if (registry!=null) {
+		if (registry != null) {
 			String id = marker.getAttribute(QUICK_FIX_ID_ATTR, null);
-			if (id!=null) {
+			if (id != null) {
 				IMarkerResolutionGenerator2 registered = registry.get(id);
-				if (registered!=null) {
+				if (registered != null) {
 					return registered;
 				}
 			}
@@ -65,11 +65,11 @@ public class MarkerResolutionRegistry {
 	 * @param generator
 	 */
 	public synchronized void register(ProblemType id, IMarkerResolutionGenerator2 generator) {
-		if (registry==null) {
+		if (registry == null) {
 			registry = new HashMap<>();
 		}
 		IMarkerResolutionGenerator2 existing = registry.get(id);
-		if (existing!=null) {
+		if (existing != null) {
 			registry.put(id.getId(), compose(existing, generator));
 		} else {
 			registry.put(id.getId(),  generator);

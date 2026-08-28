@@ -2176,7 +2176,7 @@ public class ContentProposalAdapter {
 		if (autoActivateString == null || autoActivateString.length() == 0)
 			return true;
 		String content = getControlContentAdapter().getControlContents(getControl());
-		for (int i=0; i<autoActivateString.length(); i++) {
+		for (int i=0; i < autoActivateString.length(); i++) {
 			if (content.indexOf(autoActivateString.charAt(i)) >= 0)
 				return true;
 		}

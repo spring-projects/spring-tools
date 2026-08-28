@@ -34,7 +34,7 @@ public class DelegatingLiveExp<T> extends LiveExpression<T> {
 	@Override
 	protected T compute() {
 		LiveExpression<T> delegate = _delegate.getValue();
-		if (delegate==null) {
+		if (delegate == null) {
 			return null;
 		} else {
 			return delegate.getValue();
@@ -44,13 +44,13 @@ public class DelegatingLiveExp<T> extends LiveExpression<T> {
 	public synchronized void setDelegate(LiveExpression<T> newDelegate) {
 		LiveExpression<T> oldDelegate = _delegate.getValue();
 		_delegate.setValue(newDelegate);
-		if (oldDelegate==newDelegate) {
+		if (oldDelegate == newDelegate) {
 			return;
 		} else {
-			if (oldDelegate!=null) {
+			if (oldDelegate != null) {
 				oldDelegate.removeListener(delegateListener);
 			}
-			if (newDelegate==null) {
+			if (newDelegate == null) {
 				//trigger a refresh because the delegate changed and the newDelegate won't trigger one
 				refresh();
 			} else {

@@ -87,7 +87,7 @@ public class LocalCloudServiceDashElement extends AbstractLaunchConfigurationsDa
 		for (ILaunch launch : launchManager.getLaunches()) {
 			ILaunchConfiguration configuration = launch.getLaunchConfiguration();
 			try {
-				if (configuration!=null && configuration.getType() == type && delegate.equals(configuration.getAttribute(CloudCliServiceLaunchConfigurationDelegate.ATTR_CLOUD_SERVICE_ID, (String) null))) {
+				if (configuration != null && configuration.getType() == type && delegate.equals(configuration.getAttribute(CloudCliServiceLaunchConfigurationDelegate.ATTR_CLOUD_SERVICE_ID, (String) null))) {
 					launches.add(launch);
 				}
 			} catch (CoreException e) {

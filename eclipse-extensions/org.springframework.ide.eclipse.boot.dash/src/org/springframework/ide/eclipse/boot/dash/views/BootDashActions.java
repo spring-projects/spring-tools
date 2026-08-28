@@ -570,7 +570,7 @@ public class BootDashActions {
 		for (RunTarget target : targets) {
 			if (target.getType() instanceof RemoteRunTargetType) {
 				AbstractBootDashAction a = actionFactory.createOrGet(target);
-				if (a!=null) {
+				if (a != null) {
 					builder.add(actionFactory.createOrGet(target));
 				}
 			}

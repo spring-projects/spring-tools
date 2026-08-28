@@ -105,9 +105,9 @@ public class PropertyIndexHarness {
 		public ItemConfigurer valueHint(Object value, String description) {
 			ValueHint hint = new ValueHint();
 			hint.setValue(value);
-			if (description!=null) {
+			if (description != null) {
 				int dotPos = description.indexOf('.');
-				if (dotPos>=0) {
+				if (dotPos >= 0) {
 					hint.setShortDescription( description.substring(0, dotPos));
 				}
 				hint.setDescription(description);

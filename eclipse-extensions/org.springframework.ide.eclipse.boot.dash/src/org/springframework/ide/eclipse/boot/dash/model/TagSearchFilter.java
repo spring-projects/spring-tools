@@ -94,7 +94,7 @@ public class  TagSearchFilter<T extends Taggable> implements Filter<T> {
 
 	protected ImmutableSet<String> getTags(T element) {
 		LinkedHashSet<String> tags = element.getTags();
-		if (tags==null) {
+		if (tags == null) {
 			return ImmutableSet.of();
 		}
 		return ImmutableSet.copyOf(tags);

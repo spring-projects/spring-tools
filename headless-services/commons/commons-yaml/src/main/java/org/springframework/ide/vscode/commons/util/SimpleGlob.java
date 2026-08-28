@@ -32,7 +32,7 @@ public abstract class SimpleGlob {
 			List<String> parts = new ArrayList<>();
 			int scan = 0;
 			int star = pattern.indexOf('*', scan);
-			while (star>=0) {
+			while (star >= 0) {
 				parts.add(pattern.substring(scan, star));
 				scan = star+1;
 				star = pattern.indexOf('*', scan);
@@ -50,7 +50,7 @@ public abstract class SimpleGlob {
 			int scan = prefix.length();
 			for (String part : middle) {
 				scan = value.indexOf(part, scan);
-				if (scan<0) {
+				if (scan < 0) {
 					return Match.FAIL;
 				} else {
 					//consume matched part so we cannot use that in matching next parts again.

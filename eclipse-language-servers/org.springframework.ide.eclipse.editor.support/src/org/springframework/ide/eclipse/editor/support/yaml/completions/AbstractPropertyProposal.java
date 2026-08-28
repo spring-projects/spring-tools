@@ -64,7 +64,7 @@ ICompletionProposalExtension4, ICompletionProposalExtension6
 		StyledString result = new StyledString();
 		result = result.append(super.getStyledDisplayString());
 		YType type = getType();
-		if (type!=null) {
+		if (type != null) {
 			String typeStr = niceTypeName(type);
 			result.append(" : "+typeStr, StyledString.DECORATIONS_STYLER);
 		}

@@ -49,7 +49,7 @@ public class CFWrappingV2 {
 	}
 
 	public static CFStack wrap(Stack stack) {
-		if (stack!=null) {
+		if (stack != null) {
 			String name = stack.getName();
 			return new CFStack() {
 				@Override

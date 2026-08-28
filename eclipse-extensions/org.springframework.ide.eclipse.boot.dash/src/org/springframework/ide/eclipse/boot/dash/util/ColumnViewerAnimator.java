@@ -75,7 +75,7 @@ public class ColumnViewerAnimator {
 		abstract void setImage(Image image);
 
 		public boolean isDisposed() {
-			return widget==null || widget.isDisposed();
+			return widget == null || widget.isDisposed();
 		}
 	}
 
@@ -105,10 +105,10 @@ public class ColumnViewerAnimator {
 	private Job job;
 
 	public void setAnimation(ViewerCell cell, Image[] images) {
-		if (images==null || images.length==0) {
+		if (images == null || images.length == 0) {
 			cell.setImage(null);
 			stopAnimation(cell);
-		} else if (images.length==1) {
+		} else if (images.length == 1) {
 			stopAnimation(cell);
 			cell.setImage(images[0]);
 		} else {
@@ -133,7 +133,7 @@ public class ColumnViewerAnimator {
 	}
 
 	private void ensureJob() {
-		if (job==null) {
+		if (job == null) {
 			job = new UIJob("Animate table icons") {
 				@Override
 				public IStatus runInUIThread(IProgressMonitor monitor) {
@@ -148,7 +148,7 @@ public class ColumnViewerAnimator {
 								a.item.setImage(imgs[animationCounter%imgs.length]);
 							}
 						}
-						if (job!=null && animatedElements.size()>0) {
+						if (job != null && animatedElements.size() > 0) {
 							job.schedule(INTERVAL);
 						}
 					}

@@ -97,7 +97,7 @@ class RawConfigurationMetadata {
 
 	@Override
 	public String toString() {
-		if (origin!=null) {
+		if (origin != null) {
 			return "RawConfigurationMetadata("+origin+")";
 		}
 		return super.toString();

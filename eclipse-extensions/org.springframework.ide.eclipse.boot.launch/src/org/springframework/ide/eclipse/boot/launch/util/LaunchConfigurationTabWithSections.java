@@ -67,7 +67,7 @@ implements IPageWithSections, Disposable {
 					setErrorMessage(null);
 					setWarningMessage(null);
 					scheduleUpdateJob();
-				} else if (value.status==IStatus.WARNING) {
+				} else if (value.status == IStatus.WARNING) {
 					setErrorMessage(null);
 					setWarningMessage(value.msg);
 					scheduleUpdateJob();
@@ -80,7 +80,7 @@ implements IPageWithSections, Disposable {
 		});
 		dirtyState.addListener(new ValueListener<Boolean>() {
 			public void gotValue(LiveExpression<Boolean> exp, Boolean dirty) {
-				if (dirty!=null && dirty!=isDirty()) {
+				if (dirty != null && dirty != isDirty()) {
 					setDirty(dirty);
 					if (dirty) {
 						//no sense in refreshing UI when state actually became 'clean'.
@@ -96,7 +96,7 @@ implements IPageWithSections, Disposable {
 	protected void scheduleUpdateJob() {
 		//ignore 'resfresh' request when there's no UI.
 		Control control = getControl();
-		if (control!=null && !control.isDisposed()) {
+		if (control != null && !control.isDisposed()) {
 			super.scheduleUpdateJob();
 		}
 	}
@@ -112,7 +112,7 @@ implements IPageWithSections, Disposable {
 
 	private Iterable<IPageSection> getSections() {
 		if (!disposed) {
-			if (sections==null) {
+			if (sections == null) {
 				sections = createSections();
 			}
 			return sections;
@@ -147,7 +147,7 @@ implements IPageWithSections, Disposable {
 	@Override
 	public void dispose() {
 		if (!disposed) {
-			if (sections!=null) {
+			if (sections != null) {
 				for (IPageSection s : sections) {
 					if (s instanceof Disposable) {
 						((Disposable) s).dispose();

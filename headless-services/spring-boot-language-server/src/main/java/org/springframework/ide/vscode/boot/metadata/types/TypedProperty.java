@@ -79,7 +79,7 @@ public class TypedProperty implements YTypedProperty {
 	}
 
 	public static Type typeOf(TypedProperty typedProperty) {
-		if (typedProperty!=null) {
+		if (typedProperty != null) {
 			return typedProperty.getType();
 		}
 		return null;
@@ -87,18 +87,18 @@ public class TypedProperty implements YTypedProperty {
 
 	@Override
 	public boolean isDeprecated() {
-		return deprecation!=null;
+		return deprecation != null;
 	}
 
 	public String getDeprecationReplacement() {
-		if (deprecation!=null) {
+		if (deprecation != null) {
 			return deprecation.getReplacement();
 		}
 		return null;
 	}
 
 	public String getDeprecationReason() {
-		if (deprecation!=null) {
+		if (deprecation != null) {
 			return deprecation.getReason();
 		}
 		return null;

@@ -54,9 +54,9 @@ public class HoverInfoTextHover implements ITextHover, ITextHoverExtension, ITex
 		//Note that we ask the 'delegate' first. This is because it handles info about
 		// error markers from annotations model. And this info should 'override'
 		// information about property
-		if (delegate!=null) {
+		if (delegate != null) {
 			IRegion r = delegate.getHoverRegion(tv, offset);
-			if (r!=null) {
+			if (r != null) {
 				return r;
 			}
 		}
@@ -65,7 +65,7 @@ public class HoverInfoTextHover implements ITextHover, ITextHoverExtension, ITex
 
 	public String getHoverInfo(ITextViewer tv, IRegion r) {
 		String s = delegate.getHoverInfo(tv, r);
-		if (s!=null) {
+		if (s != null) {
 			return HtmlUtil.text2html(s);
 		}
 		return hovers_getHoverInfo(tv.getDocument(), r).getHtml();
@@ -75,7 +75,7 @@ public class HoverInfoTextHover implements ITextHover, ITextHoverExtension, ITex
 	public Object getHoverInfo2(ITextViewer tv, IRegion r) {
 		if (delegate instanceof ITextHoverExtension2) {
 			Object it = ((ITextHoverExtension2) delegate).getHoverInfo2(tv, r);
-			if (it!=null) {
+			if (it != null) {
 				if (it instanceof String) {
 					return HtmlUtil.text2html((String)it);
 				} else {
@@ -84,7 +84,7 @@ public class HoverInfoTextHover implements ITextHover, ITextHoverExtension, ITex
 			}
 		} else if (delegate instanceof ITextHover) {
 			String it = delegate.getHoverInfo(tv, r);
-			if (it!=null) {
+			if (it != null) {
 				return HtmlUtil.text2html(it);
 			}
 		}

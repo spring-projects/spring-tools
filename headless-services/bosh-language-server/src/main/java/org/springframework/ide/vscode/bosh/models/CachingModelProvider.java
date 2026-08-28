@@ -69,7 +69,7 @@ public class CachingModelProvider<T> implements DynamicModelProvider<T> {
 	@Override
 	public T getModel(DynamicSchemaContext dc) throws Exception {
 		Object key = keyGetter.apply(dc);
-		if (key==null) {
+		if (key == null) {
 			//guava cache doesn't like null key
 			key = NULL_KEY;
 		}
@@ -94,7 +94,7 @@ public class CachingModelProvider<T> implements DynamicModelProvider<T> {
 
 	@SuppressWarnings("unchecked")
 	private T wrapWithCachingProxy(T model) {
-		if (model==null) {
+		if (model == null) {
 			//Special case for 'no model' we'll create a model that always returns null
 			return (T) Proxy.newProxyInstance(modelInterface.getClassLoader(), new Class[] {modelInterface}, (o, m, a) -> {
 				return null;
@@ -103,7 +103,7 @@ public class CachingModelProvider<T> implements DynamicModelProvider<T> {
 		Cache<String, CompletableFuture<Object>> attributesCache = CacheBuilder.newBuilder().build();
 		return (T) Proxy.newProxyInstance(modelInterface.getClassLoader(), new Class[] {modelInterface}, (o, m, a) -> {
 			//We only support caching results for methods that have no arguments (for now, its all we need).
-			if (m.getParameterTypes().length==0) {
+			if (m.getParameterTypes().length == 0) {
 				return attributesCache.get(m.getName(), () -> {
 					try {
 						return CompletableFuture.completedFuture((T)m.invoke(model, a));

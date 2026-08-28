@@ -74,7 +74,7 @@ public class GettingStartedGuide extends GithubRepoContent {
 
 	private static String[] _defaultCodesetNames;
 	public static String[] defaultCodesetNames() {
-		if (_defaultCodesetNames==null) {
+		if (_defaultCodesetNames == null) {
 			String[] defaultCodesetNames = new String[defaultCodesets.length];
 			for (int i = 0; i < defaultCodesets.length; i++) {
 				defaultCodesetNames[i] = defaultCodesets[i].name;
@@ -98,7 +98,7 @@ public class GettingStartedGuide extends GithubRepoContent {
 
 	@Override
 	public List<CodeSet> getCodeSets() throws UIThreadDownloadDisallowed {
-		if (codesets==null) {
+		if (codesets == null) {
 			DownloadableItem zip = getZip();
 			try {
 				CodeSet root = CodeSet.fromZip("ROOT", zip, getRootPath());
@@ -116,17 +116,17 @@ public class GettingStartedGuide extends GithubRepoContent {
 							}
 						}
 					});
-					if (metadata==null) {
+					if (metadata == null) {
 						metadata = new CodeSetMetaData[0];
 					}
 					CodeSet[] array = new CodeSet[metadata.length];
 					for (int i = 0; i < array.length; i++) {
 						String name = metadata[i].name;
 						String dir = metadata[i].dir;
-						Assert.isLegal(name!=null, ".codesets.json objects must specify at least a 'name'.");
+						Assert.isLegal(name != null, ".codesets.json objects must specify at least a 'name'.");
 						Assert.isLegal(isSafeCodeSetSegment(name), "Illegal codeset 'name' in .codesets.json: "+name);
-						Assert.isLegal(dir==null || isSafeCodeSetSegment(dir), "Illegal codeset 'dir' in .codesets.json: "+dir);
-						if (dir==null) {
+						Assert.isLegal(dir == null || isSafeCodeSetSegment(dir), "Illegal codeset 'dir' in .codesets.json: "+dir);
+						if (dir == null) {
 							dir = name; //Use the name as the default. The convention is that a codeset is in a sudirectory with the same name as
 							            // the codeset name.
 						}
@@ -175,7 +175,7 @@ public class GettingStartedGuide extends GithubRepoContent {
 		String[] words = name.split("\\-");
 		StringBuilder buf = new StringBuilder();
 		for (String w : words) {
-			if (w.length()>0) {
+			if (w.length() > 0) {
 				buf.append(w.substring(0,1).toUpperCase());
 				buf.append(w.substring(1));
 			}

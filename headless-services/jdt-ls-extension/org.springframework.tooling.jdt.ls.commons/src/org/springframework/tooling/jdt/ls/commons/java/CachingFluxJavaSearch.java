@@ -82,7 +82,7 @@ public abstract class CachingFluxJavaSearch<T> implements FluxSearch<T> {
 	private Flux<T> getValuesIncremental(IJavaProject javaProject, String query, String searchType) {
 //		debug("trying to solve "+query+" incrementally");
 		String subquery = query;
-		while (subquery.length()>=1) {
+		while (subquery.length() >= 1) {
 			subquery = subquery.substring(0, subquery.length()-1);
 			CacheEntry cached = null;
 			try {
@@ -90,12 +90,12 @@ public abstract class CachingFluxJavaSearch<T> implements FluxSearch<T> {
 			} catch (ExecutionException | InvalidCacheLoadException e) {
 //				Log.log(e);
 			}
-			if (cached!=null) {
+			if (cached != null) {
 //				debug("cached "+subquery+": "+cached);
 				if (cached.isComplete) {
 					return cached.values
 //							.doOnNext((hint) -> debug("filter["+query+"]: "+hint.getValue()))
-							.filter((result) -> 0!=FuzzyMatcher.matchScore(query, stringValue(result)));
+							.filter((result) -> 0 != FuzzyMatcher.matchScore(query, stringValue(result)));
 				} else {
 //					debug("subquery "+subquery+" cached but is incomplete");
 				}
@@ -110,7 +110,7 @@ public abstract class CachingFluxJavaSearch<T> implements FluxSearch<T> {
 	protected abstract String stringValue(T t);
 
 	private Tuple3<String,String,String> key(IJavaProject javaProject, String query, String searchType) {
-		return Tuples.of(javaProject==null?null:javaProject.getElementName(), query, searchType);
+		return Tuples.of(javaProject == null ? null : javaProject.getElementName(), query, searchType);
 	}
 
 	protected <K,V> Cache<K,V> createCache() {

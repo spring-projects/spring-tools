@@ -563,7 +563,7 @@ public class ToolbarPulldownContributionItem extends ContributionItem {
 								//When clicking the button the event position is actually 0,0
 								// use something better.
 								Point point = new Point(e.x, e.y);
-								if (point.x==0 && point.y==0) {
+								if (point.x == 0 && point.y == 0) {
 									Rectangle bnds = ti.getBounds();
 									point.x = bnds.x;
 									point.y = bnds.y+bnds.height;
@@ -632,7 +632,7 @@ public class ToolbarPulldownContributionItem extends ContributionItem {
 					}
 				}
 
-				if (resultListener!=null) {
+				if (resultListener != null) {
 					result = null;
 					action.removePropertyChangeListener(resultListener);
 				}

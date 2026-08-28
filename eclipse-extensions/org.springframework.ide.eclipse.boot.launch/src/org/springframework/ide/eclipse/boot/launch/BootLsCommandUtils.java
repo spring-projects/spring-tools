@@ -32,9 +32,9 @@ public class BootLsCommandUtils {
 	public static LanguageServerProjectExecutor getLanguageServers(String command) {
 		return LanguageServers.forProject(null).withFilter(cap -> {
 			ExecuteCommandOptions commandCap = cap.getExecuteCommandProvider();
-			if (commandCap!=null) {
+			if (commandCap != null) {
 				List<String> supportedCommands = commandCap.getCommands();
-				return supportedCommands!=null && supportedCommands.contains(command);
+				return supportedCommands != null && supportedCommands.contains(command);
 			}
 			return false;
 		}).withPreferredServer(LanguageServersRegistry.getInstance()

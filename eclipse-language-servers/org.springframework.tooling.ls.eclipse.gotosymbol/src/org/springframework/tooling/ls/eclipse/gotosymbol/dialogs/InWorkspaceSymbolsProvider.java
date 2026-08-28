@@ -119,7 +119,7 @@ public class InWorkspaceSymbolsProvider implements SymbolsProvider {
 			IAdaptable adaptable = (IAdaptable) selection.getFirstElement();
 			resource = adaptable.getAdapter(IResource.class);
 		}
-		if (resource!=null) {
+		if (resource != null) {
 			return resource.getProject();
 		}
 		return null;

@@ -65,7 +65,7 @@ public class LiveAndDeadProcessTracker extends LaunchList {
 
 	private static LiveAndDeadProcessTracker instance;
 	public synchronized static LaunchList getInstance() {
-		if (instance==null) {
+		if (instance == null) {
 			instance = new LiveAndDeadProcessTracker();
 		}
 		return instance;
@@ -87,9 +87,9 @@ public class LiveAndDeadProcessTracker extends LaunchList {
 	protected void processCreated(IProcess process) {
 		synchronized (process) {
 			ILaunch l = process.getLaunch();
-			if (l!=null) {
+			if (l != null) {
 				ILaunchConfiguration c = l.getLaunchConfiguration();
-				if (c!=null) {
+				if (c != null) {
 					last = new ProcessItem(c, l.getLaunchMode(), process);
 					configs.remove(last.getName()); //so the element moves to the end being now the 'most' recent.
 					configs.put(last.getName(), last);
@@ -107,13 +107,13 @@ public class LiveAndDeadProcessTracker extends LaunchList {
 
 	@Override
 	public synchronized Item getLast() {
-		if (last!=null) {
+		if (last != null) {
 			if (exists(last.conf)) {
 				return last;
 			}
 			//might be conf delete or renamed
 			last = findRenamed(last);
-			if (last==null) {
+			if (last == null) {
 				//last was deleted... find the 'previous last'.
 				// It's a shame we have to iterate the whole collection to find the last one...
 				// but there's no other way with a LinkedHashMap
@@ -141,7 +141,7 @@ public class LiveAndDeadProcessTracker extends LaunchList {
 			}
 			// could be renamed or deleted
 			ProcessItem renamedItem = findRenamed(item);
-			if (renamedItem!=null) {
+			if (renamedItem != null) {
 //				debug("renamed: "+name+" -> "+renamedItem.getName());
 				configs.remove(item.getName());
 				configs.put(renamedItem.getName(), renamedItem);
@@ -167,9 +167,9 @@ public class LiveAndDeadProcessTracker extends LaunchList {
 	 */
 	private ProcessItem findRenamed(ProcessItem item) {
 		ILaunch l = item.process.getLaunch();
-		if (l!=null) {
+		if (l != null) {
 			ILaunchConfiguration renamedConf = l.getLaunchConfiguration();
-			if (renamedConf!=null && exists(renamedConf)) {
+			if (renamedConf != null && exists(renamedConf)) {
 				return item.setConf(renamedConf);
 			}
 		}

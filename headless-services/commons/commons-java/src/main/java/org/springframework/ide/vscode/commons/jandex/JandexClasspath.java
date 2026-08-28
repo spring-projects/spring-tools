@@ -95,7 +95,7 @@ public final class JandexClasspath implements ClasspathIndex {
 	public void dispose() {
 		Composite toDispose = subscriptions;
 		subscriptions = null;
-		if (toDispose!=null) {
+		if (toDispose != null) {
 			toDispose.dispose();
 		}
 	}

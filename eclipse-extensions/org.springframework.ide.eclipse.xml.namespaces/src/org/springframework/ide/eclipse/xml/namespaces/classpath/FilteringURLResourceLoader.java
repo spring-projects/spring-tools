@@ -77,7 +77,7 @@ public class FilteringURLResourceLoader extends ResourceLoader {
 //		try {
 //			if (!shouldFilter(resourceName)) {
 //				URL fromParent = parent.getResource(resourceName);
-//				if (fromParent!=null) {
+//				if (fromParent != null) {
 //					return fromParent;
 //				}
 //				Collection<String> resources = getResourcesCollection(resourceName);
@@ -124,7 +124,7 @@ public class FilteringURLResourceLoader extends ResourceLoader {
 	}
 
 	private synchronized void ensureIndexed(String resourceName) {
-		if (resourcesIndex!=null && isIndexValidFor(resourceName)) {
+		if (resourcesIndex != null && isIndexValidFor(resourceName)) {
 			indexReused.incrementAndGet();
 		} else {
 			indexBuilt.incrementAndGet();
@@ -229,7 +229,7 @@ public class FilteringURLResourceLoader extends ResourceLoader {
 			try (InputStream input = url.openStream()) {
 				ZipInputStream zip = new ZipInputStream(input);
 				ZipEntry ze = zip.getNextEntry();
-				while (ze!=null) {
+				while (ze != null) {
 					String resourceName = ze.getName();
 					if (interestingResourceNames.test(resourceName)) {
 						//Example url: jar:file:/home/kdvolder/.m2/repository/org/springframework/boot/spring-boot/2.1.4.RELEASE/spring-boot-2.1.4.RELEASE.jar!/META-INF/spring.factories

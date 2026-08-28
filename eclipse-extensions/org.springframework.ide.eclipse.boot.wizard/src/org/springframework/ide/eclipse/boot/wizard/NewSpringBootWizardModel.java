@@ -217,7 +217,7 @@ public class NewSpringBootWizardModel {
 	 */
 	private void addBuildTypeValidator() {
 		final RadioGroup buildTypeGroup = getRadioGroups().getGroup("type");
-		if (buildTypeGroup!=null) {
+		if (buildTypeGroup != null) {
 			buildTypeGroup.validator(new Validator() {
 				{
 					dependsOn(buildTypeGroup.getVariable());
@@ -225,7 +225,7 @@ public class NewSpringBootWizardModel {
 				@Override
 				protected ValidationResult compute() {
 					ImportStrategy s = getImportStrategy();
-					if (s==null) {
+					if (s == null) {
 						return ValidationResult.error("No 'type' selected");
 					} else if (!s.isSupported()) {
 						//This means some required STS component like m2e or gradle tooling is not installed
@@ -334,7 +334,7 @@ public class NewSpringBootWizardModel {
 			CodeSet cs = CodeSet.fromZip(projectNameValue, zip, new Path("/"));
 
 			ImportStrategy strat = getImportStrategy();
-			if (strat==null) {
+			if (strat == null) {
 				strat = BuildType.GENERAL.getDefaultStrategy();
 			}
 			IRunnableWithProgressAndResult<IProject> oper = strat.createOperation(ImportUtils.importConfig(
@@ -356,7 +356,7 @@ public class NewSpringBootWizardModel {
 		} catch (IOException e) {
 			throw new InvocationTargetException(e);
 		} finally {
-			if (downloader!=null) {
+			if (downloader != null) {
 				downloader.dispose();
 			}
 			mon.done();
@@ -368,7 +368,7 @@ public class NewSpringBootWizardModel {
 	 */
 	public ImportStrategy getImportStrategy() {
 		TypeRadioInfo selected = getSelectedTypeRadio();
-		if (selected!=null) {
+		if (selected != null) {
 			return selected.getImportStrategy();
 		}
 		return null;
@@ -382,7 +382,7 @@ public class NewSpringBootWizardModel {
 	public void setImportStrategy(ImportStrategy is) {
 		RadioGroup typeRadios = getRadioGroups().getGroup("type");
 		RadioInfo radio = typeRadios.getRadio(is.getId());
-		Assert.isLegal(radio!=null);
+		Assert.isLegal(radio != null);
 		typeRadios.setValue(radio);
 	}
 
@@ -391,7 +391,7 @@ public class NewSpringBootWizardModel {
 	 */
 	public BuildType getBuildType() {
 		ImportStrategy is = getImportStrategy();
-		if (is!=null) {
+		if (is != null) {
 			return is.getBuildType();
 		}
 		return null;
@@ -399,7 +399,7 @@ public class NewSpringBootWizardModel {
 
 	private TypeRadioInfo getSelectedTypeRadio() {
 		RadioGroup buildTypeRadios = getRadioGroups().getGroup("type");
-		if (buildTypeRadios!=null) {
+		if (buildTypeRadios != null) {
 			return (TypeRadioInfo) buildTypeRadios.getSelection().selection.getValue();
 		}
 		return null;
@@ -408,7 +408,7 @@ public class NewSpringBootWizardModel {
 	private void addToWorkingSets(IProject project, IProgressMonitor monitor) {
 		monitor.beginTask("Add '"+project.getName()+"' to working sets", 1);
 		try {
-			if (workingSets==null || workingSets.length==0) {
+			if (workingSets == null || workingSets.length == 0) {
 				return;
 			}
 			IWorkingSetManager wsm = PlatformUI.getWorkbench().getWorkingSetManager();
@@ -447,7 +447,7 @@ public class NewSpringBootWizardModel {
 			group.label("Type:");
 			for (Type type : serviceSpec.getTypeOptions(groupName)) {
 				BuildType bt = BuildType.valueOf(type.getBuild().toUpperCase());
-				if (bt!=null) {
+				if (bt != null) {
 					List<ImportStrategy> importStrategies = bt.getImportStrategies();
 					if (importStrategies.size() == 1) {
 						ImportStrategy is = importStrategies.get(0);
@@ -469,7 +469,7 @@ public class NewSpringBootWizardModel {
 				@Override
 				public void gotValue(LiveExpression<RadioInfo> exp, RadioInfo value) {
 					try {
-						if (value!=null) {
+						if (value != null) {
 							URI base = new URI(JSON_URL);
 							URI resolved = base.resolve(((TypeRadioInfo)value).getAction());
 							baseUrl.setValue(resolved.toString());
@@ -519,7 +519,7 @@ public class NewSpringBootWizardModel {
 					@Override
 					protected Boolean compute() {
 						RadioInfo radio = bootVersion.getValue();
-						if (radio!=null) {
+						if (radio != null) {
 							String versionString = radio.getValue();
 							return dep.isSupportedFor(versionString);
 						}

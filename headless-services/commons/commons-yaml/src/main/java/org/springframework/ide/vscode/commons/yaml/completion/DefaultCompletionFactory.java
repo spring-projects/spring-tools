@@ -145,7 +145,7 @@ public class DefaultCompletionFactory implements CompletionFactory {
 		public ErrorProposal(String query, String longMessage) {
 			this.filterText = query;
 			int split = longMessage.indexOf(": ");
-			if (split>0) {
+			if (split > 0) {
 				this.shortMessage = longMessage.substring(0, split);
 				this.longMessage = longMessage.substring(split+2);
 			} else {

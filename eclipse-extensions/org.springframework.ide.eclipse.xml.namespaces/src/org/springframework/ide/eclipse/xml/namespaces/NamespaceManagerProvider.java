@@ -77,7 +77,7 @@ public class NamespaceManagerProvider {
 	private static INamespaceManager instance;
 	
 	public static synchronized INamespaceManager get() {
-		if (instance==null) {
+		if (instance == null) {
 			instance = create();
 		}
 		return instance;
@@ -86,13 +86,13 @@ public class NamespaceManagerProvider {
 	private static INamespaceManager create() {
 		try {
 			IExtensionPoint point = Platform.getExtensionRegistry().getExtensionPoint(EXTENSION_POINT);
-			if (point!=null) {
+			if (point != null) {
 				IExtension[] extensions = point.getExtensions();
-				if (extensions!=null && extensions.length>0) {
-					Assert.isLegal(extensions.length==1);
+				if (extensions != null && extensions.length > 0) {
+					Assert.isLegal(extensions.length == 1);
 					IConfigurationElement[] configs = extensions[0].getConfigurationElements();
-					if (configs!=null) {
-						Assert.isLegal(configs.length==1);
+					if (configs != null) {
+						Assert.isLegal(configs.length == 1);
 						return (INamespaceManager) configs[0].createExecutableExtension("class");
 					}
 				}

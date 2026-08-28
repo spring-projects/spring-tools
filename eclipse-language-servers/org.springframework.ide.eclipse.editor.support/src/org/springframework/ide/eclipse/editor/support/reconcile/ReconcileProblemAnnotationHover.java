@@ -25,7 +25,7 @@ public class ReconcileProblemAnnotationHover extends AbstractAnnotationHover<Rec
 	public Object getHoverInfo2(ITextViewer textViewer, IRegion hoverRegion) {
 		IAnnotationModel model = sourceViewer.getAnnotationModel();
 		ReconcileProblemAnnotation annot = getAnnotationAt(model, hoverRegion.getOffset());
-		if (annot!=null) {
+		if (annot != null) {
 			return new SpringPropertyProblemHoverInfo(annot.getSpringPropertyProblem(), context);
 		}
 		return null;

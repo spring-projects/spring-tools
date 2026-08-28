@@ -36,7 +36,7 @@ public class MavenProjectFinder extends FileBasedJavaProjectFinder {
 	@Override
 	public Optional<IJavaProject> find(File file) {
 		File pomFile = FileUtils.findFile(file, MavenCore.POM_XML);
-		if (pomFile!=null) {
+		if (pomFile != null) {
 			return Optional.ofNullable(cache.project(pomFile));
 		}
 		return Optional.empty();

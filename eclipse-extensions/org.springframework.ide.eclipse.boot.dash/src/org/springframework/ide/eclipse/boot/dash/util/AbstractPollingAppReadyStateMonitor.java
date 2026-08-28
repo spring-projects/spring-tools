@@ -47,7 +47,7 @@ public abstract class AbstractPollingAppReadyStateMonitor implements ReadyStateM
 		this.job = new Job("Ready state poller") {
 			protected IStatus run(IProgressMonitor monitor) {
 				LiveVariable<Boolean> r = ready;
-				if (r!=null) { //null means disposed. Job may be lagging behind
+				if (r != null) { //null means disposed. Job may be lagging behind
 					r.setValue(checkReady());
 					if (!r.getValue()) {
 						this.schedule(POLLING_INTERVAL);
@@ -67,7 +67,7 @@ public abstract class AbstractPollingAppReadyStateMonitor implements ReadyStateM
 	}
 
 	public void dispose() {
-		if (job!=null) {
+		if (job != null) {
 			job.cancel();
 			job = null;
 		}

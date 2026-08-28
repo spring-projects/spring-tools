@@ -37,7 +37,7 @@ import org.springframework.ide.vscode.commons.util.text.TextDocument;
  */
 class JdtRefactorUtilsTest {
 
-	// ========== helpers ==========
+	// == == == == == helpers == == == == ==
 
 	private static Map<String, String> defaultFormatterOptions() {
 		Map<String, String> options = JavaCore.getOptions();
@@ -80,7 +80,7 @@ class JdtRefactorUtilsTest {
 		return doc.get();
 	}
 
-	// ========== extractSimpleName ==========
+	// == == == == == extractSimpleName == == == == ==
 
 	@Test
 	void extractSimpleName_fullyQualified() {
@@ -97,7 +97,7 @@ class JdtRefactorUtilsTest {
 		assertEquals("Foo", JdtRefactorUtils.extractSimpleName("a.Foo"));
 	}
 
-	// ========== extractPackageName ==========
+	// == == == == == extractPackageName == == == == ==
 
 	@Test
 	void extractPackageName_fullyQualified() {
@@ -114,7 +114,7 @@ class JdtRefactorUtilsTest {
 		assertEquals("a", JdtRefactorUtils.extractPackageName("a.Foo"));
 	}
 
-	// ========== escapeForTextBlock ==========
+	// == == == == == escapeForTextBlock == == == == ==
 
 	@Test
 	void escapeForTextBlock_plainText_unchanged() {
@@ -165,7 +165,7 @@ class JdtRefactorUtilsTest {
 		assertEquals("\\\\\\\\", JdtRefactorUtils.escapeForTextBlock("\\\\"));
 	}
 
-	// ========== addImport ==========
+	// == == == == == addImport == == == == ==
 
 	@Test
 	void addImport_typeNotPresent_importAdded() throws Exception {
@@ -310,7 +310,7 @@ class JdtRefactorUtilsTest {
 				""", result);
 	}
 
-	// ========== toLspTextDocumentEdit ==========
+	// == == == == == toLspTextDocumentEdit == == == == ==
 
 	private static final String DOC_URI = "file:///test.java";
 	private static final int DOC_VERSION = 3;
@@ -410,7 +410,7 @@ class JdtRefactorUtilsTest {
 		assertEquals(0, lspEdit.getRange().getStart().getCharacter());
 	}
 
-	// ========== removeImports ==========
+	// == == == == == removeImports == == == == ==
 
 	@Test
 	void removeImports_unusedImport_removed() throws Exception {

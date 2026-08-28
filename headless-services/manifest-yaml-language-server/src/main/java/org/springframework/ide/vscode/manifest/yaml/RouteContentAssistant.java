@@ -59,14 +59,14 @@ public class RouteContentAssistant implements ISubCompletionEngine {
 			// region = "abc"
 			// offset = 3 means: "abc<*>"
 			// So offset > 3 means we are 'our of bounds for this content assistant
-			if (offset<=region.length()) {
+			if (offset <= region.length()) {
 				String[] queries = getQueries(region.subSequence(0, offset));
 				Collection<YValueHint> domains = domainsProvider.call();
 				List<ICompletionProposal> proposals = new ArrayList<>();
 				for (YValueHint domain : domains) {
 					for (String query : queries) {
 						double score = FuzzyMatcher.matchScore(query, domain.getValue());
-						if (score!=0.0) {
+						if (score != 0.0) {
 							proposals.add(createProposal(f, region, offset, query, score, domain));
 							break; //break here so we select the first (i.e. longest) query that matches
 						}
@@ -95,7 +95,7 @@ public class RouteContentAssistant implements ISubCompletionEngine {
 		DocumentRegion[] pieces = region.split('.');
 		String[] queries = new String[pieces.length];
 		for (int i = pieces.length-1; i >= 0; i--) {
-			if (i==pieces.length-1) {
+			if (i == pieces.length-1) {
 				queries[i] = pieces[i].toString();
 			} else {
 				queries[i] = pieces[i] + "." + queries[i+1];
@@ -107,7 +107,7 @@ public class RouteContentAssistant implements ISubCompletionEngine {
 	private ICompletionProposal createProposal(CompletionFactory f, DocumentRegion region, int offset, String query, double score, YValueHint domain) {
 		DocumentEdits edits = new DocumentEdits(region.getDocument(), false);
 		region = region.subSequence(offset - query.length());
-		boolean needSpace = region.textBefore(1).charAt(0)==':'; //Add extra space after ':' if needed!
+		boolean needSpace = region.textBefore(1).charAt(0) == ':'; //Add extra space after ':' if needed!
 		edits.replace(region.getStart(), region.getEnd(), needSpace ? " "+domain.getValue() : domain.getValue());
 		return f.valueProposal(domain.getValue(), query, domain.getLabel(), schema.t_route_string,
 				domain.getDocumentation(), score, edits, schema.getTypeUtil());
@@ -121,10 +121,10 @@ public class RouteContentAssistant implements ISubCompletionEngine {
 		if (matcher.find()) {
 			region = region.subSequence(0, matcher.start());
 		}
-		if (offset<=region.getLength()) {
+		if (offset <= region.getLength()) {
 			//We want to trim whitespace of the end, but must be careful not to trim past the offset
 			DocumentRegion trimmed = region.trimEnd();
-			if (offset<=trimmed.length()) {
+			if (offset <= trimmed.length()) {
 				return trimmed;
 			} else {
 				return region.subSequence(0, offset);

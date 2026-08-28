@@ -89,7 +89,7 @@ public class ProjectLocationSection extends WizardPageSection {
 	 * @return boolean
 	 */
 	private boolean isDefault() {
-		if (useDefaultsButton!=null) {
+		if (useDefaultsButton != null) {
 			return useDefaultsButton.getSelection();
 		}
 		return true;
@@ -164,7 +164,7 @@ public class ProjectLocationSection extends WizardPageSection {
 	}
 
 	public static String getDefaultProjectLocation(String projectName) {
-		if (projectName!=null) {
+		if (projectName != null) {
 			return Platform.getLocation().append(projectName).toOSString();
 		} else {
 			return Platform.getLocation().toOSString();
@@ -240,13 +240,13 @@ public class ProjectLocationSection extends WizardPageSection {
 		String selectedDirectory = null;
 		String dirName = getPathFromLocationField();
 
-		if (dirName!=null && !dirName.equals("")) {
+		if (dirName != null && !dirName.equals("")) {
 			File dir = new File(dirName);
 			if (!dir.exists()) {
 				dirName = "";
 			}
 		}
-		if (dirName==null || dirName.equals("")) {
+		if (dirName == null || dirName.equals("")) {
 			String value = getDialogSettings().get(SAVED_LOCATION_ATTR);
 			if (value != null) {
 				dirName = value;

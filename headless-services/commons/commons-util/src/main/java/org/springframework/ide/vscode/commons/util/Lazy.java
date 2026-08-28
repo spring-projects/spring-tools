@@ -20,7 +20,7 @@ public class Lazy<T> {
 	private T value;
 	
 	public synchronized T load(Supplier<T> loader) {
-		if (value==null) {
+		if (value == null) {
 			value = loader.get();
 			Assert.isNotNull(value);
 		}

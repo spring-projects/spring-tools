@@ -25,7 +25,7 @@ public class YamlAstCache {
 	public YamlASTProvider getAstProvider(boolean allowStaleAsts) {
 		return (IDocument doc) -> {
 			String uri = doc.getUri();
-			if (uri!=null) {
+			if (uri != null) {
 				return asts.get(uri, doc.getVersion(), allowStaleAsts, () -> {
 					return parser.getAST(doc);
 				});
@@ -43,7 +43,7 @@ public class YamlAstCache {
 	}
 
 	public YamlFileAST getSafeAst(IDocument doc, boolean allowStaleAst) {
-		if (doc!=null) {
+		if (doc != null) {
 			try {
 				return getAst(doc, allowStaleAst);
 			} catch (Exception e) {

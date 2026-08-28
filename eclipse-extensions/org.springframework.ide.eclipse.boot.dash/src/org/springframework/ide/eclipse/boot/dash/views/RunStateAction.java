@@ -237,7 +237,7 @@ public abstract class RunStateAction extends AbstractBootDashElementsAction {
 
 	public final void run() {
 		Job job = createJob();
-		if (job!=null) {
+		if (job != null) {
 			configureJob(job);
 			job.schedule();
 		}
@@ -247,7 +247,7 @@ public abstract class RunStateAction extends AbstractBootDashElementsAction {
 	public void dispose() {
 		debug("DISPOSE RunStateAction "+getGoalState());
 		super.dispose();
-		if (stateListener!=null) {
+		if (stateListener != null) {
 			//Avoid leaking model listeners
 			model.removeElementStateListener(stateListener);
 			stateListener = null;

@@ -90,7 +90,7 @@ public class ConcourseModel {
 				String defName = NodeUtil.asScalar(node);
 				if (StringUtil.hasText(defName)) { //Avoid silly 'not used' errors for empty names (will have an other error already).
 					NodeTypes nodeTypes = astTypeCache.getNodeTypes(dc.getDocument().getUri());
-					if (nodeTypes!=null) {
+					if (nodeTypes != null) {
 						Optional<Node> reference = nodeTypes.getNodes(refType).stream()
 							.filter(refNode -> defName.equals(NodeUtil.asScalar(refNode)))
 							.findAny();
@@ -114,18 +114,18 @@ public class ConcourseModel {
 		if (YamlPathSegment.valueAt("passed").equals(path.getLastSegment())) {
 			String jobName = NodeUtil.asScalar(node);
 			JobModel job = getJob(dc.getDocument(), jobName);
-			if (job!=null) {
+			if (job != null) {
 				//Only check if the job exists. Otherwise the extra checks will show 'redundant' errors (e.g.
 				//  complaining that 'some-job' doesn't ineract with a resource (because the resource doesn't exist).
 				YamlFileAST root = asts.getSafeAst(dc.getDocument());
-				if (root!=null) {
+				if (root != null) {
 					Node stepNode = path.dropLast().traverseToNode(root);
-					if (stepNode!=null) {
+					if (stepNode != null) {
 						StepModel step = newStep(stepNode);
 						String resourceName = step.getResourceName();
-						if (resourceName!=null && getResource(dc.getDocument(), resourceName)!=null) {
+						if (resourceName != null && getResource(dc.getDocument(), resourceName) != null) {
 							Set<String> interactions = job.getInteractedResources();
-							if (interactions!=null && !interactions.contains(resourceName)) {
+							if (interactions != null && !interactions.contains(resourceName)) {
 								problems.accept(YamlSchemaProblems.schemaProblem("Job '"+jobName+"' does not interact with resource '"+resourceName+"'", node));
 							}
 						}
@@ -142,7 +142,7 @@ public class ConcourseModel {
 	 */
 	public final void jobAssignmentIsComplete(DynamicSchemaContext dc, Node parent, Node node, YType type, IProblemCollector problems) {
 		Multiset<String> assignedJobs = getStringsFromAst(dc.getDocument(), JOBS_ASSIGNED_TO_GROUPS);
-		if (assignedJobs!=null && !assignedJobs.isEmpty()) {
+		if (assignedJobs != null && !assignedJobs.isEmpty()) {
 			Map<String, SimpleGlob> assignedJobMatchers = new HashMap<>();
 			for (String jobPattern : assignedJobs) {
 				if (!assignedJobMatchers.containsKey(jobPattern)) {
@@ -153,7 +153,7 @@ public class ConcourseModel {
 			getJobNameNodes(dc).forEach(jobDefName -> {
 				String name = NodeUtil.asScalar(jobDefName);
 				if (StringUtil.hasText(name)) { //'not assigned to a group' errors for empty names are a bit silly, so avoid that
-					if (!assignedJobMatchers.values().stream().anyMatch(jobPat -> jobPat.match(name)!=Match.FAIL)) {
+					if (!assignedJobMatchers.values().stream().anyMatch(jobPat -> jobPat.match(name) != Match.FAIL)) {
 						problems.accept(YamlSchemaProblems.schemaProblem("'"+name+"' belongs to no group", jobDefName));
 					}
 				}
@@ -235,7 +235,7 @@ public class ConcourseModel {
 		public Node getResourceNameNode() {
 			Assert.isLegal("put".equals(stepType) || "get".equals(stepType));
 			Node node = NodeUtil.getProperty(step, "resource");
-			return node!=null ? node : NodeUtil.getProperty(step, stepType);
+			return node != null ? node : NodeUtil.getProperty(step, stepType);
 		}
 
 		public String getResourceName() {
@@ -340,7 +340,7 @@ public class ConcourseModel {
 	 */
 	public String getResourceType(IDocument doc, String resourceName) {
 		ResourceModel resource = getResource(doc, resourceName);
-		if (resource!=null) {
+		if (resource != null) {
 			return resource.getType();
 		}
 		return null;
@@ -352,7 +352,7 @@ public class ConcourseModel {
 			.map((cursor) -> ((NodeCursor)cursor).getNode())
 			.filter((resourceNode) -> resourceName.equals(NodeUtil.getScalarProperty(resourceNode, "name")))
 			.findFirst().orElse(null);
-			if (resource!=null) {
+			if (resource != null) {
 				return new ResourceModel(resource);
 			}
 			return null;
@@ -383,14 +383,14 @@ public class ConcourseModel {
 			return path
 				.traverseAmbiguously(ast)
 				.map(NodeUtil::asScalar)
-				.filter((string) -> string!=null)
+				.filter((string) -> string != null)
 				.collect(CollectorUtil.toMultiset());
 		});
 	}
 
 	public Multiset<String> getResourceTypeNames(DynamicSchemaContext dc, boolean includeBuiltin) {
 		Collection<YValueHint> hints = getResourceTypeNameHints(dc, includeBuiltin);
-		if (hints!=null) {
+		if (hints != null) {
 			return ImmutableMultiset.copyOf(YTypeFactory.values(hints));
 		}
 		return null;
@@ -399,7 +399,7 @@ public class ConcourseModel {
 	public Collection<YValueHint> getResourceTypeNameHints(DynamicSchemaContext dc, boolean includeBuiltin) {
 		IDocument doc = dc.getDocument();
 		Multiset<String> userDefined = getStringsFromAst(doc, RESOURCE_TYPE_NAMES_PATH);
-		if (userDefined!=null) {
+		if (userDefined != null) {
 			Builder<YValueHint> builder = ImmutableMultiset.builder();
 			builder.addAll(YTypeFactory.hints(userDefined));
 			if (includeBuiltin) {
@@ -416,9 +416,9 @@ public class ConcourseModel {
 
 	public Node getParentPropertyNode(String propName, DynamicSchemaContext dc) {
 		YamlPath path = dc.getPath();
-		if (path!=null) {
+		if (path != null) {
 			YamlFileAST root = asts.getSafeAst(dc.getDocument());
-			if (root!=null) {
+			if (root != null) {
 				return path.dropLast().append(YamlPathSegment.valueAt(propName)).traverseToNode(root);
 			}
 		}
@@ -429,7 +429,7 @@ public class ConcourseModel {
 		return new BasicYValueHint(h.getValue(), h.getLabel()).setExtraInsertion(() -> {
 			String resourceTypeName = h.getValue();
 			AbstractType sourceType = (AbstractType) resourceTypes.getSourceType(resourceTypeName);
-			if (sourceType!=null && getParentPropertyNode("source", dc)==null) { //don't auto insert what's already there!
+			if (sourceType != null && getParentPropertyNode("source", dc) == null) { //don't auto insert what's already there!
 				List<YTypedProperty> requiredProps = sourceType.getProperties().stream().filter(p -> p.isRequired()).collect(Collectors.toList());
 				if (!requiredProps.isEmpty()) {
 					SnippetBuilder snippet = snippetBuilderFactory.get();
@@ -448,9 +448,9 @@ public class ConcourseModel {
 
 	private <T> T getFromAst(IDocument doc, Function<YamlFileAST, T> astFunction) {
 		try {
-			if (doc!=null) {
+			if (doc != null) {
 				String uri = doc.getUri();
-				if (uri!=null) {
+				if (uri != null) {
 					YamlFileAST ast = asts.getAst(doc, true);
 					return astFunction.apply(ast);
 				}

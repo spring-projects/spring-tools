@@ -58,7 +58,7 @@ public class SpringSymbolsView extends ViewPartWithSections {
 		public void run() {
 			try {
 				IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-				if (page!=null) {
+				if (page != null) {
 					page.showView(VIEW_TYPE_ID, UUID.randomUUID().toString(), IWorkbenchPage.VIEW_ACTIVATE);
 				}
 			} catch (Exception e) {

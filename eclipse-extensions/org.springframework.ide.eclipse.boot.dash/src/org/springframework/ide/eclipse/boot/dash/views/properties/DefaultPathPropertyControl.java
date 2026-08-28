@@ -115,9 +115,9 @@ public class DefaultPathPropertyControl extends AbstractBdePropertyControl {
 
 	protected String getElementText() {
 		BootDashElement e = getBootDashElement();
-		if (e!=null) {
+		if (e != null) {
 			String str = e.getDefaultRequestMappingPath();
-			if (str!=null) {
+			if (str != null) {
 				return str;
 			}
 		}

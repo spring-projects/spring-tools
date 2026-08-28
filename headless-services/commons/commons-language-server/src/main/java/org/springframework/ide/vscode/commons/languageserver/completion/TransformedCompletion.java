@@ -42,7 +42,7 @@ public abstract class TransformedCompletion extends AbstractScoreableProposal {
 
 	@Override
 	public synchronized DocumentEdits getTextEdit() {
-		if (transformedEdit==null) {
+		if (transformedEdit == null) {
 			transformedEdit = transformEdit(original.getTextEdit());
 		}
 		return transformedEdit;

@@ -53,7 +53,7 @@ public class DescriptionProviders {
 			public HtmlSnippet get() {
 				try {
 					InputStream stream = klass.getResourceAsStream(resourcePath);
-					if (stream!=null) {
+					if (stream != null) {
 						return raw(IOUtil.toString(stream));
 					}
 				} catch (Exception e) {

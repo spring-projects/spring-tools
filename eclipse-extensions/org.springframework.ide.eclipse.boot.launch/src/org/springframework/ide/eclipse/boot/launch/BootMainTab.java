@@ -62,7 +62,7 @@ public class BootMainTab extends LaunchConfigurationTabWithSections implements I
 		if (BootLaunchConfigurationDelegate.supportsAnsiConsoleOutput()) {
 			jvmArgsSections.add(new DelegatingLaunchConfigurationTabSection(this, model.ansiConsoleOutput, new CheckboxSection(this, model.ansiConsoleOutput, "ANSI console output")));
 		}
-		if (BootPreferences.getInstance().getThinWrapper()!=null) {
+		if (BootPreferences.getInstance().getThinWrapper() != null) {
 			jvmArgsSections.add(new UseThinWrapperSection(this, model.useThinWrapper));
 		}
 

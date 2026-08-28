@@ -87,7 +87,7 @@ public interface Logger {
 			}
 
 			private void init() {
-				if (plugin==null) {
+				if (plugin == null) {
 					plugin = _plugin.get();
 					DEBUG = Boolean.getBoolean(plugin.getBundle().getSymbolicName() + ".DEBUG");
 				}
@@ -110,13 +110,13 @@ public interface Logger {
 		@Override
 		public void log(Exception e) {
 			super.log(e);
-			if (firstError!=null) {
+			if (firstError != null) {
 				firstError = e;
 			}
 		}
 		
 		public void assertNoErrors() throws Exception {
-			if (firstError!=null) {
+			if (firstError != null) {
 				throw firstError;
 			}
 		}

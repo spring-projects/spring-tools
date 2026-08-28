@@ -58,10 +58,10 @@ public class BdeReadOnlyTextPropertyControl<T extends BootDashElement> extends A
 
 	protected String getPropertyValue(BootDashElement service){
 		BootDashElement element = getBootDashElement();
-		if (element!=null && type.isAssignableFrom(element.getClass())) {
+		if (element != null && type.isAssignableFrom(element.getClass())) {
 			@SuppressWarnings("unchecked")
 			String val = getter.apply((T)element);
-			if (val!=null) {
+			if (val != null) {
 				return val;
 			}
 		}

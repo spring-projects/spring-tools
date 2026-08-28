@@ -79,7 +79,7 @@ public class SpringProcessLiveDataProvider {
 
 	private STS4LanguageClient getClient() {
 		STS4LanguageClient client = server.getClient();
-		Assert.isLegal(client!=null, "Client is null. Language server not yet initialized?");
+		Assert.isLegal(client != null, "Client is null. Language server not yet initialized?");
 		return client;
 	}
 

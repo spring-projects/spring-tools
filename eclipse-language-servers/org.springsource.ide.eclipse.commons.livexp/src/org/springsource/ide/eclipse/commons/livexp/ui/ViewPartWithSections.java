@@ -82,7 +82,7 @@ public class ViewPartWithSections extends ViewPart implements UIContext, IPageWi
 	private List<IPageSection> sections;
 
 	protected synchronized List<IPageSection> getSections() {
-		if (sections==null) {
+		if (sections == null) {
 			sections = safeCreateSections();
 		}
 		return sections;
@@ -115,7 +115,7 @@ public class ViewPartWithSections extends ViewPart implements UIContext, IPageWi
 	@Override
 	public void dispose() {
 		super.dispose();
-		if (sections!=null) {
+		if (sections != null) {
 			for (IPageSection s : sections) {
 				if (s instanceof Disposable) {
 					((Disposable) s).dispose();
@@ -128,11 +128,11 @@ public class ViewPartWithSections extends ViewPart implements UIContext, IPageWi
 	@Override
 	public boolean reflow() {
 		if (enableScrolling) {
-			if (scroller!=null && !scroller.isDisposed()) {
+			if (scroller != null && !scroller.isDisposed()) {
 				scroller.reflow(true);
 			}
 		} else {
-			if (page!=null && !page.isDisposed()) {
+			if (page != null && !page.isDisposed()) {
 				page.layout();
 			}
 		}

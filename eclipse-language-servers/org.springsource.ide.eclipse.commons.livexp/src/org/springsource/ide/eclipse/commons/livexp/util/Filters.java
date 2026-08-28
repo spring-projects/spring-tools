@@ -41,9 +41,9 @@ public class Filters {
 	}
 
 	public static <T> Filter<T> compose(final Filter<T> f1, final Filter<T> f2) {
-		if (f1==ACCEPT_ALL) {
+		if (f1 == ACCEPT_ALL) {
 			return f2;
-		} else if (f2==ACCEPT_ALL) {
+		} else if (f2 == ACCEPT_ALL) {
 			return f1;
 		}
 		return new Filter<T>() {
@@ -95,11 +95,11 @@ public class Filters {
 	}
 
 	public static <T> Filter<T> ofNullable(Filter<T> maybeFilter) {
-		return maybeFilter!=null ? maybeFilter : acceptAll();
+		return maybeFilter != null ? maybeFilter : acceptAll();
 	}
 	
 	public static Filter<String> caseInsensitiveSubstring(String _lookfor) {
-		if (_lookfor!=null) {
+		if (_lookfor != null) {
 			String lookfor = _lookfor.trim().toLowerCase();
 			if (!"".equals(lookfor)) {
 				return new Filter<String>() {
@@ -111,7 +111,7 @@ public class Filters {
 					@Override
 					public List<IRegion> getHighlights(String text) {
 						int start = text.toLowerCase().indexOf(lookfor);
-						if (start>=0) {
+						if (start >= 0) {
 							return ImmutableList.of(new Region(start, lookfor.length()));
 						}
 						return ImmutableList.of();

@@ -120,7 +120,7 @@ public class ImplicitWebAnnotationNamesReconciler implements JdtAstReconciler {
 			String annotationParam = getAnnotationParameter(annotation);
 			String variableName = getParameterName(annotation);
 			if (PARAM_ANNOTATIONS.contains(typeName) && annotationParam != null && variableName != null) {
-				if(Objects.equals(annotationParam, variableName))
+				if (Objects.equals(annotationParam, variableName))
 					return true;
 			}
 		}

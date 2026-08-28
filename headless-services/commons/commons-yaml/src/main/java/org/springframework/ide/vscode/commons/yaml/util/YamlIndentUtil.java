@@ -58,9 +58,9 @@ public class YamlIndentUtil {
 	 * when either one or both indent levels are '-1' (unknown).
 	 */
 	public static int minIndent(int a, int b) {
-		if (a==-1) {
+		if (a == -1) {
 			return b;
-		} else if (b==-1) {
+		} else if (b == -1) {
 			return a;
 		} else {
 			return Math.min(a, b);
@@ -101,9 +101,9 @@ public class YamlIndentUtil {
 	 *  - negative indentations are support and result in removing upto that number of spaces after each newline
 	 */
 	public String applyIndentation(String text, int indentBy) {
-		if (indentBy>0) {
+		if (indentBy > 0) {
 			return text.replaceAll("\\n", newlineWithIndent(indentBy));
-		} else if (indentBy<0) {
+		} else if (indentBy < 0) {
 			int dedentBy = - indentBy;
 			StringBuilder dedented = new StringBuilder();
 			boolean first = true;
@@ -116,14 +116,14 @@ public class YamlIndentUtil {
 				first = false;
 			}
 			return dedented.toString();
-		} else { // indentBy==0
+		} else { // indentBy == 0
 			return text;
 		}
 	}
 
 	private String dedentLine(String line, int dedentBy) {
 		int i = 0;
-		while (i<line.length() && i<dedentBy && line.charAt(i)==' ') {
+		while (i < line.length() && i < dedentBy && line.charAt(i) == ' ') {
 			i++;
 		}
 		return line.substring(i);
@@ -134,7 +134,7 @@ public class YamlIndentUtil {
 	}
 
 	public static int getNewChildKeyIndent(SNode parent) {
-		if (parent.getNodeType()==SNodeType.DOC) {
+		if (parent.getNodeType() == SNodeType.DOC) {
 			return parent.getIndent();
 		} else {
 			return parent.getIndent()+INDENT_BY;
@@ -146,7 +146,7 @@ public class YamlIndentUtil {
 	 * just return offset unmodified.
 	 */
 	public static int addToOffset(int offset, int indent) {
-		if (indent==-1) {
+		if (indent == -1) {
 			return offset;
 		}
 		return offset + indent;
@@ -157,11 +157,11 @@ public class YamlIndentUtil {
 	 * were the indent is -1 (unknown)
 	 */
 	public static int add(int indent, int adjustment) {
-		if (indent==-1) {
+		if (indent == -1) {
 			return indent; //indent remains unknown
 		}
 		indent += adjustment;
-		return indent>=0 ? indent : 0;
+		return indent >= 0 ? indent : 0;
 	}
 
 }

@@ -155,13 +155,13 @@ public abstract class StsTestCase extends TestCase {
 	}
 
 	public static void assertContains(String needle, String haystack) {
-		if (haystack==null || !haystack.contains(needle)) {
+		if (haystack == null || !haystack.contains(needle)) {
 			fail("Not found: "+needle+"\n in \n"+haystack);
 		}
 	}
 
 	public static void assertNotContains(String needle, String haystack) {
-		if (haystack==null || haystack.contains(needle)) {
+		if (haystack == null || haystack.contains(needle)) {
 			fail("Found: "+needle+"\n in \n"+haystack);
 		}
 	}

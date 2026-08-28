@@ -59,7 +59,7 @@ public class EnableDisableBootDevtools extends AbstractHandler {
 
 	private String explainFailure(ISpringBootProject bootProject) throws Exception {
 		IProject project = bootProject.getProject();
-		if (project==null) {
+		if (project == null) {
 			return "No project selected";
 		} else if (!BootPropertyTester.isBootProject(project)) {
 			return "Project '"+project.getProject().getName()+"' does not seem to be a Spring Boot project";
@@ -87,7 +87,7 @@ public class EnableDisableBootDevtools extends AbstractHandler {
 
 	private ISpringBootProject getBootProject(IProject project) {
 		try {
-			if (project!=null) {
+			if (project != null) {
 				return springBootCore.project(project);
 			}
 		} catch (Exception e) {
@@ -101,7 +101,7 @@ public class EnableDisableBootDevtools extends AbstractHandler {
 	private boolean isExpected(Exception e) {
 		//See https://issuetracker.springsource.com/browse/STS-4263
 		String msg = ExceptionUtil.getMessage(e);
-		return msg!=null && msg.contains("only implemented for m2e");
+		return msg != null && msg.contains("only implemented for m2e");
 	}
 
 	@Override
@@ -113,7 +113,7 @@ public class EnableDisableBootDevtools extends AbstractHandler {
 	}
 
 	public void execute(ISelection selection, Shell shell) {
-		if (selection!=null) {
+		if (selection != null) {
 			List<IProject> projects = SelectionUtils.getProjects(selection, ProjectFilter.anyProject);
 			List<ISpringBootProject> bootProjects = new ArrayList<>(projects.size());
 			for (IProject project : projects) {
@@ -128,7 +128,7 @@ public class EnableDisableBootDevtools extends AbstractHandler {
 					if (BootPropertyTester.hasDevTools(bootProject)) {
 						bootProject.removeMavenDependency(devtools.getMavenId());
 					} else {
-						if (devtools!=null) {
+						if (devtools != null) {
 							bootProject.addMavenDependency(devtools.getDependency(), /*preferManaged*/true);
 						} else {
 							if (shell != null) {

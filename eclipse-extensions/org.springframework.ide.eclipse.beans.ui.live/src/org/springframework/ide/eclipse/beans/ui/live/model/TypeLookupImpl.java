@@ -74,7 +74,7 @@ public class TypeLookupImpl implements TypeLookup {
 
 	@Override
 	public IProject[] relatedProjects() {
-		if (project!=null) {
+		if (project != null) {
 			return new IProject[] { project };
 		} else {
 			return ResourcesPlugin.getWorkspace().getRoot().getProjects();

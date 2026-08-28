@@ -171,7 +171,7 @@ public class DynamicCompositeSection<M> extends PageSection implements MultiSele
 		if (s.section instanceof Disposable) {
 			((Disposable) s.section).dispose();
 		}
-		if (s.ui!=null) {
+		if (s.ui != null) {
 			for (Control widget : s.ui) {
 				widget.dispose();
 			}
@@ -180,10 +180,10 @@ public class DynamicCompositeSection<M> extends PageSection implements MultiSele
 
 	@Override
 	public void dispose() {
-		if (modelListener!=null) {
+		if (modelListener != null) {
 			models.removeListener(modelListener);
 		}
-		if (sectionsMap!=null) {
+		if (sectionsMap != null) {
 			for (SubSection s : sectionsMap.values()) {
 				if (s.section instanceof Disposable) {
 					((Disposable)s.section).dispose();

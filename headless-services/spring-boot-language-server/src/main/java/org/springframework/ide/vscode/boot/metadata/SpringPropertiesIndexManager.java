@@ -58,7 +58,7 @@ public class SpringPropertiesIndexManager extends ListenerManager<Listener<Sprin
 		if (projectObserver != null) {
 			projectObserver.addListener(ProjectObserver.onAny(project -> indexes.invalidate(project)));
 		}
-		if (fileObserver!=null) {
+		if (fileObserver != null) {
 			fileObserver.onAnyChange(ImmutableList.of("**/*spring-configuration-metadata.json"), changed -> {
 				clear();
 			});
@@ -99,7 +99,7 @@ public class SpringPropertiesIndexManager extends ListenerManager<Listener<Sprin
 	}
 
 	public synchronized void clear() {
-		if (indexes!=null) {
+		if (indexes != null) {
 			indexes.invalidateAll();
 			for (Listener<SpringPropertiesIndexManager> l : getListeners()) {
 				l.changed(this);

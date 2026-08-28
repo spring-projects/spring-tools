@@ -85,7 +85,7 @@ public class ListenerLeakDetector implements TestRule {
 		ResourceChangeListenerList listenerList = (ResourceChangeListenerList)getField(notMan, "listeners");
 		Object[] entries = listenerList.getListeners(); //Watch out, these entries aren't the actual
 														// listeners yet.
-		if (entries!=null) {
+		if (entries != null) {
 			List<Object> listeners = new ArrayList<>(entries.length);
 			for (int i = 0; i < entries.length; i++) {
 				Object l = getField(entries[i], "listener");

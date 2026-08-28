@@ -80,7 +80,7 @@ public class ExceptionUtil {
 		Throwable cause = getDeepestCause(e);
 		String errorType = cause.getClass().getSimpleName();
 		String msg = cause.getMessage();
-		if (ValueParseException.class.isInstance(cause) && msg!=null) {
+		if (ValueParseException.class.isInstance(cause) && msg != null) {
 			return msg;
 		}
 		return errorType + ": " + msg;
@@ -113,7 +113,7 @@ public class ExceptionUtil {
 				e instanceof CancellationException
 //				(
 //						e instanceof CoreException &&
-//						((CoreException)e).getStatus().getSeverity()==IStatus.CANCEL
+//						((CoreException)e).getStatus().getSeverity() == IStatus.CANCEL
 //				)
 		);
 	}

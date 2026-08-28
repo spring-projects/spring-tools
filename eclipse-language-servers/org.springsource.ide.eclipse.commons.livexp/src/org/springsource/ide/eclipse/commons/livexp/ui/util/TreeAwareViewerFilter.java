@@ -104,7 +104,7 @@ public class TreeAwareViewerFilter extends ViewerFilter {
 		}
 
 		public synchronized void expandElement(Object e) {
-			while (e!=null) {
+			while (e != null) {
 				toExpand.add(e);
 				toCollapse.remove(e);
 				e = treeContent.getParent(e);
@@ -144,7 +144,7 @@ public class TreeAwareViewerFilter extends ViewerFilter {
 
 	private boolean baseAcceptsParent(Object e) {
 		Object parent = treeContent.getParent(e);
-		if (parent!=null) {
+		if (parent != null) {
 			return baseAccepts(parent) || baseAcceptsParent(parent);
 		}
 		return false;
@@ -155,7 +155,7 @@ public class TreeAwareViewerFilter extends ViewerFilter {
 			try {
 				return baseAcceptsChild.get(e, () -> {
 					Object[] children = treeContent.getChildren(e);
-					if (children!=null) {
+					if (children != null) {
 						for (Object c : children) {
 							if (baseAccepts(c)) {
 								return true;
@@ -179,7 +179,7 @@ public class TreeAwareViewerFilter extends ViewerFilter {
 
 	private boolean baseAccepts(Object e) {
 		String label = labels.getText(e);
-		if (label==null) {
+		if (label == null) {
 			label = "";
 		}
 		return baseFilter.accept(label);

@@ -50,7 +50,7 @@ public class WorkingSetSection extends WizardPageSection {
 	}
 
 	public IWorkingSet[] getWorkingSets() {
-		if (group!=null) {
+		if (group != null) {
 			return group.getSelectedWorkingSets();
 		}
 		return new IWorkingSet[0];

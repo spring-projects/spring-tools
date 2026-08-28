@@ -87,7 +87,7 @@ public class SelectionUtils {
 
 	public static IPackageFragment getPackage(IStructuredSelection selection) {
 		Object element = selection.getFirstElement();
-		if (element!=null) {
+		if (element != null) {
 			if (element instanceof IJavaElement) {
 				return getPackageFragment((IJavaElement) element);
 			}
@@ -101,7 +101,7 @@ public class SelectionUtils {
 			if (element instanceof IJavaElement) {
 				IJavaElement javaElement = (IJavaElement)element;
 				IType type = (IType) javaElement.getAncestor(IJavaElement.TYPE);
-				if (type!=null) {
+				if (type != null) {
 					return type;
 				}
 				if (javaElement instanceof ICompilationUnit) {
@@ -109,7 +109,7 @@ public class SelectionUtils {
 					//first type declared in it.
 					ICompilationUnit compUnit = (ICompilationUnit) javaElement;
 					IType[] types = compUnit.getAllTypes();
-					if (types!=null && types.length>0) {
+					if (types != null && types.length > 0) {
 						return types[0];
 					}
 				}

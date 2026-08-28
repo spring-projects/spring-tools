@@ -34,14 +34,14 @@ public class RefreshStateTracker {
 		debugObservers = null;
 	}
 	public static CompletableFuture<Void> waitForOperation(String message) {
-		if (debugObservers==null) {
+		if (debugObservers == null) {
 			debugObservers = new HashMap<>();
 		}
 		return debugObservers.computeIfAbsent(message, s -> new CompletableFuture<>());
 	}
 
 	private CompletableFuture<Void> getObserver(String message) {
-		if (debugObservers!=null) {
+		if (debugObservers != null) {
 			return debugObservers.get(message);
 		}
 		return null;
@@ -121,12 +121,12 @@ public class RefreshStateTracker {
 		JobUtil.runInJob(busyMessage, (mon) -> {
 			try {
 				result.complete(this.call(busyMessage, callable));
-				if (observer!=null) {
+				if (observer != null) {
 					observer.complete(null);
 				}
 			} catch (Throwable e) {
 				result.completeExceptionally(e);
-				if (observer!=null) {
+				if (observer != null) {
 					observer.complete(null);
 				}
 			}

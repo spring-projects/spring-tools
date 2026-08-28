@@ -48,7 +48,7 @@ public abstract class BootInstall implements IBootInstall {
 	 */
 	public BootInstall(String urlString, String name) {
 		Assert.isNotNull(urlString);
-		if (name!=null && !"".equals(name.trim())) {
+		if (name != null && !"".equals(name.trim())) {
 			this.name = name;
 		}
 		this.uriString = urlString;
@@ -76,11 +76,11 @@ public abstract class BootInstall implements IBootInstall {
 	public File[] getBootLibJars() throws Exception {
 		//Example: .../installs/spring-boot-cli-0.5.0.M6-bin/spring-0.5.0.M6/lib/spring-boot-cli-0.5.0.M6.jar
 
-		if (bootLibJars==null) {
+		if (bootLibJars == null) {
 			File home = getHome(); //Example: .../installs/spring-boot-cli-0.5.0.M6-bin/spring-0.5.0.M6/
 			//Expect to find spring-boot-cli-<version> in lib folder.
 			bootLibJars = new File(home, "lib").listFiles(JAR_FILE_FILTER);
-			if (bootLibJars==null) {
+			if (bootLibJars == null) {
 				bootLibJars = NO_FILES;
 			}
 		}
@@ -114,7 +114,7 @@ public abstract class BootInstall implements IBootInstall {
 	 */
 	@Override
 	public String getName() {
-		if (name==null) {
+		if (name == null) {
 			name = defaultName();
 		}
 		return name;
@@ -126,11 +126,11 @@ public abstract class BootInstall implements IBootInstall {
 	 */
 	protected String defaultName() {
 		String version = getVersion();
-		if (version!=null && !version.equals(UNKNOWN_VERSION)) {
+		if (version != null && !version.equals(UNKNOWN_VERSION)) {
 			return "Boot "+version;
 		}
 		String lastSegment = lastSegment();
-		if (lastSegment!=null) {
+		if (lastSegment != null) {
 			return lastSegment;
 		}
 		return "Boot";
@@ -156,16 +156,16 @@ public abstract class BootInstall implements IBootInstall {
 	@Override
 	public String getVersion() {
 		String lastSegment = lastSegment();
-		if (lastSegment!=null) {
+		if (lastSegment != null) {
 			//Example: spring-boot-cli-0.5.0.M6-bin.zip
 			if (lastSegment.toLowerCase().endsWith(".zip")) {
 				//Expect format: <artifact-id>-<version>-<classifier>.zip
 				int end = lastSegment.length()-4; //4 = '.zip'.length
 				end = lastSegment.lastIndexOf('-', end);
 				//end is now at start of -<classifier>
-				if (end>=0) {
+				if (end >= 0) {
 					int start = lastSegment.lastIndexOf('-', end-1);
-					if (start>=0) {
+					if (start >= 0) {
 						//start at the - before the version string
 						return lastSegment.substring(start+1, end);
 					}
@@ -185,7 +185,7 @@ public abstract class BootInstall implements IBootInstall {
 				return Status.OK_STATUS;
 			} else {
 				File[] jars = getBootLibJars();
-				if (jars==null || jars.length==0) {
+				if (jars == null || jars.length == 0) {
 					return new Status(IStatus.ERROR, BootActivator.PLUGIN_ID, "No boot install found at: "+getUrl());
 				} else {
 					//Anything that has lib folder with some jars will produce jars here....
@@ -220,7 +220,7 @@ public abstract class BootInstall implements IBootInstall {
 	@Override
 	public boolean mayRequireDownload() {
 		String url = getUrl();
-		boolean isCertainlyLocal = url!=null && url.startsWith("file:");
+		boolean isCertainlyLocal = url != null && url.startsWith("file:");
 		return !isCertainlyLocal;
 	}
 
@@ -280,7 +280,7 @@ public abstract class BootInstall implements IBootInstall {
 			}
 			Version bootVersion = Version.safeParse(getVersion());
 			Version cliVersion = BootInstallUtils.getCloudCliVersion(bootVersion);
-			if (cliVersion!=null) {
+			if (cliVersion != null) {
 				return AutoInstallDescription.describe("Spring Cloud CLI version "+cliVersion+" will be installed into "+getName()+".");
 			}
 			return AutoInstallDescription.impossible("Couldn't determine a compatible Spring Cloud CLI version for "+getName()+".");
@@ -296,7 +296,7 @@ public abstract class BootInstall implements IBootInstall {
 	@Override
 	public void refreshExtension(Class<? extends IBootInstallExtension> extensionType) {
 		LiveExpression<IBootInstallExtension> extension = extensionExps.asMap().get(extensionType.getName());
-		if (extension!=null) {
+		if (extension != null) {
 			extension.refresh();
 		}
 	}

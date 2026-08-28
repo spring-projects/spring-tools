@@ -47,7 +47,7 @@ public class ImportStrategyHolder {
 				//Somewhat unexpected, so log it.
 				BootWizardActivator.log(e);
 			}
-			if (this.instance==null) {
+			if (this.instance == null) {
 				//Something prevented the creation of the import strategy.
 				this.instance = new NullImportStrategy(buildType, name, notInstalledMessage);
 			}

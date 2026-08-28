@@ -92,8 +92,8 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 	//	 * syntactic context that CA can be invoked from.
 	//	 */
 	//	public static enum Kind {
-	//		SKEY_KEY, /* CA called from a SKeyNode and node.isInKey(cursor)==true */
-	//		SKEY_VALUE, /* CA called from a SKeyNode and node.isInKey(cursor)==false */
+	//		SKEY_KEY, /* CA called from a SKeyNode and node.isInKey(cursor) == true */
+	//		SKEY_VALUE, /* CA called from a SKeyNode and node.isInKey(cursor) == false */
 	//		SRAW /* CA called from a SRawNode */
 	//	}
 	//	protected final Kind contextKind;
@@ -197,7 +197,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 						name = "["+name+"]";
 					}
 					double score = FuzzyMatcher.matchScore(query, name);
-					if (score!=0) {
+					if (score != 0) {
 						YamlPath relativePath = YamlPath.fromSimpleProperty(name);
 						YamlPathEdits edits = new YamlPathEdits(doc);
 						if (!definedProps.contains(name)) {
@@ -236,7 +236,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 				props.addAll(fromType);
 			}
 			HintProvider hints = getHintProvider();
-			if (hints!=null) {
+			if (hints != null) {
 				List<TypedProperty> fromHints = hints.getPropertyHints(query);
 				if (CollectionUtil.hasElements(fromHints)) {
 					props.addAll(fromHints);
@@ -267,16 +267,16 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 
 		private List<ICompletionProposal> getValueCompletions(YamlDocument doc, int offset, String query, EnumCaseMode enumCaseMode) {
 			Collection<StsValueHint> hints = getHintValues(query, doc, offset, enumCaseMode);
-			if (hints!=null) {
+			if (hints != null) {
 				ArrayList<ICompletionProposal> completions = new ArrayList<ICompletionProposal>();
 				for (StsValueHint hint : hints) {
 					String value = hint.getValue();
 					double score = FuzzyMatcher.matchScore(query, value);
-					if (score!=0 && !value.equals(query)) {
+					if (score != 0 && !value.equals(query)) {
 						DocumentEdits edits = new DocumentEdits(doc.getDocument(), false);
 						int valueStart = offset-query.length();
 						edits.delete(valueStart, offset);
-						if (doc.getChar(valueStart-1)==':') {
+						if (doc.getChar(valueStart-1) == ':') {
 							edits.insert(offset, " ");
 						}
 						edits.insert(offset, YamlUtil.stringEscape(value));
@@ -295,7 +295,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 			if (TypeUtil.isClass(type)) {
 				//Special case. We want hovers/hyperlinks even if the class is not a valid hint (as long as it is a class)
 				StsValueHint hint = StsValueHint.className(value.toString(), typeUtil);
-				if (hint!=null) {
+				if (hint != null) {
 					return hint.getDescription();
 				}
 			}
@@ -324,7 +324,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 			}
 			{
 				HintProvider hintProvider = getHintProvider();
-				if (hintProvider!=null) {
+				if (hintProvider != null) {
 					allHints.addAll(hintProvider.getValueHints(query));
 				}
 			}
@@ -333,16 +333,16 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 
 		@Override
 		public YamlAssistContext traverse(YamlPathSegment s) {
-			if (s.getType()==YamlPathSegmentType.VAL_AT_KEY) {
+			if (s.getType() == YamlPathSegmentType.VAL_AT_KEY) {
 				if (typeUtil.isSequencable(type) || typeUtil.isMap(type)) {
 					return contextWith(s, TypeUtil.getDomainType(type));
 				}
 				String key = s.toPropString();
 				Map<String, TypedProperty> subproperties = typeUtil.getPropertiesMap(type, EnumCaseMode.ALIASED, BeanPropertyNameMode.ALIASED);
-				if (subproperties!=null) {
+				if (subproperties != null) {
 					return contextWith(s, TypedProperty.typeOf(subproperties.get(key)));
 				}
-			} else if (s.getType()==YamlPathSegmentType.VAL_AT_INDEX) {
+			} else if (s.getType() == YamlPathSegmentType.VAL_AT_INDEX) {
 				if (typeUtil.isSequencable(type)) {
 					return contextWith(s, TypeUtil.getDomainType(type));
 				}
@@ -351,7 +351,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 		}
 
 		private AbstractYamlAssistContext contextWith(YamlPathSegment s, Type nextType) {
-			if (nextType!=null) {
+			if (nextType != null) {
 				return new TypeContext(this, contextPath.append(s), nextType, completionFactory, typeUtil, conf,
 						new YamlPath(s).traverse(hints), null, javaElementLocationProvider);
 			}
@@ -509,7 +509,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 				// context. If it doesn't we can create it as any child of the context
 				// so that includes, right at place the user is typing now.
 				SNode existingNode = contextNode.traverse(nextSegment);
-				if (existingNode==null) {
+				if (existingNode == null) {
 					edits.createPathInPlace(contextNode, relativePath, queryOffset, () -> appendTextFor(TypeParser.parse(match.data.getType())));
 				} else {
 					String wholeLine = file.getLineTextAtOffset(queryOffset);
@@ -524,7 +524,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 
 		@Override
 		public AbstractYamlAssistContext traverse(YamlPathSegment s) {
-			if (s.getType()==YamlPathSegmentType.VAL_AT_KEY) {
+			if (s.getType() == YamlPathSegmentType.VAL_AT_KEY) {
 				String key = s.toPropString();
 				IndexNavigator subIndex = indexNav.selectSubProperty(key);
 				if (subIndex.isEmpty()) {
@@ -537,9 +537,9 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 						}
 					}
 				}
-				if (subIndex.getExtensionCandidate()!=null) {
+				if (subIndex.getExtensionCandidate() != null) {
 					return new IndexContext(getDocument(), documentSelector, contextPath.append(s), index, subIndex, completionFactory, typeUtil, conf, javaElementLocationProvider);
-				} else if (subIndex.getExactMatch()!=null) {
+				} else if (subIndex.getExactMatch() != null) {
 					IndexContext asIndexContext = new IndexContext(getDocument(), documentSelector, contextPath.append(s), index, subIndex, completionFactory, typeUtil, conf, javaElementLocationProvider);
 					PropertyInfo prop = subIndex.getExactMatch();
 					return new TypeContext(asIndexContext, contextPath.append(s), TypeParser.parse(prop.getType()), completionFactory, typeUtil, conf, prop.getHints(typeUtil), prop.getHandleKeyAs(), javaElementLocationProvider);
@@ -557,7 +557,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 		@Override
 		protected Type getType() {
 			PropertyInfo match = indexNav.getExactMatch();
-			if (match!=null) {
+			if (match != null) {
 				return TypeParser.parse(match.getType());
 			}
 			return null;
@@ -566,7 +566,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 		@Override
 		public Renderable getHoverInfo() {
 			PropertyInfo prop = indexNav.getExactMatch();
-			if (prop!=null) {
+			if (prop != null) {
 				return  InformationTemplates.createHover(prop);
 //				return new PropertyRenderableProvider(typeUtil.getJavaProject(), prop).getRenderable();
 			}
@@ -583,7 +583,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 			} else {
 				//handle finding property source directly by property key
 				Collection<PropertyInfo.PropertySource> sources = index.getGroupSources(indexNav.getPrefix());
-				if (sources!=null && !sources.isEmpty()) {
+				if (sources != null && !sources.isEmpty()) {
 					IJavaProject project = typeUtil.getJavaProject();
 					Collection<IMember> elements = PropertiesDefinitionCalculator.getPropertySourceJavaElements(typeUtil, project, sources);
 					return PropertiesDefinitionCalculator.getLocations(javaElementLocationProvider, project, elements);
@@ -633,9 +633,9 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 
 	private static Deprecation getDeprecation(TypeUtil typeUtil, Type parentType, String propName) {
 		Map<String, TypedProperty> props = typeUtil.getPropertiesMap(parentType, EnumCaseMode.ALIASED, BeanPropertyNameMode.ALIASED);
-		if (props!=null) {
+		if (props != null) {
 			TypedProperty prop = props.get(propName);
-			if (prop!=null) {
+			if (prop != null) {
 				return prop.getDeprecation();
 			}
 		}
@@ -661,13 +661,13 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 	}
 
 	private static List<IJavaElement> getAllJavaElements(TypeUtil typeUtil, Type parentType, String propName) {
-		if (propName!=null) {
+		if (propName != null) {
 			Type beanType = parentType;
 			if (typeUtil.isMap(beanType)) {
 				Type keyType = typeUtil.getKeyType(beanType);
-				if (keyType!=null && typeUtil.isEnum(keyType)) {
+				if (keyType != null && typeUtil.isEnum(keyType)) {
 					IField field = typeUtil.getEnumConstant(keyType, propName);
-					if (field!=null) {
+					if (field != null) {
 						return ImmutableList.of(field);
 					}
 				}
@@ -685,7 +685,7 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 	}
 
 	private static void maybeAdd(ArrayList<IJavaElement> elements, IJavaElement e) {
-		if (e!=null) {
+		if (e != null) {
 			elements.add(e);
 		}
 	}

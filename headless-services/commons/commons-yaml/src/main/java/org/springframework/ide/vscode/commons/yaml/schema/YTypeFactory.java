@@ -99,7 +99,7 @@ public class YTypeFactory {
 				t.parseWith(ValueParser.of((String value) -> {
 					basicParser.parse(value);
 					Deprecation d = deprecations.get(value);
-					if (d!=null) {
+					if (d != null) {
 						throw new ReconcileException(d.errorMsg, YamlSchemaProblems.DEPRECATED_VALUE)
 									.fixWith(new ReplacementQuickfix(d.quickfixMsg, d.replacement));
 					}
@@ -160,7 +160,7 @@ public class YTypeFactory {
 	}
 
 	public YType yunion(String name, YType... types) {
-		Assert.isLegal(types.length>1);
+		Assert.isLegal(types.length > 1);
 		if (Stream.of(types).allMatch(t -> t instanceof YBeanType)) {
 			YBeanType[] beanTypes = new YBeanType[types.length];
 			for (int i = 0; i < beanTypes.length; i++) {
@@ -185,11 +185,11 @@ public class YTypeFactory {
 				throw new IllegalArgumentException("Union of this kind of types is not (yet) supported: "+t);
 			}
 		}
-		if (atoms.size()==1 && maps.size()==1 && arrays.size()==0 && beans.size()==0) {
+		if (atoms.size() == 1 && maps.size() == 1 && arrays.size() == 0 && beans.size() == 0) {
 			return new YAtomAndMapUnion(name, atoms.get(0), maps.get(0));
-		} else if (atoms.size()==0 && maps.size()==0 && arrays.size()==1 && beans.size()==1) {
+		} else if (atoms.size() == 0 && maps.size() == 0 && arrays.size() == 1 && beans.size() == 1) {
 			return new YBeanAndSequenceUnion(name, beans.get(0), arrays.get(0));
-		} else if (atoms.size()==1 && arrays.size()==1 && maps.size()==0 && beans.size()==0) {
+		} else if (atoms.size() == 1 && arrays.size() == 1 && maps.size() == 0 && beans.size() == 0) {
 			return new YAtomAndSequenceUnion(name, atoms.get(0), arrays.get(0));
 		}
 		throw new IllegalArgumentException("Union of this kind of types is not (yet) supported: "+types);
@@ -259,11 +259,11 @@ public class YTypeFactory {
 		@Override
 		public YType inferMoreSpecificType(YType type, DynamicSchemaContext schemaContext) {
 			YType better = ((AbstractType)type).inferMoreSpecificType(schemaContext);
-			while (better!=null && better!=type) {
+			while (better != null && better != type) {
 				type = better;
 				better = ((AbstractType)type).inferMoreSpecificType(schemaContext);
 			}
-			//Can only get here if either 'better' is null or better==type
+			//Can only get here if either 'better' is null or better == type
 			return type;
 		}
 
@@ -390,7 +390,7 @@ public class YTypeFactory {
 		}
 
 		public Map<String, YTypedProperty> getPropertiesMap() {
-			if (cachedPropertyMap==null) {
+			if (cachedPropertyMap == null) {
 				ImmutableMap.Builder<String, YTypedProperty> builder = ImmutableMap.builder();
 				for (YTypedProperty p : propertyList) {
 					builder.put(p.getName(), p);
@@ -457,7 +457,7 @@ public class YTypeFactory {
 		 * @return
 		 */
 		public AbstractType alsoAccept(String... _values) {
-			if (parser!=null) {
+			if (parser != null) {
 				ImmutableSet<String> values = ImmutableSet.copyOf(_values);
 				final SchemaContextAware<ValueParser> oldParserProvider = parser;
 				parser = (dc) -> (s) -> {
@@ -465,7 +465,7 @@ public class YTypeFactory {
 						return s;
 					} else {
 						ValueParser oldParser = oldParserProvider.safeWithContext(dc).orElse(null);
-						if (oldParser!=null) {
+						if (oldParser != null) {
 							return oldParser.parse(s);
 						}
 						return s;
@@ -512,7 +512,7 @@ public class YTypeFactory {
 
 		@Override
 		public YType inferMoreSpecificType(DynamicSchemaContext dc) {
-			if (dc!=null) {
+			if (dc != null) {
 				return typeGuesser.safeWithContext(dc).orElse(this);
 			}
 			return this;
@@ -655,7 +655,7 @@ public class YTypeFactory {
 		public YSeqType notEmpty() {
 			require((DynamicSchemaContext dc, Node parent, Node node, YType type, IProblemCollector problems) -> {
 				SequenceNode seq = (SequenceNode) node;
-				if (seq.getValue().size()==0) {
+				if (seq.getValue().size() == 0) {
 					problems.accept(YamlSchemaProblems.schemaProblem("At least one '"+el+"' is required", node));
 				}
 			});
@@ -740,7 +740,7 @@ public class YTypeFactory {
 		}
 		private boolean isUniqueFor(String name, AbstractType t, List<YBeanType> types) {
 			for (AbstractType other : types) {
-				if (other!=t) {
+				if (other != t) {
 					//Note: passing null dynamic context below is okay, assuming the properties in YBeanType
 					// do not care about dynamic context.
 					if (other.getPropertiesMap().containsKey(name)) {
@@ -768,7 +768,7 @@ public class YTypeFactory {
 		}
 
 		public synchronized Map<String, AbstractType> typesByPrimary() {
-			if (typesByPrimary==null) {
+			if (typesByPrimary == null) {
 				//To ensure that the map of 'typesByPrimary' is never stale, make the list of
 				// types immutable at this point. The assumption here is that union can be
 				// built up flexibly using mutation ops during initialization, but once it
@@ -785,7 +785,7 @@ public class YTypeFactory {
 		}
 
 		private List<YTypedProperty> getPrimaryProps() {
-			if (primaryProps==null) {
+			if (primaryProps == null) {
 				Builder<YTypedProperty> builder = ImmutableList.builder();
 				for (Entry<String, AbstractType> entry : typesByPrimary().entrySet()) {
 					builder.add(entry.getValue().getPropertiesMap().get(entry.getKey()));
@@ -820,7 +820,7 @@ public class YTypeFactory {
 		}
 		@Override
 		public final String toString() {
-			if (name!=null) {
+			if (name != null) {
 				return name;
 			} else {
 				StringBuilder b = new StringBuilder("(");
@@ -996,7 +996,7 @@ public class YTypeFactory {
 			this.isDeprecated = isDeprecated;
 		}
 		public YTypedPropertyImpl isDeprecated(String deprecationMessage) {
-			this.isDeprecated = deprecationMessage!=null;
+			this.isDeprecated = deprecationMessage != null;
 			this.deprecationMessage = deprecationMessage;
 			return this;
 		}
@@ -1153,7 +1153,7 @@ public class YTypeFactory {
 					//Note we accept 'Match.UNKNOWN' as if it is a proper match. This is the conservative thing to do 
 					// in this situation to avoid false positives (i.e. we only report an error if we are *sure* that no
 					// value matches.
-					return values.stream().anyMatch(s -> glob.match(s)!=Match.FAIL);
+					return values.stream().anyMatch(s -> glob.match(s) != Match.FAIL);
 				}
 			};
 			return enumParser;
@@ -1200,7 +1200,7 @@ public class YTypeFactory {
 	}
 
 	public static PartialCollection<YValueHint> hints(PartialCollection<String> values) {
-		if (values!=null) {
+		if (values != null) {
 			return values.map(YTypeFactory::hint);
 		}
 		return PartialCollection.unknown();

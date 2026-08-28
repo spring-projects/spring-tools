@@ -48,7 +48,7 @@ public class PartialCollection<T> {
 
 	private PartialCollection(ImmutableCollection<T> knownElements, Throwable error) {
 		this.knownElements = knownElements;
-		this.isComplete = error==null;
+		this.isComplete = error == null;
 		this.explanation = error;
 	}
 
@@ -60,7 +60,7 @@ public class PartialCollection<T> {
 	public static <T> PartialCollection<T> compute(Callable<Collection<T>> computer) {
 		try {
 			Collection<T> allValues = computer.call();
-			if (allValues==null) {
+			if (allValues == null) {
 				return PartialCollection.unknown();
 			}
 			return new PartialCollection<>(ImmutableSet.copyOf(allValues), true);
@@ -106,7 +106,7 @@ public class PartialCollection<T> {
 	 * Like map on streams, but silently drops any null elements returned by the mapper.
 	 */
 	public <R> PartialCollection<R> map(Function<? super T, ? extends R> mapper) {
-		ImmutableSet<R> mappedElements = getElements().stream().map((x) -> mapper.apply(x)).filter(x -> x!=null).collect(CollectorUtil.toImmutableSet());
+		ImmutableSet<R> mappedElements = getElements().stream().map((x) -> mapper.apply(x)).filter(x -> x != null).collect(CollectorUtil.toImmutableSet());
 		return new PartialCollection<R>(mappedElements, isComplete, explanation);
 	}
 
@@ -132,7 +132,7 @@ public class PartialCollection<T> {
 	 * A completely unknown collection with a given exception explaining the reason.
 	 */
 	public static <T> PartialCollection<T> unknown(Exception e) {
-		Assert.isLegal(e!=null);
+		Assert.isLegal(e != null);
 		return new PartialCollection<>(ImmutableSet.of(), e);
 	}
 
@@ -155,7 +155,7 @@ public class PartialCollection<T> {
 		PartialCollection<T> merged = this.addAll(values.getElements());
 		if (!values.isComplete()) {
 			merged = merged.addUncertainty();
-			if (merged.getExplanation()==null && values.getExplanation()!=null) {
+			if (merged.getExplanation() == null && values.getExplanation() != null) {
 				merged = merged.withExplanation(values.getExplanation());
 			}
 		}

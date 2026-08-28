@@ -222,7 +222,7 @@ public class BootInstallDialog extends TitleAreaDialog {
 	
 	
 	private boolean hasText(String result) {
-		return result!=null && !"".equals(result.trim());
+		return result != null && !"".equals(result.trim());
 	}
 	
 	protected void validate(boolean validateHome) {

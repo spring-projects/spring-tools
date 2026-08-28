@@ -51,7 +51,7 @@ public class LinkWithConsoleAction extends AbstractBootDashElementsAction {
 
 	@Override
 	public void dispose() {
-		if(listener != null && selection !=  null) {
+		if (listener != null && selection !=  null) {
 			selection.getElements().removeListener(listener);
 		}
 		super.dispose();

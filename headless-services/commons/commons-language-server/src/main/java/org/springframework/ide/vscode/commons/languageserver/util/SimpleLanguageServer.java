@@ -231,7 +231,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	}
 
 	public synchronized QuickfixRegistry getQuickfixRegistry() {
-		if (quickfixRegistry==null) {
+		if (quickfixRegistry == null) {
 			quickfixRegistry = new QuickfixRegistry();
 		}
 		return quickfixRegistry;
@@ -260,11 +260,11 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 
 	protected CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
 		ExecuteCommandHandler handler = commands.get(params.getCommand());
-		if (handler!=null) {
+		if (handler != null) {
 			return handler.handle(params);
 		}
 		if (CODE_ACTION_COMMAND_ID.equals(params.getCommand())) {
-			Assert.isLegal(params.getArguments().size()==2);
+			Assert.isLegal(params.getArguments().size() == 2);
 			QuickfixResolveParams quickfixParams = new QuickfixResolveParams(
 					params.getArguments().get(0) instanceof JsonPrimitive ? ((JsonPrimitive)params.getArguments().get(0)).getAsString() : params.getArguments().get(0).toString() , params.getArguments().get(1)
 			);
@@ -273,7 +273,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 				Mono<ApplyWorkspaceEditResponse> applyEdit = Mono.fromFuture(client.applyEdit(new ApplyWorkspaceEditParams(edit.workspaceEdit, quickfixParams.getType())));
 				return applyEdit.flatMap(r -> {
 					if (r.isApplied()) {
-						if (edit.cursorMovement!=null) {
+						if (edit.cursorMovement != null) {
 							return Mono.fromFuture(client.moveCursor(edit.cursorMovement));
 						}
 					}
@@ -312,7 +312,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 		}
 		else {
 			String rootUri = params.getRootUri();
-			if (rootUri==null) {
+			if (rootUri == null) {
 				log.debug("workspaceRoot NOT SET");
 			} else {
 				List<WorkspaceFolder> singleRootFolder = new ArrayList<>();
@@ -331,7 +331,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 		}
 
 		this.hasCompletionSnippetSupport = safeGet(false, () -> params.getCapabilities().getTextDocument().getCompletion().getCompletionItem().getSnippetSupport());
-		this.hasExecuteCommandSupport = safeGet(false, () -> params.getCapabilities().getWorkspace().getExecuteCommand()!=null);
+		this.hasExecuteCommandSupport = safeGet(false, () -> params.getCapabilities().getWorkspace().getExecuteCommand() != null);
 		this.hasFileWatcherRegistrationSupport = safeGet(false, () -> params.getCapabilities().getWorkspace().getDidChangeWatchedFiles().getDynamicRegistration());
 		this.hasHierarchicalDocumentSymbolSupport = safeGet(false, () -> params.getCapabilities().getTextDocument().getDocumentSymbol().getHierarchicalDocumentSymbolSupport());
 		log.debug("workspaceRoots = "+getWorkspaceService().getWorkspaceRoots());
@@ -348,7 +348,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 		}
 
 		ServerCapabilities cap = getServerCapabilities();
-		if (appContext!=null) {
+		if (appContext != null) {
 			Map<String, ServerCapabilityInitializer> extraCaps = appContext.getBeansOfType(ServerCapabilityInitializer.class);
 			for (ServerCapabilityInitializer capIniter : extraCaps.values()) {
 				capIniter.initialize(params, cap);
@@ -356,7 +356,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 		}
 		result.setCapabilities(cap);
 		Consumer<InitializeParams> ih = this.initializeHandler;
-		if (ih!=null){
+		if (ih != null){
 			ih.accept(params);
 		}
 		log.info("Returning server capabilities to client");
@@ -412,7 +412,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	public static <T> T safeGet(T deflt, Callable<T> getter) {
 		try {
 			T x = getter.call();
-			if (x!=null) {
+			if (x != null) {
 				return x;
 			}
 		} catch (Exception e) {
@@ -522,7 +522,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	}
 
 	public final boolean hasLazyCompletionResolver() {
-		return completionResolver!=null;
+		return completionResolver != null;
 	}
 
 	private boolean hasDocumentSymbolHandler() {
@@ -558,7 +558,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	}
 
 	private boolean hasQuickFixes() {
-		return quickfixRegistry!=null && quickfixRegistry.hasFixes();
+		return quickfixRegistry != null && quickfixRegistry.hasFixes();
 	}
 
 	private boolean hasWorkspaceSymbolHandler() {
@@ -882,7 +882,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	}
 
 	public void setTestListener(LanguageServerTestListener languageServerTestListener) {
-		Assert.isLegal(this.testListener==null);
+		Assert.isLegal(this.testListener == null);
 		testListener = languageServerTestListener;
 	}
 
@@ -924,7 +924,7 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	}
 
 	public synchronized void onShutdown(Runnable handler) {
-		if (shutdownHandler==null) {
+		if (shutdownHandler == null) {
 			this.shutdownHandler = handler;
 		} else {
 			Runnable oldHandler = this.shutdownHandler;

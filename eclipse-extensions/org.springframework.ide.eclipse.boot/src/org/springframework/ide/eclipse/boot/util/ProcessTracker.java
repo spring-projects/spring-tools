@@ -43,7 +43,7 @@ public class ProcessTracker implements Disposable {
 		DebugPlugin.getDefault().addDebugEventListener(debugListener = new IDebugEventSetListener() {
 			@Override
 			public void handleDebugEvents(DebugEvent[] events) {
-				if (events!=null) {
+				if (events != null) {
 					for (DebugEvent debugEvent : events) {
 						handleDebugEvent(debugEvent);
 					}
@@ -53,7 +53,7 @@ public class ProcessTracker implements Disposable {
 
 		//What if processes got started before we attached the listener?
 		ILaunch[] launches = DebugPlugin.getDefault().getLaunchManager().getLaunches();
-		if (launches!=null) {
+		if (launches != null) {
 			for (ILaunch launch : launches) {
 				for (IProcess process : launch.getProcesses()) {
 					processCreated(process);
@@ -87,28 +87,28 @@ public class ProcessTracker implements Disposable {
 
 	private void debugTargetCreated(IDebugTarget source) {
 		ProcessListener listener = this.listener;
-		if (listener!=null) {
+		if (listener != null) {
 			listener.debugTargetCreated(this, source);
 		}
 	}
 
 	private void debugTargetTerminated(IDebugTarget source) {
 		ProcessListener listener = this.listener;
-		if (listener!=null) {
+		if (listener != null) {
 			listener.debugTargetTerminated(this, source);
 		}
 	}
 
 	private void processCreated(IProcess process) {
 		ProcessListener listener = this.listener;
-		if (listener!=null) {
+		if (listener != null) {
 			listener.processCreated(this, process);
 		}
 	}
 
 	private void processTerminated(IProcess process) {
 		ProcessListener listener = this.listener;
-		if (listener!=null) {
+		if (listener != null) {
 			listener.processTerminated(this, process);
 		}
 	}
@@ -118,7 +118,7 @@ public class ProcessTracker implements Disposable {
 	 */
 	@Override
 	public void dispose() {
-		if (debugListener!=null) {
+		if (debugListener != null) {
 			DebugPlugin.getDefault().removeDebugEventListener(debugListener);
 			debugListener = null;
 			if (listener instanceof Disposable) {

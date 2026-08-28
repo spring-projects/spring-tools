@@ -32,7 +32,7 @@ public class DataRepositoryQueryStartCompletionProvider implements DataRepositor
 		String localPrefix = DataRepositoryPrefixSensitiveCompletionProvider.findLastJavaIdentifierPart(prefix);
 		for(QueryMethodSubject queryMethodSubject : QueryMethodSubject.QUERY_METHOD_SUBJECTS){
 			String toInsert = queryMethodSubject.key() + "By";
-			if(prefix == null || (toInsert.length() > localPrefix.length() && toInsert.startsWith(localPrefix)) || isOffsetAfterWhitespace(doc, offset)) {
+			if (prefix == null || (toInsert.length() > localPrefix.length() && toInsert.startsWith(localPrefix)) || isOffsetAfterWhitespace(doc, offset)) {
 				completions.add(FindByCompletionProposal.createProposal(offset, CompletionItemKind.Method, prefix, toInsert, toInsert, true, null));
 			}
 		}

@@ -57,7 +57,7 @@ public class SpringApplicationLifeCycleClientManager {
 	}
 
 	private static JMXConnector createJMXConnection(int port) {
-		if (port <=0) {
+		if (port <= 0) {
 			throw new IllegalStateException("JMX port not specified");
 		}
 		try {
@@ -81,7 +81,7 @@ public class SpringApplicationLifeCycleClientManager {
 	 */
 	public synchronized void disposeClient() {
 		try {
-			if (connector!=null) {
+			if (connector != null) {
 				connector.close();
 			}
 		} catch (Exception e) {
@@ -96,9 +96,9 @@ public class SpringApplicationLifeCycleClientManager {
 	 */
 	public SpringApplicationLifecycleClient getLifeCycleClient() throws Exception {
 		try {
-			if (client==null) {
+			if (client == null) {
 				connector = connectionProvider.call();
-				if (connector!=null) {
+				if (connector != null) {
 					client = new SpringApplicationLifecycleClient(
 							connector.getMBeanServerConnection(),
 							SpringApplicationLifecycleClient.DEFAULT_OBJECT_NAME

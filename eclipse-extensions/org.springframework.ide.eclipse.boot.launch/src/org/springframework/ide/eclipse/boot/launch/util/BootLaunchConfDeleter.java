@@ -61,7 +61,7 @@ public class BootLaunchConfDeleter {
 
 	private void handleDelete(IProject project) {
 		final List<ILaunchConfiguration> confs = getDeletableLaunchConfigs(project);
-		if (confs!=null && !confs.isEmpty()) {
+		if (confs != null && !confs.isEmpty()) {
 			Job deleteJob = new Job("Delete launch configs for "+project.getName()) {
 				@Override
 				protected IStatus run(IProgressMonitor monitor) {

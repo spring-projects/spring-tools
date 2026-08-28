@@ -17,11 +17,11 @@ public abstract class DomUtils {
 
 	public static String getAttributeValue(Node node, String attribName ) {
 		NamedNodeMap attribs = node.getAttributes();
-		if (attribs!=null) {
+		if (attribs != null) {
 			Node value = attribs.getNamedItem(attribName);
-			if (value!=null) {
+			if (value != null) {
 				short nodeType = value.getNodeType();
-				if (nodeType==Node.ATTRIBUTE_NODE) {
+				if (nodeType == Node.ATTRIBUTE_NODE) {
 					return value.getNodeValue();
 				}
 			}
@@ -31,7 +31,7 @@ public abstract class DomUtils {
 
 	public static boolean getAttributeValue(Node node, String name, boolean defaultValue) {
 		String str = getAttributeValue(node, name);
-		if (str==null) {
+		if (str == null) {
 			return defaultValue;
 		} else {
 			return "true".equals(str);

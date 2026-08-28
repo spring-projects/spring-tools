@@ -50,7 +50,7 @@ public abstract class AbstractYamlAssistContext implements YamlAssistContext {
 	}
 
 	protected DocumentRegion getCustomAssistRegion(YamlDocument doc, SNode node, int offset) {
-		if (node.getNodeType()==SNodeType.KEY) {
+		if (node.getNodeType() == SNodeType.KEY) {
 			SKeyNode keyNode = (SKeyNode) node;
 			if (keyNode.isInValue(offset)) {
 				int valueStart = keyNode.getColonOffset()+1;
@@ -70,7 +70,7 @@ public abstract class AbstractYamlAssistContext implements YamlAssistContext {
 	private static PrefixFinder prefixfinder = new PrefixFinder() {
 		@Override
 		protected boolean isPrefixChar(char c) {
-			return !(Character.isWhitespace(c) || c==',');
+			return !(Character.isWhitespace(c) || c == ',');
 		}
 	};
 
@@ -79,24 +79,24 @@ public abstract class AbstractYamlAssistContext implements YamlAssistContext {
 		// corresponding to the value, so a simplistic backwards scan isn't good enough.
 		// instead we should use offset in current node / structure to determine the
 		// the start of the current value.
-		if (node.getNodeType()==SNodeType.KEY) {
+		if (node.getNodeType() == SNodeType.KEY) {
 			SKeyNode keyNode = (SKeyNode) node;
 			if (keyNode.isInValue(offset)) {
 				int valueStart = keyNode.getColonOffset()+1;
-				while (valueStart<=offset && Character.isWhitespace(doc.getChar(valueStart))) {
+				while (valueStart <= offset && Character.isWhitespace(doc.getChar(valueStart))) {
 					valueStart++;
 				}
-				if (offset>=valueStart) {
+				if (offset >= valueStart) {
 					return prefixfinder.getPrefix(doc.getDocument(), offset, valueStart);
 				} else {
 					//only whitespace, or nothing found upto the cursor
 					return "";
 				}
 			}
-		} else if (node.getNodeType()==SNodeType.SEQ) {
+		} else if (node.getNodeType() == SNodeType.SEQ) {
 			//Careful, don't include the '-' at start of the node as part of the prefix.
 			return prefixfinder.getPrefix(doc.getDocument(), offset, node.getStart()+1);
-//		} else if (node.getNodeType()==SNodeType.RAW) {
+//		} else if (node.getNodeType() == SNodeType.RAW) {
 //			TODO: Handle this as we could be in a value that's on the next line instead of right behind the node
 		}
 

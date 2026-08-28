@@ -241,9 +241,9 @@ public class MockProjects {
 		}
 		
 		private PathMatcher buildPathMatcher(List<String> globPatterns) {
-			if (globPatterns.size()==0) {
+			if (globPatterns.size() == 0) {
 				return path -> true;
-			} else if (globPatterns.size()==1) {
+			} else if (globPatterns.size() == 1) {
 				return FileSystems.getDefault().getPathMatcher("glob:"+globPatterns.get(0));
 			} else {
 				PathMatcher[] matchers = new PathMatcher[globPatterns.size()];

@@ -66,7 +66,7 @@ class InjectBeanConstructorRefactoringTest {
 		return doc.get();
 	}
 
-	// ========== Basic scenarios ==========
+	// == == == == == Basic scenarios == == == == ==
 
 	@Test
 	void injectIntoEmptyClass() throws Exception {
@@ -169,7 +169,7 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
-	// ========== Import handling ==========
+	// == == == == == Import handling == == == == ==
 
 	@Test
 	void noImportForJavaLangType() throws Exception {
@@ -394,7 +394,7 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
-	// ========== Inner classes ==========
+	// == == == == == Inner classes == == == == ==
 
 	@Test
 	void injectInnerClassType() throws Exception {
@@ -431,7 +431,7 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
-	// ========== Nested type declarations ==========
+	// == == == == == Nested type declarations == == == == ==
 
 	@Test
 	void injectIntoNestedClass() throws Exception {
@@ -472,7 +472,7 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
-	// ========== Idempotency ==========
+	// == == == == == Idempotency == == == == ==
 
 	@Test
 	void existingFieldNotDuplicated() throws Exception {
@@ -498,7 +498,7 @@ class InjectBeanConstructorRefactoringTest {
 		assertEquals(source, result);
 	}
 
-	// ========== Target class not found ==========
+	// == == == == == Target class not found == == == == ==
 
 	@Test
 	void returnsNullWhenClassNotFound() throws Exception {
@@ -517,7 +517,7 @@ class InjectBeanConstructorRefactoringTest {
 		assertNull(refactoring.computeEdit());
 	}
 
-	// ========== Multiple classes in same file ==========
+	// == == == == == Multiple classes in same file == == == == ==
 
 	@Test
 	void injectIntoCorrectClassWhenMultiplePresent() throws Exception {
@@ -562,7 +562,7 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
-	// ========== Parameterized types ==========
+	// == == == == == Parameterized types == == == == ==
 
 	@Test
 	void injectParameterizedType() throws Exception {
@@ -714,7 +714,7 @@ class InjectBeanConstructorRefactoringTest {
 				""", result);
 	}
 
-	// ========== Type name utilities (via FullyQualifiedName) ==========
+	// == == == == == Type name utilities (via FullyQualifiedName) == == == == ==
 
 	@Test
 	void getFieldTypeName_simpleClass() {

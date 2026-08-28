@@ -47,7 +47,7 @@ public class MemoizingDisposableSupplier<T> implements Disposable {
 
 	public synchronized void evict() {
 		T oldValue = value;
-		if (oldValue!=null) {
+		if (oldValue != null) {
 			disposeWith.accept(oldValue);
 		}
 		value = null;
@@ -59,11 +59,11 @@ public class MemoizingDisposableSupplier<T> implements Disposable {
 	public void dispose() {
 		boolean shouldDispose;
 		synchronized (this) {
-			shouldDispose = computer!=null;
+			shouldDispose = computer != null;
 			computer = null;
 		}
 		if (shouldDispose) {
-			if (disposeWith!=null && value!=null) {
+			if (disposeWith != null && value != null) {
 				disposeWith.accept(value);
 			}
 			value = null;
@@ -89,7 +89,7 @@ public class MemoizingDisposableSupplier<T> implements Disposable {
 				failure = e;
 			}
 		}
-		if (failure!=null) {
+		if (failure != null) {
 			throw ExceptionUtil.exception(failure);
 		} else {
 			return value;
@@ -98,18 +98,18 @@ public class MemoizingDisposableSupplier<T> implements Disposable {
 	
 	@Override
 	public boolean isDisposed() {
-		return computer==null;
+		return computer == null;
 	}
 
 	private boolean shouldCompute() {
-		if (lastComputed==null) {
+		if (lastComputed == null) {
 			//Never computed
 			return true;
 		} else {
 			//Computed before... should check expiration
-			if (failure!=null) {
+			if (failure != null) {
 				// cached result is a exception
-				return expireExceptionsAfter!=null && 
+				return expireExceptionsAfter != null && 
 					System.currentTimeMillis() - lastComputed >= expireExceptionsAfter;
 			} else {
 				// cached result is a normal value

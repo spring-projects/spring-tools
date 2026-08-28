@@ -218,7 +218,7 @@ public class Editor {
 				}
 			}
 		}
-		if (bad!=null) {
+		if (bad != null) {
 			fail(bad + problemSumary(editor, actualProblems));
 		}
 		return ImmutableList.copyOf(actualProblems);
@@ -706,7 +706,7 @@ public class Editor {
 			int searchFrom = 0;
 			@Override
 			public boolean hasNext() {
-				return searchFrom>=0 && searchFrom < text.length() && text.indexOf(substring, searchFrom) >= 0;
+				return searchFrom >= 0 && searchFrom < text.length() && text.indexOf(substring, searchFrom) >= 0;
 			}
 
 			@Override
@@ -876,7 +876,7 @@ public class Editor {
 		if (pos >= 0) {
 			pos += hoverOver.length() / 2;
 		}
-		assertTrue(pos>=0, "Not found in editor: '"+hoverOver+"'");
+		assertTrue(pos >= 0, "Not found in editor: '"+hoverOver+"'");
 		
 		assertDefinitionLinkTargets(doc.toPosition(pos), expectedLocations);
 	}
@@ -892,7 +892,7 @@ public class Editor {
 		if (pos >= 0) {
 			pos += hoverOver.length() / 2;
 		}
-		assertTrue(pos>=0, "Not found in editor: '"+hoverOver+"'");
+		assertTrue(pos >= 0, "Not found in editor: '"+hoverOver+"'");
 		
 		assertImplementationLinkTargets(doc.toPosition(pos), expectedLocations);
 	}
@@ -921,11 +921,11 @@ public class Editor {
 		throw new UnsupportedOperationException("Not implemented yet!");
 //		Editor editor = this;
 //		int pos = getRawText().indexOf(hoverOver);
-//		if (pos>=0) {
+//		if (pos >= 0) {
 //			pos += hoverOver.length();
 //		}
 //		return harness.getHover(doc, doc.toPosition(pos));
-//		assertTrue("Not found in editor: '"+hoverOver+"'", pos>=0);
+//		assertTrue("Not found in editor: '"+hoverOver+"'", pos >= 0);
 //
 //		List<IJavaElement> targets = getLinkTargets(editor, pos);
 //		assertEquals(expecteds.length, targets.size());

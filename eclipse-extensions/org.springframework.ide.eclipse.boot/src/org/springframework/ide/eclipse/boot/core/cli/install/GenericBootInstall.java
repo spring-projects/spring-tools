@@ -41,7 +41,7 @@ public class GenericBootInstall extends BootInstall {
 
 	@Override
 	public IStatus validate() {
-		if (errorMessage==null) {
+		if (errorMessage == null) {
 			return Status.OK_STATUS;
 		} else {
 			return new Status(IStatus.ERROR, BootActivator.PLUGIN_ID, errorMessage);

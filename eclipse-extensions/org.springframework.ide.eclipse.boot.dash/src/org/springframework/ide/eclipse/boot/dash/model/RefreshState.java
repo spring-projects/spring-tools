@@ -84,25 +84,25 @@ public class RefreshState {
 	}
 
 	public boolean isError() {
-		return id==Id.ERROR;
+		return id == Id.ERROR;
 	}
 	public boolean isWarning() {
-		return id==Id.WARNING;
+		return id == Id.WARNING;
 	}
 	public boolean isLoading() {
-		return id==Id.LOADING;
+		return id == Id.LOADING;
 	}
 
 	public static RefreshState merge(RefreshState s1, RefreshState s2) {
 		//For the caller's convenience... treat null as READY so callers don't
 		// need to do a bunch of null checks.
-		if (s1==null) {
+		if (s1 == null) {
 			s1 = READY;
 		}
-		if (s2==null) {
+		if (s2 == null) {
 			s2 = READY;
 		}
-		if (s1.id.compareTo(s2.id)<0) {
+		if (s1.id.compareTo(s2.id) < 0) {
 			return s2;
 		} else {
 			return s1;

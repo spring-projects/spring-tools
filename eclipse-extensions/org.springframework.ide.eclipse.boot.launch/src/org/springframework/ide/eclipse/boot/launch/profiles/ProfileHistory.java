@@ -38,17 +38,17 @@ public class ProfileHistory implements IProfileHistory {
 	private int maxProfileHistory = 10;
 
 	public ProfileHistory setMaxHistory(int max) {
-		Assert.isLegal(max>=0);
+		Assert.isLegal(max >= 0);
 		this.maxProfileHistory = max;
 		return this;
 	}
 
 	public String[] getHistory(IProject project) {
-		if (project!=null) {
+		if (project != null) {
 			IEclipsePreferences prefs = getPreferences(project);
-			if (prefs!=null) {
+			if (prefs != null) {
 				String[] storedHistory = ArrayEncoder.decode(prefs.get(PROFILE_HISTORY, null));
-				if (storedHistory!=null) {
+				if (storedHistory != null) {
 					return storedHistory;
 				}
 			}
@@ -59,7 +59,7 @@ public class ProfileHistory implements IProfileHistory {
 	protected void setHistory(IProject project, String[] profiles) {
 		try {
 			IEclipsePreferences prefs = getPreferences(project);
-			if (prefs!=null) {
+			if (prefs != null) {
 				prefs.put(PROFILE_HISTORY, ArrayEncoder.encode(profiles));
 				prefs.flush();
 			}
@@ -73,12 +73,12 @@ public class ProfileHistory implements IProfileHistory {
 	 * the maxHistory limit is exceeded.
 	 */
 	public void updateHistory(IProject project, String profile) {
-		if (project!=null && hasText(profile)) {
+		if (project != null && hasText(profile)) {
 			LinkedList<String> history = new LinkedList<>(
 					Arrays.asList(getHistory(project)));
 			history.remove(profile);
 			history.addFirst(profile);
-			while (history.size()>maxProfileHistory) {
+			while (history.size() > maxProfileHistory) {
 				history.removeLast();
 			}
 			setHistory(project, history.toArray(new String[history.size()]));

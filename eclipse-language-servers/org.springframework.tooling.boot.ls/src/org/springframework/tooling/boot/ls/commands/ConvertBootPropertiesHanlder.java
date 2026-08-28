@@ -110,7 +110,7 @@ public abstract class ConvertBootPropertiesHanlder extends AbstractHandler {
 				ss = (IStructuredSelection) selection;
 			}
 		}
-		if (ss!=null && !ss.isEmpty()) {
+		if (ss != null && !ss.isEmpty()) {
 			return asFile(ss.getFirstElement());
 		}
 		return null;

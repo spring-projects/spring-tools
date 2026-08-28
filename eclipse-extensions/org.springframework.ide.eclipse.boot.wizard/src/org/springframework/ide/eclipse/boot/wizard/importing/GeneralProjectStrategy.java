@@ -79,7 +79,7 @@ public class GeneralProjectStrategy extends ImportStrategy {
 
 		public static boolean isDefaultProjectLocation(String projectName, File projectDir) {
 			IPath workspaceLoc = Platform.getLocation();
-			if (workspaceLoc!=null) {
+			if (workspaceLoc != null) {
 				File defaultLoc = new File(workspaceLoc.toFile(), projectName);
 				return defaultLoc.equals(projectDir);
 			}
@@ -106,7 +106,7 @@ public class GeneralProjectStrategy extends ImportStrategy {
 				//Be careful that this constraint only needs to hold in a very specific case where the
 				//location is nested exactly one level below the workspace location on disk.
 				IPath wsLocation = ws.getRoot().getLocation();
-				if (wsLocation.isPrefixOf(projectLocation) && wsLocation.segmentCount()+1==projectLocation.segmentCount()) {
+				if (wsLocation.isPrefixOf(projectLocation) && wsLocation.segmentCount()+1 == projectLocation.segmentCount()) {
 					String expectedName = projectDir.getName();
 					if (!expectedName.equals(projectName)) {
 						throw ExceptionUtil.coreException("Project-name ("+projectName+") should match last segment of location ("+projectDir+")");

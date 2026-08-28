@@ -44,7 +44,7 @@ public class DataRepositoryPrefixSensitiveCompletionProvider implements DataRepo
 			return;
 		}
 		DataRepositoryMethodNameParseResult parseResult = new DataRepositoryMethodParser(localPrefix, repoDef).parseLocalPrefixForCompletion();
-		if(parseResult != null && parseResult.performFullCompletion()){
+		if (parseResult != null && parseResult.performFullCompletion()){
 			Map<String, DomainProperty> propertiesByName = repoDef.getDomainType().getPropertiesByName();
 			if (isEndingWithProperty(parseResult, propertiesByName) || isEndingWithPredicateKeyWord(localPrefix, propertiesByName)) {
 				addMethodCompletionProposal(completions, offset, repoDef, localPrefix, prefix, parseResult, propertiesByName, node, doc);
@@ -149,7 +149,7 @@ public class DataRepositoryPrefixSensitiveCompletionProvider implements DataRepo
 		int replaceStart = offset - localPrefix.length();
 		String beforeLocalPrefix = fullPrefix.substring(0, fullPrefix.length()-localPrefix.length());
 		String trimmed = beforeLocalPrefix.trim();
-		if(trimmed.endsWith(returnType)) {
+		if (trimmed.endsWith(returnType)) {
 			replaceStart -= (beforeLocalPrefix.length() - trimmed.length()) + returnType.length();
 		}
 		return replaceStart;
@@ -185,7 +185,7 @@ public class DataRepositoryPrefixSensitiveCompletionProvider implements DataRepo
 
 	private DomainType findExpressionType(Map<String, DomainProperty> properties, String param) {
 		String[] splitByUnderscore = param.split("_");
-		if(properties.containsKey(splitByUnderscore[0])) {
+		if (properties.containsKey(splitByUnderscore[0])) {
 			DomainType type = properties.get(splitByUnderscore[0]).getType();
 			for (int j = 1; j < splitByUnderscore.length && type != null; j++) {
 				type = findMatchingParameter(splitByUnderscore[j], type);

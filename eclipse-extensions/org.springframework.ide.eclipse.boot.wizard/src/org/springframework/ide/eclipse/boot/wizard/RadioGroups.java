@@ -47,7 +47,7 @@ public class RadioGroups {
 	 */
 	public RadioGroup ensureGroup(String groupName) {
 		RadioGroup group = groups.get(groupName);
-		if (group==null) {
+		if (group == null) {
 			group = new RadioGroup(groupName);
 			groups.put(groupName, group);
 		}

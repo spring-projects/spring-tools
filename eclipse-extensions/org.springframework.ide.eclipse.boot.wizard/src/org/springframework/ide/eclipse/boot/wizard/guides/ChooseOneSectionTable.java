@@ -57,7 +57,7 @@ public class ChooseOneSectionTable<T> extends ChooseOneSection {
 		private Predicate<String> matcher = null;
 
 		public ChoicesFilter() {
-			if (searchBox!=null) {
+			if (searchBox != null) {
 				setSearchTerm(searchBox.getText());
 			}
 		}
@@ -68,7 +68,7 @@ public class ChooseOneSectionTable<T> extends ChooseOneSection {
 
 		@Override
 		public boolean select(Viewer viewer, Object parentElement, Object element) {
-			if (matcher==null) {
+			if (matcher == null) {
 				return true;
 			} else {
 				String label = labelProvider.getText(element);
@@ -83,7 +83,7 @@ public class ChooseOneSectionTable<T> extends ChooseOneSection {
 		}
 
 		private boolean match(String text) {
-			if (matcher==null) {
+			if (matcher == null) {
 				return true; // Search term not set... anything is acceptable.
 			} else {
 				return matcher.test(text);
@@ -114,7 +114,7 @@ public class ChooseOneSectionTable<T> extends ChooseOneSection {
 	@Override
 	public void createContents(Composite page) {
 		Composite field = new Composite(page, SWT.NONE);
-		int cols = label==null ? 1 : 2;
+		int cols = label == null ? 1 : 2;
 		GridLayout layout = GridLayoutFactory.fillDefaults().numColumns(cols).create();
 		field.setLayout(layout);
 
@@ -122,7 +122,7 @@ public class ChooseOneSectionTable<T> extends ChooseOneSection {
 		GridDataFactory.fillDefaults().grab(true, false).applyTo(searchBox);
 
 		Label fieldNameLabel = null;
-		if (label!=null) {
+		if (label != null) {
 			fieldNameLabel = new Label(field, SWT.NONE);
 			fieldNameLabel.setText(label);
 		}
@@ -133,7 +133,7 @@ public class ChooseOneSectionTable<T> extends ChooseOneSection {
 		tv.setContentProvider(ArrayContentProvider.getInstance());
 		tv.setInput(options);
 
-		if (fieldNameLabel!=null) {
+		if (fieldNameLabel != null) {
 			GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.BEGINNING).applyTo(fieldNameLabel);
 		}
 		GridDataFactory grab = GridDataFactory.fillDefaults().grab(true, true).hint(SWT.DEFAULT, 150);
@@ -144,7 +144,7 @@ public class ChooseOneSectionTable<T> extends ChooseOneSection {
 			@Override
 			public void run() {
 				T preSelect = selection.selection.getValue();
-				if (preSelect!=null) {
+				if (preSelect != null) {
 					tv.setSelection(new StructuredSelection(preSelect), true);
 				} else {
 					tv.setSelection(StructuredSelection.EMPTY, true);

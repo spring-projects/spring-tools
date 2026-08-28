@@ -73,15 +73,15 @@ public class JDK9CompatibilityCheck {
 		@Override
 		public void logging(IStatus status, String plugin) {
 			String indicator = getProblemIndicator(status, plugin);
-			if (indicator!=null) {
+			if (indicator != null) {
 				showWarning(indicator);
 			}
 		}
 
 		private String getProblemIndicator(IStatus status, String plugin) {
-			if (status.getSeverity()==Status.ERROR) {
+			if (status.getSeverity() == Status.ERROR) {
 				Throwable e = status.getException();
-				if (e!=null) {
+				if (e != null) {
 					String m= ExceptionUtil.getMessage(e);
 					if (m.equals("NoClassDefFoundError: Could not initialize class org.codehaus.plexus.archiver.jar.JarArchiver")) {
 						return m;
@@ -119,7 +119,7 @@ public class JDK9CompatibilityCheck {
 
 		private synchronized void showWarning(String title, String message) {
 			//Use the disposable to ensure we only show the warning at most once (per session)
-			if (disposable!=null) {
+			if (disposable != null) {
 				disposable.dispose();
 				disposable = null;
 				Display.getDefault().asyncExec(() -> {

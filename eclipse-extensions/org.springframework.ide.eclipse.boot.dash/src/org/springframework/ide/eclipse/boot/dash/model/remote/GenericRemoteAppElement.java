@@ -119,7 +119,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 		App data = app.getValue();
 		if (data instanceof RunStateIconProvider) {
 			ImageDescriptor icon = ((RunStateIconProvider) data).getRunStateIcon(getRunState());
-			if (icon!=null) {
+			if (icon != null) {
 				return icon;
 			}
 		}
@@ -130,7 +130,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	public <T extends App> T getParent(Class<T> expectedType) {
 		if (parent instanceof GenericRemoteAppElement) {
 			App parentApp = ((GenericRemoteAppElement) parent).getAppData();
-			if (parentApp!=null) {
+			if (parentApp != null) {
 				return expectedType.cast(parentApp);
 			}
 		}
@@ -152,7 +152,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 				ImmutableSet.Builder<BootDashElement> builder = ImmutableSet.builder();
 				for (App child : children) {
 					GenericRemoteAppElement childElement = childFactory.createOrGet(child.getName());
-					if (childElement!=null) {
+					if (childElement != null) {
 						child.setContext(childElement);
 						childElement.setAppData(child);
 						builder.add(childElement);
@@ -177,8 +177,8 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	@Override
 	public void setGoalState(RunState s) {
 		App data = getAppData();
-		if (data!=null) {
-			if (s==RunState.PAUSED) {
+		if (data != null) {
+			if (s == RunState.PAUSED) {
 				RemoteJavaLaunchUtil.disconnectRelatedLaunches(this);
 			}
 			data.setGoalState(s);
@@ -385,7 +385,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 
 		refreshTracker.refreshState.addListener((e, v) -> {
 			RefreshState s = e.getValue();
-			if (s!=null && !s.isLoading()) {
+			if (s != null && !s.isLoading()) {
 				app.refresh();
 			}
 		});
@@ -476,7 +476,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	@Override
 	public EnumSet<RunState> supportedGoalStates() {
 		App app = this.app.getValue();
-		return app!=null?app.supportedGoalStates():EnumSet.noneOf(RunState.class);
+		return app != null ? app.supportedGoalStates() : EnumSet.noneOf(RunState.class);
 	}
 
 	@Override
@@ -614,7 +614,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 
 	private void collectDebugPorts(Builder<Integer> ports) {
 		int port = getDebugPort();
-		if (port>0) {
+		if (port > 0) {
 			ports.add(port);
 		}
 		for (BootDashElement c : children.getValues()) {
@@ -636,7 +636,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	@Override
 	public String getJmxUrl() {
 		App data = getAppData();
-		if (data!=null && data instanceof JmxConnectable) {
+		if (data != null && data instanceof JmxConnectable) {
 			return ((JmxConnectable)data).getJmxUrl();
 		}
 		return null;
@@ -693,18 +693,18 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	@Override
 	public Failable<ImmutableList<RequestMapping>> getLiveRequestMappings() {
 		synchronized (this) {
-			if (liveRequestMappings==null) {
+			if (liveRequestMappings == null) {
 				final LiveExpression<Set<String>> actuatorUrls = getActuatorUrls();
 				liveRequestMappings = new AsyncLiveExpression<>(Failable.error(MissingLiveInfoMessages.NOT_YET_COMPUTED), "Fetch request mappings for '"+getStyledName(null).getString()+"'") {
 					@Override
 					protected Failable<ImmutableList<RequestMapping>> compute() {
 						Set<String> targets = actuatorUrls.getValue();
-						if (targets!=null && !targets.isEmpty()) {
+						if (targets != null && !targets.isEmpty()) {
 							if (targets.size() == 1) {
 								String target = targets.iterator().next();
 								ActuatorClient client = JMXActuatorClient.forUrl(getTypeLookup(), () -> target);
 								List<RequestMapping> list = client.getRequestMappings();
-								if (list!=null) {
+								if (list != null) {
 									return Failable.of(ImmutableList.copyOf(client.getRequestMappings()));
 								}
 							} else {
@@ -732,7 +732,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 					@Override
 					protected Failable<ImmutableSet<String>> compute() {
 						Set<String> targets = actuatorUrls.getValue();
-						if (targets!=null && !targets.isEmpty()) {
+						if (targets != null && !targets.isEmpty()) {
 							if (targets.size() == 1) {
 								String target = targets.iterator().next();
 								try {
@@ -769,7 +769,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 					@Override
 					protected Failable<LiveEnvModel> compute() {
 						Set<String> targets = actuatorUrls.getValue();
-						if (targets!=null && !targets.isEmpty()) {
+						if (targets != null && !targets.isEmpty()) {
 							if (targets.size() == 1) {
 								String target = targets.iterator().next();
 								ActuatorClient client = JMXActuatorClient.forUrl(getTypeLookup(), () -> target);
@@ -806,7 +806,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 					@Override
 					protected Failable<LiveBeansModel> compute() {
 						Set<String> targets = actuatorUrls.getValue();
-						if (targets!=null && !targets.isEmpty()) {
+						if (targets != null && !targets.isEmpty()) {
 							if (targets.size() == 1) {
 								String target = targets.iterator().next();
 								ActuatorClient client = JMXActuatorClient.forUrl(getTypeLookup(), () -> target);
@@ -837,7 +837,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 				if (app instanceof SystemPropertySupport) {
 					SystemPropertySupport sysprops = (SystemPropertySupport) app;
 					IProject project = getProject();
-					if (project!=null) {
+					if (project != null) {
 						sysprops.setSystemProperty(DevtoolsUtil.REMOTE_SECRET_PROP, DevtoolsUtil.getSecret(project));
 					}
 				}
@@ -870,7 +870,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 
 		@Override
 		public void gotValue(LiveExpression<RunState> exp, RunState value) {
-			if (exp.getValue()==RunState.INACTIVE) {
+			if (exp.getValue() == RunState.INACTIVE) {
 				terminate();
 			}
  		}
@@ -886,7 +886,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 				launch = this.launch;
 				this.launch = null;
 			}
-			if (launch!=null) {
+			if (launch != null) {
 				try {
 					launch.terminate();
 				} catch (Exception e) {
@@ -900,7 +900,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	public void restartRemoteDevtoolsClient() {
 		refreshTracker.runAsync("(Re)starting remote devtools client", () -> {
 			IProject project = getProject();
-			if (project!=null) {
+			if (project != null) {
 				DevtoolsUtil.disconnectDevtoolsClientsFor(this);
 				ILaunch launch = DevtoolsUtil.launchDevtools(this, DevtoolsUtil.getSecret(project), ILaunchManager.RUN_MODE, new NullProgressMonitor());
 				new LaunchTerminator(launch, this);
@@ -926,7 +926,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	public boolean isDevtoolsGreenColor() {
 		App data = getAppData();
 		if (data instanceof DevtoolsConnectable) {
-			return ((DevtoolsConnectable) data).getDevtoolsSecret()!=null;
+			return ((DevtoolsConnectable) data).getDevtoolsSecret() != null;
 		}
 		return false;
 	}
@@ -934,7 +934,7 @@ public class GenericRemoteAppElement extends WrappingBootDashElement<String> imp
 	@Override
 	public String getConsoleDisplayName() {
 		App data = app.getValue();
-		return data!=null ? data.getConsoleDisplayName() : null;
+		return data != null ? data.getConsoleDisplayName() : null;
 	}
 
 	@Override

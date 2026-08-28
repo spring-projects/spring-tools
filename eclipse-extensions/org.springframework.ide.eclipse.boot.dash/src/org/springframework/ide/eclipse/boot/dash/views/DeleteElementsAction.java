@@ -67,7 +67,7 @@ public class DeleteElementsAction<T extends RunTargetType> extends AbstractBootD
 			final DeletionCapabableModel modifiable = (DeletionCapabableModel)model; //cast is safe. Only DeleteCapabableModel are added to sortingBins
 			String confirmationMsg = modifiable.getDeletionConfirmationMessage(workitem.getValue());
 			RunTargetType runTargetType = model.getRunTarget().getType();
-			if (confirmationMsg==null || ui().confirmWithToggle(PREF_SKIP_CONFIRM_DELETE(runTargetType), "Deleting Elements", confirmationMsg, "Skip this dialog next time")) {
+			if (confirmationMsg == null || ui().confirmWithToggle(PREF_SKIP_CONFIRM_DELETE(runTargetType), "Deleting Elements", confirmationMsg, "Skip this dialog next time")) {
 				Job job = new Job("Deleting Elements from " + model.getRunTarget().getName()) {
 					@Override
 					protected IStatus run(IProgressMonitor monitor) {
@@ -125,7 +125,7 @@ public class DeleteElementsAction<T extends RunTargetType> extends AbstractBootD
 	}
 
 	private boolean isCorrectTargetType(BootDashModel model) {
-		return model!=null && targetTypeClass.isAssignableFrom(model.getRunTarget().getType().getClass());
+		return model != null && targetTypeClass.isAssignableFrom(model.getRunTarget().getType().getClass());
 	}
 
 }

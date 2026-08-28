@@ -54,12 +54,12 @@ public class YPropertyHoverInfo extends HoverInfo {
 		html.raw("<br>");
 
 		YType type = getType();
-		if (type!=null) {
+		if (type != null) {
 			actionLink(html, type.toString(), null);
 		}
 
 		HtmlSnippet description = getDescription();
-		if (description!=null) {
+		if (description != null) {
 			html.raw("<br><br>");
 			html.snippet(description);
 		}

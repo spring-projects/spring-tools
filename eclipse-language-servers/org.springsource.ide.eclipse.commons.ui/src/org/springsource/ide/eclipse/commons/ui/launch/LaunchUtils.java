@@ -89,7 +89,7 @@ public class LaunchUtils {
 			for (DebugEvent e : events) {
 				//Don't ckeck source==launch because we don't get termination events for launches
 				// only for processes in a launch.
-				if (e.getKind()==DebugEvent.TERMINATE) {
+				if (e.getKind() == DebugEvent.TERMINATE) {
 					checkAndRun();
 				}
 			}
@@ -97,7 +97,7 @@ public class LaunchUtils {
 
 		private void checkAndRun() {
 			Runnable runit = check();
-			if (runit!=null) {
+			if (runit != null) {
 				debugPlugin.removeDebugEventListener(this);
 				runit.run();
 			}
@@ -113,7 +113,7 @@ public class LaunchUtils {
 		 * not when firing the runnable!)
 		 */
 		private synchronized Runnable check() {
-			if (runnable!=null) {
+			if (runnable != null) {
 				Iterator<ILaunch> iter = launches.iterator();
 				while (iter.hasNext()) {
 					ILaunch l = iter.next();
@@ -162,7 +162,7 @@ public class LaunchUtils {
 		ArrayList<ILaunch> selected = new ArrayList<ILaunch>();
 		for (ILaunch l : all) {
 			ILaunchConfiguration lConf = l.getLaunchConfiguration();
-			if (lConf!=null && lConf.equals(launchConf)) {
+			if (lConf != null && lConf.equals(launchConf)) {
 				selected.add(l);
 			}
 		}

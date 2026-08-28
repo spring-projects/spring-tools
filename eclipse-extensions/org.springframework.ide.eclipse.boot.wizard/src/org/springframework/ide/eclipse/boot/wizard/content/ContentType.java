@@ -55,14 +55,14 @@ public class ContentType<T extends GSContent> implements Describable, DisplayNam
 		boolean found = m.find();
 		while (found) {
 			int pos2 = m.start();
-			if (pos2>pos1) {
+			if (pos2 > pos1) {
 				result.append(simpleName.substring(pos1, pos2)+" ");
 			}
 			pos1 = pos2;
 			found = m.find();
 		}
 		//Don't forget the last bit
-		if (pos1>=0) {
+		if (pos1 >= 0) {
 			result.append(simpleName.substring(pos1));
 		}
 		return result.toString();

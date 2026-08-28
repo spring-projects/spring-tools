@@ -84,7 +84,7 @@ public class Quickfix<T> {
 	}
 
 	private boolean appliesToContext(CodeActionContext context) {
-		if (context!=null) {
+		if (context != null) {
 			return context.getDiagnostics().stream().anyMatch(diag ->
 				this.diagMsg == null || this.diagMsg.equals(diag.getMessage())
 			);

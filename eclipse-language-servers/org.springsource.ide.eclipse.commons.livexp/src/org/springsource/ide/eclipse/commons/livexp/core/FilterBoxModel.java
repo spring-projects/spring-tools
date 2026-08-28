@@ -29,7 +29,7 @@ public abstract class FilterBoxModel<T> implements Disposable {
 	private LiveExpression<Filter<T>> filter = null; // lazy created
 
 	public synchronized LiveExpression<Filter<T>> getFilter() {
-		if (filter==null) {
+		if (filter == null) {
 			Filter<T> initialFilter = Filters.acceptAll();
 			filter = new LiveExpression<Filter<T>>(initialFilter) {
 				protected Filter<T> compute() {
@@ -46,7 +46,7 @@ public abstract class FilterBoxModel<T> implements Disposable {
 	}
 
 	public void dispose() {
-		if (filter!=null) {
+		if (filter != null) {
 			filter.dispose();
 			filter = null;
 		}

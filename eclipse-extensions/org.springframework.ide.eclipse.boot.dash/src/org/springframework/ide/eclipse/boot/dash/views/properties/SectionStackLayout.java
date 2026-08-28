@@ -32,7 +32,7 @@ class SectionStackLayout extends StackLayout {
 	 */
 	static void reflow(TabbedPropertySheetPage page) {
 		final Composite target = page.getControl().getParent();
-		if (target!=null) {
+		if (target != null) {
 			target.getDisplay().asyncExec(new Runnable() {
 				public void run() {
 					if (!target.isDisposed()) {

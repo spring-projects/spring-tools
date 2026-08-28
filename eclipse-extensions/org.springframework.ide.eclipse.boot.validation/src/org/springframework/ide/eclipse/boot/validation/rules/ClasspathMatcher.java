@@ -47,21 +47,21 @@ public abstract class ClasspathMatcher {
 
 	
 	protected boolean isProjectWithName(IClasspathEntry entry, String name) {
-		if (entry.getEntryKind()==CPE_PROJECT) {
+		if (entry.getEntryKind() == CPE_PROJECT) {
 			return name.equals(entry.getPath().segment(0));
 		}
 		return false;
 	}
 
 	protected boolean isSourceFolderInProject(IClasspathEntry e, String projectName) {
-		if (e.getEntryKind()==CPE_SOURCE) {
+		if (e.getEntryKind() == CPE_SOURCE) {
 			return projectName.equals(e.getPath().segment(0));
 		}
 		return false;
 	}
 
 	protected boolean isJarNameContaining(IClasspathEntry entry, String nameFragment) {
-		if (entry.getEntryKind()==CPE_LIBRARY) {
+		if (entry.getEntryKind() == CPE_LIBRARY) {
 			return entry.getPath().toString().contains(nameFragment);
 		}
 		return false;
@@ -69,11 +69,11 @@ public abstract class ClasspathMatcher {
 
 
 	public final boolean match(IClasspathEntry[] classpathMaybe) {
-		if (isCached && cachedFor==classpathMaybe) {
+		if (isCached && cachedFor == classpathMaybe) {
 			return cachedValue;
 		} else {
 			boolean value;
-			if (classpathMaybe!=null) {
+			if (classpathMaybe != null) {
 				value = doMatch(classpathMaybe);
 			} else {
 				value = defaultValue;

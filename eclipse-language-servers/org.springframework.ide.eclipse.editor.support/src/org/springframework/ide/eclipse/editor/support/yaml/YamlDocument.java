@@ -39,7 +39,7 @@ public class YamlDocument {
 	}
 
 	public SRootNode getStructure() throws Exception {
-		if (this.structure==null) {
+		if (this.structure == null) {
 			this.structure = structureProvider.getStructure(this);
 		}
 		return structure;
@@ -74,13 +74,13 @@ public class YamlDocument {
 		int len = r.getLength();
 		int startOfLine = r.getOffset();
 		int leadingSpaces = 0;
-		while (leadingSpaces<len) {
+		while (leadingSpaces < len) {
 			char c = getChar(startOfLine+leadingSpaces);
-			if (c==' ') {
+			if (c == ' ') {
 				leadingSpaces++;
-			} else if (c=='#') {
+			} else if (c == '#') {
 				return -1;
-			} else if (c!=' ') {
+			} else if (c != ' ') {
 				return leadingSpaces;
 			}
 			leadingSpaces++;
@@ -106,9 +106,9 @@ public class YamlDocument {
 		//from offset upto the start of the current line.
 		IRegion lineInfo = doc.getLineInformationOfOffset(offset);
 		int startOfLine = lineInfo.getOffset();
-		while (offset>=startOfLine) {
+		while (offset >= startOfLine) {
 			char c = getChar(offset);
-			if (c=='#') {
+			if (c == '#') {
 				return true;
 			}
 			offset--;

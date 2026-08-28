@@ -34,16 +34,16 @@ public class ValueParsers {
 	}
 
 	public static ValueParser integerRange(final Integer lowerBound, final Integer upperBound) {
-		Assert.isLegal(lowerBound==null || upperBound==null || lowerBound <= upperBound);
+		Assert.isLegal(lowerBound == null || upperBound == null || lowerBound <= upperBound);
 		return new ValueParser() {
 			@Override
 			public Object parse(String str) throws Exception {
 				str = str.replace("_", ""); //Tolerate and ignore underscores in integers.
 				int value = Integer.parseInt(str);
-				if (lowerBound!=null && value<lowerBound) {
+				if (lowerBound != null && value < lowerBound) {
 					throw new NumberFormatException("Value must be at least "+lowerBound);
 				}
-				if (upperBound!=null && value>upperBound) {
+				if (upperBound != null && value > upperBound) {
 					throw new NumberFormatException("Value must be at most "+upperBound);
 				}
 				return value;

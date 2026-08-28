@@ -50,7 +50,7 @@ public class RequestMapping1x extends AbstractRequestMapping {
 	@Override
 	public String getFullyQualifiedClassName() {
 		JLRMethod m = getMethodData();
-		if (m!=null) {
+		if (m != null) {
 			return m.getFQClassName();
 		}
 		return null;
@@ -62,7 +62,7 @@ public class RequestMapping1x extends AbstractRequestMapping {
 	 */
 	public String getMethodString() {
 		try {
-			if (handler!=null) {
+			if (handler != null) {
 				return handler; //Note: Boot 2.0 handler isn't always a method, but kind of hard to
 					// recognize. Since we don't do anything meaningfull if its not a method...
 					// its fine to treat everything as a method, as long as we don't make stuff
@@ -77,14 +77,14 @@ public class RequestMapping1x extends AbstractRequestMapping {
 	@Override
 	public String getMethodName() {
 		JLRMethod m = getMethodData();
-		if (m!=null) {
+		if (m != null) {
 			return m.getMethodName();
 		}
 		return null;
 	}
 
 	protected JLRMethod getMethodData() {
-		if (methodData==null) {
+		if (methodData == null) {
 			methodData = JLRMethodParser.parse(getMethodString());
 		}
 		return methodData;
@@ -137,7 +137,7 @@ public class RequestMapping1x extends AbstractRequestMapping {
 			//use org.json or jackson Mapper to properly parse this.
 			int start = 2; //right after first '['
 			int end = key.indexOf(']');
-			if (end>=2) {
+			if (end >= 2) {
 				return key.substring(start, end);
 			}
 		}

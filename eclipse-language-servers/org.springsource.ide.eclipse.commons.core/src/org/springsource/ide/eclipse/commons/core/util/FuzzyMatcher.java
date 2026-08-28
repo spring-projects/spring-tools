@@ -49,9 +49,9 @@ public class FuzzyMatcher {
 		int dpos = 0;
 		int qlen = query.length();
 		int dlen = data.length();
-		while (qpos<qlen && dpos<dlen) {
+		while (qpos < qlen && dpos < dlen) {
 			int nextMatch = data.indexOf(query.charAt(qpos), dpos);
-			if (nextMatch<0) {
+			if (nextMatch < 0) {
 				return highlights;
 			}
 			addMatch(highlights, nextMatch);
@@ -66,7 +66,7 @@ public class FuzzyMatcher {
 			highlights.add(new Region(nextMatch, nextMatch+1));
 		}
 		Region lastRegion = (Region) highlights.get(highlights.size()-1);
-		if (lastRegion.getOffset()+lastRegion.getLength()==nextMatch) {
+		if (lastRegion.getOffset()+lastRegion.getLength() == nextMatch) {
 			lastRegion.end++;
 		} else {
 			highlights.add(new Region(nextMatch, nextMatch+1));
@@ -89,18 +89,18 @@ public class FuzzyMatcher {
 		int skips = 0; //number of skipped characters. This is the sum of the length of all the gaps.
 		int plen = pattern.length();
 		int dlen = data.length();
-		if (plen>dlen) {
+		if (plen > dlen) {
 			return 0.0;
 		}
-		while (ppos<plen) {
-			if (dpos>=dlen) {
+		while (ppos < plen) {
+			if (dpos >= dlen) {
 				//still chars left in pattern but no more data
 				return 0.0;
 			}
 			char c = pattern.charAt(ppos++);
 			int foundCharAt = data.indexOf(c, dpos);
-			if (foundCharAt>=0) {
-				if (foundCharAt>dpos) {
+			if (foundCharAt >= 0) {
+				if (foundCharAt > dpos) {
 					gaps++;
 					skips+=foundCharAt-dpos;
 				}
@@ -110,7 +110,7 @@ public class FuzzyMatcher {
 			}
 		}
 		//end of pattern reached. All matched.
-		if (dpos<dlen) {
+		if (dpos < dlen) {
 			//data left over
 			//gaps++; don't count end skipped chars as a real 'gap'. Otherwise we
 			//tend to favor matches at the end of the string over matches in the middle.
@@ -120,7 +120,7 @@ public class FuzzyMatcher {
 	}
 
 	private static double score(int gaps, int skips, CharSequence pattern) {
-		if (gaps==0) {
+		if (gaps == 0) {
 			//gaps == 0 means a prefix match, ignore 'skips' at end of String and just sort
 			// alphabetic (see STS-4049)
 			return 0.5+pattern.length(); //all scored equally, assumes using a 'stable' sorter.

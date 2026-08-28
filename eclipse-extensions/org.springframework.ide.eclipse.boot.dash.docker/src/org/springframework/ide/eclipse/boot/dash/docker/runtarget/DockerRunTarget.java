@@ -68,7 +68,7 @@ implements RemoteRunTarget<DockerClient, DockerTargetParams>, ProjectDeploymentT
 	public DockerRunTarget(DockerRunTargetType type, DockerTargetParams params, DockerClient client) {
 		super(type, params.getUri());
 		this.client = new OldValueDisposer<DockerClient>(this).getVar();
-		this.sessionId = this.client.apply(c -> c!=null ? UUID.randomUUID().toString() : null);
+		this.sessionId = this.client.apply(c -> c != null ? UUID.randomUUID().toString() : null);
 		this.deployments = this.client.addDisposableChild(new DockerDeployments(getPersistentProperties()));
 		this.params = params;
 		this.client.setValue(client);
@@ -118,7 +118,7 @@ implements RemoteRunTarget<DockerClient, DockerTargetParams>, ProjectDeploymentT
 	@Override
 	public synchronized void disconnect() {
 		DockerClient c = client.getValue();
-		if (c!=null) {
+		if (c != null) {
 			client.setValue(null);
 		}
 	}
@@ -188,9 +188,9 @@ implements RemoteRunTarget<DockerClient, DockerTargetParams>, ProjectDeploymentT
 
 	public synchronized Network ensureNetwork(AppConsole console) {
 		DockerClient client = this.client.getValue();
-		if (client!=null) {
+		if (client != null) {
 			Network network = getNetwork(client, DOCKER_NETWORK_NAME);
-			if (network!=null) {
+			if (network != null) {
 				return network;
 			}
 			console.logCommand("docker network create -d bridge "+DOCKER_NETWORK_NAME);

@@ -98,7 +98,7 @@ public abstract class CachingValueProvider<T> {
 //		debug("CA query: "+query);
 		String key = key(type);
 		CacheEntry cached = cache.get(key);
-		if (cached==null) {
+		if (cached == null) {
 			cache.put(key, cached = new CacheEntry(key, getValuesIncremental(type, scope)));
 		}
 		return cached.values;
@@ -119,12 +119,12 @@ public abstract class CachingValueProvider<T> {
 	private Flux<T> getValuesIncremental(IType expectedType, IJavaSearchScope scope) {
 //		debug("trying to solve "+query+" incrementally");
 		CacheEntry cached = cache.get(key(expectedType));
-		if (cached!=null) {
+		if (cached != null) {
 			if (cached.isComplete) {
 //				debug("filtering "+subquery+" -> "+query);
 				return cached.values
 //						.doOnNext((hint) -> debug("filter["+query+"]: "+hint.getValue()))
-//						.filter((hint) -> 0!=FuzzyMatcher.matchScore(query, hint.getValue().toString()))
+//						.filter((hint) -> 0 != FuzzyMatcher.matchScore(query, hint.getValue().toString()))
 						;
 			} else {
 //				debug("subquery "+subquery+" cached but is incomplete");

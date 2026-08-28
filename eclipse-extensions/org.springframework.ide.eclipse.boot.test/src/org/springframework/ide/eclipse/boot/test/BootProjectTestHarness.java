@@ -132,7 +132,7 @@ public class BootProjectTestHarness {
 	}
 
 	public static WizardConfigurer withStarters(final String... ids) {
-		if (ids.length>0) {
+		if (ids.length > 0) {
 			return new WizardConfigurer() {
 				@Override
 				public void apply(NewSpringBootWizardModel wizard) {
@@ -455,7 +455,7 @@ public class BootProjectTestHarness {
 	}
 
 	public static void assertOk(IStatus result) throws Exception {
-		if (result==null || !result.isOK()) {
+		if (result == null || !result.isOK()) {
 			throw ExceptionUtil.coreException(result);
 		}
 	}

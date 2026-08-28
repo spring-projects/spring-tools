@@ -58,7 +58,7 @@ public class DeletedLaunchConfTerminator implements ILaunchConfigurationListener
 				//Careful conf could be null (because it was deleted), or not.
 				//It depends on when we get here (race condition of some kind).
 				//I've seen it happen either way! So we have to handle both cases!
-				if (conf==null || deletedConf.equals(conf)) {
+				if (conf == null || deletedConf.equals(conf)) {
 					try {
 						l.terminate();
 					} catch (Exception e) {

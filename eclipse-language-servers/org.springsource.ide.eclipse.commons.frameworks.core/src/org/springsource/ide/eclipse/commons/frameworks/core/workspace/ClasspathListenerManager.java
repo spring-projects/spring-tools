@@ -70,7 +70,7 @@ public class ClasspathListenerManager implements Disposable {
 		}
 
 		private boolean isClasspathChanged(int flags) {
-			return 0!= (flags & (
+			return 0 != (flags & (
 					IJavaElementDelta.F_CLASSPATH_CHANGED |
 					IJavaElementDelta.F_RESOLVED_CLASSPATH_CHANGED
 			));
@@ -120,7 +120,7 @@ public class ClasspathListenerManager implements Disposable {
 	}
 
 	public void dispose() {
-		if (myListener!=null) {
+		if (myListener != null) {
 			JavaCore.removeElementChangedListener(myListener);
 			myListener = null;
 		}

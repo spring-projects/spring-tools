@@ -52,7 +52,7 @@ public class BootDashCellLabelProvider extends StyledCellLabelProvider {
 	}
 
 	private void animate(ViewerCell cell, Image[] images) {
-		if (animator==null) {
+		if (animator == null) {
 			animator = new ColumnViewerAnimator(tv);
 		}
 		animator.setAnimation(cell, images);
@@ -62,7 +62,7 @@ public class BootDashCellLabelProvider extends StyledCellLabelProvider {
 	public void dispose() {
 		super.dispose();
 		bdeLabels.dispose();
-		if (animator!=null) {
+		if (animator != null) {
 			animator.dispose();
 			animator = null;
 		}
@@ -72,13 +72,13 @@ public class BootDashCellLabelProvider extends StyledCellLabelProvider {
 	public String getToolTipText(Object element) {
 		if (element instanceof BootDashModel) {
 			RefreshState state = ((BootDashModel) element).getRefreshState();
-			if (state!=null) {
+			if (state != null) {
 				return state.getMessage();
 			}
 		}
 		if (element instanceof BootDashElement) {
 			RefreshState state = ((BootDashElement) element).getRefreshState();
-			if (state!=null) {
+			if (state != null) {
 				return state.getMessage();
 			}
 		}

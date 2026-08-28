@@ -81,9 +81,9 @@ public class PlaceHolderString {
 		if (placeHolders.isEmpty()) {
 			return false;
 		}
-		if (placeHolders.size()==1) {
+		if (placeHolders.size() == 1) {
 			PlaceHolder placeHolder = CollectionUtil.getAny(placeHolders.values());
-			if (string.length()==placeHolder.getEnd()) {
+			if (string.length() == placeHolder.getEnd()) {
 				return false;
 			}
 		}
@@ -92,9 +92,9 @@ public class PlaceHolderString {
 
 	@Override
 	public String toString() {
-		if (placeHolders.size()==1) {
+		if (placeHolders.size() == 1) {
 			PlaceHolder placeHolder = CollectionUtil.getAny(placeHolders.values());
-			if (string.length()==placeHolder.getEnd()) {
+			if (string.length() == placeHolder.getEnd()) {
 				return string.substring(0, placeHolder.getOffset());
 			}
 		}
@@ -103,7 +103,7 @@ public class PlaceHolderString {
 
 	public PlaceHolder getPlaceHolder(Object id) {
 		ImmutableCollection<PlaceHolder> all = placeHolders.get(id);
-		if (all!=null && !all.isEmpty()) {
+		if (all != null && !all.isEmpty()) {
 			return all.iterator().next();
 		}
 		return null;

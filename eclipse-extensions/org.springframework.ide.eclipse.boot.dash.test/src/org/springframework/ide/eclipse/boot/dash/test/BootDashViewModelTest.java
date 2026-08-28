@@ -81,7 +81,7 @@ public class BootDashViewModelTest {
 
 	@After
 	public void teardown() throws Exception {
-		if (harness!=null) {
+		if (harness != null) {
 			harness.dispose();
 		}
 	}

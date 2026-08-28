@@ -115,7 +115,7 @@ public class TestUtils {
 				}
 			}
 		}
-		if (lastException!=null) {
+		if (lastException != null) {
 			throw lastException;
 		}
 	}

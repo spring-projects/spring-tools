@@ -57,7 +57,7 @@ public class SimpleDownloadService implements DownloadService {
 			input = conn.getInputStream();
 			IOUtil.pipe(input, writeTo);
 		} finally {
-			if (input!=null) {
+			if (input != null) {
 				try {
 					input.close();
 				} catch (Throwable e) {

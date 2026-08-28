@@ -112,7 +112,7 @@ public abstract class ACondition {
 			System.err.println("ACondition "+describe()+" timed out. Dumping current Thread stacks...\n" +
 					StsTestUtil.getStackDumps()
 			);
-			if (e!=null) {
+			if (e != null) {
 				if (e instanceof Exception) {
 					throw (Exception)e;
 				} else if (e instanceof Error) {
@@ -124,13 +124,13 @@ public abstract class ACondition {
 				throw new RuntimeException(getMessage());
 			}
 		}
-		if (description!=null) {
+		if (description != null) {
 			System.out.println(description + " succeeded after: " + (System.currentTimeMillis() - startTime));
 		}
 	}
 
 	private String describe() {
-		if (description!=null) {
+		if (description != null) {
 			return "["+description+"]";
 		}
 		return "";
@@ -229,14 +229,14 @@ public abstract class ACondition {
 			});
 			//The waitfor above should fail. Reaching here means it passed.
 			// Make sure we have some kind of exception. Create one if need be.
-			if (firstFail.get()==null) {
+			if (firstFail.get() == null) {
 				firstFail.set(new AssertionFailedError(name));
 			}
 		} catch (Throwable e) {
 			//expected. The wait for should fail with negated asserter
 		}
 		Throwable e = firstFail.get();
-		if (e!=null) {
+		if (e != null) {
 			if (e instanceof Exception) {
 				throw (Exception)e;
 			} else if (e instanceof Error) {

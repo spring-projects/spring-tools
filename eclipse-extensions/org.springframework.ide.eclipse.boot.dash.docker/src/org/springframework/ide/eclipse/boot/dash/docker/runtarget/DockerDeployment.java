@@ -55,7 +55,7 @@ public class DockerDeployment implements Nameable, DesiredInstanceCount {
 		this.buildId = copyFrom.buildId;
 		this.sessionId = copyFrom.sessionId;
 		this.sysprops = copyFrom.sysprops;
-		if (sysprops!=null) {
+		if (sysprops != null) {
 			sysprops = new HashMap<>(sysprops);
 		}
 	}
@@ -112,10 +112,10 @@ public class DockerDeployment implements Nameable, DesiredInstanceCount {
 	}
 
 	public void setSystemProperty(String name, String value) {
-		if (sysprops==null) {
+		if (sysprops == null) {
 			sysprops = new HashMap<>();
 		}
-		if (value==null) {
+		if (value == null) {
 			sysprops.remove(name);
 		} else {
 			sysprops.put(name, value);

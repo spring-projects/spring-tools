@@ -49,7 +49,7 @@ public enum BuildType {
 	private boolean hasDefaultStrategy = false;
 
 	private BuildType(String buildScriptPath) {
-		if (buildScriptPath!=null) {
+		if (buildScriptPath != null) {
 			this.buildScriptPath = new Path(buildScriptPath);
 		}
 	}
@@ -79,7 +79,7 @@ public enum BuildType {
 	}
 
 	public String displayName() {
-		if (displayName==null) {
+		if (displayName == null) {
 			String name = name();
 			displayName = name.substring(0,1) + name.substring(1).toLowerCase();
 		}

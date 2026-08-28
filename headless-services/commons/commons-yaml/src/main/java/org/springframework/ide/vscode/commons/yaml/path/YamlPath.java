@@ -150,7 +150,7 @@ public class YamlPath extends AbstractYamlTraversal {
 	}
 
 	public YamlPathSegment getSegment(int segment) {
-		if (segment>=0 && segment<segments.length) {
+		if (segment >= 0 && segment < segments.length) {
 			return segments[segment];
 		}
 		return null;
@@ -171,7 +171,7 @@ public class YamlPath extends AbstractYamlTraversal {
 
 	@Override
 	public <T extends YamlNavigable<T>> Stream<T> traverseAmbiguously(T startNode) {
-		if (startNode!=null) {
+		if (startNode != null) {
 			Stream<T> result = Stream.of(startNode);
 			for (YamlPathSegment s : segments) {
 				result = result.flatMap((node) -> {
@@ -184,10 +184,10 @@ public class YamlPath extends AbstractYamlTraversal {
 	}
 
 	public YamlPath dropFirst(int dropCount) {
-		if (dropCount>=size()) {
+		if (dropCount >= size()) {
 			return EMPTY;
 		}
-		if (dropCount==0) {
+		if (dropCount == 0) {
 			return this;
 		}
 		YamlPathSegment[] newPath = new YamlPathSegment[segments.length-dropCount];
@@ -202,10 +202,10 @@ public class YamlPath extends AbstractYamlTraversal {
 	}
 
 	public YamlPath dropLast(int dropCount) {
-		if (dropCount>=size()) {
+		if (dropCount >= size()) {
 			return EMPTY;
 		}
-		if (dropCount==0) {
+		if (dropCount == 0) {
 			return this;
 		}
 		YamlPathSegment[] newPath = new YamlPathSegment[segments.length-dropCount];
@@ -218,7 +218,7 @@ public class YamlPath extends AbstractYamlTraversal {
 
 	@Override
 	public boolean isEmpty() {
-		return segments.length==0;
+		return segments.length == 0;
 	}
 
 	public YamlPath tail() {
@@ -241,7 +241,7 @@ public class YamlPath extends AbstractYamlTraversal {
 				break;
 			case KEY: {
 				String key = NodeUtil.asScalar(nodeRef.get());
-				if (key==null) {
+				if (key == null) {
 					return null;
 				} else {
 					segments.add(YamlPathSegment.keyAt(key));
@@ -250,7 +250,7 @@ public class YamlPath extends AbstractYamlTraversal {
 			case VAL: {
 				TupleValueRef vref = (TupleValueRef) nodeRef;
 				String key = NodeUtil.asScalar(vref.getTuple().getKeyNode());
-				if (key==null) {
+				if (key == null) {
 					return null;
 				} else {
 					segments.add(YamlPathSegment.valueAt(key));
@@ -282,7 +282,7 @@ public class YamlPath extends AbstractYamlTraversal {
 		if (!isEmpty()) {
 			YamlPathSegment lastSegment = getLastSegment();
 			YamlPathSegmentType kind = lastSegment.getType();
-			if (kind==YamlPathSegmentType.KEY_AT_KEY ||  kind==YamlPathSegmentType.VAL_AT_KEY) {
+			if (kind == YamlPathSegmentType.KEY_AT_KEY ||  kind == YamlPathSegmentType.VAL_AT_KEY) {
 				return lastSegment.toPropString();
 			}
 		}
@@ -291,14 +291,14 @@ public class YamlPath extends AbstractYamlTraversal {
 
 	public boolean pointsAtKey() {
 		YamlPathSegment s = getLastSegment();
-		return s!=null && s.getType()==YamlPathSegmentType.KEY_AT_KEY;
+		return s != null && s.getType() == YamlPathSegmentType.KEY_AT_KEY;
 	}
 
 	public boolean pointsAtValue() {
 		YamlPathSegment s = getLastSegment();
-		if (s!=null) {
+		if (s != null) {
 			YamlPathSegmentType type = s.getType();
-			return type==YamlPathSegmentType.VAL_AT_KEY || type==YamlPathSegmentType.VAL_AT_INDEX;
+			return type == YamlPathSegmentType.VAL_AT_KEY || type == YamlPathSegmentType.VAL_AT_INDEX;
 		}
 		return false;
 	}
@@ -350,7 +350,7 @@ public class YamlPath extends AbstractYamlTraversal {
 	}
 
 	public boolean startsWith(YamlPath prefix) {
-		if (this.size()>=prefix.size()) {
+		if (this.size() >= prefix.size()) {
 			YamlPath chopped = this.dropLast(this.size() - prefix.size());
 			return chopped.equals(prefix);
 		}

@@ -46,7 +46,7 @@ public class NodeUtil {
 	 * node that contains an offset is unambgious.
 	 */
 	public static boolean contains(Node node, int offset) {
-		return getStart(node)<=offset && offset<getEnd(node);
+		return getStart(node) <= offset && offset < getEnd(node);
 	}
 
 	public static int getStart(Node node) {
@@ -62,21 +62,21 @@ public class NodeUtil {
 	 * @return String value or null if node is not a Scalar node.
 	 */
 	public static String asScalar(Node node) {
-		if (node!=null && node.getNodeId()==NodeId.scalar) {
+		if (node != null && node.getNodeId() == NodeId.scalar) {
 			return ((ScalarNode)node).getValue();
 		}
 		return null;
 	}
 
 	public static MappingNode asMapping(Node node) {
-		if (node!=null && node.getNodeId()==NodeId.mapping) {
+		if (node != null && node.getNodeId() == NodeId.mapping) {
 			return (MappingNode) node;
 		}
 		return null;
 	}
 
 	public static SequenceNode asSequence(Node node) {
-		if (node!=null && node.getNodeId()==NodeId.sequence) {
+		if (node != null && node.getNodeId() == NodeId.sequence) {
 			return (SequenceNode) node;
 		}
 		return null;
@@ -92,7 +92,7 @@ public class NodeUtil {
 			ImmutableSet.Builder<String> builder = ImmutableSet.builder();
 			for (NodeTuple entry : mapNode.getValue()) {
 				String key = NodeUtil.asScalar(entry.getKeyNode());
-				if (key!=null) { //key not a scalar? => something funky so skip it
+				if (key != null) { //key not a scalar? => something funky so skip it
 					builder.add(key);
 				}
 			}
@@ -107,7 +107,7 @@ public class NodeUtil {
 				String key = NodeUtil.asScalar(entry.getKeyNode());
 				if (propName.equals(key)) {
 					String value = asScalar(entry.getValueNode());
-					if (value!=null) {
+					if (value != null) {
 						return value;
 					}
 				}

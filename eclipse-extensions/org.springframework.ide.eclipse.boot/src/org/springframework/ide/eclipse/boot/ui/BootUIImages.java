@@ -33,7 +33,7 @@ public class BootUIImages {
 	}
 
 	private static synchronized ImageRegistry getRegistry() {
-		if (images==null) {
+		if (images == null) {
 			images = new ImageRegistry();
 			register(BOOT_ICON);
 			register(BOOT_DEVTOOLS_ICON);

@@ -239,11 +239,11 @@ public class BootDashViewModelHarness {
 		StyledString label = getStyledLabel(element);
 		int snippetStart = label.getString().indexOf(expectSnippet);
 		int snippetEnd = snippetStart+expectSnippet.length();
-		assertTrue("Not found '"+expectSnippet+"' in '"+label.getString()+"'", snippetStart>=0);
+		assertTrue("Not found '"+expectSnippet+"' in '"+label.getString()+"'", snippetStart >= 0);
 		StyleRange[] styles = label.getStyleRanges();
 		for (StyleRange r : styles) {
 			int end = r.start + r.length;
-			boolean overlaps = r.start<=snippetStart && end >= snippetEnd;
+			boolean overlaps = r.start <= snippetStart && end >= snippetEnd;
 			if (overlaps) {
 				if (expectedColor.equals(r.foreground)) {
 					return; // found it!

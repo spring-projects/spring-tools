@@ -263,7 +263,7 @@ public class DocumentEdits implements ProposalApplier {
 		public void insert(boolean grabCursor, int start, final String text) throws BadLocationException {
 			final int tStart = org2new.transform(start, Direction.AFTER);
 			if (!text.isEmpty()) {
-				if (doc!=null) {
+				if (doc != null) {
 					doc.replace(tStart, 0, text);
 				}
 				final OffsetTransformer parent = org2new;
@@ -271,12 +271,12 @@ public class DocumentEdits implements ProposalApplier {
 					@Override
 					public int transform(int org, Direction dir) {
 						int tOffset = parent.transform(org, dir);
-						if (tOffset<tStart) {
+						if (tOffset < tStart) {
 							return tOffset;
-						} else if (tOffset>tStart) {
+						} else if (tOffset > tStart) {
 							return tOffset + text.length();
-						} else /* tOffset==tStart*/ {
-							if (dir==Direction.BEFORE) {
+						} else /* tOffset == tStart*/ {
+							if (dir == Direction.BEFORE) {
 								return tOffset;
 							} else {
 								return tOffset + text.length();
@@ -294,10 +294,10 @@ public class DocumentEdits implements ProposalApplier {
 
 		public void delete(boolean grabCursor, final int start, final int end) throws BadLocationException {
 			final int tStart = org2new.transform(start, Direction.AFTER);
-			if (end>start) { // skip work for 'delete nothing' op
+			if (end > start) { // skip work for 'delete nothing' op
 				final int tEnd = org2new.transform(end, Direction.AFTER);
-				if (tEnd>tStart) { // skip work for 'delete nothing' op
-					if (doc!=null) {
+				if (tEnd > tStart) { // skip work for 'delete nothing' op
+					if (doc != null) {
 						doc.replace(tStart, tEnd-tStart, "");
 					}
 
@@ -306,9 +306,9 @@ public class DocumentEdits implements ProposalApplier {
 						@Override
 						public int transform(int org, Direction dir) {
 							int tOffset = parent.transform(org, dir);
-							if (tOffset<=tStart) {
+							if (tOffset <= tStart) {
 								return tOffset;
-							} else if (tOffset>=tEnd) {
+							} else if (tOffset >= tEnd) {
 								return tOffset - tEnd + tStart;
 							} else {
 								return start;
@@ -319,7 +319,7 @@ public class DocumentEdits implements ProposalApplier {
 			}
 			if (grabCursor) {
 				selection = tStart;
-			} else if (selection>tStart) {
+			} else if (selection > tStart) {
 				int len = end - start;
 				if (len > 0) {
 					selection = Math.max(tStart, selection-len);
@@ -329,12 +329,12 @@ public class DocumentEdits implements ProposalApplier {
 
 		@Override
 		public String toString() {
-			if (doc==null) {
+			if (doc == null) {
 				return super.toString();
 			}
 			StringBuilder buf = new StringBuilder();
 			buf.append("DocumentState(\n");
-			if (selection>=0) {
+			if (selection >= 0) {
 				//show cursor location for ease in debugging
 				buf.append(doc.get().substring(0, selection));
 				buf.append("<*>");
@@ -366,7 +366,7 @@ public class DocumentEdits implements ProposalApplier {
 	}
 	
 	public void delete(int start, int end) {
-		Assert.isLegal(start<=end);
+		Assert.isLegal(start <= end);
 		edits.add(new Deletion(grabCursor, start, end));
 	}
 
@@ -399,7 +399,7 @@ public class DocumentEdits implements ProposalApplier {
 		for (Edit edit : edits) {
 			edit.apply(selectionState);
 		}
-		if (selectionState.selection>=0) {
+		if (selectionState.selection >= 0) {
 			return new Region(selectionState.selection, 0);
 		}
 		return null;
@@ -463,11 +463,11 @@ public class DocumentEdits implements ProposalApplier {
 		IRegion line = doc.getLineInformation(lineNumber);
 		int startOfDeletion;
 		int endOfDeletion;
-		if (lineNumber>0) {
+		if (lineNumber > 0) {
 			IRegion previousLine = doc.getLineInformation(lineNumber-1);
 			startOfDeletion = endOf(previousLine);
 			endOfDeletion = endOf(line);
-		} else if (lineNumber<doc.getNumberOfLines()-1) {
+		} else if (lineNumber < doc.getNumberOfLines()-1) {
 			IRegion nextLine = doc.getLineInformation(lineNumber+1);
 			startOfDeletion = line.getOffset();
 			endOfDeletion = nextLine.getOffset();
@@ -491,7 +491,7 @@ public class DocumentEdits implements ProposalApplier {
 	 * Adds extra indentation at the position of the first edit in this {@link DocumentEdits}
 	 */
 	public void indentFirstEdit(String indentString) {
-		if (edits.size()>0) {
+		if (edits.size() > 0) {
 			Edit firstEdit = edits.get(0);
 			int offset = firstEdit.getStart();
 			edits.add(0, new Insertion(grabCursor, offset, indentString));
@@ -554,7 +554,7 @@ public class DocumentEdits implements ProposalApplier {
 				Deletion del = (Deletion) edits.get(0);
 				Insertion ins = (Insertion) edits.get(1);
 				String replacedText = doc.textBetween(del.start, del.end);
-				if (ins.offset>=del.start && ins.offset <=del.end && replacedText.startsWith(prefix)) {
+				if (ins.offset >= del.start && ins.offset <= del.end && replacedText.startsWith(prefix)) {
 					del.start+=prefix.length();
 					ins.text = ins.text.substring(prefix.length());
 					if (!ins.isResolved()) {

@@ -161,21 +161,21 @@ public class SpringProcessLiveDataExtractorOverHttp {
         List<String> memoryMetrics = Arrays.asList("jvm.memory.committed", "jvm.memory.max");
 
         LiveMemoryMetricsModel jvmMemUsedMetrics = getLiveMetrics(connection, "jvm.memory.used", tags);
-        if(jvmMemUsedMetrics != null) {
+        if (jvmMemUsedMetrics != null) {
             memoryMetricsList.add(jvmMemUsedMetrics);
             Arrays.sort(jvmMemUsedMetrics.getAvailableTags()[0].getValues());
             String[] memoryZones =  jvmMemUsedMetrics.getAvailableTags()[0].getValues();
             for(String zone : memoryZones) {
                 String tag = tags+",id:"+zone;
                 LiveMemoryMetricsModel metrics = getLiveMetrics(connection, "jvm.memory.used", tag );
-                if(metrics != null) {
+                if (metrics != null) {
                     memoryMetricsList.add(metrics);
                 }
             }
 
         for(String metric : memoryMetrics) {
             LiveMemoryMetricsModel metrics = getLiveMetrics(connection, metric, tags );
-            if(metrics != null) {
+            if (metrics != null) {
                 memoryMetricsList.add(metrics);
             }
         }
@@ -213,7 +213,7 @@ public class SpringProcessLiveDataExtractorOverHttp {
             }
             
             LiveMemoryMetricsModel metrics = getLiveMetrics(connection, "jvm.gc.pause", tags);
-            if(metrics != null) {
+            if (metrics != null) {
                 memoryMetricsList.add(metrics);
             }
             
@@ -317,7 +317,7 @@ public class SpringProcessLiveDataExtractorOverHttp {
 
 			if (result instanceof String) {
                 return gson.fromJson((String)result, Loggers.class);
-            } else if(result != null){
+            } else if (result != null){
                 ObjectMapper mapper = new ObjectMapper();
                 return mapper.convertValue(result, Loggers.class);
             }
@@ -516,7 +516,7 @@ public class SpringProcessLiveDataExtractorOverHttp {
 
             if (jvmMemUsedMetrics instanceof String) {
                 return gson.fromJson((String)jvmMemUsedMetrics, LiveMemoryMetricsModel.class);
-            } else if(jvmMemUsedMetrics != null){
+            } else if (jvmMemUsedMetrics != null){
                 ObjectMapper mapper = new ObjectMapper();
                 return mapper.convertValue(jvmMemUsedMetrics, LiveMemoryMetricsModel.class);
             }

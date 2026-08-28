@@ -18,7 +18,7 @@ import java.util.StringTokenizer;
 public class StringUtils {
 
 	public static boolean hasText(String val) {
-		return val!=null && !val.trim().isEmpty();
+		return val != null && !val.trim().isEmpty();
 	}
 
 	/**
@@ -29,7 +29,7 @@ public class StringUtils {
 	 * @return the delimited {@code String}
 	 */
 	public static String arrayToDelimitedString(Object[] arr, String delim) {
-		if (arr==null || arr.length==0) {
+		if (arr == null || arr.length == 0) {
 			return "";
 		}
 		StringBuilder buf = new StringBuilder();

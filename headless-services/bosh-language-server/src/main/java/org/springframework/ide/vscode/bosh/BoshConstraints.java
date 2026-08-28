@@ -28,11 +28,11 @@ public class BoshConstraints {
 		@Override
 		public void verify(DynamicSchemaContext dc, Node parent, Node node, YType type, IProblemCollector problems) {
 			NodeTuple urlProp = NodeUtil.getPropertyTuple(node, "url");
-			if (urlProp!=null) {
+			if (urlProp != null) {
 				String url = NodeUtil.asScalar(urlProp.getValueNode());
-				if (url!=null && url.startsWith("http")) {
+				if (url != null && url.startsWith("http")) {
 					Node sha1 = NodeUtil.getProperty(node, "sha1");
-					if (sha1==null) {
+					if (sha1 == null) {
 						problems.accept(problem(MISSING_SHA1_PROPERTY, "'sha1' is recommended when the 'url' is http(s)", urlProp.getKeyNode()));
 					}
 				}

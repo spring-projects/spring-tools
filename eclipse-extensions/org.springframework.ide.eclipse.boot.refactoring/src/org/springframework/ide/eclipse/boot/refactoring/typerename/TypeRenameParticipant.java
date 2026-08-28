@@ -53,7 +53,7 @@ public class TypeRenameParticipant extends RenameParticipant {
 			if (element instanceof IType) {
 				this.renamedType = (IType) element;
 				this.companionType = findCompanion(renamedType);
-				return companionType!=null;
+				return companionType != null;
 			}
 		} catch (Exception e) {
 			Log.log(e);
@@ -68,7 +68,7 @@ public class TypeRenameParticipant extends RenameParticipant {
 				String baseName = renamedType.getFullyQualifiedName();
 				String companionName = baseName+postfix;
 				IType companion = project.findType(companionName);
-				if (companion!=null && !companion.isBinary()) {
+				if (companion != null && !companion.isBinary()) {
 					return companion;
 				}
 			}

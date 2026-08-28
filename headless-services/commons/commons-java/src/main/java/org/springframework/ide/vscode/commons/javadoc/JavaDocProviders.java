@@ -18,7 +18,7 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 public class JavaDocProviders {
 
 	public static IJavadocProvider createFor(CPE classpathEntry) {
-		if (classpathEntry!=null && classpathEntry.getJavadocContainerUrl() != null) {
+		if (classpathEntry != null && classpathEntry.getJavadocContainerUrl() != null) {
 			URL containerUrl = classpathEntry.getJavadocContainerUrl();
 
 			TypeUrlProviderFromContainerUrl urlProvider = isJarUrl(containerUrl)

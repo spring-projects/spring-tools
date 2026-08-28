@@ -272,7 +272,7 @@ public class JavadocContents {
 		// try to find the field detail end
 		this.indexOfFieldsBottom =
 			this.indexOfConstructorDetails != -1 ? this.indexOfConstructorDetails :
-				this.indexOfMethodDetails != -1 ? this.indexOfMethodDetails:
+				this.indexOfMethodDetails != -1 ? this.indexOfMethodDetails :
 					this.indexOfEndOfClassData;
 
 		this.indexOfAllMethodsTop =

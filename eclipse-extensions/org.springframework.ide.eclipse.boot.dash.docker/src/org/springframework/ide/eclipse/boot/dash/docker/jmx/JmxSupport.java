@@ -62,9 +62,9 @@ public class JmxSupport {
 	}
 
 	public void setupEnvVars(int port, Map<String, String> env) {
-		if (port>0) {
+		if (port > 0) {
 			String javaOpts = env.get(JAVA_OPTS);
-			if (javaOpts!=null) {
+			if (javaOpts != null) {
 				//Erase old vars
 				javaOpts = javaOpts.replaceAll(JMX_OPTION_PAT, "").trim();
 			} else {
@@ -82,7 +82,7 @@ public class JmxSupport {
 	}
 
 	public String getJmxUrl() {
-		if (port>0) {
+		if (port > 0) {
 			return "service:jmx:rmi://localhost:"+port+"/jndi/rmi://localhost:"+port+"/jmxrmi";
 		} else {
 			return null;

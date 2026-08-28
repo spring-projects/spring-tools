@@ -18,7 +18,7 @@ public interface UIContext {
 			d.syncExec(() -> {
 				try {
 					IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
-					if (win!=null) {
+					if (win != null) {
 						shell.complete(win.getShell());
 					} else {
 						shell.complete(d.getActiveShell());

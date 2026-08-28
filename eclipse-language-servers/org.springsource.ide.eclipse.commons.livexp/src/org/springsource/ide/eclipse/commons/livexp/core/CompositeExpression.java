@@ -34,7 +34,7 @@ public abstract class CompositeExpression<V> extends LiveExpression<V> {
 	private List<LiveExpression<V>> subexps;
 	
 	public CompositeExpression<V> addChild(LiveExpression<V> e) {
-		if (subexps==null) {
+		if (subexps == null) {
 			subexps = new ArrayList<LiveExpression<V>>();
 		}
 		subexps.add(e);

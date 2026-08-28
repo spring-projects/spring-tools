@@ -56,7 +56,7 @@ public class CompositeCompletionEngine implements ICompletionEngine {
 		log.info("languageId = {}", language);
 		Collection<ICompletionEngine> engines = subEngines.get(language);
 		
-		if (engines.size()==1) {
+		if (engines.size() == 1) {
 
 			//Special case to avoid some collection copying
 			ICompletionEngine engine = engines.iterator().next();

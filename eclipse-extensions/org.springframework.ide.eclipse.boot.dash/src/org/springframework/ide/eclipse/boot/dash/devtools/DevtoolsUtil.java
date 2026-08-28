@@ -90,7 +90,7 @@ public class DevtoolsUtil {
 		String host = bde.getLiveHost();
 		Integer port = CollectionUtils.getSingle(bde.getLivePorts());
 		String proto = bde.getProtocol();
-		if (proto!=null && host!=null && port!=null && port>0) {
+		if (proto != null && host != null && port != null && port > 0) {
 			return proto +"://"+host+":"+port;
 		}
 		return null;
@@ -98,7 +98,7 @@ public class DevtoolsUtil {
 
 	public static ILaunch launchDevtools(IProject project, String debugSecret, BootDashElement bde, String mode, IProgressMonitor monitor) throws CoreException {
 		ILaunchConfiguration conf = getOrCreateLaunchConfig(project, debugSecret, bde);
-		if (conf!=null) {
+		if (conf != null) {
 			return conf.launch(mode, monitor == null ? new NullProgressMonitor() : monitor);
 		}
 		throw ExceptionUtil.coreException("Can't launch, no remote url?");
@@ -106,10 +106,10 @@ public class DevtoolsUtil {
 
 	private static ILaunchConfiguration getOrCreateLaunchConfig(IProject project, String debugSecret, BootDashElement bde) throws CoreException {
 		String remoteUrl = DevtoolsUtil.remoteUrl(bde);
-		if (remoteUrl!=null) {
+		if (remoteUrl != null) {
 			ILaunchConfiguration existing = findConfig(project, remoteUrl);
 			ILaunchConfigurationWorkingCopy wc;
-			if (existing!=null) {
+			if (existing != null) {
 				wc = existing.getWorkingCopy();
 			} else {
 				wc = createConfiguration(project, bde);
@@ -137,12 +137,12 @@ public class DevtoolsUtil {
 
 	private static List<ILaunch> findLaunches(IProject project, BootDashElement bde) {
 		String remoteUrl = remoteUrl(bde);
-		if (remoteUrl!=null) {
+		if (remoteUrl != null) {
 			List<ILaunch> launches = new ArrayList<>();
 			for (ILaunch l : getLaunchManager().getLaunches()) {
 				try {
 					ILaunchConfiguration c = l.getLaunchConfiguration();
-					if (c!=null) {
+					if (c != null) {
 						if (project.equals(BootLaunchConfigurationDelegate.getProject(c))
 							&& remoteUrl.equals(BootDevtoolsClientLaunchConfigurationDelegate.getRemoteUrl(c))) {
 							launches.add(l);
@@ -160,9 +160,9 @@ public class DevtoolsUtil {
 
 	public static boolean isDevClientAttached(BootDashElement bde, String launchMode) {
 		IProject project = bde.getProject();
-		if (project!=null) { // else not associated with a local project... can't really attach debugger then
+		if (project != null) { // else not associated with a local project... can't really attach debugger then
 			String host = bde.getLiveHost();
-			if (host!=null) { // else app not running, can't attach debugger then
+			if (host != null) { // else app not running, can't attach debugger then
 				return isLaunchMode(findLaunches(project, bde), launchMode);
 			}
 		}
@@ -206,7 +206,7 @@ public class DevtoolsUtil {
 	public static boolean isLaunchFor(ILaunch l, BootDashElement bde) {
 		String targetId = getAttribute(l, TARGET_ID);
 		String appName = getAttribute(l, APP_NAME);
-		if (targetId!=null && appName!=null) {
+		if (targetId != null && appName != null) {
 			return targetId.equals(bde.getTarget().getId())
 					&& appName.equals(bde.getName());
 		}
@@ -219,9 +219,9 @@ public class DevtoolsUtil {
 	public static BootDashElement getElement(ILaunchConfiguration l, BootDashViewModel model) {
 		String targetId = getAttribute(l, TARGET_ID);
 		String appName = getAttribute(l, APP_NAME);
-		if (targetId!=null && appName!=null) {
+		if (targetId != null && appName != null) {
 			BootDashModel section = model.getSectionByTargetId(targetId);
-			if (section!=null) {
+			if (section != null) {
 				return section.getApplication(appName);
 			}
 		}
@@ -230,7 +230,7 @@ public class DevtoolsUtil {
 
 	public static BootDashElement getElement(ILaunch l, BootDashViewModel viewModel) {
 		ILaunchConfiguration conf = l.getLaunchConfiguration();
-		if (conf!=null) {
+		if (conf != null) {
 			return getElement(conf, viewModel);
 		}
 		return null;
@@ -240,7 +240,7 @@ public class DevtoolsUtil {
 	private static String getAttribute(ILaunch l, String name) {
 		try {
 			ILaunchConfiguration c = l.getLaunchConfiguration();
-			if (c!=null) {
+			if (c != null) {
 				return c.getAttribute(name, (String)null);
 			}
 		} catch (Exception e) {
@@ -280,7 +280,7 @@ public class DevtoolsUtil {
 			private void deleteConf(ILaunch launch) {
 				try {
 					ILaunchConfiguration conf = launch.getLaunchConfiguration();
-					if (conf!=null && BootDevtoolsClientLaunchConfigurationDelegate.isManaged(conf)) {
+					if (conf != null && BootDevtoolsClientLaunchConfigurationDelegate.isManaged(conf)) {
 						BootDevtoolsClientLaunchConfigurationDelegate.clearRemoteSecret(conf);
 						conf.delete();
 					}
@@ -294,7 +294,7 @@ public class DevtoolsUtil {
 			}
 			private void handleStateChange(ILaunch l, Object info) {
 				BootDashElement e = DevtoolsUtil.getElement(l, viewModel);
-				if (e!=null) {
+				if (e != null) {
 					BootDashModel model = e.getBootDashModel();
 					model.notifyElementChanged(e, info);
 				}
@@ -347,7 +347,7 @@ public class DevtoolsUtil {
 
 	public static boolean isEnvVarSetupForRemoteClient(Map<String, String> envVars, String secret) {
 		String javaOpts = envVars.get(JAVA_OPTS_ENV_VAR);
-		if (javaOpts!=null && javaOpts.matches("(.*\\s+|^)" + REMOTE_SECRET_JVM_ARG + secret + "(\\s+.*|$)")) {
+		if (javaOpts != null && javaOpts.matches("(.*\\s+|^)" + REMOTE_SECRET_JVM_ARG + secret + "(\\s+.*|$)")) {
 //			if (runOrDebug == RunState.DEBUGGING) {
 //				return javaOpts.matches("(.*\\s+|^)" + REMOTE_DEBUG_JVM_ARGS + "(\\s+.*|$)");
 //			} else {
@@ -374,7 +374,7 @@ public class DevtoolsUtil {
 	}
 
 	private static String clearJavaOpts(String opts) {
-		if (opts!=null) {
+		if (opts != null) {
 //			opts = opts.replaceAll(REMOTE_DEBUG_JVM_ARGS + "\\s*", "");
 			opts = opts.replaceAll(REMOTE_SECRET_JVM_ARG +"\\w+\\s*", "");
 		}

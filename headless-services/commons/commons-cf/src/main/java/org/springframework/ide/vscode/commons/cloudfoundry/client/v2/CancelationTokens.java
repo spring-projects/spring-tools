@@ -87,7 +87,7 @@ public class CancelationTokens {
 	}
 
 	private void debug(String string) {
-		if (DEBUG!=null) {
+		if (DEBUG != null) {
 			System.out.println(DEBUG+": "+string);
 		}
 	}

@@ -83,7 +83,7 @@ public class BootJavaContext extends JavaContext {
 			List<String> contextTags = parseContextTags(template);
 			for (String tag : contextTags) {
 				Predicate<BootJavaContext> checker = CONTEXT_TAG_CHECKERS.get(tag);
-				if (checker!=null && !checker.test(this)) {
+				if (checker != null && !checker.test(this)) {
 					return false;
 				}
 			}
@@ -108,9 +108,9 @@ public class BootJavaContext extends JavaContext {
 	public boolean isAssertJContext() {
 		try {
 			ICompilationUnit cu = getCompilationUnit();
-			if (cu!=null) {
+			if (cu != null) {
 				IJavaProject jp = cu.getJavaProject();
-				if (jp!=null) {
+				if (jp != null) {
 					IType t = jp.findType("org.assertj.core.api.Assertions");
 					return t != null;
 				}
@@ -125,13 +125,13 @@ public class BootJavaContext extends JavaContext {
 		//True if the current file is in a src folder that has a segment with name 'test' in its path.
 		try {
 			ICompilationUnit cu = getCompilationUnit();
-			if (cu!=null) {
+			if (cu != null) {
 				IPackageFragmentRoot pfr = (IPackageFragmentRoot) cu.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
-				if (pfr!=null) {
+				if (pfr != null) {
 					IClasspathEntry cpe = pfr.getRawClasspathEntry();
-					if (cpe.getEntryKind()==IClasspathEntry.CPE_SOURCE) {
+					if (cpe.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 						IPath sourcePath = cpe.getPath().removeFirstSegments(1); //remove first... it doesn't count if project is called 'test'.
-						if (sourcePath!=null) {
+						if (sourcePath != null) {
 							for (String segment : sourcePath.segments()) {
 								if (segment.equals("test")) {
 									return true;

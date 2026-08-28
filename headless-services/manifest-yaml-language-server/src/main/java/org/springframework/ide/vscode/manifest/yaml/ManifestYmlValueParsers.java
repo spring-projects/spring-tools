@@ -50,15 +50,15 @@ public class ManifestYmlValueParsers {
 		public Object parse(String str) throws Exception {
 			str = str.trim();
 			String unit = getUnit(str.toUpperCase());
-			if (unit==null) {
+			if (unit == null) {
 				throw new NumberFormatException(
 						"'"+str+"' doesn't end with a valid unit of memory ('M', 'MB', 'G' or 'GB')"
 				);
 			}
 			str = str.substring(0, str.length()-unit.length());
-			int unitSize = GIGABYTE.contains(unit)?1024:1;
+			int unitSize = GIGABYTE.contains(unit) ? 1024 : 1;
 			int value = Integer.parseInt(str);
-			if (value<0) {
+			if (value < 0) {
 				throw new NumberFormatException("Negative value is not allowed");
 			}
 			return value * unitSize;

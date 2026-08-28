@@ -71,7 +71,7 @@ public class ConcourseValueParsers {
 					throw new ValueParseException("'"+typeName +"' should not be blank");
 				}
 				Multiset<String> resourceNames = getDefinedNameCounts.apply(dc);
-				if (resourceNames.count(input)<=1) {
+				if (resourceNames.count(input) <= 1) {
 					//okay
 					return input;
 				}

@@ -37,7 +37,7 @@ public abstract class AbstractCommandActionDelegate extends
 
 	public void selectionChanged(IAction action, ISelection sel) {
 		debug("Selection Changed: "+sel);
-		if (sel!=null) {
+		if (sel != null) {
 			//It seems we receive "null" selection when the Key shortcut popup disapears (Linux). This happens despite the fact
 			//that the selection in the workbench has not been changed. This causes problems (command gets deactivated or
 			//work on wrong selection, so we ignore any "null" selections.
@@ -49,7 +49,7 @@ public abstract class AbstractCommandActionDelegate extends
 	public void run(IAction action) {
 		List<IProject> projects = getSelectedProjects();
 		IProject project = null;
-		if (projects!=null) {
+		if (projects != null) {
 			project = getSelectedProjects().get(0);
 		}
 		if (project != null) {

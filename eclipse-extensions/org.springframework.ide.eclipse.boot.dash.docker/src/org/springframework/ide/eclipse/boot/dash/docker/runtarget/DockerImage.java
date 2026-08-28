@@ -87,7 +87,7 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 	public List<App> fetchChildren() throws Exception {
 		Builder<App> builder = ImmutableList.builder();
 		DockerClient client = app.getClient();
-		if (client!=null) {
+		if (client != null) {
 			List<Container> containers = JobUtil.interruptAfter(Duration.ofSeconds(15), 
 					() -> client.listContainersCmd()
 						.withShowAll(true)
@@ -144,11 +144,11 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 	}
 	
 	private List<String> extractTags(List<String> repoTags) {
-		if (repoTags!=null && !repoTags.isEmpty()) {
+		if (repoTags != null && !repoTags.isEmpty()) {
 			ArrayList<String> tags = new ArrayList<>();
 			for (String repoTag : repoTags) {
 				int colon = repoTag.indexOf(':');
-				if (colon>=0) {
+				if (colon >= 0) {
 					String tag = repoTag.substring(colon+1);
 					tags.add(tag);
 				}
@@ -160,10 +160,10 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 	}
 
 	private String extractRepo(List<String> repoTags) {
-		if (repoTags!=null && !repoTags.isEmpty()) {
+		if (repoTags != null && !repoTags.isEmpty()) {
 			String repoTag = repoTags.get(0);
 			int colon = repoTag.indexOf(':');
-			if (colon>=0) {
+			if (colon >= 0) {
 				return repoTag.substring(0, colon);
 			}
 		}
@@ -191,7 +191,7 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 	@Override
 	public ImageDescriptor getRunStateIcon(RunState runState) {
 		try {
-			if (RUNSTATE_ICONS==null) {
+			if (RUNSTATE_ICONS == null) {
 				RUNSTATE_ICONS = ImmutableMap.of(
 						RunState.RUNNING, imageDescriptorFromPlugin(PLUGIN_ID, "/icons/image_started.png"),
 						RunState.INACTIVE, imageDescriptorFromPlugin(PLUGIN_ID, "/icons/image_stopped.png"),
@@ -202,7 +202,7 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 		} catch (Exception e) {
 			Log.log(e);
 		}
-		if (RUNSTATE_ICONS!=null) {
+		if (RUNSTATE_ICONS != null) {
 			return RUNSTATE_ICONS.get(runState);
 		}
 		return null;

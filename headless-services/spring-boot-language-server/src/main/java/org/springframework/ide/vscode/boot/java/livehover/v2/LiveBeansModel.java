@@ -53,7 +53,7 @@ public class LiveBeansModel {
 			}
 
 			String[] deps = bean.getDependencies();
-			if (deps!=null) {
+			if (deps != null) {
 				for (String dep : deps) {
 					beansViaDependency.put(dep, bean);
 				}
@@ -103,7 +103,7 @@ public class LiveBeansModel {
 
 			JSONArray aliasesJSON = beansJSON.optJSONArray("aliases");
 			String[] aliases;
-			if (aliasesJSON!=null) {
+			if (aliasesJSON != null) {
 				aliases = new String[aliasesJSON.length()];
 				for (int i = 0; i < aliasesJSON.length(); i++) {
 					aliases[i] = aliasesJSON.optString(i);
@@ -137,7 +137,7 @@ public class LiveBeansModel {
 				for (String id : beansObject.keySet()) {
 					JSONObject beanObject = beansObject.getJSONObject(id);
 					LiveBean bean = parseBean(id, contextId, beanObject);
-					if (bean!=null) {
+					if (bean != null) {
 						model.add(bean);
 					}
 				}
@@ -152,7 +152,7 @@ public class LiveBeansModel {
 
 			JSONArray aliasesJSON = beansJSON.optJSONArray("aliases");
 			String[] aliases;
-			if (aliasesJSON==null) {
+			if (aliasesJSON == null) {
 				aliases = NO_STRINGS;
 			} else {
 				aliases = new String[aliasesJSON.length()];
@@ -163,7 +163,7 @@ public class LiveBeansModel {
 
 			JSONArray dependenciesJSON = beansJSON.optJSONArray("dependencies");
 			String[] dependencies;
-			if (dependenciesJSON==null) {
+			if (dependenciesJSON == null) {
 				dependencies = NO_STRINGS;
 			} else {
 				dependencies = new String[dependenciesJSON.length()];
@@ -187,7 +187,7 @@ public class LiveBeansModel {
 			for (Parser parser : PARSERS) {
 				try {
 					LiveBeansModel model = parser.parse(json);
-					if (model==null) {
+					if (model == null) {
 						throw new NullPointerException("Parser returned a null model (it should not!)");
 					}
 					return model; //good!

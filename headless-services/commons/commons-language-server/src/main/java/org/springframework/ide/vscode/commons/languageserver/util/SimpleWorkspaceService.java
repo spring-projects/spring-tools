@@ -154,7 +154,7 @@ public class SimpleWorkspaceService implements WorkspaceService {
 
 	@Override
 	public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
-		if (this.executeCommandHandler!=null) {
+		if (this.executeCommandHandler != null) {
 			return this.executeCommandHandler.handle(params);
 		}
 		throw new UnsupportedOperationException();

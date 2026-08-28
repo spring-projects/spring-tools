@@ -75,7 +75,7 @@ public class TextDocumentInfo {
 	}
 
 	private int[] lineStarts() {
-		if (_lineStarts==null) {
+		if (_lineStarts == null) {
 			_lineStarts = parseLines();
 		}
 		return _lineStarts;
@@ -104,7 +104,7 @@ public class TextDocumentInfo {
 	 */
 	public Position positionOf(String snippet) {
 		int offset = getText().indexOf(snippet);
-		if (offset>=0) {
+		if (offset >= 0) {
 			return toPosition(offset);
 		}
 		return null;
@@ -128,7 +128,7 @@ public class TextDocumentInfo {
 		// TODO Could use binary search which is faster
 		int lineNumber = 0;
 		for (int i = 0; i < lineStarts.length; i++) {
-			if (lineStarts[i]<=offset) {
+			if (lineStarts[i] <= offset) {
 				lineNumber = i;
 			} else {
 				return lineNumber;
@@ -148,7 +148,7 @@ public class TextDocumentInfo {
 		int scan = start;
 		char c = getSafeChar(scan);
 		StringBuilder indentStr = new StringBuilder();
-		while (c==' '|| c=='\t') {
+		while (c == ' '|| c == '\t') {
 			indentStr.append(c);
 			c = getSafeChar(++scan);
 		}
@@ -157,7 +157,7 @@ public class TextDocumentInfo {
 
 	private char getSafeChar(int pos) {
 		String text = getText();
-		if (pos>0 && pos<text.length()) {
+		if (pos > 0 && pos < text.length()) {
 			return text.charAt(pos);
 		}
 		return 0;

@@ -100,7 +100,7 @@ public class ProfileHistoryTest extends BootLaunchTestCase {
 		history.setMaxHistory(maxHist);
 		for (int i = 1; i <= 10; i++) {
 			history.updateHistory(project, "prof-"+i);
-			if (i>maxHist) {
+			if (i > maxHist) {
 				String[] expected = new String[maxHist];
 				for (int j = 0; j < expected.length; j++) {
 					expected[j] = "prof-"+(i-j);

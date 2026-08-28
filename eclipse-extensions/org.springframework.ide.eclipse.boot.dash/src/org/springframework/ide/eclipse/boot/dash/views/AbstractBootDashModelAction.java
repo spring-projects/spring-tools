@@ -67,11 +67,11 @@ public abstract class AbstractBootDashModelAction extends AbstractBootDashAction
 	}
 
 	public void updateEnablement() {
-		this.setEnabled(sectionSelection.getValue()!=null);
+		this.setEnabled(sectionSelection.getValue() != null);
 	}
 
 	public void updateVisibility() {
-		this.setVisible(sectionSelection.getValue()!=null);
+		this.setVisible(sectionSelection.getValue() != null);
 	}
 
 	@Override
@@ -80,7 +80,7 @@ public abstract class AbstractBootDashModelAction extends AbstractBootDashAction
 			listeningTo.removeModelStateListener(STATE_LISTENER);
 			listeningTo = null;
 		}
-		if (sectionListener!=null) {
+		if (sectionListener != null) {
 			sectionSelection.removeListener(sectionListener);
 			sectionListener = null;
 		}

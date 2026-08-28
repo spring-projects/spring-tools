@@ -86,11 +86,11 @@ public class DefaultGithubInfoProvider implements GithubInfoProvider {
 
 	@Override
 	public Collection<String> getOwners() throws Exception {
-		if (connectionError!=null) {
+		if (connectionError != null) {
 			throw connectionError;
 		}
-		if (github!=null) {
-			if (owners==null) {
+		if (github != null) {
+			if (owners == null) {
 				ImmutableSet.Builder<String> owners = ImmutableSet.builder();
 				for (GHRepository repo : github.getMyself().listRepositories()) {
 					owners.add(repo.getOwnerName());
@@ -120,14 +120,14 @@ public class DefaultGithubInfoProvider implements GithubInfoProvider {
 
 	@Override
 	public Collection<String> getReposForOwner(String ownerName) throws Exception {
-		if (connectionError!=null) {
+		if (connectionError != null) {
 			throw connectionError;
 		}
 		try {
-			if (github!=null) {
+			if (github != null) {
 				return reposByOwner.get(ownerName, loader(() -> {
 					GHPerson owner = getOwner(ownerName);
-					if (owner!=null) {
+					if (owner != null) {
 						ImmutableList.Builder<String> builder = ImmutableList.builder();
 						for (GHRepository repo : owner.listRepositories()) {
 							builder.add(repo.getName());

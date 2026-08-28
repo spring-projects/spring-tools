@@ -117,7 +117,7 @@ public class BootProjectTracker {
 	}
 	
 	private static boolean isBootProject(IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_PROJECT) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.startsWith("spring-core");
@@ -126,7 +126,7 @@ public class BootProjectTracker {
 	}
 
 	private static boolean isBootJar(IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_LIBRARY) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.endsWith(".jar") && name.startsWith("spring-core");

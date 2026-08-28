@@ -41,7 +41,7 @@ public abstract class YamlReconcileEngine implements IReconcileEngine {
 		try {
 			YamlFileAST ast = parser.getAST(doc);
 			YamlASTReconciler reconciler = getASTReconciler(doc, problemCollector);
-			if (reconciler!=null) {
+			if (reconciler != null) {
 				reconciler.reconcile(ast);
 			}
 		} catch (MarkedYAMLException e) {

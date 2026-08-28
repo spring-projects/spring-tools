@@ -59,7 +59,7 @@ public class ZipFileCodeSet extends CodeSet {
 		// we should take care not to accidentally leave an empty hashmap around as well.
 		// I.e. take care not to install the map unless reading download etc of the
 		// zip succeeded.
-		if (entries==null) {
+		if (entries == null) {
 			debug(">>> caching codeset entries "+this);
 			final HashMap<String, CodeSetEntry> newEntries = new HashMap<String, CodeSetEntry>(1024);
 			each(new Processor<Void>() {
@@ -139,7 +139,7 @@ public class ZipFileCodeSet extends CodeSet {
 		ZipFile zip = new ZipFile(zipDownload.getFile());
 		try {
 			Enumeration<ZipArchiveEntry> iter = zip.getEntries();
-			while (iter.hasMoreElements() && result==null) {
+			while (iter.hasMoreElements() && result == null) {
 				ZipArchiveEntry el = iter.nextElement();
 				Path zipPath = new Path(el.getName());
 				if (root.isPrefixOf(zipPath)) {
@@ -151,7 +151,7 @@ public class ZipFileCodeSet extends CodeSet {
 					} else {
 						CodeSetEntry cse = csEntry(zip, el);
 						result = processor.doit(cse);
-						if (result!=null) {
+						if (result != null) {
 							//Bail out early when result found
 							return result;
 						}
@@ -173,7 +173,7 @@ public class ZipFileCodeSet extends CodeSet {
 		try {
 			String entryName = root.append(path).toString();
 			ZipArchiveEntry entry = zip.getEntry(entryName);
-			return processor.doit(entry==null?null:csEntry(zip, entry));
+			return processor.doit(entry == null ? null : csEntry(zip, entry));
 		} finally {
 			try {
 				zip.close();

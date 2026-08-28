@@ -13,7 +13,7 @@
  *     Jesper Steen Moeller - added namespace support
  *
  *
- * =======
+ * == == == =
  *
  * Copied from org.eclipse.core.runtime.content.XMLRootElementContentDescriber2 because:
  * 1. Cannot be overridden

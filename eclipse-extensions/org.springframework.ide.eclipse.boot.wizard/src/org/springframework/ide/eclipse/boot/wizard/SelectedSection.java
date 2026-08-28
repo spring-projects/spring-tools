@@ -53,7 +53,7 @@ public class SelectedSection<T> extends ReflowableSection {
 		visibleState.addListener(new ValueListener<Boolean>() {
 			@Override
 			public void gotValue(LiveExpression<Boolean> exp, Boolean value) {
-				if (value!=null && composite!=null && !composite.isDisposed()) {
+				if (value != null && composite != null && !composite.isDisposed()) {
 					boolean newState = value;
 					composite.setVisible(newState);
 					GridData data = (GridData) composite.getLayoutData();
@@ -74,7 +74,7 @@ public class SelectedSection<T> extends ReflowableSection {
 	}
 
 	protected Composite createComposite(Composite page) {
-		if (this.label!=null) {
+		if (this.label != null) {
 			Group comp = new Group(page, SWT.NONE);
 			comp.setText(label);
 			return comp;
@@ -84,7 +84,7 @@ public class SelectedSection<T> extends ReflowableSection {
 	}
 
 	public boolean applyFilter(Filter<T> filter) {
-		if (subsections!=null) {
+		if (subsections != null) {
 			boolean visibilityChanged = false;
 			for (WizardPageSection subsection : subsections) {
 				if (subsection instanceof SelectedButtonSection) {
@@ -102,7 +102,7 @@ public class SelectedSection<T> extends ReflowableSection {
 	}
 
 	public boolean hasVisible() {
-		if (subsections!=null) {
+		if (subsections != null) {
 			for (WizardPageSection s : subsections) {
 				if (s instanceof SelectedButtonSection) {
 					@SuppressWarnings("unchecked")

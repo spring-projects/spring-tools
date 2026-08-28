@@ -52,7 +52,7 @@ public class SpringPropertyProblemHoverInfo extends HoverInfo {
 		if (!quickfixes.isEmpty()) {
 			html.hline();
 
-			if (quickfixes.size()==1) {
+			if (quickfixes.size() == 1) {
 				html.p("1 quickfix available:");
 			} else {
 				html.text(quickfixes.size()+" quickfixes available:");

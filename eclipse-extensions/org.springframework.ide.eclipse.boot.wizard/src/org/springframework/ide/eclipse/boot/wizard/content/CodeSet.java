@@ -104,13 +104,13 @@ public abstract class CodeSet {
 	 */
 	public List<BuildType> getBuildTypes() throws UIThreadDownloadDisallowed {
 		//Only use 'default' build type if no other build type works.
-		if (this.buildTypes==null) {
+		if (this.buildTypes == null) {
 			//Careful if the code in here throws (e.g. because not yet downloaded and in UI thread...
 			//then do NOT stick an empty list into this.buildTypes!
 			ArrayList<BuildType> buildTypes = new ArrayList<BuildType>();
 			for (BuildType type : BuildType.values()) {
 				IPath scriptFile = type.getBuildScript();
-				if (scriptFile!=null && hasFile(scriptFile)) {
+				if (scriptFile != null && hasFile(scriptFile)) {
 					buildTypes.add(type);
 				}
 			}
@@ -184,7 +184,7 @@ public abstract class CodeSet {
 					IOUtil.pipe(e.getData(), target);
 					if (!IS_WINDOWS) {
 						int mode = e.getUnixMode();
-						if (mode>0) {
+						if (mode > 0) {
 							Files.setPosixFilePermissions(target.toPath(),  OsUtils.posixFilePermissions(mode));
 						}
 					}
@@ -192,7 +192,7 @@ public abstract class CodeSet {
 				return null;
 			}
 		});
-		if (afterCreateHook!=null) {
+		if (afterCreateHook != null) {
 			afterCreateHook.afterCreateAt(location);
 		}
 	}
@@ -214,7 +214,7 @@ public abstract class CodeSet {
 		}
 		//Not valid formulate a nice explanation
 		IPath expectedScript = buildType.getBuildScript();
-		if (expectedScript!=null) {
+		if (expectedScript != null) {
 			return ValidationResult.error("Can't use '"+buildType.displayName()+"': There is no '"+expectedScript+"'");
 		} else {
 			StringBuilder message = new StringBuilder("Should be imported as ");

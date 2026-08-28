@@ -273,7 +273,7 @@ public class GotoSymbolSection extends WizardPageSection {
 		
 		//Favourites pulldown composite
 		Composite sbComposite = dialogArea;
-		if (model.getFavourites()!=null) {
+		if (model.getFavourites() != null) {
 			sbComposite = new Composite(dialogArea, SWT.NONE);
 			GridLayout layout = new GridLayout(2, false);
 			layout.marginWidth = 0; layout.marginHeight = 0;
@@ -294,7 +294,7 @@ public class GotoSymbolSection extends WizardPageSection {
 		SwtConnect.connect(pattern, model.getSearchBox(), true);
 		
 		//Favourites pulldown
-		if (model.getFavourites()!=null) {
+		if (model.getFavourites() != null) {
 			createFavouritesPulldown(sbComposite, model.getFavourites(), model.getSearchBox());
 		}
 

@@ -34,13 +34,13 @@ public class RequestMappingContentProposalProvider implements IContentProposalPr
 	@Override
 	public IContentProposal[] getProposals(String contents, int position) {
 		BootDashElement bde = input.getValue();
-		if (bde!=null) {
+		if (bde != null) {
 			ImmutableList<RequestMapping> rms = bde.getLiveRequestMappings().orElse(null);
-			if (rms!=null && !rms.isEmpty()) {
+			if (rms != null && !rms.isEmpty()) {
 				LinkedHashSet<String> matches = new LinkedHashSet<>(rms.size());
 				for (RequestMapping rm : rms) {
 					String path = rm.getPath();
-					if (FuzzyMatcher.matchScore(contents, path)!=0) {
+					if (FuzzyMatcher.matchScore(contents, path) != 0) {
 						matches.add(path);
 					}
 				}

@@ -262,7 +262,7 @@ public class JavaData {
 		data.setParameters(parametersBuilder.build());
 		try {
 			String[] paramNames = method.getParameterNames();
-			if (paramNames!=null) {
+			if (paramNames != null) {
 				data.setParameterNames(ImmutableList.copyOf(paramNames));
 			}
 		} catch (JavaModelException e) {
@@ -508,7 +508,7 @@ public class JavaData {
 	}
 	
 	private String[] resolveFQNames(IType type, String[] names) {
-		if (names!=null) {
+		if (names != null) {
 			String[] resolved = new String[names.length];
 			for (int i = 0; i < resolved.length; i++) {
 				try {
@@ -525,7 +525,7 @@ public class JavaData {
 
 
 	private String resolveFQName(IType type, String name) throws JavaModelException {
-		if (name!=null) {
+		if (name != null) {
 			try {
 				String[][] resolution = type.resolveType(name);
 				if (resolution != null && resolution.length > 0 && resolution[0].length > 1) {

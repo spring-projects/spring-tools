@@ -72,8 +72,8 @@ public abstract class AsyncLiveExpression<T> extends LiveExpression<T> {
 
 	public AsyncLiveExpression(T initialValue, AsyncMode refreshMode, AsyncMode eventsMode) {
 		this(initialValue,
-				refreshMode==ASYNC ? "AsyncLiveExpression refresh": null,
-				eventsMode ==ASYNC ? "AsyncLiveExpression notify":null
+				refreshMode == ASYNC ? "AsyncLiveExpression refresh" : null,
+				eventsMode == ASYNC ? "AsyncLiveExpression notify" : null
 		);
 	}
 
@@ -95,7 +95,7 @@ public abstract class AsyncLiveExpression<T> extends LiveExpression<T> {
 	
 	public AsyncLiveExpression(T initialValue, String refreshJobName, String eventsJobName, Consumer<Job> refreshJobCustomizer) {
 		super(initialValue);
-		if (refreshJobName!=null) {
+		if (refreshJobName != null) {
 			refreshJob = new Job(refreshJobName) {
 				protected IStatus run(IProgressMonitor monitor) {
 					syncRefresh();
@@ -106,7 +106,7 @@ public abstract class AsyncLiveExpression<T> extends LiveExpression<T> {
 				refreshJobCustomizer.accept(refreshJob);
 			}
 		}
-		if (eventsJobName!=null) {
+		if (eventsJobName != null) {
 			eventsJob = new Job(eventsJobName) {
 				protected IStatus run(IProgressMonitor monitor) {
 					syncChanged();
@@ -123,7 +123,7 @@ public abstract class AsyncLiveExpression<T> extends LiveExpression<T> {
 	 */
 	@Override
 	public final void refresh() {
-		if (refreshJob!=null) {
+		if (refreshJob != null) {
 			refreshJob.schedule(refreshDelay);
 		} else {
 			syncRefresh();
@@ -141,7 +141,7 @@ public abstract class AsyncLiveExpression<T> extends LiveExpression<T> {
 	 */
 	@Override
 	protected final void changed() {
-		if (eventsJob!=null) {
+		if (eventsJob != null) {
 			eventsJob.schedule();
 		} else {
 			syncChanged();

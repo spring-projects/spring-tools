@@ -42,7 +42,7 @@ public class DeployToRemoteTargetAction<Client, Params> extends AbstractBootDash
 		super(params);
 		this.setText(target.getName());
 		Assert.isLegal(target.getType() instanceof RemoteRunTargetType);
-		Assert.isLegal(runningOrDebugging==RunState.RUNNING || runningOrDebugging==RunState.DEBUGGING);
+		Assert.isLegal(runningOrDebugging == RunState.RUNNING || runningOrDebugging == RunState.DEBUGGING);
 		this.target = target;
 		this.runOrDebug = runningOrDebugging;
 
@@ -84,7 +84,7 @@ public class DeployToRemoteTargetAction<Client, Params> extends AbstractBootDash
 	}
 
 	private boolean isSupportedMode(BootDashElement element) {
-		return element!=null && element.supportedGoalStates().contains(runOrDebug);
+		return element != null && element.supportedGoalStates().contains(runOrDebug);
 	}
 
 	@Override

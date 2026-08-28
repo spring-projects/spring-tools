@@ -234,7 +234,7 @@ public abstract class AbstractProblemSeverityPreferencesPage extends FieldEditor
 			}
 			@Override
 			protected void uiGotValue(LiveExpression<Boolean> exp, Boolean enable) {
-				if (enable!=null) {
+				if (enable != null) {
 					enablePreferenceContent(enable);
 				}
 			}
@@ -245,7 +245,7 @@ public abstract class AbstractProblemSeverityPreferencesPage extends FieldEditor
 
 
 	private boolean isProjectPropertyPage() {
-		return project!=null;
+		return project != null;
 	}
 
 	protected abstract List<ProblemType> getProblemTypes();
@@ -262,7 +262,7 @@ public abstract class AbstractProblemSeverityPreferencesPage extends FieldEditor
 	@Override
 	public void setElement(IAdaptable element) {
 		project = (IProject)element.getAdapter(IProject.class);
-		if (project!=null) {
+		if (project != null) {
 			setPreferenceStore(new ScopedPreferenceStore(new ProjectScope(project), getPluginId()));
 			enablePreferences.setValue(getPreferenceStore().getBoolean(getEnableProjectPreferencesKey()));
 		}

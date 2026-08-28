@@ -106,7 +106,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 	public static RunState getRunState(Container container) {
 		String state = container.getState();
 		if ("running".equals(state)) {
-			return (container.getLabels().get(DockerApp.DEBUG_PORT)!=null) 
+			return (container.getLabels().get(DockerApp.DEBUG_PORT) != null) 
 					? RunState.DEBUGGING
 					: RunState.RUNNING;
 		} else if ("exited".equals(state)) {
@@ -128,7 +128,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 	public String getJmxUrl() {
 		try {
 			String port = container.getLabels().get(DockerApp.JMX_PORT);
-			if (port!=null) {
+			if (port != null) {
 				return new JmxSupport(Integer.valueOf(port)).getJmxUrl();
 			}
 		} catch (Exception e) {
@@ -146,7 +146,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 	@Override
 	public StyledString getStyledName(Stylers stylers) {
 		StyledString styledString = new StyledString();
-		if (container.getNames() != null && container.getNames().length>0) {
+		if (container.getNames() != null && container.getNames().length > 0) {
 			styledString = styledString.append(StringUtil.removePrefix(container.getNames()[0], "/"));
 		}
 		styledString = styledString.append(" (" +getShortHash()+")", StyledString.QUALIFIER_STYLER);
@@ -175,7 +175,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 	public EnumSet<RunState> supportedGoalStates() {
 		Set<RunState> supported = new HashSet<>();
 		supported.add(RunState.INACTIVE);
-		if (container.getLabels().get(DockerApp.DEBUG_PORT)!=null) {
+		if (container.getLabels().get(DockerApp.DEBUG_PORT) != null) {
 			supported.add(RunState.DEBUGGING);
 		} else {
 			supported.add(RunState.RUNNING);
@@ -196,7 +196,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 					RefreshStateTracker rt = this.refreshTracker.get();
 					
 					if (goal.isActive()) {
-						if (currentState==RunState.PAUSED) {
+						if (currentState == RunState.PAUSED) {
 							rt.run("Resuming " + getStyledName(null).getString(), () -> {
 								client.unpauseContainerCmd(container.getId()).exec();
 								RetryUtil.until(100, 1000, runstate -> runstate.isActive(), this::fetchRunState);
@@ -307,9 +307,9 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 		try {
 			if (fetchRunState().isActive()) {
 				String portStr = container.getLabels().get(DockerApp.DEBUG_PORT);
-				if (portStr!=null) {
+				if (portStr != null) {
 					int port = Integer.valueOf(portStr);
-					if (port>0) {
+					if (port > 0) {
 						return port;
 					}
 				}
@@ -324,7 +324,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 	public IProject getProject() {
 		try {
 			String projectName = container.getLabels().get(DockerApp.APP_NAME);
-			if (projectName!=null) {
+			if (projectName != null) {
 				return ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 			}
 		} catch (Exception e) {
@@ -352,7 +352,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 
 	@Override
 	public boolean hasClasspathProperty(ClasspathPropertyTester tester) {
-		if (context!=null) {
+		if (context != null) {
 			DockerImage image = context.getParent(DockerImage.class);
 			return image.hasClasspathProperty(tester);
 		}
@@ -389,7 +389,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 //	}
 
 	public Map<String,String> getSystemProps() {
-		return container!=null ? getSystemProps(container) : null;
+		return container != null ? getSystemProps(container) : null;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -494,9 +494,9 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 		public void onNext(Frame logMsg) {
 			try {
 				StreamType tp = logMsg.getStreamType();
-				if (tp==StreamType.STDERR) {
+				if (tp == StreamType.STDERR) {
 					consoleErr.write(logMsg.getPayload());
-				} else if (tp==StreamType.STDOUT) {
+				} else if (tp == StreamType.STDOUT) {
 					consoleOut.write(logMsg.getPayload());
 				} else {
 					Log.warn("Unknown docker log frame type dropped: "+tp);
@@ -532,7 +532,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 		Ownable<DockerClient> client = USE_DEDICATED_CLIENT 
 				? Ownable.owned(target.getDedicatedClientInstance()) 
 				: Ownable.borrowed(target.getClient());
-		if (client!=null) {
+		if (client != null) {
 			LogContainerCmd cmd = client.ref.logContainerCmd(containerId)
 					.withStdOut(true).withStdErr(true).withFollowStream(true);
 			
@@ -549,7 +549,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 	@Override
 	public ImageDescriptor getRunStateIcon(RunState runState) {
 		try {
-			if (RUNSTATE_ICONS==null) {
+			if (RUNSTATE_ICONS == null) {
 				RUNSTATE_ICONS = ImmutableMap.of(
 						RunState.RUNNING, imageDescriptorFromPlugin(PLUGIN_ID, "/icons/container_started.png"),
 						RunState.INACTIVE, imageDescriptorFromPlugin(PLUGIN_ID, "/icons/container_stopped.png"),
@@ -560,7 +560,7 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 		} catch (Exception e) {
 			Log.log(e);
 		}
-		if (RUNSTATE_ICONS!=null) {
+		if (RUNSTATE_ICONS != null) {
 			return RUNSTATE_ICONS.get(runState);
 		}
 		return null;

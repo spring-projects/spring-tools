@@ -169,9 +169,9 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 			} else if (e1 instanceof BootDashElement && e2 instanceof BootDashElement) {
 				BootDashElement bde1 = (BootDashElement) e1;
 				BootDashElement bde2 = (BootDashElement) e2;
-				if (bde1.getBootDashModel()==bde2.getBootDashModel()) {
+				if (bde1.getBootDashModel() == bde2.getBootDashModel()) {
 					Comparator<BootDashElement> comparator = bde1.getBootDashModel().getElementComparator();
-					if (comparator!=null) {
+					if (comparator != null) {
 						return comparator.compare(bde1, bde2);
 					}
 				}
@@ -380,7 +380,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 			public void mouseDown(MouseEvent evt) {
 				Point point = new Point(evt.x, evt.y);
 				ViewerCell cell = tv.getCell(point);
-				if (cell!=null) {
+				if (cell != null) {
 					Object element = cell.getElement();
 					if (element instanceof ButtonModel) {
 						ButtonModel button = (ButtonModel) element;
@@ -431,11 +431,11 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 					m.removeModelStateListener(MODEL_STATE_LISTENER);
 				}
 
-				if (searchFilterModel!=null) {
+				if (searchFilterModel != null) {
 					searchFilterModel.removeListener(FILTER_LISTENER);
 				}
 
-				if (actions!=null) {
+				if (actions != null) {
 					actions.dispose();
 					actions = null;
 				}
@@ -456,7 +456,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 	}
 
 	private LiveExpression<BootDashModel> getSectionSelection() {
-		if (sectionSelection==null) {
+		if (sectionSelection == null) {
 			sectionSelection = getMixedSelection().toSingleSelection().filter(BootDashModel.class);
 			debug("sectionSelection", sectionSelection);
 		}
@@ -464,11 +464,11 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 	}
 
 	private synchronized MultiSelection<Object> getMixedSelection() {
-		if (mixedSelection==null) {
+		if (mixedSelection == null) {
 			mixedSelection = MultiSelection.from(Object.class, new ObservableSet<>() {
 				@Override
 				protected ImmutableSet<Object> compute() {
-					if (tv!=null) {
+					if (tv != null) {
 						ISelection s = tv.getSelection();
 						if (s instanceof IStructuredSelection) {
 							Object[] elements = ((IStructuredSelection) s).toArray();
@@ -480,7 +480,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 			});
 			debug("mixedSelection", mixedSelection.getElements());
 		}
-		if (tv!=null) {
+		if (tv != null) {
 			addViewerSelectionListener();
 		}
 		return mixedSelection;
@@ -493,7 +493,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 	}
 
 	private synchronized MultiSelection<BootDashElement> getElementSelection() {
-		if (selection==null) {
+		if (selection == null) {
 			selection = getMixedSelection().filter(BootDashElement.class);
 			debug("selection", selection.getElements());
 		}
@@ -575,7 +575,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 	 * @param imageDescriptor
 	 */
 	private void addSubmenu(IMenuManager parent, String label, ImageDescriptor imageDescriptor, ImmutableList<IAction> actions) {
-		if (actions!=null && !actions.isEmpty()) {
+		if (actions != null && !actions.isEmpty()) {
 			boolean notEmpty = false;
 			MenuManager submenu = new MenuManager(label);
 			for (IAction a : actions) {
@@ -589,7 +589,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 	}
 
 	public static boolean addVisible(IMenuManager manager, IAction a) {
-		if (a!=null && isVisible(a)) {
+		if (a != null && isVisible(a)) {
 			manager.add(a);
 			return true;
 		}
@@ -678,7 +678,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 
 			private boolean canDrop(DropTargetEvent event) {
 				BootDashModel droppedOn = getDropTarget(event);
-				if (droppedOn!=null && droppedOn instanceof ModifiableModel) {
+				if (droppedOn != null && droppedOn instanceof ModifiableModel) {
 					ModifiableModel target = (ModifiableModel) droppedOn;
 					if (transfer.isSupportedType(event.currentDataType)) {
 						Object[] elements = getDraggedElements();
@@ -698,7 +698,7 @@ public class BootDashUnifiedTreeSection extends PageSection implements MultiSele
 			private BootDashModel getDropTarget(DropTargetEvent event) {
 				Point loc = tv.getTree().toControl(new Point(event.x, event.y));
 				ViewerCell cell = tv.getCell(loc);
-				if (cell!=null) {
+				if (cell != null) {
 					Object el = cell.getElement();
 					if (el instanceof BootDashModel) {
 						return (BootDashModel) el;

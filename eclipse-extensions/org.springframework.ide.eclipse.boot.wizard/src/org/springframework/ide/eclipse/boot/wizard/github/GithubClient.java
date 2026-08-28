@@ -74,7 +74,7 @@ public class GithubClient {
 		//Try system properties
 		String username = System.getProperty("github.user.name");
 		String password = System.getProperty("github.user.password");
-		if (username!=null && password!=null) {
+		if (username != null && password != null) {
 			return new BasicAuthCredentials(GITHUB_HOST, username, password);
 		}
 		//No credentials found. Try proceeding without credentials.
@@ -163,12 +163,12 @@ public class GithubClient {
 						results.add(r);
 					}
 					url = getNextPageUrl(response);
-					if (url!=null) {
+					if (url != null) {
 						webtarget = client.target(url);
 					} else {
 						webtarget = null;
 					}
-				} while (webtarget!=null);
+				} while (webtarget != null);
 				return (T) results.toArray((Object[])Array.newInstance(componentType, results.size()));
 			} else {
 				return  client.target(url).resolveTemplates(vars).get(type);
@@ -187,10 +187,10 @@ public class GithubClient {
 	 */
 	private static <T> String getNextPageUrl(Response response) {
 		List<String> linkHeader = response.getHeaders().get("link");
-		if (linkHeader==null) {
+		if (linkHeader == null) {
 			linkHeader = response.getHeaders().get("Link");
 		}
-		if (linkHeader!=null) {
+		if (linkHeader != null) {
 			//Example of header String:
 			//<https://api.github.com/organizations/4161866/repos?page=2>; rel="next", <https://api.github.com/organizations/4161866/repos?page=2>; rel="last"
 			Pattern nextPat = Pattern.compile("<([^<]*)>;\\s*rel=\"next\"");
@@ -248,7 +248,7 @@ public class GithubClient {
 			input = conn.getInputStream();
 			IOUtil.pipe(input, writeTo);
 		} finally {
-			if (input!=null) {
+			if (input != null) {
 				try {
 					input.close();
 				} catch (Throwable e) {

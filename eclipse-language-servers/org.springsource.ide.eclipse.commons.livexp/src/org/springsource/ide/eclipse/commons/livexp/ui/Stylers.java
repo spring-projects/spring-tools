@@ -93,7 +93,7 @@ public class Stylers implements Disposable {
 	private synchronized Font getBoldFont() {
 		//If baseFont is null, this Stylers is a bit 'handicapped' and won't
 		// be capable of doing 'bold' styling.
-		if (boldFont==null && baseFont!=null) {
+		if (boldFont == null && baseFont != null) {
 			FontData[] data= baseFont.getFontData();
 			for (int i= 0; i < data.length; i++) {
 				data[i].setStyle(SWT.BOLD);
@@ -106,7 +106,7 @@ public class Stylers implements Disposable {
 	public synchronized Font getItalicFont() {
 		//If baseFont is null, this Stylers is a bit 'handicapped' and won't
 		// be capable of doing 'bold' styling.
-		if (italicFont==null && baseFont!=null) {
+		if (italicFont == null && baseFont != null) {
 			FontData[] data= baseFont.getFontData();
 			for (int i= 0; i < data.length; i++) {
 				data[i].setStyle(SWT.ITALIC);
@@ -118,11 +118,11 @@ public class Stylers implements Disposable {
 
 	@Override
 	public void dispose() {
-		if (boldFont!=null) {
+		if (boldFont != null) {
 			boldFont.dispose();
 			boldFont = null;
 		}
-		if (italicFont!=null) {
+		if (italicFont != null) {
 			italicFont.dispose();
 			italicFont = null;
 		}

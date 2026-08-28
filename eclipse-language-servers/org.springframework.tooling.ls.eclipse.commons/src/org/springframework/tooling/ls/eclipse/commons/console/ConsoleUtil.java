@@ -82,11 +82,11 @@ public class ConsoleUtil {
 		IOConsole toClose = null;
 		synchronized (history) {
 			history.addLast(console);
-			if (history.size()>MAX_SIZE) {
+			if (history.size() > MAX_SIZE) {
 				toClose = history.removeFirst();
 			}
 		}
-		if (toClose!=null) {
+		if (toClose != null) {
 			close(toClose);
 		}
 		console.activate();

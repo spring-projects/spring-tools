@@ -94,7 +94,7 @@ public class PropertiesLoader {
 			} catch (Exception e) {
 				LOG.log(Level.SEVERE, "Error loading file '" + mdf + "'", e);
 			} finally {
-				if (is!=null) {
+				if (is != null) {
 					try {
 						is.close();
 					} catch (IOException e) {
@@ -112,14 +112,14 @@ public class PropertiesLoader {
 			//jarDump(jarFile);
 			for (String loc : JAR_META_DATA_LOCATIONS) {
 				ZipEntry e = jarFile.getEntry(loc);
-				if (e!=null) {
+				if (e != null) {
 					loadFrom(jarFile, e);
 				}
 			}
 		} catch (Throwable e) {
 			LOG.log(Level.SEVERE, "Error loading JAR file", e);
 		} finally {
-			if (jarFile!=null) {
+			if (jarFile != null) {
 				try {
 					jarFile.close();
 				} catch (IOException e) {
@@ -137,7 +137,7 @@ public class PropertiesLoader {
 		} catch (Throwable e) {
 			LOG.log(Level.SEVERE, "Error loading JAR file", e);
 		} finally {
-			if (is!=null) {
+			if (is != null) {
 				try {
 					is.close();
 				} catch (IOException e) {

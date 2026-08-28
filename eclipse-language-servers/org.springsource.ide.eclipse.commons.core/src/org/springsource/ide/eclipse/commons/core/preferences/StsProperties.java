@@ -53,7 +53,7 @@ public class StsProperties {
 	private static StsProperties instance = null;
 
 	public static StsProperties getInstance(IProgressMonitor mon) {
-		if (instance==null) {
+		if (instance == null) {
 			StsProperties newInstance = new StsProperties(mon);
 			instance = newInstance;
 		}
@@ -156,7 +156,7 @@ public class StsProperties {
 
 	public boolean get(String key, boolean deflt) {
 		String value = get(key);
-		if (value!=null) {
+		if (value != null) {
 			return Boolean.valueOf(value);
 		}
 		return deflt;
@@ -169,7 +169,7 @@ public class StsProperties {
 	public URL url(String prop) {
 		String s = get(prop);
 		try {
-			if (s!=null) {
+			if (s != null) {
 				return new URL(get(prop));
 			}
 		} catch (Exception e) {

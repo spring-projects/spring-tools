@@ -99,7 +99,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 
 	protected void reconcile(YamlFileAST root, IndexNavigator nav) {
 		List<Node> nodes = root.getNodes();
-		if (nodes!=null && !nodes.isEmpty()) {
+		if (nodes != null && !nodes.isEmpty()) {
 			for (Node node : nodes) {
 				if (!"".equals(NodeUtil.asScalar(node))) {
 					//^^^ ignore completely empty yaml (sub)documents. Checking them results in 
@@ -148,7 +148,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 		Set<String> seenKeys = new HashSet<>();
 		for (NodeTuple entry : node.getValue()) {
 			String key = asScalar(entry.getKeyNode());
-			if (key!=null) {
+			if (key != null) {
 				if (!seenKeys.add(key)) {
 					duplicateKeys.add(key);
 				}
@@ -158,7 +158,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 			for (NodeTuple entry : node.getValue()) {
 				Node keyNode = entry.getKeyNode();
 				String key = asScalar(keyNode);
-				if (key!=null && duplicateKeys.contains(key)) {
+				if (key != null && duplicateKeys.contains(key)) {
 					problems.accept(problem(YAML_DUPLICATE_KEY, keyNode, "Duplicate key '"+key+"'"));
 				}
 			}
@@ -167,13 +167,13 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 
 	protected boolean isIgnoreScalarAssignmentTo(String propName) {
 		//See https://issuetracker.springsource.com/browse/STS-4144
-		return propName!=null && propName.equals("spring.profiles");
+		return propName != null && propName.equals("spring.profiles");
 	}
 
 	private void reconcile(YamlFileAST root, NodeTuple entry, IndexNavigator nav) {
 		Node keyNode = entry.getKeyNode();
 		String _key = asScalar(keyNode);
-		if (_key==null) {
+		if (_key == null) {
 			expectScalar(keyNode);
 		} else {
 			IndexNavigator subNav = null;
@@ -184,19 +184,19 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 				IndexNavigator subNavAlias = nav.selectSubProperty(key);
 				match = subNavAlias.getExactMatch();
 				extension = subNavAlias.getExtensionCandidate();
-				if (subNav==null) {
+				if (subNav == null) {
 					//ensure subnav is not null, even if no real matches found.
 					subNav = subNavAlias;
 				}
-				if (match!=null || extension!=null) {
+				if (match != null || extension != null) {
 					subNav = subNavAlias;
 					break; //stop at first alias that gives a result.
 				}
 			}
-			if (match!=null && extension!=null) {
+			if (match != null && extension != null) {
 				//This is an odd situation, the current prefix lands on a propery
 				//but there are also other properties that have it as a prefix.
-				if (asScalar(entry.getValueNode())!=null) {
+				if (asScalar(entry.getValueNode()) != null) {
 					//Since the property value is a 'scalar' let's ignore the extension and just check the 'exact' match here (ignore 'extension').
 					extension = null;
 				} else {
@@ -205,13 +205,13 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 					return;
 				}
 			}
-			if (match!=null) {
+			if (match != null) {
 				Type type = TypeParser.parse(match.getType());
 				if (match.isDeprecated()) {
 					deprecatedProperty(root.getDocument().getUri(), match, keyNode, quickFixes.DEPRECATED_PROPERTY);
 				}
 				reconcile(root, entry.getValueNode(), type);
-			} else if (extension!=null) {
+			} else if (extension != null) {
 				//We don't really care about the extension only about the fact that it
 				// exists and so it is meaningful to continue checking...
 				Node valueNode = entry.getValueNode();
@@ -238,7 +238,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	 * Reconcile a node given the type that we expect the node to be.
 	 */
 	private void reconcile(YamlFileAST root, Node node, Type type) {
-		if (type!=null && onPath.add(node)) {
+		if (type != null && onPath.add(node)) {
 			try {
 				reconcileOnPath(root, node, type);
 			} finally {
@@ -277,16 +277,16 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 			}
 			Type keyType = typeUtil.getKeyType(type);
 			Type valueType = TypeUtil.getDomainType(type);
-			if (keyType!=null) {
+			if (keyType != null) {
 				for (NodeTuple entry : mapping.getValue()) {
 					reconcile(root, entry.getKeyNode(), keyType);
 				}
 			}
-			if (valueType!=null) {
+			if (valueType != null) {
 				for (NodeTuple entry : mapping.getValue()) {
 					Node value = entry.getValueNode();
 					Type nestedValueType = valueType;
-					if (value.getNodeId()==NodeId.mapping) {
+					if (value.getNodeId() == NodeId.mapping) {
 						//Some special cases to handle here!!
 						//   See https://issuetracker.springsource.com/browse/STS-4254
 						//   See https://issuetracker.springsource.com/browse/STS-4335
@@ -302,11 +302,11 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 		} else {
 			// Neither atomic, map or sequence-like => bean-like
 			Map<String, TypedProperty> props = typeUtil.getPropertiesMap(type, EnumCaseMode.ALIASED, BeanPropertyNameMode.ALIASED);
-			if (props!=null) {
+			if (props != null) {
 				for (NodeTuple entry : mapping.getValue()) {
 					Node keyNode = entry.getKeyNode();
 					String key = NodeUtil.asScalar(keyNode);
-					if (key==null) {
+					if (key == null) {
 						expectBeanPropertyName(keyNode, type);
 					} else {
 						if (!props.containsKey(key)) {
@@ -314,7 +314,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 						} else {
 							Node valNode = entry.getValueNode();
 							TypedProperty typedProperty = props.get(key);
-							if (typedProperty!=null) {
+							if (typedProperty != null) {
 								if (typedProperty.isDeprecated()) {
 									deprecatedProperty(root.getDocument().getUri(), type, typedProperty, keyNode, quickFixes.DEPRECATED_PROPERTY);
 								}
@@ -328,7 +328,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	private void checkForEscapableKeys(MappingNode mapping) {
-		if (mapping!=null) {
+		if (mapping != null) {
 			for (NodeTuple tup : mapping.getValue()) {
 				Node keyNode = tup.getKeyNode();
 				String key = NodeUtil.asScalar(keyNode);
@@ -341,13 +341,13 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	public static boolean needsEscaping(String key) {
-		if (key!=null) {
+		if (key != null) {
 			if (key.startsWith("[")) {
 				return false; // looks like its already escaped. So doesn't need more escaping.
 			}
 			for (int i = 0; i < key.length(); i++) {
 				char c = key.charAt(i);
-				if (c=='-'||Character.isAlphabetic(c)||Character.isDigit(c)) {
+				if (c == '-'||Character.isAlphabetic(c)||Character.isDigit(c)) {
 					//fine!
 				} else {
 					return true;
@@ -362,7 +362,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 			expectTypeFoundSequence(type, seq);
 		} else if (typeUtil.isSequencable(type)) {
 			Type domainType = TypeUtil.getDomainType(type);
-			if (domainType!=null) {
+			if (domainType != null) {
 				for (Node element : seq.getValue()) {
 					reconcile(root, element, domainType);
 				}
@@ -379,7 +379,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 		String stringValue = scalar.getValue();
 		if (!hasPlaceHolder(stringValue)) { //don't check anything with placeholder expressions in it
 			ValueParser valueParser = typeUtil.getValueParser(type);
-			if (valueParser!=null) {
+			if (valueParser != null) {
 				// Tag tag = scalar.getTag(); //use the tag? Actually, boot tolerates String values
 				//  even if integeger etc are expected. It has its ways of parsing the String to the
 				//  expected type
@@ -450,7 +450,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 				MappingNode map = (MappingNode) valueNode;
 				for (NodeTuple entry : map.getValue()) {
 					String key = NodeUtil.asScalar(entry.getKeyNode());
-					if (key!=null) {
+					if (key != null) {
 						key = StringUtil.camelCaseToHyphens(key);
 						getUnknownProperties(name+"."+key, entry.getValueNode(), unknownProps, onPath);
 					}
@@ -469,11 +469,11 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	private String extendForQuickfix(String name, Node node, Set<Node> onPath) {
-		if (node!=null && onPath.add(node)) {
+		if (node != null && onPath.add(node)) {
 			TupleValueRef child = getFirstTupleValue(getChildren(node));
-			if (child!=null) {
+			if (child != null) {
 				String extra = NodeUtil.asScalar(child.getKey());
-				if (extra!=null) {
+				if (extra != null) {
 					return extendForQuickfix(name + "." + StringUtil.camelCaseToHyphens(extra),
 							child.get(), onPath);
 				}
@@ -485,7 +485,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 
 	private TupleValueRef getFirstTupleValue(List<NodeRef<?>> children) {
 		for (NodeRef<?> nodeRef : children) {
-			if (nodeRef.getKind()==Kind.VAL) {
+			if (nodeRef.getKind() == Kind.VAL) {
 				return (TupleValueRef) nodeRef;
 			}
 		}
@@ -529,7 +529,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 
 	protected SpringPropertyProblem deprecatedPropertyProblem(String docUri, String name, String contextType, Node keyNode,
 			String replace, String reason, Level level, QuickfixType fixType) {
-		ApplicationYamlProblemType problemType = level==Level.ERROR ? YAML_DEPRECATED_ERROR : YAML_DEPRECATED_WARNING;
+		ApplicationYamlProblemType problemType = level == Level.ERROR ? YAML_DEPRECATED_ERROR : YAML_DEPRECATED_WARNING;
 		SpringPropertyProblem problem = problem(problemType, keyNode, TypeUtil.deprecatedPropertyMessage(name, contextType, replace, reason));
 		problem.setPropertyName(name);
 		Range range = new Range(new Position(keyNode.getStartMark().getLine(), keyNode.getStartMark().getColumn()),

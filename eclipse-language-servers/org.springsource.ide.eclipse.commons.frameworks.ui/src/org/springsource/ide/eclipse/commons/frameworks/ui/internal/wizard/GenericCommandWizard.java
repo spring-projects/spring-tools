@@ -128,7 +128,7 @@ public abstract class GenericCommandWizard extends Wizard implements ICommandLis
 	 */
 	public void init(IWorkbench workbench, IStructuredSelection selection) {
 		List<IProject> selectedProjects = SelectionUtils.getProjects(selection, getProjectFilter());
-		if (selectedProjects.size()>0) {
+		if (selectedProjects.size() > 0) {
 			setSelectedProject(selectedProjects.get(0));
 		}
 	}
@@ -179,10 +179,10 @@ public abstract class GenericCommandWizard extends Wizard implements ICommandLis
 	public void setSelectedProject(IProject project) {
 		if (project.equals(selectedProject)) return;
 		selectedProject = project;
-		if (this.commandListPage!=null) {
+		if (this.commandListPage != null) {
 			commandListPage.setProjectSelectionInPage();
 		}
-		if (this.parameterPage!=null) {
+		if (this.parameterPage != null) {
 			parameterPage.setProjectSelectionInPage();
 		}
 	}

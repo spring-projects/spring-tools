@@ -60,7 +60,7 @@ public class BootLaunchShortcut extends JavaApplicationLaunchShortcut {
 			}
 			{
 				IType type = isMainMethod(elements[0]);
-				if(type != null) {
+				if (type != null) {
 					return new IType[] {type};
 				}
 			}
@@ -120,13 +120,13 @@ public class BootLaunchShortcut extends JavaApplicationLaunchShortcut {
 	 * @return the smallest enclosing <code>IType</code> of the specified object if it is a main method or <code>null</code> if it is not
 	 */
 	private IType isMainMethod(Object o) {
-		if(o instanceof IAdaptable) {
+		if (o instanceof IAdaptable) {
 			IAdaptable adapt = (IAdaptable) o;
 			IJavaElement element = (IJavaElement) adapt.getAdapter(IJavaElement.class);
-			if(element != null && element.getElementType() == IJavaElement.METHOD) {
+			if (element != null && element.getElementType() == IJavaElement.METHOD) {
 				try {
 					IMethod method = (IMethod) element;
-					if(method.isMainMethod()) {
+					if (method.isMainMethod()) {
 						return method.getDeclaringType();
 					}
 				}

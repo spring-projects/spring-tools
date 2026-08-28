@@ -91,7 +91,7 @@ public class YamlSchemaProblems {
 
 		if (parent instanceof MappingNode) {
 			for (NodeTuple prop : ((MappingNode) parent).getValue()) {
-				if (prop.getValueNode()==map) {
+				if (prop.getValueNode() == map) {
 					underline = NodeUtil.region(doc, prop.getKeyNode());
 				}
 			}

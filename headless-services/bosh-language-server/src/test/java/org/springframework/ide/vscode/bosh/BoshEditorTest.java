@@ -191,36 +191,36 @@ public class BoshEditorTest {
                         "  stemcell: $7\n" +
                         "  networks:\n" +
                         "  - name: $8<*>"
-        , // ============
+        , // == == == == == ==
                 "name: blah\n" +
                         "releases:\n" +
                         "- name: $1\n" +
                         "  version: $2<*>"
-        , // ============
+        , // == == == == == ==
                 "name: blah\n" +
                         "stemcells:\n" +
                         "- alias: $1\n" +
                         "  version: $2<*>"
-        , // ============
+        , // == == == == == ==
                 "name: blah\n" +
                         "tags:\n  <*>"
-        , // ============
+        , // == == == == == ==
                 "name: blah\n" +
                         "update:\n" +
                         "  canaries: $1\n" +
                         "  max_in_flight: $2\n" +
                         "  canary_watch_time: $3\n" +
                         "  update_watch_time: $4<*>"
-        , // ============
+        , // == == == == == ==
                 "name: blah\n" +
                         "variables:\n" +
                         "- name: $1\n" +
                         "  type: $2<*>"
 // Below completions are suppressed because they are deprecated
-//				, // ============
+//				, // == == == == == ==
 //				"name: blah\n" +
 //				"director_uuid: <*>"
-//				, // ============
+//				, // == == == == == ==
 //				"name: blah\n" +
 //				"properties:\n  <*>"
         );
@@ -236,7 +236,7 @@ public class BoshEditorTest {
                 "stemcells:\n" +
                         "- alias: $1\n" +
                         "  version: $2<*>"
-        , // ==========
+        , // == == == == ==
                 "stemcells:\n" +
                         "- alias: <*>"
         );
@@ -306,11 +306,11 @@ public class BoshEditorTest {
                 "releases:\n" +
                         "- name: foo\n" +
                         "  sha1: <*>"
-        , // ============
+        , // == == == == == ==
                 "releases:\n" +
                         "- name: foo\n" +
                         "  url: <*>"
-        , // ============
+        , // == == == == == ==
                 "releases:\n" +
                         "- name: foo\n" +
                         "  version: <*>"
@@ -392,58 +392,58 @@ public class BoshEditorTest {
                         "- name: foo-group\n" +
                         "  azs:\n" +
                         "  - <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  env:\n" +
                         "    <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  instances: <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  jobs:\n" +
                         "  - <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  lifecycle: <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  migrated_from:\n" +
                         "  - <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  networks:\n" +
                         "  - name: <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  persistent_disk_type: <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  stemcell: <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  update:\n" +
                         "    <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  vm_extensions:\n" +
                         "  - <*>"
-        , // =============
+        , // == == == == == == =
                 "instance_groups:\n" +
                         "- name: foo-group\n" +
                         "  vm_type: <*>"
 
-//				, // =============
+//				, // == == == == == == =
 // Not suggested because its deprecated:
 //				"instance_groups:\n" +
 //				"- name: foo-group\n" +
@@ -569,16 +569,16 @@ public class BoshEditorTest {
         editor.assertCompletions(PLAIN_COMPLETION,
                 "update:\n" +
                         "  canaries: <*>"
-        , // =====
+        , // == == =
                 "update:\n" +
                         "  canary_watch_time: <*>"
-        , // =====
+        , // == == =
                 "update:\n" +
                         "  max_in_flight: <*>"
-        , // =====
+        , // == == =
                 "update:\n" +
                         "  serial: <*>"
-        , // =====
+        , // == == =
                 "update:\n" +
                         "  update_watch_time: <*>"
         );
@@ -623,7 +623,7 @@ public class BoshEditorTest {
                         "- name: foo\n" +
                         "  options:\n" +
                         "    <*>"
-        , // ===============
+        , // == == == == == == == =
                 "variables:\n" +
                         "- name: foo\n" +
                         "  type: <*>"
@@ -879,7 +879,7 @@ public class BoshEditorTest {
                         "  sha1: asddsfsd\n"
         );
         editor.assertContextualCompletions("<*>"
-        , // ==>
+        , // == >
                 "other-release<*>", "some-release<*>"
         );
     }
@@ -925,7 +925,7 @@ public class BoshEditorTest {
                         "  version: 678.9.1\n"
         );
         editor.assertContextualCompletions("<*>"
-        , // ==>
+        , // == >
                 "default<*>", "windoze<*>"
         );
     }
@@ -1388,7 +1388,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(
                 "<*>"
-        , // ==>
+        , // == >
                 "default<*>",
                 "large<*>"
         );
@@ -1806,7 +1806,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(DEDENTED_COMPLETION,
                 "  <*>"
-        , // ==>
+        , // == >
                 "instance_groups:\n" +
                         "- name: $1\n" +
                         "  azs:\n" +
@@ -1819,27 +1819,27 @@ public class BoshEditorTest {
                         "  stemcell: $7\n" +
                         "  networks:\n" +
                         "  - name: $8<*>"
-        , //=========
+        , // == == == == =
                 "releases:\n" +
                         "- name: $1\n" +
                         "  version: $2<*>"
-        , //========
+        , // == == == ==
                 "stemcells:\n" +
                         "- alias: $1\n" +
                         "  version: $2<*>"
-        , //========
+        , // == == == ==
                 "tags:\n" +
                         "  <*>"
-        , //========
+        , // == == == ==
                 "update:\n" +
                         "  canaries: $1\n" +
                         "  max_in_flight: $2\n" +
                         "  canary_watch_time: $3\n" +
                         "  update_watch_time: $4<*>"
-        , //========
+        , // == == == ==
                 "- name: $1\n" +
                         "  type: $2<*>"
-        , //========
+        , // == == == ==
                 "- name: <*>"
         );
     }
@@ -1856,7 +1856,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(DEDENTED_COMPLETION.and(SNIPPET_COMPLETION.negate()),
                 "  <*>"
-        , //==>
+        , // == >
                 "instance_groups:\n" +
                         "- name: $1\n" +
                         "  azs:\n" +
@@ -1901,7 +1901,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(c -> c.getLabel().equals("→ jobs"),
                 "jo<*>"
-        , // ==>
+        , // == >
                 "  jobs:\n" +
                         "  - name: $1\n" +
                         "    release: $2<*>"
@@ -2018,7 +2018,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(PLAIN_COMPLETION.and(SNIPPET_COMPLETION),
                 "<*>"
-        , // ==>
+        , // == >
                 "workers: $1\n" +
                         "  az: $2\n" +
                         "  vm_type: $3\n" +
@@ -2224,7 +2224,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(PLAIN_COMPLETION.and(SNIPPET_COMPLETION.negate()),
                 "<*>"
-        , // ==>
+        , // == >
                 "az: <*>"
         ,
                 "azs:\n" +
@@ -2327,7 +2327,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(PLAIN_COMPLETION,
                 "<*>"
-        , // ==>
+        , // == >
                 "cloud_properties:\n" +
                         "    <*>"
         ,
@@ -2406,7 +2406,7 @@ public class BoshEditorTest {
         );
         editor.assertContextualCompletions(PLAIN_COMPLETION,
                 "<*>"
-        , // ==>
+        , // == >
                 "cloud_properties:\n" +
                         "    <*>"
         );

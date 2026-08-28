@@ -45,9 +45,9 @@ public class SimpleTemplate implements Template {
 		int len = pattern.length();
 		int nextChar = 0; //position of next input char to read from the pattern.
 		StringBuilder output = new StringBuilder();
-		while (nextChar<len) {
+		while (nextChar < len) {
 			int nextVarAt = pattern.indexOf(VAR_CHAR, nextChar);
-			if (nextVarAt>=0) {
+			if (nextVarAt >= 0) {
 				output.append(pattern.substring(nextChar, nextVarAt));
 				char varName = getVarName(nextVarAt);
 				output.append(getValue(varName, env));
@@ -63,12 +63,12 @@ public class SimpleTemplate implements Template {
 	}
 
 	private Object getValue(char varName, TemplateEnv env) {
-		if (varName==VAR_CHAR) {
+		if (varName == VAR_CHAR) {
 			//its not actually a real var,  but an escaped '%'
 			return VAR_CHAR;
 		}
 		String resolved = env.getTemplateVar(varName);
-		return resolved!=null?resolved:new String(new char[]{VAR_CHAR, varName});
+		return resolved != null ? resolved : new String(new char[]{VAR_CHAR, varName});
 	}
 
 	private char getVarName(int varPos) {

@@ -44,7 +44,7 @@ public abstract class FuzzyMap<E> implements Iterable<E> {
 			double bestScore = Double.NEGATIVE_INFINITY;
 			Match<E> best = null;
 			for (Match<E> match : matches) {
-				if (match.score>bestScore) {
+				if (match.score > bestScore) {
 					best = match;
 					bestScore = match.score;
 				}
@@ -74,7 +74,7 @@ public abstract class FuzzyMap<E> implements Iterable<E> {
 		//This assumes no two entries have the same id.
 		String key = getKey(value);
 		E existing = entries.get(key);
-		if (existing==null) {
+		if (existing == null) {
 			entries.put(getKey(value), value);
 		} else {
 			LOG.warning(FuzzyMap.class.getName()+": Multiple entries for key "+key+" some entries discarded");
@@ -104,7 +104,7 @@ public abstract class FuzzyMap<E> implements Iterable<E> {
 			for (Entry<String, E> e : entries.entrySet()) {
 				String key = e.getKey();
 				double score = FuzzyMatcher.matchScore(pattern, key);
-				if (score!=0.0) {
+				if (score != 0.0) {
 					matches.add(new Match<E>(pattern, score, e.getValue()));
 				}
 			}
@@ -122,7 +122,7 @@ public abstract class FuzzyMap<E> implements Iterable<E> {
 	 */
 	public String findValidPrefix(String propertyName) {
 		E best = findLongestCommonPrefixEntry(propertyName);
-		return best==null?null:StringUtil.commonPrefix(propertyName, getKey(best));
+		return best == null ? null : StringUtil.commonPrefix(propertyName, getKey(best));
 	}
 
 	/**
@@ -137,16 +137,16 @@ public abstract class FuzzyMap<E> implements Iterable<E> {
 		Entry<String, E> ceiln = entries.ceilingEntry(propertyName);
 		Entry<String, E> floor = entries.floorEntry(propertyName);
 		Entry<String, E> best;
-		if (floor==null || floor==ceiln) {
+		if (floor == null || floor == ceiln) {
 			best = ceiln;
-		} else if (ceiln==null) {
+		} else if (ceiln == null) {
 			best = floor;
 		} else {
-			int floorScore = floor==null?0:StringUtil.commonPrefixLength(floor.getKey(), propertyName);
-			int ceilnScore = ceiln==null?0:StringUtil.commonPrefixLength(ceiln.getKey(), propertyName);
-			best = floorScore>ceilnScore ? floor : ceiln;
+			int floorScore = floor == null ? 0 : StringUtil.commonPrefixLength(floor.getKey(), propertyName);
+			int ceilnScore = ceiln == null ? 0 : StringUtil.commonPrefixLength(ceiln.getKey(), propertyName);
+			best = floorScore > ceilnScore ? floor : ceiln;
 		}
-		return best==null?null:best.getValue();
+		return best == null ? null : best.getValue();
 	}
 
 	/**
@@ -157,7 +157,7 @@ public abstract class FuzzyMap<E> implements Iterable<E> {
 	}
 
 	public boolean isEmpty() {
-		return entries==null || entries.isEmpty();
+		return entries == null || entries.isEmpty();
 	}
 
 	public int size() {

@@ -142,14 +142,14 @@ public class GSImportWizardModel {
 		protected ValidationResult compute() {
 			try {
 				GSContent g = codesetProvider.getValue();
-				if (g!=null) { //Don't check or produce errors unless a content provider has been selected.
+				if (g != null) { //Don't check or produce errors unless a content provider has been selected.
 					boolean codesetSelected = false;
 					try {
 						Set<String> names = selectedNames.getValue();
 						if (names != null && !names.isEmpty()) {
 							for (String name : names) {
 								CodeSet cs = g.getCodeSet(name);
-								if (cs!=null) {
+								if (cs != null) {
 									codesetSelected = true;
 									ImportConfiguration conf = ImportUtils.importConfig(g, cs);
 									ValidationResult valid = ImportUtils.validateImportConfiguration(conf);
@@ -163,7 +163,7 @@ public class GSImportWizardModel {
 							//Selectiong nothing is only allowed if there is in fact nothing to select
 							//otherwise at least on codeset must be selected for import.
 							String[] validNames = validCodesetNames.getValue();
-							if (validNames!=null && validNames.length>0) {
+							if (validNames != null && validNames.length > 0) {
 								return ValidationResult.error("At least one codeset should be selected");
 							}
 						}
@@ -205,9 +205,9 @@ public class GSImportWizardModel {
 		protected String[] compute() {
 			try {
 				GSContent g = guide.getValue();
-				if (g!=null) {
+				if (g != null) {
 					List<CodeSet> validSets = g.getCodeSets();
-					if (validSets!=null) {
+					if (validSets != null) {
 						String[] names = new String[validSets.size()];
 						for (int i = 0; i < names.length; i++) {
 							names[i] = validSets.get(i).getName();
@@ -243,16 +243,16 @@ public class GSImportWizardModel {
 
 	private ValidationResult validateImportStrategy(GSContent g, ImportStrategy importStrategy) {
 		try {
-			if (g!=null) {
+			if (g != null) {
 				try {
-					if (importStrategy==null) {
+					if (importStrategy == null) {
 						return ValidationResult.error("No build type selected");
 					} else {
 						List<String> codesetNames = codesets.getValues();
-						if (codesetNames!=null) {
+						if (codesetNames != null) {
 							for (String csname : codesetNames) {
 								CodeSet cs = g.getCodeSet(csname);
-								if (cs!=null) {
+								if (cs != null) {
 									ValidationResult result = cs.validateBuildType(importStrategy.getBuildType());
 									if (!result.isOk()) {
 										return result.withMessage("CodeSet '"+csname+"': "+result.msg);
@@ -304,7 +304,7 @@ public class GSImportWizardModel {
 		@Override
 		protected Void compute() {
 			GSContent g = guide.getValue();
-			if (g!=null) {
+			if (g != null) {
 				if (g.isDownloaded()) {
 					//Yes, we depend on the value of buildType but shouldn't respond to changes on it.
 					// We do not want to autoselect a buildType when a user selects one. That would be
@@ -312,7 +312,7 @@ public class GSImportWizardModel {
 					ImportStrategy is = importStrategy.getValue();
 					if (!validateImportStrategy(g, is).isOk()) {
 						for (ImportStrategy other : ImportStrategies.all()) {
-							if (other!=is) {
+							if (other != is) {
 								if (validateImportStrategy(g,other).isOk()) {
 									importStrategy.setValue(other);
 								}
@@ -332,7 +332,7 @@ public class GSImportWizardModel {
 		@Override
 		protected String compute() {
 			Object g = rawSelection.getValue();
-			if (g!=null && g instanceof Describable) {
+			if (g != null && g instanceof Describable) {
 				return ((Describable) g).getDescription();
 			}
 			return "Select Getting Started Content to see its Description";
@@ -343,7 +343,7 @@ public class GSImportWizardModel {
 		@Override
 		protected URL compute() {
 			GSContent g = guide.getValue();
-			if (g!=null) {
+			if (g != null) {
 				return g.getHomePage();
 			}
 			return null;
@@ -385,7 +385,7 @@ public class GSImportWizardModel {
 		mon.beginTask("Downloading", 1);
 		try {
 			GSContent g = guide.getValue();
-			if (g!=null) {
+			if (g != null) {
 				g.getZip().getFile(); //This forces download
 			}
 		} catch (Exception e) {
@@ -430,7 +430,7 @@ public class GSImportWizardModel {
 		try {
 			for (String name : codesetNames) {
 				CodeSet cs = g.getCodeSet(name);
-				if (cs==null) {
+				if (cs == null) {
 					//Ignore 'invalid' codesets. This is a bit of a hack so that we can retain selected codeset names
 					//  across guide selection changes. To do that we remember 'selected' cs names even if they
 					//  aren't valid for the current guide. That way the checkbox state stays consistent
@@ -461,7 +461,7 @@ public class GSImportWizardModel {
 
 	public void openHomePage() {
 		URL url = homePage.getValue();
-		if (url!=null) {
+		if (url != null) {
 			openUrl(url.toString());
 		}
 	}

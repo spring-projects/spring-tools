@@ -63,13 +63,13 @@ public class YamlPathEdits extends DocumentEdits {
 		//This code doesn't handle selection of subddocuments
 		// or creation of new subdocuments so must not call it on
 		//ROOT node but start at an appropriate SDocNode (or below)
-		Assert.isLegal(node.getNodeType()!=SNodeType.ROOT);
+		Assert.isLegal(node.getNodeType() != SNodeType.ROOT);
 		if (!path.isEmpty()) {
 			YamlPathSegment s = path.getSegment(0);
-			if (s.getType()==YamlPathSegmentType.VAL_AT_KEY) {
+			if (s.getType() == YamlPathSegmentType.VAL_AT_KEY) {
 				String key = s.toPropString();
 				SKeyNode existing = node.getChildWithKey(key);
-				if (existing==null) {
+				if (existing == null) {
 					createNewPath(node, path, appendText);
 				} else {
 					createPath(existing, path.tail(), appendText);
@@ -79,13 +79,13 @@ public class YamlPathEdits extends DocumentEdits {
 			//whole path already exists. Just try to move cursor somewhere
 			// sensible in the existing tail-end-node of the path.
 			SNode child = node.getFirstRealChild();
-			if (child!=null) {
+			if (child != null) {
 				moveCursorTo(child.getStart());
-			} else if (node.getNodeType()==SNodeType.KEY) {
+			} else if (node.getNodeType() == SNodeType.KEY) {
 				SKeyNode keyNode = (SKeyNode) node;
 				int colonOffset = keyNode.getColonOffset();
 				char c = doc.getChar(colonOffset+1);
-				if (c==' ') {
+				if (c == ' ') {
 					moveCursorTo(colonOffset+2); //cursor after the ": "
 				} else {
 					moveCursorTo(colonOffset+1); //cursor after the ":"
@@ -98,13 +98,13 @@ public class YamlPathEdits extends DocumentEdits {
 		//This code doesn't handle selection of subddocuments
 		// or creation of new subdocuments so must not call it on
 		//ROOT node but start at an appropriate SDocNode (or below)
-		Assert.isLegal(node.getNodeType()!=SNodeType.ROOT);
+		Assert.isLegal(node.getNodeType() != SNodeType.ROOT);
 		if (!path.isEmpty()) {
 			YamlPathSegment s = path.getSegment(0);
-			if (s.getType()==YamlPathSegmentType.VAL_AT_KEY) {
+			if (s.getType() == YamlPathSegmentType.VAL_AT_KEY) {
 				String key = s.toPropString();
 				SKeyNode existing = node.getChildWithKey(key);
-				if (existing==null) {
+				if (existing == null) {
 					createNewPath(node, path, appendText);
 				} else {
 					createPath(existing, path.tail(), appendText);
@@ -114,13 +114,13 @@ public class YamlPathEdits extends DocumentEdits {
 			//whole path already exists. Just try to move cursor somewhere
 			// sensible in the existing tail-end-node of the path.
 			SNode child = node.getFirstRealChild();
-			if (child!=null) {
+			if (child != null) {
 				moveCursorTo(child.getStart());
-			} else if (node.getNodeType()==SNodeType.KEY) {
+			} else if (node.getNodeType() == SNodeType.KEY) {
 				SKeyNode keyNode = (SKeyNode) node;
 				int colonOffset = keyNode.getColonOffset();
 				char c = doc.getChar(colonOffset+1);
-				if (c==' ') {
+				if (c == ' ') {
 					moveCursorTo(colonOffset+2); //cursor after the ": "
 				} else {
 					moveCursorTo(colonOffset+1); //cursor after the ":"
@@ -151,13 +151,13 @@ public class YamlPathEdits extends DocumentEdits {
 	protected String createPathInsertionText(YamlPath path, int indent, boolean startOnNewLine, String appendText) {
 		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < path.size(); i++) {
-			if (startOnNewLine||i>0) {
+			if (startOnNewLine||i > 0) {
 				indentUtil.addNewlineWithIndent(indent, buf);
 			}
 			String key = path.getSegment(i).toPropString();
 			buf.append(YamlUtil.stringEscape(key));
 			buf.append(":");
-			if (i<path.size()-1) {
+			if (i < path.size()-1) {
 				indent += YamlIndentUtil.INDENT_BY;
 			} else {
 				buf.append(indentUtil.applyIndentation(appendText, indent));
@@ -168,10 +168,10 @@ public class YamlPathEdits extends DocumentEdits {
 
 	public int getNewPathInsertionOffset(SChildBearingNode parent) throws Exception {
 		int insertAfterLine = doc.getLineOfOffset(parent.getTreeEnd());
-		while (insertAfterLine>=0 && doc.getLineIndentation(insertAfterLine)==-1) {
+		while (insertAfterLine >= 0 && doc.getLineIndentation(insertAfterLine) == -1) {
 			insertAfterLine--;
 		}
-		if (insertAfterLine<0) {
+		if (insertAfterLine < 0) {
 			//This code is probably 'dead' because:
 			//   - it can only occur if all lines in the 'parent' are empty
 			//   - if parent is any other node than SRootNode then it must have at least one
@@ -194,7 +194,7 @@ public class YamlPathEdits extends DocumentEdits {
 	}
 
 	private boolean needNewline(SNode contextNode, int insertionPoint) throws Exception {
-		if (contextNode.getNodeType()==SNodeType.SEQ) {
+		if (contextNode.getNodeType() == SNodeType.SEQ) {
 			// after a '- ' its okay to put key on same line
 			return false;
 		} else {

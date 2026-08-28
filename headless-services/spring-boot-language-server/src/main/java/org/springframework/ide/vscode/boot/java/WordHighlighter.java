@@ -45,7 +45,7 @@ public class WordHighlighter implements Function<TextDocument, List<Range>> {
 		String text = doc.get();
 		int wordStart = text.indexOf(word);
 		ImmutableList.Builder<Range> highlights = ImmutableList.builder();
-		while (wordStart>=0) {
+		while (wordStart >= 0) {
 			try {
 				highlights.add(doc.toRange(wordStart, word.length()));
 			} catch (BadLocationException e) {

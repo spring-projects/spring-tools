@@ -84,7 +84,7 @@ public class ResourceListener implements IResourceChangeListener {
 
 	private boolean isApplicableFile(IFile resource) {
 		IPath loc = resource.getLocation();
-		if (loc!=null) { // Avoid NPE for resource that has no location (happens when project deleted)
+		if (loc != null) { // Avoid NPE for resource that has no location (happens when project deleted)
 			Path locPath = resource.getLocation().toFile().toPath();
 			return pathMatchers.stream().filter(m -> m.matches(locPath)).findFirst().isPresent();
 		}

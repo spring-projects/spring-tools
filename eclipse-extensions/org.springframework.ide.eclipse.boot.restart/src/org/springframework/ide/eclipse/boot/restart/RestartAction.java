@@ -54,9 +54,9 @@ public class RestartAction extends Action implements IUpdate {
 		try {
 			IProcess process = this.console.getProcess();
 			ILaunchConfiguration launchConfiguration = process.getLaunch().getLaunchConfiguration();
-			if (launchConfiguration!=null) {
+			if (launchConfiguration != null) {
 				ILaunchConfigurationType type = launchConfiguration.getType();
-				if (type!=null) {
+				if (type != null) {
 					ILaunchConfigurationDelegate delegate = type.getDelegate();
 
 					bootProject = delegate instanceof BootLaunchConfigurationDelegate;

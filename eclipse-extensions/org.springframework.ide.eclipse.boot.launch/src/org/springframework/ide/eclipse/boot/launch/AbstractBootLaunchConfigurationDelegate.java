@@ -103,7 +103,7 @@ public abstract class AbstractBootLaunchConfigurationDelegate extends AdvancedJa
 
 		@Override
 		public String toString() {
-			return (isChecked?"[X] ":"[ ] ") +
+			return (isChecked ? "[X] " : "[ ] ") +
 					name + "="+ value;
 		}
 
@@ -146,9 +146,9 @@ public abstract class AbstractBootLaunchConfigurationDelegate extends AdvancedJa
 		try {
 			ILaunchManager lm = getLaunchMan();
 			ILaunchConfigurationType type = lm.getLaunchConfigurationType(confTypeId);
-			if (type!=null) {
+			if (type != null) {
 				ILaunchConfiguration[] configs = lm.getLaunchConfigurations(type);
-				if (configs!=null && configs.length>0) {
+				if (configs != null && configs.length > 0) {
 					ArrayList<ILaunchConfiguration> result = new ArrayList<>();
 					for (ILaunchConfiguration conf : configs) {
 						if (p.equals(getProject(conf))) {
@@ -203,12 +203,12 @@ public abstract class AbstractBootLaunchConfigurationDelegate extends AdvancedJa
 					if (prefixed.startsWith(PROPS_PREFIX)) {
 						String name = prefixed.substring(PROPS_PREFIX.length());
 						int dotPos = name.lastIndexOf(OID_SEPERATOR);
-						if (dotPos>=0) {
+						if (dotPos >= 0) {
 							name = name.substring(0, dotPos);
 						}
 						String valueEnablement = (String)e.getValue();
 						String value = valueEnablement.substring(1);
-						boolean enabled = valueEnablement.charAt(0)=='1';
+						boolean enabled = valueEnablement.charAt(0) == '1';
 						props.add(new PropVal(name, value, enabled));
 					}
 				} catch (Exception ignore) {
@@ -324,7 +324,7 @@ public abstract class AbstractBootLaunchConfigurationDelegate extends AdvancedJa
 
 	public static void setProject(ILaunchConfigurationWorkingCopy conf, IProject p) {
 		//debug(conf, "setProject <= "+p);
-		if (p==null) {
+		if (p == null) {
 			conf.removeAttribute(ATTR_PROJECT_NAME);
 		} else {
 			conf.setAttribute(ATTR_PROJECT_NAME, p.getName());
@@ -341,7 +341,7 @@ public abstract class AbstractBootLaunchConfigurationDelegate extends AdvancedJa
 				//Take care not to add this a 'real' Boot launch config or it will cause m2e to throw exceptions
 				//These 'magic' attributes should only be added to a 'cloned' copy of our config with the right type.
 				IProject p = getProject(conf);
-				if (p!=null && p.hasNature(SpringBootCore.M2E_NATURE)) {
+				if (p != null && p.hasNature(SpringBootCore.M2E_NATURE)) {
 					if (!conf.hasAttribute(IJavaLaunchConfigurationConstants.ATTR_CLASSPATH_PROVIDER)) {
 						conf.setAttribute(IJavaLaunchConfigurationConstants.ATTR_CLASSPATH_PROVIDER, M2E_CLASSPATH_PROVIDER);
 					}
@@ -380,7 +380,7 @@ public abstract class AbstractBootLaunchConfigurationDelegate extends AdvancedJa
 
 	protected ILaunchConfiguration configureClassPathProviders(ILaunchConfiguration conf) throws CoreException {
 		IProject project = BootLaunchConfigurationDelegate.getProject(conf);
-		if (project!=null) {
+		if (project != null) {
 			if (project.hasNature(SpringBootCore.M2E_NATURE)) {
 				conf = modify(conf, (ILaunchConfigurationWorkingCopy wc) -> {
 					enableMavenClasspathProviders(wc);

@@ -106,10 +106,10 @@ public class CoreUtil {
 	public static boolean promptForProjectSave(IProject project) throws Exception {
 		IStatusHandler prompter = DebugPlugin.getDefault().getStatusHandler(promptStatus);
 
-		if(prompter != null) {
+		if (prompter != null) {
 			IProject[] projects = new IProject[] {project};
 			ILaunchConfiguration configuration = null;
-			if(!((Boolean)prompter.handleStatus(saveScopedDirtyEditors, new Object[]{configuration, projects})).booleanValue()) {
+			if (!((Boolean)prompter.handleStatus(saveScopedDirtyEditors, new Object[]{configuration, projects})).booleanValue()) {
 				return false;
 			}
 		}

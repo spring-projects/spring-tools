@@ -76,7 +76,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				List.of(new PropertySegment(domainTypeFqn, methodName)));
 	}
 
-	// ========== Single-segment: basic replacement ==========
+	// == == == == == Single-segment: basic replacement == == == == ==
 
 	@Test
 	void basicReplacement_addsImportAndMethodReference() throws Exception {
@@ -109,7 +109,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Single-segment: import already present ==========
+	// == == == == == Single-segment: import already present == == == == ==
 
 	@Test
 	void importAlreadyPresent_noDuplicate() throws Exception {
@@ -143,7 +143,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Single-segment: same package — no import needed ==========
+	// == == == == == Single-segment: same package — no import needed == == == == ==
 
 	@Test
 	void samePackageType_noImportAdded() throws Exception {
@@ -175,7 +175,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Single-segment: batch (two descriptors, same domain type) ==========
+	// == == == == == Single-segment: batch (two descriptors, same domain type) == == == == ==
 
 	@Test
 	void batchReplacement_twoLiterals() throws Exception {
@@ -209,7 +209,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Single-segment: Criteria.where ==========
+	// == == == == == Single-segment: Criteria.where == == == == ==
 
 	@Test
 	void criteriaWhereReplacement() throws Exception {
@@ -242,7 +242,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Single-segment: wildcard import covers package ==========
+	// == == == == == Single-segment: wildcard import covers package == == == == ==
 
 	@Test
 	void wildcardImportCoversPackage_noExtraImport() throws Exception {
@@ -276,7 +276,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Single-segment: replace only targeted literal ==========
+	// == == == == == Single-segment: replace only targeted literal == == == == ==
 
 	@Test
 	void replaceOnlyTargetedLiteral_otherUntouched() throws Exception {
@@ -309,7 +309,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Multi-segment: two-level property path ==========
+	// == == == == == Multi-segment: two-level property path == == == == ==
 
 	@Test
 	void multiSegment_twoLevels_propertyPathOfThen() throws Exception {
@@ -346,7 +346,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Multi-segment: three-level property path ==========
+	// == == == == == Multi-segment: three-level property path == == == == ==
 
 	@Test
 	void multiSegment_threeLevels_chainedThen() throws Exception {
@@ -385,7 +385,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Multi-segment: domain types share same package — no duplicate imports ==========
+	// == == == == == Multi-segment: domain types share same package — no duplicate imports == == == == ==
 
 	@Test
 	void multiSegment_sharedImports_noDuplicates() throws Exception {
@@ -423,7 +423,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Mixed batch: single-segment + multi-segment in one refactoring ==========
+	// == == == == == Mixed batch: single-segment + multi-segment in one refactoring == == == == ==
 
 	@Test
 	void mixedBatch_singleAndMultiSegment() throws Exception {
@@ -465,7 +465,7 @@ class TypeSafePropertyReferenceRefactoringTest {
 				""", result);
 	}
 
-	// ========== Record domain type: accessor method (no get prefix) ==========
+	// == == == == == Record domain type: accessor method (no get prefix) == == == == ==
 
 	@Test
 	void recordDomainType_accessorMethodReference() throws Exception {

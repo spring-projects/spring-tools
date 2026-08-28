@@ -77,7 +77,7 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 			args.add(propertyAssignmentArgument(REMOTE_SECRET, secret, PROGRAM_ARG_PREFIX));
 		}
 		Integer debugPort = localDebugPort.get();
-		if (debugPort!=null) {
+		if (debugPort != null) {
 			args.add(propertyAssignmentArgument(DEBUG_PORT, ""+debugPort, PROGRAM_ARG_PREFIX));
 		}
 		args.add(getRemoteUrl(conf));
@@ -199,10 +199,10 @@ public class BootDevtoolsClientLaunchConfigurationDelegate extends AbstractBootL
 	 * session to the client.
 	 */
 	private void launchRemote(int port, ILaunchConfiguration configuration, final ILaunch launch, IProgressMonitor _monitor) throws CoreException {
-		if (port<0) {
+		if (port < 0) {
 			return;
 		}
-		final IProgressMonitor monitor = _monitor==null?new NullProgressMonitor():_monitor;
+		final IProgressMonitor monitor = _monitor == null ? new NullProgressMonitor() : _monitor;
 
 		monitor.beginTask(NLS.bind(LaunchingMessages.JavaRemoteApplicationLaunchConfigurationDelegate_Attaching_to__0_____1, new String[]{configuration.getName()}), 3);
 		// check for cancellation

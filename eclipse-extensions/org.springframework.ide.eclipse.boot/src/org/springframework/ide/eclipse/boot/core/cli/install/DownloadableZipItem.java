@@ -38,18 +38,18 @@ public class DownloadableZipItem extends DownloadableItem {
 
 	@Override
 	protected String getFileName() {
-		if (fileName==null) {
+		if (fileName == null) {
 			try {
 				//Try to create human friendly name
 				String name = new Path(getURL().getPath()).lastSegment();
-				if (name!=null && name.endsWith(".zip")) {
+				if (name != null && name.endsWith(".zip")) {
 					fileName = name;
 				}
 			} catch (Throwable e) {
 				Log.log(e);
 			}
 			//Ensure that filename is at least set to something that ends with .zip
-			if (fileName==null) {
+			if (fileName == null) {
 				fileName = super.getFileName()+".zip";
 			}
 		}

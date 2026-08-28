@@ -218,7 +218,7 @@ public class DefaultUserInteractions implements UserInteractions {
 			@Override
 			public void run() {
 				MessageDialogWithToggle result = MessageDialogWithToggle.openYesNoQuestion(getShell(), title , message, toggleMessage, false, null, null);
-				dialog[0] = result.getReturnCode()==IDialogConstants.YES_ID;
+				dialog[0] = result.getReturnCode() == IDialogConstants.YES_ID;
 				dialog[1] = result.getToggleState();
 			}
 		});
@@ -239,7 +239,7 @@ public class DefaultUserInteractions implements UserInteractions {
 			@Override
 			public void run() {
 				MessageDialogWithToggle result = MessageDialogWithToggle.openOkCancelConfirm(getShell(), title , message, toggleMessage, false, null, null);
-				dialog[0] = result.getReturnCode()==IDialogConstants.OK_ID;
+				dialog[0] = result.getReturnCode() == IDialogConstants.OK_ID;
 				dialog[1] = result.getToggleState();
 			}
 		});
@@ -319,7 +319,7 @@ public class DefaultUserInteractions implements UserInteractions {
 			public void run() {
 				InputDialog dlg = new InputDialog(getShell(), dialogTitle, prompt, defaultValue, null);
 				int code = dlg.open();
-				if (code==IDialogConstants.OK_ID) {
+				if (code == IDialogConstants.OK_ID) {
 					result.set(dlg.getValue());
 				}
 			}

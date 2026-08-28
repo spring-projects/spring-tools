@@ -67,7 +67,7 @@ public class GroupLaunchTabSection extends WizardPageSection implements ILaunchC
 		this.groupTitle = title;
 		this.sections = new ArrayList<IPageSection>();
 		for (IPageSection s : _sections) {
-			if (s!=null) {
+			if (s != null) {
 				sections.add(s);
 			}
 		}
@@ -96,7 +96,7 @@ public class GroupLaunchTabSection extends WizardPageSection implements ILaunchC
 				layout.exclude = !isVisible;
 				group.setLayoutData(layout);
 				Shell shell = owner.getShell();
-				if (shell!=null) {
+				if (shell != null) {
 					shell.layout(new Control[] {group});
 				}
 			};
@@ -104,7 +104,7 @@ public class GroupLaunchTabSection extends WizardPageSection implements ILaunchC
 	}
 
 	private Composite createComposite(Composite page) {
-		if (groupTitle!=null) {
+		if (groupTitle != null) {
 			//Create a group with box around it and a title
 			final Group group = new Group(page, SWT.NONE);
 			group.setText(groupTitle);
@@ -127,7 +127,7 @@ public class GroupLaunchTabSection extends WizardPageSection implements ILaunchC
 	 */
 	protected GridLayout createLayout() {
 		GridLayout layout = new GridLayout(this.columns, true);
-		if (groupTitle==null) {
+		if (groupTitle == null) {
 			layout.marginWidth = 0;
 		}
 		return layout;
@@ -140,14 +140,14 @@ public class GroupLaunchTabSection extends WizardPageSection implements ILaunchC
 				((Disposable) s).dispose();
 			}
 		}
-		if (dirtyState!=null) {
+		if (dirtyState != null) {
 			dirtyState.dispose();
 		}
 		super.dispose();
 	}
 
 	public GroupLaunchTabSection columns(int i) {
-		Assert.isLegal(i>=1);
+		Assert.isLegal(i >= 1);
 		this.columns = i;
 		return this;
 	}
@@ -181,7 +181,7 @@ public class GroupLaunchTabSection extends WizardPageSection implements ILaunchC
 
 	@Override
 	public LiveExpression<Boolean> getDirtyState() {
-		if (dirtyState==null) {
+		if (dirtyState == null) {
 			OrExpression ds = new OrExpression();
 			for (IPageSection s : sections) {
 				if (s instanceof ILaunchConfigurationTabSection) {

@@ -207,7 +207,7 @@ public class LanguageServerHarness {
 	public synchronized TextDocumentInfo getOrReadFile(File file, String languageId) throws Exception {
 		String uri = file.toURI().toASCIIString();
 		TextDocumentInfo d = documents.get(uri);
-		if (d==null) {
+		if (d == null) {
 			documents.put(uri, d = readFile(file, languageId));
 		}
 		return d;
@@ -256,7 +256,7 @@ public class LanguageServerHarness {
 		Collection<CompletableFuture<HighlightParams>>requestors = ImmutableList.of();
 		synchronized (this) {
 			String uri = highlights.getDoc().getUri();
-			if (uri!=null) {
+			if (uri != null) {
 				requestors = ImmutableList.copyOf(this.highlights.get(uri));
 				//Carefull!! Must make a copy above. Because the returned collection is cleared when we call removeAll below.
 				this.highlights.removeAll(uri); //futures can only be completed once, so no point holding any longer
@@ -280,7 +280,7 @@ public class LanguageServerHarness {
 	}
 
 	public void ensureInitialized() throws Exception {
-		if (initResult==null) {
+		if (initResult == null) {
 			intialize(null);
 		}
 	}
@@ -505,7 +505,7 @@ public class LanguageServerHarness {
 	public TextDocumentInfo openDocument(TextDocumentInfo documentInfo) throws Exception {
 		DidOpenTextDocumentParams didOpen = new DidOpenTextDocumentParams();
 		didOpen.setTextDocument(documentInfo.getDocument());
-		if (getServer()!=null) {
+		if (getServer() != null) {
 			getServer().getTextDocumentService().didOpen(didOpen);
 		}
 		return documentInfo;
@@ -552,7 +552,7 @@ public class LanguageServerHarness {
 		default:
 			throw new IllegalStateException("Unkown SYNC mode: "+getDocumentSyncMode());
 		}
-		if (getServer()!=null) {
+		if (getServer() != null) {
 			getServer().getTextDocumentService().didChange(didChange);
 		}
 		return documents.get(uri);
@@ -593,14 +593,14 @@ public class LanguageServerHarness {
 		default:
 			throw new IllegalStateException("Unkown SYNC mode: "+getDocumentSyncMode());
 		}
-		if (getServer()!=null) {
+		if (getServer() != null) {
 			getServer().getTextDocumentService().didChange(didChange);
 		}
 		return documents.get(uri);
 	}
 
 	private TextDocumentSyncKind getDocumentSyncMode() {
-		if (initResult!=null) {
+		if (initResult != null) {
 			Either<TextDocumentSyncKind, TextDocumentSyncOptions> mode = initResult.getCapabilities().getTextDocumentSync();
 			if (mode.isLeft()) {
 				return mode.getLeft();
@@ -630,7 +630,7 @@ public class LanguageServerHarness {
 
 	public static Condition<Diagnostic> isDiagnosticWithSeverity(DiagnosticSeverity severity) {
 		return new Condition<>(
-				(d) -> d.getSeverity()==severity,
+				(d) -> d.getSeverity() == severity,
 				"Diagnostic with severity '"+severity+"'"
 		);
 	}
@@ -652,7 +652,7 @@ public class LanguageServerHarness {
 
 	public static Condition<Diagnostic> isDiagnosticOnLine(int line) {
 		return new Condition<>(
-				(d) -> d.getRange().getStart().getLine()==line,
+				(d) -> d.getRange().getStart().getLine() == line,
 				"Diagnostic on line "+line
 		);
 	}
@@ -845,7 +845,7 @@ public class LanguageServerHarness {
 	}
 
 	public static String getDocString(CompletionItem completion) {
-		if (completion!=null) {
+		if (completion != null) {
 			Either<String, MarkupContent> doc = completion.getDocumentation();
 			if (doc.isLeft()) {
 				return doc.getLeft();
@@ -903,7 +903,7 @@ public class LanguageServerHarness {
 				}
 				edits.apply(workingDocument);
 				Editor editor = getOpenEditor(uri);
-				if (editor!=null) {
+				if (editor != null) {
 					editor.setRawText(workingDocument.get());
 				} else {
 					changeDocument(uri, workingDocument.get());
@@ -931,7 +931,7 @@ public class LanguageServerHarness {
 					}
 					edits.apply(workingDocument);
 					Editor editor = getOpenEditor(uri);
-					if (editor!=null) {
+					if (editor != null) {
 						editor.setRawText(workingDocument.get());
 					} else {
 						if (docInfo == null) {
@@ -985,7 +985,7 @@ public class LanguageServerHarness {
 		List<Editor> editors = getOpenEditors(uri);
 		if (editors.isEmpty()) {
 			return null;
-		} else if (editors.size()>1) {
+		} else if (editors.size() > 1) {
 			throw new IllegalStateException("Multiple active editors on the same uri. The harness doesn't handle that yet!");
 		}
 		return editors.get(0);
@@ -1033,7 +1033,7 @@ public class LanguageServerHarness {
 	 */
 	public Editor newEditorFromClasspath(String resourcePath) throws Exception {
 		try (InputStream is = LanguageServerHarness.class.getResourceAsStream(resourcePath)) {
-			if (is==null) {
+			if (is == null) {
 				fail("Couldn't find the resource: "+resourcePath);
 			}
 			return newEditor(IOUtil.toString(is));
@@ -1071,7 +1071,7 @@ public class LanguageServerHarness {
 	}
 
 	public SimpleLanguageServer getServer() {
-		return server==null ? null : server.getServer();
+		return server == null ? null : server.getServer();
 	}
 
 	public void enableHierarchicalDocumentSymbols(boolean b) {

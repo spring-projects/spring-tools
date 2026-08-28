@@ -35,7 +35,7 @@ class TypedContentManager<T> {
 	}
 
 	public T[] getAll() {
-		if (items==null) {
+		if (items == null) {
 			items = fetch(downloader);
 		}
 		return items;

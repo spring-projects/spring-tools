@@ -45,7 +45,7 @@ public class SpringApplicationReadyStateMonitor extends AbstractPollingAppReadyS
 	protected boolean checkReady() {
 		try {
 			SpringApplicationLifecycleClient client = clientManager.getLifeCycleClient();
-			if (client!=null) {
+			if (client != null) {
 				return client.isReady();
 			}
 		} catch (Exception e) {

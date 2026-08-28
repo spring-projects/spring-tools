@@ -128,7 +128,7 @@ public class BootDashActionTests {
 			Boolean enabled = liveActionsMenu.isEnabled().getValue();
 			System.out.println("Enabled = "+enabled);
 			assertEquals(state, element.getRunState());
-			assertEquals(state==RunState.RUNNING || state==RunState.DEBUGGING, enabled);
+			assertEquals(state == RunState.RUNNING || state == RunState.DEBUGGING, enabled);
 		}
 	}
 
@@ -165,7 +165,7 @@ public class BootDashActionTests {
 		assertTrue(liveActionsMenu.isVisible());
 		for (RunState s1 : RunState.values()) {
 			for (RunState s2 : RunState.values()) {
-				boolean expectEnabled = s1==RunState.RUNNING || s2==RunState.RUNNING || s1==RunState.DEBUGGING || s2==RunState.DEBUGGING;
+				boolean expectEnabled = s1 == RunState.RUNNING || s2 == RunState.RUNNING || s1 == RunState.DEBUGGING || s2 == RunState.DEBUGGING;
 				elementState.setValue(s1);
 				otherElementState.setValue(s2);
 				assertEquals(expectEnabled, liveActionsMenu.isEnabled().getValue());
@@ -205,7 +205,7 @@ public class BootDashActionTests {
 			BootDashElement projectElement = harness.getElementWithName(projectNames[i]);
 			selection.setElements(projectElement);
 			int numprocs = processCounts[i];
-			if (numprocs==0) {
+			if (numprocs == 0) {
 				List<IAction> actions = liveActionsMenu.getActions();
 				assertEquals(1, actions.size());
 				IAction action = actions.get(0);
@@ -497,7 +497,7 @@ public class BootDashActionTests {
 		ACondition.waitFor("Wait for config deletion", 3000, () -> {
 			assertEquals(ImmutableSet.of(conf2), element.getLaunchConfigs());
 			assertFalse(conf1.exists());
-			assertTrue(element.getCurrentChildren().size()==1);
+			assertTrue(element.getCurrentChildren().size() == 1);
 		});
 	}
 
@@ -574,7 +574,7 @@ public class BootDashActionTests {
 				assertTrue(confs.contains(conf1));
 				for (ILaunchConfiguration other : confs) {
 					if (!other.equals(conf1)) {
-						assertFalse(getJMXPortAsInt(conf1)==getJMXPortAsInt(other));
+						assertFalse(getJMXPortAsInt(conf1) == getJMXPortAsInt(other));
 					}
 				}
 				return true;
@@ -592,7 +592,7 @@ public class BootDashActionTests {
 	private static int getJMXPortAsInt(ILaunchConfiguration conf) {
 		try {
 			String str = BootLaunchConfigurationDelegate.getJMXPort(conf);
-			if (str!=null) {
+			if (str != null) {
 				return Integer.parseInt(str);
 			}
 		} catch (NumberFormatException e) {
@@ -975,7 +975,7 @@ public class BootDashActionTests {
 
 	private RunStateAction getRunStateAction(RunState goalState) {
 		for (RunStateAction s : actions.getRunStateActions()) {
-			if (s.getGoalState()==goalState) {
+			if (s.getGoalState() == goalState) {
 				return s;
 			}
 		}

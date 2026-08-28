@@ -38,10 +38,10 @@ class StructureClient {
 	
 	CompletableFuture<List<StereotypeNode>> fetchStructure(StructureParameter param) {
 		return getExecutor(WS_STRUCTURE_CMD_CAP).map(lss -> {
-			List<CompletableFuture<@Nullable Object>> res = lss.computeAll(ls -> ls.getWorkspaceService().executeCommand(new ExecuteCommandParams(FETCH_SPRING_BOOT_STRUCTURE, List.of(param))));
+			List < CompletableFuture < @Nullable Object>> res = lss.computeAll(ls -> ls.getWorkspaceService().executeCommand(new ExecuteCommandParams(FETCH_SPRING_BOOT_STRUCTURE, List.of(param))));
 			final List<StereotypeNode> nodes = Collections.synchronizedList(new ArrayList<>());
 			final Gson gson = new GsonBuilder().registerTypeAdapter(StereotypeNode.class, new StereotypeNodeDeserializer()).create();
-			for (CompletableFuture<@Nullable Object> f : res) {
+			for (CompletableFuture < @Nullable Object > f : res) {
 				f.thenAccept(o -> {
 					JsonElement json = null;
 					if (o instanceof List) {
@@ -63,10 +63,10 @@ class StructureClient {
 	
 	CompletableFuture<List<Groups>> fetchGroups() {
 		return getExecutor(WS_GROUPS_CMD_CAP).map(lss -> {
-			List<CompletableFuture<@Nullable Object>> res = lss.computeAll(ls -> ls.getWorkspaceService().executeCommand(new ExecuteCommandParams(FETCH_STRUCTURE_GROUPS, List.of())));
+			List < CompletableFuture < @Nullable Object>> res = lss.computeAll(ls -> ls.getWorkspaceService().executeCommand(new ExecuteCommandParams(FETCH_STRUCTURE_GROUPS, List.of())));
 			final List<Groups> groups = Collections.synchronizedList(new ArrayList<>());
 			final Gson gson = new GsonBuilder().create();
-			for (CompletableFuture<@Nullable Object> f : res) {
+			for (CompletableFuture < @Nullable Object > f : res) {
 				f.thenAccept(o -> {
 					JsonElement json = null;
 					if (o instanceof List) {

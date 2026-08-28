@@ -78,7 +78,7 @@ public class PopularityTracker {
 		for (Iterator<CheckBoxModel<Dependency>> iterator = allUsedBoxes.iterator(); iterator.hasNext();) {
 			CheckBoxModel<Dependency> cb = iterator.next();
 			int useCount = this.getUsageCount(cb.getValue());
-			if (useCount==0) {
+			if (useCount == 0) {
 				iterator.remove(); //don't care about those options never used at all.
 			} else {
 				useCounts.put(cb, this.getUsageCount(cb.getValue()));

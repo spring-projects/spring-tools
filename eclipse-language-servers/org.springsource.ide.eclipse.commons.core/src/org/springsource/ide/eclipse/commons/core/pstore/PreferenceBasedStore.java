@@ -29,7 +29,7 @@ public abstract class PreferenceBasedStore<T> implements IScopedPropertyStore<T>
 	@Override
 	public void put(T element, String key, String value) throws Exception {
 		IEclipsePreferences prefs = createPrefs(element);
-		if (value==null) {
+		if (value == null) {
 			prefs.remove(key);
 		} else {
 			prefs.put(key, value);

@@ -50,7 +50,7 @@ public class ToggleComment extends AbstractHandler {
 					int startLine = textSel.getStartLine();
 					int endLine = textSel.getEndLine();
 					IDocument doc = textEditor.getDocumentProvider().getDocument(editorInput);
-					if (doc!=null) {
+					if (doc != null) {
 						
 						boolean hasComments = hasComments(doc, startLine, endLine);
 						IDocumentUndoManager undo = DocumentUndoManagerRegistry.getDocumentUndoManager(doc);
@@ -77,7 +77,7 @@ public class ToggleComment extends AbstractHandler {
 		MultiTextEdit edits = new MultiTextEdit();
 		int startLine = selection.getStartLine();
 		int endLine = selection.getEndLine();
-		for (int line = startLine; line<=endLine; line++) {
+		for (int line = startLine; line <= endLine; line++) {
 			int lineStart = doc.getLineOffset(line);
 			edits.addChild(new InsertEdit(lineStart, commentPrefix));
 		}
@@ -91,7 +91,7 @@ public class ToggleComment extends AbstractHandler {
 		int startLine = selection.getStartLine();
 		int endLine = selection.getEndLine();
 		int charsRemoved = 0;
-		for (int line = startLine; line<=endLine; line++) {
+		for (int line = startLine; line <= endLine; line++) {
 			int lineStart = doc.getLineOffset(line);
 			String lineText = getLineText(doc, line);
 			Matcher matcher = commmentPattern.matcher(lineText);

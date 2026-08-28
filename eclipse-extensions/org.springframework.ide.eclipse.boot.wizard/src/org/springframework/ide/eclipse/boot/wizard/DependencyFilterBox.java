@@ -35,7 +35,7 @@ public class DependencyFilterBox extends FilterBoxModel<Dependency> {
 	}
 
 	protected boolean matches(String pattern, String text) {
-		if (text!=null) {
+		if (text != null) {
 			return text.toLowerCase().contains(pattern);
 		}
 		return false;

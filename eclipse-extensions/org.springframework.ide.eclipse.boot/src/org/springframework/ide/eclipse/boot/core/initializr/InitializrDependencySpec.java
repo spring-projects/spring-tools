@@ -234,7 +234,7 @@ public class InitializrDependencySpec {
 			input = conn.getInputStream();
 			return parseFrom(input);
 		} finally {
-			if (input!=null) {
+			if (input != null) {
 				try {
 					input.close();
 				} catch (IOException e) {

@@ -60,13 +60,13 @@ public class YamlHoverInfoProvider implements HoverInfoProvider {
 	@Override
 	public HoverInfo getHoverInfo(IDocument doc, IRegion r) {
 		YamlFileAST ast = getAst(doc);
-		if (ast!=null) {
+		if (ast != null) {
 			YamlDocument ymlDoc = new YamlDocument(doc, structureProvider);
 			YamlAssistContext assistContext = assistContextProvider.getGlobalAssistContext(ymlDoc);
-			if (assistContext!=null) {
+			if (assistContext != null) {
 				List<NodeRef<?>> astPath = ast.findPath(r.getOffset());
 				final YamlPath path = YamlPath.fromASTPath(astPath);
-				if (path!=null) {
+				if (path != null) {
 					YamlPath assistPath = path;
 					if (assistPath.pointsAtKey()) {
 						//When a path points at a key we must tramsform it to a 'value-terminating path'
@@ -76,7 +76,7 @@ public class YamlHoverInfoProvider implements HoverInfoProvider {
 						assistPath = path.dropLast().append(YamlPathSegment.valueAt(key));
 					}
 					assistContext = assistPath.traverse(assistContext);
-					if (assistContext!=null) {
+					if (assistContext != null) {
 						if (path.pointsAtValue()) {
 							return assistContext.getValueHoverInfo(ymlDoc, new DocumentRegion(doc, r));
 						}
@@ -91,9 +91,9 @@ public class YamlHoverInfoProvider implements HoverInfoProvider {
 	@Override
 	public IRegion getHoverRegion(IDocument document, int offset) {
 		YamlFileAST ast = getAst(document);
-		if (ast!=null) {
+		if (ast != null) {
 			Node n = ast.findNode(offset);
-			if (n!=null && n.getNodeId()==NodeId.scalar) {
+			if (n != null && n.getNodeId() == NodeId.scalar) {
 				int start = n.getStartMark().getIndex();
 				int end = n.getEndMark().getIndex();
 				return new Region(start, end-start);

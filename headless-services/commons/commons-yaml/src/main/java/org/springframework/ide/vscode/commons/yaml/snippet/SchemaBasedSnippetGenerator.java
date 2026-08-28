@@ -50,7 +50,7 @@ public class SchemaBasedSnippetGenerator implements TypeBasedSnippetProvider {
 	private Collection<Snippet> generateSnippets(YType type) {
 		//Generate a 'full' snippet that defines all required properties of the current type.
 		Snippet snippet = generateFullSnippet(type, 0);
-		return snippet==null ? ImmutableList.of() : ImmutableList.of(snippet);
+		return snippet == null ? ImmutableList.of() : ImmutableList.of(snippet);
 	}
 
 	private Snippet generateFullSnippet(YType type, int indent) {
@@ -62,7 +62,7 @@ public class SchemaBasedSnippetGenerator implements TypeBasedSnippetProvider {
 			if (!requiredProps.isEmpty()) {
 				generateBeanSnippet(requiredProps, builder, indent, maxNesting);
 			}
-			if (builder.getPlaceholderCount()>=2) {
+			if (builder.getPlaceholderCount() >= 2) {
 				return new Snippet(typeUtil.niceTypeName(type)+" Snippet", builder.build(), (dc) ->
 					requiredProps.stream().noneMatch(p -> dc.getDefinedProperties().contains(p.getName()))
 				);
@@ -72,7 +72,7 @@ public class SchemaBasedSnippetGenerator implements TypeBasedSnippetProvider {
 	}
 
 	private void generateBeanSnippet(List<YTypedProperty> props, SnippetBuilder builder, int indent, int nestingLimit) {
-		if (nestingLimit>0 && !props.isEmpty()) {
+		if (nestingLimit > 0 && !props.isEmpty()) {
 			boolean first = true;
 			for (YTypedProperty p : props) {
 				if (!first) {
@@ -94,7 +94,7 @@ public class SchemaBasedSnippetGenerator implements TypeBasedSnippetProvider {
 		SnippetBuilder builder = snippetBuilderFactory.get();
 		generateBeanSnippet(props, builder, 0, maxNesting);
 		String snippetName;
-		if (props.size()==1) {
+		if (props.size() == 1) {
 			snippetName = props.get(0).getName();
 		} else {
 			snippetName = props.stream().map(p -> p.getName()).collect(Collectors.toList()).toString() + " Snippet";
@@ -106,7 +106,7 @@ public class SchemaBasedSnippetGenerator implements TypeBasedSnippetProvider {
 
 
 	private void generateNestedSnippet(boolean parentIsSeq, YType type, SnippetBuilder builder, int indent, int nestingLimit) {
-		if (type==null) {
+		if (type == null) {
 			//Assume its some kind of pojo bean
 			builder.newline(indent+YamlIndentUtil.INDENT_BY);
 			builder.placeHolder();

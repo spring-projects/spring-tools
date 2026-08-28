@@ -65,7 +65,7 @@ public class ImportStrategiesRadiosSection extends GroupSection {
 			selection.addListener(new UIValueListener<ImportStrategy>() {
 				@Override
 				protected void uiGotValue(LiveExpression<ImportStrategy> exp, ImportStrategy value) {
-					button.setSelection(value==strategy);
+					button.setSelection(value == strategy);
 				}
 			});
 			button.addSelectionListener(new SelectionListener() {

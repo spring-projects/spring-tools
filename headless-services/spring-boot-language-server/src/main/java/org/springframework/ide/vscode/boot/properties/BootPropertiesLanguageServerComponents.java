@@ -125,7 +125,7 @@ public class BootPropertiesLanguageServerComponents implements LanguageServerCom
 
 		HoverInfoProvider combined = (IDocument document, int offset) -> {
 			String uri = document.getUri();
-			if (uri!=null) {
+			if (uri != null) {
 				if (uri.endsWith(PROPERTIES)) {
 					return propertiesHovers.getHoverInfo(document, offset);
 				} else {
@@ -145,7 +145,7 @@ public class BootPropertiesLanguageServerComponents implements LanguageServerCom
 	public Optional<IReconcileEngine> getReconcileEngine() {
 		return Optional.of((doc, problemCollector) -> {
 			String uri = doc.getUri();
-			if (uri!=null) {
+			if (uri != null) {
 				if (uri.endsWith(PROPERTIES)) {
 					propertiesReconciler.reconcile(doc, problemCollector);
 					return;

@@ -112,7 +112,7 @@ public class SimpleDIContext {
 
 	@SuppressWarnings("unchecked")
 	protected <T> Definition<T> resolveDefinition(Class<T> type) {
-		for (int i = definitions.size()-1; i>=0; i--) {
+		for (int i = definitions.size()-1; i >= 0; i--) {
 			Definition<?> d = definitions.get(i);
 			if (d.satisfies(type)) {
 				return (Definition<T>) d;

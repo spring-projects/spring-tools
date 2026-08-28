@@ -38,7 +38,7 @@ public class JSONCursor implements YamlNavigable<JSONCursor> {
 	}
 
 	private Stream<JsonElement> oneStep(YamlPathSegment s) {
-		if (target==null) {
+		if (target == null) {
 			return Stream.empty();
 		}
 		switch (s.getType()) {

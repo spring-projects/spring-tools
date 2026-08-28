@@ -45,7 +45,7 @@ public class MapSet<S, T> extends ObservableSet<T> {
 			//Check for null, generally google collections don't allow nulls (which is good)
 			// and we can take advantage of returning nulls to combine mapping and filtering with
 			// a single function.
-			if (v!=null) {
+			if (v != null) {
 				builder.add(v);
 			}
 		}

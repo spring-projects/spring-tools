@@ -51,7 +51,7 @@ public class DefaultPathEditorSupport extends EditingSupport {
 	protected Object getValue(Object element) {
 		if (element instanceof BootDashElement) {
 			String path = ((BootDashElement) element).getDefaultRequestMappingPath();
-			return path==null?"":path;
+			return path == null ? "" : path;
 		}
 		return "?huh?";
 	}

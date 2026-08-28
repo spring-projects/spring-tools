@@ -32,7 +32,7 @@ public class Log {
 		}
 		try {
 			Consumer<Throwable> eh = errorHandler;
-			if (eh!=null) {
+			if (eh != null) {
 				eh.accept(e);
 			}
 			Activator.getDefault().getLog().log(ExceptionUtil.status(e));

@@ -81,7 +81,7 @@ public class MetadataManipulator {
 		@Override
 		public void addProperty(JSONObject propertyData) throws Exception {
 			int insertAt = findLast(']');
-			if (insertAt<0) {
+			if (insertAt < 0) {
 				//although we're not looking for much, we didn't find it!
 				//Funky file contents. Let's just insert something at end of file in a 'best effort' spirit.
 				insertAt = doc.length();
@@ -91,7 +91,7 @@ public class MetadataManipulator {
 			insert(insertAt, propertyData.toString(indentFactor));
 
 			int insertComma = findInsertCommaPos(insertAt);
-			if (insertComma>=0) {
+			if (insertComma >= 0) {
 				insert(insertComma, ",");
 			}
 		}
@@ -103,10 +103,10 @@ public class MetadataManipulator {
 		 */
 		private int findInsertCommaPos(int pos) throws Exception {
 			pos--;
-			while (pos>=0 && Character.isWhitespace(doc.charAt(pos))) {
+			while (pos >= 0 && Character.isWhitespace(doc.charAt(pos))) {
 				pos--;
 			}
-			if (pos>=0) {
+			if (pos >= 0) {
 				char c = doc.charAt(pos);
 				if (c == '}') {
 					//Add a comma after a '}'
@@ -127,7 +127,7 @@ public class MetadataManipulator {
 
 		private int findLast(char toFind) throws Exception {
 			int pos = doc.length()-1;
-			while (pos>=0 && doc.charAt(pos)!=toFind) {
+			while (pos >= 0 && doc.charAt(pos) != toFind) {
 				pos--;
 			}
 			//We got here either because
@@ -173,7 +173,7 @@ public class MetadataManipulator {
 	}
 
 	private Content getContent() throws Exception {
-		if (fContent==null) {
+		if (fContent == null) {
 			fContent = readContent();
 		}
 		return fContent;

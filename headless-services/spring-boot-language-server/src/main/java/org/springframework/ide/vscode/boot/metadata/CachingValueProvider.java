@@ -113,7 +113,7 @@ public abstract class CachingValueProvider implements ValueProviderStrategy {
 	private Flux<StsValueHint> getValuesIncremental(IJavaProject javaProject, String query) {
 //		debug("trying to solve "+query+" incrementally");
 		String subquery = query;
-		while (subquery.length()>=1) {
+		while (subquery.length() >= 1) {
 			subquery = subquery.substring(0, subquery.length()-1);
 			CacheEntry cached = null;
 			try {
@@ -121,12 +121,12 @@ public abstract class CachingValueProvider implements ValueProviderStrategy {
 			} catch (ExecutionException | InvalidCacheLoadException e) {
 //				Log.log(e);
 			}
-			if (cached!=null) {
+			if (cached != null) {
 //				debug("cached "+subquery+": "+cached);
 				if (cached.isComplete) {
 					return cached.values
 //							.doOnNext((hint) -> debug("filter["+query+"]: "+hint.getValue()))
-							.filter((hint) -> 0!=FuzzyMatcher.matchScore(query, hint.getValue().toString()));
+							.filter((hint) -> 0 != FuzzyMatcher.matchScore(query, hint.getValue().toString()));
 				} else {
 //					debug("subquery "+subquery+" cached but is incomplete");
 				}
@@ -139,7 +139,7 @@ public abstract class CachingValueProvider implements ValueProviderStrategy {
 	protected abstract Flux<StsValueHint> getValuesAsync(IJavaProject javaProject, String query);
 
 	private Tuple2<String,String> key(IJavaProject javaProject, String query) {
-		return Tuples.of(javaProject==null?null:javaProject.getElementName(), query);
+		return Tuples.of(javaProject == null ? null : javaProject.getElementName(), query);
 	}
 
 	protected <K,V> Cache<K,V> createCache() {

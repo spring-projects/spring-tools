@@ -58,7 +58,7 @@ public class BootLaunchShortcutTest extends BootLaunchTestCase {
 		super.tearDown();
 		ILaunchManager lm = DebugPlugin.getDefault().getLaunchManager();
 		ILaunch[] launches = lm.getLaunches();
-		if (launches!=null) {
+		if (launches != null) {
 			lm.removeLaunches(lm.getLaunches());
 		}
 	}
@@ -177,7 +177,7 @@ public class BootLaunchShortcutTest extends BootLaunchTestCase {
 
 	public String[] findTypes(Object selection) throws InterruptedException, CoreException {
 		IType[] types = shortcut.findTypes(new Object[] {selection}, testContext);
-		if (types!=null && types.length>0) {
+		if (types != null && types.length > 0) {
 			String[] names = new String[types.length];
 			for (int i = 0; i < names.length; i++) {
 				names[i] = types[i].getFullyQualifiedName();

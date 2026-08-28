@@ -32,6 +32,6 @@ public class CommandUtil {
 	}
 
 	private static boolean needsEscape(char c) {
-		return Character.isWhitespace(c) || c=='"' || c=='\\';
+		return Character.isWhitespace(c) || c == '"' || c == '\\';
 	}
 }

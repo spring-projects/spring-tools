@@ -44,7 +44,7 @@ public class Snippet {
 		return applicability;
 	}
 	public boolean isApplicable(DynamicSchemaContext dc) {
-		return applicability==null || applicability.test(dc);
+		return applicability == null || applicability.test(dc);
 	}
 	public PlaceHolder getPlaceHolder(Object id) {
 		return snippet.getPlaceHolder(id);

@@ -79,14 +79,14 @@ public class SpringPropertyIndex {
 	}
 
 	private String dumpString(Object v) {
-		if (v==null) {
+		if (v == null) {
 			return "null";
 		}
 		return dumpString(""+v);
 	}
 
 	private String dumpString(String s) {
-		if (s==null) {
+		if (s == null) {
 			return "null";
 		} else {
 			StringBuilder buf = new StringBuilder("\"");
@@ -121,18 +121,18 @@ public class SpringPropertyIndex {
 	 */
 	public static PropertyInfo findLongestValidProperty(FuzzyMap<PropertyInfo> index, String name) {
 		int bracketPos = name.indexOf('[');
-		int endPos = bracketPos>=0?bracketPos:name.length();
+		int endPos = bracketPos >= 0 ? bracketPos : name.length();
 		PropertyInfo prop = null;
 		String prefix = null;
-		while (endPos>0 && prop==null) {
+		while (endPos > 0 && prop == null) {
 			prefix = name.substring(0, endPos);
 			String canonicalPrefix = StringUtil.camelCaseToHyphens(prefix);
 			prop = index.get(canonicalPrefix);
-			if (prop==null) {
+			if (prop == null) {
 				endPos = name.lastIndexOf('.', endPos-1);
 			}
 		}
-		if (prop!=null) {
+		if (prop != null) {
 			//We should meet caller's expectation that matched properties returned by this method
 			// match the names exactly even if we found them using relaxed name matching.
 			return prop.withId(prefix);

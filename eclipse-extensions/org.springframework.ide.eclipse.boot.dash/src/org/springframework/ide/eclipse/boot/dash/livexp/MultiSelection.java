@@ -61,7 +61,7 @@ public final class MultiSelection<T> {
 	 */
 	public <U> MultiSelection<U> filter(Class<U> retainType) {
 		MultiSelection<U> converted = this.as(retainType);
-		if (converted!=null) {
+		if (converted != null) {
 			//Don't need to filter element-by-element since the selection only
 			// can contain elements of 'retainType'.
 			return converted;
@@ -96,7 +96,7 @@ public final class MultiSelection<T> {
 	 */
 	public <U> MultiSelection<U> cast(Class<U> toElementType) throws ClassCastException {
 		MultiSelection<U> converted = as(toElementType);
-		if (converted==null) {
+		if (converted == null) {
 			throw new ClassCastException(getElementType().getName()+" => "+toElementType.getName());
 		}
 		return converted;
@@ -121,7 +121,7 @@ public final class MultiSelection<T> {
 	 */
 	public T getSingle() {
 		Set<T> es = getValue();
-		if (es.size()==1) {
+		if (es.size() == 1) {
 			for (T t : es) {
 				return t;
 			}

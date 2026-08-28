@@ -197,7 +197,7 @@ public class ConvertYamlToPropertiesRefactoringTest {
 			"my:\n" +
 			"  goodbye: 'See ya # later'\n" +
 			"  hello: Good morning!\n"
-			, // ==>
+			, // == >
 			"my.goodbye=See ya \\# later\n" +
 			"my.hello=Good morning\\!\n"
 		);
@@ -211,7 +211,7 @@ public class ConvertYamlToPropertiesRefactoringTest {
 				"    b: first-b\n" +
 				"  - a: second-a\n" +
 				"    b: second-b\n"
-				, // ==>
+				, // == >
 				"some.thing[0].a=first-a\n" +
 				"some.thing[0].b=first-b\n" +
 				"some.thing[1].a=second-a\n" +
@@ -225,7 +225,7 @@ public class ConvertYamlToPropertiesRefactoringTest {
 				"  other:\n" +
 				"    thing: blah\n" +
 				"  thing: vvvv\n"
-				, // ==>
+				, // == >
 				"some.other.thing=blah\n" +
 				"some.thing=vvvv\n"
 		);
@@ -234,7 +234,7 @@ public class ConvertYamlToPropertiesRefactoringTest {
 	@Test public void emptyFileConversion() throws Exception {
 		do_conversionTest(
 				""
-				, // ==>
+				, // == >
 				""
 		);
 	}
@@ -259,7 +259,7 @@ public class ConvertYamlToPropertiesRefactoringTest {
 				"  property:\n" +
 				"  - something\n" +
 				"  - something-else\n"
-				, // ==>
+				, // == >
 				"some.property[0]=something\n" +
 				"some.property[1]=something-else\n"
 		);
@@ -299,7 +299,7 @@ public class ConvertYamlToPropertiesRefactoringTest {
 				"  other:\n" +
 				"    thing: blah\n" +
 				"  thing: vvvv\n"
-				, // ==>
+				, // == >
 				"some.other.thing=blah\n" +
 				"some.thing=vvvv\n" +
 				"#---\n" +

@@ -30,7 +30,7 @@ public class ArrayEncoder {
 	 * Decode an array of Strings encoded as a single String by StringUtils encodeArray.
 	 */
 	public static String[] decode(String encoded) {
-		if (encoded==null) {
+		if (encoded == null) {
 			return null;
 		}
 		// Encoding: String are terminated by a special terminator char. If the original String contains a separator
@@ -42,20 +42,20 @@ public class ArrayEncoder {
 
 		// Examples: (terminator = ';' escape = '\\')
 
-		// new String[0]       ==encode==> ""
-		// new String[] { "" } ==encode==> ";"
-		// new String[] { "Hello", "World" } ==encode==> "Hello;World;"
+		// new String[0]       == encode == > ""
+		// new String[] { "" } == encode == > ";"
+		// new String[] { "Hello", "World" } == encode == > "Hello;World;"
 
 		StringReader in = new StringReader(encoded);
 		List<String> strings = new ArrayList<String>();
 		StringBuffer currentString = new StringBuffer();
 		try {
-			for (int _c = in.read(); _c>=0; _c = in.read()) {
+			for (int _c = in.read(); _c >= 0; _c = in.read()) {
 				char c = (char)_c;
-				if (c==TERMINATOR_CHAR) {
+				if (c == TERMINATOR_CHAR) {
 					strings.add(currentString.toString());
 					currentString = new StringBuffer();
-				} else if (c==ESCAPE_CHAR) {
+				} else if (c == ESCAPE_CHAR) {
 					c = (char)in.read();
 					currentString.append(c);
 				} else {
@@ -73,7 +73,7 @@ public class ArrayEncoder {
 		for (String string : strings) {
 			for (int i = 0; i < string.length(); i++) {
 				char c = string.charAt(i);
-				if (c==ESCAPE_CHAR || c==TERMINATOR_CHAR) {
+				if (c == ESCAPE_CHAR || c == TERMINATOR_CHAR) {
 					out.write(ESCAPE_CHAR);
 				}
 				out.write(c);

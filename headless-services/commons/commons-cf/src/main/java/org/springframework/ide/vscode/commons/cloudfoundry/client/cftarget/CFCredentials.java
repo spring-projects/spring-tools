@@ -113,10 +113,10 @@ public class CFCredentials {
 	}
 
 	private String hidePassword(CFCredentialType type, String password) {
-		if (password==null) {
+		if (password == null) {
 			return null;
 		}
-		return (type==CFCredentialType.PASSWORD || type==CFCredentialType.REFRESH_TOKEN)
+		return (type == CFCredentialType.PASSWORD || type == CFCredentialType.REFRESH_TOKEN)
 				? "****"
 				: password;
 	}

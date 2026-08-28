@@ -110,7 +110,7 @@ public class PropertyStores {
 		return new IPropertyStore() {
 			@Override
 			public void put(String key, String value) throws Exception {
-				if (value==null) {
+				if (value == null) {
 					preferenceStore.setToDefault(key);
 				} else {
 					preferenceStore.setValue(key, value);

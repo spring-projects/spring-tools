@@ -86,7 +86,7 @@ public class TestKeyboard {
 	public void typeText(String text) {
 		for (int i = 0; i < text.length(); i++) {
 			char c = text.charAt(i);
-			Assert.assertTrue("Only visible ascii no funny chars: (char)"+(int)c+" not allowed!", c>=' ' && c <= '~');
+			Assert.assertTrue("Only visible ascii no funny chars: (char)"+(int)c+" not allowed!", c >= ' ' && c <= '~');
 		}
 		keyboard.typeText(text);
 	}

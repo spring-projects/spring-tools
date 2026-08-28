@@ -88,9 +88,9 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 	private ListenerList listeners = new ListenerList(); // listeners that are interested in us (i.e. clients)
 
 	private static <T> RunState getState(Map<T, RunState> states, T p) {
-		if (states!=null) {
+		if (states != null) {
 			RunState state = states.get(p);
-			if (state!=null) {
+			if (state != null) {
 				return state;
 			}
 		}
@@ -131,11 +131,11 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 	}
 
 	private synchronized LiveExpression<Boolean> getReadyState(ILaunch l) {
-		if (readyStateTrackers==null) {
+		if (readyStateTrackers == null) {
 			readyStateTrackers = new HashMap<>();
 		}
 		ReadyStateMonitor tracker = readyStateTrackers.get(l);
-		if (tracker==null) {
+		if (tracker == null) {
 			readyStateTrackers.put(l, tracker = createReadyStateTracker(l));
 			tracker.getReady().addListener(readyStateListener);
 //		} else {
@@ -180,7 +180,7 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 	}
 
 	private synchronized void cleanupReadyStateTrackers() {
-		if (readyStateTrackers!=null) {
+		if (readyStateTrackers != null) {
 			Iterator<Entry<ILaunch, ReadyStateMonitor>> iter = readyStateTrackers.entrySet().iterator();
 			while(iter.hasNext()) {
 				Entry<ILaunch, ReadyStateMonitor> entry = iter.next();
@@ -199,7 +199,7 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 	}
 
 	public void dispose() {
-		if (processTracker!=null) {
+		if (processTracker != null) {
 			processTracker.dispose();
 			processTracker = null;
 		}
@@ -256,7 +256,7 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 	 * Null-safe 'keySet' fetcher for map.
 	 */
 	private <K,V> Set<K> keySet(Map<K, V> map) {
-		if (map==null) {
+		if (map == null) {
 			return Collections.emptySet();
 		}
 		return map.keySet();

@@ -44,11 +44,11 @@ public class ImageDecorator implements Disposable {
 
 	@Override
 	public void dispose() {
-		if (images!=null) {
+		if (images != null) {
 			images.dispose();
 			images = null;
 		}
-		if (decoratedImages!=null) {
+		if (decoratedImages != null) {
 			for (Image i : decoratedImages.values()) {
 				i.dispose();
 			}
@@ -57,15 +57,15 @@ public class ImageDecorator implements Disposable {
 	}
 
 	public Image get(ImageDescriptor icon, ImageDescriptor decoration) {
-		if (decoration==null) {
+		if (decoration == null) {
 			return get(icon);
 		} else {
-			if (decoratedImages==null) {
+			if (decoratedImages == null) {
 				decoratedImages = new HashMap<>();
 			}
 			Object key = keyFor(icon, decoration);
 			Image existing = decoratedImages.get(key);
-			if (existing==null) {
+			if (existing == null) {
 				debug("Decorating: "+icon + " with "+decoration);
 				Image baseImg = get(icon);
 				DecorationOverlayIcon overlayer = new DecorationOverlayIcon(baseImg,
@@ -77,15 +77,15 @@ public class ImageDecorator implements Disposable {
 	}
 
 	private Image get(Image baseImg, ImageDescriptor decoration) {
-		if (decoration==null) {
+		if (decoration == null) {
 			return baseImg;
 		} else {
-			if (decoratedImages==null) {
+			if (decoratedImages == null) {
 				decoratedImages = new HashMap<>();
 			}
 			Object key = keyFor(baseImg, decoration);
 			Image existing = decoratedImages.get(key);
-			if (existing==null) {
+			if (existing == null) {
 				debug("Decorating: "+baseImg + " with "+decoration);
 				DecorationOverlayIcon overlayer = new DecorationOverlayIcon(baseImg,
 						decoration, IDecoration.TOP_RIGHT);
@@ -106,7 +106,7 @@ public class ImageDecorator implements Disposable {
 	 * Get plain, undecorated image.
 	 */
 	private Image get(ImageDescriptor desc) {
-		if (images==null) {
+		if (images == null) {
 			images = new ImageDescriptorRegistry();
 		}
 		return images.get(desc);

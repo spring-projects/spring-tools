@@ -143,7 +143,7 @@ public class NoRequestMappingAnnotation extends Recipe {
         }
 
         private @Nullable String requestMethodType(J.@Nullable Assignment assignment) {
-            if(assignment == null) {
+            if (assignment == null) {
                 return null;
             }
             if (assignment.getAssignment() instanceof J.Identifier) {
@@ -151,19 +151,19 @@ public class NoRequestMappingAnnotation extends Recipe {
             } else if (assignment.getAssignment() instanceof J.FieldAccess) {
                 return ((J.FieldAccess) assignment.getAssignment()).getSimpleName();
             } else if (methodArgumentHasSingleType(assignment)) {
-                if(assignment.getAssignment() instanceof J.NewArray) {
+                if (assignment.getAssignment() instanceof J.NewArray) {
                     J.NewArray newArray = (J.NewArray) assignment.getAssignment();
                     List<Expression> initializer = newArray.getInitializer();
-                    if(initializer == null || initializer.size() != 1) {
+                    if (initializer == null || initializer.size() != 1) {
                         return null;
                     }
                     Expression methodName = initializer.get(0);
-                    if(methodName instanceof J.Identifier) {
+                    if (methodName instanceof J.Identifier) {
                         return ((J.Identifier)methodName).getSimpleName();
-                    } else if(methodName instanceof J.FieldAccess) {
+                    } else if (methodName instanceof J.FieldAccess) {
                         return ((J.FieldAccess) methodName).getSimpleName();
                     }
-                } else if(assignment.getAssignment() instanceof J.Identifier) {
+                } else if (assignment.getAssignment() instanceof J.Identifier) {
                     return ((J.Identifier) assignment.getAssignment()).getSimpleName();
                 }
             }

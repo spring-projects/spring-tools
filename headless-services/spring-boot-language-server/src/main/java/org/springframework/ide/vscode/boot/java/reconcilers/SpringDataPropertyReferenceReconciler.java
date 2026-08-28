@@ -103,9 +103,9 @@ public class SpringDataPropertyReferenceReconciler implements JdtAstReconciler {
 		}
 	}
 
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 	// Visitor — collects problems during the walk, attaches "fix all" at the end
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 
 	private class PropertyReferenceVisitor extends ASTVisitor {
 
@@ -289,9 +289,9 @@ public class SpringDataPropertyReferenceReconciler implements JdtAstReconciler {
 		static final QuickFixResult EMPTY = new QuickFixResult(List.of(), false);
 	}
 
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 	// Label building — shared by all contributors
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 
 	static String buildQuickFixLabel(List<List<PropertySegment>> segmentGroups,
 			boolean inferred, boolean similarProperty) {

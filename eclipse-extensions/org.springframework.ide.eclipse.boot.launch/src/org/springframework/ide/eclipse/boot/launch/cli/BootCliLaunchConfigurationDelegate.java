@@ -96,7 +96,7 @@ public class BootCliLaunchConfigurationDelegate extends LaunchConfigurationDeleg
 				value = ""; //$NON-NLS-1$
 			}
 			if (var.equalsIgnoreCase("path")) { //$NON-NLS-1$
-//				if(value.indexOf(jrestr) == -1) {
+//				if (value.indexOf(jrestr) == -1) {
 //					value = jrestr+';'+value;
 //				}
 				continue;

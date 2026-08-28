@@ -78,7 +78,7 @@ public class HtmlBuffer {
 
 
 	public String toString() {
-		if (!epilogAdded && buffer.length()>0) {
+		if (!epilogAdded && buffer.length() > 0) {
 			epilogAdded = true;
 
 			ColorRegistry registry = JFaceResources.getColorRegistry();

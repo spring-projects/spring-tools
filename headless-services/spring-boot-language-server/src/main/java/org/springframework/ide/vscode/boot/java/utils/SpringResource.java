@@ -65,7 +65,7 @@ public class SpringResource {
 	}
 
 	public String toMarkdown() {
-		if (type==null) {
+		if (type == null) {
 			return path; //path is just the raw text in this case
 		}
 		Optional<String> linkUrl = Optional.empty();

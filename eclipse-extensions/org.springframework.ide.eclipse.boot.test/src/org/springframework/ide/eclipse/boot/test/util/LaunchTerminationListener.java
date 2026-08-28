@@ -44,7 +44,7 @@ class LaunchTerminationListener implements ILaunchesListener, ILaunchesListener2
 		long start = System.currentTimeMillis();
 		long end = start+timeout.toMillis();
 		while (!isTerminated()) {
-			if (System.currentTimeMillis()>end) {
+			if (System.currentTimeMillis() > end) {
 				try {
 					//The process may be stuck, try to kill it forcibly to avoid stuck tests
 					launch.terminate();
@@ -64,7 +64,7 @@ class LaunchTerminationListener implements ILaunchesListener, ILaunchesListener2
 
 	private void notifyMaybe(ILaunch[] launches) {
 		for (ILaunch iLaunch : launches) {
-			if (iLaunch==this.launch) {
+			if (iLaunch == this.launch) {
 				synchronized (this) {
 					notifyAll();
 				}

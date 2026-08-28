@@ -107,7 +107,7 @@ public abstract class ACondition {
 			System.err.println("ACondition "+describe()+" timed out. Dumping current Thread stacks...\n" +
 					getStackDumps()
 			);
-			if (e!=null) {
+			if (e != null) {
 				if (e instanceof Exception) {
 					throw (Exception)e;
 				} else if (e instanceof Error) {
@@ -119,13 +119,13 @@ public abstract class ACondition {
 				throw new RuntimeException(getMessage());
 			}
 		}
-		if (description!=null) {
+		if (description != null) {
 			System.out.println(description + " succeeded after: " + (System.currentTimeMillis() - startTime));
 		}
 	}
 
 	private String describe() {
-		if (description!=null) {
+		if (description != null) {
 			return "["+description+"]";
 		}
 		return "";

@@ -39,7 +39,7 @@ public class LiveExpToFlux {
 //			debug("Creating LiveExpFlux");
 			ValueListener<T> valueListener = (e, v) -> {
 //				debug("LiveExpFlux <- "+v);
-				if (v!=null) {
+				if (v != null) {
 					sink.next(v);
 				}
 			};

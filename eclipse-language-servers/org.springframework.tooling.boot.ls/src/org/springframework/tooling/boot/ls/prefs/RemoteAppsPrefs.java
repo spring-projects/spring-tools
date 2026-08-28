@@ -40,7 +40,7 @@ public class RemoteAppsPrefs {
 		String json = getRawJson();
 		try {
 			RemoteAppData[] parsed = parse(json);
-			if (parsed!=null) {
+			if (parsed != null) {
 				for (RemoteAppData remoteAppData : parsed) {
 					remoteAppData.setKeepChecking(true);
 				}

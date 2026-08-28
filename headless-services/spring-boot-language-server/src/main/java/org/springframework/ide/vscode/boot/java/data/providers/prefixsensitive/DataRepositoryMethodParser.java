@@ -75,7 +75,7 @@ class DataRepositoryMethodParser {
 		int lastWordEnd = 0;
 
 		for (int i = 1; i <= predicate.length(); i++) {
-			if(i == predicate.length() || Character.isUpperCase(predicate.charAt(i))) {//word ends on uppercase letter or end of string
+			if (i == predicate.length() || Character.isUpperCase(predicate.charAt(i))) {//word ends on uppercase letter or end of string
 				String word = predicate.substring(lastWordEnd, i);
 				QueryPredicateKeywordInfo keyword = findByLargestFirstWord(PREDICATE_KEYWORDS_GROUPED_BY_FIRST_WORD, QueryPredicateKeywordInfo::keyword, predicate, lastWordEnd, word);
 				if (keyword == null){
@@ -101,7 +101,7 @@ class DataRepositoryMethodParser {
 		String subject = prefix.substring(0, subjectPredicateSplitIndex);
 		QueryMethodSubject subjectType = null;
 		for(QueryMethodSubject queryMethodSubject : QueryMethodSubject.QUERY_METHOD_SUBJECTS){
-			if(subject.startsWith(queryMethodSubject.key())) {
+			if (subject.startsWith(queryMethodSubject.key())) {
 				subjectType = queryMethodSubject;
 			}
 		}

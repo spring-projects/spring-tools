@@ -44,7 +44,7 @@ public class PropertyDocUtils {
 		Builder<Renderable> renderableBuilder = ImmutableList.builder();
 		IJavadoc javadoc = je.getJavaDoc();
 		renderableBuilder.add(Renderables.lineBreak());
-		renderableBuilder.add(Renderables.paragraph(javadoc == null ? Renderables.NO_DESCRIPTION: javadoc.getRenderable()));
+		renderableBuilder.add(Renderables.paragraph(javadoc == null ? Renderables.NO_DESCRIPTION : javadoc.getRenderable()));
 		return Renderables.concat(renderableBuilder.build());
 	}
 
@@ -76,7 +76,7 @@ public class PropertyDocUtils {
 		}
 		IJavadoc javadoc = je.getJavaDoc();
 		renderableBuilder.add(Renderables.lineBreak());
-		renderableBuilder.add(Renderables.paragraph(javadoc == null ? Renderables.NO_DESCRIPTION: javadoc.getRenderable()));
+		renderableBuilder.add(Renderables.paragraph(javadoc == null ? Renderables.NO_DESCRIPTION : javadoc.getRenderable()));
 		return Renderables.concat(renderableBuilder.build());
 	}
 

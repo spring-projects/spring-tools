@@ -54,7 +54,7 @@ public class BootProjectDashElementFactory implements Disposable {
 			BootProjectDashElement el;
 			synchronized (this) {
 				el = cache.get(p);
-				if (el==null) {
+				if (el == null) {
 					cache.put(p, el = new BootProjectDashElement(p, model, projectProperties, this, launchConfElementFactory));
 				}
 			}
@@ -72,7 +72,7 @@ public class BootProjectDashElementFactory implements Disposable {
 	 * Clients should call this to allow factory to remove/dispose elements that are no longer interesting.
 	 */
 	public synchronized void disposeAllExcept(Set<? extends BootDashElement> toRetain) {
-		if (cache!=null) {
+		if (cache != null) {
 			Iterator<BootProjectDashElement> iter = cache.values().iterator();
 			while (iter.hasNext()) {
 				BootProjectDashElement element = iter.next();

@@ -71,7 +71,7 @@ public class SpringBootStarters {
 	public MavenId getMavenId(String findId) {
 		ensureIndexes();
 		SpringBootStarter starter = byId.get(findId);
-		if (starter!=null) {
+		if (starter != null) {
 			return starter.getMavenId();
 		}
 		return null;
@@ -82,7 +82,7 @@ public class SpringBootStarters {
 	 * one of the indexes should call this method first.
 	 */
 	private synchronized void ensureIndexes() {
-		if (byId==null) {
+		if (byId == null) {
 			byId = new HashMap<>();
 			byMavenId = new HashMap<>();
 			bomsByMavenId = new HashMap<>();
@@ -99,10 +99,10 @@ public class SpringBootStarters {
 				BomInfo bomInfo = e.getValue();
 				List<Repo> repos = new ArrayList<>();
 				String[] repoIds = bomInfo.getRepositories();
-				if (repoIds!=null) {
+				if (repoIds != null) {
 					for (String repoId : repoIds) {
 						Repo repo = reposById.get(repoId);
-						if (repo!=null) {
+						if (repo != null) {
 							repos.add(repo);
 						}
 					}
@@ -123,7 +123,7 @@ public class SpringBootStarters {
 				String scope = dep.getScope();
 				String bom = dep.getBom();
 				String repo = dep.getRepository();
-				if (id!=null && groupId!=null && artifactId!=null) {
+				if (id != null && groupId != null && artifactId != null) {
 					//ignore invalid looking entries. Should at least have an id, aid and gid
 					SpringBootStarter starter = new SpringBootStarter(id, new MavenCoordinates(dep), scope, bomsById.get(bom), reposById.get(repo));
 //					debug(id + " => "+groupId + ":"+artifactId);
@@ -143,7 +143,7 @@ public class SpringBootStarters {
 
 	private void extraBackMapping(String starterId, String gid, String aid) {
 		SpringBootStarter starter = byId.get(starterId);
-		if (starter!=null) {
+		if (starter != null) {
 			MavenId mid = new MavenId(gid, aid);
 			Assert.isTrue(!byMavenId.containsKey(mid));
 			byMavenId.put(mid, starter);
@@ -155,7 +155,7 @@ public class SpringBootStarters {
 	}
 
 	public boolean contains(String id) {
-		return getMavenId(id)!=null;
+		return getMavenId(id) != null;
 	}
 
 	public List<String> getStarterIds() {
@@ -166,7 +166,7 @@ public class SpringBootStarters {
 	public synchronized String getId(MavenId mavenId) {
 		ensureIndexes();
 		SpringBootStarter starter = byMavenId.get(mavenId);
-		if (starter!=null) {
+		if (starter != null) {
 			return starter.getId();
 		}
 		return null;

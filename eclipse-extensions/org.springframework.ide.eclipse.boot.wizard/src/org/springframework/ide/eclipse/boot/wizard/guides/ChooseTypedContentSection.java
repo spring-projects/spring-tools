@@ -101,10 +101,10 @@ public class ChooseTypedContentSection extends WizardPageSection {
 
 		@Override
 		public Object[] getElements(Object e) {
-			if (e==content) {
+			if (e == content) {
 				ContentType<?>[] types = content.getTypes();
-				if (types!=null) {
-					if (types.length==1) {
+				if (types != null) {
+					if (types.length == 1) {
 						//If there's only one type of content. Then it looks better
 						//to just show those elements uncategorized.
 						return getChildren(types[0]);
@@ -142,7 +142,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 		@Override
 		public boolean hasChildren(Object e) {
 			Object[] c = getChildren(e);
-			return c!=null && c.length>0;
+			return c != null && c.length > 0;
 		}
 	}
 
@@ -173,7 +173,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 		private final HashMap<Object, Boolean> cache = new HashMap<>();
 
 		public ChoicesFilter() {
-			if (searchBox!=null && searchModel.getValue() != null) {
+			if (searchBox != null && searchModel.getValue() != null) {
 				setSearchTerm(searchModel.getValue());
 			}
 		}
@@ -185,11 +185,11 @@ public class ChooseTypedContentSection extends WizardPageSection {
 
 		@Override
 		public boolean select(Viewer viewer, Object parentElement, Object element) {
-			if (matcher==null) {
+			if (matcher == null) {
 				return true;
 			}
 			Boolean v = cache.get(element);
-			if (v==null) {
+			if (v == null) {
 				v = compute(viewer, parentElement, element);
 				cache.put(element, v);
 			}
@@ -212,7 +212,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 
 		private boolean matchChildren(Viewer viewer, Object e) {
 			Object[] children=contentProvider.getChildren(e);
-			if (children!=null) {
+			if (children != null) {
 				for (Object c : children) {
 					if (select(viewer, e, c)) {
 						return true;
@@ -274,7 +274,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 	    prefetchProvidersAndContent();
 
 		Composite field = new Composite(page, SWT.NONE);
-		int cols = sectionLabel==null ? 1 : 2;
+		int cols = sectionLabel == null ? 1 : 2;
 		GridLayout layout = GridLayoutFactory.fillDefaults().numColumns(cols).create();
 		field.setLayout(layout);
 
@@ -290,7 +290,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 		searchBox.createContents(field);
 
 		Label fieldNameLabel = null;
-		if (sectionLabel!=null) {
+		if (sectionLabel != null) {
 			fieldNameLabel = new Label(field, SWT.NONE);
 			fieldNameLabel.setText(sectionLabel);
 		}
@@ -307,7 +307,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 		GridDataFactory fixHeight = GridDataFactory.fillDefaults().hint(SWT.DEFAULT, 200);
 		grabHor.applyTo(field);
 		fixHeight.applyTo(treeviewer.getControl());
-		if (fieldNameLabel!=null) {
+		if (fieldNameLabel != null) {
 			GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.BEGINNING).applyTo(fieldNameLabel);
 		}
 
@@ -315,15 +315,15 @@ public class ChooseTypedContentSection extends WizardPageSection {
 			@Override
 			public void run() {
 				GSContent preSelect = selection.selection.getValue();
-				if (preSelect!=null) {
+				if (preSelect != null) {
 					treeviewer.setSelection(new StructuredSelection(preSelect), true);
 				} else {
 					treeviewer.setSelection(StructuredSelection.EMPTY, true);
 				}
-				if (initialFilterText!=null) {
+				if (initialFilterText != null) {
 					searchModel.setValue(initialFilterText);
 				}
-				if (category!=null) {
+				if (category != null) {
 					//System.out.println(category);
 					ContentType<?> expand = null;
 					ContentType<?>[] contentTypes = content.getTypes();
@@ -334,7 +334,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 							break;
 						}
 					}
-					if (expand!=null) {
+					if (expand != null) {
 						treeviewer.setExpandedElements(new Object[] { expand });
 					}
 				}
@@ -392,7 +392,7 @@ public class ChooseTypedContentSection extends WizardPageSection {
 	}
 
 	public void setFilterText(String text) {
-		if (searchBox!=null) {
+		if (searchBox != null) {
 			// Don't set values into the search box directly. Do it
 			// through the model. However, guard this against checks on the search box
 			// existing, as no point in setting value in the model if there is

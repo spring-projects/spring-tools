@@ -35,7 +35,7 @@ import org.springframework.tooling.boot.ls.BootLanguageServerPlugin;
 @SuppressWarnings("restriction")
 public class LiveProcessCommandsQuickAccessProvider implements IQuickAccessComputer, IQuickAccessComputerExtension {
 
-	private List<@NonNull LanguageServer> usedLanguageServers;
+	private List < @NonNull LanguageServer > usedLanguageServers;
 
 	@Override
 	public QuickAccessElement[] computeElements() {
@@ -59,7 +59,7 @@ public class LiveProcessCommandsQuickAccessProvider implements IQuickAccessCompu
 		
 		usedLanguageServers = new ArrayList<>();
 		@NonNull
-		List<@NonNull CompletableFuture<@Nullable Void>> futures = LanguageServers
+		List < @NonNull CompletableFuture < @Nullable Void>> futures = LanguageServers
 			.forProject(null)
 			.excludeInactive()
 			.withPreferredServer(LanguageServersRegistry.getInstance().getDefinition(BootLanguageServerPlugin.BOOT_LS_DEFINITION_ID))

@@ -215,7 +215,7 @@ public class BoshCloudConfigSchema extends SchemaSupport implements YamlSchema {
 	}
 
 	public Collection<YType> getDefinitionTypes() {
-		if (definitionTypes==null) {
+		if (definitionTypes == null) {
 			definitionTypes = getDefAndRefTypes().stream()
 					.map(pair -> pair.getLeft())
 					.collect(CollectorUtil.toImmutableList());

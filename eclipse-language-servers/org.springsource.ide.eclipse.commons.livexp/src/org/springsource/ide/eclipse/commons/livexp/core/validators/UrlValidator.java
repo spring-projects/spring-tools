@@ -56,7 +56,7 @@ public class UrlValidator extends LiveExpression<ValidationResult> {
 	@Override
 	protected ValidationResult compute() {
 		String str = url.getValue();
-		if (str==null) {
+		if (str == null) {
 			str = "";
 		} else {
 			str = str.trim();
@@ -68,7 +68,7 @@ public class UrlValidator extends LiveExpression<ValidationResult> {
 		} else {
 			try {
 				URI uri = new URI(str);
-				if (allowedSchemes!=null) {
+				if (allowedSchemes != null) {
 					if (!allowedSchemes.contains(uri.getScheme())) {
 						return ValidationResult.error(fieldName+" url scheme should be one of: "+allowedSchemes);
 					}

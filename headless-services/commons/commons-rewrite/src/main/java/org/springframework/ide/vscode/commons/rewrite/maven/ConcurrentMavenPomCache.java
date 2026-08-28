@@ -56,7 +56,7 @@ public class ConcurrentMavenPomCache implements MavenPomCache {
 	private final ConcurrentHashMap<ResolvedGroupArtifactVersion, CompletableFuture<Optional<Pom>>> pomsInFlight = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<MetadataKey, CompletableFuture<Optional<MavenMetadata>>> metadataInFlight = new ConcurrentHashMap<>();
 	private final ConcurrentHashMap<MavenRepository, CompletableFuture<Optional<MavenRepository>>> repositoriesInFlight = new ConcurrentHashMap<>();
-	private final ConcurrentHashMap<ResolvedGroupArtifactVersion, CompletableFuture<@Nullable ResolvedPom>> resolvedDependencyPomsInFlight = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap < ResolvedGroupArtifactVersion, CompletableFuture < @Nullable ResolvedPom>> resolvedDependencyPomsInFlight = new ConcurrentHashMap<>();
 
 	public ConcurrentMavenPomCache(MavenPomCache delegate) {
 		this(delegate, DEFAULT_TIMEOUT);
@@ -84,7 +84,7 @@ public class ConcurrentMavenPomCache implements MavenPomCache {
 	 * {@code put*} method), or the result of an equivalent already-in-flight fetch once
 	 * it completes (or {@code null} if it doesn't complete within {@code timeout}).
 	 */
-	private <K, V> @Nullable V getOrWait(ConcurrentHashMap<K, CompletableFuture<V>> inFlight, K key, Supplier<@Nullable V> cachedLookup) {
+	private <K, V> @Nullable V getOrWait(ConcurrentHashMap<K, CompletableFuture<V>> inFlight, K key, Supplier < @Nullable V > cachedLookup) {
 		V cached = cachedLookup.get();
 		if (cached != null) {
 			return cached;

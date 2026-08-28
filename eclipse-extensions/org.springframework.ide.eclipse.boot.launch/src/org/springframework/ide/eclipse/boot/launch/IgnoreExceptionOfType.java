@@ -90,11 +90,11 @@ public class IgnoreExceptionOfType implements IDebugEventFilter, Disposable {
 	}
 
 	private boolean select(DebugEvent e) {
-		if (e.getKind()==DebugEvent.SUSPEND && e.getDetail()==DebugEvent.BREAKPOINT) {
+		if (e.getKind() == DebugEvent.SUSPEND && e.getDetail() == DebugEvent.BREAKPOINT) {
 			IJavaThread source = (IJavaThread) e.getSource();
-			if (launch==null || launch.equals(source.getLaunch())) {
+			if (launch == null || launch.equals(source.getLaunch())) {
 				IBreakpoint[] bps = source.getBreakpoints();
-				if (bps!=null) {
+				if (bps != null) {
 					for (IBreakpoint bp : bps) {
 						if (bp instanceof IJavaExceptionBreakpoint) {
 							IJavaExceptionBreakpoint ebp = (IJavaExceptionBreakpoint) bp;

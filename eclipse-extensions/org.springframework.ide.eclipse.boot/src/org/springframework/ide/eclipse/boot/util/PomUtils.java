@@ -32,7 +32,7 @@ public class PomUtils {
 
 	public static String getTextChild(Element depEl, String name) {
 		Element child = findChild(depEl, name);
-		if (child!=null) {
+		if (child != null) {
 			return PomEdits.getTextValue(child);
 		}
 		return null;

@@ -1217,7 +1217,7 @@ public class BootDashModelTest {
 		BootDashElement element = getElement(projectName);
 		IProject project = element.getProject();
 
-		if (tagsToSet==null || tagsToSet.length==0) {
+		if (tagsToSet == null || tagsToSet.length == 0) {
 			element.setTags(new LinkedHashSet<>(Arrays.asList("foo", "bar")));
 			assertFalse(element.getTags().isEmpty());
 		} else {
@@ -1236,7 +1236,7 @@ public class BootDashModelTest {
 	}
 
 	private LinkedHashSet<String> linkedHashSet(String[] tagsToSet) {
-		if (tagsToSet!=null) {
+		if (tagsToSet != null) {
 			return new LinkedHashSet<>(Arrays.asList(tagsToSet));
 		}
 		return null;
@@ -1472,7 +1472,7 @@ public class BootDashModelTest {
 		ILaunch activeLaunch = null;
 		for (ILaunch l : ls) {
 			if (!l.isTerminated()) {
-				if (activeLaunch==null) {
+				if (activeLaunch == null) {
 					activeLaunch = l;
 				} else {
 					//More than one active launch

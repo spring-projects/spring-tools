@@ -46,7 +46,7 @@ public final class MockCloudConfigProvider extends BoshCommandCloudConfigProvide
 
 	@Override
 	protected String getBlock() throws Exception {
-		if (reader==null) {
+		if (reader == null) {
 			return super.getBlock();
 		}
 		readCount++;

@@ -276,7 +276,7 @@ public class AddStartersWizardModel implements OkButtonHandler, Disposable {
 
 				@Override
 				public boolean belongsTo(Object family) {
-					return family==JOB_FAMILY;
+					return family == JOB_FAMILY;
 				}
 			};
 		}

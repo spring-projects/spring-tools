@@ -119,8 +119,8 @@ public class MainTypeLaunchTabSection extends DelegatingLaunchConfigurationTabSe
 				});
 				mainTypeName().addListener(new ValueListener<String>() {
 					public void gotValue(LiveExpression<String> exp, String newName) {
-						if (fMainText!=null) {
-							if (newName!=null) {
+						if (fMainText != null) {
+							if (newName != null) {
 								String oldName = fMainText.getText();
 								//Don't set the text if its not actually changed.
 								// Otherwise change events from typing in the widget will cause the

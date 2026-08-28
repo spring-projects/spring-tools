@@ -39,7 +39,7 @@ public class ASTDynamicSchemaContext extends CachingSchemaContext {
 
 	@SuppressWarnings("unchecked")
 	private <T> T as(Class<T> klass, Node node) {
-		if (node!=null && klass.isInstance(node)) {
+		if (node != null && klass.isInstance(node)) {
 			return (T) node;
 		}
 		return null;

@@ -90,11 +90,11 @@ public class JMXActuatorClient extends ActuatorClient {
 	protected ImmutablePair<String, String> getDataFrom(OperationInfo[] infos) throws Exception {
 		try {
 			JMXClient client = getClient();
-			if (client!=null && infos!=null) {
+			if (client != null && infos != null) {
 				for (OperationInfo op : infos) {
 					try {
 						Object obj = client.callOperation(op.objectName, op.operationName);
-						if (obj!=null) {
+						if (obj != null) {
 							return ImmutablePair.of(new ObjectMapper().writeValueAsString(obj), op.version);
 						}
 					} catch (InstanceNotFoundException e) {
@@ -124,8 +124,8 @@ public class JMXActuatorClient extends ActuatorClient {
 
 	private synchronized JMXClient getClient() throws Exception {
 		String currentUrl = urlProvider.get();
-		if (currentUrl==null) return null;
-		if (!currentUrl.equals(this.url) || client==null) {
+		if (currentUrl == null) return null;
+		if (!currentUrl.equals(this.url) || client == null) {
 			disposeClient();
 			url = currentUrl;
 			client = new JMXClient(currentUrl);
@@ -135,7 +135,7 @@ public class JMXActuatorClient extends ActuatorClient {
 
 	private void disposeClient() {
 		JMXClient client = this.client;
-		if (client!=null) {
+		if (client != null) {
 			this.client = null;
 			client.dispose();
 		}

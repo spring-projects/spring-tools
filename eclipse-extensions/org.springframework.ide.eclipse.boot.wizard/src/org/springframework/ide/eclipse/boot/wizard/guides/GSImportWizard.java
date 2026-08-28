@@ -89,7 +89,7 @@ public class GSImportWizard extends Wizard implements IImportWizard, INewWizard 
 		}
 
 		private ChooseTypedContentSection getContentChooser() {
-			if (contentChooser==null) {
+			if (contentChooser == null) {
 				contentChooser = new ChooseTypedContentSection(this, model.getGSContentSelectionModel(),
 						model.getRawSelection(), model.getContentManager());
 			}
@@ -180,7 +180,7 @@ public class GSImportWizard extends Wizard implements IImportWizard, INewWizard 
 //			GettingStartedActivator.log(e);
 //		} catch (InvocationTargetException e) {
 //			String msg = ExceptionUtil.getMessage(e);
-//			if (msg!=null && !"".equals(msg)) {
+//			if (msg != null && !"".equals(msg)) {
 //				MessageDialog.openError(getShell(), "Error performing the import", msg);
 //			}
 //			GettingStartedActivator.log(e);
@@ -250,7 +250,7 @@ public class GSImportWizard extends Wizard implements IImportWizard, INewWizard 
 	 */
 	public void setItem(GSContent guide) {
 		this.model.setItem(guide);
-		if (guide!=null) {
+		if (guide != null) {
 			pageOne.setFilterText(guide.getDisplayName());
 		}
 	}

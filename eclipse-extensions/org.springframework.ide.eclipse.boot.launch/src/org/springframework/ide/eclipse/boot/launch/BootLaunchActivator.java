@@ -71,7 +71,7 @@ public class BootLaunchActivator extends AbstractUIPlugin {
 	@Override
 	public void stop(BundleContext context) throws Exception {
 		instance = null;
-		if (workspaceListener!=null) {
+		if (workspaceListener != null) {
 			workspaceListener.dispose();
 		}
 		TestJarSupport.stop();

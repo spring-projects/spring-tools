@@ -58,7 +58,7 @@ public abstract class LaunchList {
 		DebugPlugin.getDefault().addDebugEventListener(debugListener = new IDebugEventSetListener() {
 			@Override
 			public void handleDebugEvents(DebugEvent[] events) {
-				if (events!=null) {
+				if (events != null) {
 					for (DebugEvent debugEvent : events) {
 						handleDebugEvent(debugEvent);
 					}
@@ -68,7 +68,7 @@ public abstract class LaunchList {
 
 		//What if processes got started before we attached the listener?
 		ILaunch[] launches = DebugPlugin.getDefault().getLaunchManager().getLaunches();
-		if (launches!=null) {
+		if (launches != null) {
 			for (ILaunch launch : launches) {
 				for (IProcess process : launch.getProcesses()) {
 					processCreated(process);

@@ -53,9 +53,9 @@ public class ValueParseException extends Exception {
 	}
 
 	public DocumentRegion getHighlightRegion(DocumentRegion containingRegion) {
-		int start = startIndex>=0 ? startIndex : 0;
-		int end = endIndex>=0 ? endIndex : containingRegion.length();
-		if (highightString!=null) {
+		int start = startIndex >= 0 ? startIndex : 0;
+		int end = endIndex >= 0 ? endIndex : containingRegion.length();
+		if (highightString != null) {
 			//Make a 'best effort' adjusting start and end to highlight the correct string,
 			// even if positions are screwy because of handling escape sequences before parsing.
 			String actualHighlight = containingRegion.subSequence(start, end).toString();
@@ -63,12 +63,12 @@ public class ValueParseException extends Exception {
 				String containingString = containingRegion.toString();
 				//Search 'close' to start position first
 				int found = containingString.indexOf(highightString, start);
-				if (found>=0) {
+				if (found >= 0) {
 					return containingRegion.subSequence(found, found+highightString.length());
 				}
 				//Second... search whole string
 				found = containingString.indexOf(highightString);
-				if (found>=0) {
+				if (found >= 0) {
 					return containingRegion.subSequence(found, found+highightString.length());
 				}
 				//Give up, couldn't find the highlight string... highlight everything
@@ -79,10 +79,10 @@ public class ValueParseException extends Exception {
 	}
 
 	public void adjustHighlight(int start, int end, String piece) {
-		if (this.highightString==null || this.highightString.length()>piece.length()) {
+		if (this.highightString == null || this.highightString.length() > piece.length()) {
 			this.highightString = piece;
 		}
-		if (this.startIndex>=0) {
+		if (this.startIndex >= 0) {
 			this.startIndex += start;
 		} else {
 			this.startIndex = start;

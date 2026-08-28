@@ -40,7 +40,7 @@ public class Type implements YType {
 
 
 	public boolean isGeneric() {
-		return params!=null;
+		return params != null;
 	}
 
 	public String getErasure() {
@@ -82,7 +82,7 @@ public class Type implements YType {
 //	public static Type fromSignature(String typeSig, IType context) {
 //		//TODO: does this work correctly with nested types (i.e like Map$Entry)
 //		Type type = TYPE_FROM_SIG.get(typeSig);
-//		if (type!=null) {
+//		if (type != null) {
 //			return type;
 //		}
 //		int kind = Signature.getTypeSignatureKind(typeSig);
@@ -90,8 +90,8 @@ public class Type implements YType {
 //		// as long as these generic parameters are fully concrete (i.e. do not contain unbound type
 //		// variables. For now only support the simplest case (no generics) and bail out returning null if we
 //		// see something we don't understand.
-//		if (kind==Signature.CLASS_TYPE_SIGNATURE) {
-//			boolean shouldResolve = typeSig.charAt(0)==Signature.C_UNRESOLVED;
+//		if (kind == Signature.CLASS_TYPE_SIGNATURE) {
+//			boolean shouldResolve = typeSig.charAt(0) == Signature.C_UNRESOLVED;
 //			String erasure = Signature.getTypeErasure(typeSig);
 //			String pkg = Signature.getSignatureQualifier(erasure);
 //			String nam = Signature.getSignatureSimpleName(erasure);
@@ -114,9 +114,9 @@ public class Type implements YType {
 //			} else {
 //				return new Type(erasure, null);
 //			}
-//		} else if (kind==Signature.ARRAY_TYPE_SIGNATURE) {
+//		} else if (kind == Signature.ARRAY_TYPE_SIGNATURE) {
 //			Type elementType = fromSignature(Signature.getElementType(typeSig), context);
-//			if (elementType!=null) {
+//			if (elementType != null) {
 //				int arrayCount = Signature.getArrayCount(typeSig);
 //				return elementType.asArray(arrayCount);
 //			}

@@ -92,7 +92,7 @@ public class JavaSnippetBuilder{
 			String placeHolderImage = template.substring(matcher.start(1), matcher.end(1));
 			int colon = placeHolderImage.indexOf(':');
 			String id, value;
-			if (colon>=0) {
+			if (colon >= 0) {
 				id = placeHolderImage.substring(0, colon);
 				value = placeHolderImage.substring(colon+1);
 			} else {

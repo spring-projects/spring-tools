@@ -59,7 +59,7 @@ public abstract class AbstractJavaProject implements IJavaProject, Disposable {
 			toDispose = index;
 			index = null;
 		}
-		if (toDispose!=null) {
+		if (toDispose != null) {
 			toDispose.dispose();
 		}
 	}

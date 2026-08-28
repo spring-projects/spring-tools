@@ -50,7 +50,7 @@ public class RunTargetPropertiesManager implements ValueListener<ImmutableSet<Ru
 
 		List<RunTarget> targets = new ArrayList<>();
 		for (RunTargetType type : types) {
-			if (type==RunTargetTypes.LOCAL) {
+			if (type == RunTargetTypes.LOCAL) {
 				targets.add(RunTargets.LOCAL);
 			} else if (type.canInstantiate()) {
 				String serializedList = context.getRunTargetProperties().get(type, RUN_TARGET_KEY);
@@ -98,7 +98,7 @@ public class RunTargetPropertiesManager implements ValueListener<ImmutableSet<Ru
 					List<String> strings = new ArrayList<>(targets.size());
 					for (RunTarget t : targets) {
 						String s = type.serialize(t.getParams());
-						if (s!=null) {
+						if (s != null) {
 							strings.add(s);
 						}
 					}

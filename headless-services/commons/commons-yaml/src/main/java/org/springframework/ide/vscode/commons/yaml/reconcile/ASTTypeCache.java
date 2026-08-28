@@ -67,7 +67,7 @@ public class ASTTypeCache implements ITypeCollector {
 
 		@Override
 		public synchronized Collection<Node> getNodes(YType type) {
-			if (type2node==null) {
+			if (type2node == null) {
 				ImmutableMultimap.Builder<YType, Node> builder = ImmutableMultimap.builder();
 				for (Entry<Node, YType> e : node2type.entrySet()) {
 					builder.put(e.getValue(), e.getKey());
@@ -107,7 +107,7 @@ public class ASTTypeCache implements ITypeCollector {
 
 	@Override
 	public synchronized void endCollecting(YamlFileAST ast) {
-		Assert.isLegal(currentAst==ast);
+		Assert.isLegal(currentAst == ast);
 		String uri = ast.getDocument().getUri();
 		ImmutableMap.Builder<Node, YType> nodeTypes = ImmutableMap.builder();
 		for (Entry<Node, Pair<YType, YamlPath>> entry : currentTypes.entrySet()) {
@@ -122,7 +122,7 @@ public class ASTTypeCache implements ITypeCollector {
 	public void accept(Node node, YType type, YamlPath path) {
 		if (interestingTypes.contains(type)) {
 			Pair<YType, YamlPath> existing = currentTypes.get(node);
-			if (existing!=null) {
+			if (existing != null) {
 				//A second time assinging type to the same node. This is possible when anchors / references
 				// are used (this makes parts of the tree 'shared').
 				YType oldType = existing.getLeft();
@@ -145,7 +145,7 @@ public class ASTTypeCache implements ITypeCollector {
 
 	public synchronized YType getType(YamlFileAST ast, Node node) {
 		NodeTypes types = typeIndex.get(ast.getDocument().getUri());
-		if (types!=null) {
+		if (types != null) {
 			return types.getTypes().get(node);
 		}
 		return null;
@@ -168,13 +168,13 @@ public class ASTTypeCache implements ITypeCollector {
 	 */
 	public Collection<String> getDefinedNames(DynamicSchemaContext dc, YType defType) {
 		IDocument doc = dc.getDocument();
-		if (doc!=null) {
+		if (doc != null) {
 			String uri = doc.getUri();
-			if (uri!=null) {
+			if (uri != null) {
 				NodeTypes typeMap =  getNodeTypes(uri);
-				if (typeMap!=null) {
+				if (typeMap != null) {
 					Collection<Node> nodes = typeMap.getNodes(defType);
-					if (nodes!=null) {
+					if (nodes != null) {
 						ImmutableSet.Builder<String> builder = ImmutableSortedSet.naturalOrder();
 						for (Node node : nodes) {
 							String name = NodeUtil.asScalar(node);
@@ -193,9 +193,9 @@ public class ASTTypeCache implements ITypeCollector {
 
 	public Collection<Node> getNodes(String uri, YType type) {
 		NodeTypes nodeMap = getNodeTypes(uri);
-		if (nodeMap!=null) {
+		if (nodeMap != null) {
 			Collection<Node> nodes = nodeMap.getNodes(type);
-			if (nodes!=null) {
+			if (nodes != null) {
 				return nodes;
 			}
 		}

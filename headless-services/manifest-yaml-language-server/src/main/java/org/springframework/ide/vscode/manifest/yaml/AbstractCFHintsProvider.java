@@ -93,7 +93,7 @@ public abstract class AbstractCFHintsProvider implements Callable<Collection<YVa
 	 * @return non-null list of hints. Return empty if no hints available
 	 */
 	protected Collection<YValueHint> getHints(List<CFTarget> targets) throws Exception {
-		if (targets==null || targets.isEmpty()) {
+		if (targets == null || targets.isEmpty()) {
 			//no targets... means we don't know anything. Indicate this by returning null...
 			// this "don't know" value will suppress bogus warnings in the reconciler.
 			return null;

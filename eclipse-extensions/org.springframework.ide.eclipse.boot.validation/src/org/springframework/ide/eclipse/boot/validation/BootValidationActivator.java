@@ -46,7 +46,7 @@ public class BootValidationActivator implements BundleActivator {
 	}
 
 	private static synchronized Runnable[] getStopHandlers() {
-		if (onStop==null) {
+		if (onStop == null) {
 			return new Runnable[0];
 		}
 		try {
@@ -61,7 +61,7 @@ public class BootValidationActivator implements BundleActivator {
 	public static final String BUILDER_ID = PLUGIN_ID+".springbootbuilder";
 
 	public static synchronized void onStop(Runnable runnable) {
-		if (onStop==null) {
+		if (onStop == null) {
 			onStop = new ArrayList<>();
 		}
 		onStop.add(runnable);

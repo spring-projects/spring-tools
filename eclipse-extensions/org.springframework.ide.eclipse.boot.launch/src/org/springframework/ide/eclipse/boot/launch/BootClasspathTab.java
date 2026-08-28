@@ -30,7 +30,7 @@ public class BootClasspathTab extends JavaClasspathTab implements ILaunchConfigu
 		// So make sure the classpath provider is present.
 		IProject project = BootLaunchConfigurationDelegate.getProject(conf);
 		try {
-			if (project!=null && project.hasNature(SpringBootCore.M2E_NATURE) && !conf.hasAttribute(IJavaLaunchConfigurationConstants.ATTR_CLASSPATH_PROVIDER)) {
+			if (project != null && project.hasNature(SpringBootCore.M2E_NATURE) && !conf.hasAttribute(IJavaLaunchConfigurationConstants.ATTR_CLASSPATH_PROVIDER)) {
 				ILaunchConfigurationWorkingCopy wc = conf.getWorkingCopy();
 				BootLaunchConfigurationDelegate.enableMavenClasspathProviders(wc);
 				conf = wc;

@@ -55,7 +55,7 @@ public class GotoSymbolDialog extends PopupDialog implements IPageWithSections {
 
 	@Override
 	protected IDialogSettings getDialogSettings() {
-		if (dlgSettings==null) {
+		if (dlgSettings == null) {
 			this.dlgSettings = GotoSymbolPlugin.getInstance().getDialogSettings();
 		}
 		return dlgSettings;

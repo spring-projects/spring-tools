@@ -88,10 +88,10 @@ public class SpringIndexerHarness {
 		@Override
 		public int compare(WorkspaceSymbol o1, WorkspaceSymbol o2) {
 			int r = o1.getLocation().getLeft().getUri().compareTo(o2.getLocation().getLeft().getUri());
-			if (r!=0) return r;
+			if (r != 0) return r;
 
 			r = RANGE_COMPARATOR.compare(o1.getLocation().getLeft().getRange(), o2.getLocation().getLeft().getRange());
-			if (r!=0) return r;
+			if (r != 0) return r;
 
 			return o1.getName().compareTo(o2.getName());
 		}
@@ -117,7 +117,7 @@ public class SpringIndexerHarness {
 
 	public static List<TestSymbolInfo> getSymbolsInFile(SpringSymbolIndex indexer, String docURI) throws Exception {
 		List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docURI);
-		if (symbols!=null) {
+		if (symbols != null) {
 			symbols = new ArrayList<>(symbols);
 			Collections.sort(symbols, SYMBOL_COMPARATOR);
 			TextDocument doc = new TextDocument(docURI, LanguageId.JAVA, 1, IOUtils.toString(new URI(docURI), Charset.defaultCharset()));

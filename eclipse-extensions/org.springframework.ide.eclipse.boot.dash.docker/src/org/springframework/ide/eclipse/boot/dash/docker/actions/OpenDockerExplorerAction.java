@@ -45,7 +45,7 @@ public class OpenDockerExplorerAction extends AbstractBootDashModelAction {
 	@Override
 	public void run() {
 		DockerRunTarget target = getRunTarget();
-		if (target!=null) {
+		if (target != null) {
 			try {
 				DockerConnectionManager connections = DockerConnectionManager.getInstance();
 				if (connections.getAllConnections().isEmpty()) {
@@ -66,7 +66,7 @@ public class OpenDockerExplorerAction extends AbstractBootDashModelAction {
 				}
 				
 				IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-				if (page!=null) {
+				if (page != null) {
 					page.showView(VIEW_TYPE_ID);
 				}
 			} catch (Exception e) {

@@ -39,7 +39,7 @@ public class SimpleUriBuilder {
 
 	public void addParameter(String name, String paramValue) {
 		try {
-			if (numparams==0) {
+			if (numparams == 0) {
 				builder.append("?");
 			} else {
 				builder.append("&");
@@ -47,7 +47,7 @@ public class SimpleUriBuilder {
 			numparams++;
 
 			builder.append(URLEncoder.encode(name, "UTF-8"));
-			if (paramValue!=null) {
+			if (paramValue != null) {
 				builder.append("=");
 				builder.append(URLEncoder.encode(paramValue, "UTF-8"));
 			}

@@ -116,7 +116,7 @@ public class ProfileLaunchTabModel extends LaunchTabSelectionModel<String> {
 		 */
 		private void addHistoricProfiles(LinkedHashSet<String> profiles) {
 			IProject proj = project.getValue();
-			if (proj!=null) {
+			if (proj != null) {
 				for (String profile : profileHistory.getHistory(proj)) {
 					profiles.add(profile);
 				}
@@ -130,7 +130,7 @@ public class ProfileLaunchTabModel extends LaunchTabSelectionModel<String> {
 			try {
 				for (IContainer srcFolder : JavaProjectUtil.getSourceFolders(project.getValue())) {
 					for (IResource rsrc : srcFolder.members()) {
-						if (rsrc.getType()==IResource.FILE) {
+						if (rsrc.getType() == IResource.FILE) {
 							String name = rsrc.getName();
 							Matcher matcher = FILE_NAME_PAT.matcher(name);
 							if (matcher.matches()) {

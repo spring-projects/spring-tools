@@ -71,7 +71,7 @@ public abstract class ActuatorClient {
 			ImmutablePair<String, String> data = getRequestMappingData();
 			if (data != null) {
 				String json = data.left;
-				if (json!=null) {
+				if (json != null) {
 					return parseRequestMappings(json, data.right);
 				}
 			}
@@ -107,7 +107,7 @@ public abstract class ActuatorClient {
 			ImmutablePair<String, String> data = getEnvData();
 			if (data != null) {
 				String json = data.left;
-				if (json!=null) {
+				if (json != null) {
 					return parseEnv(json, data.right);
 				}
 			}

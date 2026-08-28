@@ -53,7 +53,7 @@ public class UriUtilTest {
 		String previous = null;
 		for (String uri : cases) {
 			String normalized = UriUtil.normalize(uri); 
-			if (previous!=null) {
+			if (previous != null) {
 				assertEquals(previous, normalized);
 			}
 			previous = normalized;

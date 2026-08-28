@@ -482,7 +482,7 @@ public class JavaContentAssistUIAdapter implements
 
 		public void browseButtonPressed() {
 			Text textControl = getHandler().getJavaTextControl();
-			String pattern = textControl != null && !textControl.isDisposed()? textControl.getText() : null;
+			String pattern = textControl != null && !textControl.isDisposed() ? textControl.getText() : null;
 
 			Shell shell = getHandler().getShell();
 

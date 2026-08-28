@@ -32,9 +32,9 @@ public class LiveSets {
 
 	@SuppressWarnings("unchecked")
 	public static <R, A extends R, B extends R> ObservableSet<R> union(ObservableSet<A> e1, ObservableSet<B> e2) {
-		if (e1==EMPTY_SET) {
+		if (e1 == EMPTY_SET) {
 			return (ObservableSet<R>) e2;
-		} else if (e2==EMPTY_SET) {
+		} else if (e2 == EMPTY_SET) {
 			return (ObservableSet<R>) e1;
 		} else {
 			return new LiveUnion<>(e1, e2);
@@ -61,7 +61,7 @@ public class LiveSets {
 
 	@SuppressWarnings("unchecked")
 	public static <R, A extends R, B extends R> ObservableSet<R> intersection(ObservableSet<A> a, ObservableSet<B> b) {
-		if (a==EMPTY_SET || b==EMPTY_SET) {
+		if (a == EMPTY_SET || b == EMPTY_SET) {
 			return EMPTY_SET;
 		} else {
 			return new LiveIntersection<>(a, b);
@@ -111,7 +111,7 @@ public class LiveSets {
 			}
 			protected ImmutableSet<T> compute() {
 				T val = exp.getValue();
-				if (val==null) {
+				if (val == null) {
 					return ImmutableSet.of();
 				} else {
 					return ImmutableSet.of(val);
@@ -122,7 +122,7 @@ public class LiveSets {
 
 	@SuppressWarnings("unchecked")
 	public static <A,R> ObservableSet<R> map(ObservableSet<A> input, AsyncMode asyncRefresh, AsyncMode asyncEvents, Function<A, R> function) {
-		if (input==EMPTY_SET) {
+		if (input == EMPTY_SET) {
 			return EMPTY_SET;
 		}
 		return new MapSet<>(input, asyncRefresh, asyncEvents, function);

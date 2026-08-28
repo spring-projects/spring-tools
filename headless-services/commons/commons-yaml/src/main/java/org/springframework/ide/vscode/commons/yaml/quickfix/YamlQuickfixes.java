@@ -63,7 +63,7 @@ public class YamlQuickfixes {
 				if (_doc != null) {
 					YamlDocument doc = new YamlDocument(_doc, structureProvider);
 					SNode root = doc.getStructure();
-					if (root!=null) {
+					if (root != null) {
 						YamlPath path = YamlPath.decode(params.getPath());
 						SNode _target = path.traverse(root);
 						if (_target instanceof SChildBearingNode) {
@@ -118,14 +118,14 @@ public class YamlQuickfixes {
 
 	public static QuickfixEdit createReplacementQuickfic(TextDocument doc, YamlPathEdits edits) throws BadLocationException {
 		TextReplace replaceEdit = edits.asReplacement(doc);
-		if (replaceEdit!=null) {
+		if (replaceEdit != null) {
 			WorkspaceEdit wsEdits = new WorkspaceEdit();
 			wsEdits.setChanges(ImmutableMap.of(
 					doc.getUri(),
 					ImmutableList.of(new TextEdit(doc.toRange(replaceEdit.getRegion()), replaceEdit.newText))
 			));
 			Position newCursor = getCursorPostionAfter(doc, edits);
-			return new QuickfixEdit(wsEdits, newCursor==null ? null : new CursorMovement(doc.getUri(), newCursor));
+			return new QuickfixEdit(wsEdits, newCursor == null ? null : new CursorMovement(doc.getUri(), newCursor));
 		}
 		return NULL_FIX;
 	}
@@ -133,7 +133,7 @@ public class YamlQuickfixes {
 	private static Position getCursorPostionAfter(TextDocument _doc, YamlPathEdits edits) {
 		try {
 			IRegion newSelection = edits.getSelection();
-			if (newSelection!=null) {
+			if (newSelection != null) {
 				//There is probably a more efficient way to compute the new cursor position. But its tricky...
 				//... because we need to compute line/char coordinate, in terms of lines in the *new* document.
 				//So we have to take into account how newlines have been inserted or shifted around by the edits.

@@ -265,13 +265,13 @@ public class TypeUtil {
 	}
 
 	public ValueParser getValueParser(Type type) {
-		if (type!=null) {
+		if (type != null) {
 			ValueParser simpleParser = VALUE_PARSERS.get(type.getErasure());
-			if (simpleParser!=null) {
+			if (simpleParser != null) {
 				return simpleParser;
 			}
 			Collection<StsValueHint> enumValues = getAllowedValues(type, EnumCaseMode.ALIASED);
-			if (enumValues!=null) {
+			if (enumValues != null) {
 				//Note, technically if 'enumValues is empty array' this means something different
 				// from when it is null. An empty array means a type that has no values, so
 				// assigning anything to it is an error.
@@ -286,9 +286,9 @@ public class TypeUtil {
 				//Trying to parse list from scalars is possible if the domain type is parseable. Spring boot
 				// will try to interpret the string as a comma-separated list
 				Type elType = getDomainType(type);
-				if (elType!=null) {
+				if (elType != null) {
 					ValueParser elParser = getValueParser(elType);
-					if (elParser!=null) {
+					if (elParser != null) {
 						return new DelimitedStringParser(elParser);
 					}
 				}
@@ -298,7 +298,7 @@ public class TypeUtil {
 	}
 
 	private String[] getBareValues(Collection<StsValueHint> hints) {
-		if (hints!=null) {
+		if (hints != null) {
 			String[] values = new String[hints.size()];
 			int i = 0;
 			for (StsValueHint h : hints) {
@@ -318,11 +318,11 @@ public class TypeUtil {
 	 * or 'aliased' (meaning both forms are returned).
 	 */
 	public Collection<StsValueHint> getAllowedValues(Type enumType, EnumCaseMode caseMode) {
-		if (enumType!=null) {
+		if (enumType != null) {
 			try {
 				String[] values = TYPE_VALUES.get(enumType.getErasure());
-				if (values!=null) {
-					if (caseMode==EnumCaseMode.ALIASED) {
+				if (values != null) {
+					if (caseMode == EnumCaseMode.ALIASED) {
 						ImmutableSet.Builder<String> aliased = ImmutableSet.builder();
 						aliased.add(values);
 						for (int i = 0; i < values.length; i++) {
@@ -334,7 +334,7 @@ public class TypeUtil {
 					}
 				}
 				IType type = findType(enumType.getErasure());
-				if (type!=null && type.isEnum()) {
+				if (type != null && type.isEnum()) {
 					ImmutableList.Builder<StsValueHint> enums = ImmutableList.builder();
 					boolean addOriginal = caseMode == EnumCaseMode.ORIGNAL || caseMode == EnumCaseMode.ALIASED;
 					boolean addLowerCased = caseMode == EnumCaseMode.LOWER_CASE || caseMode == EnumCaseMode.ALIASED;
@@ -364,13 +364,13 @@ public class TypeUtil {
 	}
 
 	public void niceTypeName(Type type, StringBuilder buf) {
-		if (type==null) {
+		if (type == null) {
 			buf.append("null");
 			return;
 		}
 		String typeStr = type.getErasure();
 		String primTypeName = PRIMITIVE_TYPE_NAMES.get(typeStr);
-		if (primTypeName!=null) {
+		if (primTypeName != null) {
 			buf.append(primTypeName);
 		} else if (typeStr.startsWith("java.lang.")) {
 			buf.append(typeStr.substring("java.lang.".length()));
@@ -381,20 +381,20 @@ public class TypeUtil {
 		}
 		if (isEnum(type)) {
 			Collection<StsValueHint> values = getAllowedValues(type, EnumCaseMode.ORIGNAL);
-			if (values!=null && !values.isEmpty()) {
+			if (values != null && !values.isEmpty()) {
 				buf.append("[");
 				int i = 0;
 				for (StsValueHint hint : values) {
-					if (i>0) {
+					if (i > 0) {
 						buf.append(", ");
 					}
 					buf.append(hint.getValue());
 					i++;
-					if (i>=4) {
+					if (i >= 4) {
 						break;
 					}
 				}
-				if (i<values.size()) {
+				if (i < values.size()) {
 					buf.append(", ...");
 				}
 				buf.append("]");
@@ -403,7 +403,7 @@ public class TypeUtil {
 			Type[] params = type.getParams();
 			buf.append("<");
 			for (int i = 0; i < params.length; i++) {
-				if (i>0) {
+				if (i > 0) {
 					buf.append(", ");
 				}
 				niceTypeName(params[i], buf);
@@ -431,15 +431,15 @@ public class TypeUtil {
 	}
 
 	public static boolean isObject(Type type) {
-		return type!=null && OBJECT_TYPE_NAME.equals(type.getErasure());
+		return type != null && OBJECT_TYPE_NAME.equals(type.getErasure());
 	}
 
 	public static boolean isString(Type type) {
-		return type!=null && STRING_TYPE_NAME.equals(type.getErasure());
+		return type != null && STRING_TYPE_NAME.equals(type.getErasure());
 	}
 
 	public boolean isAtomic(Type type) {
-		if (type!=null) {
+		if (type != null) {
 			String typeName = type.getErasure();
 			return ATOMIC_TYPES.contains(typeName) || isEnum(type);
 		}
@@ -477,11 +477,11 @@ public class TypeUtil {
 	}
 
 	private static boolean isArray(Type type) {
-		return type!=null && type.getErasure().endsWith("[]");
+		return type != null && type.getErasure().endsWith("[]");
 	}
 
 	public boolean isMap(Type type) {
-		if (type!=null) {
+		if (type != null) {
 			String erasure = type.getErasure();
 			if (MAP_TYPE_NAME.equals(erasure)) {
 				//quick / easy case. No looking for types and hierarchies required.
@@ -498,7 +498,7 @@ public class TypeUtil {
 	}
 
 	private boolean isCollection(String collectionTypeName, Type type) {
-		if (type!=null) {
+		if (type != null) {
 			String erasure = type.getErasure();
 			if (collectionTypeName.equals(erasure)) {
 				//quick / easy case. No looking for types and hierarchies required.
@@ -522,14 +522,14 @@ public class TypeUtil {
 
 
 	private boolean searchSuperTypes(Set<String> seen, IType searchIn, String fqTargetType) {
-		if (searchIn!=null) {
+		if (searchIn != null) {
 			String fqName = searchIn.getFullyQualifiedName();
 			if (fqName.equals(fqTargetType)) {
 				return true;
 			}
 			if (seen.add(fqName)) {
 				String[] itfs = searchIn.getSuperInterfaceNames();
-				if (itfs!=null) {
+				if (itfs != null) {
 					for (String itfName : itfs) {
 						IType itf = findType(itfName);
 						if (searchSuperTypes(seen, itf, fqTargetType)) {
@@ -560,7 +560,7 @@ public class TypeUtil {
 	}
 
 	private static Type getArrayDomainType(Type type) {
-		if (type!=null) {
+		if (type != null) {
 			String fullName = type.getErasure();
 			Assert.isLegal(fullName.endsWith("[]"));
 			String elName = fullName.substring(0, fullName.length()-2);
@@ -575,10 +575,10 @@ public class TypeUtil {
 	 * just return it unchanged.
 	 */
 	private static Type normalizePrimitiveType(Type type) {
-		if (type!=null) {
+		if (type != null) {
 			String name = type.getErasure();
 			Type boxType = PRIMITIVE_TO_BOX_TYPE.get(name);
-			if (boxType!=null) {
+			if (boxType != null) {
 				return boxType;
 			}
 		}
@@ -616,7 +616,7 @@ public class TypeUtil {
 		try {
 			if (!isArray(type)) {
 				IType eclipseType = findType(type.getErasure());
-				if (eclipseType!=null) {
+				if (eclipseType != null) {
 					return eclipseType.isEnum();
 				}
 			}
@@ -627,7 +627,7 @@ public class TypeUtil {
 	}
 	
 	public IType getSuperType(IType type) {
-		if (type!=null) {
+		if (type != null) {
 			return findType(type.getSuperclassName());
 		}
 		return null;
@@ -635,7 +635,7 @@ public class TypeUtil {
 
 	private IType findType(String typeName) {
 		try {
-			if (javaProject!=null && typeName!=null) {
+			if (javaProject != null && typeName != null) {
 				/*
 				 * Java project expects inner type separator to be '$' while properties index
 				 * has '.' as the separator. Replace '.' with '$' to find inner type
@@ -727,7 +727,7 @@ public class TypeUtil {
 	 * @return A list of known properties or null if the list of properties is unknown.
 	 */
 	public List<TypedProperty> getProperties(Type type, EnumCaseMode enumMode, BeanPropertyNameMode beanMode) {
-		if (type==null) {
+		if (type == null) {
 			return null;
 		}
 		if (!isDotable(type)) {
@@ -736,7 +736,7 @@ public class TypeUtil {
 		}
 		if (isMap(type)) {
 			Type keyType = getKeyType(type);
-			if (keyType!=null) {
+			if (keyType != null) {
 				Collection<StsValueHint> keyHints = getAllowedValues(keyType, enumMode);
 				if (CollectionUtil.hasElements(keyHints)) {
 					Type valueType = getDomainType(type);
@@ -893,17 +893,17 @@ public class TypeUtil {
 
 //	private List<IMethod> getSetterMethods(IType eclipseType) {
 //		try {
-//			if (eclipseType!=null && eclipseType.isClass()) {
+//			if (eclipseType != null && eclipseType.isClass()) {
 //				IMethod[] allMethods = eclipseType.getMethods();
 //				if (ArrayUtils.hasElements(allMethods)) {
 //					ArrayList<IMethod> setters = new ArrayList<IMethod>();
 //					for (IMethod m : allMethods) {
 //						String mname = m.getElementName();
-//						if (mname.startsWith("set") && mname.length()>=4) {
+//						if (mname.startsWith("set") && mname.length() >= 4) {
 //							//Need at least 4 chars or the property name will be empty.
 //							String sig = m.getSignature();
 //							int numParams = Signature.getParameterCount(sig);
-//							if (numParams==1) {
+//							if (numParams == 1) {
 //								setters.add(m);
 //							}
 //						}
@@ -944,7 +944,7 @@ public class TypeUtil {
 		//TODO: optimize, produce directly as a map instead of
 		// first creating list and then coverting it.
 		List<TypedProperty> list = getProperties(type, enumMode, beanMode);
-		if (list!=null) {
+		if (list != null) {
 			Map<String, TypedProperty> map = new HashMap<>();
 			for (TypedProperty p : list) {
 				map.put(p.getName(), p);
@@ -969,7 +969,7 @@ public class TypeUtil {
 
 	protected IField getExactField(IType type, String fieldName) {
 		IField f = type.getField(StringUtil.hyphensToCamelCase(fieldName, false));
-		if (f!=null && f.exists()) {
+		if (f != null && f.exists()) {
 			return f;
 		}
 		return null;
@@ -990,7 +990,7 @@ public class TypeUtil {
 		IType type = findType(enumType);
 		//1: if propname is already spelled exactly...
 		IField f = getExactField(type, propName);
-		if (f!=null) return f;
+		if (f != null) return f;
 
 		//2: most likely enum constant is upper-case form of propname
 		String fieldName = StringUtil.hyphensToUpperCase(propName);
@@ -1052,13 +1052,13 @@ public class TypeUtil {
 	}
 
 	public Collection<StsValueHint> getHintValues(Type type, String query, EnumCaseMode enumCaseMode) {
-		if (type!=null) {
+		if (type != null) {
 			Collection<StsValueHint> allowed = getAllowedValues(type, enumCaseMode);
-			if (allowed!=null) {
+			if (allowed != null) {
 				return allowed;
 			}
 			ValueProviderStrategy valueHinter = VALUE_HINTERS.get(type.getErasure());
-			if (valueHinter!=null) {
+			if (valueHinter != null) {
 				return valueHinter.getValuesNow(javaProject, query);
 			}
 		}
@@ -1085,7 +1085,7 @@ public class TypeUtil {
 	}
 
 	public static boolean isClass(Type type) {
-		if (type!=null) {
+		if (type != null) {
 			return CLASS_TYPE_NAME.equals(type.getErasure());
 		}
 		return false;
@@ -1099,7 +1099,7 @@ public class TypeUtil {
 
 	public Type subsituteKey(Type type, String handleKeyAs) {
 		try {
-			if (handleKeyAs!=null && isMap(type)) {
+			if (handleKeyAs != null && isMap(type)) {
 				Type valueType = getDomainType(type);
 				Type keyType = TypeParser.parse(handleKeyAs);
 				return new Type(MAP_TYPE_NAME, new Type[] {keyType, valueType});

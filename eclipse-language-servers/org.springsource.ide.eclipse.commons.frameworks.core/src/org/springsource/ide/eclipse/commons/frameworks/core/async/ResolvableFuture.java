@@ -74,7 +74,7 @@ public class ResolvableFuture<T> implements Future<T>, Resolvable<T> {
 		if (isPending) {
 			throw new IllegalStateException("Still pending, can't fetch value or exception");
 		}
-		if (exception!=null) {
+		if (exception != null) {
 			throw new ExecutionException(exception);
 		} else {
 			return value;
@@ -94,7 +94,7 @@ public class ResolvableFuture<T> implements Future<T>, Resolvable<T> {
 		if (isPending) {
 			throw new TimeoutException();
 		}
-		if (exception!=null) {
+		if (exception != null) {
 			throw new ExecutionException(exception);
 		} else {
 			return value;

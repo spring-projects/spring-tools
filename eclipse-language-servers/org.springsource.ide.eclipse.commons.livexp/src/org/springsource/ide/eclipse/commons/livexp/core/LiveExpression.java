@@ -82,14 +82,14 @@ public abstract class LiveExpression<V> implements Disposable, OnDispose {
 		}
 		synchronized (this) {
 			LiveVariable<Integer> rc = this.refreshCount;
-			if (rc!=null) {
+			if (rc != null) {
 				rc.setValue(rc.getValue()+1);
 			}
 		}
 	}
 	
 	public synchronized LiveExpression<Integer> refreshCount() {
-		if (refreshCount==null) {
+		if (refreshCount == null) {
 			refreshCount = new LiveVariable<>(0);
 		}
 		return refreshCount;
@@ -99,8 +99,8 @@ public abstract class LiveExpression<V> implements Disposable, OnDispose {
 	 * Implementation of value equals that works if either one of the values is null.
 	 */
 	private static <V> boolean equals(V a, V b) {
-		if (a==null||b==null) {
-			return a==b;
+		if (a == null||b == null) {
+			return a == b;
 		} else {
 			return a.equals(b);
 		}
@@ -129,7 +129,7 @@ public abstract class LiveExpression<V> implements Disposable, OnDispose {
 	protected abstract V compute();
 
 	protected void changed() {
-		if (fListeners!=null) {
+		if (fListeners != null) {
 			Object[] listeners = fListeners.getListeners();
 			for (Object _l : listeners) {
 				@SuppressWarnings("unchecked")
@@ -166,14 +166,14 @@ public abstract class LiveExpression<V> implements Disposable, OnDispose {
 	
 	public void addListener(ValueListener<V> l) {
 		ListenerList fListeners = this.fListeners;
-		if (fListeners!=null) {
+		if (fListeners != null) {
 			fListeners.add(l);
 			l.gotValue(this, value);
 		}
 	}
 
 	public void removeListener(ValueListener<V> l) {
-		if (fListeners!=null) {
+		if (fListeners != null) {
 			fListeners.remove(l);
 		}
 	}
@@ -328,7 +328,7 @@ public abstract class LiveExpression<V> implements Disposable, OnDispose {
 
 	@SuppressWarnings("unchecked")
 	public <T> T getOwner(Class<T> cls) {
-		if (owner!=null && cls.isAssignableFrom(owner.getClass())) {
+		if (owner != null && cls.isAssignableFrom(owner.getClass())) {
 			return (T) owner;
 		}
 		return null;
@@ -338,13 +338,13 @@ public abstract class LiveExpression<V> implements Disposable, OnDispose {
 	public void dispose() {
 		Object[] disposeHandlers = null;
 		synchronized (this) {
-			if (fDisposeHandlers!=null) {
+			if (fDisposeHandlers != null) {
 				disposeHandlers = fDisposeHandlers.getListeners();
 				fDisposeHandlers = null;
 				fListeners = null;
 			}
 		}
-		if (disposeHandlers!=null) {
+		if (disposeHandlers != null) {
 			for (Object _handler : disposeHandlers) {
 				DisposeListener handler = (DisposeListener) _handler;
 				handler.disposed(this);
@@ -356,7 +356,7 @@ public abstract class LiveExpression<V> implements Disposable, OnDispose {
 	public void onDispose(DisposeListener listener) {
 		boolean alreadyDisposed = false;
 		synchronized (this) {
-			if (this.fDisposeHandlers==null) {
+			if (this.fDisposeHandlers == null) {
 				alreadyDisposed = true;
 			} else {
 				this.fDisposeHandlers.add(listener);

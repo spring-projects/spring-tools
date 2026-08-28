@@ -58,9 +58,9 @@ public abstract class DisposingFactory<K,V extends Disposable> implements Dispos
 		if (valid.contains(key)) {
 			enableValidKeyTracking();
 			V instance = cachedInstances.get(key);
-			if (instance==null) {
+			if (instance == null) {
 				instance=create(key);
-				if (instance!=null) {
+				if (instance != null) {
 					cachedInstances.put(key, instance);
 				}
 			}
@@ -70,7 +70,7 @@ public abstract class DisposingFactory<K,V extends Disposable> implements Dispos
 	}
 
 	private void enableValidKeyTracking() {
-		if (validKeyListener==null) {
+		if (validKeyListener == null) {
 			validKeys.addListener(validKeyListener = new ValueListener<ImmutableSet<K>>() {
 				public void gotValue(LiveExpression<ImmutableSet<K>> exp, ImmutableSet<K> value) {
 					retainOnlyValidKeys();
@@ -81,7 +81,7 @@ public abstract class DisposingFactory<K,V extends Disposable> implements Dispos
 	}
 
 	private ImmutableSet<K> getValidKeys() {
-		if (validKeys!=null) {
+		if (validKeys != null) {
 			return validKeys.getValues();
 		}
 		return ImmutableSet.of();
@@ -89,8 +89,8 @@ public abstract class DisposingFactory<K,V extends Disposable> implements Dispos
 
 	@Override
 	public synchronized void dispose() {
-		if (validKeys!=null) {
-			if (validKeyListener!=null) {
+		if (validKeys != null) {
+			if (validKeyListener != null) {
 				validKeys.removeListener(validKeyListener);
 			}
 			validKeys = null;
@@ -100,7 +100,7 @@ public abstract class DisposingFactory<K,V extends Disposable> implements Dispos
 	}
 
 	private synchronized void retainOnlyValidKeys() {
-		if (cachedInstances!=null) {
+		if (cachedInstances != null) {
 			ImmutableSet<K> valid = getValidKeys();
 			Iterator<Entry<K, V>> iter = cachedInstances.entrySet().iterator();
 			while (iter.hasNext()) {

@@ -548,7 +548,7 @@ public class ValueCompletionTest {
         //There are no 'ad-hoc' properties yet. So should only suggest the default ones.
         editor.assertContextualCompletions(
                 "<*>"
-        , //==>
+        , // == >
 				"classpath:a-random-resource-root.md<*>",
 				"classpath:org/random-resource-org.md<*>",
         		"classpath:org/test/random-resource-org-test.txt<*>",
@@ -563,7 +563,7 @@ public class ValueCompletionTest {
         adHocProperties.add("spring.prop1"); //should not suggest this twice!
         editor.assertContextualCompletions(
                 "<*>"
-        , //==>
+        , // == >
 				"classpath:a-random-resource-root.md<*>",
 				"classpath:org/random-resource-org.md<*>",
 				"classpath:org/test/random-resource-org-test.txt<*>",
@@ -577,7 +577,7 @@ public class ValueCompletionTest {
 
         editor.assertContextualCompletions(
                 "adhoc<*>"
-        , //==>
+        , // == >
                 "${spring.ad-hoc.thingy}<*>",
                 "${spring.ad-hoc.other-thingy}<*>"
         );

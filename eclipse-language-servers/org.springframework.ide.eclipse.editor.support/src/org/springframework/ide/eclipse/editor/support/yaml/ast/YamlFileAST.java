@@ -140,7 +140,7 @@ public class YamlFileAST {
 
 	public Node findNode(int offset) {
 		NodeRef<?> ref = findNodeRef(offset);
-		if (ref!=null) {
+		if (ref != null) {
 			return ref.get();
 		}
 		return null;

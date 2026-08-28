@@ -188,21 +188,21 @@ public class SpringProcessLiveDataExtractorOverJMX {
         List<String> memoryMetrics = Arrays.asList("jvm.memory.committed", "jvm.memory.max");
 
         LiveMemoryMetricsModel jvmMemUsedMetrics = getLiveMetrics(connection, domain, "jvm.memory.used", tags);
-        if(jvmMemUsedMetrics != null ) {
+        if (jvmMemUsedMetrics != null ) {
             memoryMetricsList.add(jvmMemUsedMetrics);
             Arrays.sort(jvmMemUsedMetrics.getAvailableTags()[0].getValues());
             String[] memoryZones =  jvmMemUsedMetrics.getAvailableTags()[0].getValues();
             for(String zone : memoryZones) {
                 String tag = tags+",id:"+zone;
                 LiveMemoryMetricsModel metrics = getLiveMetrics(connection, domain, "jvm.memory.used", tag );
-                if(metrics != null) {
+                if (metrics != null) {
                     memoryMetricsList.add(metrics);
                 }
             }
 
             for(String metric : memoryMetrics) {
                 LiveMemoryMetricsModel metrics = getLiveMetrics(connection, domain, metric, tags );
-                if(metrics != null) {
+                if (metrics != null) {
                     memoryMetricsList.add(metrics);
                 }
             }	    
@@ -241,7 +241,7 @@ public class SpringProcessLiveDataExtractorOverJMX {
 			}
 			
 			LiveMemoryMetricsModel metrics = getLiveMetrics(connection, domain, "jvm.gc.pause", tags);
-			if(metrics != null) {
+			if (metrics != null) {
 				memoryMetricsList.add(metrics);
 			}
 			
@@ -354,7 +354,7 @@ public class SpringProcessLiveDataExtractorOverJMX {
 					signature);
 			if (loggersData instanceof String) {
 				return gson.fromJson((String)loggersData, Loggers.class);
-			} else if(loggersData != null){
+			} else if (loggersData != null){
 				ObjectMapper objectMapper = new ObjectMapper();
 				return objectMapper.convertValue(loggersData, Loggers.class);
 			}
@@ -524,7 +524,7 @@ public class SpringProcessLiveDataExtractorOverJMX {
 					signature);
 			if (metricsData instanceof String) {
 				return gson.fromJson((String)metricsData, LiveMemoryMetricsModel.class);
-			} else if(metricsData != null){
+			} else if (metricsData != null){
 				ObjectMapper mapper = new ObjectMapper();
 				return mapper.convertValue(metricsData, LiveMemoryMetricsModel.class);
 			}
@@ -822,7 +822,7 @@ public class SpringProcessLiveDataExtractorOverJMX {
 			ObjectName objectName = new ObjectName(DEFAULT_OBJECT_NAME);
 
 			Object o = connection.invoke(objectName,"getProperty", new String[] {"local.server.port"}, new String[] {String.class.getName()});
-			return o==null ? null : o.toString();
+			return o == null ? null : o.toString();
 		}
 		catch (InstanceNotFoundException e) {
 			return null;
@@ -836,14 +836,14 @@ public class SpringProcessLiveDataExtractorOverJMX {
 				JSONObject portsObject = env.optJSONObject("server.ports");
 				if (portsObject != null) {
 					String portValue = portsObject.optString("local.server.port");
-					if (portValue!=null) {
+					if (portValue != null) {
 						return portValue;
 					}
 				}
 				//Not found as direct property value... in Boot 2.0 we must look inside the 'propertySources'.
 				//Similar... but structure is more complex.
 				JSONArray propertySources = env.optJSONArray("propertySources");
-				if (propertySources!=null) {
+				if (propertySources != null) {
 					for (Object _source : propertySources) {
 						if (_source instanceof JSONObject) {
 							JSONObject source = (JSONObject) _source;
@@ -851,9 +851,9 @@ public class SpringProcessLiveDataExtractorOverJMX {
 							if ("server.ports".equals(sourceName)) {
 								JSONObject props = source.optJSONObject("properties");
 								JSONObject valueObject = props.optJSONObject("local.server.port");
-								if (valueObject!=null) {
+								if (valueObject != null) {
 									String portValue = valueObject.optString("value");
-									if (portValue!=null) {
+									if (portValue != null) {
 										return portValue;
 									}
 								}

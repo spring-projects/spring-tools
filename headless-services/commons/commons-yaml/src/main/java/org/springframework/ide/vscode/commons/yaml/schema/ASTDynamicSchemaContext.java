@@ -43,7 +43,7 @@ public class ASTDynamicSchemaContext extends CachingSchemaContext {
 
 	@SuppressWarnings("unchecked")
 	private <T> T as(Class<T> klass, Node node) {
-		if (node!=null && klass.isInstance(node)) {
+		if (node != null && klass.isInstance(node)) {
 			return (T) node;
 		}
 		return null;
@@ -76,7 +76,7 @@ public class ASTDynamicSchemaContext extends CachingSchemaContext {
 
 	@Override
 	public boolean isMap() {
-		return mapNode!=null;
+		return mapNode != null;
 	}
 	@Override
 	public boolean isSequence() {

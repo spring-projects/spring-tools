@@ -85,14 +85,14 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         useProject(p);
 
 //		assertCompletions("spring.config.import=<*>", 
-//				// ==>
+//				// == >
 //				"spring.config.import=classpath:<*>",
 //				"spring.config.import=configtree:<*>",
 //				"spring.config.import=file:<*>"
 //		);
         
         assertCompletions("spring.config.import=classpath:ex<*>",
-                // ==>
+                // == >
                 "spring.config.import=classpath:extra.properties<*>"
         );
     }
@@ -777,7 +777,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
                 "my.map[foo.bar].<*>"
         );
         editor.assertContextualCompletions("<*>",
-                // ==>
+                // == >
                 "age=<*>",
                 "name=<*>"
         );
@@ -1551,7 +1551,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletions(
                 "foobar.enco<*>"
-        , // ==>
+        , // == >
                 "foobar.encoding=<*>"
         );
 
@@ -1570,7 +1570,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletions(
                 "foobar.loca<*>"
-        , // ==>
+        , // == >
                 "foobar.locale=<*>"
         );
 
@@ -1671,7 +1671,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.level.<*>"
-        , //==============
+        , // == == == == == == ==
                 "user-defined",
                 //=>
                 "logging.level.user-defined=<*>"
@@ -1679,7 +1679,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.level.<*>"
-        , //==============
+        , // == == == == == == ==
                 "foobar",
                 //=>
                 "logging.level.foobar=<*>"
@@ -1687,7 +1687,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.level.<*>"
-        , //==============
+        , // == == == == == == ==
                 "indexed",
                 //=>
                 "logging.level.indexed=<*>"
@@ -1705,7 +1705,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.group.whatever=demo<*>"
-        , //==============
+        , // == == == == == == ==
                 "com.example.demo",
                 //=>
                 "logging.group.whatever=com.example.demo<*>"
@@ -1713,7 +1713,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.group.whatever=stuff,demo<*>"
-        , //==============
+        , // == == == == == == ==
                 "com.example.demo",
                 //=>
                 "logging.group.whatever=stuff,com.example.demo<*>"
@@ -1721,7 +1721,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.group.whatever[0]=demo<*>"
-        , //==============
+        , // == == == == == == ==
                 "com.example.demo",
                 //=>
                 "logging.group.whatever[0]=com.example.demo<*>"
@@ -1733,7 +1733,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         useProject(createPredefinedMavenProject("empty-boot-2.1.0-app"));
         assertCompletionWithLabel(
                 "logging.level.<*>"
-        , //==============
+        , // == == == == == == ==
                 "root",
                 //=>
                 "logging.level.root=<*>"
@@ -1742,7 +1742,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.level.r<*>"
-        , //==============
+        , // == == == == == == ==
                 "root",
                 //=>
                 "logging.level.root=<*>"
@@ -1751,7 +1751,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.level.ot<*>"
-        , //==============
+        , // == == == == == == ==
                 "root",
                 //=>
                 "logging.level.root=<*>"
@@ -1762,7 +1762,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         // See: https://docs.spring.io/spring-boot/docs/2.1.0.RELEASE/reference/htmlsingle/#_logger_name
         assertCompletionWithLabel(
                 "logging.level.<*>"
-        , //==============
+        , // == == == == == == ==
                 "web",
                 //=>
                 "logging.level.web=<*>"
@@ -1771,7 +1771,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "logging.level.<*>"
-        , //==============
+        , // == == == == == == ==
                 "sql",
                 //=>
                 "logging.level.sql=<*>"
@@ -1929,7 +1929,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "my.nice.list[0]=classpath:app<*>\n"
-        , // ==========
+        , // == == == == ==
                 "application.yml"
         , // =>
                 "my.nice.list[0]=classpath:application.yml<*>\n"
@@ -1937,7 +1937,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "my.nice.list[0]=  classpath:app<*>\n"
-        , // ==========
+        , // == == == == ==
                 "application.yml"
         , // =>
                 "my.nice.list[0]=  classpath:application.yml<*>\n"
@@ -1945,7 +1945,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "my.nice.list[0]=classpath:<*>\n"
-        , // ==========
+        , // == == == == ==
                 "application.yml"
         , // =>
                 "my.nice.list[0]=classpath:application.yml<*>\n"
@@ -1956,7 +1956,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         // do we find resources in sub-folders too?
         assertCompletionWithLabel(
                 "my.nice.resource=classpath:word<*>\n"
-        , //===============
+        , // == == == == == == == =
                 "stuff/wordlist.txt"
         , // =>
                 "my.nice.resource=classpath:stuff/wordlist.txt<*>\n"
@@ -1974,7 +1974,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         for (String kind : ImmutableList.of("list", "array")) {
             assertCompletionWithLabel(
                     "my.nice." + kind + "=classpath:<*>"
-            , //===========
+            , // == == == == == =
                     "stuff/wordlist.txt"
             , //=>
                     "my.nice." + kind + "=classpath:stuff/wordlist.txt<*>"
@@ -1993,7 +1993,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
             assertCompletionWithLabel(
                     "my.nice." + kind + "=classpath:stuff/wordlist.txt,classpath:app<*>"
-            , //===========
+            , // == == == == == =
                     "application.yml"
             , //=>
                     "my.nice." + kind + "=classpath:stuff/wordlist.txt,classpath:application.yml<*>"
@@ -2024,7 +2024,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionWithLabel(
                 "spring.data.mongodb.field-naming-strategy=<*>"
-        , //=====
+        , // == == =
                 "org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy"
         , //=>
                 "spring.data.mongodb.field-naming-strategy=org.springframework.data.mapping.model.PropertyNameFieldNamingStrategy<*>"
@@ -2202,7 +2202,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         assertCompletionWithLabel(
                 "some.property=SOMETHING\n" +
                         "<*>"
-        , // ===============
+        , // == == == == == == == =
                 "some.other.property"
         , // =>
                 "some.property=SOMETHING\n" +
@@ -2218,9 +2218,9 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 
         assertCompletionDetails(
                 "my.background=<*>"
-        , // ==========
+        , // == == == == ==
                 "red"
-        , // ==>
+        , // == >
                 "demo.Color[BLUE, GREEN, RED]",
                 "Hot and delicious"
         );

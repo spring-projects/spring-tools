@@ -32,11 +32,11 @@ public enum TemporalBoolean {
 	ALLwAYS;
 
 	public boolean isTrue() {
-		return this==TRUE || this==ALLwAYS;
+		return this == TRUE || this == ALLwAYS;
 	}
 
 	public boolean isFalse() {
-		return this==FALSE || this==NEVER;
+		return this == FALSE || this == NEVER;
 	}
 
 	public static TemporalBoolean allways(boolean b) {

@@ -66,7 +66,7 @@ public class ValueProviderRegistry {
 		if (CollectionUtil.hasElements(providerDescriptors)) {
 			for (ValueProvider descriptor : providerDescriptors) {
 				Function<Map<String, Object>, ValueProviderStrategy> factory = registry.get(descriptor.getName());
-				if (factory!=null) {
+				if (factory != null) {
 					Map<String, Object> params = descriptor.getParameters();
 					return factory.apply(params);
 				}

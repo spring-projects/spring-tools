@@ -288,7 +288,7 @@ public class ProjectResourceLoaderCache {
 	public static ResourceLoader getResourceLoader(IProject project, ResourceLoader parentResourceLoader) {
 		synchronized (ProjectResourceLoaderCache.class) {
 			// Setup the root class loader to be used when no explicit parent class loader is given
-			if (parentResourceLoader==null) {
+			if (parentResourceLoader == null) {
 				parentResourceLoader = ResourceLoader.NULL;
 			}
 			if (project == null) {

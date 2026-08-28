@@ -237,7 +237,7 @@ public class BoshDeploymentManifestSchema extends SchemaSupport implements YamlS
 			(dc) -> (parseString, validValues) -> {
 				try {
 					Predicate<StemcellData> filter = getCurrentStemcell(dc).createVersionFilter();
-					if (filter!=StemcellModel.ALLWAYS_TRUE_FILTER) {
+					if (filter != StemcellModel.ALLWAYS_TRUE_FILTER) {
 						return "'"+parseString+"' is an unknown 'StemcellVersion["+filter+"]'. Valid values are: "+validValues;
 					}
 				} catch (Exception e) {
@@ -331,7 +331,7 @@ public class BoshDeploymentManifestSchema extends SchemaSupport implements YamlS
 	private String getCurrentEntityProperty(DynamicSchemaContext dc, String propName) {
 		YamlPath path = dc.getPath();
 		YamlFileAST ast = asts.getSafeAst(dc.getDocument(), true);
-		if (ast!=null) {
+		if (ast != null) {
 			return NodeUtil.asScalar(path.dropLast().thenValAt(propName).traverseToNode(ast));
 		}
 		return null;
@@ -353,7 +353,7 @@ public class BoshDeploymentManifestSchema extends SchemaSupport implements YamlS
 	}
 
 	public Collection<YType> getDefinitionTypes() {
-		if (definitionTypes==null) {
+		if (definitionTypes == null) {
 			definitionTypes = getDefAndRefTypes().stream()
 					.map(pair -> pair.getLeft())
 					.collect(CollectorUtil.toImmutableList());
@@ -367,7 +367,7 @@ public class BoshDeploymentManifestSchema extends SchemaSupport implements YamlS
 	 * contain the same scalar value.
 	 */
 	public Collection<Pair<YType, YType>> getDefAndRefTypes() {
-		if (defAndRefTypes==null) {
+		if (defAndRefTypes == null) {
 			defAndRefTypes = ImmutableList.of(
 					Pair.of(t_instance_group_name_def, null),
 					Pair.of(t_stemcell_alias_def, t_stemcell_alias_ref),

@@ -111,7 +111,7 @@ public class Constraints {
 		private boolean allowMultiple = false;
 
 		public RequireOneOf(String[] properties) {
-			Assert.isLegal(properties.length>1);
+			Assert.isLegal(properties.length > 1);
 			this._requiredProps = properties;
 		}
 
@@ -135,16 +135,16 @@ public class Constraints {
 				long foundPropsCount = requiredProps.stream()
 					.filter(foundProps::contains)
 					.count();
-				if (foundPropsCount==0) {
+				if (foundPropsCount == 0) {
 					if (!allowFewer) {
 						problems.accept(missingProperty(
 								"One of "+requiredProps+" is required for '"+type+"'", doc, parent, map));
 					}
-				} else if (foundPropsCount>1 && !allowMultiple) {
+				} else if (foundPropsCount > 1 && !allowMultiple) {
 					//Mark each of the found keys as a violation:
 					for (NodeTuple entry : map.getValue()) {
 						String key = NodeUtil.asScalar(entry.getKeyNode());
-						if (key!=null && requiredProps.contains(key)) {
+						if (key != null && requiredProps.contains(key)) {
 							problems.accept(problem(EXTRA_PROPERTY,
 									"Only one of "+requiredProps+" should be defined for '"+type+"'",  entry.getKeyNode()));
 						}
@@ -235,9 +235,9 @@ public class Constraints {
 	public static Constraint uniqueDefinition(ASTTypeCache astTypes, YType defType, ProblemType problemType) {
 		return (DynamicSchemaContext dc, Node parent, Node _ignored_node, YType type, IProblemCollector problems) -> {
 			NodeTypes nodeTypes = astTypes.getNodeTypes(dc.getDocument().getUri());
-			if (nodeTypes!=null) {
+			if (nodeTypes != null) {
 				Collection<Node> nodes = nodeTypes.getNodes(defType);
-				if (nodes!=null && !nodes.isEmpty()) {
+				if (nodes != null && !nodes.isEmpty()) {
 					Multimap<String, Node> name2nodes = ArrayListMultimap.create();
 					for (Node node : nodes) {
 						String name = NodeUtil.asScalar(node);
@@ -247,7 +247,7 @@ public class Constraints {
 					}
 					for (String name : name2nodes.keys()) {
 						Collection<Node> nodesForName = name2nodes.get(name);
-						if (nodesForName.size()>1) {
+						if (nodesForName.size() > 1) {
 							for (Node duplicateNode : nodesForName) {
 								problems.accept(YamlSchemaProblems.problem(problemType, "Duplicate '"+defType+"'", duplicateNode));
 							}

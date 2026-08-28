@@ -142,11 +142,11 @@ public class BootDashLabels implements Disposable {
 		if (javaLabels != null) {
 			javaLabels.dispose();
 		}
-		if (runStateImages!=null) {
+		if (runStateImages != null) {
 			runStateImages.dispose();
 			runStateImages = null;
 		}
-		if (imageDecorator!=null) {
+		if (imageDecorator != null) {
 			imageDecorator.dispose();
 			imageDecorator = null;
 		}
@@ -168,7 +168,7 @@ public class BootDashLabels implements Disposable {
 	 */
 	public final Image getImage(Object element, BootDashColumn column) {
 		Image[] imgs = getImageAnimation(element, column);
-		if (imgs!=null && imgs.length>0) {
+		if (imgs != null && imgs.length > 0) {
 			return imgs[0];
 		}
 		return null;
@@ -232,7 +232,7 @@ public class BootDashLabels implements Disposable {
 	}
 
 	private Image[] toAnimation(Image img) {
-		if (img!=null) {
+		if (img != null) {
 			return new Image[]{img};
 		}
 		return NO_IMAGES;
@@ -241,21 +241,21 @@ public class BootDashLabels implements Disposable {
 	public Image[] getImageAnimation(BootDashElement element, BootDashColumn column) {
 		if (column == BootDashColumn.RUN_STATE_ICN || column == BootDashColumn.TREE_VIEWER_MAIN) {
 			RefreshState rs = element.getRefreshState();
-			if (rs!=null) {
+			if (rs != null) {
 				if (rs.isLoading()) {
 					return getRunStateAnimation(RunState.STARTING);
 				}
 			}
 			ImageDescriptor img = element.getCustomRunStateIcon();
 			Image[] anim;
-			if (img!=null) {
+			if (img != null) {
 				anim = toAnimation(img, null);
 			} else {
 				anim = getRunStateAnimation(element.getRunState());
 			}
 			ImageDescriptor decoration = getDecoration(element);
 			return imageDecorator.decorateImages(anim, decoration);
-		} else if (column==PROJECT) {
+		} else if (column == PROJECT) {
 			try {
 				if (element != null) {
 					IJavaProject jp = element.getJavaProject();
@@ -285,7 +285,7 @@ public class BootDashLabels implements Disposable {
 				return new StyledString(UNKNOWN_LABEL);
 			}
 		}
-		return stylers==null?new StyledString("null"):new StyledString("null", stylers.red());
+		return stylers == null ? new StyledString("null") : new StyledString("null", stylers.red());
 	}
 
 	public StyledString getStyledText(ButtonModel element) {
@@ -297,12 +297,12 @@ public class BootDashLabels implements Disposable {
 	 * added around it. Return null
 	 */
 	public Styler getPrefixSuffixStyler(BootDashColumn column) {
-		if (column==TAGS) {
+		if (column == TAGS) {
 			return stylers.tagBrackets();
-		} else if (column==LIVE_PORT) {
+		} else if (column == LIVE_PORT) {
 			Color portColor = colorGreen();
 			return stylers.color(portColor);
-		} else if (column==INSTANCES) {
+		} else if (column == INSTANCES) {
 			Color instancesColor = PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getColorRegistry().get(ALT_TEXT_DECORATION_COLOR_THEME);
 			return stylers.color(instancesColor);
 		} else {
@@ -318,13 +318,13 @@ public class BootDashLabels implements Disposable {
 
 		if (element != null) {
 			styledLabel = styledTextFromContributions(element, column);
-			if (styledLabel!=null) {
+			if (styledLabel != null) {
 				return styledLabel;
 			}
-			if (column==TAGS) {
+			if (column == TAGS) {
 				String text = TagUtils.toString(element.getTags());
 				styledLabel = stylers == null ? new StyledString(text) : TagUtils.applyTagStyles(text, stylers.tag());
-			} else if (column==PROJECT) {
+			} else if (column == PROJECT) {
 				IJavaProject jp = element.getJavaProject();
 				if (jp == null) {
 					// Not all projects in elements are Java projects. CF elements accept any project that contains a valid manifest.yml since the manifest.yml may
@@ -350,10 +350,10 @@ public class BootDashLabels implements Disposable {
 						styledLabel.append(devtoolsDecoration);
 					}
 				}
-			} else if (column==HOST) {
+			} else if (column == HOST) {
 				String host = element.getLiveHost();
 				label = host == null ? UNKNOWN_LABEL : host;
-			} else if (column==TREE_VIEWER_MAIN) {
+			} else if (column == TREE_VIEWER_MAIN) {
 				BootDashColumn[] cols = element.getColumns();
 				styledLabel = new StyledString();
 				for (BootDashColumn col : cols) {
@@ -380,7 +380,7 @@ public class BootDashLabels implements Disposable {
 						}
 					}
 				}
-			} else if (column==NAME) {
+			} else if (column == NAME) {
 				styledLabel = getStyleableName(element);
 				if (styledLabel == null) {
 					styledLabel = new StyledString();
@@ -396,7 +396,7 @@ public class BootDashLabels implements Disposable {
 					styledLabel = new StyledString(styledLabel.getString(), stylers.italicColoured(colorGrey()));
 				}
 
-			} else if (column==PROGRESS) {
+			} else if (column == PROGRESS) {
 				if (element.getRefreshState() != null && element.getRefreshState().isLoading()) {
 					String message = element.getRefreshState().getMessage();
 					Color muted = colorGrey();
@@ -409,7 +409,7 @@ public class BootDashLabels implements Disposable {
 					Color muted = colorGrey();
 					styledLabel = new StyledString("- " + "Fetching runstate from JMX", stylers.italicColoured(muted));
 				}
-			} else if (column==DEVTOOLS) {
+			} else if (column == DEVTOOLS) {
 				if (element.hasClasspathProperty(ClasspathPropertyTester.HAS_DEVTOOLS)) {
 					Color grey = colorGrey();
 					Color green = colorGreen();
@@ -418,9 +418,9 @@ public class BootDashLabels implements Disposable {
 				} else {
 					styledLabel = new StyledString();
 				}
-			} else if (column==RUN_STATE_ICN) {
+			} else if (column == RUN_STATE_ICN) {
 				label = element.getRunState().toString();
-			} else if (column==LIVE_PORT) {
+			} else if (column == LIVE_PORT) {
 				RunState runState = element.getRunState();
 				if (runState == RunState.RUNNING || runState == RunState.DEBUGGING) {
 					String textLabel;
@@ -476,7 +476,7 @@ public class BootDashLabels implements Disposable {
 					Color color = liveProfilesAvailable ? colorGreen() : colorGrey();
 					styledLabel = new StyledString(textLabel, stylers.color(color));
 				}
-			} else if (column==DEFAULT_PATH) {
+			} else if (column == DEFAULT_PATH) {
 				String path = element.getDefaultRequestMappingPath();
 				if (stylers == null) {
 					label = path == null ? "" : path;
@@ -484,7 +484,7 @@ public class BootDashLabels implements Disposable {
 					Color color = colorGrey();
 					styledLabel = new StyledString(path == null ? "" : path, stylers.color(color));
 				}
-			} else if (column==INSTANCES) {
+			} else if (column == INSTANCES) {
 				int actual = element.getActualInstances();
 				int desired = element.getDesiredInstances();
 				boolean showDesired = desired >= 0;
@@ -499,9 +499,9 @@ public class BootDashLabels implements Disposable {
 				label = UNKNOWN_LABEL;
 			}
 		}
-		if (styledLabel!=null) {
+		if (styledLabel != null) {
 			return styledLabel;
-		} else if (label!=null) {
+		} else if (label != null) {
 			return new StyledString(label);
 		}
 		return new StyledString("");
@@ -519,7 +519,7 @@ public class BootDashLabels implements Disposable {
 		ImmutableCollection<Contribution> contributions = this.contributions.get(col);
 		for (Contribution c : contributions) {
 			StyledString styledText = c.getStyledText(stylers, element, col);
-			if (styledText!=null) {
+			if (styledText != null) {
 				return styledText;
 			}
 		}
@@ -529,7 +529,7 @@ public class BootDashLabels implements Disposable {
 	private ImmutableMultimap<BootDashColumn, Contribution> contributions = null;
 
 	private void initContributions() {
-		if (contributions==null) {
+		if (contributions == null) {
 			ImmutableMultimap.Builder<BootDashColumn, Contribution> builder = ImmutableMultimap.builder();
 			for (Contribution c : injections.getBeans(Contribution.class)) {
 				for (BootDashColumn col : c.appliesTo) {
@@ -564,7 +564,7 @@ public class BootDashLabels implements Disposable {
 
 	private Image[] getRunStateAnimation(RunState runState) {
 		try {
-			if (runStateImages==null) {
+			if (runStateImages == null) {
 				runStateImages = new RunStateImages();
 			}
 			return runStateImages.getAnimation(runState);

@@ -60,7 +60,7 @@ public class SpringDataRelationalReconcilerTest {
 		projectFinder.find(new TextDocumentIdentifier(testProject.getLocationUri().toASCIIString())).get();
 	}
 
-	// ========== Criteria.where ==========
+	// == == == == == Criteria.where == == == == ==
 
 	@Test
 	void criteriaWhere_repositoryContext() throws Exception {
@@ -105,7 +105,7 @@ public class SpringDataRelationalReconcilerTest {
 		);
 	}
 
-	// ========== Update.update / Update.set ==========
+	// == == == == == Update.update / Update.set == == == == ==
 
 	@Test
 	void updateUpdate_repositoryContext() throws Exception {
@@ -154,7 +154,7 @@ public class SpringDataRelationalReconcilerTest {
 		);
 	}
 
-	// ========== Quick fix ==========
+	// == == == == == Quick fix == == == == ==
 
 	@Test
 	void quickfix_criteriaWhere_exactMatch() throws Exception {

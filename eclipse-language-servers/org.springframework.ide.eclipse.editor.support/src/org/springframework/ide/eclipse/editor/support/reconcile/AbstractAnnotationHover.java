@@ -65,7 +65,7 @@ public abstract class AbstractAnnotationHover<T extends Annotation> implements I
 		T annot = getAnnotationAt(model, offset);
 		if (annot != null) {
 			Position pos = model.getPosition(annot);
-			if (pos!=null) {
+			if (pos != null) {
 				return new Region(pos.getOffset(), pos.getLength());
 			}
 		}
@@ -74,7 +74,7 @@ public abstract class AbstractAnnotationHover<T extends Annotation> implements I
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	final protected T getAnnotationAt(IAnnotationModel model, int offset) {
-		if (model!=null) {
+		if (model != null) {
 			Iterator iter= model.getAnnotationIterator();
 			T found = null;
 			Position foundPos = null;
@@ -85,7 +85,7 @@ public abstract class AbstractAnnotationHover<T extends Annotation> implements I
 					if (acceptAnnotation(annotation)) {
 						Position pos= model.getPosition(annotation);
 						if (isAtPosition(offset, pos)) {
-							if (foundPos==null || pos.length<foundPos.length) {
+							if (foundPos == null || pos.length < foundPos.length) {
 								found = annotation;
 								foundPos = pos;
 							}

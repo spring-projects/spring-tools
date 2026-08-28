@@ -27,17 +27,17 @@ public class DocumentUtil {
 	 * retrieve the text just upto the end or beginning of the document instead.
 	 */
 	public static String textBetween(IDocument doc, int start, int end) {
-		Assert.isLegal(start<=end);
-		if (start>=doc.getLength()) {
+		Assert.isLegal(start <= end);
+		if (start >= doc.getLength()) {
 			return "";
 		}
-		if (start<0) {
+		if (start < 0) {
 			start = 0;
 		}
-		if (end>doc.getLength()) {
+		if (end > doc.getLength()) {
 			end = doc.getLength();
 		}
-		if (end<start) {
+		if (end < start) {
 			end = start;
 		}
 		try {

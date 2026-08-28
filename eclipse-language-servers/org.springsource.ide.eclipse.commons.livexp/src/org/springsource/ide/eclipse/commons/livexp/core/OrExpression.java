@@ -40,7 +40,7 @@ public class OrExpression extends CompositeExpression<Boolean> {
 	 * Null-safe check for truth value of boxed Boolean.
 	 */
 	private static boolean isTrue(Boolean value) {
-		if (value!=null) {
+		if (value != null) {
 			return value;
 		}
 		return false;

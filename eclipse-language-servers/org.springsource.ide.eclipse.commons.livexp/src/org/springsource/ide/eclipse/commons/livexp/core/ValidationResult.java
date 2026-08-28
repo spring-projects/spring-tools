@@ -134,14 +134,14 @@ public class ValidationResult {
 		} else {
 			Throwable e = status.getException();
 			String msg;
-			if (e!=null) {
+			if (e != null) {
 				//produces more informative error messages (from the deepest cause rather than a generic message
 				// usually attached to the IStatuses from Eclipse.
 				msg = ExceptionUtil.getMessage(e);
 			} else {
 				msg = status.getMessage();
 			}
-			if (msg==null) {
+			if (msg == null) {
 				msg = "Error";
 			}
 			return new ValidationResult(status.getSeverity(), msg);

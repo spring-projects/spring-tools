@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
 
 public class StringUtil {
 	public static boolean hasText(String name) {
-		return name!=null && !name.trim().equals("");
+		return name != null && !name.trim().equals("");
 	}
 
 	public static String collectionToDelimitedString(Iterable<String> strings, String delim) {
@@ -43,14 +43,14 @@ public class StringUtil {
 	}
 
 	public static String trim(String s) {
-		if (s!=null) {
+		if (s != null) {
 			return s.trim();
 		}
 		return null;
 	}
 
 	public static String trimEnd(String s) {
-		if (s!=null) {
+		if (s != null) {
 			return s.replaceAll("\\s+\\z", "");
 		}
 		return null;
@@ -59,7 +59,7 @@ public class StringUtil {
 	public static int commonPrefixLength(CharSequence s, CharSequence t) {
 		int shortestStringLen = Math.min(s.length(), t.length());
 		for (int i = 0; i < shortestStringLen; i++) {
-			if (s.charAt(i)!=t.charAt(i)) {
+			if (s.charAt(i) != t.charAt(i)) {
 				return i;
 			}
 		}
@@ -72,7 +72,7 @@ public class StringUtil {
 	 */
 	public static String commonPrefix(CharSequence s, CharSequence t) {
 		int len = commonPrefixLength(s, t);
-		if (len>0) {
+		if (len > 0) {
 			return s.subSequence(0,len).toString();
 		}
 		return "";
@@ -81,11 +81,11 @@ public class StringUtil {
 	public static String commonPrefix(Stream<CharSequence> strings) {
 		CharSequence prefix = null;
 		for (CharSequence string : (Iterable<CharSequence>)strings::iterator) {
-			if (prefix==null) {
+			if (prefix == null) {
 				prefix = string;
 			} else {
 				int end = 0;
-				while (end<prefix.length() && end<string.length() && string.charAt(end)==prefix.charAt(end)) {
+				while (end < prefix.length() && end < string.length() && string.charAt(end) == prefix.charAt(end)) {
 					end++;
 				}
 				prefix = prefix.subSequence(0, end);
@@ -129,14 +129,14 @@ public class StringUtil {
 	}
 
 	public static String upperCaseToHyphens(String v) {
-		if (v!=null) {
+		if (v != null) {
 			return v.toLowerCase().replace('_', '-');
 		}
 		return null;
 	}
 
 	public static String hyphensToUpperCase(String v) {
-		if (v!=null) {
+		if (v != null) {
 			return v.toUpperCase().replace('-', '_');
 		}
 		return null;
@@ -242,7 +242,7 @@ public class StringUtil {
 
 	public static String stripIndentationFromLine(String indent, String line) {
 		int start = 0;
-		while (start<line.length() && start < indent.length() && line.charAt(start)==indent.charAt(start)) {
+		while (start < line.length() && start < indent.length() && line.charAt(start) == indent.charAt(start)) {
 			start++;
 		}
 		return line.substring(start);
@@ -259,7 +259,7 @@ public class StringUtil {
 		List<String> pieces = new ArrayList<>();
 		int start = 0;
 		int next = string.indexOf(c);
-		while (next>=0) {
+		while (next >= 0) {
 			pieces.add(string.substring(start, next));
 			start = next+1;
 			next = string.indexOf(c, start);
@@ -281,7 +281,7 @@ public class StringUtil {
 	 */
 	public static String simpleName(String fullyQualifiedName) {
 		int dot = fullyQualifiedName.lastIndexOf('.');
-		if (dot>=0) {
+		if (dot >= 0) {
 			return fullyQualifiedName.substring(dot+1);
 		}
 		return fullyQualifiedName;

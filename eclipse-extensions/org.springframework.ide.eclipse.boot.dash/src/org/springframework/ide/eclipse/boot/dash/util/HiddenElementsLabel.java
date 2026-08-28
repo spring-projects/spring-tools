@@ -36,7 +36,7 @@ public class HiddenElementsLabel implements ValueListener<Integer> {
 			hiddenElementCount.removeListener(this);
 		} else {
 			label.setText(value+" elements hidden by filter");
-			hide(value==0);
+			hide(value == 0);
 			label.getParent().layout(new Control[]{label});
 			//May need this is we make element 'disapear' from layout:
 			// ReflowUtil.reflow(owner, this);
@@ -44,7 +44,7 @@ public class HiddenElementsLabel implements ValueListener<Integer> {
 	}
 
 	private void hide(boolean shouldHide) {
-		if (isHide()!=shouldHide) {
+		if (isHide() != shouldHide) {
 			GridData d = new GridData();
 			d.exclude = shouldHide;
 			label.setLayoutData(d);
@@ -52,7 +52,7 @@ public class HiddenElementsLabel implements ValueListener<Integer> {
 	}
 
 	private boolean isHide() {
-		if (label!=null) {
+		if (label != null) {
 			Object d = label.getLayoutData();
 			if (d instanceof GridData) {
 				return ((GridData) d).exclude;

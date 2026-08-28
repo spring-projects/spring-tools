@@ -81,7 +81,7 @@ public class OperationTracker {
 	}
 
 	private void end(Throwable error, UserInteractions ui, CancelationToken cancelationToken, IProgressMonitor monitor) throws Exception {
-		Assert.isLegal(inProgress.getValue()>0);
+		Assert.isLegal(inProgress.getValue() > 0);
 		int level = inProgress.decrement();
 		debug("ended: "+name.get()+" ["+inProgress.getValue()+"]");
 		if (cancelationToken.isCanceled() || monitor.isCanceled()) {
@@ -89,7 +89,7 @@ public class OperationTracker {
 			// its errors should simply be ignored.
 			throw new OperationCanceledException();
 		}
-		if (level==0 && !(ExceptionUtil.isCancelation(error))) {
+		if (level == 0 && !(ExceptionUtil.isCancelation(error))) {
 			setError(error);
 		}
 		if (error != null) {

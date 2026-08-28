@@ -28,15 +28,15 @@ public class RetryUtil {
 	public static void retryWhen(String name, int tries, Predicate<Throwable> when, Thunk task) throws Exception {
 		boolean success = false;
 		Throwable error = null;
-		while (!success && tries>0) {
+		while (!success && tries > 0) {
 			tries--;
 			try {
 				task.call();
 				success = true;
 			} catch (Throwable e) {
 				error = e;
-				if (name!=null) {
-					if (tries>0) {
+				if (name != null) {
+					if (tries > 0) {
 						if (when.test(e)) {
 							System.out.println(name+" failed: "+ExceptionUtil.getMessage(e));
 							System.out.println("Retrying!");

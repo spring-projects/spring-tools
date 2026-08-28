@@ -77,7 +77,7 @@ public class AppYamlQuickfixes {
 						YamlPath oldPath = node.getPath().dropFirst(1);
 						YamlPath newPath = YamlPath.fromProperty(params.getReplacement());
 						YamlPath prefix = newPath.commonPrefix(oldPath);
-						if (prefix.size()==newPath.size()-1 && newPath.size()==oldPath.size()) {
+						if (prefix.size() == newPath.size()-1 && newPath.size() == oldPath.size()) {
 							//only the last segment has changed. We can do a simple 'in-place' replace
 							// of just the change segment.
 							WorkspaceEdit wsEdits = new WorkspaceEdit();
@@ -88,7 +88,7 @@ public class AppYamlQuickfixes {
 							));
 							return new QuickfixEdit(wsEdits, new CursorMovement(params.getUri(), _doc.toPosition(node.getNodeEnd())));
 						}
-						if (node.getNodeType()==SNodeType.KEY) {
+						if (node.getNodeType() == SNodeType.KEY) {
 							SKeyNode problemKey = (SKeyNode) node;
 							if (problemKey.isInKey(offset)) {
 								YamlPathEdits edits = new YamlPathEdits(doc);
@@ -96,7 +96,7 @@ public class AppYamlQuickfixes {
 								edits.deleteNode(problemKey);
 								int maxParentDeletions = oldPath.size() - prefix.size() - 1; // don't delete bits of the common prefix!
 								SChildBearingNode parent = node.getParent();
-								while (maxParentDeletions>0 && parent!=null && parent.getChildren().size()==1) {
+								while (maxParentDeletions > 0 && parent != null && parent.getChildren().size() == 1) {
 									edits.deleteNode(parent);
 									parent = parent.getParent();
 									maxParentDeletions--;

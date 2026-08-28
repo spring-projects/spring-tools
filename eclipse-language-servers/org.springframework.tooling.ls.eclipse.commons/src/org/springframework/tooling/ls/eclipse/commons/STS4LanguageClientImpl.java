@@ -305,7 +305,7 @@ public class STS4LanguageClientImpl extends DefaultLanguageClient implements STS
 //			f = AnnotationPainter.class.getDeclaredField("fAnnotationType2Color");
 //			f.setAccessible(true);
 //			Color highlightColor = LanguageServerCommonsActivator.getInstance().getBootHighlightRangeColor();
-//			if (highlightColor!=null && ((Map<Object, Color>)f.get(painter)).get(ALT_ANNOTATION_TYPE_ID) != highlightColor) {
+//			if (highlightColor != null && ((Map<Object, Color>)f.get(painter)).get(ALT_ANNOTATION_TYPE_ID) != highlightColor) {
 //				painter.setAnnotationTypeColor(ALT_ANNOTATION_TYPE_ID, highlightColor);
 //				painter.addDrawingStrategy(ALT_ANNOTATION_DRAWING_STRATEGY_ID, BOOT_RANGE_HIGHLIGHT_DRAWING_STRATEGY);
 //				painter.addAnnotationType(ALT_ANNOTATION_TYPE_ID, ALT_ANNOTATION_DRAWING_STRATEGY_ID);
@@ -338,7 +338,7 @@ public class STS4LanguageClientImpl extends DefaultLanguageClient implements STS
 
 	private static Map<Annotation, Position> createAnnotations(IDocument doc, List<CodeLens> highlights, String annotationType) {
 		ImmutableMap.Builder<Annotation, Position> annotations = ImmutableMap.builder();
-		if (highlights==null) {
+		if (highlights == null) {
 			highlights = ImmutableList.of();
 		}
 		highlights.stream().map(CodeLens::getRange).distinct().forEach(rng -> {
@@ -357,9 +357,9 @@ public class STS4LanguageClientImpl extends DefaultLanguageClient implements STS
 	@Override
 	public synchronized void highlight(HighlightParams highlights) {
 		String target = highlights.getDoc().getUri();
-		if (target!=null) {
+		if (target != null) {
 			HighlightParams oldHighligts = currentHighlights.get(target);
-			List<CodeLens> oldCodelenses = oldHighligts==null ? ImmutableList.of() : oldHighligts.getCodeLenses();
+			List<CodeLens> oldCodelenses = oldHighligts == null ? ImmutableList.of() : oldHighligts.getCodeLenses();
 			if (!oldCodelenses.equals(highlights.getCodeLenses())) {
 				currentHighlights.put(target, highlights);
 				new UpdateHighlights(target, isCodeLensHighlightOn());
@@ -499,7 +499,7 @@ public class STS4LanguageClientImpl extends DefaultLanguageClient implements STS
 				if (_editor instanceof AbstractTextEditor) {
 					AbstractTextEditor editor = (AbstractTextEditor) _editor;
 					IDocument doc = editor.getDocumentProvider().getDocument(editor.getEditorInput());
-					if (doc!=null) {
+					if (doc != null) {
 						URI uri = LSPEclipseUtils.toUri(doc);
 						if (cursorMovement.getUri().equals(uri.toASCIIString())) {
 							org.eclipse.lsp4j.Position pos = cursorMovement.getPosition();

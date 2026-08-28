@@ -58,7 +58,7 @@ public class SashSection extends PageSection implements Disposable, MultiSelecti
 
 	@Override
 	public synchronized LiveExpression<ValidationResult> getValidator() {
-		if (validator==null) {
+		if (validator == null) {
 			validator = new CompositeValidator();
 			validator.addChild(top.getValidator());
 			validator.addChild(bottom.getValidator());
@@ -95,13 +95,13 @@ public class SashSection extends PageSection implements Disposable, MultiSelecti
 
 	@Override
 	public void dispose() {
-		if (top!=null) {
+		if (top != null) {
 			if (top instanceof Disposable) {
 				((Disposable) top).dispose();
 			}
 			top = null;
 		}
-		if (bottom!=null) {
+		if (bottom != null) {
 			if (bottom instanceof Disposable) {
 				((Disposable) bottom).dispose();
 			}
@@ -136,7 +136,7 @@ public class SashSection extends PageSection implements Disposable, MultiSelecti
 	@Override
 	public synchronized MultiSelection<?> getSelection() {
 		//for now we keep it simple and only propagate selection from the 'dominant' child (i.e. the one at the top).
-		if (selection==null) {
+		if (selection == null) {
 			if (top instanceof MultiSelectionSource) {
 				selection = ((MultiSelectionSource) top).getSelection();
 			} else {

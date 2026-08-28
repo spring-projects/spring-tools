@@ -68,7 +68,7 @@ public class MavenCoordinates implements IMavenCoordinates, Ilabelable {
 
 	@Override
 	public String toString() {
-		return group + ":"+ artifact+":"+(classifier!=null?classifier+":":"")+version;
+		return group + ":"+ artifact+":"+(classifier != null ? classifier+":" : "")+version;
 	}
 
 	@Override

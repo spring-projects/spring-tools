@@ -27,7 +27,7 @@ public class RepeatingYamlTraversal extends AbstractYamlTraversal {
 
 	@Override
 	public <T extends YamlNavigable<T>> Stream<T> traverseAmbiguously(T start) {
-		if (start==null) {
+		if (start == null) {
 			return Stream.empty();
 		} else {
 			return Stream.concat(

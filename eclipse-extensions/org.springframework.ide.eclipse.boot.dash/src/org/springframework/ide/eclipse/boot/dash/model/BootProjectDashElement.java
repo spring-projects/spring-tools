@@ -73,7 +73,7 @@ public class BootProjectDashElement extends AbstractLaunchConfigurationsDashElem
 
 	private AsyncLiveExpression<Boolean> hasMainMethod = new AsyncLiveExpression<>(
 			false,
-			"Search main' method in project " + (getProject() != null && getProject().getName() != null ? "'" + getProject().getName() + "'": "UNKNOWQN"),
+			"Search main' method in project " + (getProject() != null && getProject().getName() != null ? "'" + getProject().getName() + "'" : "UNKNOWQN"),
 			null,
 			job -> {
 				job.setPriority(Job.DECORATE);
@@ -153,10 +153,10 @@ public class BootProjectDashElement extends AbstractLaunchConfigurationsDashElem
 	}
 
 	private ObservableSet<Integer> getLivePortsExp() {
-		if (ports==null) {
+		if (ports == null) {
 			ports = createSortedLiveSummary((BootDashElement element) -> {
 				int port = CollectionUtils.getAnyOr(element.getLivePorts(), -1);
-				if (port>0) {
+				if (port > 0) {
 					return port;
 				}
 				return null;
@@ -191,7 +191,7 @@ public class BootProjectDashElement extends AbstractLaunchConfigurationsDashElem
 				debug("port-summary["+getName()+"]: add port for "+child);
 				T v = getter.apply(child);
 				debug("port-summary["+getName()+"]: add port for "+child+" = "+v);
-				if (v!=null) {
+				if (v != null) {
 					builder.add(v);
 				}
 			}
@@ -221,7 +221,7 @@ public class BootProjectDashElement extends AbstractLaunchConfigurationsDashElem
 	 */
 	@Override
 	public ObservableSet<BootDashElement> getChildren() {
-		if (children==null) {
+		if (children == null) {
 			children = LiveSets.mapSync(getBootDashModel().launchConfTracker.getConfigs(delegate),
 					new Function<ILaunchConfiguration, BootDashElement>() {
 						public BootDashElement apply(ILaunchConfiguration input) {
@@ -265,7 +265,7 @@ public class BootProjectDashElement extends AbstractLaunchConfigurationsDashElem
 	@Override
 	public boolean matchesLiveProcessCommand(ExecuteCommandAction action) {
 		IProject project = getProject();
-		return project!=null && project.getName().equals(action.getProjectName());
+		return project != null && project.getName().equals(action.getProjectName());
 	}
 
 	@Override

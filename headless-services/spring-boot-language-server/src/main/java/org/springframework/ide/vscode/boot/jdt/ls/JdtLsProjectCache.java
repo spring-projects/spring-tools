@@ -186,7 +186,7 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 		int count = 0;
 		for (CPE cpe : classpathEntries) {
 			URL sourceJar = cpe.getSourceContainerUrl();
-			if (sourceJar!=null) {
+			if (sourceJar != null) {
 				try {
 					if (new File(sourceJar.toURI()).exists()) {
 						count++;
@@ -214,7 +214,7 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 				String projectUri = e.getKey();
 				log.debug("projectUri = '{}'", projectUri);
 				if (UriUtil.contains(projectUri, uri)) {
-					if (foundUri==null) {
+					if (foundUri == null) {
 						log.debug("found {} for {}", e.getValue(), uri);
 						foundUri = projectUri;
 						foundProject = e.getValue();
@@ -363,7 +363,7 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 							deleted = table.remove(uri);
 						}
 						// Notify outside of the lock 
-						if (deleted!=null) {
+						if (deleted != null) {
 							log.debug("removed from table = true");
 							notifyDelete(deleted);
 						} else {

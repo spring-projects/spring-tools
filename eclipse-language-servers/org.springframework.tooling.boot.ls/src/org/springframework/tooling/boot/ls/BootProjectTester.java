@@ -82,7 +82,7 @@ public class BootProjectTester extends PropertyTester {
 	}
 	
 	private static boolean isDependencyJar(String dep, IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_LIBRARY) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_LIBRARY) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.endsWith(".jar") && name.startsWith(dep);
@@ -91,7 +91,7 @@ public class BootProjectTester extends PropertyTester {
 	}
 	
 	private static boolean isDependencyProject(String dep, IClasspathEntry e) {
-		if (e.getEntryKind()==IClasspathEntry.CPE_PROJECT) {
+		if (e.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
 			IPath path = e.getPath();
 			String name = path.lastSegment();
 			return name.startsWith(dep);

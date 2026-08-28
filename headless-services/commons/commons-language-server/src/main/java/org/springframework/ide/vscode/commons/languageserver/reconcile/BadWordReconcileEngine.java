@@ -28,7 +28,7 @@ public class BadWordReconcileEngine implements IReconcileEngine {
 
 		@Override
 		public ProblemSeverity getDefaultSeverity() {
-			if (this==VERY_BAD_WORD) {
+			if (this == VERY_BAD_WORD) {
 				return ProblemSeverity.ERROR;
 			} else {
 				return ProblemSeverity.WARNING;
@@ -76,9 +76,9 @@ public class BadWordReconcileEngine implements IReconcileEngine {
 		try {
 			for (String badword : BADWORDS) {
 				int pos = 0;
-				while (pos>=0 && pos < text.length()) {
+				while (pos >= 0 && pos < text.length()) {
 					int badPos = text.indexOf(badword, pos);
-					if (badPos>=0) {
+					if (badPos >= 0) {
 						if (badword.equals(BADWORDS[0])) {
 							problemCollector.accept(new ReconcileProblemImpl(BWProblemType.VERY_BAD_WORD, "'"+badword+"' is a VERY bad word", badPos, badword.length()));
 						} else {

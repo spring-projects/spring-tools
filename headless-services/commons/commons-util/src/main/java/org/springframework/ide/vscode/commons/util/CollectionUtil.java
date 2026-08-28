@@ -34,7 +34,7 @@ public class CollectionUtil {
 	}
 
 	public static <E> boolean hasElements(Collection<E> c) {
-		return c!=null && !c.isEmpty();
+		return c != null && !c.isEmpty();
 	}
 
 }

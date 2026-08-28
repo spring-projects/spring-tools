@@ -103,7 +103,7 @@ public class StringFieldSection extends WizardPageSection {
         	.hint(vertical ? SWT.DEFAULT : UIConstants.fieldLabelWidthHint(label), SWT.DEFAULT)
         	.align(SWT.BEGINNING, SWT.CENTER)
         	.applyTo(label);
-        if (tooltip!=null) {
+        if (tooltip != null) {
         	label.setToolTipText(tooltip);
         	text.setToolTipText(tooltip);
         }
@@ -139,8 +139,8 @@ public class StringFieldSection extends WizardPageSection {
 			}
 		});
         variable.addListener(UIValueListener.from((exp, value) -> {
-			if (text!=null && !text.isDisposed()) {
-				if (value==null) {
+			if (text != null && !text.isDisposed()) {
+				if (value == null) {
 					value = "";
 				}
 				String oldText = text.getText();

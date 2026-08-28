@@ -250,7 +250,7 @@ public class BootDashDockerTests {
 					found.set(remoteApp);
 				}
 			}
-			assertThat("remoteApp data not found", found.get()!=null);
+			assertThat("remoteApp data not found", found.get() != null);
 		});
 		assertThat("manual connect should be enabled", found.get().isManualConnect());
 	}
@@ -279,7 +279,7 @@ public class BootDashDockerTests {
 					found.set(remoteApp);
 				}
 			}
-			assertThat("remoteApp data not found", found.get()!=null);
+			assertThat("remoteApp data not found", found.get() != null);
 		});
 		assertThat("manual connect should NOT be enabled", !found.get().isManualConnect());
 	}
@@ -1483,7 +1483,7 @@ public class BootDashDockerTests {
 		for (ILaunch l : DebugPlugin.getDefault().getLaunchManager().getLaunches()) {
 			if (!l.isTerminated()) {
 				ILaunchConfiguration conf = l.getLaunchConfiguration();
-				if (conf!=null && containerId.equals(conf.getAttribute(RemoteJavaLaunchUtil.APP_NAME, ""))) {
+				if (conf != null && containerId.equals(conf.getAttribute(RemoteJavaLaunchUtil.APP_NAME, ""))) {
 					launches.add(l);
 				}
 			}
@@ -1565,7 +1565,7 @@ public class BootDashDockerTests {
 	DockerClient _client;
 
 	private DockerClient client() {
-		if (_client==null) {
+		if (_client == null) {
 			_client = DockerRunTargetType.createDockerClient(DEFAULT_DOCKER_URL);
 		}
 		return _client;
@@ -1591,7 +1591,7 @@ public class BootDashDockerTests {
 				client().removeImageCmd(img.getId()).withForce(true).withNoPrune(false).exec();
 			}
 		} finally {
-			if (_client!=null) {
+			if (_client != null) {
 				_client.close();
 			}
 		}
@@ -1625,7 +1625,7 @@ public class BootDashDockerTests {
 	BootDashActions actions;
 
 	private BootDashActions actions() {
-		if (actions==null) {
+		if (actions == null) {
 			actions = new BootDashActions(harness.model, harness.selection.forReading(), injections(), null);
 		}
 		return actions;

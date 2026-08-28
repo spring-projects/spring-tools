@@ -50,7 +50,7 @@ public class CompletionServerCapabilityRegistration implements ServerCapabilityI
 	private List<String> getMergedTriggerCharacters() {
 		Set<String> allTriggerChars = new TreeSet<>();
 		Map<String, String> triggersByLanguage = props.getCompletionTriggerCharacters();
-		if (triggersByLanguage!=null) {
+		if (triggersByLanguage != null) {
 			for (String triggers : triggersByLanguage.values()) {
 				for (int i = 0; i < triggers.length(); i++) {
 					String c = triggers.substring(i, i+1);
@@ -69,7 +69,7 @@ public class CompletionServerCapabilityRegistration implements ServerCapabilityI
 		this.hasDynamicCompletionRegistration = SimpleLanguageServer.safeGet(false, () -> params.getCapabilities().getTextDocument().getCompletion().getDynamicRegistration());
 		log.info("hasDynamicCompletionRegistration = "+hasDynamicCompletionRegistration);
 		List<String> allTiggerChars = getMergedTriggerCharacters();
-		if (!hasDynamicCompletionRegistration || allTiggerChars==null) {
+		if (!hasDynamicCompletionRegistration || allTiggerChars == null) {
 			//Register completion provider and triggerCharacters statically
 			CompletionOptions completionProvider = new CompletionOptions();
 			completionProvider.setResolveProvider(server.hasLazyCompletionResolver());

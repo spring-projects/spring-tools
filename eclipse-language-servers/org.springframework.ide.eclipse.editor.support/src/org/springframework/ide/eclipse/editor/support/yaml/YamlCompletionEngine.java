@@ -63,12 +63,12 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			SNode current = root.find(offset);
 			YamlPath contextPath = getContextPath(doc, current, offset);
 			YamlAssistContext context = getContext(doc, offset, current, contextPath);
-			if (context==null && isDubiousKey(current, offset)) {
+			if (context == null && isDubiousKey(current, offset)) {
 				current = current.getParent();
 				contextPath = contextPath.dropLast();
 				context = getContext(doc, offset, current, contextPath);
 			}
-			if (context!=null) {
+			if (context != null) {
 				return context.getCompletions(doc, current, offset);
 			}
 		}
@@ -81,9 +81,9 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	 * then that key is no longer a key but parses as a 'value' instead.
 	 */
 	private boolean isDubiousKey(SNode node, int offset) {
-		if (node.getNodeType()==SNodeType.KEY) {
+		if (node.getNodeType() == SNodeType.KEY) {
 			SKeyNode key = (SKeyNode)node;
-			return key.getColonOffset()+1==offset;
+			return key.getColonOffset()+1 == offset;
 		}
 		return false;
 	}
@@ -98,9 +98,9 @@ public class YamlCompletionEngine implements ICompletionEngine {
 	}
 
 	protected YamlPath getContextPath(YamlDocument doc, SNode node, int offset) throws Exception {
-		if (node==null) {
+		if (node == null) {
 			return YamlPath.EMPTY;
-		} else if (node.getNodeType()==SNodeType.KEY) {
+		} else if (node.getNodeType() == SNodeType.KEY) {
 			//slight complication. The area in the key and value of a key node represent different
 			// contexts for content assistance
 			SKeyNode keyNode = (SKeyNode)node;
@@ -109,7 +109,7 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			} else {
 				return keyNode.getParent().getPath();
 			}
-		} else if (node.getNodeType()==SNodeType.RAW) {
+		} else if (node.getNodeType() == SNodeType.RAW) {
 			//Treat raw node as a 'key node'. This is basically assuming that is misclasified
 			// by structure parser because the ':' was not yet typed into the document.
 
@@ -121,18 +121,18 @@ public class YamlCompletionEngine implements ICompletionEngine {
 			int cursorIndent = doc.getColumn(offset);
 			int nodeIndent = node.getIndent();
 			int currentIndent = YamlIndentUtil.minIndent(cursorIndent, nodeIndent);
-			while (node.getIndent()==-1 || (node.getIndent()>=currentIndent && node.getNodeType()!=SNodeType.DOC)) {
+			while (node.getIndent() == -1 || (node.getIndent() >= currentIndent && node.getNodeType() != SNodeType.DOC)) {
 				node = node.getParent();
 			}
 			return node.getPath();
-		} else if (node.getNodeType()==SNodeType.SEQ) {
+		} else if (node.getNodeType() == SNodeType.SEQ) {
 			SSeqNode seqNode = (SSeqNode)node;
 			if (seqNode.isInValue(offset)) {
 				return seqNode.getPath();
 			} else {
 				return seqNode.getParent().getPath();
 			}
-		} else if (node.getNodeType()==SNodeType.DOC) {
+		} else if (node.getNodeType() == SNodeType.DOC) {
 			return node.getPath();
 		} else {
 			throw new IllegalStateException("Missing case");

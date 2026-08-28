@@ -81,9 +81,9 @@ public class BootDashActivator extends AbstractUIPlugin {
 	public static final String INJECTIONS_EXTENSION_ID = "org.springframework.ide.eclipse.boot.dash.injections";
 
 	public synchronized IProxyService getProxyService() {
-		if (proxyService==null) {
+		if (proxyService == null) {
 			BundleContext bc = getBundle().getBundleContext();
-			if (bc!=null) {
+			if (bc != null) {
 				ServiceReference<IProxyService> sr = bc.getServiceReference(IProxyService.class);
 				proxyService = bc.getService(sr);
 			}
@@ -114,7 +114,7 @@ public class BootDashActivator extends AbstractUIPlugin {
 		stopListeningToLaunchedBootApps();
 		plugin = null;
 		super.stop(context);
-		if (model!=null) {
+		if (model != null) {
 			model.dispose();
 		}
 	}
@@ -155,7 +155,7 @@ public class BootDashActivator extends AbstractUIPlugin {
 	}
 
 	public synchronized BootDashViewModel getModel() {
-		if (model==null) {
+		if (model == null) {
 			model = getInjections().getBean(BootDashViewModel.class);
 
 //			DebugSelectionListener debugSelectionListener = new DebugSelectionListener(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getSelectionService());

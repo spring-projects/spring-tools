@@ -116,9 +116,9 @@ public abstract class AbstractSpringDataDomainTypeResolver {
 	 */
 	protected abstract @Nullable ITypeBinding extractDomainTypeFromInvocation(MethodInvocation invocation);
 
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 	// Shared Pattern: Repository method call
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 
 	/**
 	 * Pattern 1 — Repository method call.
@@ -164,9 +164,9 @@ public abstract class AbstractSpringDataDomainTypeResolver {
 		return ASTUtils.isAnyTypeInHierarchy(erasure, WRAPPER_BASE_TYPES);
 	}
 
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 	// Shared Pattern: Fluent API receiver type
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 
 	/**
 	 * Returns FQN prefixes of the fluent operation types for this module.
@@ -298,9 +298,9 @@ public abstract class AbstractSpringDataDomainTypeResolver {
 		return null;
 	}
 
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 	// Shared Pattern: Class<T> literal in arguments
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 
 	/**
 	 * Scans method arguments for a {@code Class<T>} literal (e.g., {@code Customer.class})
@@ -320,9 +320,9 @@ public abstract class AbstractSpringDataDomainTypeResolver {
 		return null;
 	}
 
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 	// Helper: find enclosing Block
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 
 	private @Nullable Block findEnclosingBlock(ASTNode node) {
 		ASTNode current = node.getParent();

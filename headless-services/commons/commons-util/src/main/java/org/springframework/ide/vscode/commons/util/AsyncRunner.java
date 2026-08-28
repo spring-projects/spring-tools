@@ -58,7 +58,7 @@ public class AsyncRunner {
 
 	public static void thenLog(Logger log, CompletableFuture<?> work) {
 		work.handle((v, e) -> {
-			if (e!=null) {
+			if (e != null) {
 				log.error("", e);
 			}
 			return null;

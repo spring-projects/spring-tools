@@ -76,10 +76,10 @@ public class DocumentRegion implements CharSequence {
 	}
 
 	private int limitRange(int offset, int min, int max) {
-		if (offset<min) {
+		if (offset < min) {
 			return min;
 		}
-		if (offset>max) {
+		if (offset > max) {
 			return max;
 		}
 		return offset;
@@ -97,7 +97,7 @@ public class DocumentRegion implements CharSequence {
 	public DocumentRegion trimStart() {
 		int howMany = 0;
 		int len = length();
-		while (howMany<len && Character.isWhitespace(charAt(howMany))) {
+		while (howMany < len && Character.isWhitespace(charAt(howMany))) {
 			howMany++;
 		}
 		return subSequence(howMany, len);
@@ -107,10 +107,10 @@ public class DocumentRegion implements CharSequence {
 		int howMany = 0; //how many chars to remove from the end
 		int len = length();
 		int lastChar = len-1;
-		while (howMany<len && Character.isWhitespace(charAt(lastChar-howMany))) {
+		while (howMany < len && Character.isWhitespace(charAt(lastChar-howMany))) {
 			howMany++;
 		}
-		if (howMany>0) {
+		if (howMany > 0) {
 			return subSequence(0, len-howMany);
 		}
 		return this;
@@ -122,7 +122,7 @@ public class DocumentRegion implements CharSequence {
 	 */
 	@Override
 	public char charAt(int offset) {
-		if (offset<0 || offset>=length()) {
+		if (offset < 0 || offset >= length()) {
 			throw new IndexOutOfBoundsException(""+offset);
 		}
 		try {
@@ -140,16 +140,16 @@ public class DocumentRegion implements CharSequence {
 	@Override
 	public DocumentRegion subSequence(int start, int end) {
 		int len = length();
-		Assert.isLegal(start>=0);
-		Assert.isLegal(end<=len);
-		if (start==0 && end==len) {
+		Assert.isLegal(start >= 0);
+		Assert.isLegal(end <= len);
+		if (start == 0 && end == len) {
 			return this;
 		}
 		return new DocumentRegion(doc, this.start+start, this.start+end);
 	}
 
 	public boolean isEmpty() {
-		return length()==0;
+		return length() == 0;
 	}
 
 	public DocumentRegion subSequence(int start) {
@@ -167,7 +167,7 @@ public class DocumentRegion implements CharSequence {
 
 	public int indexOf(char ch, int fromIndex) {
 		while (fromIndex < length()) {
-			if (charAt(fromIndex)==ch) {
+			if (charAt(fromIndex) == ch) {
 				return fromIndex;
 			}
 			fromIndex++;
@@ -179,7 +179,7 @@ public class DocumentRegion implements CharSequence {
 		List<DocumentRegion> pieces = new ArrayList<>();
 		int start = 0;
 		int end;
-		while ((end=indexOf(c, start))>=0) {
+		while ((end=indexOf(c, start)) >= 0) {
 			pieces.add(subSequence(start, end));
 			start = end+1;
 		}
@@ -233,7 +233,7 @@ public class DocumentRegion implements CharSequence {
 	 * then the region is truncated to end of the document.
 	 */
 	public DocumentRegion textAfter(int len) {
-		Assert.isLegal(len>=0);
+		Assert.isLegal(len >= 0);
 		return new DocumentRegion(doc, end, end+len);
 	}
 
@@ -244,7 +244,7 @@ public class DocumentRegion implements CharSequence {
 	 * then the region is shortened so its start coincides with document start.
 	 */
 	public DocumentRegion textBefore(int len) {
-		Assert.isLegal(len>=0);
+		Assert.isLegal(len >= 0);
 		return new DocumentRegion(doc, start-len, start);
 	}
 
@@ -280,9 +280,9 @@ public class DocumentRegion implements CharSequence {
 	public boolean endsWith(CharSequence string) {
 		int myLen = length();
 		int strLen = string.length();
-		if (myLen>=strLen) {
+		if (myLen >= strLen) {
 			for (int i = 0; i < strLen; i++) {
-				if (charAt(myLen-strLen+i)!=string.charAt(i)) {
+				if (charAt(myLen-strLen+i) != string.charAt(i)) {
 					return false;
 				}
 			}

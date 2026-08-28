@@ -94,7 +94,7 @@ public class MultiSelectionFieldModel<T> {
 
 	public synchronized LiveVariable<Boolean> getSelection(T v) {
 		LiveVariable<Boolean> existing = selections.get(v);
-		if (existing==null) {
+		if (existing == null) {
 			selections.put(v, existing = new LiveVariable<Boolean>(false));
 		}
 		return existing;
@@ -110,7 +110,7 @@ public class MultiSelectionFieldModel<T> {
 	 * @param key  Value added to the set when user selects this choice.
 	 */
 	public MultiSelectionFieldModel<T> choice(String label, T value) {
-		Assert.isLegal(labelMap.get(value)==null, "Duplicate choice "+value+" already added");
+		Assert.isLegal(labelMap.get(value) == null, "Duplicate choice "+value+" already added");
 		labelMap.put(value, label);
 		return this;
 	}
@@ -123,21 +123,21 @@ public class MultiSelectionFieldModel<T> {
 
 	public void choice(String label, T value, Supplier<String> tooltipHtml, String requirementTooltip, LiveExpression<Boolean> enablement) {
 		choice(label, value, tooltipHtml, requirementTooltip);
-		if (enablements==null) {
+		if (enablements == null) {
 			enablements = new HashMap<T, LiveExpression<Boolean>>();
 		}
 		enablements.put(value, enablement);
 	}
 
 	public void setTooltipHtml(T value, Supplier<String> tooltipHtml) {
-		if (tooltipsHtml==null) {
+		if (tooltipsHtml == null) {
 			tooltipsHtml = new HashMap<T, Supplier<String>>();
 		}
 		tooltipsHtml.put(value,  tooltipHtml);
 	}
 
 	public Supplier<String> getTooltipHtml(T value) {
-		if (tooltipsHtml!=null) {
+		if (tooltipsHtml != null) {
 			return tooltipsHtml.get(value);
 		}
 		return null;
@@ -170,9 +170,9 @@ public class MultiSelectionFieldModel<T> {
 	}
 
 	public LiveExpression<Boolean> getEnablement(T choice) {
-		if (enablements!=null) {
+		if (enablements != null) {
 			LiveExpression<Boolean> e = enablements.get(choice);
-			if (e!=null) {
+			if (e != null) {
 				return e;
 			}
 		}
@@ -205,14 +205,14 @@ public class MultiSelectionFieldModel<T> {
 	}
 
 	private String getRequirementTooltip(T choice) {
-		if (requirementToolstips!=null) {
+		if (requirementToolstips != null) {
 			return requirementToolstips.get(choice);
 		}
 		return null;
 	}
 
 	public void setRequirementTooltip(T value, String tt) {
-		if (requirementToolstips==null) {
+		if (requirementToolstips == null) {
 			requirementToolstips = new HashMap<T, String>();
 		}
 		requirementToolstips.put(value,  tt);

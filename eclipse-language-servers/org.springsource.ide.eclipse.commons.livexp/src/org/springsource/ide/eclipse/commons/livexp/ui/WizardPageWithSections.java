@@ -110,7 +110,7 @@ public abstract class WizardPageWithSections extends WizardPage implements IPage
 				reflow();
 			}
 		});
-        if (getContainer().getCurrentPage()!=null) { // Otherwise an NPE will ensue when updating buttons. Buttons depend on current page so that is logical.
+        if (getContainer().getCurrentPage() != null) { // Otherwise an NPE will ensue when updating buttons. Buttons depend on current page so that is logical.
 	        getContainer().updateButtons();
 	        getContainer().updateMessage();
         }
@@ -118,11 +118,11 @@ public abstract class WizardPageWithSections extends WizardPage implements IPage
 
 	@Override
 	public boolean reflow() {
-		if (reflowJob==null) {
+		if (reflowJob == null) {
 			reflowJob = new UIJob(Display.getDefault(), "Reflow Wizard Contents") {
 				@Override
 				public IStatus runInUIThread(IProgressMonitor monitor) {
-					if (scroller!=null && !scroller.isDisposed()) {
+					if (scroller != null && !scroller.isDisposed()) {
 						scroller.layout(true, true);
 						scroller.reflow(true);
 					}
@@ -139,7 +139,7 @@ public abstract class WizardPageWithSections extends WizardPage implements IPage
 	}
 
 	protected synchronized List<WizardPageSection> getSections() {
-		if (sections==null) {
+		if (sections == null) {
 			sections = createSections();
 		}
 		return sections;
@@ -157,8 +157,8 @@ public abstract class WizardPageWithSections extends WizardPage implements IPage
 
 	private synchronized void scheduleUpdateJob() {
 		Shell shell = getShell();
-		if (shell!=null) {
-			if (this.updateJob==null) {
+		if (shell != null) {
+			if (this.updateJob == null) {
 				this.updateJob = new UIJob("Update Wizard message") {
 					@Override
 					public IStatus runInUIThread(IProgressMonitor monitor) {

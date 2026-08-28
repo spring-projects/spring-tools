@@ -46,7 +46,7 @@ public class NodeCursor extends ASTCursor {
 		case KEY_AT_KEY: {
 			String key = s.toPropString();
 			MappingNode mappingNode = asMapping(getNode());
-			if (mappingNode!=null) {
+			if (mappingNode != null) {
 				return mappingNode.getValue().stream()
 						.filter((c) -> key.equals(NodeUtil.asScalar(c.getKeyNode())))
 						.map((c) -> new NodeCursor(c.getKeyNode()));
@@ -56,12 +56,12 @@ public class NodeCursor extends ASTCursor {
 		}
 		case ANY_CHILD: {
 			MappingNode mappingNode = asMapping(getNode());
-			if (mappingNode!=null) {
+			if (mappingNode != null) {
 				return mappingNode.getValue().stream()
 						.map((c) -> new NodeCursor(c.getValueNode()));
 			}
 			SequenceNode sequenceNode = NodeUtil.asSequence(getNode());
-			if (sequenceNode!=null) {
+			if (sequenceNode != null) {
 				return sequenceNode.getValue().stream().map(NodeCursor::new);
 			}
 			return Stream.empty();
@@ -70,14 +70,14 @@ public class NodeCursor extends ASTCursor {
 			SequenceNode seq = NodeUtil.asSequence(getNode());
 			int index = s.toIndex();
 			int size = seq.getValue().size();
-			if (index<size && index >= 0) {
+			if (index < size && index >= 0) {
 				return Stream.of(new NodeCursor(seq.getValue().get(index)));
 			}
 			return Stream.empty();
 		}
 		case VAL_AT_KEY: {
 			MappingNode mappingNode = asMapping(getNode());
-			if (mappingNode!=null) {
+			if (mappingNode != null) {
 				String key = s.toPropString();
 				return mappingNode.getValue().stream()
 						.filter((c) -> key.equals(NodeUtil.asScalar(c.getKeyNode())))
@@ -95,7 +95,7 @@ public class NodeCursor extends ASTCursor {
 
 	private MappingNode asMapping(Node node) {
 		MappingNode mapping = NodeUtil.asMapping(node);
-		if (mapping!=null) {
+		if (mapping != null) {
 			nodeMerger.flattenMapping(mapping);
 		}
 		return mapping;

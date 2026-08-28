@@ -60,7 +60,7 @@ public class PropertyNavigator {
 
 	public PropertyNavigator(IDocument doc, IProblemCollector problemCollector, TypeUtil typeUtil, DocumentRegion region) throws BadLocationException {
 		this.doc = doc;
-		this.problemCollector = problemCollector==null?IProblemCollector.NULL:problemCollector;
+		this.problemCollector = problemCollector == null ? IProblemCollector.NULL : problemCollector;
 		this.typeUtil = typeUtil;
 		this.region = region;
 		this.regionText = doc.get(region.getStart(), region.getLength());
@@ -75,13 +75,13 @@ public class PropertyNavigator {
 	 * @return Type at the end of the whole nav chain, or null if the type could not be determined.
 	 */
 	public Type navigate(int offset, Type type) {
-		if (type!=null) {
-			if (offset<region.getEnd()) {
+		if (type != null) {
+			if (offset < region.getEnd()) {
 				char navOp = getChar(offset);
-				if (navOp=='.' && getChar(offset+1)=='[') {
+				if (navOp == '.' && getChar(offset+1) == '[') {
 					navOp = '['; // just skip the redundant '.'. See:  https://www.pivotaltracker.com/story/show/175147973
 				}
-				if (navOp=='.') {
+				if (navOp == '.') {
 					if (typeUtil.isDotable(type)) {
 						return dotNavigate(offset, type);
 					} else {
@@ -89,7 +89,7 @@ public class PropertyNavigator {
 								"Can't use '.' navigation for property '"+textBetween(region.getStart(), offset)+"' of type "+type,
 								offset, region.getEnd()-offset));
 					}
-				} else if (navOp=='[') {
+				} else if (navOp == '[') {
 					if (typeUtil.isBracketable(type)) {
 						return bracketNavigate(offset, type);
 					} else if (!typeUtil.isObjectOrSequence(type)) {
@@ -111,7 +111,7 @@ public class PropertyNavigator {
 
 	private String textBetween(int start, int end) {
 		try {
-			if (end>start) {
+			if (end > start) {
 				return doc.get(start, end-start);
 			}
 		} catch (BadLocationException e) {
@@ -123,7 +123,7 @@ public class PropertyNavigator {
 	private int indexOf(char c, int from) {
 		int offset = region.getStart();
 		int found = regionText.indexOf(c, from-offset);
-		if (found>=0) {
+		if (found >= 0) {
 			return found+offset;
 		}
 		return -1;
@@ -137,7 +137,7 @@ public class PropertyNavigator {
 	private Type bracketNavigate(int offset, Type type) {
 		int lbrack = offset;
 		int rbrack = indexOf(']', lbrack);
-		if (rbrack<0) {
+		if (rbrack < 0) {
 			problemCollector.accept(problem(ApplicationPropertiesProblemType.PROP_NO_MATCHING_RBRACK,
 					"No matching ']'",
 					offset, 1));
@@ -146,7 +146,7 @@ public class PropertyNavigator {
 			if (!indexStr.contains("${")) {
 				Type keytype = typeUtil.getKeyType(type);
 				ValueParser parser = typeUtil.getValueParser(keytype);
-				if (parser!=null) {
+				if (parser != null) {
 					try {
 						parser.parse(indexStr);
 					} catch (Exception e) {
@@ -183,9 +183,9 @@ public class PropertyNavigator {
 			}
 			String key = textBetween(keyStart, keyEnd);
 			Type keyType = typeUtil.getKeyType(type);
-			if (keyType!=null) {
+			if (keyType != null) {
 				ValueParser keyParser = typeUtil.getValueParser(keyType);
-				if (keyParser!=null) {
+				if (keyParser != null) {
 					try {
 						keyParser.parse(key);
 					} catch (Exception e) {
@@ -200,13 +200,13 @@ public class PropertyNavigator {
 			// dot navigation into object properties
 			int keyStart = offset+1;
 			int	keyEnd = nextNavOp(".[", offset+1);
-			if (keyEnd<0) {
+			if (keyEnd < 0) {
 				keyEnd = region.getEnd();
 			}
 			String key = StringUtil.camelCaseToHyphens(textBetween(keyStart, keyEnd));
 
 			List<TypedProperty> properties = typeUtil.getProperties(type, EnumCaseMode.ALIASED, BeanPropertyNameMode.ALIASED);
-			if (properties!=null) {
+			if (properties != null) {
 				TypedProperty prop = null;
 				for (TypedProperty p : properties) {
 					if (p.getName().equals(key)) {
@@ -214,7 +214,7 @@ public class PropertyNavigator {
 						break;
 					}
 				}
-				if (prop==null) {
+				if (prop == null) {
 					problemCollector.accept(problem(ApplicationPropertiesProblemType.PROP_INVALID_BEAN_PROPERTY,
 							"Type '"+typeUtil.niceTypeName(type)+"' has no property '"+key+"'",
 							keyStart, keyEnd-keyStart));
@@ -251,7 +251,7 @@ public class PropertyNavigator {
 	 */
 	private int nextNavOp(String navops, int pos) {
 		int end = region.getEnd();
-		while (pos < end && navops.indexOf(getChar(pos))<0) {
+		while (pos < end && navops.indexOf(getChar(pos)) < 0) {
 			pos++;
 		}
 		return Math.min(pos, end); //ensure never past the end

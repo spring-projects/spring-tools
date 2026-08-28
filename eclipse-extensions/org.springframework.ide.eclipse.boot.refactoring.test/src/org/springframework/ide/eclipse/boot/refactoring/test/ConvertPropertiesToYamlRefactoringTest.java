@@ -86,7 +86,7 @@ public class ConvertPropertiesToYamlRefactoringTest {
 		do_conversionTest(
 			"my.hello=Good morning!\n" +
 			"my.goodbye=See ya # later\n"
-			, // ==>
+			, // == >
 			"my:\n" +
 			"  goodbye: 'See ya # later'\n" +
 			"  hello: Good morning!\n"
@@ -100,7 +100,7 @@ public class ConvertPropertiesToYamlRefactoringTest {
 				"some.thing[0].b=first-b\n" +
 				"some.thing[1].a=second-a\n" +
 				"some.thing[1].b=second-b\n"
-				, // ==>
+				, // == >
 				"some:\n" +
 				"  thing:\n" +
 				"  - a: first-a\n" +
@@ -114,7 +114,7 @@ public class ConvertPropertiesToYamlRefactoringTest {
 		do_conversionTest(
 				"some.thing=vvvv\n" +
 				"some.other.thing=blah\n"
-				, // ==>
+				, // == >
 				"some:\n" +
 				"  other:\n" +
 				"    thing: blah\n" +
@@ -133,7 +133,7 @@ public class ConvertPropertiesToYamlRefactoringTest {
 				"fractional=0.78\n" +
 				"largenumber=989898989898989898989898989898989898989898989898989898989898\n" +
 				"longfractional=-0.989898989898989898989898989898989898989898989898989898989898\n"
-				, // ==>
+				, // == >
 				"exponated: '123.4E-12'\n" + //quotes are added because conversion to number changes the string value
 				"foobar:\n" +
 				"  enabled: true\n" +
@@ -149,7 +149,7 @@ public class ConvertPropertiesToYamlRefactoringTest {
 	@Test public void emptyFileConversion() throws Exception {
 		do_conversionTest(
 				""
-				, // ==>
+				, // == >
 				""
 		);
 	}
@@ -182,7 +182,7 @@ public class ConvertPropertiesToYamlRefactoringTest {
 		do_conversionTest(
 				"some.property=something\n" +
 				"some.property=something-else"
-				, // ==>
+				, // == >
 				"some:\n" +
 				"  property:\n" +
 				"  - something\n" +

@@ -24,9 +24,9 @@ public class StatusHandler {
 
 	public static void log(IStatus status) {
 		CorePlugin plugin = CorePlugin.getDefault();
-		if (plugin!=null) {
+		if (plugin != null) {
 			ILog log = plugin.getLog();
-			if (log!=null) {
+			if (log != null) {
 				log.log(status);
 			}
 		}

@@ -62,7 +62,7 @@ public class LiveDataConnectionManagementActions extends AbstractDisposable impl
 
 	@Override
 	public boolean isVisible() {
-		if (liveProcessCmds!=null) {
+		if (liveProcessCmds != null) {
 			Set<BootDashElement> selection = params.getSelection().getValue();
 			return selection.isEmpty() || selection.stream().anyMatch(x -> x instanceof LiveDataCapableElement);
 		}
@@ -152,7 +152,7 @@ public class LiveDataConnectionManagementActions extends AbstractDisposable impl
 					for (BootDashElement bde : els) {
 						if (bde instanceof LiveDataCapableElement) {
 							RunState s = bde.getRunState();
-							if (s == RunState.RUNNING || s ==RunState.DEBUGGING) {
+							if (s == RunState.RUNNING || s == RunState.DEBUGGING) {
 								return true;
 							}
 						}

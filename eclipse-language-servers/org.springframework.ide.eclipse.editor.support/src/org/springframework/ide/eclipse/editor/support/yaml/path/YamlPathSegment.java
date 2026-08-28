@@ -157,7 +157,7 @@ public abstract class YamlPathSegment extends AbstractYamlTraversal {
 
 		@Override
 		public String toNavString() {
-			if (key.indexOf('.')>=0) {
+			if (key.indexOf('.') >= 0) {
 				//TODO: what if key contains '[' or ']'??
 				return "["+key+"]";
 			}

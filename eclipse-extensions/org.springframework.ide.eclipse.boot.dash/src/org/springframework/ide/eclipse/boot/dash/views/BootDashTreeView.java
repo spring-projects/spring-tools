@@ -228,7 +228,7 @@ public class BootDashTreeView extends ViewPartWithSections implements ITabbedPro
 	}
 
 	private void addAddRunTargetMenuActions(IMenuManager manager) {
-		if (actions.getAddRunTargetActions().length==1) {
+		if (actions.getAddRunTargetActions().length == 1) {
 			//Special case. Creationg a pulldown for just one item isn't very logical.
 			AddRunTargetAction action = actions.getAddRunTargetActions()[0];
 			manager.add(action);
@@ -249,7 +249,7 @@ public class BootDashTreeView extends ViewPartWithSections implements ITabbedPro
 
 
 	public void createAddRunTargetPulldown(IToolBarManager toolbar) {
-		if (actions.getAddRunTargetActions().length==1) {
+		if (actions.getAddRunTargetActions().length == 1) {
 			//Special case. Creationg a pulldown for just one item isn't very logical.
 			AddRunTargetAction action = actions.getAddRunTargetActions()[0];
 			toolbar.add(action);
@@ -267,7 +267,7 @@ public class BootDashTreeView extends ViewPartWithSections implements ITabbedPro
 
 				@Override
 				public Menu getMenu(Control parent) {
-					if (theMenu==null) {
+					if (theMenu == null) {
 						final MenuManager menu = createAddRunTargetMenuManager();
 						theMenu = menu.createContextMenu(parent);
 						theMenu.addDisposeListener(new DisposeListener() {

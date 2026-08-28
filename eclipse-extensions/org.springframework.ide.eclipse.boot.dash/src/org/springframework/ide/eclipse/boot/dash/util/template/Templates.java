@@ -34,7 +34,7 @@ public class Templates {
 		//patterns or large amounts so it should be fine.
 		//Also note that optimizing this wouldn't make make much sense unless the result of calls to
 		// this method are actually reused more than once.
-		if (pattern!=null) {
+		if (pattern != null) {
 			return new SimpleTemplate(pattern);
 		}
 		return null;

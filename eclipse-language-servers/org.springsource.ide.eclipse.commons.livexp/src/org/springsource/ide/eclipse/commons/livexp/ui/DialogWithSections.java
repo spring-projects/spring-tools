@@ -106,11 +106,11 @@ public abstract class DialogWithSections extends TitleAreaDialog
 
 	@Override
 	public boolean reflow() {
-		if (reflowJob==null) {
+		if (reflowJob == null) {
 			reflowJob = new UIJob(Display.getDefault(), "Reflow Wizard Contents") {
 				@Override
 				public IStatus runInUIThread(IProgressMonitor monitor) {
-					if (scroller!=null && !scroller.isDisposed()) {
+					if (scroller != null && !scroller.isDisposed()) {
 						scroller.reflow(true);
 					}
 					return Status.OK_STATUS;
@@ -153,7 +153,7 @@ public abstract class DialogWithSections extends TitleAreaDialog
 	}
 
 	protected synchronized List<WizardPageSection> getSections() {
-		if (sections==null) {
+		if (sections == null) {
 			sections = safeCreateSections();
 		}
 		return sections;
@@ -189,8 +189,8 @@ public abstract class DialogWithSections extends TitleAreaDialog
 
 	private synchronized void scheduleUpdateJob() {
 		Shell shell = getShell();
-		if (shell!=null) {
-			if (this.updateJob==null) {
+		if (shell != null) {
+			if (this.updateJob == null) {
 				this.updateJob = new UIJob("Update Wizard message") {
 					@Override
 					public IStatus runInUIThread(IProgressMonitor monitor) {
@@ -207,16 +207,16 @@ public abstract class DialogWithSections extends TitleAreaDialog
 	}
 
 	private void updateStatus(ValidationResult status) {
-		if (scroller!=null && !scroller.isDisposed()) {
+		if (scroller != null && !scroller.isDisposed()) {
 			boolean enableOk = true;
-			if (status==null || status.isOk()) {
+			if (status == null || status.isOk()) {
 				setMessage("", IMessageProvider.NONE);
 			} else {
 				setMessage(status.msg, status.getMessageProviderStatus());
-				enableOk = status.status<disableOkButtonLevel;
+				enableOk = status.status < disableOkButtonLevel;
 			}
 			Button okButton = getButton(IDialogConstants.OK_ID);
-			if (okButton!=null) {
+			if (okButton != null) {
 				okButton.setEnabled(enableOk);
 			}
 		}
@@ -249,7 +249,7 @@ public abstract class DialogWithSections extends TitleAreaDialog
 	 */
 	public boolean clickOk() {
 		Button button = getButton(OK);
-		if (button!=null && button.isEnabled()) {
+		if (button != null && button.isEnabled()) {
 			okPressed();
 			return true;
 		}

@@ -147,7 +147,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	@Override
 	public ILaunchConfiguration getActiveConfig() {
 		ILaunchConfiguration single = CollectionUtils.getSingle(getLaunchConfigs());
-		if (single!=null) {
+		if (single != null) {
 			return single;
 		}
 		return null;
@@ -159,8 +159,8 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	}
 
 	public void stop(boolean sync) throws Exception {
-		debug("Stopping: "+this+" "+(sync?"...":""));
-		final CompletableFuture<Void> done = sync?new CompletableFuture<>():null;
+		debug("Stopping: "+this+" "+(sync ? "..." : ""));
+		final CompletableFuture<Void> done = sync ? new CompletableFuture<>() : null;
 		try {
 			ImmutableSet<ILaunch> launches = getLaunches();
 			if (sync) {
@@ -229,7 +229,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	private void start(final String runMode, UserInteractions ui) {
 		try {
 			ILaunchConfiguration conf = getOrCreateLaunchConfig(ui);
-			if (conf!=null) {
+			if (conf != null) {
 				launch(runMode, conf);
 			}
 		} catch (Exception e) {
@@ -243,7 +243,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 		ImmutableSet<ILaunchConfiguration> configs = getLaunchConfigs();
 		if (configs.isEmpty()) {
 			IType mainType = chooseMainType(ui);
-			if (mainType!=null) {
+			if (mainType != null) {
 				LocalRunTarget target = getTarget();
 				IJavaProject jp = getJavaProject();
 				conf = target.createLaunchConfig(jp, mainType);
@@ -257,10 +257,10 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 
 	private IType chooseMainType(UserInteractions ui) throws CoreException {
 		IType[] mainTypes = guessMainTypes();
-		if (mainTypes.length==0) {
+		if (mainTypes.length == 0) {
 			ui.errorPopup("Problem launching", "Couldn't find a main type in '"+getName()+"'");
 			return null;
-		} else if (mainTypes.length==1){
+		} else if (mainTypes.length == 1){
 			return mainTypes[0];
 		} else {
 			return ui.chooseMainType(mainTypes, "Choose Main Type", "Choose main type for '"+getName()+"'");
@@ -283,7 +283,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 			}
 		});
 		Display display = Display.getCurrent();
-		if (display!=null) {
+		if (display != null) {
 			//Blocking the ui thread is iffy. It has a tendency to deadlock when
 			// work you are waiting for is actually using 'syncExec or asyncExec' somewhere inside.
 			//We can avoid this deadlock by calling on display.readAndDispatch to allow other stuff to run in
@@ -300,7 +300,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	public void openConfig(UserInteractions ui) {
 		try {
 			IProject p = getProject();
-			if (p!=null) {
+			if (p != null) {
 				ILaunchConfiguration conf;
 				ImmutableSet<ILaunchConfiguration> configs = getLaunchConfigs();
 				if (configs.isEmpty()) {
@@ -308,7 +308,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 				} else {
 					conf = chooseConfig(ui, configs);
 				}
-				if (conf!=null) {
+				if (conf != null) {
 					ui.openLaunchConfigurationDialogOnGroup(conf, getLaunchGroup());
 				}
 			}
@@ -319,14 +319,14 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 
 	@Override
 	public boolean canDuplicate() {
-		return getLaunchConfigs().size()==1;
+		return getLaunchConfigs().size() == 1;
 	}
 
 	@Override
 	public LaunchConfDashElement duplicate(UserInteractions ui) {
 		try {
 			ILaunchConfiguration conf = CollectionUtils.getSingle(getLaunchConfigs());
-			if (conf!=null) {
+			if (conf != null) {
 				ILaunchConfiguration newConf = BootLaunchConfigurationDelegate.duplicate(conf);
 				return getBootDashModel().getLaunchConfElementFactory().createOrGet(newConf);
 			}
@@ -351,7 +351,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 
 	@Override
 	public PropertyStoreApi getPersistentProperties() {
-		if (persistentProperties==null) {
+		if (persistentProperties == null) {
 			IPropertyStore backingStore = createPropertyStore();
 			this.persistentProperties = PropertyStores.createApi(backingStore);
 		}
@@ -372,7 +372,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 		IJavaProject jp = getJavaProject();
 		LocalRunTarget target = getTarget();
 		IType[] mainTypes = guessMainTypes();
-		return target.createLaunchConfig(jp, mainTypes.length==1?mainTypes[0]:null);
+		return target.createLaunchConfig(jp, mainTypes.length == 1 ? mainTypes[0] : null);
 	}
 
 	protected ILaunchConfiguration chooseConfig(UserInteractions ui, Collection<ILaunchConfiguration> configs) {
@@ -387,9 +387,9 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	}
 
 	private ILaunchConfiguration chooseConfigurationDialog(Collection<ILaunchConfiguration> configs, String dialogTitle, String message, UserInteractions ui) {
-		if (configs.size()==1) {
+		if (configs.size() == 1) {
 			return CollectionUtils.getSingle(configs);
-		} else if (configs.size()>0) {
+		} else if (configs.size() > 0) {
 			ILaunchConfiguration chosen = ui.chooseConfigurationDialog(dialogTitle, message, configs);
 			return chosen;
 		}
@@ -532,11 +532,11 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 			for (ILaunch l : LaunchUtils.getLaunches(c)) {
 				if (!l.isTerminated()) {
 					int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-					if (port>0) {
+					if (port > 0) {
 						return JMXClient.createLocalJmxUrl(port);
 					}
 					String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
-					if (pid!=null) {
+					if (pid != null) {
 						return ProcessUtils.getLocalManagementAgentUrl(pid);
 					}
 				}
@@ -548,7 +548,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	@Override
 	public Failable<ImmutableList<RequestMapping>> getLiveRequestMappings() {
 		synchronized (this) {
-			if (liveRequestMappings==null) {
+			if (liveRequestMappings == null) {
 				ActuatorClient client = getActuatorClient();
 				liveRequestMappings = PollingLiveExp.create(Failable.error(MissingLiveInfoMessages.NOT_YET_COMPUTED), () -> {
 					List<RequestMapping> requestMappings = client.getRequestMappings();
@@ -666,11 +666,11 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 			for (ILaunch l : LaunchUtils.getLaunches(c)) {
 				if (!l.isTerminated()) {
 					int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-					if (port>0) {
+					if (port > 0) {
 						return JMXClient.createLocalJmxUrl(port);
 					}
 					String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
-					if (pid!=null) {
+					if (pid != null) {
 						return pid;
 					}
 				}
@@ -683,7 +683,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 		debug("["+this.getName()+"] getLivePort("+propName+")");
 		ILaunchConfiguration conf = getActiveConfig();
 		debug("["+this.getName()+"] getLivePort("+propName+") conf = "+conf);
-		if (conf!=null && READY_STATES.contains(getRunState())) {
+		if (conf != null && READY_STATES.contains(getRunState())) {
 			debug("["+this.getName()+"] getLivePort("+propName+") runstate ok");
 			if (BootLaunchConfigurationDelegate.canUseLifeCycle(conf) || CloudCliServiceLaunchConfigurationDelegate.canUseLifeCycle(conf)) {
 				debug("["+this.getName()+"] getLivePort("+propName+") canUseLifeCycle ok");
@@ -699,7 +699,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 							cm = new SpringApplicationLifeCycleClientManager(l);
 							SpringApplicationLifecycleClient c = cm.getLifeCycleClient();
 							debug("["+this.getName()+"] getLivePort("+propName+") lifeCycleClient = "+c);
-							if (c!=null) {
+							if (c != null) {
 								//Just because lifecycle bean is ready does not mean that the port property has already been set.
 								//To avoid race condition we should wait here until the port is set (some apps aren't web apps and
 								//may never get a port set, so we shouldn't wait indefinitely!)
@@ -707,7 +707,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 									debug("["+this.getName()+"] getLivePort("+propName+") trying to get...");
 									int port = c.getProperty(propName, -1);
 									debug("["+this.getName()+"] getLivePort("+propName+") port = "+ port);
-									if (port<=0) {
+									if (port <= 0) {
 										throw new IllegalStateException("port not (yet) set");
 									}
 									return port;
@@ -717,7 +717,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 							debug(ExceptionUtil.getMessage(e));
 							//most likely this just means the app isn't running so ignore
 						} finally {
-							if (cm!=null) {
+							if (cm != null) {
 								cm.disposeClient();
 							}
 						}
@@ -735,7 +735,7 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 
 	private void refresh(LiveExpression<?>... exps) {
 		for (LiveExpression<?> e : exps) {
-			if (e!=null) {
+			if (e != null) {
 				e.refresh();
 			}
 		}

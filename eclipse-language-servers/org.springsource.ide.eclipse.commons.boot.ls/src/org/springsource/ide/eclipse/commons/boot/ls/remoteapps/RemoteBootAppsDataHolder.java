@@ -50,7 +50,7 @@ public class RemoteBootAppsDataHolder {
 	private static RemoteBootAppsDataHolder DEFAULT;
 
 	public synchronized static RemoteBootAppsDataHolder getDefault() {
-		if (DEFAULT==null) {
+		if (DEFAULT == null) {
 			DEFAULT = new RemoteBootAppsDataHolder(() -> ExentionPointLoader.load(RemoteBootAppsDataHolder.Contributor.class));
 		}
 		return DEFAULT;
@@ -201,7 +201,7 @@ public class RemoteBootAppsDataHolder {
 	public static ObservableSet<RemoteAppData> union(List<Contributor> contributors) {
 		if (contributors.isEmpty()) {
 			return LiveSets.emptySet(RemoteAppData.class);
-		} else if (contributors.size()==1) {
+		} else if (contributors.size() == 1) {
 			return contributors.get(0).getRemoteApps();
 		} else {
 			ObservableSet<RemoteAppData> union = contributors.get(0).getRemoteApps();

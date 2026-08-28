@@ -161,7 +161,7 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 	@Override
 	public List<App> fetchChildren() throws Exception {
 		Builder<App> builder = ImmutableList.builder();
-		if (client!=null) {
+		if (client != null) {
 			List<Image> images = JobUtil.interruptAfter(Duration.ofSeconds(15), 
 					() -> client.listImagesCmd().withShowAll(true).exec()
 			);
@@ -213,14 +213,14 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 							.withShowAll(true)
 							.withLabelFilter(ImmutableMap.of(APP_NAME, getName()))
 							.exec();
-					if (desiredRunState==RunState.INACTIVE) {
+					if (desiredRunState == RunState.INACTIVE) {
 						stop(containers);
 					} else if (desiredRunState.isActive()) {
 						List<Container> toStop = new ArrayList<>(containers.size());
 						boolean desiredContainerFound = false;
 						for (Container c : containers) {
 							if (isMatchingContainer(deployment, c)) {
-								if (new DockerContainer(getTarget(), this, c).fetchRunState()==desiredRunState) {
+								if (new DockerContainer(getTarget(), this, c).fetchRunState() == desiredRunState) {
 									desiredContainerFound = true;
 								}
 							} else {
@@ -288,14 +288,14 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 	}
 
 	private void run(AppConsole console, String image, DockerDeployment deployment) throws Exception {
-		if (client==null) {
+		if (client == null) {
 			console.write("Cannot start container... Docker client is disconnected!", LogType.STDERROR);
 		} else {
 			Network network = target.ensureNetwork(console);
 			console.write("Running container with '"+image+"'", LogType.STDOUT);
 			JmxSupport jmx = new JmxSupport();
 			String jmxUrl = jmx.getJmxUrl();
-			if (jmxUrl!=null) {
+			if (jmxUrl != null) {
 				console.write("JMX URL = "+jmxUrl, LogType.STDOUT);
 			}
 			String desiredBuildId = deployment.getBuildId();
@@ -321,7 +321,7 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 
 			StringBuilder javaOpts = new StringBuilder();
 
-			if (jmxUrl!=null) {
+			if (jmxUrl != null) {
 				int jmxPort = jmx.getPort();
 				labels.put(JMX_PORT, ""+jmxPort);
 
@@ -333,7 +333,7 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 			}
 			
 			RunState desiredRunState = deployment.getRunState();
-			if (desiredRunState==RunState.DEBUGGING) {
+			if (desiredRunState == RunState.DEBUGGING) {
 				int debugPort = PortFinder.findFreePort();
 				labels.put(DockerApp.DEBUG_PORT, ""+debugPort);
 				
@@ -446,19 +446,19 @@ Successfully tagged fui:latest
 			}
 		});
 		int exitCode = process.waitFor();
-		if (exitCode!=0) {
+		if (exitCode != 0) {
 			throw new IOException("Command execution failed!");
 		}
 		outputGobler.join();
 		
 		String imageTag = null;
 		for (String found : imageIds) {
-			if (found!=null) {
+			if (found != null) {
 				imageTag = found;
 				break;
 			}
 		}
-		if (imageTag==null) {
+		if (imageTag == null) {
 			throw new MissingBuildTagException(BUILT_IMAGE_MESSAGE_PATS);
 		}
 		if (imageTag.startsWith(DOCKER_IO_LIBRARY)) {
@@ -490,17 +490,17 @@ Successfully tagged fui:latest
 	private BuildCommand getBuildCommand(File directory) throws MissingBuildScriptException {
 		BuildScriptLocator buildScriptLocator = new BuildScriptLocator(directory);
 		BuildKind buildKind = buildScriptLocator.getBuildKind();
-		if (buildKind==null) {
+		if (buildKind == null) {
 			throw new MissingBuildScriptException(buildScriptLocator.checkedLocations);
 		}
-		boolean wantsDevtools = deployment().getSystemProperties().getOrDefault(DevtoolsUtil.REMOTE_SECRET_PROP, null)!=null;
+		boolean wantsDevtools = deployment().getSystemProperties().getOrDefault(DevtoolsUtil.REMOTE_SECRET_PROP, null) != null;
 		boolean withDevtoolsArgs = false;
 		List<String> command = buildScriptLocator.command;
 		if (wantsDevtools) {
-			if (buildKind==BuildKind.MAVEN) {
+			if (buildKind == BuildKind.MAVEN) {
 				withDevtoolsArgs = true;
 				command.add("-Dspring-boot.repackage.excludeDevtools=false");
-			} else if (buildKind==BuildKind.GRADLE) {
+			} else if (buildKind == BuildKind.GRADLE) {
 				try {
 					withDevtoolsArgs = true;
 					command.addAll(gradle_initScript(
@@ -521,7 +521,7 @@ Successfully tagged fui:latest
     }
 
 	private synchronized static List<String> gradle_initScript(String script) throws IOException {
-		if (initFile==null) {
+		if (initFile == null) {
 			initFile = File.createTempFile("init-script", ".gradle");
 			FileUtils.writeStringToFile(initFile, script, "UTF8");
 			initFile.deleteOnExit();
@@ -596,7 +596,7 @@ Successfully tagged fui:latest
 	@Override
 	public String getSystemProperty(String key) {
 		DockerDeployment d = deployment();
-		if (d!=null ) {
+		if (d != null ) {
 			return d.getSystemProperties().getOrDefault(key, null);
 		}
 		return null;
@@ -605,7 +605,7 @@ Successfully tagged fui:latest
 	@Override
 	public void setGoalState(RunState newGoalState) {
 		DockerDeployment deployment = deployment();
-		if (deployment.getRunState()!=newGoalState) {
+		if (deployment.getRunState() != newGoalState) {
 			target.deployments.createOrUpdate(deployment.withGoalState(newGoalState, target.sessionId.getValue()));
 		}
 	}
@@ -645,7 +645,7 @@ Successfully tagged fui:latest
 	@Override
 	public String getDevtoolsSecret() {
 		DockerDeployment d = deployment();
-		if (d!=null) {
+		if (d != null) {
 			return d.getSystemProperties().getOrDefault(DevtoolsUtil.REMOTE_SECRET_PROP, null);
 		}
 		return null;
@@ -653,6 +653,6 @@ Successfully tagged fui:latest
 
 	@Override
 	public boolean hasClasspathProperty(ClasspathPropertyTester tester) {
-		return context!=null && context.projectHasClasspathProperty(tester);
+		return context != null && context.projectHasClasspathProperty(tester);
 	}	
 }

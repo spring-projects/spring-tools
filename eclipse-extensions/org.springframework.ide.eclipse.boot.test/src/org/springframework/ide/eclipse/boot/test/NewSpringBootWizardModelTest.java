@@ -82,7 +82,7 @@ public class NewSpringBootWizardModelTest extends TestCase {
 	public static NewSpringBootWizardModel parseFrom(String resourcePath, IPreferenceStore store) throws Exception {
 		AtomicReference<Throwable> firstError = new AtomicReference<>();
 		Log.errorHandler = error -> {
-			firstError.getAndUpdate(existing -> existing!=null?existing:error);
+			firstError.getAndUpdate(existing -> existing != null ? existing : error);
 		};
 		try {
 			URL formUrl = resourceUrl(resourcePath);
@@ -95,7 +95,7 @@ public class NewSpringBootWizardModelTest extends TestCase {
 			};
 		} finally {
 			Log.errorHandler = null;
-			if (firstError.get()!=null) {
+			if (firstError.get() != null) {
 				throw ExceptionUtil.exception(firstError.get());
 			}
 		}
@@ -194,15 +194,15 @@ public class NewSpringBootWizardModelTest extends TestCase {
 
 			Collection<Dependency> styles = getAllChoices(model.dependencies);
 			assertNotNull(styles);
-			assertTrue(styles.size()>7);
+			assertTrue(styles.size() > 7);
 
 			for (String catName : model.dependencies.getCategories()) {
 				String lastLabel = null; //check that style labels are sorted within each category
 				MultiSelectionFieldModel<Dependency> cat = model.dependencies.getContents(catName);
 				for (Dependency choice : cat.getChoices()) {
 					String label = cat.getLabel(choice);
-					if (lastLabel!=null) {
-						assertTrue("Labels not sorted: '"+lastLabel+"' > '"+label+"'", lastLabel.compareTo(label)<0);
+					if (lastLabel != null) {
+						assertTrue("Labels not sorted: '"+lastLabel+"' > '"+label+"'", lastLabel.compareTo(label) < 0);
 					}
 					lastLabel = label;
 					assertNotNull("No tooltip for: "+choice+" ["+label+"]", cat.getTooltipHtml(choice).get());
@@ -675,7 +675,7 @@ public class NewSpringBootWizardModelTest extends TestCase {
 	}
 
 	public void assertContains(String needle, String haystack) {
-		if (haystack==null || !haystack.contains(needle)) {
+		if (haystack == null || !haystack.contains(needle)) {
 			fail("Not found: "+needle+"\n in \n"+haystack);
 		}
  	}
@@ -809,7 +809,7 @@ public class NewSpringBootWizardModelTest extends TestCase {
 	private String getUrlParam(String url, String name) throws Exception {
 		Map<String, List<String>> params = getQueryParams(url);
 		List<String> values = params.get(name);
-		if (values!=null && !values.isEmpty()) {
+		if (values != null && !values.isEmpty()) {
 			assertEquals(1, values.size());
 			return values.get(0);
 		}

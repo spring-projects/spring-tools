@@ -978,7 +978,7 @@ public class YamlStructureParserTest {
 		SKeyNode node = (SKeyNode) root.find(start);
 		int valueRangeStart;
 		int valueRangeEnd;
-		if (expectedValue==null) {
+		if (expectedValue == null) {
 			valueRangeStart = valueRangeEnd = start+nodeText.length();
 		} else {
 			valueRangeStart = editor.getRawText().lastIndexOf(expectedValue);
@@ -1065,7 +1065,7 @@ public class YamlStructureParserTest {
 		SKeyNode testNode = doc.getChildWithKey(testNodeName);
 		assertNotNull(testNode);
 		SNode expected = null;
-		if (expectedNodeSnippet!=null) {
+		if (expectedNodeSnippet != null) {
 			int offset = editor.getRawText().indexOf(expectedNodeSnippet);
 			expected = doc.find(offset);
 			assertTrue(editor.textUnder(expected).contains(expectedNodeSnippet));
@@ -1134,7 +1134,7 @@ public class YamlStructureParserTest {
 
 	private SNode getNodeAtPath(SNode node, int... childindices) {
 		int i = 0;
-		while (i<childindices.length) {
+		while (i < childindices.length) {
 			int child = childindices[i];
 			node = ((SChildBearingNode)node).getChildren().get(child);
 			i++;

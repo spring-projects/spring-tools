@@ -106,7 +106,7 @@ public class DependencyDelta {
 				) {
 					String gid = getGroupId(bom);
 					String aid = getArtifactId(bom);
-					if (gid!=null && aid!=null) {
+					if (gid != null && aid != null) {
 						boms.add(new MavenId(gid, aid));
 					}
 				}
@@ -127,7 +127,7 @@ public class DependencyDelta {
 		for (Element dep : deps) {
 			String gid = PomUtils.getGroupId(dep);
 			String aid = PomUtils.getArtifactId(dep);
-			if (aid!=null && gid!=null) {
+			if (aid != null && gid != null) {
 				builder.put(new MavenId(gid, aid), Optional.ofNullable(PomUtils.getScope(dep)));
 			}
 		}

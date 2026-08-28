@@ -56,7 +56,7 @@ public class OpenUrlSection extends WizardPageSection {
 	@Override
 	public void createContents(Composite page) {
 		final Composite comp;
-		if (sectionLabel!=null) {
+		if (sectionLabel != null) {
 			Group group = new Group(page, SWT.NONE);
 			group.setText(sectionLabel);
 			comp = group;
@@ -89,7 +89,7 @@ public class OpenUrlSection extends WizardPageSection {
 				} else {
 					label.setText("<a href=\"" + value + "\">" + value + "</a>");
 				}
-				checkbox.setEnabled(value!=null);
+				checkbox.setEnabled(value != null);
 
 				//Size requirements for label may have changed:
 				comp.layout(new Control[] {label});
@@ -111,7 +111,7 @@ public class OpenUrlSection extends WizardPageSection {
 
 	public static boolean enabled(LiveExpression<Boolean> var) {
 		Boolean val = var.getValue();
-		return val!=null && val;
+		return val != null && val;
 	}
 
 }

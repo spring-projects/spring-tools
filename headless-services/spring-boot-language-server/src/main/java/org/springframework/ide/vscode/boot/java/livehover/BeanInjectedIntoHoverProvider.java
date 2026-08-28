@@ -45,7 +45,7 @@ public class BeanInjectedIntoHoverProvider extends AbstractInjectedIntoHoverProv
 	@Override
 	protected LiveBean getDefinedBean(Annotation annotation) {
 		MethodDeclaration beanMethod = ASTUtils.getAnnotatedMethod(annotation);
-		if (beanMethod!=null) {
+		if (beanMethod != null) {
 			Optional<String> beanId = getBeanId(annotation, beanMethod);
 			if (beanId.isPresent()) {
 				//TODO: we could try to be more precise here and determine the bean type from the
@@ -55,7 +55,7 @@ public class BeanInjectedIntoHoverProvider extends AbstractInjectedIntoHoverProv
 				// somehow. Therefore, for the time being we leave the beanType as `unknown` and
 				// so do not use the bean type in determining relevant beans.
 				//		Type unresolvedBeanType = beanMethod.getReturnType2();
-				//		if (unresolvedBeanType!=null) {
+				//		if (unresolvedBeanType != null) {
 				//			beanType = unresolvedBeanType.resolveBinding();
 				//		}
 				return LiveBean.builder()

@@ -27,11 +27,11 @@ public class Utils {
 	 * @return the resultant URL
 	 */
 	public static String createUrl(String host, int port, String path) {
-		if (path==null) {
+		if (path == null) {
 			path = "";
 		}
-		if (host!=null) {
-			if (port>0) {
+		if (host != null) {
+			if (port > 0) {
 				if (!path.startsWith("/")) {
 					path = "/" +path;
 				}

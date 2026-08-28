@@ -149,10 +149,10 @@
 //		});
 //		expansionState.addListener(new ValueListener<Boolean>() {
 //			public void gotValue(LiveExpression<Boolean> exp, Boolean value) {
-//				if (value!=null && comp!=null && !comp.isDisposed()) {
+//				if (value != null && comp != null && !comp.isDisposed()) {
 //					boolean newState = value;
 //					boolean currentState = comp.isExpanded();
-//					if (currentState!=newState) {
+//					if (currentState != newState) {
 //						comp.setExpanded(newState);
 //					}
 //				}
@@ -174,7 +174,7 @@
 //
 //	@Override
 //	public synchronized MultiSelection<?> getSelection() {
-//		if (selection==null) {
+//		if (selection == null) {
 //			selection = createSelection();
 //		}
 //		return selection;
@@ -182,7 +182,7 @@
 //
 //	@Override
 //	public void dispose() {
-//		if (child!=null) {
+//		if (child != null) {
 //			if (child instanceof Disposable) {
 //				((Disposable) child).dispose();
 //			}

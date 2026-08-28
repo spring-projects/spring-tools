@@ -40,7 +40,7 @@ public class ExceptionUtil {
 	}
 
 	public static CoreException coreException(IStatus status) {
-		if (status==null) {
+		if (status == null) {
 			return coreException("Null status?");
 		}
 		Throwable e = status.getException();
@@ -85,7 +85,7 @@ public class ExceptionUtil {
 		Throwable cause = getDeepestCause(e);
 		String errorType = cause.getClass().getSimpleName();
 		String msg = cause.getMessage();
-		if (NO_SHOW_EXCEPTIONS.contains(errorType) && msg!=null) {
+		if (NO_SHOW_EXCEPTIONS.contains(errorType) && msg != null) {
 			return msg;
 		}
 		return errorType + ": " + msg;
@@ -100,14 +100,14 @@ public class ExceptionUtil {
 	}
 
 	public static IStatus status(Throwable e, String message) {
-		if (message==null) {
+		if (message == null) {
 			return status(e);
 		}
 		return new Status(IStatus.ERROR, Activator.PLUGIN_ID, message, e);
 	}
 
 	public static boolean isCancelation(Throwable e) {
-		if (e==null) {
+		if (e == null) {
 			return false;
 		}
 		Throwable cause = e.getCause();
@@ -117,12 +117,12 @@ public class ExceptionUtil {
 				e instanceof CancellationException ||
 				(
 						e instanceof CoreException &&
-						((CoreException)e).getStatus().getSeverity()==IStatus.CANCEL
+						((CoreException)e).getStatus().getSeverity() == IStatus.CANCEL
 				)
 		);
 		return isCancel || (
-				cause!=null && //avoid npe's on recursive check
-				cause!=e && //avoid infinite recursion on e == cause
+				cause != null && //avoid npe's on recursive check
+				cause != e && //avoid infinite recursion on e == cause
 				isCancelation(cause)
 		);
 	}
@@ -204,7 +204,7 @@ public class ExceptionUtil {
 		if (e instanceof CoreException) {
 			CoreException ce = (CoreException) e;
 			IStatus status = ce.getStatus();
-			return status.getSeverity()==IStatus.WARNING;
+			return status.getSeverity() == IStatus.WARNING;
 		}
 		return false;
 	}

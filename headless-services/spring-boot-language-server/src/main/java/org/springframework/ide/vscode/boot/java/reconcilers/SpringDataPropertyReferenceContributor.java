@@ -46,9 +46,9 @@ interface SpringDataPropertyReferenceContributor {
 
 	Set<String> getFieldAnnotationFqns();
 
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 	// Shared utilities available to all contributors
-	// =====================================================================
+	// == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == =
 
 	static String getErasedFqn(ITypeBinding type) {
 		if (type.isParameterizedType()) {

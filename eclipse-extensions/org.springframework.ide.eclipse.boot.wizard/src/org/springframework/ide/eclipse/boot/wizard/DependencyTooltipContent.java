@@ -154,20 +154,20 @@ public class DependencyTooltipContent {
 	}
 
 	public static String generateRequirements(Dependency dep) {
-		if (dep!=null) {
+		if (dep != null) {
 			String rangeString = dep.getVersionRange();
 			if (StringUtil.hasText(rangeString)) { //check to avoid logging errors on empty string or null
 				try {
 					VersionRange versionRange = VersionParser.DEFAULT.parseRange(rangeString);
 					Version l = versionRange.getLowerVersion();
 					Version r = versionRange.getHigherVersion();
-					if (l!=null && r!=null) {
+					if (l != null && r != null) {
 						return "Requires Spring Boot "+
 								rangeText(l, getLeftChar(versionRange)) + " and " + rangeText(r, getRightChar(versionRange));
-					} else if (l!=null) {
+					} else if (l != null) {
 						return "Requires Spring Boot "+
 								rangeText(l, getLeftChar(versionRange));
-					} else if (r!=null) {
+					} else if (r != null) {
 						return "Requires Spring Boot "+
 								rangeText(r, getRightChar(versionRange));
 					}

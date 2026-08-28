@@ -120,7 +120,7 @@ public class LanguageServerPreferencesPage extends FieldEditorPreferencePage imp
 						return false;
 					}
 
-					if(doCheckState()) { // OK!
+					if (doCheckState()) { // OK!
 						clearErrorMessage();
 						return true;
 					}

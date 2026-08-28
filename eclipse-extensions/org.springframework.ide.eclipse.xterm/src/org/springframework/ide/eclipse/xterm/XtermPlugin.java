@@ -113,7 +113,7 @@ public class XtermPlugin extends AbstractUIPlugin {
 	}
 	
 	private static boolean isCancelation(Throwable e) {
-		if (e==null) {
+		if (e == null) {
 			return false;
 		}
 		Throwable cause = e.getCause();
@@ -123,12 +123,12 @@ public class XtermPlugin extends AbstractUIPlugin {
 				e instanceof CancellationException ||
 				(
 						e instanceof CoreException &&
-						((CoreException)e).getStatus().getSeverity()==IStatus.CANCEL
+						((CoreException)e).getStatus().getSeverity() == IStatus.CANCEL
 				)
 		);
 		return isCancel || (
-				cause!=null && //avoid npe's on recursive check
-				cause!=e && //avoid infinite recursion on e == cause
+				cause != null && //avoid npe's on recursive check
+				cause != e && //avoid infinite recursion on e == cause
 				isCancelation(cause)
 		);
 	}
@@ -159,7 +159,7 @@ public class XtermPlugin extends AbstractUIPlugin {
 		Throwable cause = getDeepestCause(e);
 		String errorType = cause.getClass().getSimpleName();
 		String msg = cause.getMessage();
-		if (NO_SHOW_EXCEPTIONS.contains(errorType) && msg!=null) {
+		if (NO_SHOW_EXCEPTIONS.contains(errorType) && msg != null) {
 			return msg;
 		}
 		return errorType + ": " + msg;

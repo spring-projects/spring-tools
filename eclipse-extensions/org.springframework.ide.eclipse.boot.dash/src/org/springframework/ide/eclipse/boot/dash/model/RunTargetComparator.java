@@ -35,9 +35,9 @@ public class RunTargetComparator implements Comparator<RunTarget> {
 		RunTargetType rtType2 = target2.getType();
 
 		int result = typeComparator.compare(rtType1, rtType2);
-		if (result==0) {
+		if (result == 0) {
 			result = target1.getDisplayName().compareTo(target2.getDisplayName());
-			if (result==0) {
+			if (result == 0) {
 				result = target1.getId().compareTo(target2.getId());
 			}
 		}

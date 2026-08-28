@@ -593,28 +593,28 @@ public class ConcourseEditorTest {
                         "- name: some-job\n" +
                         "  plan:\n" +
                         "  - <*>"
-        , // ==============
+        , // == == == == == == ==
                 "<*>"
         , // =>
                 "do:\n" +
                         "    - <*>"
-        , // ==============
+        , // == == == == == == ==
                 "get: <*>"
-        , // ==============
+        , // == == == == == == ==
                 "in_parallel:\n" +
                         "      <*>"
-        , // ==============
+        , // == == == == == == ==
                 "load_var: <*>"
-        , // ==============
+        , // == == == == == == ==
                 "put: <*>"
-        , // ==============
+        , // == == == == == == ==
                 "set_pipeline: <*>"
-        , // ==============
+        , // == == == == == == ==
                 "task: <*>"
-        , // ==============
+        , // == == == == == == ==
                 "try:\n" +
                         "      <*>"
-        , // ==============
+        , // == == == == == == ==
                 "aggregate:\n" +
                         "    - <*>"
         );
@@ -1020,7 +1020,7 @@ public class ConcourseEditorTest {
                         "      <*>"
         , // ------------
                 "<*>"
-        , // ==>
+        , // == >
                 "fail_fast: <*>"
         ,
                 "limit: <*>"
@@ -1041,7 +1041,7 @@ public class ConcourseEditorTest {
                         "    <*>"
         , // ------------
                 "  <*>"
-        , // ==>
+        , // == >
                 "- get: <*>"
         ,
                 "- put: <*>"
@@ -1584,7 +1584,7 @@ public class ConcourseEditorTest {
                         "  type: time\n" +
                         "  source:\n" +
                         "    location: <*>"
-        , // ======================
+        , // == == == == == == == == == == ==
                 "Van<*>"
         , // =>
                 "America/Vancouver<*>",
@@ -1599,7 +1599,7 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    <*>\n" +
                         "    blah: blah"
-        , // ======================
+        , // == == == == == == == == == == ==
                 "<*>"
         , // =>
                 "days:\n" +
@@ -1617,7 +1617,7 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    days:\n" +
                         "    - <*>"
-        , // ======================
+        , // == == == == == == == == == == ==
                 "<*>"
         , // =>
                 "Friday<*>",
@@ -1773,9 +1773,9 @@ public class ConcourseEditorTest {
                         "  type: git\n" +
                         "  source:\n" +
                         "    <*>"
-        , //================
+        , // == == == == == == == ==
                 "<*>"
-        , // ==>
+        , // == >
                 "uri: <*>"
         );
 
@@ -1786,9 +1786,9 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    uri:\n" +
                         "    <*>"
-        , //================
+        , // == == == == == == == ==
                 "<*>"
-        , // ==>
+        , // == >
                 "branch: <*>"
         ,
                 "commit_filter:\n" +
@@ -1854,9 +1854,9 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    git_config:\n" +
                         "    - <*>"
-        , // =============
+        , // == == == == == == =
                 "<*>"
-        , // ==>
+        , // == >
                 "name: <*>",
                 "value: <*>"
         );
@@ -1950,7 +1950,7 @@ public class ConcourseEditorTest {
 
         assertContextualCompletions(context,
                 "<*>"
-        , // ===>
+        , // == =>
                 "clean_tags: <*>"
         ,
                 "depth: <*>"
@@ -1977,13 +1977,13 @@ public class ConcourseEditorTest {
         );
         assertContextualCompletions(context,
                 "disable_git_lfs: <*>"
-        , // ===>
+        , // == =>
                 "disable_git_lfs: false<*>",
                 "disable_git_lfs: true<*>"
         );
         assertContextualCompletions(context,
                 "submodules: <*>"
-        , // ===>
+        , // == =>
                 "submodules: all<*>",
                 "submodules: none<*>"
         );
@@ -2086,7 +2086,7 @@ public class ConcourseEditorTest {
 
         assertContextualCompletions(PLAIN_COMPLETION, context,
                 "<*>"
-        , // ===>
+        , // == =>
                 "annotate: <*>"
         ,
                 "branch: <*>"
@@ -2109,25 +2109,25 @@ public class ConcourseEditorTest {
         );
         assertContextualCompletions(context,
                 "rebase: <*>"
-        , // ===>
+        , // == =>
                 "rebase: false<*>",
                 "rebase: true<*>"
         );
         assertContextualCompletions(context,
                 "only_tag: <*>"
-        , // ===>
+        , // == =>
                 "only_tag: false<*>",
                 "only_tag: true<*>"
         );
         assertContextualCompletions(context,
                 "force: <*>"
-        , // ===>
+        , // == =>
                 "force: false<*>",
                 "force: true<*>"
         );
         assertContextualCompletions(context,
                 "merge: <*>"
-        , // ===>
+        , // == =>
                 "merge: false<*>",
                 "merge: true<*>"
         );
@@ -3088,9 +3088,9 @@ public class ConcourseEditorTest {
                         "  type: s3\n" +
                         "  source:\n" +
                         "    region_name: <*>"
-        , //===================
+        , // == == == == == == == == == =
                 "<*>"
-        , // ===>
+        , // == =>
                 expectedCompletions
         );
     }
@@ -3223,7 +3223,7 @@ public class ConcourseEditorTest {
         }
         assertContextualCompletions(conText,
                 "acl: <*>"
-        , // ===>
+        , // == =>
                 expectedAclCompletions
         );
     }
@@ -3491,9 +3491,9 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    driver: gcs\n" +
                         "    <*>"
-        , // ===========
+        , // == == == == == =
                 "<*>"
-        , // ==>
+        , // == >
                 "bucket: $1\n" +
                         "    key: $2\n" +
                         "    json_key: $3<*>"
@@ -3540,9 +3540,9 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    driver: git\n" +
                         "    <*>"
-        , // ===========
+        , // == == == == == =
                 "<*>"
-        , // ==>
+        , // == >
                 "uri: $1\n" +
                         "    branch: $2\n" +
                         "    file: $3<*>"
@@ -3557,9 +3557,9 @@ public class ConcourseEditorTest {
                         "    driver: git\n" +
                         "    uri: something\n" +
                         "<*>"
-        , // =============
+        , // == == == == == == =
                 "    <*>"
-        , // ==>
+        , // == >
                 "    branch: <*>"
         ,
                 "    file: <*>"
@@ -3574,9 +3574,9 @@ public class ConcourseEditorTest {
                         "    branch: master\n" +
                         "    file: somefile\n" +
                         "<*>"
-        , // =============
+        , // == == == == == == =
                 "    <*>"
-        , // ==>
+        , // == >
                 "    commit_message: <*>"
         ,
                 "    depth: <*>"
@@ -3652,7 +3652,7 @@ public class ConcourseEditorTest {
                         "    <*>"
         , /////////////
                 "<*>"
-        , // ==>
+        , // == >
                 //snippet:
                 "bucket: $1\n" +
                         "    key: $2\n" +
@@ -3672,7 +3672,7 @@ public class ConcourseEditorTest {
                         "    <*>"
         , /////////////
                 "<*>"
-        , // ==>
+        , // == >
                 //snippet:
                 "bucket: $1\n" +
                         "    key: $2\n" +
@@ -3692,7 +3692,7 @@ public class ConcourseEditorTest {
                         "    <*>"
         , /////////////
                 "<*>"
-        ,  // ==>
+        ,  // == >
                 "access_key_id: <*>",
                 "key: <*>",
                 "secret_access_key: <*>"
@@ -3707,7 +3707,7 @@ public class ConcourseEditorTest {
                         "    <*>"
         , /////////////
                 "<*>"
-        ,  // ==>
+        ,  // == >
                 "access_key_id: <*>",
                 "driver: <*>",
                 "key: <*>",
@@ -3724,11 +3724,11 @@ public class ConcourseEditorTest {
                         "    <*>"
         , /////////////
                 "<*>"
-        , // ==>
+        , // == >
                 "uri: $1\n" +
                         "    branch: $2\n" +
                         "    file: $3<*>"
-        , //===
+        , // == =
                 "uri: <*>"
         );
         assertContextualCompletions(PLAIN_COMPLETION,
@@ -3741,7 +3741,7 @@ public class ConcourseEditorTest {
                         "    <*>"
         , /////////////
                 "<*>"
-        , // ==>
+        , // == >
                 "branch: <*>",
                 "file: <*>"
         );
@@ -3757,7 +3757,7 @@ public class ConcourseEditorTest {
                         "    <*>"
         , /////////////
                 "<*>"
-        , // ==>
+        , // == >
                 "commit_message: <*>",
                 "depth: <*>",
                 "git_user: <*>",
@@ -4077,7 +4077,7 @@ public class ConcourseEditorTest {
                         "  plan:\n" +
                         "  - <*>";
         assertContextualCompletions(conText
-        , // ==============
+        , // == == == == == == ==
                 "get: <*>"
         ,
                 "get: bar-resource<*>",
@@ -4085,9 +4085,9 @@ public class ConcourseEditorTest {
                 "get: other-resource<*>"
         );
         assertContextualCompletions(conText
-        , // ==============
+        , // == == == == == == ==
                 "put: <*>"
-        , // ==>
+        , // == >
                 "put: bar-resource<*>",
                 "put: foo-resource<*>",
                 "put: other-resource<*>"
@@ -4105,9 +4105,9 @@ public class ConcourseEditorTest {
                         "  - put: something\n" +
                         "    <*>";
         assertContextualCompletions(conText
-        , // ==============
+        , // == == == == == == ==
                 "resource: <*>"
-        , // ==>
+        , // == >
                 "resource: bar-resource<*>",
                 "resource: foo-resource<*>",
                 "resource: other-resource<*>"
@@ -4126,11 +4126,11 @@ public class ConcourseEditorTest {
 
         assertContextualCompletions(conText,
                 "put: <*>"
-        // ==> NONE
+        // == > NONE
         );
         assertContextualCompletions(conText,
                 "get: <*>"
-        // ==> NONE
+        // == > NONE
         );
     }
 
@@ -4289,7 +4289,7 @@ public class ConcourseEditorTest {
 
         assertContextualCompletions(context,
                 "<*>"
-        , // ===>
+        , // == =>
                 expectedCompletions
         );
     }
@@ -4381,7 +4381,7 @@ public class ConcourseEditorTest {
     void contentAssistTaskFileToplevelProperties() throws Exception {
         assertTaskCompletions(
                 "<*>"
-        , // ==>
+        , // == >
                 "platform: $1\n" +
                         "run:\n" +
                         "  path: $2<*>"
@@ -4398,7 +4398,7 @@ public class ConcourseEditorTest {
                         "<*>"
         ,
                 "<*>"
-        , // ==>
+        , // == >
                 "caches:\n" +
                         "- path: <*>"
         ,
@@ -4566,9 +4566,9 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    uri: https://github.com/spring-projects/sts4.git\n" +
                         "    <*>"
-        , // ==================
+        , // == == == == == == == == ==
                 "bra<*>"
-        , // ==>
+        , // == >
                 "branch: <*>"
         ,
                 "submodule_credentials:\n" +
@@ -4585,9 +4585,9 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    uri: https://github.com/spring-projects/sts4.git\n" +
                         "    <*>"
-        , // ==================
+        , // == == == == == == == == ==
                 "bra<*>"
-        , // ==>
+        , // == >
                 "branch: <*>"
         ,
                 "submodule_credentials:\n" +
@@ -4604,9 +4604,9 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    uri: https://github.com/spring-projects/sts4.git\n" +
                         "    <*>"
-        , // ==================
+        , // == == == == == == == == ==
                 "bra<*>"
-        , // ==>
+        , // == >
                 "branch: <*>"
         ,
                 "submodule_credentials:\n" +
@@ -4816,7 +4816,7 @@ public class ConcourseEditorTest {
                         "  type: git\n" +
                         "  source:\n" +
                         "  <*>"
-        , // =========
+        , // == == == == =
                 "ur"
         , //=>
                 "  uri: <*>"
@@ -4829,7 +4829,7 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    uri: blah\n" +
                         "  <*>"
-        , // =========
+        , // == == == == =
                 "bran"
         , //=>
                 "  branch: <*>"
@@ -4842,7 +4842,7 @@ public class ConcourseEditorTest {
                         "  source:\n" +
                         "    uri: blah\n" +
                         "  <*>"
-        , // =========
+        , // == == == == =
                 "comverids<*>"
         , //=>
                 "  commit_verification_key_ids:\n" +
@@ -6091,7 +6091,7 @@ public class ConcourseEditorTest {
         );
         editor.assertContextualCompletions(PLAIN_COMPLETION,
                 "imgrs<*>"
-        , // ==>
+        , // == >
                 "image_resource:\n" +
                         "  type: <*>"
         );

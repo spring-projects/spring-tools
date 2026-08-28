@@ -131,7 +131,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 
 	private MavenProject getMavenProject() throws CoreException {
 		IMavenProjectFacade mpf = getMavenProjectFacade();
-		if (mpf!=null) {
+		if (mpf != null) {
 			return mpf.getMavenProject(new NullProgressMonitor());
 		}
 		return null;
@@ -150,7 +150,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 	@Override
 	public List<IMavenCoordinates> getDependencies() throws CoreException {
 		MavenProject mp = getMavenProject();
-		if (mp!=null) {
+		if (mp != null) {
 			return toMavenCoordinates(mp.getDependencies());
 		}
 		return Collections.emptyList();
@@ -171,11 +171,11 @@ public class MavenSpringBootProject extends SpringBootProject {
 	private String getManagedVersion(IMavenCoordinates dep) {
 		try {
 			MavenProject mp = getMavenProject();
-			if (mp!=null) {
+			if (mp != null) {
 				DependencyManagement managedDeps = mp.getDependencyManagement();
-				if (managedDeps!=null) {
+				if (managedDeps != null) {
 					List<Dependency> deps = managedDeps.getDependencies();
-					if (deps!=null && !deps.isEmpty()) {
+					if (deps != null && !deps.isEmpty()) {
 						for (Dependency d : deps) {
 							if ("jar".equals(d.getType())) {
 								if (dep.getArtifactId().equals(d.getArtifactId()) && dep.getGroupId().equals(d.getGroupId())) {
@@ -209,12 +209,12 @@ public class MavenSpringBootProject extends SpringBootProject {
 				public void process(Document document) {
 					Element depsEl = getChild(
 							document.getDocumentElement(), DEPENDENCIES);
-					if (depsEl==null) {
+					if (depsEl == null) {
 						//TODO: handle this case
 					} else {
 						String version = dep.getVersion();
 						String managedVersion = getManagedVersion(dep);
-						if (managedVersion!=null) {
+						if (managedVersion != null) {
 							//Decide whether we can/should inherit the managed version or override it.
 							if (preferManagedVersion || managedVersion.equals(version)) {
 								version = null;
@@ -254,7 +254,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 					for (Element c : children) {
 						String aid = getTextValue(findChild(c, ARTIFACT_ID));
 						String gid = getTextValue(findChild(c, GROUP_ID));
-						if (aid!=null && gid!=null) { //ignore invalid entries that don't have gid or aid
+						if (aid != null && gid != null) { //ignore invalid entries that don't have gid or aid
 							MavenId id = new MavenId(gid, aid);
 							if (delta.isRemoved(id)) {
 								depsEl.removeChild(c);
@@ -268,7 +268,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 						String scope = added.getValue().orElse(null);
 						SpringBootStarter starter = knownStarters.getStarter(mid);
 						createDependency(depsEl, new MavenCoordinates(mid.getGroupId(), mid.getArtifactId()), scope);
-						if (starter!=null) {
+						if (starter != null) {
 							createBomIfNeeded(pom, starter.getBom());
 							createRepoIfNeeded(pom, starter.getRepo());
 						}
@@ -278,7 +278,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 					try {
 						for (MavenId bomMavenId : delta.addedBoms) {
 							Bom bom = getStarterInfos().getBom(bomMavenId);
-							if (bom!=null) {
+							if (bom != null) {
 								createBomIfNeeded(pom, bom);
 							}
 						}
@@ -304,12 +304,12 @@ public class MavenSpringBootProject extends SpringBootProject {
 				public void process(Document pom) {
 					Element depsEl = getChild(
 							pom.getDocumentElement(), DEPENDENCIES);
-					if (depsEl!=null) {
+					if (depsEl != null) {
 						Element dep = findChild(depsEl, DEPENDENCY,
 								childEquals(GROUP_ID, mavenId.getGroupId()),
 								childEquals(ARTIFACT_ID, mavenId.getArtifactId())
 						);
-						if (dep!=null) {
+						if (dep != null) {
 							depsEl.removeChild(dep);
 						}
 					}
@@ -357,7 +357,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 	public String getBootVersion() {
 		try {
 			MavenProject mp = getMavenProject();
-			if (mp!=null) {
+			if (mp != null) {
 				return getBootVersion(mp.getDependencies());
 			}
 		} catch (Exception e) {
@@ -402,19 +402,19 @@ public class MavenSpringBootProject extends SpringBootProject {
 	}
 
 	private void createRepoIfNeeded(Document pom, Repo repo) {
-		if (repo!=null) {
+		if (repo != null) {
 			addReposIfNeeded(pom, Collections.singletonList(repo));
 		}
 	}
 
 	private void createBomIfNeeded(Document pom, Bom bom) {
-		if (bom!=null) {
+		if (bom != null) {
 			Element bomList = ensureDependencyMgmtSection(pom);
 			Element existing = PomEdits.findChild(bomList, DEPENDENCY,
 					childEquals(GROUP_ID, bom.getGroupId()),
 					childEquals(ARTIFACT_ID, bom.getArtifactId())
 			);
-			if (existing==null) {
+			if (existing == null) {
 				createBom(bomList, bom);
 				addReposIfNeeded(pom, bom.getRepos());
 			}
@@ -438,12 +438,12 @@ public class MavenSpringBootProject extends SpringBootProject {
 		boolean needFormatting = false;
 		Element doc = pom.getDocumentElement();
 		Element depman = findChild(doc, DEPENDENCY_MANAGEMENT);
-		if (depman==null) {
+		if (depman == null) {
 			depman = createElement(doc, DEPENDENCY_MANAGEMENT);
 			needFormatting = true;
 		}
 		Element deplist = findChild(depman, DEPENDENCIES);
-		if (deplist==null) {
+		if (deplist == null) {
 			deplist = createElement(depman, DEPENDENCIES);
 		}
 		if (needFormatting) {
@@ -476,18 +476,18 @@ public class MavenSpringBootProject extends SpringBootProject {
 
 		Element dep = createElement(parentList, DEPENDENCY);
 
-		if(groupId != null) {
+		if (groupId != null) {
 			createElementWithText(dep, GROUP_ID, groupId);
 		}
 		createElementWithText(dep, ARTIFACT_ID, artifactId);
-		if(version != null) {
+		if (version != null) {
 			createElementWithText(dep, VERSION, version);
 		}
 		createElementWithText(dep, TYPE, type);
-		if (scope !=null && !scope.equals("compile")) {
+		if (scope != null && !scope.equals("compile")) {
 			createElementWithText(dep, SCOPE, scope);
 		}
-		if (classifier!=null) {
+		if (classifier != null) {
 			createElementWithText(dep, CLASSIFIER, classifier);
 		}
 		format(dep);
@@ -504,17 +504,17 @@ public class MavenSpringBootProject extends SpringBootProject {
 		String version = info.getVersion();
 		String classifier = info.getClassifier();
 
-		if(groupId != null) {
+		if (groupId != null) {
 			createElementWithText(dep, GROUP_ID, groupId);
 		}
 		createElementWithText(dep, ARTIFACT_ID, artifactId);
-		if(version != null) {
+		if (version != null) {
 			createElementWithText(dep, VERSION, version);
 		}
 		if (classifier != null) {
 			createElementWithText(dep, CLASSIFIER, classifier);
 		}
-		if (scope!=null && !scope.equals("compile")) {
+		if (scope != null && !scope.equals("compile")) {
 			createElementWithText(dep, SCOPE, scope);
 		}
 		format(dep);
@@ -542,23 +542,23 @@ public class MavenSpringBootProject extends SpringBootProject {
 		//		</repository>
 		//	</repositories>
 
-		if (repos!=null && !repos.isEmpty()) {
+		if (repos != null && !repos.isEmpty()) {
 			Element doc = pom.getDocumentElement();
 			Element repoList = findChild(doc, REPOSITORIES);
-			if (repoList==null) {
+			if (repoList == null) {
 				repoList = createElement(doc, REPOSITORIES);
 				format(repoList);
 			}
 			for (Repo repo : repos) {
 				String id = repo.getId();
 				Element repoEl = findChild(repoList, REPOSITORY, childEquals(ID, id));
-				if (repoEl==null) {
+				if (repoEl == null) {
 					repoEl = createElement(repoList, REPOSITORY);
 					createElementWithTextMaybe(repoEl, ID, id);
 					createElementWithTextMaybe(repoEl, NAME, repo.getName());
 					createElementWithTextMaybe(repoEl, URL, repo.getUrl());
 					Boolean isSnapshot = repo.getSnapshotEnabled();
-					if (isSnapshot!=null) {
+					if (isSnapshot != null) {
 						Element snapshot = createElement(repoEl, SNAPSHOTS);
 						createElementWithText(snapshot, ENABLED, isSnapshot.toString());
 					}
@@ -582,7 +582,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 	@Override
 	public String getPackaging() throws CoreException {
 		MavenProject mp = getMavenProject();
-		if (mp!=null) {
+		if (mp != null) {
 			return mp.getPackaging();
 		}
 		return null;
@@ -601,7 +601,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 
 			LaunchUtils.whenTerminated(launch).get();
 			int exitValue = launch.getProcesses()[0].getExitValue();
-			if (exitValue!=0) {
+			if (exitValue != 0) {
 				throw ExceptionUtil.coreException("Non-zero exit-code("+exitValue+") from maven war packaging. Check maven console for errors!");
 			}
 			return findWarFile();
@@ -614,7 +614,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 
 	private File findWarFile() throws CoreException {
 		File warFile = getWarFile();
-		if (warFile==null) {
+		if (warFile == null) {
 			throw ExceptionUtil.coreException("Couldn't determine where to find the war file after 'mvn package'");
 		} else if (!warFile.isFile()) {
 			throw ExceptionUtil.coreException("Couldn't find file to deploy at '"+warFile+"' after running 'mvn package'");
@@ -624,11 +624,11 @@ public class MavenSpringBootProject extends SpringBootProject {
 
 	private File getWarFile() throws CoreException {
 		MavenProject mpf = getMavenProject();
-		if (mpf!=null) {
+		if (mpf != null) {
 			String buildDir = mpf.getBuild().getDirectory();
 			String fName = mpf.getBuild().getFinalName();
 			String type = mpf.getPackaging();
-			if (buildDir!=null && fName!=null && type!=null) {
+			if (buildDir != null && fName != null && type != null) {
 				return new File(new File(buildDir), fName+"."+type);
 			}
 		}
@@ -658,7 +658,7 @@ public class MavenSpringBootProject extends SpringBootProject {
 			setProjectConfiguration(workingCopy, basedir);
 
 			IPath path = getJREContainerPath(basedir);
-			if(path != null) {
+			if (path != null) {
 				workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_JRE_CONTAINER_PATH, path.toPortableString());
 			}
 
@@ -675,12 +675,12 @@ public class MavenSpringBootProject extends SpringBootProject {
 	// TODO ideally it should use MavenProject, but it is faster to scan IJavaProjects
 	private IPath getJREContainerPath(IContainer basedir) throws CoreException {
 		IProject project = basedir.getProject();
-		if(project != null && project.hasNature(JavaCore.NATURE_ID)) {
+		if (project != null && project.hasNature(JavaCore.NATURE_ID)) {
 			IJavaProject javaProject = JavaCore.create(project);
 			IClasspathEntry[] entries = javaProject.getRawClasspath();
 			for(int i = 0; i < entries.length; i++ ) {
 				IClasspathEntry entry = entries[i];
-				if(JavaRuntime.JRE_CONTAINER.equals(entry.getPath().segment(0))) {
+				if (JavaRuntime.JRE_CONTAINER.equals(entry.getPath().segment(0))) {
 					return entry.getPath();
 				}
 			}
@@ -692,11 +692,11 @@ public class MavenSpringBootProject extends SpringBootProject {
 		IMavenProjectRegistry projectManager = MavenPlugin.getMavenProjectRegistry();
 		IFile pomFile = basedir.getFile(new Path(IMavenConstants.POM_FILE_NAME));
 		IMavenProjectFacade projectFacade = projectManager.create(pomFile, false, new NullProgressMonitor());
-		if(projectFacade != null) {
+		if (projectFacade != null) {
 			ResolverConfiguration configuration = projectFacade.getResolverConfiguration();
 
 			String selectedProfiles = configuration.getSelectedProfiles();
-			if(selectedProfiles != null && selectedProfiles.length() > 0) {
+			if (selectedProfiles != null && selectedProfiles.length() > 0) {
 				workingCopy.setAttribute(MavenLaunchConstants.ATTR_PROFILES, selectedProfiles);
 			}
 		}

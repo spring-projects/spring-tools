@@ -31,7 +31,7 @@ public class CursorProviders {
 
 			@Override
 			public Cursor getCursor(ViewerCell cell) {
-				if (cursor==null) {
+				if (cursor == null) {
 					cursor = new Cursor(cell.getControl().getDisplay(), cursorStyle);
 				}
 				return cursor;

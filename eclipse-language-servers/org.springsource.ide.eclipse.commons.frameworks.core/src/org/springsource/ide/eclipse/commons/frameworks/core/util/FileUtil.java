@@ -69,7 +69,7 @@ public class FileUtil {
 	
 	public static boolean isJarFile(File jarFile) {
 		try {
-			return jarFile!=null && jarFile.isFile() && jarFile.toString().toLowerCase().endsWith(".jar");
+			return jarFile != null && jarFile.isFile() && jarFile.toString().toLowerCase().endsWith(".jar");
 		} catch (Throwable e) {
 			org.springsource.ide.eclipse.commons.livexp.util.Log.log(e);
 			return false;

@@ -61,7 +61,7 @@ public class UriUtil {
 	public static boolean contains(String projectUri, String uri) {
 		if (projectUri.length() < uri.length()) {
 			return uri.startsWith(projectUri) && (
-					projectUri.charAt(projectUri.length()-1)=='/' ||
+					projectUri.charAt(projectUri.length()-1) == '/' ||
 					uri.charAt(projectUri.length()) == '/'
 			);
 		} else if (projectUri.length() > uri.length()) {

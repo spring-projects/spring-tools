@@ -78,12 +78,12 @@ public class GroupSection extends WizardPageSection {
 	public void addSections(WizardPageSection... _sections) {
 		Assert.isLegal(!contentsCreated);
 		for (WizardPageSection s : _sections) {
-			if (s!=null) {
+			if (s != null) {
 				sections.add(s);
 			}
 		}
 
-		if (validator==null) {
+		if (validator == null) {
 			validator = new CompositeValidator();
 		}
 		for (WizardPageSection s : sections) {
@@ -100,7 +100,7 @@ public class GroupSection extends WizardPageSection {
 	public void createContents(Composite page) {
 		contentsCreated = true;
 		final Composite group = createComposite(page);
-		if (background!=null) {
+		if (background != null) {
 			group.setBackground(background);
 		}
 		for (WizardPageSection s : sections) {
@@ -113,7 +113,7 @@ public class GroupSection extends WizardPageSection {
 				layout.exclude = !isVisible;
 				group.setLayoutData(layout);
 				Shell shell = owner.getShell();
-				if (shell!=null) {
+				if (shell != null) {
 					shell.layout(new Control[] {group});
 				}
 			};
@@ -121,7 +121,7 @@ public class GroupSection extends WizardPageSection {
 	}
 
 	private Composite createComposite(Composite page) {
-		if (groupTitle!=null) {
+		if (groupTitle != null) {
 			//Create a group with box around it and a title
 			final Group group = new Group(page, SWT.NONE);
 			if (!"".equals(groupTitle)) {
@@ -146,7 +146,7 @@ public class GroupSection extends WizardPageSection {
 	 */
 	protected GridLayout createLayout() {
 		GridLayout layout = new GridLayout(this.columns, equalWidthColumns);
-		if (groupTitle==null || noMargins) {
+		if (groupTitle == null || noMargins) {
 			layout.marginWidth = 0;
 			layout.marginHeight = 0;
 		}
@@ -173,7 +173,7 @@ public class GroupSection extends WizardPageSection {
 	}
 
 	public GroupSection columns(int i) {
-		Assert.isLegal(i>=1);
+		Assert.isLegal(i >= 1);
 		this.columns = i;
 		return this;
 	}

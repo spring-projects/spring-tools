@@ -29,7 +29,7 @@ public class ConvertPropertiesToYamlHandler extends AbstractHandler {
 
 	private static ITextFileBuffer getDirtyFileBuffer(IFile file) {
 		ITextFileBuffer buffer = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE);
-		if (buffer!=null && buffer.isDirty()) {
+		if (buffer != null && buffer.isDirty()) {
 			return buffer;
 		}
 		return null;
@@ -39,9 +39,9 @@ public class ConvertPropertiesToYamlHandler extends AbstractHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		IFile file = getTarget(event);
 		try {
-			if (file!=null) {
+			if (file != null) {
 				ITextFileBuffer dirtyBuffer = getDirtyFileBuffer(file);
-				if (dirtyBuffer!=null) {
+				if (dirtyBuffer != null) {
 					dirtyBuffer.commit(null, true);
 				}
 				ConvertPropertiesToYamlRefactoring refactoring = new ConvertPropertiesToYamlRefactoring(file);
@@ -75,7 +75,7 @@ public class ConvertPropertiesToYamlHandler extends AbstractHandler {
 				ss = (IStructuredSelection) selection;
 			}
 		}
-		if (ss!=null && !ss.isEmpty()) {
+		if (ss != null && !ss.isEmpty()) {
 			return asFile(ss.getFirstElement());
 		}
 		return null;

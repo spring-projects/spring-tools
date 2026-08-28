@@ -116,7 +116,7 @@ public class HoverInformationControlCreator implements IInformationControlCreato
 				BrowserInformationControlInput input = fInfoControl.getInput();
 				if (input instanceof HoverInfo) {
 					HoverInfo infoInput= (HoverInfo) input;
-					if (infoInput!=null) {
+					if (infoInput != null) {
 						List<IJavaElement> elements = infoInput.getJavaElements();
 						//TODO: This only opens the first element, if there's more than one should offer a choice/
 						if (!elements.isEmpty()) {

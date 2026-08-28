@@ -66,9 +66,9 @@ public class CompletionFactory {
 	};
 
 	public static Styler compose(final Styler s1, final Styler s2) {
-		if (s1==NULL_STYLER) {
+		if (s1 == NULL_STYLER) {
 			return s2;
-		} else if (s2==NULL_STYLER) {
+		} else if (s2 == NULL_STYLER) {
 			return s1;
 		} else {
 			return new Styler() {
@@ -124,7 +124,7 @@ public class CompletionFactory {
 
 		private void highlightPattern(String pattern, String data, StyledString result) {
 			Styler highlightStyle = CompletionFactory.HIGHLIGHT;
-			Styler plainStyle = isDeemphasized()?CompletionFactory.DEEMPHASIZE:CompletionFactory.NULL_STYLER;
+			Styler plainStyle = isDeemphasized() ? CompletionFactory.DEEMPHASIZE : CompletionFactory.NULL_STYLER;
 			if (isDeprecated()) {
 				highlightStyle = CompletionFactory.compose(highlightStyle, CompletionFactory.DEPRECATE);
 				plainStyle = CompletionFactory.compose(plainStyle, CompletionFactory.DEPRECATE);
@@ -133,16 +133,16 @@ public class CompletionFactory {
 				int dataPos = 0;	int dataLen = data.length();
 				int patternPos = 0; int patternLen = pattern.length();
 
-				while (dataPos<dataLen && patternPos<patternLen) {
+				while (dataPos < dataLen && patternPos < patternLen) {
 					int pChar = pattern.charAt(patternPos++);
 					int highlightPos = data.indexOf(pChar, dataPos);
-					if (dataPos<highlightPos) {
+					if (dataPos < highlightPos) {
 						result.append(data.substring(dataPos, highlightPos), plainStyle);
 					}
 					result.append(data.charAt(highlightPos), highlightStyle);
 					dataPos = highlightPos+1;
 				}
-				if (dataPos<dataLen) {
+				if (dataPos < dataLen) {
 					result.append(data.substring(dataPos), plainStyle);
 				}
 			} else { //no pattern to highlight
@@ -160,7 +160,7 @@ public class CompletionFactory {
 		@Override
 		public String getAdditionalProposalInfo() {
 			HoverInfo hoverInfo = getAdditionalProposalInfo(new NullProgressMonitor());
-			if (hoverInfo!=null) {
+			if (hoverInfo != null) {
 				return hoverInfo.getHtml();
 			}
 			return null;
@@ -270,7 +270,7 @@ public class CompletionFactory {
 			if (p1 instanceof ScoreableProposal && p2 instanceof ScoreableProposal) {
 				double s1 = ((ScoreableProposal)p1).getScore();
 				double s2 = ((ScoreableProposal)p2).getScore();
-				if (s1==s2) {
+				if (s1 == s2) {
 					String name1 = ((ScoreableProposal)p1).getDisplayString();
 					String name2 = ((ScoreableProposal)p2).getDisplayString();
 					return name1.compareTo(name2);

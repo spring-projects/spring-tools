@@ -71,9 +71,9 @@ public class IndexNavigator {
 	 * null if there's no exact match
 	 */
 	public PropertyInfo getExactMatch() {
-		if (prefix!=null) {
+		if (prefix != null) {
 			PropertyInfo candidate = index.findLongestCommonPrefixEntry(prefix);
-			if (candidate!=null && candidate.getId().equals(prefix)) {
+			if (candidate != null && candidate.getId().equals(prefix)) {
 				return candidate;
 			}
 		}
@@ -88,9 +88,9 @@ public class IndexNavigator {
 	public PropertyInfo getExtensionCandidate() {
 		//If current prefix is null then all entries in the index are candidates since
 		// the index is at the 'root' of the tree and we don't need a '.' to navigate
-		String extendedPrefix = prefix==null?"":prefix + NAV_CHAR;
+		String extendedPrefix = prefix == null ? "" : prefix + NAV_CHAR;
 		PropertyInfo candidate = index.findLongestCommonPrefixEntry(extendedPrefix);
-		if (candidate!=null && candidate.getId().startsWith(extendedPrefix)) {
+		if (candidate != null && candidate.getId().startsWith(extendedPrefix)) {
 			return candidate;
 		}
 		return null;
@@ -127,7 +127,7 @@ public class IndexNavigator {
 	}
 
 	public boolean isEmpty() {
-		return getExactMatch()==null && getExtensionCandidate()==null;
+		return getExactMatch() == null && getExtensionCandidate() == null;
 	}
 
 }

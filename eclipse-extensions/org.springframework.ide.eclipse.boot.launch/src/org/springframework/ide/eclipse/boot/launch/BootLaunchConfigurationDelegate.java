@@ -70,10 +70,10 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 	private static DeletedLaunchConfTerminator deletedLaunchConfTerminator = null;
 
 	public synchronized static void ensureDeletedLaunchConfTerminator() {
-		if (deletedLaunchConfTerminator==null) {
+		if (deletedLaunchConfTerminator == null) {
 			deletedLaunchConfTerminator = new DeletedLaunchConfTerminator(DebugPlugin.getDefault().getLaunchManager(), (ILaunch l) -> {
 				try {
-					return l!=null && Boolean.valueOf(l.getAttribute(BOOT_LAUNCH_MARKER));
+					return l != null && Boolean.valueOf(l.getAttribute(BOOT_LAUNCH_MARKER));
 				} catch (Exception e) {
 					Log.log(e);
 					return false;
@@ -102,7 +102,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 	public static final String ENABLE_LIVE_BEAN_SUPPORT = "spring.boot.livebean.enable";
 	public static final boolean DEFAULT_ENABLE_LIVE_BEAN_SUPPORT() {
 		BootLaunchActivator ins = BootLaunchActivator.getInstance();
-		return ins!=null && ins.isLiveBeanSupported();
+		return ins != null && ins.isLiveBeanSupported();
 	}
 
 	public static final String ENABLE_JMX = "spring.boot.jmx.enable";
@@ -235,7 +235,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 				} catch (Exception e) {
 					//ignore: bad data in launch config.
 				}
-				// port==0 means 'auto': no port is picked here. The child JVM starts without any
+				// port == 0 means 'auto': no port is picked here. The child JVM starts without any
 				// com.sun.management.jmxremote* args, and the JMX agent is started later
 				// on-demand via Attach API against the child's real PID (see BootProcessFactory /
 				// SpringApplicationLifeCycleClientManager). An explicitly pinned nonzero port
@@ -244,9 +244,9 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 				for (int i = 0; i < enableLiveBeanArgs.length; i++) {
 					vmArgs.add(i, enableLiveBeanArgs[i]);
 				}
-				if (port!=0) {
+				if (port != 0) {
 					ILaunch currentLaunch = CURRENT_LAUNCH.get();
-					if (currentLaunch!=null) {
+					if (currentLaunch != null) {
 						currentLaunch.setAttribute(JMX_PORT, ""+port);
 					}
 				}
@@ -341,12 +341,12 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 
 	public static boolean canUseLifeCycle(ILaunch launch) {
 		ILaunchConfiguration conf = launch.getLaunchConfiguration();
-		return conf!=null && canUseLifeCycle(conf);
+		return conf != null && canUseLifeCycle(conf);
 	}
 
 	public static boolean supportsLifeCycleManagement(ILaunchConfiguration conf) {
 		IProject p = getProject(conf);
-		if (p!=null) {
+		if (p != null) {
 			return BootPropertyTester.supportsLifeCycleManagement(p);
 		}
 		return false;
@@ -361,13 +361,13 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 	) throws CoreException {
 		setProcessFactory(wc, BootProcessFactory.class);
 		setProject(wc, project);
-		if (project!=null && project.hasNature(SpringBootCore.M2E_NATURE)) {
+		if (project != null && project.hasNature(SpringBootCore.M2E_NATURE)) {
 			enableMavenClasspathProviders(wc);
-		} else if (project!=null && project.hasNature(SpringBootCore.BUILDSHIP_NATURE)) {
+		} else if (project != null && project.hasNature(SpringBootCore.BUILDSHIP_NATURE)) {
 			enableGradleClasspathProviders(wc);
 		}
 		wc.setAttribute(IJavaLaunchConfigurationConstants.ATTR_EXCLUDE_TEST_CODE, true);
-		if (mainType!=null) {
+		if (mainType != null) {
 			setMainType(wc, mainType);
 		}
 		setEnableJMX(wc, DEFAULT_ENABLE_JMX);
@@ -490,7 +490,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 		ILaunchConfigurationWorkingCopy copy = conf.copy(newName);
 
 		int existingJmxPort = getJMXPortAsInt(conf);
-		if (existingJmxPort>0) {
+		if (existingJmxPort > 0) {
 			//change port on duplicated config, but only if it was set to a specific port.
 			setJMXPort(copy, ""+JmxBeanSupport.randomPort());
 		}
@@ -555,7 +555,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 
 	public static int getJMXPortAsInt(ILaunchConfiguration conf) {
 		String jmxPortStr = getJMXPort(conf);
-		if (jmxPortStr!=null) {
+		if (jmxPortStr != null) {
 			try {
 				return Integer.parseInt(jmxPortStr);
 			} catch (Exception e) {
@@ -567,7 +567,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 
 	public static int getJMXPortAsInt(ILaunch launch) {
 		String jmxPortStr = launch.getAttribute(JMX_PORT);
-		if (jmxPortStr!=null) {
+		if (jmxPortStr != null) {
 			try {
 				return Integer.parseInt(jmxPortStr);
 			} catch (Exception e) {
@@ -579,7 +579,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 
 	public static long getTerminationTimeoutAsLong(ILaunch launch) {
 		ILaunchConfiguration conf = launch.getLaunchConfiguration();
-		if (conf!=null) {
+		if (conf != null) {
 			return BootLaunchConfigurationDelegate.getTerminationTimeoutAsLong(conf);
 		}
 		return BootLaunchConfigurationDelegate.DEFAULT_TERMINATION_TIMEOUT;
@@ -641,7 +641,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 	public String[] getClasspath(ILaunchConfiguration conf) throws CoreException {
 		if (useThinWrapper(conf)) {
 			File thinWrapper = BootPreferences.getInstance().getThinWrapper();
-			Assert.isLegal(thinWrapper!=null, "'Use thin wrapper' option is selected, but thin wrapper is not defined");
+			Assert.isLegal(thinWrapper != null, "'Use thin wrapper' option is selected, but thin wrapper is not defined");
 			Assert.isLegal(thinWrapper.isFile(), "'Use thin wrapper' option is selected, but thin wrapper ("+thinWrapper+") is not an existing file");
 			return new String[] {
 					thinWrapper.getAbsolutePath()
@@ -666,12 +666,12 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 		File thinWrapper = BootPreferences.getInstance().getThinWrapper();
 		try (ZipInputStream zipStream = new ZipInputStream(new FileInputStream(thinWrapper))) {
 			ZipEntry zipEntry;
-			while (null!=(zipEntry = zipStream.getNextEntry())) {
+			while (null != (zipEntry = zipStream.getNextEntry())) {
 				String name = zipEntry.getName();
 				if (name.equals("META-INF/MANIFEST.MF")) {
 					Manifest manifest = new Manifest(zipStream);
 					String mainClass = manifest.getMainAttributes().getValue("Main-Class");
-					if (mainClass!=null) {
+					if (mainClass != null) {
 						return mainClass;
 					} else {
 						throw new IllegalArgumentException("Thin wrapper '"+thinWrapper+"' doesn't have a 'Main-Class' attribute in its jar manifest");
@@ -699,7 +699,7 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 
 	public static boolean useThinWrapper(ILaunchConfiguration conf) {
 		try {
-			return BootPreferences.getInstance().getThinWrapper()!=null && conf.getAttribute(USE_THIN_WRAPPER, DEFAULT_USE_THIN_WRAPPER);
+			return BootPreferences.getInstance().getThinWrapper() != null && conf.getAttribute(USE_THIN_WRAPPER, DEFAULT_USE_THIN_WRAPPER);
 		} catch (CoreException e) {
 			Log.log(e);
 		}

@@ -42,7 +42,7 @@ public interface IndexCache {
 	
 	default <T extends IndexCacheable> T[] retrieveSymbols(IndexCacheKey cacheKey, String[] files, Class<T> type) {
 		Pair<T[], Multimap<SourceJavaFile, QualifiedTypeName>> r = retrieve(cacheKey, files, type);
-		return r!=null ? r.getLeft() : null;
+		return r != null ? r.getLeft() : null;
 	}
 	
 	long getModificationTimestamp(IndexCacheKey cacheKey, String docURI);

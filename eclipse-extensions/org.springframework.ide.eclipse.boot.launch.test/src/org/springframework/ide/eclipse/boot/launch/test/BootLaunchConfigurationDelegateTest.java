@@ -401,7 +401,7 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 				if (reallyDoThinLaunch) {
 					BootLaunchConfigurationDelegate.setUseThinWrapper(wc, true);
 					String[] classpath = getClasspath(new BootLaunchConfigurationDelegate(), wc);
-					assertTrue(classpath.length==1);
+					assertTrue(classpath.length == 1);
 					assertEquals(thinWrapper.getAbsolutePath(), classpath[0]);
 				}
 
@@ -428,7 +428,7 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 		for (String testFrag : testFragments) {
 			String normalizedEntry = cpe.replace('\\', '/');
 			int slash = normalizedEntry.lastIndexOf('/');
-			if (slash>=0) {
+			if (slash >= 0) {
 				normalizedEntry = normalizedEntry.substring(slash);
 			}
 			if (normalizedEntry.contains(testFrag)) {

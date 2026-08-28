@@ -217,7 +217,7 @@ public class ORDocUtils {
 	}
 
 	public static void addToWorkspaceEdit(SimpleTextDocumentService documents, String docUri, String oldContent, String newContent, String changeAnnotationId, WorkspaceEdit we) {
-		if(oldContent == null) {
+		if (oldContent == null) {
 			createNewFileEdit(docUri, newContent, changeAnnotationId, we);
 		} else if (newContent == null) {
 			createDeleteFileEdit(docUri, changeAnnotationId, we);

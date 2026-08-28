@@ -194,7 +194,7 @@ public class Annotations {
 	public static final String CONDITIONAL_ON_NOT_WEB_APPLICATION = "org.springframework.boot.autoconfigure.condition.ConditionalOnNotWebApplication";
 	public static final String CONDITIONAL_ON_ENABLED_INFO_CONTRIBUTOR = "org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledInfoContributor";
 	public static final String CONDITIONAL_ON_ENABLED_RESOURCE_CHAIN = "org.springframework.boot.autoconfigure.web.ConditionalOnEnabledResourceChain";
-	public static final String CONDITIONAL_ON_ENABLED_ENDPOINT = "org.springframework.boot.actuate.condition.ConditionalOnEnabledEndpoint";             // <========= double checking necessary
+	public static final String CONDITIONAL_ON_ENABLED_ENDPOINT = "org.springframework.boot.actuate.condition.ConditionalOnEnabledEndpoint";             // <= == == == == double checking necessary
 	public static final String CONDITIONAL_ON_ENABLED_HEALTH_INDICATOR = "org.springframework.boot.actuate.autoconfigure.ConditionalOnEnabledHealthIndicator";
 	public static final String CONDITIONAL_ON_EXPRESSION = "org.springframework.boot.autoconfigure.condition.ConditionalOnExpression";
 	public static final String CONDITIONAL_ON_JAVA = "org.springframework.boot.autoconfigure.condition.ConditionalOnJava";

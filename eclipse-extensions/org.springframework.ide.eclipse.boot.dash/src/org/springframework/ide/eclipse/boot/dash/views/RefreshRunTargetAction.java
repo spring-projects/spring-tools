@@ -29,7 +29,7 @@ public class RefreshRunTargetAction extends AbstractBootDashModelAction {
 	@Override
 	public void run() {
 		BootDashModel model = sectionSelection.getValue();
-		if (model!=null) {
+		if (model != null) {
 			model.refresh(ui());
 		}
 	}
@@ -38,7 +38,7 @@ public class RefreshRunTargetAction extends AbstractBootDashModelAction {
 	public void updateEnablement() {
 		super.updateEnablement();
 		BootDashModel model = sectionSelection.getValue();
-		if (model!=null) {
+		if (model != null) {
 			RunTarget target = model.getRunTarget();
 			if (target instanceof RemoteRunTarget<?, ?>) {
 				setEnabled(((RemoteRunTarget<?, ?>) target).isConnected());

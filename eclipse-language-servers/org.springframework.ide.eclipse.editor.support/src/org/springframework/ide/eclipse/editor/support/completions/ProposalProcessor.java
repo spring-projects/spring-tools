@@ -46,7 +46,7 @@ public class ProposalProcessor implements IContentAssistProcessor {
 	public ICompletionProposal[] computeCompletionProposals(ITextViewer viewer, int offset) {
 		try {
 			Collection<ICompletionProposal> proposals = fEngine.getCompletions(viewer.getDocument(), offset);
-			if (proposals==null || proposals.isEmpty()) {
+			if (proposals == null || proposals.isEmpty()) {
 				return NO_PROPOSALS;
 			} else {
 				return proposals.toArray(new ICompletionProposal[proposals.size()]);

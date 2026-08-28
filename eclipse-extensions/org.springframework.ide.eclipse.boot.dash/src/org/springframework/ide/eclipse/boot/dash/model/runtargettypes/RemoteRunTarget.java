@@ -19,7 +19,7 @@ public interface RemoteRunTarget<Client, Params> extends RunTarget<Params> {
 	}
 
 	default boolean isConnected() {
-		return getClientExp().getValue()!=null;
+		return getClientExp().getValue() != null;
 	}
 	LiveExpression<Client> getClientExp();
 	default Client getClient() {

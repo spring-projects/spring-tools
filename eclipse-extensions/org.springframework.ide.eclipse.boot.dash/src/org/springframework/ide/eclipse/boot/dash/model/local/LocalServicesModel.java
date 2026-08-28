@@ -57,11 +57,11 @@ public class LocalServicesModel extends AbstractDisposable {
 	BootDashHyperlink enableCloudServicesButton = new BootDashHyperlink("Install local cloud services") {
 		public void doPerform(UserInteractions ui) throws Exception {
 			IBootInstall bootInstall = defaultBootInstall.getValue();
-			if (bootInstall!=null) {
+			if (bootInstall != null) {
 				if (bootInstall.getExtension(CloudCliInstall.class) == null) {
 					new AutoCloudCliInstaller(bootInstall).performInstall(ui);
 				}
-				if (bootInstall.getExtension(CloudCliInstall.class)!=null) {
+				if (bootInstall.getExtension(CloudCliInstall.class) != null) {
 					viewerFilters.remove(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES);
 				}
 			}
@@ -88,10 +88,10 @@ public class LocalServicesModel extends AbstractDisposable {
 			}
 		});
 		cloudCliInstall = defaultBootInstall.then(bootInstall ->
-			bootInstall==null ? null : bootInstall.getExtensionExp(CloudCliInstall.class)
+			bootInstall == null ? null : bootInstall.getExtensionExp(CloudCliInstall.class)
 		);
 		cloudCliInstall.onChange(this, (e, v) -> {
-			if (cloudCliInstall.getValue()!=null) {
+			if (cloudCliInstall.getValue() != null) {
 				buttons.remove(enableCloudServicesButton);
 			} else {
 				buttons.add(enableCloudServicesButton);
@@ -106,7 +106,7 @@ public class LocalServicesModel extends AbstractDisposable {
 	@Override
 	public void dispose() {
 		super.dispose();
-		if (cloudCliServices!=null) {
+		if (cloudCliServices != null) {
 			cloudCliServices.getValue().forEach(bde -> bde.dispose());
 			cloudCliServices.dispose();
 			cloudCliServices = null;
@@ -142,7 +142,7 @@ public class LocalServicesModel extends AbstractDisposable {
 
 	private List<LocalCloudServiceDashElement> fetchLocalServices() {
 		IBootInstall bootInstall = defaultBootInstall.getValue();
-		if (bootInstall!=null) {
+		if (bootInstall != null) {
 			try {
 				CloudCliInstall cloudCliInstall =  bootInstall.getExtension(CloudCliInstall.class);
 				if (cloudCliInstall != null) {

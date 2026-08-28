@@ -23,7 +23,7 @@ public class ProjectNameParser implements Parser<IProject> {
 
 	@Override
 	public IProject parse(String projectName) {
-		if (projectName!=null) {
+		if (projectName != null) {
 			return ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 		}
 		return null;

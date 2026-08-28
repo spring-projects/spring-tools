@@ -39,7 +39,7 @@ class ProgressServiceTest {
 		service = new ProgressService(mockClient);
 	}
 
-	// ========== ProgressService Tests ==========
+	// == == == == == ProgressService Tests == == == == ==
 
 	@Test
 	void testServiceConstructorRejectsNull() {
@@ -72,7 +72,7 @@ class ProgressServiceTest {
 		verify(mockLspClient).createProgress(any(WorkDoneProgressCreateParams.class));
 	}
 
-	// ========== IndefiniteProgressTask Tests ==========
+	// == == == == == IndefiniteProgressTask Tests == == == == ==
 
 	@Test
 	void testIndefiniteProgressTaskCreation() {
@@ -155,7 +155,7 @@ class ProgressServiceTest {
 		assertThat(reportCaptor.getValue().getMessage()).isNull();
 	}
 
-	// ========== PercentageProgressTask Tests ==========
+	// == == == == == PercentageProgressTask Tests == == == == ==
 
 	@Test
 	void testPercentageProgressTaskCreation() {
@@ -268,7 +268,7 @@ class ProgressServiceTest {
 		verify(mockClient).end(anyString(), any(WorkDoneProgressEnd.class));
 	}
 
-	// ========== Task ID Uniqueness Tests ==========
+	// == == == == == Task ID Uniqueness Tests == == == == ==
 
 	@Test
 	void testTaskIdsAreUnique() {
@@ -287,7 +287,7 @@ class ProgressServiceTest {
 		assertThat(taskId2).startsWith("test-");
 	}
 
-	// ========== Integration Tests ==========
+	// == == == == == Integration Tests == == == == ==
 
 	@Test
 	void testFullIndefiniteProgressLifecycle() {
@@ -342,7 +342,7 @@ class ProgressServiceTest {
 		verify(mockClient, times(2)).end(anyString(), any(WorkDoneProgressEnd.class));
 	}
 
-	// ========== ProgressClient Direct Tests ==========
+	// == == == == == ProgressClient Direct Tests == == == == ==
 
 	@Test
 	void testProgressClientBeginIsCalled() {

@@ -42,9 +42,9 @@ public class GeneratorComposition {
 	public static IMarkerResolutionGenerator2 compose(
 			IMarkerResolutionGenerator2 a,
 			IMarkerResolutionGenerator2 b) {
-		if (a==null || a==NULL_GENERATOR) {
+		if (a == null || a == NULL_GENERATOR) {
 			return b;
-		} else if (b==null || b==NULL_GENERATOR) {
+		} else if (b == null || b == NULL_GENERATOR) {
 			return a;
 		} else {
 			return new CompositeGenerator(uncompose(a), uncompose(b));
@@ -82,7 +82,7 @@ public class GeneratorComposition {
 			ArrayList<IMarkerResolution> resolutions = new ArrayList<IMarkerResolution>();
 			for (IMarkerResolutionGenerator2 generator : children) {
 				IMarkerResolution[] additions = generator.getResolutions(marker);
-				if (additions!=null && additions.length>0) {
+				if (additions != null && additions.length > 0) {
 					resolutions.addAll(Arrays.asList(additions));
 				}
 			}

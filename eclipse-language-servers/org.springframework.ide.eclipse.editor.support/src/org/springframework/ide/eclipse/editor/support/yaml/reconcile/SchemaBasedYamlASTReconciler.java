@@ -69,10 +69,10 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	@Override
 	public void reconcile(YamlFileAST ast, IProgressMonitor mon) {
 		List<Node> nodes = ast.getNodes();
-		if (nodes!=null && !nodes.isEmpty()) {
+		if (nodes != null && !nodes.isEmpty()) {
 			mon.beginTask("Reconcile", nodes.size());
 			try {
-				if (nodes!=null && !nodes.isEmpty()) {
+				if (nodes != null && !nodes.isEmpty()) {
 					for (int i = 0; i < nodes.size(); i++) {
 						Node node = nodes.get(i);
 						reconcile(ast, new YamlPath(YamlPathSegment.valueAt(i)), /*parent*/null, node, schema.getTopLevelType());
@@ -87,10 +87,10 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	private void reconcile(YamlFileAST ast, YamlPath path, Node parent, Node node, YType type) {
-		if (type!=null) {
+		if (type != null) {
 			DynamicSchemaContext schemaContext = new ASTDynamicSchemaContext(ast, path, node);
 //			type = typeUtil.inferMoreSpecificType(type, schemaContext);
-//			if (typeCollector!=null) {
+//			if (typeCollector != null) {
 //				typeCollector.accept(node, type);
 //			}
 			checkConstraints(parent, node, type, schemaContext);
@@ -108,11 +108,11 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 					for (NodeTuple entry : map.getValue()) {
 						Node keyNode = entry.getKeyNode();
 						String key = NodeUtil.asScalar(keyNode);
-						if (key==null) {
+						if (key == null) {
 							expectScalar(node);
 						} else {
 							YTypedProperty prop = beanProperties.get(key);
-							if (prop==null) {
+							if (prop == null) {
 								unknownBeanProperty(keyNode, type, key);
 							} else {
 								if (prop.isDeprecated()) {
@@ -145,10 +145,10 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 			case scalar:
 				if (typeUtil.isAtomic(type)) {
 					ValueParser parser = typeUtil.getValueParser(type);
-					if (parser!=null) {
+					if (parser != null) {
 						try {
 							String value = NodeUtil.asScalar(node);
-							if (value!=null) {
+							if (value != null) {
 								parser.parse(value);
 							}
 						} catch (Exception e) {
@@ -218,7 +218,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	protected void checkConstraints(Node parent, Node node, YType type, DynamicSchemaContext dc) {
 		//Check for other constraints attached to the type
 		for (Constraint constraint : typeUtil.getConstraints(type)) {
-			if (constraint!=null) {
+			if (constraint != null) {
 				delayedConstraints.add(() -> {
 					constraint.verify(dc, parent, node, type, problems);
 				});
@@ -234,21 +234,21 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	private YamlPath keyAt(YamlPath path, String key) {
-		if (path!=null && key!=null) {
+		if (path != null && key != null) {
 			return path.append(YamlPathSegment.keyAt(key));
 		}
 		return null;
 	}
 
 	private YamlPath valueAt(YamlPath path, int index) {
-		if (path!=null) {
+		if (path != null) {
 			return path.append(YamlPathSegment.valueAt(index));
 		}
 		return null;
 	}
 
 	private YamlPath valueAt(YamlPath path, String key) {
-		if (path!=null && key!=null) {
+		if (path != null && key != null) {
 			return path.append(YamlPathSegment.valueAt(key));
 		}
 		return null;
@@ -268,7 +268,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 		}
 		ReconcileProblemImpl problem = YamlSchemaProblems.problem(problemType, parseErrorMsg, region);
 // TODO: backport quickfix support for deprecated replacement somehow.
-//		if (fix!=null && StringUtil.hasText(fix.replacement)) {
+//		if (fix != null && StringUtil.hasText(fix.replacement)) {
 //			try {
 //				problem.addQuickfix(
 //					new QuickfixData<>(quickfixes.SIMPLE_TEXT_EDIT,

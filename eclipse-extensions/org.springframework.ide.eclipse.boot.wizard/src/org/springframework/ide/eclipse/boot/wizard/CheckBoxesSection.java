@@ -109,7 +109,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 	}
 
 	public CheckBoxesSection<T> columns(int howMany) {
-		Assert.isLegal(howMany>0);
+		Assert.isLegal(howMany > 0);
 		this.numCols = howMany;
 		return this;
 	}
@@ -134,7 +134,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 
 		@Override
 		public void createContents(Composite page) {
-			if (page!=null && !page.isDisposed()) {
+			if (page != null && !page.isDisposed()) {
 				Composite composite = new Composite(page, SWT.NONE);
 				composite.setLayout(new FillLayout());
 				this.cb = new Button(composite, SWT.CHECK);
@@ -162,7 +162,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 						// note: checkbox button may be null in cases where the
 						// model keeps changing in the container section and the selection
 						// listener is notified after the button was disposed
-						if (value!=null && cb != null && !cb.isDisposed()) {
+						if (value != null && cb != null && !cb.isDisposed()) {
 							cb.setSelection(value);
 						}
 					}
@@ -184,11 +184,11 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 					}
 				});
 				LiveExpression<Boolean> enablement = model.getEnablement();
-				if (enablement!=null) {
+				if (enablement != null) {
 					enablement.addListener(enablementListener = new ValueListener<Boolean>() {
 						@Override
 						public void gotValue(LiveExpression<Boolean> exp, Boolean value) {
-							if (value!=null) {
+							if (value != null) {
 								cb.setEnabled(value);
 							}
 						}
@@ -197,7 +197,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 				isVisible.addListener(new ValueListener<Boolean>() {
 					@Override
 					public void gotValue(LiveExpression<Boolean> exp, Boolean reveal) {
-						if (reveal!=null && composite !=null && !composite.isDisposed()) {
+						if (reveal != null && composite != null && !composite.isDisposed()) {
 							composite.setVisible(reveal);
 							GridData data = (GridData) composite.getLayoutData();
 							data.exclude = !reveal;
@@ -209,7 +209,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 
 		@Override
 		public void dispose() {
-			if (cb!=null && !cb.isDisposed()) {
+			if (cb != null && !cb.isDisposed()) {
 				cb.dispose();
 				cb = null;
 			}
@@ -281,7 +281,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 	}
 
 	protected Composite createComposite(Composite page) {
-		if (this.label!=null) {
+		if (this.label != null) {
 			Group comp = new Group(page, SWT.NONE);
 			comp.setText(label);
 			return comp;
@@ -291,7 +291,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 	}
 
 	public boolean applyFilter(Filter<T> filter) {
-		if (subsections!=null) {
+		if (subsections != null) {
 			boolean visibilityChanged = false;
 			for (WizardPageSection subsection : subsections) {
 				if (subsection instanceof CheckBox) {
@@ -309,7 +309,7 @@ public class CheckBoxesSection<T> extends WizardPageSection {
 	}
 
 	public boolean hasVisible() {
-		if (subsections!=null) {
+		if (subsections != null) {
 			for (WizardPageSection s : subsections) {
 				if (s instanceof CheckBox) {
 					@SuppressWarnings("unchecked")

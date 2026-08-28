@@ -62,14 +62,14 @@ public class LoggerNameProvider implements ValueProviderStrategy {
 
 	Collection<String> loggerGroupNames(IJavaProject jp) {
 		Builder<String> builder = ImmutableSet.builder();
-		if (adhocProperties!=null && includeGroups) {
+		if (adhocProperties != null && includeGroups) {
 			SortedMap<String, PropertyInfo> index = adhocProperties.getIndex(jp).getTreeMap();
 			index = index.subMap(LOGGING_GROUPS_PREFIX, LOGGING_GROUPS_PREFIX+Character.MAX_VALUE);
 			for (String prop : index.keySet()) {
 				if (prop.startsWith(LOGGING_GROUPS_PREFIX)) {
 					String groupName = prop.substring(LOGGING_GROUPS_PREFIX.length());
 					int bracket = groupName.indexOf('[');
-					if (bracket>=0) {
+					if (bracket >= 0) {
 						groupName = groupName.substring(0, bracket);
 					}
 					builder.add(groupName);
@@ -83,7 +83,7 @@ public class LoggerNameProvider implements ValueProviderStrategy {
 		return Flux.concat(
 			Flux.fromIterable(loggerGroupNames(javaProject))
 				.map(loggerName -> Tuples.of(StsValueHint.create(loggerName), FuzzyMatcher.matchScore(query, loggerName)))
-				.filter(t -> t.getT2()!=0.0),
+				.filter(t -> t.getT2() != 0.0),
 			javaProject.getIndex()
 				.fuzzySearchPackages(query, true, false)
 				.map(t -> Tuples.of(StsValueHint.create(t.getT1()), t.getT2())),

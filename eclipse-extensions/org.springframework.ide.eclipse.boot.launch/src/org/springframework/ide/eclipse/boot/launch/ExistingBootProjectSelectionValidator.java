@@ -37,7 +37,7 @@ public class ExistingBootProjectSelectionValidator extends Validator {
 	@Override
 	protected ValidationResult compute() {
 		IProject p = selection.getValue();
-		if (p==null) {
+		if (p == null) {
 			return error("No project selected");
 		} else if (!p.exists()) {
 			return error("Project '"+p.getName()+"' does not exist in the workspace");

@@ -110,7 +110,7 @@ public class ManifestYamlLanguageServerInitializer implements InitializingBean {
 
 //		workspace.onDidChangeConfiguraton(settings -> {
 //			Integer val = settings.getInt("languageServerExample", "maxNumberOfProblems");
-//			if (val!=null) {
+//			if (val != null) {
 //				maxProblems = ((Number) val).intValue();
 //				for (TextDocument doc : documents.getAll()) {
 //					validateDocument(documents, doc);

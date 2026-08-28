@@ -34,10 +34,10 @@ public class CompositeValidator extends CompositeExpression<ValidationResult> {
 		ValidationResult worst = ValidationResult.OK;
 		for (LiveExpression<ValidationResult> v : getChildren()) {
 			ValidationResult r = v.getValue();
-			if (r!=null && r.status>worst.status) {
+			if (r != null && r.status > worst.status) {
 				worst = r;
 			}
-			if (worst.status>=IStatus.ERROR) {
+			if (worst.status >= IStatus.ERROR) {
 				//can't really get any worse than that
 				return worst;
 			}

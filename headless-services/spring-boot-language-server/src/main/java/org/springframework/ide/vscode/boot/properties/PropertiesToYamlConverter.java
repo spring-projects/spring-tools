@@ -84,7 +84,7 @@ class PropertiesToYamlConverter {
 						}
 					}
 				}
-				if (parsed!=null && parsed.toString().equals(value)) {
+				if (parsed != null && parsed.toString().equals(value)) {
 					return parsed;
 				}
 			}
@@ -93,7 +93,7 @@ class PropertiesToYamlConverter {
 
 		private <T> YamlBuilder getSubBuilder(LinkedTreeMap<T, YamlBuilder> subBuilders, YamlPathSegment segment, T key) {
 			YamlBuilder existing = subBuilders.get(key);
-			if (existing==null) {
+			if (existing == null) {
 				subBuilders.put(key, existing = new YamlBuilder(path.append(segment)));
 			}
 			return existing;
@@ -102,7 +102,7 @@ class PropertiesToYamlConverter {
 		public Object build() {
 			if (!scalars.isEmpty()) {
 				if (listItems.isEmpty() && mapEntries.isEmpty()) {
-					if (scalars.size()>1) {
+					if (scalars.size() > 1) {
 						warnings.add("Multiple values "+ scalars +" assigned to '"+path.toPropString()+"'. Values are merged into a yaml sequence node.");
 						return scalars;
 					} else {

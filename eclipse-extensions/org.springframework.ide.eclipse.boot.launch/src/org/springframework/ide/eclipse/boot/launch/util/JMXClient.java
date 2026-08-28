@@ -67,7 +67,7 @@ public class JMXClient implements Disposable {
 	@SuppressWarnings("unchecked")
 	public <T> T getAttribute(Class<T> klass, String objectName, String attributeName) throws AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, IOException {
 		Object value = getAttribute(objectName, attributeName);
-		if (value==null || klass.isInstance(value)) {
+		if (value == null || klass.isInstance(value)) {
 			return (T)value;
 		} else {
 			throw new ClassCastException("Value '"+value+"' can't be cast to "+klass);
@@ -112,7 +112,7 @@ public class JMXClient implements Disposable {
 	}
 
 	public static String createLocalJmxUrl(Integer port) {
-		if (port!=null && port>0) {
+		if (port != null && port > 0) {
 			return "service:jmx:rmi:///jndi/rmi://127.0.0.1:" + port + "/jmxrmi";
 		}
 		return null;
@@ -124,7 +124,7 @@ public class JMXClient implements Disposable {
 	}
 
 	public static JMXConnector createLocalJmxConnector(int port) throws MalformedURLException, IOException {
-		if (port>0) {
+		if (port > 0) {
 			return createJmxConnectorFromUrl(createLocalJmxUrl(""+port));
 		}
 		return null;

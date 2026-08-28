@@ -27,11 +27,11 @@ public class IntegerRange {
 	}
 
 	public boolean isTooLarge(int x) {
-		return upperBound!=null && x > upperBound;
+		return upperBound != null && x > upperBound;
 	}
 
 	public boolean isTooSmall(int x) {
-		return lowerBound!=null && x < lowerBound;
+		return lowerBound != null && x < lowerBound;
 	}
 
 	private IntegerRange(Integer lowerBound, Integer upperBound) {
@@ -64,7 +64,7 @@ public class IntegerRange {
 	}
 
 	private String maybeStr(Integer bound) {
-		if (bound!=null) {
+		if (bound != null) {
 			return bound.toString();
 		}
 		return "";

@@ -252,7 +252,7 @@
 //			for (CheckBoxModel<Dependency> cb2 : allDependencies) {
 //				Dependency d1 = cb1.getValue();
 //				Dependency d2 = cb2.getValue();
-//				if (d1.getId().compareTo(d2.getId())<=0) {
+//				if (d1.getId().compareTo(d2.getId()) <= 0) {
 //					allPairs.add(Pair.of(cb1, cb2));
 //				}
 //			}
@@ -698,9 +698,9 @@
 //
 //
 //	private String getSnapshotsEnabled(Element repo) {
-//		if (repo!=null) {
+//		if (repo != null) {
 //			Element snapshots = findChild(repo, "snapshots");
-//			if (snapshots!=null) {
+//			if (snapshots != null) {
 //				return getTextChild(snapshots, "enabled");
 //			}
 //		}
@@ -710,7 +710,7 @@
 //	private Element getRepo(IDOMDocument pom, String id) {
 //		Element doc = pom.getDocumentElement();
 //		Element repos = findChild(doc, REPOSITORIES);
-//		if (repos!=null) {
+//		if (repos != null) {
 //			return findChild(repos, REPOSITORY, childEquals("id", id));
 //		}
 //		return null;
@@ -727,9 +727,9 @@
 //
 //	private int getRepoCount(IDOMDocument pom) {
 //		Element reposEl = findChild(pom.getDocumentElement(), REPOSITORIES);
-//		if (reposEl!=null) {
+//		if (reposEl != null) {
 //			List<Element> repos = findChilds(reposEl, REPOSITORY);
-//			if (repos!=null) {
+//			if (repos != null) {
 //				return repos.size();
 //			}
 //		}
@@ -742,9 +742,9 @@
 //	 */
 //	private Element getBom(IDOMDocument pom, String aid) {
 //		Element depman = findChild(pom.getDocumentElement(), DEPENDENCY_MANAGEMENT);
-//		if (depman!=null) {
+//		if (depman != null) {
 //			Element deps = findChild(depman, DEPENDENCIES);
-//			if (deps!=null) {
+//			if (deps != null) {
 //				return findChild(deps, DEPENDENCY, childEquals(ARTIFACT_ID, aid));
 //			}
 //		}
@@ -753,11 +753,11 @@
 //
 //	private int getBomCount(IDOMDocument pom) {
 //		Element depman = findChild(pom.getDocumentElement(), DEPENDENCY_MANAGEMENT);
-//		if (depman!=null) {
+//		if (depman != null) {
 //			Element deps = findChild(depman, DEPENDENCIES);
-//			if (deps!=null) {
+//			if (deps != null) {
 //				List<Element> boms = findChilds(deps, DEPENDENCY);
-//				if (boms!=null) {
+//				if (boms != null) {
 //					return boms.size();
 //				}
 //			}

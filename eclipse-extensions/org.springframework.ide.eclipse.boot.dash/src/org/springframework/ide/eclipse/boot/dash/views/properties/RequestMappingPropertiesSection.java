@@ -62,7 +62,7 @@ public class RequestMappingPropertiesSection extends LiveDataPropertiesSection<I
 		@Override
 		public void mouseDoubleClick(MouseEvent e) {
 			ViewerCell cell = tv.getCell(new Point(e.x, e.y));
-			if (cell!=null) {
+			if (cell != null) {
 				Object clicked = cell.getElement();
 				if (clicked instanceof RequestMapping){
 					RequestMapping rm = (RequestMapping) clicked;
@@ -72,7 +72,7 @@ public class RequestMappingPropertiesSection extends LiveDataPropertiesSection<I
 					case PATH:
 						BootDashElement bde = getBootDashElement();
 						String url = Utils.createUrl(bde.getLiveHost(), bde.getLivePort(), rm.getPath());
-						if (url!=null) {
+						if (url != null) {
 							openUrl(url);
 						}
 						break;
@@ -108,7 +108,7 @@ public class RequestMappingPropertiesSection extends LiveDataPropertiesSection<I
 				 RequestMapping rm2 = (RequestMapping) e2;
 				 int cat1 = getCategory(rm1);
 				 int cat2 = getCategory(rm2);
-				 if (cat1!=cat2) {
+				 if (cat1 != cat2) {
 					 return cat1-cat2;
 				 } else {
 					 return rm1.getPath().compareTo(rm2.getPath());
@@ -133,11 +133,11 @@ public class RequestMappingPropertiesSection extends LiveDataPropertiesSection<I
 
 	@Override
 	public void dispose() {
-		if (labelProvider!=null) {
+		if (labelProvider != null) {
 			labelProvider.dispose();
 			labelProvider = null;
 		}
-		if (stylers!=null) {
+		if (stylers != null) {
 			stylers.dispose();
 			stylers = null;
 		}

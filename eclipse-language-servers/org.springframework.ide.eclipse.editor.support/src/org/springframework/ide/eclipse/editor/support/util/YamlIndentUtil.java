@@ -55,9 +55,9 @@ public class YamlIndentUtil {
 	 * when either one or both indent levels are '-1' (unknown).
 	 */
 	public static int minIndent(int a, int b) {
-		if (a==-1) {
+		if (a == -1) {
 			return b;
-		} else if (b==-1) {
+		} else if (b == -1) {
 			return a;
 		} else {
 			return Math.min(a, b);
@@ -99,7 +99,7 @@ public class YamlIndentUtil {
 	 * just return offset unmodified.
 	 */
 	public static int addToOffset(int offset, int indent) {
-		if (indent==-1) {
+		if (indent == -1) {
 			return offset;
 		}
 		return offset + indent;

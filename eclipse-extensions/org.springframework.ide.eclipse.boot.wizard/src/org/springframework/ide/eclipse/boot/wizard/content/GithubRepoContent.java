@@ -50,7 +50,7 @@ public abstract class GithubRepoContent extends AGSContent {
 	 */
 	@Override
 	public DownloadableItem getZip() {
-		if (zip==null) {
+		if (zip == null) {
 			String repoUrl = getRepo().getHtmlUrl();
 			//repoUrl is something like "https://github.com/springframework-meta/gs-consuming-rest-android"
 			//zipUrl is something like  "https://github.com/springframework-meta/gs-consuming-rest-android/archive/master.zip"

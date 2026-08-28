@@ -69,7 +69,7 @@ public class UrlMaker extends LiveExpression<String> {
 	@Override
 	protected String compute() {
 		String baseUrl = this.baseUrl.getValue();
-		if (baseUrl==null) {
+		if (baseUrl == null) {
 			baseUrl = "";
 		} else {
 			baseUrl = baseUrl.trim();
@@ -77,16 +77,16 @@ public class UrlMaker extends LiveExpression<String> {
 		SimpleUriBuilder builder = new SimpleUriBuilder(baseUrl);
 		for (FieldModel<String> f : inputs) {
 			String paramValue = f.getValue();
-			if (paramValue!=null) {
+			if (paramValue != null) {
 				builder.addParameter(f.getName(), paramValue);
 			}
 		}
 
 		for (FieldModel<RadioInfo> f : radioInputs) {
 			RadioInfo radio = f.getValue();
-			if (radio!=null) {
+			if (radio != null) {
 				String paramValue = radio.getUrlParamValue();
-				if (paramValue!=null) {
+				if (paramValue != null) {
 					builder.addParameter(f.getName(), paramValue);
 				}
 			}

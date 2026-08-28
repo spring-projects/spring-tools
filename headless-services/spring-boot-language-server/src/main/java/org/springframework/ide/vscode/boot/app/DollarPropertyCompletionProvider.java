@@ -38,7 +38,7 @@ public class DollarPropertyCompletionProvider implements ICompletionEngine, Lang
 	private static PrefixFinder PREFIX_FINDER = new PrefixFinder() {
 		@Override
 		protected boolean isPrefixChar(char c) {
-			return Character.isJavaIdentifierPart(c) || c=='-' || c=='.';
+			return Character.isJavaIdentifierPart(c) || c == '-' || c == '.';
 		}
 	};
 	private static final Collection<LanguageId> LANGUAGES = ImmutableList.of(
@@ -60,7 +60,7 @@ public class DollarPropertyCompletionProvider implements ICompletionEngine, Lang
 			String dollar = doc.textBetween(prefixStart-DOLLAR.length(), prefixStart);
 			if (DOLLAR.equals(dollar)) {
 				String pattern = prefix.replaceAll("[^a-zA-Z0-9\\s+]", "");
-				boolean hasCloseCurly = doc.getSafeChar(offset)=='}';
+				boolean hasCloseCurly = doc.getSafeChar(offset) == '}';
 				List<Match<PropertyInfo>> matches = indexProvider.getIndex(doc).getProperties().find(pattern);
 				for (Match<PropertyInfo> match : matches) {
 					DocumentEdits edits = new DocumentEdits(doc, false);

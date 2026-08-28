@@ -52,7 +52,7 @@ public class Scroller extends SharedScrolledComposite implements Reflowable {
 	}
 	
 	public boolean reflowAsync() {
-		if (reflowJob==null) {
+		if (reflowJob == null) {
 			reflowJob = new UIJob(Display.getDefault(), "Reflow Wizard Contents") {
 				@Override
 				public IStatus runInUIThread(IProgressMonitor monitor) {

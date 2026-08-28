@@ -26,7 +26,7 @@ public class TestDataProvider {
 	public List<String> getParameterNames(IMethod method) {
 		String key = method.getBindingKey();
 		List<String> l = methodParameters.get(method.getBindingKey());
-		Assert.isLegal(l!=null, "Test code should provide method parameter names for '"+key+"'");;
+		Assert.isLegal(l != null, "Test code should provide method parameter names for '"+key+"'");;
 		return l;
 	}
 

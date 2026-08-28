@@ -23,7 +23,7 @@ public class BootMarkerUtils {
 
 	public static IProject getProject(IMarker marker) {
 		IResource resource = marker.getResource();
-		if (resource!=null) {
+		if (resource != null) {
 			return resource.getProject();
 		}
 		return null;
@@ -47,7 +47,7 @@ public class BootMarkerUtils {
 				attributes.put(IMarker.MESSAGE, problem.getMessage());
 				attributes.put(IMarker.SEVERITY, new Integer(problem.getSeverity()));
 				int start = problem.getStart();
-				if (start>=0) {
+				if (start >= 0) {
 					attributes.put(IMarker.CHAR_START, start);
 					attributes.put(IMarker.CHAR_END, problem.getEnd());
 				}

@@ -44,7 +44,7 @@ public class ASTRootCursor extends ASTCursor {
 			List<Node> nodes = getNode().getNodes();
 			int index = s.toIndex();
 			int size = nodes.size();
-			if (index<size && index >= 0) {
+			if (index < size && index >= 0) {
 				return Stream.of(new NodeCursor(nodes.get(index)));
 			}
 			return Stream.empty();

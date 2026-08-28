@@ -42,9 +42,9 @@ public class SpringJavaElementPropertyTester extends PropertyTester {
 	}
 
 	private boolean isInSpringProject(IJavaElement je) {
-		if (je!=null) {
+		if (je != null) {
 			IJavaProject jp = je.getJavaProject();
-			if (jp!=null) {
+			if (jp != null) {
 				return SpringPropertyTester.isSpringProject(jp.getProject());
 			}
 		}

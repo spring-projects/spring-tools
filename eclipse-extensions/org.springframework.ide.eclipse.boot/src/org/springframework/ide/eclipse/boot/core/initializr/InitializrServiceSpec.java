@@ -81,7 +81,7 @@ public class InitializrServiceSpec {
 			input = conn.getInputStream();
 			return parseFrom(input);
 		} finally {
-			if (input!=null) {
+			if (input != null) {
 				try {
 					input.close();
 				} catch (IOException e) {
@@ -103,7 +103,7 @@ public class InitializrServiceSpec {
 				input = conn.getInputStream();
 			}
 		} finally {
-			if (input!=null) {
+			if (input != null) {
 				try {
 					input.close();
 				} catch (IOException e) {
@@ -184,7 +184,7 @@ public class InitializrServiceSpec {
 		@Override
 		public String getName() {
 			String name = super.getName();
-			return name!=null?name:getId();
+			return name != null ? name : getId();
 		}
 
 		public void setId(String id) {
@@ -242,7 +242,7 @@ public class InitializrServiceSpec {
 				if (StringUtils.isNotBlank(versionRange)) {
 					final VersionRange range = VersionParser.DEFAULT.parseRange(versionRange);
 					String versionStr = bootVersion;
-					if (versionStr!=null) {
+					if (versionStr != null) {
 						Version version = VersionParser.DEFAULT.parse(versionStr);
 						//replacement of BS -> ZZ: see bug https://www.pivotaltracker.com/story/show/100963226
 						return range.match(version);
@@ -383,7 +383,7 @@ public class InitializrServiceSpec {
 	public Type[] getTypeOptions(String groupName) {
 		try {
 			JSONObject obj = data.optJSONObject(groupName);
-			if (obj!=null && "action".equals(obj.optString("type"))) {
+			if (obj != null && "action".equals(obj.optString("type"))) {
 				String defaultValue = obj.optString("default", "");
 				JSONArray arr = obj.getJSONArray("values");
 				List<Type> options = new ArrayList<>(arr.length());
@@ -415,7 +415,7 @@ public class InitializrServiceSpec {
 	public Option[] getSingleSelectOptions(String groupName) {
 		try {
 			JSONObject obj = data.optJSONObject(groupName);
-			if (obj!=null && "single-select".equals(obj.optString("type"))) {
+			if (obj != null && "single-select".equals(obj.optString("type"))) {
 				String defaultValue = obj.optString("default", "");
 				JSONArray arr = obj.getJSONArray("values");
 				Option[] options = new Option[arr.length()];
@@ -443,7 +443,7 @@ public class InitializrServiceSpec {
 	private DependencyGroup[] getHierarchicalMultiSelect(String prop) {
 		try {
 			JSONObject obj = data.optJSONObject(prop);
-			if (obj!=null && "hierarchical-multi-select".equals(obj.optString("type"))) {
+			if (obj != null && "hierarchical-multi-select".equals(obj.optString("type"))) {
 				JSONArray arr = obj.getJSONArray("values");
 				DependencyGroup[] groups = new DependencyGroup[arr.length()];
 				for (int i = 0; i < groups.length; i++) {

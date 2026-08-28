@@ -29,7 +29,7 @@ public abstract class Validator extends LiveExpression<ValidationResult> {
 			@Override
 			protected ValidationResult compute() {
 				String v = target.getValue();
-				if (v==null || v.trim().isEmpty()) {
+				if (v == null || v.trim().isEmpty()) {
 					return ValidationResult.error(errorMessage);
 				} else {
 					return ValidationResult.OK;
@@ -42,7 +42,7 @@ public abstract class Validator extends LiveExpression<ValidationResult> {
 		Validator v = new Validator() {
 			@Override
 			protected ValidationResult compute() {
-				if (target.getValue()==null) {
+				if (target.getValue() == null) {
 					return ValidationResult.error(errorMessage);
 				} else {
 					return ValidationResult.OK;

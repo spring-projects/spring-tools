@@ -32,9 +32,9 @@ public class DocumentUtil {
 	 */
 	public static IPath getLocation(IDocument doc) {
 		ITextFileBufferManager bufferMgr = FileBuffers.getTextFileBufferManager();
-		if (bufferMgr!=null) {
+		if (bufferMgr != null) {
 			ITextFileBuffer buf = bufferMgr.getTextFileBuffer(doc);
-			if (buf!=null) {
+			if (buf != null) {
 				return buf.getLocation();
 			}
 		}
@@ -43,8 +43,8 @@ public class DocumentUtil {
 
 	public static IProject getProject(IDocument doc) {
 		IPath location = getLocation(doc);
-		if (location!=null) {
-			if (location.segmentCount()>=1) {
+		if (location != null) {
+			if (location.segmentCount() >= 1) {
 				String projectName = location.segment(0);
 				return ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 			}
@@ -54,9 +54,9 @@ public class DocumentUtil {
 
 	public static IJavaProject getJavaProject(IDocument doc) {
 		try {
-			if (doc!=null) {
+			if (doc != null) {
 				IProject p = getProject(doc);
-				if (p!=null && p.isAccessible() && p.hasNature(JavaCore.NATURE_ID)) {
+				if (p != null && p.isAccessible() && p.hasNature(JavaCore.NATURE_ID)) {
 					return JavaCore.create(p);
 				}
 			}
@@ -69,7 +69,7 @@ public class DocumentUtil {
 	public static int firstNonWhitespaceCharOfRegion(IDocument doc, IRegion region) {
 		try {
 			int pos = skipWhiteSpace(doc, region.getOffset());
-			if (pos<region.getOffset()+region.getLength()) {
+			if (pos < region.getOffset()+region.getLength()) {
 				return pos;
 			}
 		} catch (Exception e) {
@@ -84,10 +84,10 @@ public class DocumentUtil {
 	public static int lastNonWhitespaceCharOfRegion(IDocument doc, IRegion errorRegion) {
 		try {
 			int pos = errorRegion.getOffset()+errorRegion.getLength()-1;
-			while (pos>=errorRegion.getOffset()&&Character.isWhitespace(doc.getChar(pos))) {
+			while (pos >= errorRegion.getOffset()&&Character.isWhitespace(doc.getChar(pos))) {
 				pos--;
 			}
-			if (pos>=errorRegion.getOffset()) {
+			if (pos >= errorRegion.getOffset()) {
 				return pos;
 			}
 		} catch (Exception e) {
@@ -99,10 +99,10 @@ public class DocumentUtil {
 	public static int skipWhiteSpace(IDocument doc, int pos) {
 		try {
 			int end = doc.getLength();
-			while (pos<end&&Character.isWhitespace(doc.getChar(pos))) {
+			while (pos < end&&Character.isWhitespace(doc.getChar(pos))) {
 				pos++;
 			}
-			if (pos<end) {
+			if (pos < end) {
 				return pos;
 			}
 		} catch (Exception e) {
@@ -118,17 +118,17 @@ public class DocumentUtil {
 	 * retrieve the text just upto the end or beginning of the document instead.
 	 */
 	public static String textBetween(IDocument doc, int start, int end) {
-		Assert.isLegal(start<=end);
-		if (start>=doc.getLength()) {
+		Assert.isLegal(start <= end);
+		if (start >= doc.getLength()) {
 			return "";
 		}
-		if (start<0) {
+		if (start < 0) {
 			start = 0;
 		}
-		if (end>doc.getLength()) {
+		if (end > doc.getLength()) {
 			end = doc.getLength();
 		}
-		if (end<start) {
+		if (end < start) {
 			end = start;
 		}
 		try {
@@ -140,14 +140,14 @@ public class DocumentUtil {
 	}
 
 //	public static IRegion trim(IDocument doc, IRegion region) {
-//		if (region.getLength()==0) {
+//		if (region.getLength() == 0) {
 //			//Special case avoid doing any work for empty region trimming.
 //			return region;
 //		}
 //		int start = firstNonWhitespaceCharOfRegion(doc, region);
-//		if (start>=0) {
+//		if (start >= 0) {
 //			int end = lastNonWhitespaceCharOfRegion(doc, region);
-//			if (end>=start) {
+//			if (end >= start) {
 //				return new Region(start, end-start+1); //+1 because 'end' character should be included.
 //			}
 //		}

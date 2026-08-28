@@ -131,7 +131,7 @@ public class HtmlTooltip extends ToolTip {
 				public void changing(LocationEvent event) {
 					super.changing(event);
 					try {
-						if (event.location!=null) {
+						if (event.location != null) {
 							if (event.location.startsWith("about:")) { //about:blank url
 								//ignore
 							} else {
@@ -256,7 +256,7 @@ public class HtmlTooltip extends ToolTip {
 			}
 
 			fTextLayout.setText(text);
-			fTextLayout.setWidth(maxSizeConstraints == null || maxSizeConstraints.x < trim.width? SWT.DEFAULT : maxSizeConstraints.x - trim.width);
+			fTextLayout.setWidth(maxSizeConstraints == null || maxSizeConstraints.x < trim.width ? SWT.DEFAULT : maxSizeConstraints.x - trim.width);
 			Iterator<StyleRange> iter= presentation.getAllStyleRangeIterator();
 			while (iter.hasNext()) {
 				StyleRange sr= iter.next();

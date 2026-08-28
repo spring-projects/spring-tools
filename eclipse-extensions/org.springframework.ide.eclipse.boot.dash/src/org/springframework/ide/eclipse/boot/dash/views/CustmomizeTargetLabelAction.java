@@ -33,11 +33,11 @@ public class CustmomizeTargetLabelAction extends AbstractBootDashModelAction {
 	}
 
 	private boolean isApplicable(BootDashModel section) {
-		if (section!=null) {
+		if (section != null) {
 			PropertyStoreApi props = section.getRunTarget().getType().getPersistentProperties();
 			//Not all target types provide persistent properties yet. This feature only works on
 			// those target types that do.
-			return props!=null;
+			return props != null;
 		}
 		return false;
 	}

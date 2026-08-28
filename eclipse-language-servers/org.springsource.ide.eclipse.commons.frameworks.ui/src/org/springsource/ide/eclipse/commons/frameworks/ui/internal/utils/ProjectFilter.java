@@ -27,7 +27,7 @@ public abstract class ProjectFilter {
 
 		@Override
 		public boolean isAcceptable(IProject project) {
-			return project!=null;
+			return project != null;
 		}
 	};
 	public static final ProjectFilter isJavaProject = new ProjectFilter() {
@@ -35,7 +35,7 @@ public abstract class ProjectFilter {
 		@Override
 		public boolean isAcceptable(IProject project) {
 			try {
-				return project!=null && project.isAccessible() && project.hasNature(JavaCore.NATURE_ID);
+				return project != null && project.isAccessible() && project.hasNature(JavaCore.NATURE_ID);
 			} catch (CoreException e) {
 			}
 			return false;

@@ -108,7 +108,7 @@ public class MemoizingProxy {
 				@FieldValue(F_DELEGATE) Object delegate, 
 				@AllArguments Object[] args
 		) throws Exception {
-			if (args.length==0) {
+			if (args.length == 0) {
 				synchronized (cache) {
 					String mname = method.getName();
 					Result r = cache.get(mname, () -> new Result(() -> { 
@@ -147,7 +147,7 @@ public class MemoizingProxy {
 		}
 
 		public Object get() throws Exception {
-			if (e!=null) {
+			if (e != null) {
 				throw ExceptionUtil.exception(e);
 			}
 			return v;
@@ -157,7 +157,7 @@ public class MemoizingProxy {
 	public static <T> Builder<T> builder(Class<T> klass, Duration duration, Class<?>... argTypes) {
 		try {
 			if (klass.isInterface()) {
-				Assert.isLegal(argTypes.length==0, "Should not provide constructor argument types for interface type "+klass.getSimpleName());
+				Assert.isLegal(argTypes.length == 0, "Should not provide constructor argument types for interface type "+klass.getSimpleName());
 				DynamicType.Builder<T> builder = new ByteBuddy()
 						.subclass(klass, ConstructorStrategy.Default.NO_CONSTRUCTORS)
 						.defineField(F_DURATION, long.class, Opcodes.ACC_FINAL | Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC).value(duration.toMillis())

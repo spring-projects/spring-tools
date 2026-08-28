@@ -178,7 +178,7 @@ public class InjectBeanConstructorRefactoring {
 		return rewrite.rewriteAST(jdtDoc, formatterOptions);
 	}
 
-	// ========== Class lookup ==========
+	// == == == == == Class lookup == == == == ==
 
 	private static TypeDeclaration findClassByName(CompilationUnit cu, String fullyQualifiedName) {
 		String simpleName = fullyQualifiedName.contains(".")
@@ -209,7 +209,7 @@ public class InjectBeanConstructorRefactoring {
 		return null;
 	}
 
-	// ========== Field ==========
+	// == == == == == Field == == == == ==
 
 	/**
 	 * Add a {@code private final} field declaration to the class.
@@ -248,7 +248,7 @@ public class InjectBeanConstructorRefactoring {
 		return fieldDecl;
 	}
 
-	// ========== Constructor ==========
+	// == == == == == Constructor == == == == ==
 
 	private static MethodDeclaration findConstructor(TypeDeclaration typeDecl) {
 		for (MethodDeclaration method : typeDecl.getMethods()) {

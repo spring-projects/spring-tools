@@ -72,7 +72,7 @@ public class SpringBootProjectBuilder extends IncrementalProjectBuilder {
 	}
 	
 	private static synchronized void ensureClasspathListener() {
-		if (classpathListener==null) {
+		if (classpathListener == null) {
 			classpathListener = new ClasspathListenerManager((jp) -> classpathChanged(jp.getElementName()));
 		}
 	}
@@ -94,7 +94,7 @@ public class SpringBootProjectBuilder extends IncrementalProjectBuilder {
 				for (IResource rsrc : affectedResources) {
 					IModelElement element = CompilationUnitElement.create(rsrc);
 					MarkerUtils.deleteAllMarkers(rsrc, MARKER_ID);
-					if (element!=null) {
+					if (element != null) {
 						for (IValidationRule rule : rules) {
 							if (rule.supports(element)) {
 								rule.validate(element, validationContext(rsrc, rule), new SubProgressMonitor(monitor, 1));
@@ -115,7 +115,7 @@ public class SpringBootProjectBuilder extends IncrementalProjectBuilder {
 		SeverityProvider severityProvider = new PreferencesBasedSeverityProvider(ConfigProcessingPreferencesPage.util, rsrc.getProject(), BootValidationActivator.PLUGIN_ID, EditorType.JAVA);
 		return (IResource cu, ProblemType problemId, String msg, int offset, int end) -> {
 			ProblemSeverity severity = severityProvider.getSeverity(problemId);
-			if (severity==ProblemSeverity.IGNORE) {
+			if (severity == ProblemSeverity.IGNORE) {
 				return;
 			}
 			ValidationProblem problem = new ValidationProblem() {

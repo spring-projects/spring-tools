@@ -170,7 +170,7 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 	}
 
 	void init() {
-		if (allElements==null) {
+		if (allElements == null) {
 			this.applications = new LiveSetVariable<>(AsyncMode.SYNC);
 			this.allElements = LiveSets.union(
 					this.applications,
@@ -249,7 +249,7 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 	 * listening for changes to the workspace in order to keep itself in synch.
 	 */
 	public void dispose() {
-		if (applications!=null) {
+		if (applications != null) {
 			applications.getValue().forEach(bde -> bde.dispose());
 			applications.dispose();
 			applications = null;
@@ -260,19 +260,19 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 			devtoolsPortRefresher.dispose();
 			devtoolsPortRefresher = null;
 		}
-		if (launchConfElementFactory!=null) {
+		if (launchConfElementFactory != null) {
 			launchConfElementFactory.dispose();
 			launchConfElementFactory = null;
 		}
-		if (projectElementFactory!=null) {
+		if (projectElementFactory != null) {
 			projectElementFactory.dispose();
 			projectElementFactory = null;
 		}
-		if (projectExclusionListener!=null) {
+		if (projectExclusionListener != null) {
 			projectExclusion.removeListener(projectExclusionListener);
 			projectExclusionListener=null;
 		}
-		if (localServices!=null) {
+		if (localServices != null) {
 			localServices.dispose();
 			localServices = null;
 		}
@@ -305,7 +305,7 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 
 	private void doUpdateElementsFromWorkspace() {
 		LiveSetVariable<BootProjectDashElement> apps = this.applications;
-		if (apps!=null) {
+		if (apps != null) {
 			Set<BootProjectDashElement> newElements = Arrays.stream(this.workspace.getRoot().getProjects())
 					.map(projectElementFactory::createOrGet)
 					.filter(Objects::nonNull)

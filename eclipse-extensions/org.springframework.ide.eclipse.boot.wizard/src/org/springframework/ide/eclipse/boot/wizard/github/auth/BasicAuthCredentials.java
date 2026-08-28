@@ -59,7 +59,7 @@ public class BasicAuthCredentials extends Credentials {
 	}
 
 	private boolean matchHost(String host) {
-		if (this.host!=null) {
+		if (this.host != null) {
 			return this.host.matcher(host).matches();
 		} else {
 			return true;

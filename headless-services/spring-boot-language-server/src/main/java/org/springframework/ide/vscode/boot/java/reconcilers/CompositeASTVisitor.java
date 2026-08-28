@@ -172,7 +172,7 @@ public class CompositeASTVisitor extends ASTVisitor {
 
 	private boolean checkOffset(ASTNode n) {
 		return (startOffset < 0 || n.getStartPosition() >= startOffset)
-				|| (endOffset <0 || n.getStartPosition() + n.getLength() < endOffset);
+				|| (endOffset < 0 || n.getStartPosition() + n.getLength() < endOffset);
 	}
 
 }

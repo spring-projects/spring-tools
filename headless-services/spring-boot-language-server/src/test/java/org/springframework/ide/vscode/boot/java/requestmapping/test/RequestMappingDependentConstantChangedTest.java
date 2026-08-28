@@ -223,7 +223,7 @@ public class RequestMappingDependentConstantChangedTest {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	private void assertSymbolCount(int expectedCount, List<? extends WorkspaceSymbol> symbols) {
-		if (symbols.size()!=expectedCount) {
+		if (symbols.size() != expectedCount) {
 			StringBuilder found = new StringBuilder();
 			for (WorkspaceSymbol s : symbols) {
 				found.append(s.getName());

@@ -47,7 +47,7 @@ public class InProjectSymbolsProvider implements SymbolsProvider {
 
 	public static InProjectSymbolsProvider createFor(ExecutionEvent event) {
 		final IProject project = InWorkspaceSymbolsProvider.projectFor(event);
-		if (project!=null) {
+		if (project != null) {
 			return createFor(LiveExpression.constant(project));
 		}
 		return null;

@@ -239,7 +239,7 @@ public class BootLanguageServerInitializer implements InitializingBean {
 	}
 
 	public void setMaxCompletions(int number) {
-		if (completionEngineAdapter!=null) {
+		if (completionEngineAdapter != null) {
 			completionEngineAdapter.setMaxCompletions(number);
 		}
 	}

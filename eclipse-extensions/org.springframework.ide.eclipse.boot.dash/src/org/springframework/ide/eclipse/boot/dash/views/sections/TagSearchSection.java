@@ -81,7 +81,7 @@ public class TagSearchSection extends PageSection implements Disposable {
 
 	@Override
 	public void dispose() {
-		if (modelListener!=null) {
+		if (modelListener != null) {
 			this.model.removeListener(modelListener);
 			modelListener = null;
 		}

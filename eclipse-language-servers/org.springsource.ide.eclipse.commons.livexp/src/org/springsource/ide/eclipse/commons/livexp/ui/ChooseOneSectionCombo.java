@@ -49,7 +49,7 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 	
 	private static boolean checkGtk() {
 		try { 
-			return Class.forName("org.eclipse.swt.internal.gtk.GTK")!=null;
+			return Class.forName("org.eclipse.swt.internal.gtk.GTK") != null;
 		} catch (Exception e) {
 			return false;
 		}
@@ -159,14 +159,14 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 		}
 		labelGridData.applyTo(fieldNameLabel);
 
-		final Combo combo = new Combo(field, inputParser==null?SWT.READ_ONLY:SWT.NONE);
+		final Combo combo = new Combo(field, inputParser == null ? SWT.READ_ONLY : SWT.NONE);
 		{	//works around strange bug (?) in Combo widget. This code looks like it shouldn't do anything... 
 			//but it actually does. Without it, the 'pulldown' from the combo will be transparant on Linux 
 			// and hard to read.
 			// See: https://www.pivotaltracker.com/story/show/174833544
 			//Note avoid doing the workaround for editable combo (i.e. where text is editable).
 			//because the call to 'setBackground' then messes up the background color of selected text.
-			if (inputParser==null && isGtk) {
+			if (inputParser == null && isGtk) {
 				Color comboBg = combo.getBackground();
 				combo.setBackground(comboBg);
 			}
@@ -174,7 +174,7 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 
 		options.addListener(new ValueListener<T[]>() {
 			public void gotValue(org.springsource.ide.eclipse.commons.livexp.core.LiveExpression<T[]> exp, T[] value) {
-				if (combo!=null) {
+				if (combo != null) {
 					String oldText = combo.getText();
 					combo.setItems(getLabels()); //This will clear the selection sometimes
 					combo_setText(combo, oldText);
@@ -182,7 +182,7 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 			};
 		});
 		GridDataFactory gridData = GridDataFactory.fillDefaults();
-		if (inputParser!=null) {
+		if (inputParser != null) {
 			gridData = gridData
 					.hint(FIELD_TEXT_AREA_WIDTH, SWT.DEFAULT)
 					.minSize(FIELD_TEXT_AREA_WIDTH, SWT.DEFAULT);
@@ -212,7 +212,7 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 		}
 		
 		selection.selection.addListener(UIValueListener.from((exp, newSelection) -> {
-			if (newSelection!=null && !combo.isDisposed()) {
+			if (newSelection != null && !combo.isDisposed()) {
 				//Technically, not entirely correct. This might
 				// select the wrong element if more than one option
 				// has the same label text.
@@ -229,7 +229,7 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 	}
 
 	private void combo_setText(final Combo combo, String newText) {
-		if (combo!=null && !combo.isDisposed()) {
+		if (combo != null && !combo.isDisposed()) {
 			String oldText = combo.getText();
 			if (!Objects.equals(oldText, newText)) {
 				//Avoid setting the text if its already set to a equal value. This can cause strange effects by
@@ -250,7 +250,7 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 		// result in the first element in the options being set instead of the new text in the control with the code below.
 		// Therefore adding an additional check that guards when values from options are set in the selection ONLY if the value in the selected
 		// index of the options matches the text in the combo. Otherwise, parse the combo text directly
-		if (options!=null && selected>=0 && selected<options.length
+		if (options != null && selected >= 0 && selected < options.length
 				&& labelProvider.getText(options[selected]).equals(combo.getText())) {
 			debug("setting selection based on idx = " + options[selected]);
 			selection.selection.setValue(options[selected]);
@@ -264,7 +264,7 @@ public class ChooseOneSectionCombo<T> extends AbstractChooseOneSection<T> {
 
 	private T parse(String text) {
 		try {
-			if (inputParser!=null) {
+			if (inputParser != null) {
 				return inputParser.parse(text);
 			}
 		} catch (Exception e) {

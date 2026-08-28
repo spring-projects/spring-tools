@@ -97,7 +97,7 @@ public class DockerDeployments extends AbstractDisposable {
 			listeners = this.listeners.toArray(NO_LISTENERS);
 		}
 		for (Listener l : listeners ) {
-			if (old==null) {
+			if (old == null) {
 				l.added(deployment);
 			} else {
 				l.updated(deployment);
@@ -111,7 +111,7 @@ public class DockerDeployments extends AbstractDisposable {
 		DockerDeployment removed = null;
 		synchronized (this) {
 			removed = byName.remove(name);
-			if (removed!=null) {
+			if (removed != null) {
 				listeners = this.listeners.toArray(NO_LISTENERS);
 			}
 		}

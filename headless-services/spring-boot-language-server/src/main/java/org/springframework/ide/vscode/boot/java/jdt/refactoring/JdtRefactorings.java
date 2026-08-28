@@ -81,7 +81,7 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 		this.cuCache = cuCache;
 	}
 
-	// ========== Command creation ==========
+	// == == == == == Command creation == == == == ==
 
 	public Command createFixCommand(String title, JdtFixDescriptor descriptor) {
 		return new Command(
@@ -91,7 +91,7 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 		);
 	}
 
-	// ========== CodeActionResolver ==========
+	// == == == == == CodeActionResolver == == == == ==
 
 	@Override
 	public CompletableFuture<WorkspaceEdit> resolve(CodeAction codeAction) {
@@ -109,7 +109,7 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 		return CompletableFuture.completedFuture(null);
 	}
 
-	// ========== QuickfixHandler ==========
+	// == == == == == QuickfixHandler == == == == ==
 
 	@Override
 	public Mono<QuickfixEdit> createEdits(Object params) {
@@ -122,7 +122,7 @@ public class JdtRefactorings implements CodeActionResolver, QuickfixHandler {
 		return Mono.empty();
 	}
 
-	// ========== Execution ==========
+	// == == == == == Execution == == == == ==
 
 	private CompletableFuture<WorkspaceEdit> perform(JdtFixDescriptor descriptor) {
 		return CompletableFuture.supplyAsync(() -> {

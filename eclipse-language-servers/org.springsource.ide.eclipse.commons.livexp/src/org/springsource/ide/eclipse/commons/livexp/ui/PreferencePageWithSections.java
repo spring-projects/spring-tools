@@ -96,7 +96,7 @@ public abstract class PreferencePageWithSections extends PreferencePage implemen
 	}
 
 	private synchronized List<PrefsPageSection> getSections() {
-		if (sections==null) {
+		if (sections == null) {
 			sections = createSections();
 		}
 		return sections;

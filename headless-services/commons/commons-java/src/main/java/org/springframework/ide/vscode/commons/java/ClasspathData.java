@@ -60,7 +60,7 @@ public class ClasspathData implements IClasspath {
 		}
 		return new ClasspathData(
 				d.getName(),
-				entries==null ? ImmutableSet.of() : entries,
+				entries == null ? ImmutableSet.of() : entries,
 				d.getJre()
 		);
 	}

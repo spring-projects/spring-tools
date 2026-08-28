@@ -36,7 +36,7 @@ public class SpringPropertyTester extends PropertyTester {
 
 	@Override
 	public boolean test(Object receiver, String property, Object[] args, Object expectedValue) {
-		if (expectedValue==null) {
+		if (expectedValue == null) {
 			expectedValue = true;
 		}
 		if (receiver instanceof IProject && "isSpringProject".equals(property)) {

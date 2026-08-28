@@ -48,7 +48,7 @@ public abstract class AbstractRunTarget<Params> extends AbstractDisposable imple
 		this.name = name;
 		this.type = type;
 		IPropertyStore typeStore = type.getPropertyStore();
-		if (typeStore!=null) {
+		if (typeStore != null) {
 			propertyStore = PropertyStores.createSubStore(id, typeStore);
 		}
 	}
@@ -111,9 +111,9 @@ public abstract class AbstractRunTarget<Params> extends AbstractDisposable imple
 	@Override
 	public String getNameTemplate() {
 		PropertyStoreApi props = getPersistentProperties();
-		if (props!=null) {
+		if (props != null) {
 			String localTemplate = props.get(NAME_TEMPLATE);
-			if (localTemplate!=null) {
+			if (localTemplate != null) {
 				return localTemplate;
 			}
 		}
@@ -128,7 +128,7 @@ public abstract class AbstractRunTarget<Params> extends AbstractDisposable imple
 	@Override
 	public String getDisplayName() {
 		Template template = Templates.create(getNameTemplate());
-		if (template!=null) {
+		if (template != null) {
 			return template.render(this);
 		}
 		return getName();
@@ -142,8 +142,8 @@ public abstract class AbstractRunTarget<Params> extends AbstractDisposable imple
 	@Override
 	public boolean hasCustomNameTemplate() {
 		PropertyStoreApi props = getPersistentProperties();
-		if (props!=null) {
-			return props.get(NAME_TEMPLATE)!=null;
+		if (props != null) {
+			return props.get(NAME_TEMPLATE) != null;
 		}
 		return false;
 	}
@@ -156,7 +156,7 @@ public abstract class AbstractRunTarget<Params> extends AbstractDisposable imple
 	@Override
 	public PropertyStoreApi getPersistentProperties() {
 		IPropertyStore store = getPropertyStore();
-		if (store!=null) {
+		if (store != null) {
 			return new PropertyStoreApi(store);
 		}
 		return null;

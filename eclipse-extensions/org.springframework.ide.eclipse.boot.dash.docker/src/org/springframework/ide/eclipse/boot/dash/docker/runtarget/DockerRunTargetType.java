@@ -48,7 +48,7 @@ public class DockerRunTargetType extends AbstractRemoteRunTargetType<DockerTarge
 	public CompletableFuture<?> openTargetCreationUi(LiveSetVariable<RunTarget> targets) {
 		return JobUtil.runInJob("Docker Target Creation", mon -> {
 			DockerRunTarget target = login(targets);
-			if (target!=null) {
+			if (target != null) {
 				targets.add(target);
 			}
 		});
@@ -123,7 +123,7 @@ public class DockerRunTargetType extends AbstractRemoteRunTargetType<DockerTarge
 
 	@Override
 	public String serialize(DockerTargetParams p) {
-		return p==null ? null : p.getUri();
+		return p == null ? null : p.getUri();
 	}
 
 	@Override

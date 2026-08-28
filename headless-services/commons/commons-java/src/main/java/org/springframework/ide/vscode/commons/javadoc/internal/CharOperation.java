@@ -93,7 +93,7 @@ public static final char[] append(char[] array, char suffix) {
  * @since 3.11
  */
 public static final char[] append(char[] target, char[] suffix) {
-	if(suffix == null || suffix.length == 0)
+	if (suffix == null || suffix.length == 0)
 		return target;
 	int targetLength = target.length;
 	int subLength = suffix.length;
@@ -959,7 +959,7 @@ public static final int compareTo(char[] array1, char[] array2, int start, int e
  *
  * @param array the given array
  * @param prefix the given prefix
- * @return the result of the comparison (>=0 if array>prefix)
+ * @return the result of the comparison ( >= 0 if array>prefix)
  * @throws NullPointerException if either array or prefix is null
  */
 public static final int compareWith(char[] array, char[] prefix) {

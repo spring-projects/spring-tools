@@ -117,7 +117,7 @@ public class DebugLaunchTerminationListener implements ILaunchesListener2 {
 					}
 				}
 				long timeleft = deadline - System.currentTimeMillis();
-				if (!refreshables.isEmpty() && timeleft>0) {
+				if (!refreshables.isEmpty() && timeleft > 0) {
 					debug("trigger another round of refreshes");
 					schedule(INTERVAL);
 				} else {

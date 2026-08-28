@@ -91,9 +91,9 @@ public class BootLaunchUIModel {
 			@Override
 			protected ValidationResult compute() {
 				IProject p = project.selection.getValue();
-				if (p!=null && p.isAccessible() && useThinWrapper!=null) {
+				if (p != null && p.isAccessible() && useThinWrapper != null) {
 					Boolean useThinWrapperValue = useThinWrapper.selection.getValue();
-					if (useThinWrapperValue!=null && useThinWrapperValue) {
+					if (useThinWrapperValue != null && useThinWrapperValue) {
 						try {
 							if (!p.hasNature(SpringBootCore.M2E_NATURE)) {
 								return ValidationResult.error("Thin launcher support only works for Maven projects");

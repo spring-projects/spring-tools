@@ -51,7 +51,7 @@ public abstract class AbstractBootDashModel extends AbstractDisposable implement
 	@Override
 	public void notifyElementChanged(BootDashElement element, Object reason) {
 		debug("notifyElementChanged("+element.getName() + ", "+reason);
-		if (element!=null) {
+		if (element != null) {
 			for (Object l : elementStateListeners.getListeners()) {
 				((BootDashModel.ElementStateListener) l).stateChanged(element);
 			}

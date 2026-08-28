@@ -55,7 +55,7 @@ public class GotoSymbolHandler extends AbstractHandler {
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		debug(">>>GotoSymbolHandler.execute");
-		if (currentDialog!=null) {
+		if (currentDialog != null) {
 			debug("GotoSymbolDialog already open: send 'toggle' signal");
 			currentDialog.toggleSymbolsProvider();
 		} else {
@@ -87,7 +87,7 @@ public class GotoSymbolHandler extends AbstractHandler {
 		Command invokingCommand = event.getCommand();
 		IBindingService service = PlatformUI.getWorkbench().getService(IBindingService.class);
 		TriggerSequence[] bindings = service.getActiveBindingsFor(invokingCommand.getId());
-		if (bindings!=null && bindings.length>0) {
+		if (bindings != null && bindings.length > 0) {
 			return bindings[0].toString();
 		}
 		return null;

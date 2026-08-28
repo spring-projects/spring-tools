@@ -69,13 +69,13 @@ public class PropertyFinder {
 //		for (PropertyInfo candidate : index) {
 //			int commonPrefixLen = StringUtil.commonPrefixLength(propName, candidate.getId());
 //			int extraLen = candidate.getId().length()-commonPrefixLen;
-//			if (commonPrefixLen==propName.length() && extraLen==0) {
+//			if (commonPrefixLen == propName.length() && extraLen == 0) {
 //				//exact match found, can stop searching for better matches
 //				return candidate;
 //			}
 //			//candidate is better if...
 //			if (commonPrefixLen>bestCommonPrefixLen // it has a longer common prefix
-//			|| commonPrefixLen==bestCommonPrefixLen && extraLen<bestExtraLen //or same common prefix but fewer extra chars
+//			|| commonPrefixLen == bestCommonPrefixLen && extraLen<bestExtraLen //or same common prefix but fewer extra chars
 //			) {
 //				bestCommonPrefixLen = commonPrefixLen;
 //				bestExtraLen = extraLen;

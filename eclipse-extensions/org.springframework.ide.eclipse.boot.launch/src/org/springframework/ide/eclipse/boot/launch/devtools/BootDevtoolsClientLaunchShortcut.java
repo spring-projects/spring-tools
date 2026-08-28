@@ -55,9 +55,9 @@ public class BootDevtoolsClientLaunchShortcut implements ILaunchShortcut {
 	}
 
 	public void launch(IResource rsrc, String mode) throws CoreException {
-		if (rsrc!=null && rsrc.getType()==IResource.PROJECT) {
+		if (rsrc != null && rsrc.getType() == IResource.PROJECT) {
 			ILaunchConfiguration conf = findOrCreateConfiguration((IProject) rsrc);
-			if (conf!=null) {
+			if (conf != null) {
 				if (isLaunchable(conf)) {
 					DebugUITools.launch(conf, mode);
 				} else {
@@ -75,7 +75,7 @@ public class BootDevtoolsClientLaunchShortcut implements ILaunchShortcut {
 	private boolean isLaunchable(ILaunchConfiguration conf) {
 		IProject project = BootLaunchConfigurationDelegate.getProject(conf);
 		String url = BootDevtoolsClientLaunchConfigurationDelegate.getRemoteUrl(conf);
-		return project!=null &&
+		return project != null &&
 				BootPropertyTester.isBootProject(project) &&
 				BootPropertyTester.hasDevtools(project) &&
 				StringUtil.hasText(url);
@@ -96,7 +96,7 @@ public class BootDevtoolsClientLaunchShortcut implements ILaunchShortcut {
 		List<ILaunchConfiguration> candidates = findConfigurations(project);
 		if (candidates.isEmpty()) {
 			return createConfiguration(project);
-		} else if (candidates.size()==1) {
+		} else if (candidates.size() == 1) {
 			return candidates.get(0);
 		} else {
 			return chooseConfiguration(project, candidates);
@@ -199,7 +199,7 @@ public class BootDevtoolsClientLaunchShortcut implements ILaunchShortcut {
 		try {
 			IEditorInput input = editor.getEditorInput();
 			Object rsrc = input.getAdapter(IResource.class);
-			if (rsrc!=null) {
+			if (rsrc != null) {
 				launch((IResource)rsrc, mode);
 			}
 		} catch (Throwable e) {

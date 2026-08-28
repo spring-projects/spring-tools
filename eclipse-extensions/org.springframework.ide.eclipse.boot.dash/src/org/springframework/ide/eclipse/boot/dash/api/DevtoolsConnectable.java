@@ -6,6 +6,6 @@ public interface DevtoolsConnectable extends ClasspathBearing {
 	String getDevtoolsSecret();
 
 	default TemporalBoolean isDevtoolsConnectable() {
-		return TemporalBoolean.now(hasClasspathProperty(ClasspathPropertyTester.HAS_DEVTOOLS) && getDevtoolsSecret()!=null);
+		return TemporalBoolean.now(hasClasspathProperty(ClasspathPropertyTester.HAS_DEVTOOLS) && getDevtoolsSecret() != null);
 	}
 }

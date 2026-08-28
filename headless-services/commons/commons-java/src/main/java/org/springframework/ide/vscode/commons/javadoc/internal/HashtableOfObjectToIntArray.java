@@ -83,7 +83,7 @@ public final class HashtableOfObjectToIntArray implements Cloneable {
 
 	public void keysToArray(Object[] array) {
 		int index = 0;
-		for (int i=0, length=this.keyTable.length; i<length; i++) {
+		for (int i=0, length=this.keyTable.length; i < length; i++) {
 			if (this.keyTable[i] != null)
 				array[index++] = this.keyTable[i];
 		}

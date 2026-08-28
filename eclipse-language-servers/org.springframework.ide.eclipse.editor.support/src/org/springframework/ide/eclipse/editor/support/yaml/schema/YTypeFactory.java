@@ -201,7 +201,7 @@ public class YTypeFactory {
 		}
 
 		public final Map<String, YTypedProperty> getPropertiesMap() {
-			if (cachedPropertyMap==null) {
+			if (cachedPropertyMap == null) {
 				cachedPropertyMap = new LinkedHashMap<>();
 				for (YTypedProperty p : propertyList) {
 					cachedPropertyMap.put(p.getName(), p);
@@ -372,7 +372,7 @@ public class YTypeFactory {
 				t.parseWith(ValueParser.of((String value) -> {
 					basicParser.parse(value);
 					Deprecation d = deprecations.get(value);
-					if (d!=null) {
+					if (d != null) {
 						throw new ReconcileException(d.errorMsg, YamlSchemaProblems.DEPRECATED_VALUE)
 									.fixWith(new ReplacementQuickfix(d.quickfixMsg, d.replacement));
 					}

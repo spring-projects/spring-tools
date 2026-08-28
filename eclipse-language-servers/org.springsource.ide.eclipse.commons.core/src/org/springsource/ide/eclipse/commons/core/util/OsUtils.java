@@ -53,7 +53,7 @@ public class OsUtils {
 		int mask = 1;
 		Set<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
 		for (PosixFilePermission flag : decodeMap) {
-			if (flag!=null && (mask & mode) != 0) {
+			if (flag != null && (mask & mode) != 0) {
 				perms.add(flag);
 			}
 			mask = mask << 1;

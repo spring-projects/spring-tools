@@ -46,7 +46,7 @@ public class ClasspathResourceCompletionProvider implements ICompletionEngine, L
 	private static PrefixFinder PREFIX_FINDER = new PrefixFinder() {
 		@Override
 		protected boolean isPrefixChar(char c) {
-			return Character.isJavaIdentifierPart(c) || c=='-' || c=='.' || c=='/' || c==':' || c=='*';
+			return Character.isJavaIdentifierPart(c) || c == '-' || c == '.' || c == '/' || c == ':' || c == '*';
 		}
 	};
 	private static final Collection<LanguageId> LANGUAGES = ImmutableList.of(
@@ -77,7 +77,7 @@ public class ClasspathResourceCompletionProvider implements ICompletionEngine, L
 	public InternalCompletionList getCompletions(TextDocument doc, int offset) {
 		ImmutableList.Builder<ICompletionProposal> proposals = ImmutableList.builder();
 		IJavaProject jp = projectFinder.find(doc.getId()).orElse(null);
-		if (jp!=null) {
+		if (jp != null) {
 			String prefix = PREFIX_FINDER.getPrefix(doc, offset);
 			for (String CLASSPATH : CLASSPATH_PREFIXES) {
 				if (prefix.startsWith(CLASSPATH)) {

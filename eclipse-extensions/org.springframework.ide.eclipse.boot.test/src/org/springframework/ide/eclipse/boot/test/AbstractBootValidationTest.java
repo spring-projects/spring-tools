@@ -92,7 +92,7 @@ public abstract class AbstractBootValidationTest {
 	}
 
 	public static void assertNoMarkers(Set<IMarker> markers) throws Exception {
-		if (markers.size()>0) {
+		if (markers.size() > 0) {
 			StringBuilder messages = new StringBuilder("Expected no markers but found: \n");
 			for (IMarker m : markers) {
 				messages.append(m.getAttribute(IMarker.MESSAGE)+"\n");

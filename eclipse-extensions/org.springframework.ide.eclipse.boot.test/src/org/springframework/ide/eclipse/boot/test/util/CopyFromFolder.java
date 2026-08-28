@@ -110,12 +110,12 @@ public class CopyFromFolder extends CodeSet {
 		T result = null;
 		if (target.isDirectory()) {
 			result = processor.doit(new DirEntry(target));
-			if (result!=null) {
+			if (result != null) {
 				return result;
 			}
 			for (File child : target.listFiles()) {
 				result = each(child, processor);
-				if (result!=null) {
+				if (result != null) {
 					return result;
 				}
 			}

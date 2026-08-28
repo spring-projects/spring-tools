@@ -1154,7 +1154,7 @@ public class ManifestYamlEditorTest {
 				"applications:\n" +
 				"- name: foo\n" +
 				"  random-route:<*>"
-				, // ==>
+				, // == >
 				"applications:\n" +
 				"- name: foo\n" +
 				"  random-route: false<*>"
@@ -1169,7 +1169,7 @@ public class ManifestYamlEditorTest {
 		assertCompletions(
 				"applications:\n" +
 				"-<*>",
-				// ===>
+				// == =>
 				"applications:\n" +
 				"- name: <*>"
 		);
@@ -1179,7 +1179,7 @@ public class ManifestYamlEditorTest {
 				"applications:\n" +
 				"-<*>\n" +
 				"- name: test"
-				, // ==>
+				, // == >
 				"applications:\n" +
 				"- name: <*>\n" +
 				"- name: test"
@@ -1216,7 +1216,7 @@ public class ManifestYamlEditorTest {
 			);
 			//also check the location of the marker since there are two occurrences of '---' in the editor text.
 			Diagnostic problem = editor.assertProblem("---");
-			assertTrue(problem.getRange().getStart().getLine()>1);
+			assertTrue(problem.getRange().getStart().getLine() > 1);
 		}
 
 		{
@@ -1236,7 +1236,7 @@ public class ManifestYamlEditorTest {
 			);
 			//also check the location of the marker since there are two occurrences of '---' in the editor text.
 			Diagnostic problem = editor.assertProblem("---");
-			assertTrue(problem.getRange().getStart().getLine()>1);
+			assertTrue(problem.getRange().getStart().getLine() > 1);
 		}
 
 	}
@@ -1489,7 +1489,7 @@ public class ManifestYamlEditorTest {
 		CompletionItem completion = assertCompletions(
 				"services:\n" +
 				"  - <*>"
-				, // ==>
+				, // == >
 				"services:\n" +
 				"  - mysql<*>"
 		).get(0);
@@ -1562,7 +1562,7 @@ public class ManifestYamlEditorTest {
 		CompletionItem completion = assertCompletions(
 				"domains:\n" +
 				"- <*>"
-				, // ===>
+				, // == =>
 				"domains:\n" +
 				"- cfapps.io<*>"
 		).get(0);
@@ -1826,7 +1826,7 @@ public class ManifestYamlEditorTest {
 				"- name: test\n" +
 				"  routes:\n" +
 				"  - route: cfapps.io<*>"
-				, // ==============
+				, // == == == == == == ==
 				"applications:\n" +
 				"- name: test\n" +
 				"  routes:\n" +
@@ -1844,7 +1844,7 @@ public class ManifestYamlEditorTest {
 				"- name: test\n" +
 				"  routes:\n" +
 				"  - route: cfapps.io<*>"
-				, // ==============
+				, // == == == == == == ==
 				"applications:\n" +
 				"- name: test\n" +
 				"  routes:\n" +
@@ -1862,7 +1862,7 @@ public class ManifestYamlEditorTest {
 				"- name: test\n" +
 				"  routes:\n" +
 				"  - route: dsyer.com<*>"
-				, // ==============
+				, // == == == == == == ==
 				"applications:\n" +
 				"- name: test\n" +
 				"  routes:\n" +
@@ -1880,7 +1880,7 @@ public class ManifestYamlEditorTest {
 				"- name: test\n" +
 				"  routes:\n" +
 				"  - route: test.cfapps.io<*>"
-				, // ==============
+				, // == == == == == == ==
 				"applications:\n" +
 				"- name: test\n" +
 				"  routes:\n" +
@@ -1899,7 +1899,7 @@ public class ManifestYamlEditorTest {
 				"- name: test\n" +
 				"  routes:\n" +
 				"  - route: foo.bar.cfapps.io<*>"
-				, // ==============
+				, // == == == == == == ==
 				"applications:\n" +
 				"- name: test\n" +
 				"  routes:\n" +

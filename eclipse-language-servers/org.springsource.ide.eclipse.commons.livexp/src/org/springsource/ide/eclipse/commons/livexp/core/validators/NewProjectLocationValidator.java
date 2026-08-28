@@ -64,12 +64,12 @@ public class NewProjectLocationValidator extends Validator implements ValueListe
 	@Override
 	protected ValidationResult compute() {
 		String path = pathExp.getValue();
-		if (path==null || "".equals(path)) {
+		if (path == null || "".equals(path)) {
 			return error(elementName+" should be defined");
 		}
 		String lastSegment = new Path(path).lastSegment();
 		String projectName = projectNameExp.getValue();
-		if (projectName!=null && lastSegment!=null && !lastSegment.equals(projectName)) {
+		if (projectName != null && lastSegment != null && !lastSegment.equals(projectName)) {
 			return error(elementName+": last segment of path should be '"+projectName+"'");
 		}
 		File file = new File(path);
@@ -87,8 +87,8 @@ public class NewProjectLocationValidator extends Validator implements ValueListe
 
 	private boolean isEmptyDirectory(File file) {
 		File[] files = listFiles(file);
-		if (files!=null) {
-			return files.length==0;
+		if (files != null) {
+			return files.length == 0;
 		}
 		return false;
 	}

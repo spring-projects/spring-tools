@@ -16,7 +16,7 @@ import java.util.Collection;
 public class Assert {
 
 	public static void isNull(String msg, Object obj) {
-		if (obj!=null) {
+		if (obj != null) {
 			throw new IllegalStateException(msg);
 		}
 	}
@@ -34,7 +34,7 @@ public class Assert {
 	}
 
 	public static void isNotNull(Object it) {
-		if (it==null) {
+		if (it == null) {
 			throw new NullPointerException();
 		}
 	}
@@ -44,7 +44,7 @@ public class Assert {
 	}
 	
 	public static void noElements(Collection<?> elements) {
-		if (elements==null || elements.isEmpty()) {
+		if (elements == null || elements.isEmpty()) {
 			return; //good
 		}
 		throw new IllegalArgumentException("Should not have elements: "+elements);

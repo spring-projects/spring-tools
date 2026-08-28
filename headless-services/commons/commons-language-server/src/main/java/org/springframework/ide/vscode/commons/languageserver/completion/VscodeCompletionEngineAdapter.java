@@ -100,9 +100,9 @@ public class VscodeCompletionEngineAdapter implements VscodeCompletionEngine {
 		
 		public synchronized void resolveNow(CancelChecker cancelToken, CompletionItem unresolved) {
 			Object id = unresolved.getData();
-			if (id!=null) {
+			if (id != null) {
 				Consumer<CompletionItem> resolver = resolvers.get(id instanceof JsonPrimitive ? ((JsonPrimitive)id).getAsString() : id);
-				if (resolver!=null) {
+				if (resolver != null) {
 					resolver.accept(unresolved);
 					unresolved.setData(null); //No longer needed after item is resolved.
 				} else {
@@ -198,7 +198,7 @@ public class VscodeCompletionEngineAdapter implements VscodeCompletionEngine {
 			try {
 				log.info("Starting completion handling for: " + params.getTextDocument().getUri());
 
-				if (resolver!=null) {
+				if (resolver != null) {
 					//Assumes we don't have more than one completion request in flight from the client.
 					// So when a new request arrives we can forget about the old unresolved items:
 					resolver.clear();
@@ -252,7 +252,7 @@ public class VscodeCompletionEngineAdapter implements VscodeCompletionEngine {
 				// See: https://bugs.eclipse.org/bugs/show_bug.cgi?id=535823
 				// Reason  hack is not needed is because of the fix in: https://www.pivotaltracker.com/story/show/159667257
 	
-				//				if (LspClient.currentClient()==Client.ECLIPSE) {
+				//				if (LspClient.currentClient() == Client.ECLIPSE) {
 				//					list.setIsIncomplete(true); 
 				//				}
 				return list;
@@ -436,7 +436,7 @@ public class VscodeCompletionEngineAdapter implements VscodeCompletionEngine {
 	}
 
 	private static String toMarkdown(Renderable r) {
-		if (r!=null) {
+		if (r != null) {
 			return r.toMarkdown();
 		}
 		return null;
@@ -448,7 +448,7 @@ public class VscodeCompletionEngineAdapter implements VscodeCompletionEngine {
 			if (usedSnippets != null && edits != null) {
 				usedSnippets.set(edits.hasSnippets());
 			}
-			if (replaceEdit==null) {
+			if (replaceEdit == null) {
 				//The original edit does nothing.
 				return Optional.empty();
 			} else {
@@ -459,7 +459,7 @@ public class VscodeCompletionEngineAdapter implements VscodeCompletionEngine {
 				String newText = replaceEdit.newText;
 				IRegion selection = edits.getSelection();
 				
-				if (selection!=null && usedSnippets != null) {
+				if (selection != null && usedSnippets != null) {
 					//Special handling for the case where cursor is *not* just at the end of the newText
 					int cursor = selection.getOffset() + selection.getLength();
 					cursor = cursor - replaceEdit.start;

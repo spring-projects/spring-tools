@@ -31,7 +31,7 @@ public class RouteValueParser extends RegexpParser {
 	}
 
 	private Object dynamicValidation(String str, Matcher matcher) throws Exception {
-		if (domains==null) {
+		if (domains == null) {
 			// If domains is unknown we can't do the dynamic checks, so bail out.
 			return str;
 		}

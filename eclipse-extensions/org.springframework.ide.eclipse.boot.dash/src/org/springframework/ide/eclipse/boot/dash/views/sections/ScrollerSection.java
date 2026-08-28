@@ -45,7 +45,7 @@ public class ScrollerSection extends PageSection implements Disposable, MultiSel
 
 	@Override
 	public void dispose() {
-		if (scolledContent!=null) {
+		if (scolledContent != null) {
 			if (scolledContent instanceof Disposable) {
 				((Disposable) scolledContent).dispose();
 			}
@@ -70,7 +70,7 @@ public class ScrollerSection extends PageSection implements Disposable, MultiSel
 
 	@Override
 	public synchronized MultiSelection<?> getSelection() {
-		if (selection==null) {
+		if (selection == null) {
 			if (scolledContent instanceof MultiSelectionSource) {
 				selection = ((MultiSelectionSource) scolledContent).getSelection();
 			} else {

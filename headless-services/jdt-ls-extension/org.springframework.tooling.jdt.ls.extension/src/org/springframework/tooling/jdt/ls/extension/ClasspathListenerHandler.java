@@ -42,14 +42,14 @@ public class ClasspathListenerHandler implements IDelegateCommandHandler {
 
 	@Override
 	public Object executeCommand(String commandId, List<Object> arguments, IProgressMonitor monitor) throws Exception {
-		if (handlerImpl==null) {
+		if (handlerImpl == null) {
 			throw new UnsupportedOperationException("Command '"+commandId+"' not supported on older versions of JDT Language Server");
 		}
 		logger.log("ClasspathListenerHandler executeCommand " + commandId + ", " + arguments);
 		switch (commandId) {
 		case "sts.java.addClasspathListener":
 			boolean isBatched = false;
-			if (arguments.size()>=2) {
+			if (arguments.size() >= 2) {
 				isBatched = (Boolean)arguments.get(1);
 			}
 			return addClasspathListener((String) arguments.get(0), isBatched);

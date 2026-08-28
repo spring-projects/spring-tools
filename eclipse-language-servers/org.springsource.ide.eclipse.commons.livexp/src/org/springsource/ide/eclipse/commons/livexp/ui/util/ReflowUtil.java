@@ -28,7 +28,7 @@ public class ReflowUtil {
 	}
 
 	public static boolean findAndReflowControl(Control control) {
-		while (control!=null) {
+		while (control != null) {
 			if (control instanceof Reflowable) {
 				if (((Reflowable)control).reflow()) {
 					return true;
@@ -48,7 +48,7 @@ public class ReflowUtil {
 	 */
 	public static boolean reflowParents(IPageWithSections owner, Control control) {
 		boolean layoutChildren = true;
-		while (control!=null) {
+		while (control != null) {
 			if (control instanceof Reflowable) {
 				if (((Reflowable)control).reflow()) {
 					return true;

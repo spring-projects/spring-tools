@@ -57,7 +57,7 @@ public class PrefsGroupSection extends PrefsPageSection {
 		this.groupTitle = title;
 		this.sections = new ArrayList<PrefsPageSection>();
 		for (PrefsPageSection s : _sections) {
-			if (s!=null) {
+			if (s != null) {
 				sections.add(s);
 			}
 		}

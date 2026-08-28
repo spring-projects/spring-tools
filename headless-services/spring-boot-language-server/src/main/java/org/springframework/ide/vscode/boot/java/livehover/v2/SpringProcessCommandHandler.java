@@ -107,7 +107,7 @@ public class SpringProcessCommandHandler {
 			for (SpringProcessConnector process : connectorService.getConnectedProcesses()) {
 				String processKey = process.getProcessKey();
 				SpringProcessLiveData liveData = connectorService.getLiveData(processKey);
-				if (liveData!=null) {
+				if (liveData != null) {
 					result.add(SpringProcessLiveDataProvider.createProcessSummary(processKey, liveData));
 				}
 			}
@@ -348,7 +348,7 @@ public class SpringProcessCommandHandler {
 				}
 				case SpringProcessConnectorService.HEAP_MEMORY: {
 					SpringProcessMemoryMetricsLiveData data = connectorService.getMemoryMetricsLiveData(processKey);
-					return data != null ? CompletableFuture.completedFuture(data.getHeapMemoryMetrics()): CompletableFuture.failedFuture(new IllegalStateException("Live Metrics Data is not yet available!"));
+					return data != null ? CompletableFuture.completedFuture(data.getHeapMemoryMetrics()) : CompletableFuture.failedFuture(new IllegalStateException("Live Metrics Data is not yet available!"));
 				}
 				case SpringProcessConnectorService.NON_HEAP_MEMORY: {
                     SpringProcessMemoryMetricsLiveData data = connectorService.getMemoryMetricsLiveData(processKey);

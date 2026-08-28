@@ -55,10 +55,10 @@ public class DynamicSection extends ReflowableSection {
 		// To set a minimum size in general and avoid the parent composite from being too small and having scrollbars before the dynamic content is created,
 		// set a minimum size. This means setting both minSize and hint, along with grab,  for it to work properly.
 		GridData gd = GridDataFactory.fillDefaults().grab(true, true).minSize(minSize).create();
-		if (widthHint!=null) {
+		if (widthHint != null) {
 			gd.widthHint = widthHint;
 		}
-		if (heightHint!=null) {
+		if (heightHint != null) {
 			gd.heightHint = heightHint;
 		}
 		composite.setLayoutData(gd);
@@ -82,7 +82,7 @@ public class DynamicSection extends ReflowableSection {
 	}
 
 	private void updateContent(IPageSection newContents) {
-		if (composite!=null && !composite.isDisposed()) {
+		if (composite != null && !composite.isDisposed()) {
 			validator.setDelegate(newContents.getValidator());
 			for (Control oldWidget : composite.getChildren()) {
 				oldWidget.dispose();

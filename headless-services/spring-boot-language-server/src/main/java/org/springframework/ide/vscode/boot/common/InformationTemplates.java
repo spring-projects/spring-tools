@@ -52,14 +52,14 @@ public class InformationTemplates {
 
 		renderId(renderableBuilder, id, deprecation);
 
-		if (type==null) {
+		if (type == null) {
 			type = Object.class.getName();
 		}
 		renderableBuilder.add(lineBreak());
 		actionLink(renderableBuilder, type);
 
 		String deflt = formatDefaultValue(defaultValue);
-		if (deflt!=null) {
+		if (deflt != null) {
 			renderableBuilder.add(lineBreak());
 			renderableBuilder.add(lineBreak());
 			defaultValueRenderable(renderableBuilder, deflt);
@@ -71,7 +71,7 @@ public class InformationTemplates {
 			depreactionRenderable(renderableBuilder, deprecation);
 		}
 
-		if (description!=null) {
+		if (description != null) {
 			renderableBuilder.add(lineBreak());
 			descriptionRenderable(renderableBuilder, description);
 		}
@@ -88,7 +88,7 @@ public class InformationTemplates {
 			idInserted = true;
 		}
 
-		if (description!=null) {
+		if (description != null) {
 			if (idInserted) {
 				renderableBuilder.add(lineBreak());
 			}
@@ -96,7 +96,7 @@ public class InformationTemplates {
 		}
 
 		String deflt = formatDefaultValue(defaultValue);
-		if (deflt!=null) {
+		if (deflt != null) {
 			if (idInserted || description != null) {
 				renderableBuilder.add(lineBreak());
 			}
@@ -144,7 +144,7 @@ public class InformationTemplates {
 	}
 
 	private static String formatDefaultValue(Object defaultValue) {
-		if (defaultValue!=null) {
+		if (defaultValue != null) {
 			if (defaultValue instanceof String) {
 				return (String) defaultValue;
 			} else if (defaultValue instanceof Number) {

@@ -62,7 +62,7 @@ public class TemplateProcessor {
 				CorePlugin.log("Problem while attempting to copy template directory", e);
 			}
 			String[] names = source.list();
-			if (names!=null) {
+			if (names != null) {
 				for (String childName : names) {
 					File childSource = new File(source, childName);
 					File childTarget = new File(target, childName);

@@ -50,7 +50,7 @@ public class AbstractBootDashElementsAction extends AbstractBootDashAction {
 		super(params.context, params.style);
 		this.model = params.model;
 		this.selection = params.selection;
-		if (model!=null) {
+		if (model != null) {
 			model.addElementStateListener(modelListener = new ElementStateListener() {
 				public void stateChanged(BootDashElement e) {
 					debug("action '"+getText()+"' updating for element "+e);
@@ -87,7 +87,7 @@ public class AbstractBootDashElementsAction extends AbstractBootDashAction {
 	 */
 	public void updateEnablement() {
 		Collection<BootDashElement> selecteds = getSelectedElements();
-		this.setEnabled(selecteds.size()==1);
+		this.setEnabled(selecteds.size() == 1);
 	}
 
 	public void updateVisibility() {
@@ -103,10 +103,10 @@ public class AbstractBootDashElementsAction extends AbstractBootDashAction {
 	}
 
 	public void dispose() {
-		if (selectionListener!=null) {
+		if (selectionListener != null) {
 			selection.getElements().removeListener(selectionListener);
 		}
-		if (modelListener!=null) {
+		if (modelListener != null) {
 			model.removeElementStateListener(modelListener);
 			modelListener = null;
 		}

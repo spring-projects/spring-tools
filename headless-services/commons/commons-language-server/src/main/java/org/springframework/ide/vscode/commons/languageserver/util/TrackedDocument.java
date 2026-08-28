@@ -46,7 +46,7 @@ public class TrackedDocument {
 
 	public boolean close() {
 		openCount--;
-		return openCount<=0;
+		return openCount <= 0;
 	}
 
 	public int getOpenCount() {

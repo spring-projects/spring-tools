@@ -126,7 +126,7 @@ public class ConcourseLanguageServerInitializer {
 
 //		workspace.onDidChangeConfiguraton(settings -> {
 //			Integer val = settings.getInt("languageServerExample", "maxNumberOfProblems");
-//			if (val!=null) {
+//			if (val != null) {
 //				maxProblems = ((Number) val).intValue();
 //				for (TextDocument doc : documents.getAll()) {
 //					validateDocument(documents, doc);
@@ -176,7 +176,7 @@ public class ConcourseLanguageServerInitializer {
 //		documents.onDocumentSymbol((params) -> {
 //			DocumentSymbolHandler handler = DocumentSymbolHandler.NO_SYMBOLS;
 //			TextDocument doc = documents.getDocument(params.getTextDocument().getUri());
-//			if (doc!=null) {
+//			if (doc != null) {
 //				if (LanguageId.CONCOURSE_PIPELINE.equals(doc.getLanguageId())) {
 //					handler = forPipelines.symbolHandler;
 //				} else if (LanguageId.CONCOURSE_TASK.equals(doc.getLanguageId())) {

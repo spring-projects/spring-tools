@@ -39,7 +39,7 @@ public class NatureUtils {
 		for (String n : oldNaturesArr) {
 			natures.add(n);
 		}
-		if (natures.size()>oldNaturesArr.length) {
+		if (natures.size() > oldNaturesArr.length) {
 			//Some natures got added
 			desc.setNatureIds(natures.toArray(new String[natures.size()]));
 			project.setDescription(desc, mon);
@@ -62,7 +62,7 @@ public class NatureUtils {
 				natures.add(n);
 			}
 		}
-		if (natures.size()!=oldNaturesArr.length) {
+		if (natures.size() != oldNaturesArr.length) {
 			//Something removed
 			desc.setNatureIds(natures.toArray(new String[natures.size()]));
 			project.setDescription(desc, mon);
@@ -72,7 +72,7 @@ public class NatureUtils {
 
 	public static boolean hasNature(IProject p, String natureId) {
 		try {
-			return p!=null && p.isAccessible() && p.hasNature(natureId);
+			return p != null && p.isAccessible() && p.hasNature(natureId);
 		} catch (CoreException e) {
 			CorePlugin.log(e);
 		}

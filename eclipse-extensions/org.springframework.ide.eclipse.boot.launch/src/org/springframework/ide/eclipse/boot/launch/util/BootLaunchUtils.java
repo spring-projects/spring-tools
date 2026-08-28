@@ -56,14 +56,14 @@ public class BootLaunchUtils {
 	public static void terminate(ILaunch l) throws DebugException, CoreException {
 		ILaunchConfiguration conf = l.getLaunchConfiguration();
 //		try {
-			if (conf!=null
+			if (conf != null
 					&& conf.getType().getIdentifier().equals(BootLaunchConfigurationDelegate.TYPE_ID)
 					&& BootLaunchConfigurationDelegate.canUseLifeCycle(conf)
 			) {
 				SpringApplicationLifeCycleClientManager clientMgr = new SpringApplicationLifeCycleClientManager(l);
 				try {
 					SpringApplicationLifecycleClient client = clientMgr.getLifeCycleClient();
-					if (client!=null) {
+					if (client != null) {
 						client.stop();
 						whenTerminated(l).get(BootLaunchConfigurationDelegate.getTerminationTimeoutAsLong(l), TimeUnit.MILLISECONDS);
 						return; //Success
@@ -84,7 +84,7 @@ public class BootLaunchUtils {
 
 	public static IProject getProject(ILaunch launch) {
 		ILaunchConfiguration conf = launch.getLaunchConfiguration();
-		if (conf!=null) {
+		if (conf != null) {
 			return BootLaunchConfigurationDelegate.getProject(conf);
 		}
 		return null;
@@ -93,7 +93,7 @@ public class BootLaunchUtils {
 	public static boolean isBootLaunch(ILaunch l) {
 		try {
 			ILaunchConfiguration conf = l.getLaunchConfiguration();
-			if (conf!=null) {
+			if (conf != null) {
 					String type = conf.getType().getIdentifier();
 				return BootLaunchConfigurationDelegate.TYPE_ID.equals(type);
 			}
@@ -116,7 +116,7 @@ public class BootLaunchUtils {
 		ArrayList<ILaunch> selected = new ArrayList<>();
 		for (ILaunch l : all) {
 			ILaunchConfiguration lConf = l.getLaunchConfiguration();
-			if (lConf!=null && configs.contains(lConf)) {
+			if (lConf != null && configs.contains(lConf)) {
 				selected.add(l);
 			}
 			//This weird stuff below is for ngrok support in the boot dash which creates working copys that are really

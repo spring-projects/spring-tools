@@ -46,7 +46,7 @@ public class DelegatingLiveSet<T> extends ObservableSet<T> {
 
 	@Override
 	protected ImmutableSet<T> compute() {
-		if (delegate==null) {
+		if (delegate == null) {
 			return ImmutableSet.of();
 		} else {
 			return delegate.getValue();
@@ -56,13 +56,13 @@ public class DelegatingLiveSet<T> extends ObservableSet<T> {
 	public synchronized void setDelegate(ObservableSet<T> newDelegate) {
 		LiveExpression<ImmutableSet<T>> oldDelegate = this.delegate;
 		this.delegate = newDelegate;
-		if (oldDelegate==newDelegate) {
+		if (oldDelegate == newDelegate) {
 			return;
 		} else {
-			if (oldDelegate!=null) {
+			if (oldDelegate != null) {
 				oldDelegate.removeListener(delegateListener);
 			}
-			if (newDelegate==null) {
+			if (newDelegate == null) {
 				//trigger a refresh because the delegate changed and the newDelegate won't trigger one
 				refresh();
 			} else {

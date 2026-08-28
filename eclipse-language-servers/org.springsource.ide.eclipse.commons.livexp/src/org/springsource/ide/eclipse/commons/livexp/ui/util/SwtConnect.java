@@ -65,7 +65,7 @@ public class SwtConnect {
 			Disposable disconnect = model.onChange(UIValueListener.from((e,v) -> {
 				String oldText = text.getText();
 				String newText = model.getValue();
-				if (newText==null) {
+				if (newText == null) {
 					newText = "";
 				}
 				if (!oldText.equals(newText)) {
@@ -162,7 +162,7 @@ public class SwtConnect {
 			@Override
 			protected void uiGotValue(LiveExpression<String> exp, String value) {
 				String newText = model.getValue();
-				if (newText==null) {
+				if (newText == null) {
 					newText = "";
 				}
 				if (!widget.isDisposed()) {
@@ -205,7 +205,7 @@ public class SwtConnect {
 	}
 
 	public static void connect(Label widget, LiveExpression<String> model, Duration delay) {
-		if (delay==null || delay.isZero() || delay.isNegative()) {
+		if (delay == null || delay.isZero() || delay.isNegative()) {
 			connect(widget, model);
 		} else {
 			LiveExpression<String> delayedModel = model.delay(delay);
@@ -215,7 +215,7 @@ public class SwtConnect {
 	}
 	
 	public static void connectHighlighted(Styler highlightStyle, StyledText widget, LiveExpression<HighlightedText> model, Duration delay) {
-		if (delay==null || delay.isZero() || delay.isNegative()) {
+		if (delay == null || delay.isZero() || delay.isNegative()) {
 			connectHighlighted(highlightStyle, widget, model);
 		} else {
 			LiveExpression<HighlightedText> delayedModel = model.delay(delay);
@@ -229,7 +229,7 @@ public class SwtConnect {
 			@Override
 			protected void uiGotValue(LiveExpression<Boolean> exp, Boolean value) {
 				Boolean newValue = model.getValue();
-				boolean select = newValue!=null && newValue;
+				boolean select = newValue != null && newValue;
 				if (!checkbox.isDisposed()) {
 					checkbox.setSelection(select);
 				}

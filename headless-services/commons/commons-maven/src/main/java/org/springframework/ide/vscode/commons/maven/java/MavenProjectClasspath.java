@@ -103,7 +103,7 @@ public class MavenProjectClasspath implements IClasspath {
 		//Add jar dependencies...
 		for (Artifact a : projectDependencies(project)) {
 			File f = a.getFile();
-			if (f!=null) {
+			if (f != null) {
 				MavenProject peerProject = maven.findPeerProject(project, a);
 				if (peerProject != null) {
 					// Peer project dependency case
@@ -115,7 +115,7 @@ public class MavenProjectClasspath implements IClasspath {
 					cpe.setJavaContent(true);
 					safe(() -> {
 						String reportingDir = peerProject.getModel().getReporting().getOutputDirectory();
-						if (reportingDir!=null) {
+						if (reportingDir != null) {
 							File apidocs = new File(new File(reportingDir), "apidocs");
 							cpe.setJavadocContainerUrl(apidocs.toURI().toURL());
 						}
@@ -125,13 +125,13 @@ public class MavenProjectClasspath implements IClasspath {
 					CPE cpe = CPE.binary(a.getFile().toPath().toString());
 					safe(() -> { //add javadoc
 						Artifact jdoc = maven.getJavadoc(a, project.getRemoteArtifactRepositories());
-						if (jdoc!=null) {
+						if (jdoc != null) {
 							cpe.setJavadocContainerUrl(jdoc.getFile().toURI().toURL());
 						}
 					});
 					safe(() -> { //add source
 						Artifact source = maven.getSources(a, project.getRemoteArtifactRepositories());
-						if (source!=null) {
+						if (source != null) {
 							cpe.setSourceContainerUrl(source.getFile().toURI().toURL());
 						}
 					});
@@ -149,7 +149,7 @@ public class MavenProjectClasspath implements IClasspath {
 			cpe.setJavaContent(true);
 			safe(() -> {
 				String reportingDir = project.getModel().getReporting().getOutputDirectory();
-				if (reportingDir!=null) {
+				if (reportingDir != null) {
 					File apidocs = new File(new File(reportingDir), "apidocs");
 					cpe.setJavadocContainerUrl(apidocs.toURI().toURL());
 				}
@@ -167,7 +167,7 @@ public class MavenProjectClasspath implements IClasspath {
 //				cpe.setJavaContent(true);
 //				safe(() -> {
 //					String reportingDir = project.getModel().getReporting().getOutputDirectory();
-//					if (reportingDir!=null) {
+//					if (reportingDir != null) {
 //						File apidocs = new File(new File(reportingDir), "apidocs");
 //						cpe.setJavadocContainerUrl(apidocs.toURI().toURL());
 //					}
@@ -179,7 +179,7 @@ public class MavenProjectClasspath implements IClasspath {
 			for (Resource resource : project.getBuild().getResources()) {
 				File sourceFolder = new File(resource.getDirectory());
 				String targetPath = resource.getTargetPath();
-				if (targetPath==null) {
+				if (targetPath == null) {
 					targetPath = project.getBuild().getOutputDirectory();
 				}
 				CPE cpe = CPE.source(sourceFolder, new File(targetPath));
@@ -193,10 +193,10 @@ public class MavenProjectClasspath implements IClasspath {
 			for (Resource resource : project.getBuild().getTestResources()) {
 				File sourceFolder = new File(resource.getDirectory());
 				String targetPath = resource.getTargetPath();
-				if (targetPath==null) {
+				if (targetPath == null) {
 					targetPath = project.getBuild().getTestOutputDirectory();
 				}
-				CPE cpe = CPE.source(sourceFolder, targetPath==null ? null : new File(targetPath));
+				CPE cpe = CPE.source(sourceFolder, targetPath == null ? null : new File(targetPath));
 				cpe.setOwn(true);
 				cpe.setTest(true);
 				cpe.setJavaContent(false);
@@ -212,7 +212,7 @@ public class MavenProjectClasspath implements IClasspath {
 			cpe.setJavaContent(true);
 			safe(() -> {
 				String reportingDir = project.getModel().getReporting().getOutputDirectory();
-				if (reportingDir!=null) {
+				if (reportingDir != null) {
 					File apidocs = new File(new File(reportingDir), "apidocs");
 					cpe.setJavadocContainerUrl(apidocs.toURI().toURL());
 				}

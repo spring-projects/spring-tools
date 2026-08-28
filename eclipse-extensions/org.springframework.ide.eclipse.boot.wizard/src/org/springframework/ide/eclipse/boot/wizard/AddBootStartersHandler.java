@@ -32,7 +32,7 @@ public class AddBootStartersHandler extends AbstractHandler {
 		Shell activeShell = HandlerUtil.getActiveShell(event);
 		try {
 			IStructuredSelection selection = HandlerUtil.getCurrentStructuredSelection(event);
-			if (selection!=null) {
+			if (selection != null) {
 				AddStartersWizard.openFor(activeShell, selection);
 			}
 		} catch (Throwable e) {

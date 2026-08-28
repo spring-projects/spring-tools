@@ -80,7 +80,7 @@ public class TextDocument implements IDocument {
 
 	private void apply(TextDocumentContentChangeEvent change) throws BadLocationException {
 		Range rng = change.getRange();
-		if (rng==null) {
+		if (rng == null) {
 			//full sync mode
 			setText(change.getText());
 		} else {
@@ -142,7 +142,7 @@ public class TextDocument implements IDocument {
 	@Override
 	public IRegion getLineInformationOfOffset(int offset) {
 		try {
-			if (offset<=getLength()) {
+			if (offset <= getLength()) {
 				int line = lineNumber(offset);
 				return getLineInformation(line);
 			}
@@ -182,7 +182,7 @@ public class TextDocument implements IDocument {
 
 	@Override
 	public char getChar(int offset) throws BadLocationException {
-		if (offset>=0 && offset<getText().length()) {
+		if (offset >= 0 && offset < getText().length()) {
 			return getText().charAt(offset);
 		}
 		throw new BadLocationException();
@@ -249,18 +249,18 @@ public class TextDocument implements IDocument {
 		// To generalize this it should probably return a String containing exactly the spaces
 		// and tabs at the front of the line.
 		IRegion r = getLineInformation(line);
-		if (r==null) {
+		if (r == null) {
 			//not a line in the document so it has no indentation
 			return -1;
 		}
 		int len = r.getLength();
 		int startOfLine = r.getOffset();
 		int leadingSpaces = 0;
-		while (leadingSpaces<len) {
+		while (leadingSpaces < len) {
 			char c = getSafeChar(startOfLine+leadingSpaces);
-			if (c==' ') {
+			if (c == ' ') {
 				leadingSpaces++;
-			} else if (c!=' ') {
+			} else if (c != ' ') {
 				return leadingSpaces;
 			}
 			leadingSpaces++;

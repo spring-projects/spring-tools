@@ -88,11 +88,11 @@ public class BasicYValueHint implements YValueHint {
 	@Override
 	public PlaceHolderString getExtraInsertion() {
 		Supplier<PlaceHolderString> ei = this.extraInsertion;
-		return ei==null ? null : ei.get();
+		return ei == null ? null : ei.get();
 	}
 
 	public BasicYValueHint setExtraInsertion(Supplier<PlaceHolderString> insertions) {
-		Assert.isLegal(this.extraInsertion==null);
+		Assert.isLegal(this.extraInsertion == null);
 		this.extraInsertion = insertions;
 		return this;
 	}

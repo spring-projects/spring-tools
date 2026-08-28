@@ -66,7 +66,7 @@ public class MissingConfigurationProcessorRule extends BootValidationRule {
 		public IMarkerResolution[] getResolutions(IMarker marker) {
 			try {
 				final ISpringBootProject project = SpringBootCore.create(getProject(marker));
-				if (project!=null) {
+				if (project != null) {
 					return new IMarkerResolution[] {
 						new IMarkerResolution() {
 							@Override
@@ -162,7 +162,7 @@ public class MissingConfigurationProcessorRule extends BootValidationRule {
 			mon.beginTask(t.getElementName(), 1+methods.length);
 			try {
 				IAnnotation annot = getAnnotation(t);
-				if (annot!=null && annot.exists()) {
+				if (annot != null && annot.exists()) {
 					visit(annot);
 					mon.worked(1);
 				}
@@ -177,7 +177,7 @@ public class MissingConfigurationProcessorRule extends BootValidationRule {
 		private IAnnotation getAnnotation(IType t) {
 			try {
 				IAnnotation[] all = t.getAnnotations();
-				if (all!=null) {
+				if (all != null) {
 					for (IAnnotation a : all) {
 						String name = a.getElementName();
 						//name could be fully qualified or simple, so check for both
@@ -203,7 +203,7 @@ public class MissingConfigurationProcessorRule extends BootValidationRule {
 			mon.beginTask(m.getElementName(), 1);
 			try {
 				IAnnotation annot = m.getAnnotation("ConfigurationProperties");
-				if (annot!=null && annot.exists()) {
+				if (annot != null && annot.exists()) {
 					visit(annot);
 					mon.worked(1);
 				}
@@ -213,7 +213,7 @@ public class MissingConfigurationProcessorRule extends BootValidationRule {
 		}
 
 		void warn(String msg, ISourceRange location) {
-			if (location!=null) {
+			if (location != null) {
 				context.problem(cu.getElementResource(), PROBLEM_ID, msg, location.getOffset(), location.getOffset()+location.getLength());
 
 //				context.addProblems(new ValidationProblem(PROBLEM_ID, IMarker.SEVERITY_WARNING,

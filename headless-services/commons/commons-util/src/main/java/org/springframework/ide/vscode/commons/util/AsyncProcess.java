@@ -69,10 +69,10 @@ public class AsyncProcess {
 		@Override
 		public void run() {
 			byte[] buf = new byte[256];
-			while (toRead!=null) {
+			while (toRead != null) {
 				try {
 					int i = toRead.read(buf);
-					if (i==-1) {
+					if (i == -1) {
 						//EOF
 						toRead = null; //Done!
 					} else {
@@ -92,7 +92,7 @@ public class AsyncProcess {
 		}
 
 		private void append(byte[] buf, int len) {
-			if (echo!=null) {
+			if (echo != null) {
 				try {
 					echo.write(buf, 0, len);
 				} catch (IOException e) {
@@ -165,7 +165,7 @@ public class AsyncProcess {
 	 */
 	public int waitFor(Duration timeout) throws InterruptedException, TimeoutException {
 		try {
-			if (timeout==null) {
+			if (timeout == null) {
 				exitValue = process.waitFor();
 			} else {
 				if (process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
@@ -196,12 +196,12 @@ public class AsyncProcess {
 			result.append(cmd+"\n");
 			result.append("exitValue = "+exitValue+"\n");
 			String strOut = getOut();
-			if (strOut!=null) {
+			if (strOut != null) {
 				result.append("------- System-out -------\n");
 				result.append(strOut);
 			}
 			String strErr = getErr();
-			if (strErr!=null) {
+			if (strErr != null) {
 				result.append("------- System-err -------\n");
 				result.append(strErr);
 			}

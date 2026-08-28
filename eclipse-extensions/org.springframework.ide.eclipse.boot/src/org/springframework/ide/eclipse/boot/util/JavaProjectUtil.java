@@ -42,10 +42,10 @@ public class JavaProjectUtil {
 	public static List<File> getNonSystemJarDependencies(IJavaProject jp, boolean reverse) {
 		try {
 			String[] paths = JavaRuntime.computeDefaultRuntimeClassPath(jp);
-			if (paths!=null && paths.length>0) {
+			if (paths != null && paths.length > 0) {
 				LinkedList<File> jars = new LinkedList<File>();
 				for (String path : paths) {
-					if (path!=null) {
+					if (path != null) {
 						File jar = new File(path);
 						if (FileUtil.isJarFile(jar)) {
 							if (reverse) {
@@ -88,7 +88,7 @@ public class JavaProjectUtil {
 	 */
 	public static IContainer[] getSourceFolders(IProject p) {
 		try {
-			if (p!=null && p.isAccessible() && p.hasNature(JavaCore.NATURE_ID)) {
+			if (p != null && p.isAccessible() && p.hasNature(JavaCore.NATURE_ID)) {
 				return getSourceFolders(JavaCore.create(p), true);
 			}
 		} catch (Exception e) {
@@ -109,9 +109,9 @@ public class JavaProjectUtil {
 			IClasspathEntry[] cp = jp.getResolvedClasspath(true);
 			for (IClasspathEntry cpe : cp) {
 				try {
-					if (cpe.getEntryKind()==IClasspathEntry.CPE_SOURCE) {
+					if (cpe.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 						IContainer sf = getProjectOrFolder(cpe.getPath());
-						if (sf!=null && sf.exists()) {
+						if (sf != null && sf.exists()) {
 							if (includeDerived || !sf.isDerived()) {
 								sourceFolders.add(sf);
 							}
@@ -129,9 +129,9 @@ public class JavaProjectUtil {
 	}
 
 	public static IContainer getProjectOrFolder(IPath path) {
-		if (path.segmentCount()>1) {
+		if (path.segmentCount() > 1) {
 			return ResourcesPlugin.getWorkspace().getRoot().getFolder(path);
-		} else if (path.segmentCount()==1) {
+		} else if (path.segmentCount() == 1) {
 			return ResourcesPlugin.getWorkspace().getRoot().getProject(path.segment(0));
 		}
 		return null;

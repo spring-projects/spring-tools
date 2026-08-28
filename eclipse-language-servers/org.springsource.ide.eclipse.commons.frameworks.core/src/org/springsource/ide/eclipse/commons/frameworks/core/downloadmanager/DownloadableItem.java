@@ -97,7 +97,7 @@ public class DownloadableItem {
 	 * a collisions is astronomically small.
 	 */
 	protected String getFileName() {
-		if (name==null) {
+		if (name == null) {
 			try {
 				MessageDigest sha1encoder = MessageDigest.getInstance("sha1");
 				byte[] bytes = sha1encoder.digest((""+getURL()).getBytes());
@@ -117,7 +117,7 @@ public class DownloadableItem {
 	}
 
 	public boolean isDownloaded() {
-		return downloader!=null && downloader.isDownloaded(this);
+		return downloader != null && downloader.isDownloaded(this);
 	}
 
 	/**
@@ -131,7 +131,7 @@ public class DownloadableItem {
 	public void clearCache() {
 		//Take care not to delete the original file if was local to begin with (in that case we don't 
 		// copy it into the cache dir so there is no cache to clear!
-		if (url!=null && !"file".equals(url.getProtocol())) {
+		if (url != null && !"file".equals(url.getProtocol())) {
 			//Avoid race conditions when someone is downloading this item at the moment.
 			synchronized (downloader) {
 				File localFile = downloader.getLocalLocation(this);

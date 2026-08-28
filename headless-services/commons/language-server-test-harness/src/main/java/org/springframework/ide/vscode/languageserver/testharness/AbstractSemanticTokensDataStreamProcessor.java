@@ -23,10 +23,10 @@ import org.jspecify.annotations.Nullable;
 abstract class AbstractSemanticTokensDataStreamProcessor<T, V> {
 
 	private final Function<Position, Integer> offsetMapper;
-	private final Function<String, @Nullable T> tokenTypeMapper;
+	private final Function < String, @Nullable T > tokenTypeMapper;
 
 	protected AbstractSemanticTokensDataStreamProcessor(Function<Position, Integer> offsetMapper,
-			Function<String, @Nullable T> tokenTypeMapper) {
+			Function < String, @Nullable T > tokenTypeMapper) {
 		this.offsetMapper = offsetMapper;
 		this.tokenTypeMapper = tokenTypeMapper;
 	}

@@ -245,11 +245,11 @@ public class Classpath {
 	}
 
 	public static boolean isSource(CPE e) {
-		return e!=null && Classpath.ENTRY_KIND_SOURCE.equals(e.getKind());
+		return e != null && Classpath.ENTRY_KIND_SOURCE.equals(e.getKind());
 	}
 
 	public static boolean isBinary(CPE e) {
-		return e!=null && Classpath.ENTRY_KIND_BINARY.equals(e.getKind());
+		return e != null && Classpath.ENTRY_KIND_BINARY.equals(e.getKind());
 	}
 	
 	public static boolean isProjectSource(CPE e) {

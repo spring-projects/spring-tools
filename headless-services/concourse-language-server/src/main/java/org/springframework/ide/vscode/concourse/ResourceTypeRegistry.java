@@ -61,9 +61,9 @@ public class ResourceTypeRegistry {
 	}
 
 	public YType getSourceType(String typeTag) {
-		if (typeTag!=null) {
+		if (typeTag != null) {
 			ResourceTypeInfo v = resourceTypes.get(typeTag);
-			if (v!=null) {
+			if (v != null) {
 				return v.getSource();
 			}
 		}
@@ -71,9 +71,9 @@ public class ResourceTypeRegistry {
 	}
 
 	public YType getInParamsType(String typeTag) {
-		if (typeTag!=null) {
+		if (typeTag != null) {
 			ResourceTypeInfo v = resourceTypes.get(typeTag);
-			if (v!=null) {
+			if (v != null) {
 				return v.getIn();
 			}
 		}
@@ -81,9 +81,9 @@ public class ResourceTypeRegistry {
 	}
 
 	public YType getOutParamsType(String typeTag) {
-		if (typeTag!=null) {
+		if (typeTag != null) {
 			ResourceTypeInfo v = resourceTypes.get(typeTag);
-			if (v!=null) {
+			if (v != null) {
 				return v.getOut();
 			}
 		}

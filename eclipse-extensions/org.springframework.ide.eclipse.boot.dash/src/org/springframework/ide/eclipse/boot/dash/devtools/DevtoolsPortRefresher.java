@@ -58,7 +58,7 @@ public class DevtoolsPortRefresher implements Disposable, ProcessListener {
 	@Override
 	public void debugTargetCreated(ProcessTracker tracker, IDebugTarget target) {
 		IProcess process = target.getProcess();
-		if (process!=null) { // may be null. E.g. for CF debug targets there's no local process attached to debug target.
+		if (process != null) { // may be null. E.g. for CF debug targets there's no local process attached to debug target.
 			processCreated(tracker, process);
 		}
 	}
@@ -66,7 +66,7 @@ public class DevtoolsPortRefresher implements Disposable, ProcessListener {
 	@Override
 	public void processCreated(ProcessTracker tracker, IProcess process) {
 		final BootProjectDashElement element = getElementFor(process);
-		if (element!=null) {
+		if (element != null) {
 			process.getStreamsProxy().getOutputStreamMonitor().addListener(new IStreamListener() {
 				public void streamAppended(String text, IStreamMonitor monitor) {
 					if (text.contains("started on port")) {
@@ -84,11 +84,11 @@ public class DevtoolsPortRefresher implements Disposable, ProcessListener {
 	private BootProjectDashElement getElementFor(IProcess process) {
 		ILaunch launch = process.getLaunch();
 		try {
-			if (launch!=null) {
+			if (launch != null) {
 				ILaunchConfiguration conf = launch.getLaunchConfiguration();
-				if (conf!=null && conf.getType().getIdentifier().equals(BootLaunchConfigurationDelegate.TYPE_ID)) {
+				if (conf != null && conf.getType().getIdentifier().equals(BootLaunchConfigurationDelegate.TYPE_ID)) {
 					IProject p = BootLaunchConfigurationDelegate.getProject(conf);
-					if (p!=null && BootPropertyTester.hasDevtools(p)) {
+					if (p != null && BootPropertyTester.hasDevtools(p)) {
 						BootDashElement e = elementFactory.createOrGet(p);
 						if (BootPropertyTester.hasDevtools(p)) {
 							if (e instanceof BootProjectDashElement) { // this test should always succeed but check it anyway

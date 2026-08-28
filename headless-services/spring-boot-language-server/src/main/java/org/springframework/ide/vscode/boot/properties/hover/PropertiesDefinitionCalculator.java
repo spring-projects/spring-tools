@@ -69,7 +69,7 @@ public class PropertiesDefinitionCalculator {
 		if (sources != null) {
 			for (PropertySource source : sources) {
 				IMember e = getPropertyJavaElement(typeUtil, project, property, source);
-				if (e!=null) {
+				if (e != null) {
 					elements.add(e);
 				}
 			}
@@ -82,7 +82,7 @@ public class PropertiesDefinitionCalculator {
 		if (sources != null) {
 			for (PropertySource source : sources) {
 				IMember e = getPropertySourceJavaElement(typeUtil, project, source);
-				if (e!=null) {
+				if (e != null) {
 					elements.add(e);
 				}
 			}
@@ -95,12 +95,12 @@ public class PropertiesDefinitionCalculator {
 		// collect elements in increasing order of accuracy, so that we can return the last
 		// (most accurate) element at the end of this method.
 		String typeName = source.getSourceType();
-		if (typeName!=null) {
+		if (typeName != null) {
 			IType type = project.getIndex().findType(typeName);
-			if (type!=null) {
+			if (type != null) {
 				elements.add(type);
 				String methodSig = source.getSourceMethod();
-				if (methodSig!=null) {
+				if (methodSig != null) {
 					if (type.isRecord()) {
 						IField field = type.getField(getMethodName(methodSig));
 						if (field != null) {
@@ -109,14 +109,14 @@ public class PropertiesDefinitionCalculator {
 						} else {
 							// No field? Add a method if found then.
 							IMethod method = getMethod(type, methodSig);
-							if (method!=null) {
+							if (method != null) {
 								elements.add(method);
 							}
 						}
 					} else {
 						// the property source is a method, so actually we look for accessor in the return type.
 						IMethod method = getMethod(type, methodSig);
-						if (method!=null) {
+						if (method != null) {
 							elements.add(method);
 						}
 					}
@@ -134,20 +134,20 @@ public class PropertiesDefinitionCalculator {
 			// collect elements in increasing order of accuracy, so that we can return the last
 			// (most accurate) element at the end of this method.
 		String typeName = source.getSourceType();
-		if (typeName!=null) {
+		if (typeName != null) {
 			IType type = project.getIndex().findType(typeName);
-			if (type!=null) {
+			if (type != null) {
 				elements.add(type);
 				String methodSig = source.getSourceMethod();
-				if (methodSig!=null) {
+				if (methodSig != null) {
 					// the property source is a method, so actually we look for accessor in the return type.
 					IMethod method = getMethod(type, methodSig);
-					if (method!=null) {
+					if (method != null) {
 						elements.add(method);
 						IJavaType retType = method.getReturnType();
 						if (retType instanceof IClassType) {
 							type = project.getIndex().findType(((IClassType) retType).getFQName());
-							if (type!=null) {
+							if (type != null) {
 								elements.add(type);
 							}
 						}
@@ -180,7 +180,7 @@ public class PropertiesDefinitionCalculator {
 		//TODO: This code assumes 0 arguments, which is the case currently for all
 		//  'real' data in spring jars.
 		IMethod m = type.getMethod(name, Stream.empty());
-		if (m!=null) {
+		if (m != null) {
 			return m;
 		}
 		//try  find a method  with the same name.
@@ -193,7 +193,7 @@ public class PropertiesDefinitionCalculator {
 	private static String getMethodName(String methodSig) {
 		String name;
 		int nameEnd = methodSig.indexOf('(');
-		if (nameEnd>=0) {
+		if (nameEnd >= 0) {
 			name = methodSig.substring(0, nameEnd);
 			int space = name.lastIndexOf(' ');
 			if (space >= 0) {
@@ -235,7 +235,7 @@ public class PropertiesDefinitionCalculator {
 
 	public static IMethod getPropertyMethod(TypeUtil typeUtil, IType type, String propName) {
 		String[] accessors = { "set", "get", "is" };
-		while (type!=null && !"java.lang.Object".equals(type.getFullyQualifiedName())) {
+		while (type != null && !"java.lang.Object".equals(type.getFullyQualifiedName())) {
 			for (String a : accessors) {
 				IMethod propertyMethod = getAccessor(type, a, propName);
 				if (propertyMethod != null) {
@@ -259,9 +259,9 @@ public class PropertiesDefinitionCalculator {
 			char[] chars = name.toCharArray();
 			for (int i = 0; i < chars.length; i++) {
 				char c = chars[i];
-				if (c=='-') {
+				if (c == '-') {
 					i++;
-					if (i<chars.length) {
+					if (i < chars.length) {
 						camel.append(Character.toUpperCase(chars[i]));
 					}
 				} else {

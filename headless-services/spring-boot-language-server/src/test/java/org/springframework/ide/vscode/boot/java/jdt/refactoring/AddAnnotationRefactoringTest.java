@@ -77,7 +77,7 @@ class AddAnnotationRefactoringTest {
 		return doc.get();
 	}
 
-	// ========== No existing annotation ==========
+	// == == == == == No existing annotation == == == == ==
 
 	@Test
 	void noAnnotation_singleValueAttribute_addsSingleMemberAnnotation() throws Exception {
@@ -188,7 +188,7 @@ class AddAnnotationRefactoringTest {
 				""", result);
 	}
 
-	// ========== Existing marker annotation ==========
+	// == == == == == Existing marker annotation == == == == ==
 
 	@Test
 	void existingMarkerAnnotation_emptyAttributeList_noChange() throws Exception {
@@ -236,7 +236,7 @@ class AddAnnotationRefactoringTest {
 				""", result);
 	}
 
-	// ========== Existing single-member annotation ==========
+	// == == == == == Existing single-member annotation == == == == ==
 
 	@Test
 	void existingSingleMemberAnnotation_newAttributeAdded_becomesNormalAnnotation() throws Exception {
@@ -337,7 +337,7 @@ class AddAnnotationRefactoringTest {
 		assertEquals(source, result);
 	}
 
-	// ========== Existing normal annotation ==========
+	// == == == == == Existing normal annotation == == == == ==
 
 	@Test
 	void existingNormalAnnotation_multipleMissingAttributes_allAdded() throws Exception {
@@ -421,7 +421,7 @@ class AddAnnotationRefactoringTest {
 		assertEquals(source, result);
 	}
 
-	// ========== Method matching ==========
+	// == == == == == Method matching == == == == ==
 
 	@Test
 	void methodNotFound_noChange() throws Exception {
@@ -466,7 +466,7 @@ class AddAnnotationRefactoringTest {
 				""", result);
 	}
 
-	// ========== Text block with backslash (escape character bug) ==========
+	// == == == == == Text block with backslash (escape character bug) == == == == ==
 
 	/**
 	 * Regression test: a query containing a backslash (e.g. {@code ESCAPE '\'} in JPQL)
@@ -513,7 +513,7 @@ class AddAnnotationRefactoringTest {
 				""", result);
 	}
 
-	// ========== Annotation matched by simple name ==========
+	// == == == == == Annotation matched by simple name == == == == ==
 
 	@Test
 	void existingAnnotationBySimpleName_treatedAsExisting() throws Exception {

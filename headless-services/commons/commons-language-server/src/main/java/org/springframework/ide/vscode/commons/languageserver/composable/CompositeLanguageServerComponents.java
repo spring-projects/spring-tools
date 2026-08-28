@@ -98,7 +98,7 @@ public class CompositeLanguageServerComponents implements LanguageServerComponen
 				public void reconcile(IDocument document, IProblemCollector problemCollector) {
 					LanguageId language = document.getLanguageId();
 					List<LanguageServerComponents> subComponents = componentsByLanguageId.get(language);
-					if (subComponents!=null) {
+					if (subComponents != null) {
 						for (LanguageServerComponents subComponent : subComponents) {
 							Optional<IReconcileEngine> subEngine = subComponent.getReconcileEngine();
 							if (subEngine.isPresent()) {

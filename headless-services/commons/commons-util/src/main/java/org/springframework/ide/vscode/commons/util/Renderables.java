@@ -348,14 +348,14 @@ public class Renderables {
 		return Renderables.lazy(() -> {
 			String html = getText(klass, resourcePath, ".html");
 			String markdown = getText(klass, resourcePath, ".md");
-			if (html==null && markdown==null) {
+			if (html == null && markdown == null) {
 				return NO_DESCRIPTION;
 			} else {
 				return new Renderable() {
 					
 					@Override
 					public void renderAsMarkdown(StringBuilder buffer) {
-						if (markdown!=null) {
+						if (markdown != null) {
 							buffer.append(markdown);
 						} else {
 							buffer.append(getHtmlToMarkdownConverter().convert(html));
@@ -364,7 +364,7 @@ public class Renderables {
 		
 					@Override
 					public void renderAsHtml(HtmlBuffer buffer) {
-						if (html!=null) {
+						if (html != null) {
 							buffer.raw(html);
 						} else {
 							//TODO: proper conversion to html
@@ -381,7 +381,7 @@ public class Renderables {
 	}
 
 	private static String getText(final Class<?> klass, String resourcePath, String extension) {
-		if (extension!=null) {
+		if (extension != null) {
 			resourcePath = resourcePath + extension;
 		}
 		try {

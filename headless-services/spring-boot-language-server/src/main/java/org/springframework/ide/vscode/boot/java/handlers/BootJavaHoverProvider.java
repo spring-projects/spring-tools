@@ -178,7 +178,7 @@ public class BootJavaHoverProvider implements HoverHandler {
 		Collection<HoverProvider> providers = this.hoverProviders.getAll();
 		for (HoverProvider provider : providers) {
 			Collection<CodeLens> hints = provider.getLiveHintCodeLenses(project, methodDeclaration, doc, processLiveData);
-			if (hints!=null) {
+			if (hints != null) {
 				result.addAll(hints);
 			}
 		}
@@ -189,7 +189,7 @@ public class BootJavaHoverProvider implements HoverHandler {
 		Collection<HoverProvider> providers = this.hoverProviders.getAll();
 		for (HoverProvider provider : providers) {
 			Collection<CodeLens> hints = provider.getLiveHintCodeLenses(project, typeDeclaration, doc, processLiveData);
-			if (hints!=null) {
+			if (hints != null) {
 				result.addAll(hints);
 			}
 		}
@@ -202,7 +202,7 @@ public class BootJavaHoverProvider implements HoverHandler {
 			AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(annotation);
 			for (HoverProvider provider : this.hoverProviders.get(annotationHierarchies, type)) {
 				Collection<CodeLens> hints = provider.getLiveHintCodeLenses(project, annotation, doc, processLiveData);
-				if (hints!=null) {
+				if (hints != null) {
 					result.addAll(hints);
 				}
 			}
@@ -333,7 +333,7 @@ public class BootJavaHoverProvider implements HoverHandler {
 				cancelToken.checkCanceled();
 				
 				Hover hover = provider.provideHover(exactNode, typeDeclaration, type, offset, doc, project, processLiveData);
-				if (hover!=null) {
+				if (hover != null) {
 					//TODO: compose multiple hovers somehow instead of just returning the first one?
 					return hover;
 				}

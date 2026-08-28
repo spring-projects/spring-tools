@@ -51,7 +51,7 @@ public class PropertyInfo {
 		private final String sourceMethod;
 		public PropertySource(ConfigurationMetadataSource source) {
 			String st = source.getSourceType();
-			this.sourceType = st!=null?st:source.getType();
+			this.sourceType = st != null ? st : source.getType();
 			this.sourceMethod = source.getSourceMethod();
 		}
 		
@@ -129,8 +129,8 @@ public class PropertyInfo {
 		this.defaultValue = defaultValue;
 		this.description = description;
 		this.deprecation = deprecation;
-		this.valueHints = valueHints==null?null:ImmutableList.copyOf(valueHints);
-		this.keyHints = keyHints==null?null:ImmutableList.copyOf(keyHints);
+		this.valueHints = valueHints == null ? null : ImmutableList.copyOf(valueHints);
+		this.keyHints = keyHints == null ? null : ImmutableList.copyOf(keyHints);
 		this.valueProvider = valueProvider;
 		this.keyProvider = keyProvider;
 		this.sources = sources;
@@ -226,7 +226,7 @@ public class PropertyInfo {
 	}
 
 	public List<PropertySource> getSources() {
-		if (sources!=null) {
+		if (sources != null) {
 			return sources;
 		}
 		return Collections.emptyList();
@@ -243,7 +243,7 @@ public class PropertyInfo {
 	}
 
 	public void addSource(PropertySource source) {
-		if (sources==null) {
+		if (sources == null) {
 			sources = new ArrayList<PropertySource>();
 		}
 		sources.add(source);
@@ -266,7 +266,7 @@ public class PropertyInfo {
 	}
 
 	public boolean isDeprecated() {
-		return deprecation!=null;
+		return deprecation != null;
 	}
 
 	public String getDeprecationReason() {

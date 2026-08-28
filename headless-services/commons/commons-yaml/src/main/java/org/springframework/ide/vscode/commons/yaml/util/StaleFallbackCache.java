@@ -73,7 +73,7 @@ public class StaleFallbackCache<K, V>{
 
 	public synchronized V get(K key, int version, boolean allowStaleEntries, Callable<? extends V> valueLoader) throws Exception {
 		Versioned<CompletableFuture<V>> latest = latestEntries.get(key, () -> new Versioned<>(version, load(valueLoader)));
-		if (latest.version!=version) {
+		if (latest.version != version) {
 			latestEntries.invalidate(key);
 			keepStaleBackup(key, latest);
 			latest = latestEntries.get(key, () -> new Versioned<>(version, load(valueLoader)));
@@ -83,7 +83,7 @@ public class StaleFallbackCache<K, V>{
 		} else {
 			if (latest.it.isCompletedExceptionally()) {
 				V staleValue = staleEntries.get(key);
-				if (staleValue!=null) {
+				if (staleValue != null) {
 					return staleValue;
 				}
 			}
@@ -106,7 +106,7 @@ public class StaleFallbackCache<K, V>{
 	}
 
 	private V future_get(int wantedVersion, Versioned<CompletableFuture<V>> versioned) throws Exception {
-		Assert.isLegal(wantedVersion==versioned.version);
+		Assert.isLegal(wantedVersion == versioned.version);
 		return future_get(versioned.it);
 	}
 

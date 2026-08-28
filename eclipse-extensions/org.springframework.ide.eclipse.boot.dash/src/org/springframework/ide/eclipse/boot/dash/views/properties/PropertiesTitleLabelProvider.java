@@ -75,7 +75,7 @@ public class PropertiesTitleLabelProvider implements ILabelProvider {
 				Object o = ((IStructuredSelection)element).getFirstElement();
 				if (o instanceof BootDashElement) {
 					StyledString l = labels.getStyledText((BootDashElement)o, BootDashColumn.NAME);
-					if (l!=null) {
+					if (l != null) {
 						return l.getString();
 					} else {
 						return ((BootDashElement) o).getName();

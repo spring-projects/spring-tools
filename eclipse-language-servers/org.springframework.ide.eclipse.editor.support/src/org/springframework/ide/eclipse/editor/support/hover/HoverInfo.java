@@ -62,7 +62,7 @@ public abstract class HoverInfo extends BrowserInformationControlInput {
 	 * implement this. Instead they should override the 'renderAsHtml' method.
 	 */
 	public final String getHtml() {
-		if (html==null) {
+		if (html == null) {
 			html = renderAsHtml();
 		}
 		return html;
@@ -84,7 +84,7 @@ public abstract class HoverInfo extends BrowserInformationControlInput {
 	}
 
 	public static HoverInfo withText(final String plainText) {
-		if (plainText!=null) {
+		if (plainText != null) {
 			return new HoverInfo() {
 
 				@Override
@@ -104,9 +104,9 @@ public abstract class HoverInfo extends BrowserInformationControlInput {
 	 */
 	public boolean handleActionLink(String link) {
 		String actionId = getActionLinkTarget(link);
-		if (actionId!=null) {
+		if (actionId != null) {
 			Runnable action = getAction(actionId);
-			if (action!=null) {
+			if (action != null) {
 				action.run();
 			}
 			return true;
@@ -115,7 +115,7 @@ public abstract class HoverInfo extends BrowserInformationControlInput {
 	}
 
 	private Runnable getAction(String actionId) {
-		if (actions!=null) {
+		if (actions != null) {
 			return actions.get(actionId);
 		}
 		return null;
@@ -135,7 +135,7 @@ public abstract class HoverInfo extends BrowserInformationControlInput {
 	}
 
 	private synchronized String registerAction(Runnable runnable) {
-		if (actions==null) {
+		if (actions == null) {
 			actions = new HashMap<>();
 		}
 		String actionId = ""+actions.size();
@@ -149,7 +149,7 @@ public abstract class HoverInfo extends BrowserInformationControlInput {
 	 */
 	private String getActionLinkTarget(String location) {
 		try {
-			if (location!=null) {
+			if (location != null) {
 				URI uri = new URI(location);
 				if (ACTION_HOST.equals(uri.getHost())) {
 					String path = URLDecoder.decode(uri.getPath(), "utf8");

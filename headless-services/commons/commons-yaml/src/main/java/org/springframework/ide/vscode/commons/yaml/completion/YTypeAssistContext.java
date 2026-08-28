@@ -93,9 +93,9 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 	@Override
 	public Collection<ICompletionProposal> getCompletions(YamlDocument doc, SNode node, int offset) throws Exception {
 		ISubCompletionEngine customContentAssistant = typeUtil.getCustomContentAssistant(type);
-		if (customContentAssistant!=null) {
+		if (customContentAssistant != null) {
 			DocumentRegion region = getCustomAssistRegion(doc, node, offset);
-			if (region!=null) {
+			if (region != null) {
 				return customContentAssistant.getCompletions(completionFactory(), region, region.toRelative(offset));
 			}
 		}
@@ -115,13 +115,13 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 			List<ICompletionProposal> completions = getValueCompletions(doc, node, offset, query);
 			if (completions.isEmpty()) {
 				TypeBasedSnippetProvider snippetProvider = typeUtil.getSnippetProvider();
-				if (snippetProvider!=null) {
+				if (snippetProvider != null) {
 					Collection<Snippet> snippets = snippetProvider.getSnippets(type);
 					YamlIndentUtil indenter = new YamlIndentUtil(doc);
 					for (Snippet snippet : snippets) {
 						String snippetName = snippet.getName();
 						double score = FuzzyMatcher.matchScore(query, snippetName);
-						if (score!=0.0 && snippet.isApplicable(getSchemaContext())) {
+						if (score != 0.0 && snippet.isApplicable(getSchemaContext())) {
 							DocumentEdits edits = createEditFromSnippet(doc, node, offset, query, indenter, snippet);
 							completions.add(completionFactory().valueProposal(snippetName, query, snippetName, type, null, score, edits, typeUtil));
 						}
@@ -144,7 +144,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 		edits.delete(start, query);
 		int referenceIndent = doc.getColumn(start);
 
-		boolean needNewline = node.getNodeType()==SNodeType.KEY;
+		boolean needNewline = node.getNodeType() == SNodeType.KEY;
 		String snippet = _snippet.getSnippet();
 		if (needNewline) {
 			snippet = "\n"+snippet;
@@ -175,10 +175,10 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 					for (YTypedProperty p : undefinedProps) {
 						String name = p.getName();
 						double score = FuzzyMatcher.matchScore(query, name);
-						if (score!=0) {
+						if (score != 0) {
 							TypeBasedSnippetProvider snippetProvider = typeUtil.getSnippetProvider();
 							DocumentEdits edits;
-							if (snippetProvider!=null) {
+							if (snippetProvider != null) {
 								// Generate edits from snippet
 								Snippet snippet = snippetProvider.getSnippet(p);
 								edits = createEditFromSnippet(doc, node, offset, query, indenter, snippet);
@@ -188,12 +188,12 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 								YType YType = p.getType();
 								edits.delete(queryOffset, query);
 								int referenceIndent = doc.getColumn(queryOffset);
-								boolean needNewline = node.getNodeType()==SNodeType.KEY;
+								boolean needNewline = node.getNodeType() == SNodeType.KEY;
 								StringBuilder snippet = new StringBuilder();
 								if (needNewline) {
 									snippet.append("\n");
 									referenceIndent = YamlIndentUtil.getNewChildKeyIndent(node);
-								} else if (queryOffset>0 && !Character.isWhitespace(doc.getChar(queryOffset-1))) {
+								} else if (queryOffset > 0 && !Character.isWhitespace(doc.getChar(queryOffset-1))) {
 									//See https://www.pivotaltracker.com/story/show/137722057
 									snippet.append(" ");
 									referenceIndent++;
@@ -269,11 +269,11 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 
 	private List<ICompletionProposal> getValueCompletions(YamlDocument doc, SNode node, int offset, String query) {
 		PartialCollection<YValueHint> _values = typeUtil.getHintValues(type, getSchemaContext());
-		if (_values.getExplanation()!=null && _values.getElements().isEmpty() && !Boolean.getBoolean("lsp.yaml.completions.errors.disable")) {
+		if (_values.getExplanation() != null && _values.getElements().isEmpty() && !Boolean.getBoolean("lsp.yaml.completions.errors.disable")) {
 			return ImmutableList.of(completionFactory().errorMessage(query, getMessage(_values.getExplanation())));
 		}
 		Collection<YValueHint> values = _values.getElements();
-		if (values!=null) {
+		if (values != null) {
 			ArrayList<ICompletionProposal> completions = new ArrayList<>();
 			YamlIndentUtil indenter = new YamlIndentUtil(doc);
 			int referenceIndent;
@@ -286,7 +286,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 			}
 			for (YValueHint value : values) {
 				double score = FuzzyMatcher.matchScore(query, value.getValue());
-				if (score!=0 && value!=null && !query.equals(value.getValue())) {
+				if (score != 0 && value != null && !query.equals(value.getValue())) {
 					int queryStart = offset-query.length();
 					DocumentEdits edits = new DocumentEdits(doc.getDocument(), false);
 					edits.delete(queryStart, offset);
@@ -295,7 +295,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 					}
 					edits.insert(offset, value.getValue());
 					PlaceHolderString extraInsertion = value.getExtraInsertion();
-					if (extraInsertion!=null) {
+					if (extraInsertion != null) {
 						String insertText = indenter.applyIndentation(extraInsertion.toString(), referenceIndent);
 						if (extraInsertion.hasPlaceHolders()) {
 							edits.insertSnippet(offset, insertText);
@@ -333,16 +333,16 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 	}
 
 	protected YamlAssistContext _traverse(YamlPathSegment s) {
-		if (s.getType()==YamlPathSegmentType.VAL_AT_KEY) {
+		if (s.getType() == YamlPathSegmentType.VAL_AT_KEY) {
 			if (typeUtil.isSequencable(type) || typeUtil.isMap(type)) {
 				return contextWith(s, typeUtil.getDomainType(type));
 			}
 			String key = s.toPropString();
 			Map<String, YTypedProperty> subproperties = typeUtil.getPropertiesMap(type);
-			if (subproperties!=null) {
+			if (subproperties != null) {
 				return contextWith(s, getType(subproperties.get(key)));
 			}
-		} else if (s.getType()==YamlPathSegmentType.VAL_AT_INDEX) {
+		} else if (s.getType() == YamlPathSegmentType.VAL_AT_INDEX) {
 			if (typeUtil.isSequencable(type)) {
 				return contextWith(s, typeUtil.getDomainType(type));
 			}
@@ -351,14 +351,14 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 	}
 
 	private YType getType(YTypedProperty prop) {
-		if (prop!=null) {
+		if (prop != null) {
 			return prop.getType();
 		}
 		return null;
 	}
 
 	private YamlAssistContext contextWith(YamlPathSegment s, YType nextType) {
-		if (nextType!=null) {
+		if (nextType != null) {
 			return new YTypeAssistContext(this, contextPath.append(s), nextType, typeUtil);
 		}
 		return null;
@@ -372,7 +372,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 
 	@Override
 	public Renderable getHoverInfo() {
-		if (parent!=null) {
+		if (parent != null) {
 			return parent.getHoverInfo(contextPath.getLastSegment());
 		}
 		return null;
@@ -389,7 +389,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 		case VAL_AT_KEY:
 		case KEY_AT_KEY:
 			YTypedProperty prop = getProperty(lastSegment.toPropString());
-			if (prop!=null) {
+			if (prop != null) {
 				return YPropertyInfoTemplates.createHover(contextPath.toPropString(), getType(), prop);
 			}
 			break;
@@ -424,7 +424,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 		try {
 			if (typeUtil.isSequencable(type)) {
 				YType itemType = typeUtil.getDomainType(type);
-				if (itemType!=null) {
+				if (itemType != null) {
 					return new YTypeAssistContext(this, itemType) {
 						@Override
 						public Collection<ICompletionProposal> getCompletions(YamlDocument doc, SNode node, int offset) throws Exception {
@@ -443,7 +443,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 	protected Collection<ICompletionProposal> getDashedCompletions(YamlDocument doc, SNode current, int offset) {
 		try {
 			YamlAssistContext relaxed = relaxForDashes();
-			if (relaxed!=null) {
+			if (relaxed != null) {
 				return relaxed.getCompletions(doc, current, offset);
 			}
 		} catch (Exception e) {
@@ -484,7 +484,7 @@ public class YTypeAssistContext extends AbstractYamlAssistContext {
 							// its not required for them. So we should add it along with the dash.
 							try {
 								Integer insertAt = textEdit.getFirstEditStart();
-								if (insertAt!=null && c instanceof ValueProposal) {
+								if (insertAt != null && c instanceof ValueProposal) {
 									//Value proposals don't automatically get newline added (because they don't require it), so we dmust add it here.
 									return !"".equals(doc.getLineTextBefore(insertAt).trim());
 								}

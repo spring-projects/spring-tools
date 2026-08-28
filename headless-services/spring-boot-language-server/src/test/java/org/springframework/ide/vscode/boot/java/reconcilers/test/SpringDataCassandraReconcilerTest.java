@@ -61,7 +61,7 @@ public class SpringDataCassandraReconcilerTest {
 		projectFinder.find(new TextDocumentIdentifier(testProject.getLocationUri().toASCIIString())).get();
 	}
 
-	// ========== Criteria.where ==========
+	// == == == == == Criteria.where == == == == ==
 
 	@Test
 	void criteriaWhere_templateUpdateWithEntity() throws Exception {
@@ -111,7 +111,7 @@ public class SpringDataCassandraReconcilerTest {
 		);
 	}
 
-	// ========== Update.set ==========
+	// == == == == == Update.set == == == == ==
 
 	@Test
 	void updateSet_templateContext() throws Exception {
@@ -142,7 +142,7 @@ public class SpringDataCassandraReconcilerTest {
 		);
 	}
 
-	// ========== Columns.from ==========
+	// == == == == == Columns.from == == == == ==
 
 	@Test
 	void columnsFrom_multipleProperties() throws Exception {
@@ -191,7 +191,7 @@ public class SpringDataCassandraReconcilerTest {
 		);
 	}
 
-	// ========== Quick fix ==========
+	// == == == == == Quick fix == == == == ==
 
 	@Test
 	void quickfix_criteriaWhere_exactMatch() throws Exception {

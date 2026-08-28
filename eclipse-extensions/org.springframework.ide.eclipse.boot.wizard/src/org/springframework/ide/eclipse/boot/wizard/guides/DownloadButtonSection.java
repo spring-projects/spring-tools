@@ -119,7 +119,7 @@ public class DownloadButtonSection extends WizardPageSection {
 	 */
 	private void enableDisable() {
 		Boolean isDown = model.isDownloaded.getValue();
-		if (isDown!=null) {
+		if (isDown != null) {
 			button.setEnabled(isDown);
 		}
 	}

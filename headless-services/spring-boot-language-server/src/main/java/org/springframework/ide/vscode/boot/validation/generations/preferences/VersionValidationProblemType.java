@@ -58,7 +58,7 @@ public enum VersionValidationProblemType implements ProblemType {
 	}
 
 	public String getLabel() {
-		if (label==null) {
+		if (label == null) {
 			label = createDefaultLabel();
 		}
 		return label;

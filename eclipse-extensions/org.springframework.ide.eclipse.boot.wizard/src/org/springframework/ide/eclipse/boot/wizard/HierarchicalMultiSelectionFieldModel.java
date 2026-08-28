@@ -57,7 +57,7 @@ public class HierarchicalMultiSelectionFieldModel<T> {
 
 	private MultiSelectionFieldModel<T> ensureCategory(String categoryName) {
 		MultiSelectionFieldModel<T> existing = categories.get(categoryName);
-		if (existing==null) {
+		if (existing == null) {
 			categories.put(categoryName, existing = new MultiSelectionFieldModel<T>(type, name)
 					.label(categoryName));
 		}
@@ -80,7 +80,7 @@ public class HierarchicalMultiSelectionFieldModel<T> {
 
 	public void setSelection(String catName, T dep, boolean selected) {
 		MultiSelectionFieldModel<T> cat = categories.get(catName);
-		if (cat!=null) {
+		if (cat != null) {
 			cat.getSelection(dep).setValue(selected);
 		}
 	}

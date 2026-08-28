@@ -222,7 +222,7 @@ public class BeanCompletionProposal implements ICompletionProposalWithScore {
 		return Objects.equals(beanId, other.beanId) && Objects.equals(beanType, other.beanType);
 	}
 
-	// ========== Additional edits via InjectBeanConstructorRefactoring ==========
+	// == == == == == Additional edits via InjectBeanConstructorRefactoring == == == == ==
 
 	private DocumentEdits computeAdditionalEdits() throws Exception {
 		String source = doc.get();

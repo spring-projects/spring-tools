@@ -48,7 +48,7 @@ public class DefaultQuickfixContext implements QuickfixContext {
 
 	public IProject getProject() {
 		IDocument doc = getDocument();
-		if (doc!=null) {
+		if (doc != null) {
 			return DocumentUtil.getProject(doc);
 		}
 		return null;
@@ -58,7 +58,7 @@ public class DefaultQuickfixContext implements QuickfixContext {
 	public IJavaProject getJavaProject() {
 		try {
 			IProject p = getProject();
-			if (p!=null && p.isAccessible() && p.hasNature(JavaCore.NATURE_ID)) {
+			if (p != null && p.isAccessible() && p.hasNature(JavaCore.NATURE_ID)) {
 				return JavaCore.create(p);
 			}
 		} catch (Exception e) {
@@ -80,7 +80,7 @@ public class DefaultQuickfixContext implements QuickfixContext {
 	@Override
 	public IPreferenceStore getProjectPreferences() {
 		IProject project = getProject();
-		if (project!=null) {
+		if (project != null) {
 			return new ScopedPreferenceStore(new ProjectScope(project), PLUGIN_ID);
 		}
 		return null;

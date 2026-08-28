@@ -74,7 +74,7 @@ public class FastStartupLaunchTabSection extends DelegatingLaunchConfigurationTa
 			});
 			model.selection.addListener(new ValueListener<Boolean>() {
 				public void gotValue(LiveExpression<Boolean> exp, Boolean selected) {
-					if (selected!=null) {
+					if (selected != null) {
 						button.setSelection(selected);
 					}
 				}

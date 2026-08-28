@@ -84,7 +84,7 @@ public class LocalElementConsoleManager extends BootDashModelConsoleManager {
 				if (processes != null) {
 					for (IProcess process : processes) {
 						IConsole console = getConsole(process, activeConsoles);
-						if (console!=null) {
+						if (console != null) {
 							return console;
 						}
 					}

@@ -159,7 +159,7 @@ public class EnableJmxSection extends DelegatingLaunchConfigurationTabSection {
 		}
 
 		private String computeTooltipText(String baseMsg, Feature feature) {
-			if (feature==Feature.JMX) {
+			if (feature == Feature.JMX) {
 				return baseMsg +
 						JmxBeanSupport.jmxBeanVmArgs("${jmxPort}", EnumSet.of(feature));
 			} else {
@@ -182,7 +182,7 @@ public class EnableJmxSection extends DelegatingLaunchConfigurationTabSection {
 		final String name = widget.getText();
 		checkedState.addListener(new ValueListener<Boolean>() {
 			public void gotValue(LiveExpression<Boolean> exp, Boolean value) {
-				boolean enable = value!=null && value;
+				boolean enable = value != null && value;
 				debug("Widget '"+name+"' <- "+enable);
 				widget.setSelection(enable);
 			}

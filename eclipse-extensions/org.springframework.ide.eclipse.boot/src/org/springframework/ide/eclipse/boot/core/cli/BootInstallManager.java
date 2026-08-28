@@ -63,7 +63,7 @@ public class BootInstallManager implements IBootInstallFactory {
 
 	public static synchronized BootInstallManager getInstance() {
 		try {
-			if (instance==null) {
+			if (instance == null) {
 				IPreferenceStore prefsStore = BootActivator.getDefault().getPreferenceStore();
 				instance = new BootInstallManager(determineCacheDir(), PropertyStores.backedBy(prefsStore));
 			}
@@ -97,7 +97,7 @@ public class BootInstallManager implements IBootInstallFactory {
 		IEclipsePreferences prefs = getPrefs();
 		String defaultName = prefs.get(DEFAULT_BOOT_INSTALL, "");
 		String encoded = prefs.get(BOOT_INSTALLS, null);
-		if (encoded!=null) {
+		if (encoded != null) {
 			String[] encodedInstalls = ArrayEncoder.decode(encoded);
 			for (String encodedInstall : encodedInstalls) {
 				try {
@@ -138,7 +138,7 @@ public class BootInstallManager implements IBootInstallFactory {
 		} catch (Exception e) {
 			Log.log(e);
 		}
-		if (di==null) {
+		if (di == null) {
 			prefs.remove(DEFAULT_BOOT_INSTALL);
 		} else {
 			prefs.put(DEFAULT_BOOT_INSTALL, di.getName());

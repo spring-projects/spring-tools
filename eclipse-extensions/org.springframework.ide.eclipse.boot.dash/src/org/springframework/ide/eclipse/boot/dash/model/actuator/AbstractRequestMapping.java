@@ -34,7 +34,7 @@ public abstract class AbstractRequestMapping implements RequestMapping {
 	@Override
 	public IType getType() {
 		String fqName = getFullyQualifiedClassName();
-		if (fqName!=null) {
+		if (fqName != null) {
 			return typeLookup.findType(fqName);
 		}
 		return null;
@@ -44,10 +44,10 @@ public abstract class AbstractRequestMapping implements RequestMapping {
 	public boolean isUserDefined() {
 		try {
 			IType type = getType();
-			if (type!=null) {
+			if (type != null) {
 				IPackageFragmentRoot pfr = (IPackageFragmentRoot)type.getAncestor(IJavaElement.PACKAGE_FRAGMENT_ROOT);
-				if (pfr!=null) {
-					return pfr.getKind()==IPackageFragmentRoot.K_SOURCE;
+				if (pfr != null) {
+					return pfr.getKind() == IPackageFragmentRoot.K_SOURCE;
 				}
 			}
 		} catch (Exception e) {
@@ -60,11 +60,11 @@ public abstract class AbstractRequestMapping implements RequestMapping {
 	public IMethod getMethod() {
 		try {
 			IType type = getType();
-			if (type!=null) {
+			if (type != null) {
 				String mName = getMethodName();
-				if (mName!=null) {
+				if (mName != null) {
 					IMethod[] methods = type.getMethods();
-					if (methods!=null && methods.length>0) {
+					if (methods != null && methods.length > 0) {
 						for (IMethod m : methods) {
 							//TODO: handle method overloading
 							if (mName.equals(m.getElementName())) {

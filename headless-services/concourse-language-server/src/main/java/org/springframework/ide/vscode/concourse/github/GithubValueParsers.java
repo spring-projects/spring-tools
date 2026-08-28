@@ -45,7 +45,7 @@ public class GithubValueParsers {
 				doc.setText(_str);
 				DocumentRegion str = new DocumentRegion(doc);
 				GithubRepoReference repo = parseFormat(str);
-				if (repo!=null) {
+				if (repo != null) {
 					Collection<String> knownRepos;
 					try {
 						knownRepos = github.getReposForOwner(repo.owner.toString());
@@ -53,7 +53,7 @@ public class GithubValueParsers {
 						//Couldn't read info from github. Ignore this in reconciler context.
 						return repo;
 					}
-					if (knownRepos==null) {
+					if (knownRepos == null) {
 						throw unknownEntity("User or Organization not found: '"+repo.owner+"'", repo.owner);
 					} else {
 						if (!knownRepos.contains(repo.name.toString())) {
@@ -66,7 +66,7 @@ public class GithubValueParsers {
 
 			private GithubRepoReference parseFormat(DocumentRegion str) throws Exception {
 				String prefix = checkPrefix(str);
-				if (prefix!=null) {
+				if (prefix != null) {
 					DocumentRegion ownerAndName = str.subSequence(prefix.length());
 					//Should end with '.git'
 					if (ownerAndName.endsWith(".git")) {
@@ -76,7 +76,7 @@ public class GithubValueParsers {
 						throw new ValueParseException("GitHub repo uri should end with '.git'", highlight.getStart(), highlight.getEnd());
 					}
 					int slash = ownerAndName.indexOf('/');
-					if (slash>=0) {
+					if (slash >= 0) {
 						return new GithubRepoReference(ownerAndName.subSequence(0, slash), ownerAndName.subSequence(slash+1));
 					} else {
 						throw new ValueParseException("Expecting something of the form '${owner}/${repo}'.", ownerAndName.getStart(), ownerAndName.getEnd());
@@ -91,10 +91,10 @@ public class GithubValueParsers {
 					if (str.startsWith(expectedPrefix.substring(0, lastChar))) {
 						char actualSeparator = str.safeCharAt(lastChar);
 						char expectedSeparator = expectedPrefix.charAt(lastChar);
-						if (actualSeparator==expectedSeparator) {
+						if (actualSeparator == expectedSeparator) {
 							return expectedPrefix;
 						}
-						if (actualSeparator==':' || actualSeparator == '/') {
+						if (actualSeparator == ':' || actualSeparator == '/') {
 							throw new ValueParseException("Expecting a '"+expectedSeparator+"'", lastChar, lastChar+1);
 						}
 					}

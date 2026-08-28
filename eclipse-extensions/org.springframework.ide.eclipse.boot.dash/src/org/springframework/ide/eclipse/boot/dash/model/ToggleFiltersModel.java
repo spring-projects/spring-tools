@@ -43,7 +43,7 @@ public class ToggleFiltersModel {
 		public boolean accept(BootDashElement e) {
 			if (e instanceof LaunchConfDashElement) {
 				LaunchConfDashElement conf = (LaunchConfDashElement) e;
-				return conf.getParent().getCurrentChildren().size()!=1;
+				return conf.getParent().getCurrentChildren().size() != 1;
 			}
 			return true;
 		}
@@ -51,9 +51,9 @@ public class ToggleFiltersModel {
 
 	private static final Filter<BootDashElement> HIDE_NON_WORKSPACE_ELEMENTS = new Filter<BootDashElement>() {
 		public boolean accept(BootDashElement t) {
-			if (t!=null) {
+			if (t != null) {
 				IProject p = t.getProject();
-				return p!=null && p.exists();
+				return p != null && p.exists();
 			}
 			return false;
 		}
@@ -253,7 +253,7 @@ public class ToggleFiltersModel {
 		try {
 			for (FilterChoice f : getAvailableFilters()) {
 				boolean active = filters.contains(f);
-				if (active==f.defaultEnable) {
+				if (active == f.defaultEnable) {
 					//don't store default values that way if we change the default in the future then
 					// users will get the new default rather than their persisted value
 					persistentProperties.put(f.getId(), (String)null);

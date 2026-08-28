@@ -77,7 +77,7 @@ public class OldValueDisposer<T> implements Disposable {
 		Object oldValue = lastObservedValue;
 		lastObservedValue = v;
 		//Take care with spurious change events! Ideally these shouldn't happen, but livexp isn't perfectly avoiding them!
-		if (oldValue!=v) {
+		if (oldValue != v) {
 			disposeValue(oldValue);
 		}
 	}

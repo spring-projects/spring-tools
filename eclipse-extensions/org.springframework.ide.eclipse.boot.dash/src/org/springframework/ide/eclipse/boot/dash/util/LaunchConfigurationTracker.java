@@ -88,7 +88,7 @@ public class LaunchConfigurationTracker implements Disposable {
 
 				private void refreshIfNeeded(ILaunchConfiguration configuration) {
 					try {
-						if (configuration!=null && launchType.equals(configuration.getType())) {
+						if (configuration != null && launchType.equals(configuration.getType())) {
 							refresh();
 						}
 					} catch (CoreException e) {
@@ -105,7 +105,7 @@ public class LaunchConfigurationTracker implements Disposable {
 	}
 
 	private synchronized Job refreshJob() {
-		if (refreshJob==null) {
+		if (refreshJob == null) {
 			refreshJob = new Job("Refresh Launch Conf Boot Dash Elements") {
 				protected IStatus run(IProgressMonitor arg0) {
 					Map<IProject, Set<ILaunchConfiguration>> newSets = new HashMap<>();
@@ -118,7 +118,7 @@ public class LaunchConfigurationTracker implements Disposable {
 					}
 					for (ILaunchConfiguration conf : getRelevantConfs()) {
 						IProject project = BootLaunchConfigurationDelegate.getProject(conf);
-						if (project!=null) {
+						if (project != null) {
 							add(newSets, project, conf);
 						}
 					}
@@ -142,7 +142,7 @@ public class LaunchConfigurationTracker implements Disposable {
 	private Set<ILaunchConfiguration> getSet(Map<IProject, Set<ILaunchConfiguration>> index,
 			IProject project) {
 		Set<ILaunchConfiguration> elements = index.get(project);
-		if (elements==null) {
+		if (elements == null) {
 			index.put(project, elements = new HashSet<>());
 		}
 		return elements;
@@ -155,7 +155,7 @@ public class LaunchConfigurationTracker implements Disposable {
 
 	private synchronized LiveSetVariable<ILaunchConfiguration> getVar(IProject project) {
 		LiveSetVariable<ILaunchConfiguration> existing = configs.get(project);
-		if (existing==null) {
+		if (existing == null) {
 			configs.put(project, existing = new LiveSetVariable<>(AsyncMode.SYNC));
 		}
 		return existing;
@@ -184,7 +184,7 @@ public class LaunchConfigurationTracker implements Disposable {
 
 	@Override
 	public synchronized void dispose() {
-		if (launchConfListener!=null) {
+		if (launchConfListener != null) {
 			launchManager.removeLaunchConfigurationListener(launchConfListener);
 			launchConfListener = null;
 		}

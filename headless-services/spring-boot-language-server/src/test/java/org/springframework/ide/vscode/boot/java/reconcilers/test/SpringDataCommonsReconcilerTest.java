@@ -63,7 +63,7 @@ public class SpringDataCommonsReconcilerTest {
 		projectFinder.find(new TextDocumentIdentifier(testProject.getLocationUri().toASCIIString())).get();
 	}
 
-	// ========== Sort.by — direct repository call (Tier 1) ==========
+	// == == == == == Sort.by — direct repository call (Tier 1) == == == == ==
 
 	@Test
 	void sortBy_singleProperty_repositoryCall() throws Exception {
@@ -152,7 +152,7 @@ public class SpringDataCommonsReconcilerTest {
 		editor.assertProblems();
 	}
 
-	// ========== Tier 2: Contextual resolution from enclosing block ==========
+	// == == == == == Tier 2: Contextual resolution from enclosing block == == == == ==
 
 	@Test
 	void contextual_sortVariable_repositoryInSameBlock() throws Exception {
@@ -221,7 +221,7 @@ public class SpringDataCommonsReconcilerTest {
 		);
 	}
 
-	// ========== No string property reference — no problems ==========
+	// == == == == == No string property reference — no problems == == == == ==
 
 	@Test
 	void noStringPropertyReference_noProblems() throws Exception {
@@ -239,7 +239,7 @@ public class SpringDataCommonsReconcilerTest {
 		editor.assertProblems();
 	}
 
-	// ========== Quick fix tests ==========
+	// == == == == == Quick fix tests == == == == ==
 
 	@Test
 	void quickfix_exactMatch_singleProperty() throws Exception {
@@ -380,7 +380,7 @@ public class SpringDataCommonsReconcilerTest {
 		assertTrue(actions.isEmpty(), "No quick fixes when no domain type is known");
 	}
 
-	// ========== Fix all in file ==========
+	// == == == == == Fix all in file == == == == ==
 
 	@Test
 	void fixAll_multipleExactMatches_singleFixAllQuickFix() throws Exception {
@@ -469,7 +469,7 @@ public class SpringDataCommonsReconcilerTest {
 		assertTrue(actions1.isEmpty(), "No quick fixes for non-matching property");
 	}
 
-	// ========== Cross-module fix all in file ==========
+	// == == == == == Cross-module fix all in file == == == == ==
 
 	@Test
 	void fixAll_crossModule_commonsAndMongodb() throws Exception {

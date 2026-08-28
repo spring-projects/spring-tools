@@ -72,11 +72,11 @@ public class TrayDialogWithSections extends TrayDialog implements IPageWithSecti
 
 	@Override
 	public boolean reflow() {
-		if (reflowJob==null) {
+		if (reflowJob == null) {
 			reflowJob = new UIJob(Display.getDefault(), "Reflow Wizard Contents") {
 				@Override
 				public IStatus runInUIThread(IProgressMonitor monitor) {
-					if (scroller!=null && !scroller.isDisposed()) {
+					if (scroller != null && !scroller.isDisposed()) {
 						scroller.reflow(true);
 					}
 					return Status.OK_STATUS;
@@ -89,7 +89,7 @@ public class TrayDialogWithSections extends TrayDialog implements IPageWithSecti
 	}
 
 	protected synchronized List<WizardPageSection> getSections() {
-		if (sections==null) {
+		if (sections == null) {
 			sections = safeCreateSections();
 		}
 		return sections;
@@ -146,7 +146,7 @@ public class TrayDialogWithSections extends TrayDialog implements IPageWithSecti
 	 */
 	public boolean clickOk() {
 		Button button = getButton(OK);
-		if (button!=null && button.isEnabled()) {
+		if (button != null && button.isEnabled()) {
 			okPressed();
 			return true;
 		}

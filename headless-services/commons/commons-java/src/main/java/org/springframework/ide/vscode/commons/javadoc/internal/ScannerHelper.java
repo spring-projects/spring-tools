@@ -429,7 +429,7 @@ public class ScannerHelper {
 //	return (high - Scanner.HIGH_SURROGATE_MIN_VALUE) * 0x400 + (low - Scanner.LOW_SURROGATE_MIN_VALUE) + 0x10000;
 //}
 //public static boolean isDigit(char c) throws InvalidInputException {
-//	if(c < ScannerHelper.MAX_OBVIOUS) {
+//	if (c < ScannerHelper.MAX_OBVIOUS) {
 //		return (ScannerHelper.OBVIOUS_IDENT_CHAR_NATURES[c] & ScannerHelper.C_DIGIT) != 0;
 //	}
 //	if (Character.isDigit(c)) {

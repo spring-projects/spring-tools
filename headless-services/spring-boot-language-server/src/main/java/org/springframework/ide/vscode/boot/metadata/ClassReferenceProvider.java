@@ -62,8 +62,8 @@ public class ClassReferenceProvider extends CachingValueProvider {
 				return cache.get(params, () -> {
 					String target = getTarget(params);
 					Boolean concrete = getConcrete(params);
-					if (target!=null || concrete!=null) {
-						if (concrete==null) {
+					if (target != null || concrete != null) {
+						if (concrete == null) {
 							concrete = DEFAULT_CONCRETE;
 						}
 						return new ClassReferenceProvider(target, concrete, sourceLinks);
@@ -78,7 +78,7 @@ public class ClassReferenceProvider extends CachingValueProvider {
 	}
 
 	private static String getTarget(Map<String, Object> params) {
-		if (params!=null) {
+		if (params != null) {
 			Object obj = params.get("target");
 			if (obj instanceof String) {
 				String target = (String) obj;
@@ -101,7 +101,7 @@ public class ClassReferenceProvider extends CachingValueProvider {
 
 	private static Boolean getConcrete(Map<String, Object> params) {
 		try {
-			if (params!=null) {
+			if (params != null) {
 				Object obj = params.get("concrete");
 				if (obj instanceof String) {
 					String concrete = (String) obj;

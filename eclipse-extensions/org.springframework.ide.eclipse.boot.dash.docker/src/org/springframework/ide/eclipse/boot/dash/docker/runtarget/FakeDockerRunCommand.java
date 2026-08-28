@@ -44,7 +44,7 @@ public class FakeDockerRunCommand {
 	}
 
 	private void addEnv(StringBuilder cmd) {
-		if (env!=null && env.length>0) {
+		if (env != null && env.length > 0) {
 			for (String b : env) {
 				addArgs(cmd, "--env", b);
 			}
@@ -52,7 +52,7 @@ public class FakeDockerRunCommand {
 	}
 
 	private void addPortBindings(StringBuilder cmd) {
-		if (portBindings!=null) {
+		if (portBindings != null) {
 			Map<ExposedPort, Binding[]> bindings = portBindings.getBindings();
 			if (!bindings.isEmpty()) {
 				for (Entry<ExposedPort, Binding[]> entry : bindings.entrySet()) {
@@ -68,13 +68,13 @@ public class FakeDockerRunCommand {
 	}
 
 	private void addNetwork(StringBuilder cmd) {
-		if (network!=null) {
+		if (network != null) {
 			addArgs(cmd, "--network", network);
 		}
 	}
 
 	public void addAliases(StringBuilder cmd) {
-		if (networkAliases!=null && networkAliases.length>0) {
+		if (networkAliases != null && networkAliases.length > 0) {
 			for (String alias : networkAliases) {
 				addArgs(cmd, "--network-alias", alias);
 			}
@@ -82,7 +82,7 @@ public class FakeDockerRunCommand {
 	}
 
 	private void addLabels(StringBuilder cmd) {
-		if (labels!=null && !labels.isEmpty()) {
+		if (labels != null && !labels.isEmpty()) {
 			for (Entry<String, String> entry : labels.entrySet()) {
 				addArgs(cmd, "--label", entry.getKey()+"="+entry.getValue());
 			}

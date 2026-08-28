@@ -22,7 +22,7 @@ public class LanguageServerConsoles {
 	private static Map<String, Supplier<Console>> managers;
 
 	public static synchronized Supplier<Console> getConsoleFactory(String serverLabel) {
-		if (managers==null) {
+		if (managers == null) {
 			managers = new HashMap<>();
 		}
 		return managers.computeIfAbsent(serverLabel, label -> new Supplier<Console>() {

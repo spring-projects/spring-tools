@@ -54,11 +54,11 @@ public class PreferencesBasedSeverityProvider implements SeverityProvider {
 	}
 
 	@Override public synchronized ProblemSeverity getSeverity(ProblemType problemType) {
-		if (cache==null) {
+		if (cache == null) {
 			cache = new HashMap<>();
 		}
 		ProblemSeverity existing = cache.get(problemType);
-		if (existing==null) {
+		if (existing == null) {
 			cache.put(problemType, existing = util.getSeverity(getPrefs(), problemType));
 		}
 		return existing;
@@ -73,7 +73,7 @@ public class PreferencesBasedSeverityProvider implements SeverityProvider {
 	}
 
 	private boolean useProjectPreferences() {
-		if (projectPrefs!=null) {
+		if (projectPrefs != null) {
 			return util.projectPreferencesEnabled(projectPrefs, editorType);
 		}
 		return false;

@@ -111,7 +111,7 @@ public abstract class WrappingBootDashElement<T> extends AbstractDisposable impl
 	}
 
 	protected TypeLookup getTypeLookup() {
-		if (typeLookup==null) {
+		if (typeLookup == null) {
 			typeLookup = new TypeLookupImpl(getName(), getProject());
 		}
 		return typeLookup;
@@ -123,7 +123,7 @@ public abstract class WrappingBootDashElement<T> extends AbstractDisposable impl
 	public LinkedHashSet<String> getTags() {
 		try {
 			String[] tags = getPersistentProperties() == null ? null : getPersistentProperties().get(TAGS_KEY, (String[])null);
-			if (tags!=null) {
+			if (tags != null) {
 				return new LinkedHashSet<>(Arrays.asList(tags));
 			}
 		} catch (Exception e) {
@@ -135,7 +135,7 @@ public abstract class WrappingBootDashElement<T> extends AbstractDisposable impl
 	@Override
 	public void setTags(LinkedHashSet<String> newTags) {
 		try {
-			if (newTags==null || newTags.isEmpty()) {
+			if (newTags == null || newTags.isEmpty()) {
 				getPersistentProperties().put(TAGS_KEY, (String[])null);
 			} else {
 				getPersistentProperties().put(TAGS_KEY, newTags.toArray(new String[newTags.size()]));
@@ -149,7 +149,7 @@ public abstract class WrappingBootDashElement<T> extends AbstractDisposable impl
 	@Override
 	public final String getDefaultRequestMappingPath() {
 		String storedValue = getPersistentProperties() == null ? null : getPersistentProperties().get(DEFAULT_RM_PATH_KEY);
-		if (storedValue!=null) {
+		if (storedValue != null) {
 			return storedValue;
 		}
 		//inherit a default value from parent node?
@@ -183,11 +183,11 @@ public abstract class WrappingBootDashElement<T> extends AbstractDisposable impl
 					protected Boolean compute() {
 						IProject p = getProject();
 						try {
-							if (p!=null && p.isAccessible()) {
+							if (p != null && p.isAccessible()) {
 								IJavaProject jp = JavaCore.create(p);
 								if (jp.exists()) {
 									IClasspathEntry[] classpath = jp.getResolvedClasspath(true);
-									if (classpath!=null) {
+									if (classpath != null) {
 										return tester.test(classpath);
 									}
 								}
@@ -266,7 +266,7 @@ public abstract class WrappingBootDashElement<T> extends AbstractDisposable impl
 	@Override
 	public ImmutableSet<Integer> getLivePorts() {
 		int port = getLivePort();
-		if (port>0) {
+		if (port > 0) {
 			return ImmutableSet.of(port);
 		} else {
 			return ImmutableSet.of();
@@ -296,7 +296,7 @@ public abstract class WrappingBootDashElement<T> extends AbstractDisposable impl
 	}
 
 	private synchronized ValueListener<?> getElementNotifier() {
-		if (elementNotifier==null) {
+		if (elementNotifier == null) {
 			elementNotifier = new ValueListener<Object>() {
 				@Override
 				public void gotValue(LiveExpression<Object> exp, Object value) {

@@ -92,7 +92,7 @@ public class SpringBootCore {
 	 * instance from their context.
 	 */
 	public static SpringBootCore getDefault() {
-		if (instance==null) {
+		if (instance == null) {
 			instance = new SpringBootCore(InitializrService.DEFAULT);
 		}
 		return instance;

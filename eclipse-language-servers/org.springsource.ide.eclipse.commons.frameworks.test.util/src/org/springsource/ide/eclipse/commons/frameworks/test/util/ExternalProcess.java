@@ -60,10 +60,10 @@ public class ExternalProcess {
 		@Override
 		public void run() {
 			byte[] buf = new byte[256];
-			while (toRead!=null) {
+			while (toRead != null) {
 				try {
 					int i = toRead.read(buf);
-					if (i==-1) {
+					if (i == -1) {
 						//EOF
 						toRead = null; //Done!
 					} else {
@@ -83,7 +83,7 @@ public class ExternalProcess {
 		}
 
 		private void append(byte[] buf, int len) {
-			if (echo!=null) {
+			if (echo != null) {
 				try {
 					echo.write(buf, 0, len);
 				} catch (IOException e) {
@@ -157,12 +157,12 @@ public class ExternalProcess {
 			result.append(cmd+"\n");
 			result.append("exitValue = "+exitValue+"\n");
 			String strOut = getOut();
-			if (strOut!=null) {
+			if (strOut != null) {
 				result.append("\n------- System.out -------\n");
 				result.append(strOut);
 			}
 			String strErr = getErr();
-			if (strErr!=null) {
+			if (strErr != null) {
 				result.append("\n------- System.err -------\n");
 				result.append(getOut());
 			}

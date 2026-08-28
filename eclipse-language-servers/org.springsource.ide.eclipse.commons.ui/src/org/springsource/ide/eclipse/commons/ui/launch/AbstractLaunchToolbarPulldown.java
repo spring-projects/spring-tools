@@ -51,7 +51,7 @@ public abstract class AbstractLaunchToolbarPulldown implements IWorkbenchWindowP
 	private LaunchList.Listener launchListener;
 	private LaunchList launches = createList().addListener(launchListener = new LaunchList.Listener() {
 		public void changed() {
-			if (action!=null && window!=null) {
+			if (action != null && window != null) {
 				uiUpdate();
 			}
 		}
@@ -74,7 +74,7 @@ public abstract class AbstractLaunchToolbarPulldown implements IWorkbenchWindowP
 	public void run(IAction action) {
 		this.action = action;
 		final LaunchList.Item l = launches.getLast();
-		if (l!=null) {
+		if (l != null) {
 			Job job = new Job(getOperationName()) {
 				@Override
 				protected IStatus run(IProgressMonitor monitor) {
@@ -108,15 +108,15 @@ public abstract class AbstractLaunchToolbarPulldown implements IWorkbenchWindowP
 	 * Update labels etc. This method must only be called from the UI thread.
 	 */
 	private void update() {
-		if (action!=null) {
+		if (action != null) {
 			Item launch = launches.getLast();
 			String label = getOperationName();
-			if (launch!=null) {
+			if (launch != null) {
 				label = label + " " + launch.getName();
 			}
 			action.setText(label);
 			action.setToolTipText(label);
-			action.setEnabled(launch!=null);
+			action.setEnabled(launch != null);
 		}
 	}
 
@@ -125,10 +125,10 @@ public abstract class AbstractLaunchToolbarPulldown implements IWorkbenchWindowP
 	 */
 	private void uiUpdate() {
 		Shell shell = window.getShell();
-		if (shell!=null) {
+		if (shell != null) {
 			//We may not be in the UIThread here. So take care before futzing with the widgets!
 			Display display = shell.getDisplay();
-			if (display!=null) {
+			if (display != null) {
 				display.asyncExec(new Runnable() {
 					public void run() {
 						update();
@@ -142,11 +142,11 @@ public abstract class AbstractLaunchToolbarPulldown implements IWorkbenchWindowP
 
 	@Override
 	public void dispose() {
-		if (menu!=null) {
+		if (menu != null) {
 			menu.dispose();
 			menu = null;
 		}
-		if (launches!=null && launchListener!=null) {
+		if (launches != null && launchListener != null) {
 			launches.removeListener(launchListener);
 			launches = null;
 		}
@@ -161,7 +161,7 @@ public abstract class AbstractLaunchToolbarPulldown implements IWorkbenchWindowP
 
 	@Override
 	public Menu getMenu(Control parent) {
-		if (menu!=null) {
+		if (menu != null) {
 			menu.dispose();
 		}
 		menu = new Menu(parent);

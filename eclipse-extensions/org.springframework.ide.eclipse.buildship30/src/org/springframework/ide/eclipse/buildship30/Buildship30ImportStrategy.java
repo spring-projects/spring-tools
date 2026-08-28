@@ -54,7 +54,7 @@ public class Buildship30ImportStrategy extends ImportStrategy {
 	public static class Factory implements ImportStrategyFactory {
 		@Override
 		public ImportStrategy create(BuildType buildType, String name, String notInstalledMessage) throws Exception {
-			Assert.isLegal(buildType==BuildType.GRADLE);
+			Assert.isLegal(buildType == BuildType.GRADLE);
 			Class.forName("org.eclipse.buildship.core.GradleBuild");
 			return new Buildship30ImportStrategy(buildType, name, notInstalledMessage);
 		}
@@ -86,7 +86,7 @@ public class Buildship30ImportStrategy extends ImportStrategy {
 						//For STS3 we should add spring nature? But what project? The buildresult doesn't tell us what was imported.
 						//We try to work around this by looking for the project in the workspace by its location.
 						IContainer[] containers = ResourcesPlugin.getWorkspace().getRoot().findContainersForLocationURI(loc.toURI());
-						if (containers!=null) {
+						if (containers != null) {
 							for (IContainer c : containers) {
 								if (c instanceof IProject) {
 									IProject p = (IProject) c;

@@ -81,7 +81,7 @@ public class NewSpringBootWizard extends Wizard implements INewWizard, IImportWi
 	@Override
 	public void addPages() {
 		super.addPages();
-		Assert.isLegal(model!=null, "The Spring Starter Wizard model was not initialized. Unable to open the wizard.");
+		Assert.isLegal(model != null, "The Spring Starter Wizard model was not initialized. Unable to open the wizard.");
 		addPage(projectPage = new ProjectDetailsPage(model));
 		addPage(new MultipleViewsDependencyPage(model));
 		addPage(new PageThree(model));
@@ -90,7 +90,7 @@ public class NewSpringBootWizard extends Wizard implements INewWizard, IImportWi
 
 	@Override
 	public boolean canFinish() {
-		return super.canFinish() && getContainer().getCurrentPage()!=projectPage;
+		return super.canFinish() && getContainer().getCurrentPage() != projectPage;
 	}
 
 	public class ProjectDetailsSection extends GroupSection {
@@ -112,13 +112,13 @@ public class NewSpringBootWizard extends Wizard implements INewWizard, IImportWi
 			sections.add(new ProjectLocationSection(owner, model.getLocation(), projectName.getVariable(), model.getLocationValidator()));
 
 			WizardPageSection radios = createRadioGroupsSection(owner);
-			if (radios!=null) {
+			if (radios != null) {
 				sections.add(radios);
 			}
 
 			for (FieldModel<String> f : model.stringInputs) {
 				//caution! we already created the section for projectName because we want it at the top
-				if (projectName!=f) {
+				if (projectName != f) {
 					sections.add(new StringFieldSection(owner, f));
 				}
 			}
@@ -133,8 +133,8 @@ public class NewSpringBootWizard extends Wizard implements INewWizard, IImportWi
 			RadioGroup bootVersion = model.getBootVersion(); //This is placed specifically somewhere else so must skip it here
 			ArrayList<WizardPageSection> radioSections = new ArrayList<>();
 			for (RadioGroup radioGroup : model.getRadioGroups().getGroups()) {
-				if (radioGroup!=bootVersion) {
-					if (radioGroup.getRadios().length>1) {
+				if (radioGroup != bootVersion) {
+					if (radioGroup.getRadios().length > 1) {
 						//Don't add a UI elements for something that offers no real choice
 						radioSections.add(
 							new ChooseOneSectionCombo<>(owner, radioGroup.getLabel(), radioGroup.getSelection(), radioGroup.getRadios()).grabHorizontal(true)

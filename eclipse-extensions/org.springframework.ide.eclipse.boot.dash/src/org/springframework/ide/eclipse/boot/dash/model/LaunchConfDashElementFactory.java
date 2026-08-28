@@ -66,9 +66,9 @@ public class LaunchConfDashElementFactory implements Disposable {
 	}
 
 	private synchronized void deleted(ILaunchConfiguration configuration) {
-		if (this.cache!=null) {
+		if (this.cache != null) {
 			LaunchConfDashElement element = this.cache.remove(configuration);
-			if (element!=null) {
+			if (element != null) {
 				debug("deleted from factory: "+element);
 				element.dispose();
 			}
@@ -77,11 +77,11 @@ public class LaunchConfDashElementFactory implements Disposable {
 
 	public synchronized LaunchConfDashElement createOrGet(ILaunchConfiguration c) {
 		try {
-			if (cache!=null && c!=null) {
+			if (cache != null && c != null) {
 				ILaunchConfigurationType type = c.getType();
-				if (type!=null && BootLaunchConfigurationDelegate.TYPE_ID.equals(type.getIdentifier())) {
+				if (type != null && BootLaunchConfigurationDelegate.TYPE_ID.equals(type.getIdentifier())) {
 					LaunchConfDashElement el = cache.get(c);
-					if (el==null) {
+					if (el == null) {
 						cache.put(c, el = new LaunchConfDashElement(model, c));
 						debug("created: "+el);
 					}
@@ -96,7 +96,7 @@ public class LaunchConfDashElementFactory implements Disposable {
 
 	@Override
 	public void dispose() {
-		if (listener!=null) {
+		if (listener != null) {
 			launchManager.removeLaunchConfigurationListener(listener);
 			listener = null;
 			launchManager = null;

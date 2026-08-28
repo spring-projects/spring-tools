@@ -279,7 +279,7 @@ public class StsTestUtil {
 				}
 			}
 		}
-		if (lastException!=null) {
+		if (lastException != null) {
 			throw lastException;
 		}
 	}
@@ -595,12 +595,12 @@ public class StsTestUtil {
 				if (problem.getAttribute(IMarker.SEVERITY, 0) >= IMarker.SEVERITY_ERROR) {
 					errors.append(markerMessage(problem)+"\n");
 					errorCount++;
-					if (errorCount>=10) { //don't include hundreds of errors. 10 is reasonable
+					if (errorCount >= 10) { //don't include hundreds of errors. 10 is reasonable
 						break;
 					}
 				}
 			}
-			if (errorCount>0) {
+			if (errorCount > 0) {
 				IJavaProject javaproject = JavaCore.create(project);
 				ByteArrayOutputStream capture = new ByteArrayOutputStream();
 				PrintStream out = new PrintStream(capture);

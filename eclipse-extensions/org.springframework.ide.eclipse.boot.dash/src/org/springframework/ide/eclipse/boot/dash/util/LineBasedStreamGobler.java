@@ -28,10 +28,10 @@ public class LineBasedStreamGobler extends Thread {
 
 	@Override
 	public void run() {
-		while (toRead!=null) {
+		while (toRead != null) {
 			try {
 				String line = toRead.readLine();
-				if (line==null) {
+				if (line == null) {
 					toRead = null;
 				} else {
 					echo.accept(line);

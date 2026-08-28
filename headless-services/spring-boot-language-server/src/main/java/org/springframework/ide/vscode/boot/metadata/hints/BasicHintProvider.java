@@ -67,7 +67,7 @@ public class BasicHintProvider implements HintProvider {
 				builder.add(StsValueHint.create(hint));
 			}
 		}
-		if (valueProvider!=null) {
+		if (valueProvider != null) {
 			Collection<StsValueHint> provided = valueProvider.getValuesNow(javaProject, query);
 			if (CollectionUtil.hasElements(provided)) {
 				builder.addAll(provided);

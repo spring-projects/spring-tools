@@ -29,7 +29,7 @@ public class GenericRemoteAppGeneralPropertiesSection extends AbstractBdeGeneral
 				new TagsPropertyControl(),
 				new DebugPortPropertyControl(),
 				new ReadOnlyStringPropertyControl<>(GenericRemoteAppElement.class, "Jmx URL:", (e) -> e.getJmxUrl(), false)
-					.visibleWhen((e) -> e!=null && e.getAppData() instanceof JmxConnectable)
+					.visibleWhen((e) -> e != null && e.getAppData() instanceof JmxConnectable)
 		};
 	}
 

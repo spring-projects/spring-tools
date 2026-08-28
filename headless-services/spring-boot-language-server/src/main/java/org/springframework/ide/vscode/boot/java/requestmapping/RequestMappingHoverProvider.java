@@ -252,7 +252,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 
 		LiveRequestMapping requestMapping = mappingMethod.getT1();
 		String[] paths = requestMapping.getSplitPath();
-		if (paths==null || paths.length==0) {
+		if (paths == null || paths.length == 0) {
 			//Technically, this means the path 'predicate' is unconstrained, meaning any path matches.
 			//So this is not quite the same as the case where path=""... but...
 			//It is better for us to show one link where any path is allowed, versus showing no links where any link is allowed.
@@ -281,7 +281,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 			String host = liveData.getHost();
 
 			String[] paths = requestMapping.getSplitPath();
-			if (paths==null || paths.length==0) {
+			if (paths == null || paths.length == 0) {
 				//Technically, this means the path 'predicate' is unconstrained, meaning any path matches.
 				//So this is not quite the same as the case where path=""... but...
 				//It is better for us to show one link where any path is allowed, versus showing no links where any link is allowed.

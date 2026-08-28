@@ -80,7 +80,7 @@ public class ReconcileProblemImpl implements ReconcileProblem {
 	}
 
 	private static boolean canUnderline(char c) {
-		return c!='\n'&&c!='\r';
+		return c != '\n'&&c != '\r';
 	}
 
 	@Override

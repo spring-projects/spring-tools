@@ -26,12 +26,12 @@ public class OpenInBrowserAction extends AbstractBootDashElementsAction {
 	@Override
 	public void updateEnablement() {
 		String url = getUrl();
-		setEnabled(url!=null);
+		setEnabled(url != null);
 	}
 
 	private String getUrl() {
 		BootDashElement el = getSingleSelectedElement();
-		if (el!=null) {
+		if (el != null) {
 			return el.getUrl();
 		}
 		return null;
@@ -40,7 +40,7 @@ public class OpenInBrowserAction extends AbstractBootDashElementsAction {
 	@Override
 	public void run() {
 		String url = getUrl();
-		if (url!=null) {
+		if (url != null) {
 			ui().openUrl(url);
 		}
 	}

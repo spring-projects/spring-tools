@@ -110,7 +110,7 @@ public class GSGWizardModelTest {
 				// should be invoked multiple times during the prefetching
 				// operation
 				if (!actualContentDownloadStates.contains(actualDownloadState)) {
-					if (actualDownloadState==DownloadState.DOWNLOADING_FAILED) {
+					if (actualDownloadState == DownloadState.DOWNLOADING_FAILED) {
 						error.setValue(contentManager.getPrefetchContentError());
 					}
 					actualContentDownloadStates.add(actualDownloadState);
@@ -172,7 +172,7 @@ public class GSGWizardModelTest {
 			public boolean test() throws Exception {
 				if (actualContentDownloadStates.contains(DownloadState.DOWNLOADING_FAILED)) {
 					Throwable e = contentManager.getPrefetchContentError();
-					if (e!=null) {
+					if (e != null) {
 						throw new RuntimeException("Problem downloading: ", e);
 					}
 				}
@@ -215,7 +215,7 @@ public class GSGWizardModelTest {
 					fail(
 							"Expected downloadStates not reached.\n" +
 							"Actual states: "+actualContentDownloadStates+"\n" +
-							error.getValue()==null
+							error.getValue() == null
 								? ""
 								: "Error: "+ExceptionUtil.stacktrace(error.getValue())
 					);

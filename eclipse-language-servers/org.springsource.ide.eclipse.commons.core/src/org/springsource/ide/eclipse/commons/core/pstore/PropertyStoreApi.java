@@ -51,7 +51,7 @@ public class PropertyStoreApi {
 	}
 
 	public void put(String key, String[] values) throws Exception {
-		if (values==null) {
+		if (values == null) {
 			backingStore.put(key, null);
 		} else {
 			backingStore.put(key, ArrayEncoder.encode(values));
@@ -60,7 +60,7 @@ public class PropertyStoreApi {
 
 	public String[] get(String key, String[] dflt) throws Exception {
 		String encoded = backingStore.get(key);
-		if (encoded==null) {
+		if (encoded == null) {
 			return dflt;
 		} else {
 			return ArrayEncoder.decode(encoded);

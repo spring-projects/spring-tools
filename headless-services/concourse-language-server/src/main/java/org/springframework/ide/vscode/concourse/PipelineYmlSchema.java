@@ -323,7 +323,7 @@ public class PipelineYmlSchema implements YamlSchema {
 			LanguageId languageId = dc.getDocument().getLanguageId();
 			if (LanguageId.CONCOURSE_PIPELINE.equals(languageId)) {
 				Node parentImageDef = models.getParentPropertyNode("image", dc);
-				if (parentImageDef==null) {
+				if (parentImageDef == null) {
 					return Constraints.requireOneOf("image_resource", "rootfs_uri", "image");
 				} else {
 					return Constraints.deprecated((name) ->
@@ -338,7 +338,7 @@ public class PipelineYmlSchema implements YamlSchema {
 		}));
 
 		AbstractType t_put_get_name = f.contextAware("Name", (dc) -> {
-			if (models.getParentPropertyNode("resource", dc)!=null) {
+			if (models.getParentPropertyNode("resource", dc) != null) {
 				return null;
 			} else {
 				return t_resource_name;
@@ -373,9 +373,9 @@ public class PipelineYmlSchema implements YamlSchema {
 				MappingNode map = (MappingNode) _map;
 				StepModel step = models.newStep(map);
 				String resourceName = step.getResourceName();
-				if (resourceName!=null) {
+				if (resourceName != null) {
 					ResourceModel resource = models.getResource(dc.getDocument(), resourceName);
-					if (resource!=null) {
+					if (resource != null) {
 						if ("git".equals(resource.getType()) && !resource.hasSourceProperty("branch")) {
 							problems.accept(YamlSchemaProblems.schemaProblem(
 									"Resource of type 'git' is used in a 'put' step, so it should define 'branch' attribute in its 'source', but it doesn't.",
@@ -461,7 +461,7 @@ public class PipelineYmlSchema implements YamlSchema {
 			addProp(step, subStep, "tags", t_strings);
 			addProp(step, subStep, "timeout", t_duration);
 			addProp(step, subStep, "attempts", t_strictly_pos_integer);
-			if (subStep!=getStep && subStep!=putStep) { // doc says 'across' doesn't work with put and get
+			if (subStep != getStep && subStep != putStep) { // doc says 'across' doesn't work with put and get
 				addProp(step, subStep, "across", f.yseq(acrossVar)); //TODO: create proper schema
 			}
 		}
@@ -515,7 +515,7 @@ public class PipelineYmlSchema implements YamlSchema {
 			YamlPath path = dc.getPath();
 			if (path != null) {
 				YamlFileAST root = asts.getSafeAst(dc.getDocument());
-				if (root!=null) {
+				if (root != null) {
 					String value = NodeUtil.asScalar(path.dropLast().append(YamlPathSegment.valueAt("type")).traverseToNode(root));
 					switch (value) {
 					case "vault":
@@ -1011,12 +1011,12 @@ public class PipelineYmlSchema implements YamlSchema {
 
 	private String getSemverDriverName(DynamicSchemaContext dc) {
 		String driver = getSiblingPropertyValue(dc, "driver");
-		return driver!=null ? driver : "s3";
+		return driver != null ? driver : "s3";
 	}
 
 	private Node getResourceNameNode(String resourceNameProp, DynamicSchemaContext dc) {
 		Node resourceName = models.getParentPropertyNode("resource", dc);
-		if (resourceName==null) {
+		if (resourceName == null) {
 			resourceName = models.getParentPropertyNode(resourceNameProp, dc);
 		}
 		return resourceName;
@@ -1029,7 +1029,7 @@ public class PipelineYmlSchema implements YamlSchema {
 
 	private String getResourceType(String resourceNameProp, ConcourseModel models, DynamicSchemaContext dc) {
 		String resourceName = getResourceName(resourceNameProp, dc);
-		if (resourceName!=null) {
+		if (resourceName != null) {
 			return models.getResourceType(dc.getDocument(), resourceName);
 		}
 		return null;
@@ -1045,9 +1045,9 @@ public class PipelineYmlSchema implements YamlSchema {
 
 	private String getSiblingPropertyValue(DynamicSchemaContext dc, String propName) {
 		YamlPath path = dc.getPath();
-		if (path!=null) {
+		if (path != null) {
 			YamlFileAST root = asts.getSafeAst(dc.getDocument());
-			if (root!=null) {
+			if (root != null) {
 				return NodeUtil.asScalar(path.append(YamlPathSegment.valueAt(propName)).traverseToNode(root));
 			}
 		}

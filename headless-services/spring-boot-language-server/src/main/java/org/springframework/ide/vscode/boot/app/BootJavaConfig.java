@@ -110,7 +110,7 @@ public class BootJavaConfig implements InitializingBean {
 		if (foldersStr != null) {
 			foldersStr = foldersStr.trim().replace("/", File.separator);
 		}
-		String[] folders = foldersStr == null || foldersStr.isEmpty()? new String[0] : foldersStr.split("\\s*,\\s*");
+		String[] folders = foldersStr == null || foldersStr.isEmpty() ? new String[0] : foldersStr.split("\\s*,\\s*");
 		List<String> cleanedFolders = new ArrayList<>(folders.length);
 		for (String folder : folders) {
 			int startIndex = 0;

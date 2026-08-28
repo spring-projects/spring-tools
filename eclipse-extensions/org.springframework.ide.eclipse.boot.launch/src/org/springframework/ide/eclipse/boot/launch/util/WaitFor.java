@@ -44,7 +44,7 @@ public abstract class WaitFor {
 			} catch (Throwable _e) {
 				e = _e;
 			}
-			retry = e!=null && System.currentTimeMillis() < endTime;
+			retry = e != null && System.currentTimeMillis() < endTime;
 			if (retry) {
 				try {
 					//System.out.println("Failed: "+e.getMessage());
@@ -54,7 +54,7 @@ public abstract class WaitFor {
 				}
 			}
 		} while (retry);
-		if (e!=null) {
+		if (e != null) {
 			//System.out.println("FAIL");
 			throw ExceptionUtil.exception(e);
 		}

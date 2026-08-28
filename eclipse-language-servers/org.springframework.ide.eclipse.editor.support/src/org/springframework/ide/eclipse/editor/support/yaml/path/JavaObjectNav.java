@@ -31,7 +31,7 @@ public class JavaObjectNav implements YamlNavigable<JavaObjectNav> {
 
 	@Override
 	public Stream<JavaObjectNav> traverseAmbiguously(YamlPathSegment s) {
-		if (obj==null) {
+		if (obj == null) {
 			return Stream.empty();
 		} else {
 			switch (s.getType()) {
@@ -52,7 +52,7 @@ public class JavaObjectNav implements YamlNavigable<JavaObjectNav> {
 						return Stream.of(new JavaObjectNav(key));
 					}
 					Object v = map.get(s.toPropString());
-					if (v!=null) {
+					if (v != null) {
 						return Stream.of(new JavaObjectNav(v));
 					}
 				}
@@ -61,7 +61,7 @@ public class JavaObjectNav implements YamlNavigable<JavaObjectNav> {
 				if (obj instanceof Map) {
 					Map<String, ?> map = (Map) obj;
 					Object v = map.get(s.toPropString());
-					if (v!=null) {
+					if (v != null) {
 						return Stream.of(new JavaObjectNav(v));
 					}
 				}
@@ -70,7 +70,7 @@ public class JavaObjectNav implements YamlNavigable<JavaObjectNav> {
 				if (obj instanceof List) {
 					List list = (List) obj;
 					int index = s.toIndex();
-					if (index>=0 && index<list.size()) {
+					if (index >= 0 && index < list.size()) {
 						return Stream.of(new JavaObjectNav(list.get(index)));
 					}
 				}

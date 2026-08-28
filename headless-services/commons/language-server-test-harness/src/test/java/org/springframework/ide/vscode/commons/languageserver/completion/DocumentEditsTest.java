@@ -64,7 +64,7 @@ public class DocumentEditsTest {
 
 		public void del(String snippet) {
 			int start = orgText.indexOf(snippet);
-			assertTrue(start>=0);
+			assertTrue(start >= 0);
 			int end = start + snippet.length();
 			edits.delete(start, end);
 		}
@@ -86,13 +86,13 @@ public class DocumentEditsTest {
 
 		public void insBefore(String before, String insert) {
 			int offset = orgText.indexOf(before);
-			assertTrue(offset>=0);
+			assertTrue(offset >= 0);
 			edits.insert(offset, insert);
 		}
 
 		public void delLineAt(String snippet) throws Exception {
 			int offset = orgText.indexOf(snippet);
-			assertTrue(offset>=0);
+			assertTrue(offset >= 0);
 			edits.deleteLineBackwardAtOffset(offset);
 		}
 

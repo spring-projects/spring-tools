@@ -74,7 +74,7 @@ public class ConcourseDefinitionFinder extends SimpleDefinitionFinder {
 		astTypes.addInterestingType(refType);
 		Handler handler = (Node refNode, TextDocument doc, YamlFileAST ast) -> {
 			String name = NodeUtil.asScalar(refNode);
-			if (name!=null) {
+			if (name != null) {
 				Builder<Location> definitions = ImmutableList.builder();
 				definitionsPath.traverseAmbiguously(ast).forEach(node -> {
 					if (name.equals(NodeUtil.asScalar(node))) {
@@ -113,7 +113,7 @@ public class ConcourseDefinitionFinder extends SimpleDefinitionFinder {
 							cancelToken.checkCanceled();
 
 							Handler handler = handlers.get(type);
-							if (handler!=null) {
+							if (handler != null) {
 								int start = refNode.getStartMark().getIndex();
 								int end = refNode.getEndMark().getIndex();
 								Range originalRange = doc.toRange(start, end - start);

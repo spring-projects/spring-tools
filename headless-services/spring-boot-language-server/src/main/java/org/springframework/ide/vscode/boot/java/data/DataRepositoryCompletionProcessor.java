@@ -46,7 +46,7 @@ public class DataRepositoryCompletionProcessor implements CompletionProvider {
 	public void provideCompletions(ASTNode node, int offset, TextDocument doc, Collection<ICompletionProposal> completions) {
 		TypeDeclaration type = ASTUtils.findDeclaringType(node);
 		DataRepositoryDefinition repo = getDataRepositoryDefinition(type);
-		if(repo != null && repo.getDomainType() != null){
+		if (repo != null && repo.getDomainType() != null){
 			String prefix = "";
 			try {
 				IRegion line = doc.getLineInformationOfOffset(offset);

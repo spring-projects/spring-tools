@@ -49,7 +49,7 @@ public class DuplicateNameChecker {
 		if (!name.isEmpty()) {
 			if (seen.containsKey(name)) {
 				DocumentRegion pending = seen.get(name);
-				if (pending!=null) {
+				if (pending != null) {
 					reportDuplicate(pending);
 					seen.put(name, null);
 				}

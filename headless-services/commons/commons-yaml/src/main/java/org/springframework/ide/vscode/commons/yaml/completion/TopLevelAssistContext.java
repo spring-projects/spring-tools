@@ -48,7 +48,7 @@ public abstract class TopLevelAssistContext implements YamlAssistContext {
 
 	protected YamlAssistContext _traverse(YamlPathSegment s) {
 		Integer documentSelector = s.toIndex();
-		if (documentSelector!=null) {
+		if (documentSelector != null) {
 			return getDocumentContext(documentSelector);
 		}
 		return null;

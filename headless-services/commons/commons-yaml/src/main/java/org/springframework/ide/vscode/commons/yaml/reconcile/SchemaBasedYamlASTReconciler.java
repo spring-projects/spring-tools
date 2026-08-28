@@ -102,7 +102,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 
 	@Override
 	public void reconcile(YamlFileAST ast) {
-		if (typeCollector!=null) typeCollector.beginCollecting(ast);
+		if (typeCollector != null) typeCollector.beginCollecting(ast);
 		delayedConstraints.clear();
 		slowDelayedConstraints.clear();
 		try {
@@ -123,14 +123,14 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 					problem(endOf(ast.getDocument()), "'"+schema.getName()+"' should have at least "+lowerBound+" Yaml Documents");
 				}
 			}
-			if (!emptyDoc && nodes!=null && !nodes.isEmpty()) {
+			if (!emptyDoc && nodes != null && !nodes.isEmpty()) {
 				for (int i = 0; i < nodes.size(); i++) {
 					Node node = nodes.get(i);
 					reconcile(ast, new YamlPath(YamlPathSegment.valueAt(i)), /*parent*/null, node, schema.getTopLevelType());
 				}
 			}
 		} finally {
-			if (typeCollector!=null) {
+			if (typeCollector != null) {
 				typeCollector.endCollecting(ast);
 			}
 			verifyDelayedConstraints();
@@ -182,10 +182,10 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	private void reconcileOnPath(YamlFileAST ast, YamlPath path, Node parent, Node node, YType _type) {
 		nodeMerger.flattenMapping(node);
 
-		if (_type!=null && !skipReconciling(node)) {
+		if (_type != null && !skipReconciling(node)) {
 			DynamicSchemaContext schemaContext = new ASTDynamicSchemaContext(ast, path, node);
 			YType type = typeUtil.inferMoreSpecificType(_type, schemaContext);
-			if (typeCollector!=null) {
+			if (typeCollector != null) {
 				typeCollector.accept(node, type, path);
 			}
 			checkConstraints(parent, node, type, schemaContext);
@@ -205,11 +205,11 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 					for (NodeTuple entry : map.getValue()) {
 						Node keyNode = entry.getKeyNode();
 						String key = NodeUtil.asScalar(keyNode);
-						if (key==null) {
+						if (key == null) {
 							expectScalar(node);
 						} else {
 							YTypedProperty prop = beanProperties.get(key);
-							if (prop==null) {
+							if (prop == null) {
 								if (!NodeUtil.isAnchored(entry)) {
 									unknownBeanProperty(keyNode, type, key);
 								}
@@ -244,7 +244,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 			case scalar:
 				if (typeUtil.isAtomic(type)) {
 					SchemaContextAware<ValueParser> parserProvider = typeUtil.getValueParser(type);
-					if (parserProvider!=null) {
+					if (parserProvider != null) {
 						//Take care not to execute parserProvider early just to check how long it should be delayed.
 						delayedConstraints.add(() -> {
 							parserProvider.safeWithContext(schemaContext).ifPresent(parser -> {
@@ -271,7 +271,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	private void parse(YamlFileAST ast, Node node, YType type, ValueParser parser) {
 		try {
 			String value = NodeUtil.asScalar(node);
-			if (value!=null) {
+			if (value != null) {
 				parser.parse(value);
 			}
 		} catch (Exception e) {
@@ -362,7 +362,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 					.collect(Collectors.toCollection(TreeSet::new));
 			if (!missingPropNames.isEmpty()) {
 				String message;
-				if (missingPropNames.size()==1) {
+				if (missingPropNames.size() == 1) {
 					// slightly more specific message when only one missing property
 					String missing = missingPropNames.stream().findFirst().get();
 					message = "Property '"+missing+"' is required for '"+type+"'";
@@ -379,7 +379,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	protected void checkConstraints(Node parent, Node node, YType type, DynamicSchemaContext dc) {
 		//Check for other constraints attached to the type
 		for (Constraint constraint : typeUtil.getConstraints(type)) {
-			if (constraint!=null) {
+			if (constraint != null) {
 				delayedConstraints.add(() -> {
 					constraint.verify(dc, parent, node, type, problems);
 				});
@@ -405,7 +405,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 
 	protected NodeId getNodeId(Node node) {
 		NodeId id = node.getNodeId();
-//		if (id==NodeId.mapping && isMoustacheVar(node)) {
+//		if (id == NodeId.mapping && isMoustacheVar(node)) {
 //			return NodeId.scalar;
 //		}
 		return id;
@@ -433,7 +433,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 
 	private Node debrace(Node _node) {
 		MappingNode node = NodeUtil.asMapping(_node);
-		if (node!=null && node.getFlowStyle()==FlowStyle.FLOW && node.getValue().size()==1) {
+		if (node != null && node.getFlowStyle() == FlowStyle.FLOW && node.getValue().size() == 1) {
 			NodeTuple entry = node.getValue().get(0);
 			if ("".equals(NodeUtil.asScalar(entry.getValueNode()))) {
 				return entry.getKeyNode();
@@ -443,21 +443,21 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 	}
 
 	private YamlPath keyAt(YamlPath path, String key) {
-		if (path!=null && key!=null) {
+		if (path != null && key != null) {
 			return path.append(YamlPathSegment.keyAt(key));
 		}
 		return null;
 	}
 
 	private YamlPath valueAt(YamlPath path, int index) {
-		if (path!=null) {
+		if (path != null) {
 			return path.append(YamlPathSegment.valueAt(index));
 		}
 		return null;
 	}
 
 	private YamlPath valueAt(YamlPath path, String key) {
-		if (path!=null && key!=null) {
+		if (path != null && key != null) {
 			return path.append(YamlPathSegment.valueAt(key));
 		}
 		return null;
@@ -468,7 +468,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 		Set<String> seenKeys = new HashSet<>();
 		for (NodeTuple entry : node.getValue()) {
 			String key = asScalar(entry.getKeyNode());
-			if (key!=null) {
+			if (key != null) {
 				if (!seenKeys.add(key)) {
 					duplicateKeys.add(key);
 				}
@@ -478,7 +478,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 			for (NodeTuple entry : node.getValue()) {
 				Node keyNode = entry.getKeyNode();
 				String key = asScalar(keyNode);
-				if (key!=null && duplicateKeys.contains(key)) {
+				if (key != null && duplicateKeys.contains(key)) {
 					problem(keyNode, "Duplicate key '"+key+"'");
 				}
 			}
@@ -490,7 +490,7 @@ public class SchemaBasedYamlASTReconciler implements YamlASTReconciler {
 			parseErrorMsg= "Couldn't parse as '"+describe(type)+"'";
 		}
 		ReconcileProblemImpl problem = YamlSchemaProblems.problem(problemType, parseErrorMsg, region);
-		if (fix!=null && StringUtil.hasText(fix.replacement)) {
+		if (fix != null && StringUtil.hasText(fix.replacement)) {
 			try {
 				problem.addQuickfix(
 					new QuickfixData<>(quickfixes.SIMPLE_TEXT_EDIT,

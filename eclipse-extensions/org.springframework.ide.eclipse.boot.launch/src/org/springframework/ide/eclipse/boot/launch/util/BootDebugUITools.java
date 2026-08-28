@@ -109,7 +109,7 @@ public class BootDebugUITools {
 				 * - Build & launch (98) */
 				monitor.beginTask(DebugUIMessages.DebugUITools_3, 100);
 				try {
-					if(waitInJob) {
+					if (waitInJob) {
 						StringBuffer buffer = new StringBuffer(configuration.getName());
 						buffer.append(DebugUIMessages.DebugUIPlugin_0);
 						ILaunchConfigurationWorkingCopy workingCopy = configuration.copy(buffer.toString());

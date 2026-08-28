@@ -75,7 +75,7 @@ public class MemoizingProxyClassTest {
 	private void sleep(int millis) {
 		long endTime = System.currentTimeMillis()+millis;
 		long timeLeft = endTime - System.currentTimeMillis();
-		while (timeLeft>0) {
+		while (timeLeft > 0) {
 			try {
 				Thread.sleep(timeLeft);
 			} catch (InterruptedException e) {

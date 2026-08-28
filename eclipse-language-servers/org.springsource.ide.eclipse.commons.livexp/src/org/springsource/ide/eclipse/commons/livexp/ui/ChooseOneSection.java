@@ -72,7 +72,7 @@ public class ChooseOneSection<T extends Ilabelable> extends WizardPageSection {
 
 	@SuppressWarnings("unchecked")
 	private T getSingleSelection(ListViewer lv) {
-		if (lv!=null) {
+		if (lv != null) {
 			ISelection sel = lv.getSelection();
 			if (sel instanceof IStructuredSelection) {
 				return (T) ((IStructuredSelection) sel).getFirstElement();
@@ -86,7 +86,7 @@ public class ChooseOneSection<T extends Ilabelable> extends WizardPageSection {
 
 		Composite composite = new Composite(page, SWT.NONE);
 		GridLayout layout = new GridLayout();
-		layout.numColumns = (labelText==null||vertical)?1:2;
+		layout.numColumns = (labelText == null||vertical) ? 1 : 2;
 		layout.marginWidth = 0;
 		composite.setLayout(layout);
 		GridDataFactory grab = GridDataFactory.fillDefaults().grab(true, true);
@@ -96,7 +96,7 @@ public class ChooseOneSection<T extends Ilabelable> extends WizardPageSection {
 		grab.applyTo(composite);
 		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		if (labelText!=null) {
+		if (labelText != null) {
 			Label label = new Label(composite, SWT.NONE);
 			label.setText(labelText);
 			if (!vertical) {
@@ -119,7 +119,7 @@ public class ChooseOneSection<T extends Ilabelable> extends WizardPageSection {
 
 		chosen.addListener(new UIValueListener<T>() {
 			public void uiGotValue(LiveExpression<T> exp, T value) {
-				if (value==null) {
+				if (value == null) {
 					tv.setSelection(StructuredSelection.EMPTY);
 				} else {
 					tv.setSelection(new StructuredSelection(value));

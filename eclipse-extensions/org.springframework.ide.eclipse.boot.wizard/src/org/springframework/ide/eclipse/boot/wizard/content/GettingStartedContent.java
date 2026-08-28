@@ -77,7 +77,7 @@ public class GettingStartedContent extends ContentManager {
 	private Repo[] cachedRepos = null;
 
 	private Repo[] getGuidesRepos() {
-		if (cachedRepos==null) {
+		if (cachedRepos == null) {
 			Repo[] repos = github.getOrgRepos("spring-guides");
 			Arrays.sort(repos, new Comparator<Repo>() {
 				@Override
@@ -105,7 +105,7 @@ public class GettingStartedContent extends ContentManager {
 	 */
 	protected void registerAllContentProviders(IProgressMonitor monitor) {
 		// Avoid registering and downloading content properties if already registered
-		if (prefetchContentProviderPropertiesTracker.getValue()!=DownloadState.DOWNLOADED) {
+		if (prefetchContentProviderPropertiesTracker.getValue() != DownloadState.DOWNLOADED) {
 			try {
 				prefetchContentProviderPropertiesTracker.setValue(DownloadState.IS_DOWNLOADING);
 				registerAllWithStsProperties(StsProperties.getInstance(monitor));
@@ -229,7 +229,7 @@ public class GettingStartedContent extends ContentManager {
 	}
 
 	private <A> Collection<A> asList(A[] tutorials) {
-		if (tutorials==null) {
+		if (tutorials == null) {
 			return Collections.emptyList();
 		} else {
 			return Arrays.asList(tutorials);
@@ -238,7 +238,7 @@ public class GettingStartedContent extends ContentManager {
 
 //	public GettingStartedGuide getGuide(String guideName) {
 //		GettingStartedGuide[] guides = getGuides();
-//		if (guides!=null) {
+//		if (guides != null) {
 //			for (GettingStartedGuide g : guides) {
 //				if (guideName.equals(g.getName())) {
 //					return g;

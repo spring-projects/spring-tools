@@ -71,7 +71,7 @@ public class YamlHoverInfoProvider implements HoverInfoProvider {
 				log.debug("No hover because ast is null");
 			} else {
 				IRegion region = getHoverRegion(ast, offset);
-				if (region==null) {
+				if (region == null) {
 					log.debug("No hover because region is null");
 				} else {
 					YamlDocument ymlDoc = new YamlDocument(doc, structureProvider);

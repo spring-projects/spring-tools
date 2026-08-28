@@ -62,7 +62,7 @@ public class HintProviders {
 	 * this with one or more of the other methods in this class to wrap the basic provider so it becomes context-aware.
 	 */
 	public static HintProvider basic(IJavaProject jp, final ImmutableList<ValueHint> valueHints, final ValueProviderStrategy valueProvider) {
-		if (!CollectionUtil.hasElements(valueHints) && valueProvider==null) {
+		if (!CollectionUtil.hasElements(valueHints) && valueProvider == null) {
 			return NULL;
 		}
 		return new BasicHintProvider(jp, valueHints, valueProvider);
@@ -76,7 +76,7 @@ public class HintProviders {
 		if (isNull(valueHints)) {
 			return NULL;
 		}
-		if (dim==0) {
+		if (dim == 0) {
 			return forHere(valueHints);
 		}
 		return new HintProvider() {
@@ -163,7 +163,7 @@ public class HintProviders {
 	public static boolean isNull(HintProvider p) {
 		//If everyone is nice and doesn't ever use null pointers then the p==null check is
 		// not needed. But just in case.
-		return p == NULL || p==null;
+		return p == NULL || p == null;
 	}
 
 	public static HintProvider forMap(HintProvider _keyProvider, HintProvider _valueProvider, final Type valueType) {
@@ -212,7 +212,7 @@ public class HintProviders {
 	 * Protection against bad code passing us null pointers.
 	 */
 	private static HintProvider notNull(HintProvider p) {
-		if (p==null) {
+		if (p == null) {
 			return NULL;
 		}
 		return p;

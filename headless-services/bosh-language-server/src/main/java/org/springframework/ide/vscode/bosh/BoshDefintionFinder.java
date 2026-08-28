@@ -65,9 +65,9 @@ public class BoshDefintionFinder extends SimpleDefinitionFinder {
 		this.astTypes = astTypes;
 		for (Pair<YType, YType> defAndRef : schema.getDefAndRefTypes()) {
 			YType def = defAndRef.getLeft();
-			if (def!=null) {
+			if (def != null) {
 				YType ref = defAndRef.getRight();
-				if (ref!=null) {
+				if (ref != null) {
 					findByType(def, ref);
 				}
 			}
@@ -89,7 +89,7 @@ public class BoshDefintionFinder extends SimpleDefinitionFinder {
 					cancelToken.checkCanceled();
 					
 					Node refNode = ast.findNode(doc.toOffset(params.getPosition()));
-					if (refNode!=null) {
+					if (refNode != null) {
 
 						cancelToken.checkCanceled();
 						
@@ -100,7 +100,7 @@ public class BoshDefintionFinder extends SimpleDefinitionFinder {
 
 							Handler handler = handlers.get(type);
 
-							if (handler!=null) {
+							if (handler != null) {
 								int start = refNode.getStartMark().getIndex();
 								int end = refNode.getEndMark().getIndex();
 								Range originalRange = doc.toRange(start, end - start);
@@ -129,9 +129,9 @@ public class BoshDefintionFinder extends SimpleDefinitionFinder {
 		astTypes.addInterestingType(ref);
 		Handler handler = (Node refNode, TextDocument doc, YamlFileAST ast) -> {
 			String uri = doc.getUri();
-			if (uri!=null) {
+			if (uri != null) {
 				String name = NodeUtil.asScalar(refNode);
-				if (name!=null) {
+				if (name != null) {
 					Collection<Node> candidates = astTypes.getNodes(uri, def);
 					Builder<Location> definitions = ImmutableList.builder();
 					for (Node node : candidates) {

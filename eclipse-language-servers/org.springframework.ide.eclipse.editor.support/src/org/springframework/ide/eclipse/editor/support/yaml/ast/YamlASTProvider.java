@@ -63,7 +63,7 @@ public class YamlASTProvider {
 	}
 
 	private synchronized void changed(IDocument doc) {
-		if (doc==cachedFor) {
+		if (doc == cachedFor) {
 			doc.removeDocumentListener(listener);
 			cachedFor = null;
 			cached = null;
@@ -71,10 +71,10 @@ public class YamlASTProvider {
 	}
 
 	public synchronized YamlFileAST getAST(IDocument doc) {
-		if (doc==cachedFor) {
+		if (doc == cachedFor) {
 			return cached;
 		} else {
-			if (cachedFor!=null) {
+			if (cachedFor != null) {
 				cachedFor.removeDocumentListener(listener);
 			}
 			doc.addDocumentListener(listener);

@@ -24,7 +24,7 @@ import org.xml.sax.SAXException;
 public class XmlUtils {
 
 	public static String getTagName(Node labelNode) {
-		if (labelNode.getNodeType()==Node.ELEMENT_NODE) {
+		if (labelNode.getNodeType() == Node.ELEMENT_NODE) {
 			return labelNode.getNodeName();
 		}
 		return null;

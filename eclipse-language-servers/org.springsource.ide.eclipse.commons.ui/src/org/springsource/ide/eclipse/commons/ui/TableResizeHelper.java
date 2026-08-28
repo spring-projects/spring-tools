@@ -42,7 +42,7 @@ public class TableResizeHelper {
 		};
 		tableViewer.getTable().addControlListener(resizeListener);
 		TableColumn[] cols = tableViewer.getTable().getColumns();
-		if (cols!=null) {
+		if (cols != null) {
 			for (int i = 0; i < cols.length-1; i++) {
 				cols[i].addControlListener(resizeListener);
 			}
@@ -58,7 +58,7 @@ public class TableResizeHelper {
 		Rectangle tableCompositeArea = tableComposite.getClientArea();
 		int width = tableCompositeArea.width;
 //		ScrollBar sb = tableViewer.getTable().getVerticalBar();
-//		if (sb!=null && sb.isVisible()) {
+//		if (sb != null && sb.isVisible()) {
 //			width = width - sb.getSize().x;
 //		}
 		resizeTableColumns(width, tableViewer.getTable());
@@ -80,7 +80,7 @@ public class TableResizeHelper {
 
 		TableColumn lastColumn = tableColumns[columnsOrder[columnsOrder.length - 1]];
 		int newWidth = (tableWidth - total) + lastColumn.getWidth();
-		if (newWidth>0) {
+		if (newWidth > 0) {
 			lastColumn.setWidth(newWidth);
 		}
 

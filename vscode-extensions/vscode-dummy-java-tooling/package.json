@@ -1,0 +1,31 @@
+{
+  "name": "vscode-dummy-java-tooling",
+  "displayName": "Dummy Java Tooling (Spring Tools test harness)",
+  "description": "Hard-coded stand-in for a Java tooling extension (redhat.java + vscjava.vscode-maven). Sends the same messages a real Java tooling extension would send to vscode-spring-boot to start the language server and report project/classpath information, so that Spring Tools can be exercised without JDT LS.",
+  "version": "0.0.1",
+  "private": true,
+  "publisher": "spring-tools-dev",
+  "license": "EPL-1.0",
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "dummy-java-tooling.startLanguageServer",
+        "title": "Dummy Java Tooling: Start Spring Boot Language Server"
+      },
+      {
+        "command": "dummy-java-tooling.sendClasspath",
+        "title": "Dummy Java Tooling: Send Fake Project/Classpath Info"
+      }
+    ]
+  },
+  "extensionDependencies": [
+    "vmware.vscode-spring-boot"
+  ]
+}

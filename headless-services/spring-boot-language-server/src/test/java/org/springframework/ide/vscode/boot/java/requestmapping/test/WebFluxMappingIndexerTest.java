@@ -88,6 +88,37 @@ public class WebFluxMappingIndexerTest {
     }
 
     @Test
+    void testConcatenatedRoutesMappingSymbols() throws Exception {
+        String docUri = directory.toPath().resolve("src/main/java/org/test/ConcatenatedRouter.java").toUri().toString();
+        List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);
+
+        // static route predicate with a concatenated path
+        assertTrue(containsSymbol(symbols, "@/concat -- GET - Accept: application/json", docUri, 19, 5, 19, 82));
+        // path predicate with a constant taking part in the concatenation
+        assertTrue(containsSymbol(symbols, "@/pre/quotes", docUri, 20, 5, 20, 102));
+        // builder style: a concatenated path prefix must not drop the nested routes
+        assertTrue(containsSymbol(symbols, "@/base/items -- GET", docUri, 27, 6, 27, 51));
+
+        Bean[] routeBeans = springIndex.getBeansWithName(project.getElementName(), "concatenatedRoute");
+        assertEquals(1, routeBeans.length);
+        List<SpringIndexElement> children = routeBeans[0].getChildren();
+
+        WebfluxHandlerMethodIndexElement concatElement = getWebfluxIndexElements(children, "/concat", "GET").get(0);
+        assertEquals("[APPLICATION_JSON]", Arrays.toString(concatElement.getAcceptTypes()));
+        assertEquals("org.test.QuoteHandler", concatElement.getHandlerClass());
+
+        assertEquals(1, children.stream()
+                .filter(child -> child instanceof WebfluxHandlerMethodIndexElement element && "/pre/quotes".equals(element.getPath()))
+                .count());
+
+        Bean[] builderRouteBeans = springIndex.getBeansWithName(project.getElementName(), "concatenatedBuilderRoute");
+        assertEquals(1, builderRouteBeans.length);
+
+        WebfluxHandlerMethodIndexElement builderElement = getWebfluxIndexElements(builderRouteBeans[0].getChildren(), "/base/items", "GET").get(0);
+        assertEquals("org.test.QuoteHandler", builderElement.getHandlerClass());
+    }
+
+    @Test
     void testRoutesMappingSymbols() throws Exception {
         String docUri = directory.toPath().resolve("src/main/java/org/test/QuoteRouter.java").toUri().toString();
         List<? extends WorkspaceSymbol> symbols = indexer.getSymbols(docUri);

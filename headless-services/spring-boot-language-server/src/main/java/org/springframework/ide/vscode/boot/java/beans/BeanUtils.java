@@ -25,7 +25,6 @@ import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -206,7 +205,7 @@ public class BeanUtils {
 
 				Optional<Expression> attribute = ASTUtils.getAttribute(annotation, "value");
 				if (attribute.isPresent()) {
-					return ASTUtils.getExpressionValueAsString(attribute.get(), (a) -> {});
+					return ASTUtils.getExpressionValueAsString(attribute.get());
 				}
 			}
 		}
@@ -220,7 +219,7 @@ public class BeanUtils {
 		Collection<Expression> beanNameNodes = getBeanNameExpressions(node);
 
 		if (beanNameNodes != null && !beanNameNodes.isEmpty()) {
-			return beanNameNodes.stream().map(nameNode -> ASTUtils.getExpressionValueAsString(nameNode, v -> {}))
+			return beanNameNodes.stream().map(ASTUtils::getExpressionValueAsString)
 					.toList();
 		}
 		else {
@@ -239,13 +238,8 @@ public class BeanUtils {
 		if (beanNameNodes != null && !beanNameNodes.isEmpty()) {
 			ImmutableList.Builder<Tuple2<String,DocumentRegion>> namesAndRegions = ImmutableList.builder();
 			for (Expression nameNode : beanNameNodes) {
-				String name = ASTUtils.getExpressionValueAsString(nameNode, v -> {});
-
-				DocumentRegion region = ASTUtils.nodeRegion(doc, nameNode);
-				if (nameNode instanceof StringLiteral) {
-					region = new DocumentRegion(region.getDocument(), region.getStart() + 1, region.getEnd() - 1);
-				}
-				namesAndRegions.add(Tuples.of(name, region));
+				String name = ASTUtils.getExpressionValueAsString(nameNode);
+				namesAndRegions.add(Tuples.of(name, ASTUtils.valueRegion(doc, nameNode)));
 			}
 			return namesAndRegions.build();
 		}

@@ -112,6 +112,24 @@ public class NamedDefinitionProviderTest {
 	}
 
 	@Test
+	public void testNamedClassWithConcatenatedStringRefersToBeanDefinitionLink() throws Exception {
+        Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import jakarta.inject.Named;
+
+				@Named("na" + "med1")
+				public class TestDependsOnClass {
+				}""", tempJavaDocUri);
+		
+		LocationLink expectedLocation = new LocationLink(locationNamedAnnotation1.getUri(),
+				locationNamedAnnotation1.getRange(), locationNamedAnnotation1.getRange(),
+				null);
+
+		editor.assertDefinitionLinkTargets("med1", List.of(expectedLocation));
+	}
+
+	@Test
 	public void testNamedDependencyRefersToBeanDefinitionLink() throws Exception {
         Editor editor = harness.newEditor(LanguageId.JAVA, """
 				package org.test;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,7 +17,7 @@ import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -34,21 +34,18 @@ public class ConditionalOnResourceDefinitionProvider implements IJavaLocationLin
     public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project,
                                              TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
 
-        if (n instanceof StringLiteral) {
-            StringLiteral valueNode = (StringLiteral) n;
-
-            String literalValue = ASTUtils.getLiteralValue(valueNode);
-            if (literalValue != null) {
-                if (literalValue.startsWith("classpath")) {
-                    return getDefinitionForClasspathResource(project, cu, valueNode, literalValue);
-                }
+        Expression valueNode = ASTUtils.getValueExpressionAt(n);
+        if (valueNode != null) {
+            String value = ASTUtils.getExpressionValueAsString(valueNode);
+            if (value != null && value.startsWith("classpath")) {
+                return getDefinitionForClasspathResource(project, cu, valueNode, value);
             }
         }
         return Collections.emptyList();
     }
 
 
-    private List<LocationLink> getDefinitionForClasspathResource(IJavaProject project, CompilationUnit cu, StringLiteral valueNode, String literalValue) {
+    private List<LocationLink> getDefinitionForClasspathResource(IJavaProject project, CompilationUnit cu, Expression valueNode, String literalValue) {
         literalValue = literalValue.substring("classpath:".length());
 
         List<LocationLink> result = new ArrayList<>();

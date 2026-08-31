@@ -93,6 +93,28 @@ public class ValueDefinitionProviderTest {
 	}
 
 	@Test
+	void propertiesCase_ValueAnnotationWithConcatenatedString() throws Exception {
+		Path propertiesFilePath = projectFile("src/main/resources/application.properties", "some.prop=5");
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.beans.factory.annotation.Value;
+
+				public class TestValueCompletion {
+
+					@Value("${some." + "prop}")
+					private String value1;
+				}""");
+
+		// the origin range covers the whole concatenated expression
+		LocationLink expectedLocation = new LocationLink(propertiesFilePath.toUri().toASCIIString(),
+				new Range(new Position(0, 0), new Position(0, 11)), new Range(new Position(0, 10), new Position(0, 11)),
+				new Range(new Position(6, 8), new Position(6, 27)));
+
+		editor.assertDefinitionLinkTargets("prop}", List.of(expectedLocation));
+	}
+
+	@Test
 	void yamlCase_ValueAnnotation() throws Exception {
 		Path yamlFilePath = projectFile("src/main/resources/application.yml", """
 				some:

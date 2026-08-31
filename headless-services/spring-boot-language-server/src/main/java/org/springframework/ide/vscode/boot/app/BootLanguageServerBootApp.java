@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -48,12 +49,11 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheVoid;
+import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.JavaDefinitionHandler;
-import org.springframework.ide.vscode.boot.java.beans.DependsOnDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.beans.BeanNameDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.beans.NamedDefinitionProvider;
-import org.springframework.ide.vscode.boot.java.beans.QualifierDefinitionProvider;
-import org.springframework.ide.vscode.boot.java.beans.ResourceDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnBeanDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnResourceDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
@@ -443,10 +443,10 @@ public class BootLanguageServerBootApp {
 		return new JavaDefinitionHandler(cuCache, projectFinder, List.of(
 				new ValueDefinitionProvider(),
 				new ConditionalOnResourceDefinitionProvider(),
-				new DependsOnDefinitionProvider(springIndex),
+				new BeanNameDefinitionProvider(springIndex, Set.of(Annotations.DEPENDS_ON)),
 				new ConditionalOnBeanDefinitionProvider(springIndex),
-				new ResourceDefinitionProvider(springIndex),
-				new QualifierDefinitionProvider(springIndex),
+				new BeanNameDefinitionProvider(springIndex, Set.of(Annotations.RESOURCE_JAVAX, Annotations.RESOURCE_JAKARTA)),
+				new BeanNameDefinitionProvider(springIndex, Set.of(Annotations.QUALIFIER)),
 				new NamedDefinitionProvider(springIndex),
 				new DataQueryParameterDefinitionProvider(server.getTextDocumentService(), qurySemanticTokens),
 				new SpelDefinitionProvider(springIndex, cuCache)

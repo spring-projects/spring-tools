@@ -31,7 +31,6 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
@@ -308,8 +307,12 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 			return ((MethodInvocation) expression).getName().getIdentifier();
 		} else if (expression instanceof SimpleName) {
 			return ((SimpleName) expression).getIdentifier();
-		} else if (expression instanceof StringLiteral) {
-			String literalValue = ASTUtils.getLiteralValue((StringLiteral) expression);
+		} else {
+			// resolves concatenated pointcut expressions and constant references as well
+			String literalValue = ASTUtils.getExpressionValueAsString(expression);
+			if (literalValue == null) {
+				return null;
+			}
 			StringBuilder pointcuts = new StringBuilder();
 			for (Map.Entry<String, String> entry : pointcutMap.entrySet()) {
 				if (literalValue.contains(entry.getKey())) {
@@ -318,7 +321,6 @@ public class CopilotCodeLensProvider implements CodeLensProvider {
 			}
 			return pointcuts.toString();
 		}
-		return null;
 	}
 	
 	/**

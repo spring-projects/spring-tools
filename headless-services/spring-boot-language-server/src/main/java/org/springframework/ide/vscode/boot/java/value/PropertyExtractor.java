@@ -20,7 +20,6 @@ import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 
@@ -31,7 +30,7 @@ public class PropertyExtractor {
 	private static final String PARAM_PREFIX = "prefix";
 
 	private static interface PropertyKeyExtractor {
-		String extract(Annotation annotation, MemberValuePair memberValuePair, StringLiteral stringLiteral);
+		String extract(Annotation annotation, MemberValuePair memberValuePair, Expression valueExpression);
 	}
 
 	private final Map<String, PropertyKeyExtractor> propertyKeyExtractors;
@@ -39,29 +38,29 @@ public class PropertyExtractor {
 	public PropertyExtractor() {
 		propertyKeyExtractors = Map.of(
 
-				Annotations.VALUE, (annotation, memberValuePair, stringLiteral) -> {
+				Annotations.VALUE, (annotation, memberValuePair, valueExpression) -> {
 					if (annotation.isSingleMemberAnnotation()) {
-						return extractPropertyKey(ASTUtils.getLiteralValue(stringLiteral));
+						return extractPropertyKey(ASTUtils.getExpressionValueAsString(valueExpression));
 					} else if (annotation.isNormalAnnotation() && PARAM_VALUE.equals(memberValuePair.getName().getIdentifier())) {
-						return extractPropertyKey(ASTUtils.getLiteralValue(stringLiteral));
+						return extractPropertyKey(ASTUtils.getExpressionValueAsString(valueExpression));
 					}
 					return null;
 				},
 
-				Annotations.CONDITIONAL_ON_PROPERTY, (annotation, memberValuePair, stringLiteral) -> {
+				Annotations.CONDITIONAL_ON_PROPERTY, (annotation, memberValuePair, valueExpression) -> {
 					if (annotation.isSingleMemberAnnotation()) {
-						return ASTUtils.getLiteralValue(stringLiteral);
+						return ASTUtils.getExpressionValueAsString(valueExpression);
 					} else if (annotation.isNormalAnnotation()) {
 						switch (memberValuePair.getName().getIdentifier()) {
 						case PARAM_VALUE:
-							return ASTUtils.getLiteralValue(stringLiteral);
+							return ASTUtils.getExpressionValueAsString(valueExpression);
 						case PARAM_NAME:
 							String prefix = extractAnnotationParameter(annotation, PARAM_PREFIX);
-							String name = ASTUtils.getLiteralValue(stringLiteral);
+							String name = ASTUtils.getExpressionValueAsString(valueExpression);
 							return prefix != null && !prefix.isBlank() ? prefix + "." + name : name;
 						case PARAM_PREFIX:
 							name = extractAnnotationParameter(annotation, PARAM_NAME);
-							prefix = ASTUtils.getLiteralValue(stringLiteral);
+							prefix = ASTUtils.getExpressionValueAsString(valueExpression);
 							return prefix != null && !prefix.isBlank() ? prefix + "." + name : name;
 						}
 					}
@@ -70,34 +69,40 @@ public class PropertyExtractor {
 		);
 	}
 	
-	public String extractPropertyKey(StringLiteral valueNode) {
-		
+	/**
+	 * Extracts the property key an expression inside an annotation attribute refers to. The given
+	 * node may be any node at a cursor offset; the enclosing attribute value expression is resolved
+	 * first, so concatenated values work as well.
+	 */
+	public String extractPropertyKey(ASTNode nodeAtOffset) {
+		Expression valueNode = ASTUtils.getAttributeValueExpressionAt(nodeAtOffset);
+		if (valueNode == null) {
+			return null;
+		}
+
 		ASTNode parent = valueNode.getParent();
 
-		if (parent instanceof Annotation) {
-			
-			Annotation a = (Annotation) parent;
-			IAnnotationBinding binding = a.resolveAnnotationBinding();
-			if (binding != null && binding.getAnnotationType() != null) {
-				PropertyKeyExtractor propertyExtractor = propertyKeyExtractors.get(binding.getAnnotationType().getQualifiedName());
-				if (propertyExtractor != null) {
-					return propertyExtractor.extract(a, null, valueNode);
-				}
-			}
-
-		} else if (parent instanceof MemberValuePair && parent.getParent() instanceof Annotation) {
-
-			MemberValuePair pair = (MemberValuePair) parent;
-			Annotation a = (Annotation) parent.getParent();
-			IAnnotationBinding binding = a.resolveAnnotationBinding();
-			if (binding != null && binding.getAnnotationType() != null) {
-				PropertyKeyExtractor propertyExtractor = propertyKeyExtractors.get(binding.getAnnotationType().getQualifiedName());
-				if (propertyExtractor != null) {
-					return propertyExtractor.extract(a, pair, valueNode);
-				}
+		if (parent instanceof Annotation a) {
+			PropertyKeyExtractor propertyExtractor = findExtractor(a);
+			if (propertyExtractor != null) {
+				return propertyExtractor.extract(a, null, valueNode);
 			}
 		}
-		
+		else if (parent instanceof MemberValuePair pair && pair.getParent() instanceof Annotation a) {
+			PropertyKeyExtractor propertyExtractor = findExtractor(a);
+			if (propertyExtractor != null) {
+				return propertyExtractor.extract(a, pair, valueNode);
+			}
+		}
+
+		return null;
+	}
+
+	private PropertyKeyExtractor findExtractor(Annotation annotation) {
+		IAnnotationBinding binding = annotation.resolveAnnotationBinding();
+		if (binding != null && binding.getAnnotationType() != null) {
+			return propertyKeyExtractors.get(binding.getAnnotationType().getQualifiedName());
+		}
 		return null;
 	}
 	
@@ -121,10 +126,7 @@ public class PropertyExtractor {
 				}
 			}
 		}
-		if (value instanceof StringLiteral) {
-			return ASTUtils.getLiteralValue((StringLiteral) value);
-		}
-		return null;
+		return ASTUtils.getExpressionValueAsString(value);
 	}
 
 }

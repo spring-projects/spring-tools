@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,10 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IAnnotationBinding;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
@@ -45,24 +42,12 @@ public class NamedDefinitionProvider implements IJavaLocationLinksProvider {
 
 	@Override
 	public List<LocationLink> getLocationLinks(CancelChecker cancelToken, IJavaProject project, TextDocumentIdentifier docId, CompilationUnit cu, ASTNode n, int offset) {
-		if (n instanceof StringLiteral) {
-			StringLiteral valueNode = (StringLiteral) n;
-			
-			ASTNode parent = ASTUtils.getNearestAnnotationParent(valueNode);
-			
-			if (parent != null && parent instanceof Annotation) {
-				Annotation a = (Annotation) parent;
-				IAnnotationBinding binding = a.resolveAnnotationBinding();
-				if (binding != null && binding.getAnnotationType() != null && Annotations.NAMED_ANNOTATIONS.contains(binding.getAnnotationType().getQualifiedName())) {
-					String beanName = ASTUtils.getLiteralValue(valueNode);
-					
-					if (beanName != null && beanName.length() > 0) {
-						return findBeansWithName(project, beanName);
-					}
-				}
-			}
-		}
-		return Collections.emptyList();
+		return ASTUtils.resolveAnnotationAttributeAt(n)
+				.filter(attribute -> Annotations.NAMED_ANNOTATIONS.contains(attribute.annotationType()))
+				.map(attribute -> attribute.value())
+				.filter(beanName -> beanName != null && beanName.length() > 0)
+				.map(beanName -> findBeansWithName(project, beanName))
+				.orElse(Collections.emptyList());
 	}
 
 	private List<LocationLink> findBeansWithName(IJavaProject project, String beanName) {

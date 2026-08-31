@@ -96,6 +96,64 @@ public class ConditionalOnBeanDefinitionProviderTest {
     }
 
     @Test
+    public void testConditionalOnBeanWithConcatenatedNameRefersToBeanDefinitionLink() throws Exception {
+        String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+        Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+        		import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+                import org.springframework.context.annotation.Bean;
+                import org.springframework.context.annotation.Configuration;
+
+				@Configuration
+                public class TestConditionalOnBeanCompletion {
+                @ConditionalOnBean(name = "be" + "an1")
+                @Bean
+                public void method() {
+                }
+				}""", tempJavaDocUri);
+
+        Bean[] beans = springIndex.getBeansWithName(project.getElementName(), "bean1");
+        assertEquals(1, beans.length);
+
+        LocationLink expectedLocation = new LocationLink(beans[0].getLocation().getUri(),
+                beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
+                null);
+
+        editor.assertDefinitionLinkTargets("an1", List.of(expectedLocation));
+    }
+
+    @Test
+    public void testConditionalOnBeanWithConcatenatedNameInArrayRefersToBeanDefinitionLink() throws Exception {
+        String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+        Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+        		import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+                import org.springframework.context.annotation.Bean;
+                import org.springframework.context.annotation.Configuration;
+
+				@Configuration
+                public class TestConditionalOnBeanCompletion {
+                @ConditionalOnBean(name = {"other", "be" + "an1"})
+                @Bean
+                public void method() {
+                }
+				}""", tempJavaDocUri);
+
+        Bean[] beans = springIndex.getBeansWithName(project.getElementName(), "bean1");
+        assertEquals(1, beans.length);
+
+        LocationLink expectedLocation = new LocationLink(beans[0].getLocation().getUri(),
+                beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
+                null);
+
+        editor.assertDefinitionLinkTargets("an1", List.of(expectedLocation));
+    }
+
+    @Test
     public void testConditionalOnMissingBeanWithNameRefersToBeanDefinitionLink() throws Exception {
         String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
 

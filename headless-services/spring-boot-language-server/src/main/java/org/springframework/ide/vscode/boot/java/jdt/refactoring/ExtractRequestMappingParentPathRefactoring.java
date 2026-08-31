@@ -144,7 +144,7 @@ public class ExtractRequestMappingParentPathRefactoring implements JdtRefactorin
 	 * path prefixed by {@link #methodPathPrefix}.
 	 */
 	private String suffixAfterMethodPathPrefix(Expression pathExpression) {
-		String raw = ASTUtils.getExpressionValueAsString(pathExpression, t -> {});
+		String raw = ASTUtils.getExpressionValueAsString(pathExpression);
 		if (raw == null) {
 			return null;
 		}

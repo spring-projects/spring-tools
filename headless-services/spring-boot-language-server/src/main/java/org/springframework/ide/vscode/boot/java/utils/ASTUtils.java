@@ -76,7 +76,6 @@ import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata
 import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
-import org.springframework.ide.vscode.commons.util.CollectorUtil;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.util.text.IDocument;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -105,13 +104,21 @@ public class ASTUtils {
 		}
 	}
 
-	public static DocumentRegion stringRegion(TextDocument doc, StringLiteral node) {
-		DocumentRegion nodeRegion = nodeRegion(doc, node);
-		if (nodeRegion.startsWith("\"")) {
-			nodeRegion = nodeRegion.subSequence(1);
-		}
-		if (nodeRegion.endsWith("\"")) {
-			nodeRegion = nodeRegion.subSequence(0, nodeRegion.getLength()-1);
+	/**
+	 * Region that covers the value of an annotation attribute expression. For a plain string
+	 * literal the surrounding quotes are stripped, so the region covers the string content only.
+	 * For anything else (a concatenation, a constant reference, ...) there is no single quoted
+	 * literal to unwrap, so the region covers the whole expression.
+	 */
+	public static DocumentRegion valueRegion(TextDocument doc, Expression exp) {
+		DocumentRegion nodeRegion = nodeRegion(doc, exp);
+		if (exp instanceof StringLiteral) {
+			if (nodeRegion.startsWith("\"")) {
+				nodeRegion = nodeRegion.subSequence(1);
+			}
+			if (nodeRegion.endsWith("\"")) {
+				nodeRegion = nodeRegion.subSequence(0, nodeRegion.getLength()-1);
+			}
 		}
 		return nodeRegion;
 	}
@@ -156,15 +163,105 @@ public class ASTUtils {
 	}
 
 	/**
+	 * An annotation attribute value that a cursor position points at, together with the resolved
+	 * string value of that attribute.
+	 *
+	 * @param annotation the annotation the attribute belongs to
+	 * @param annotationType fully qualified name of the annotation type
+	 * @param attributeName name of the attribute ({@code "value"} for a single-member annotation)
+	 * @param valueExpression the complete expression that makes up the attribute value, or one
+	 *        element of it when the attribute value is an array
+	 * @param value the resolved string value, or {@code null} if it cannot be resolved
+	 */
+	public record AnnotationAttribute(Annotation annotation, String annotationType, String attributeName,
+			Expression valueExpression, String value) {
+	}
+
+	/**
+	 * Walks up from a node found at a cursor offset to the expression that makes up a complete
+	 * annotation attribute value, or a complete element of an attribute value array.
+	 * <p>
+	 * This is what makes concatenated values work for cursor-driven features: a cursor inside
+	 * {@code @Qualifier("qual" + "ifier")} lands on one of the two string literals, and only the
+	 * enclosing {@link InfixExpression} carries the full value.
+	 *
+	 * @return the attribute value expression, or {@code null} if the given node is not inside one
+	 */
+	public static Expression getAttributeValueExpressionAt(ASTNode nodeAtOffset) {
+		ASTNode node = nodeAtOffset;
+		while (node != null
+				&& !(node.getParent() instanceof Annotation)
+				&& !(node.getParent() instanceof MemberValuePair)
+				&& !(node.getParent() instanceof ArrayInitializer)) {
+			node = node.getParent();
+		}
+		return node instanceof Expression expression ? expression : null;
+	}
+
+	/**
+	 * Like {@link #getAttributeValueExpressionAt(ASTNode)}, but falls back to the node itself when
+	 * it is not part of an annotation attribute value, so that plain expressions keep working.
+	 */
+	public static Expression getValueExpressionAt(ASTNode nodeAtOffset) {
+		Expression attributeValue = getAttributeValueExpressionAt(nodeAtOffset);
+		if (attributeValue != null) {
+			return attributeValue;
+		}
+		return nodeAtOffset instanceof Expression expression ? expression : null;
+	}
+
+	/**
+	 * Resolves the annotation attribute a cursor offset points at, including the attribute name and
+	 * the resolved string value. Handles concatenated values via
+	 * {@link #getAttributeValueExpressionAt(ASTNode)}.
+	 */
+	public static Optional<AnnotationAttribute> resolveAnnotationAttributeAt(ASTNode nodeAtOffset) {
+		Expression valueExpression = getAttributeValueExpressionAt(nodeAtOffset);
+		if (valueExpression == null) {
+			return Optional.empty();
+		}
+
+		ASTNode parent = valueExpression.getParent();
+		if (parent instanceof ArrayInitializer) {
+			parent = parent.getParent();
+		}
+
+		String attributeName;
+		Annotation annotation;
+
+		if (parent instanceof MemberValuePair pair) {
+			attributeName = pair.getName().getIdentifier();
+			annotation = pair.getParent() instanceof Annotation a ? a : null;
+		}
+		else if (parent instanceof Annotation a) {
+			attributeName = "value";
+			annotation = a;
+		}
+		else {
+			return Optional.empty();
+		}
+
+		if (annotation == null) {
+			return Optional.empty();
+		}
+
+		IAnnotationBinding binding = annotation.resolveAnnotationBinding();
+		if (binding == null || binding.getAnnotationType() == null) {
+			return Optional.empty();
+		}
+
+		return Optional.of(new AnnotationAttribute(annotation, binding.getAnnotationType().getQualifiedName(),
+				attributeName, valueExpression, getExpressionValueAsString(valueExpression)));
+	}
+
+	/**
 	 * For case where a expression can be either a String or a array of Strings and
 	 * we are interested in the first element of the array. (I.e. typical case
 	 * when annotation attribute is of type String[] (because Java allows using a single
 	 * value as a convenient syntax for writing an array of length 1 in that case.
 	 */
 	public static Optional<String> getFirstString(Expression exp) {
-		if (exp instanceof StringLiteral) {
-			return Optional.ofNullable(getLiteralValue((StringLiteral) exp));
-		} else if (exp instanceof ArrayInitializer) {
+		if (exp instanceof ArrayInitializer) {
 			ArrayInitializer array = (ArrayInitializer) exp;
 			Object objs = array.getStructuralProperty(ArrayInitializer.EXPRESSIONS_PROPERTY);
 			if (objs instanceof List) {
@@ -176,8 +273,9 @@ public class ASTUtils {
 					}
 				}
 			}
+			return Optional.empty();
 		}
-		return Optional.empty();
+		return Optional.ofNullable(getExpressionValueAsString(exp));
 	}
 
 	public static TypeDeclaration findDeclaringType(ASTNode node) {
@@ -257,7 +355,7 @@ public class ASTUtils {
 	 */
 	public static String getAnnotationAttributeAsString(Annotation annotation, String attributeName) {
 		return getAttribute(annotation, attributeName)
-				.map(expr -> getExpressionValueAsString(expr, dep -> {}))
+				.map(ASTUtils::getExpressionValueAsString)
 				.orElse(null);
 	}
 
@@ -305,6 +403,14 @@ public class ASTUtils {
 		if (exp instanceof CastExpression cast) {
 			collectTypeDependenciesForConstantExpression(cast.getExpression(), dependencies);
 		}
+	}
+
+	/**
+	 * Convenience variant of {@link #getExpressionValueAsString(Expression, Consumer)} for callers
+	 * that are not interested in the types referenced by constants inside the expression.
+	 */
+	public static String getExpressionValueAsString(Expression exp) {
+		return getExpressionValueAsString(exp, dependency -> {});
 	}
 
 	public static String getExpressionValueAsString(Expression exp, Consumer<ITypeBinding> dependencies) {
@@ -355,22 +461,6 @@ public class ASTUtils {
 			}
 		}
 		return null;
-	}
-
-	@SuppressWarnings("unchecked")
-	public static List<StringLiteral> getExpressionValueAsListOfLiterals(Expression exp) {
-		if (exp instanceof ArrayInitializer) {
-			ArrayInitializer array = (ArrayInitializer) exp;
-			return ((List<Expression>) array.expressions()).stream()
-					.flatMap(e -> e instanceof StringLiteral
-							? Stream.of((StringLiteral)e)
-							: Stream.empty()
-					)
-					.collect(CollectorUtil.toImmutableList());
-		} else if (exp instanceof StringLiteral){
-			return ImmutableList.of((StringLiteral)exp);
-		}
-		return ImmutableList.of();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -974,9 +1064,11 @@ public class ASTUtils {
 			Range range = doc.toRange(region);
 			Location location = new Location(doc.getUri(), range);
 			
-			Object constantExpressionValue = expression.resolveConstantExpressionValue();
+			// resolves concatenated values and constant references; falls back to the raw source
+			// text so that non-constant expressions at least show up in the index
+			String value = getExpressionValueAsString(expression);
 			
-			return new AnnotationAttributeValue(constantExpressionValue != null ? constantExpressionValue.toString() : expression.toString(), location);
+			return new AnnotationAttributeValue(value != null ? value : expression.toString(), location);
 		}
 	}
 	

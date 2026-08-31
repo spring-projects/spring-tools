@@ -18,10 +18,6 @@ import java.util.function.Function;
 
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.QualifiedName;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.Type;
 
 /**
@@ -64,42 +60,6 @@ public class WebFnUtils {
 		return false;
 	}
 	
-	public static StringLiteral extractStringLiteralArgument(MethodInvocation node) {
-		List<?> arguments = node.arguments();
-		if (arguments != null && arguments.size() > 0) {
-			Object object = arguments.get(0);
-			if (object instanceof StringLiteral) {
-				return (StringLiteral) object;
-			}
-		}
-		return null;
-	}
-	
-	public static QualifiedName extractQualifiedNameArgument(MethodInvocation node) {
-		List<?> arguments = node.arguments();
-		if (arguments != null && arguments.size() > 0) {
-			Object object = arguments.get(0);
-			if (object instanceof QualifiedName) {
-				return (QualifiedName) object;
-			}
-		}
-		return null;
-	}
-	
-	public static SimpleName extractSimpleNameArgument(MethodInvocation node) {
-		List<?> arguments = node.arguments();
-		if (arguments != null && arguments.size() > 0) {
-			Object object = arguments.get(0);
-			if (object instanceof SimpleName sn) {
-				return sn;
-			}
-			else if (object instanceof QualifiedName qn) {
-				return qn.getName();
-			}
-		}
-		return null;
-	}
-
 	public static String getMediaType(String constantRep) {
 		if (constantRep == null) {
 			return null;

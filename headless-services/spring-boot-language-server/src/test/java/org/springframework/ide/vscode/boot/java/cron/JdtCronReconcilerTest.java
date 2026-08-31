@@ -122,6 +122,48 @@ public class JdtCronReconcilerTest {
 	}
 	
 	@Test
+	void noErrors_ConcatenatedString() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.scheduling.annotation.Scheduled;
+
+				public class A {
+
+					@Scheduled(cron = "0 0 0 " + "L-3 * *")
+					void foo() {}
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/A.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems();
+	}
+
+	@Test
+	void errorsReported_ConcatenatedString() throws Exception {
+		String source = """
+				package example.demo;
+
+				import org.springframework.scheduling.annotation.Scheduled;
+
+				public class A {
+
+					@Scheduled(cron = "10/? * * " + "? * MON-5")
+					void foo() {}
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/A.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		editor.assertProblems(
+				"?|CRON: Number expected"
+		);
+	}
+
+	@Test
 	void errorsReported_1() throws Exception {
 		String source = """
 				package example.demo;

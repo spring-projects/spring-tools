@@ -191,7 +191,7 @@ public class WebConfigJavaIndexer {
 		
 		result.put(USE_REQUEST_HEADER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
-				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				String value = ASTUtils.getExpressionValueAsString(expression);
 				if (value != null) {
 					ASTNode parent = expression.getParent();
 					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
@@ -204,7 +204,7 @@ public class WebConfigJavaIndexer {
 
 		result.put(USE_PATH_SEGMENT, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
-				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				String value = ASTUtils.getExpressionValueAsString(expression);
 				if (value != null) {
 					ASTNode parent = expression.getParent();
 					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
@@ -217,7 +217,7 @@ public class WebConfigJavaIndexer {
 
 		result.put(USE_QUERY_PARAM, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
-				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				String value = ASTUtils.getExpressionValueAsString(expression);
 				if (value != null) {
 					ASTNode parent = expression.getParent();
 					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
@@ -230,7 +230,7 @@ public class WebConfigJavaIndexer {
 
 		result.put(USE_MEDIA_TYPE_PARAMETER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
-				String value = ASTUtils.getExpressionValueAsString(expression, (d) -> {});
+				String value = ASTUtils.getExpressionValueAsString(expression);
 				if (value != null) {
 					ASTNode parent = expression.getParent();
 					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
@@ -297,7 +297,7 @@ public class WebConfigJavaIndexer {
 				List<Expression> arguments = methodInvocation.arguments();
 				if (arguments.isEmpty()) return;
 
-				String pathPrefixValue = ASTUtils.getExpressionValueAsString(arguments.get(0), dep -> {});
+				String pathPrefixValue = ASTUtils.getExpressionValueAsString(arguments.get(0));
 				if (pathPrefixValue != null) {
 					webconfigBuilder.pathPrefix(pathPrefixValue);
 				}

@@ -97,7 +97,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 						}
 						
 						Expression valueExpression = pair.getValue();
-						String versionValue = ASTUtils.getExpressionValueAsString(valueExpression, (d) -> {});
+						String versionValue = ASTUtils.getExpressionValueAsString(valueExpression);
 
 						validateVersion(context, valueExpression, versionValue);
 					}
@@ -162,7 +162,7 @@ public class WebApiVersionSyntaxReconciler implements JdtAstReconciler {
 				}
 				
 				Expression expression = arguments.get(0);
-				String versionValue = ASTUtils.getExpressionValueAsString(expression,  (d) -> {});
+				String versionValue = ASTUtils.getExpressionValueAsString(expression);
 				
 				// Validate the version
 				validateVersion(context, expression, versionValue);

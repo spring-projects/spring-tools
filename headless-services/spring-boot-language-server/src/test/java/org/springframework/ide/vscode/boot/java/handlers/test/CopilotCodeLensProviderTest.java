@@ -274,6 +274,26 @@ Provide a brief summary of the pointcut's role within the annotation.
 	}
 	
 	@Test
+	public void testShowCodeLensesForAopPointcutReferenceWithConcatenatedString() throws Exception {
+
+		setCommandParamsHandler(true);
+
+		String docUri = directory.toPath().resolve("src/main/java/org/test/ConcatenatedPointcutExamples.java").toUri().toString();
+		TextDocumentInfo doc = harness.getOrReadFile(new File(new URI(docUri)), LanguageId.JAVA.getId());
+		TextDocumentInfo openedDoc = harness.openDocument(doc);
+
+		List<? extends CodeLens> codeLenses = harness.getCodeLenses(openedDoc);
+
+		assertEquals(2, codeLenses.size());
+
+		// the referenced pointcut definition has to be resolved even though the reference is
+		// spelled as a concatenation
+		String promptForConcatenatedReference = codeLenses.get(1).getCommand().getArguments().get(0).toString();
+		assertTrue(promptForConcatenatedReference.contains("@Pointcut(\"target(com.example.service.MyService)\")"),
+				promptForConcatenatedReference);
+	}
+
+	@Test
 	public void testShowCodeLensesFalseForQuery() throws Exception {
 		
 		setCommandParamsHandler(false);

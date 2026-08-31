@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,8 +14,6 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.TextBlock;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLangAstUtils;
 import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLanguageSnippet;
@@ -47,12 +45,8 @@ public class JdtCronVisitorUtils {
 	}
 
 	private static boolean isCronExpression(Expression e) {
-		String value = null;
-		if (e instanceof StringLiteral sl) {
-			value = ASTUtils.getLiteralValue(sl);
-		} else if (e instanceof TextBlock tb) {
-			value = tb.getLiteralValue();
-		}
+		// resolves concatenated expressions and constant references as well
+		String value = ASTUtils.getExpressionValueAsString(e);
 		if (value != null) {
 			value = value.trim();
 			if (value.startsWith("#{") || value.startsWith("${")) {

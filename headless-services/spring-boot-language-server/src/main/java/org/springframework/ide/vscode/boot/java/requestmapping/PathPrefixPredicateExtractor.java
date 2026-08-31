@@ -104,7 +104,7 @@ public class PathPrefixPredicateExtractor {
 				}
 				List<String> packages = new ArrayList<>();
 				for (Expression arg : (List<Expression>) mi.arguments()) {
-					String value = ASTUtils.getExpressionValueAsString(arg, dep -> {});
+					String value = ASTUtils.getExpressionValueAsString(arg);
 					if (value != null) {
 						packages.add(value);
 					}

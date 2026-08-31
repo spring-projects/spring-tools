@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,8 +19,6 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
-import org.eclipse.jdt.core.dom.TextBlock;
 import org.eclipse.lsp4j.InlayHint;
 import org.eclipse.lsp4j.InlayHintKind;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
@@ -29,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.JdtInlayHintsProvider;
+import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLangAstUtils;
+import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLanguageSnippet;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.util.Collector;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -49,7 +49,7 @@ public class CronExpressionsInlayHintsProvider implements JdtInlayHintsProvider 
 
 	private final BootJavaConfig config;
 
-	public record EmbeddedCronExpression(Expression expression, String text, int offset) {
+	public record EmbeddedCronExpression(Expression expression, String text) {
 	};
 
 	public CronExpressionsInlayHintsProvider(BootJavaConfig config) {
@@ -114,9 +114,7 @@ public class CronExpressionsInlayHintsProvider implements JdtInlayHintsProvider 
 
 	public static EmbeddedCronExpression extractCronExpression(SingleMemberAnnotation a) {
 		if (isScheduledAnnotation(a)) {
-			EmbeddedCronExpression expression = extractEmbeddedExpression(a.getValue(), a);
-			return expression == null ? null
-					: new EmbeddedCronExpression(expression.expression(), expression.text(), expression.offset());
+			return extractEmbeddedExpression(a.getValue());
 		}
 		return null;
 	}
@@ -136,27 +134,19 @@ public class CronExpressionsInlayHintsProvider implements JdtInlayHintsProvider 
 			}
 		}
 		if (cronExpression != null) {
-			EmbeddedCronExpression e = extractEmbeddedExpression(cronExpression, a);
-			if (e != null) {
-				return new EmbeddedCronExpression(e.expression(), e.text(), e.offset());
-			}
+			return extractEmbeddedExpression(cronExpression);
 		}
 		return null;
 	}
 
-	public static EmbeddedCronExpression extractEmbeddedExpression(Expression valueExp, Annotation node) {
-		String text = null;
-		int offset = 0;
-		if (valueExp instanceof StringLiteral sl) {
-			text = sl.getEscapedValue();
-			text = text.substring(1, text.length() - 1);
-			offset = sl.getStartPosition() + 1; // +1 to skip over opening "
-		} else if (valueExp instanceof TextBlock tb) {
-			text = tb.getEscapedValue();
-			text = text.substring(3, text.length() - 3).trim();
-			offset = tb.getStartPosition() + 3; // +3 to skip over opening """
-		}
-		return text == null ? null : new EmbeddedCronExpression(valueExp, text, offset);
+	/**
+	 * Resolves the cron expression text of an annotation attribute value. Delegates to
+	 * {@link EmbeddedLangAstUtils}, so string literals, text blocks, constant references and
+	 * concatenations of those are all handled.
+	 */
+	public static EmbeddedCronExpression extractEmbeddedExpression(Expression valueExp) {
+		EmbeddedLanguageSnippet snippet = EmbeddedLangAstUtils.extractEmbeddedExpression(valueExp);
+		return snippet == null ? null : new EmbeddedCronExpression(valueExp, snippet.getText().trim());
 	}
 
 	static boolean isScheduledAnnotation(Annotation a) {

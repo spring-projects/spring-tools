@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,9 +18,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationAttributeCompletionProvider;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationAttributeProposal;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
@@ -134,24 +132,10 @@ public class ConditionalOnPropertyCompletionProcessor implements AnnotationAttri
 	
 	private String getPrefixAttributeValue(ASTNode node) {
 		ASTNode annotationNode = ASTUtils.getNearestAnnotationParent(node);
-		if (annotationNode != null && annotationNode instanceof NormalAnnotation) {
-			NormalAnnotation annotation = (NormalAnnotation) annotationNode;
-			
-			List<?> values = annotation.values();
-			for (Object value : values) {
-				if (value instanceof MemberValuePair) {
-					MemberValuePair valuePair = (MemberValuePair) value;
-					String valuePairName = valuePair.getName() != null ? valuePair.getName().toString() : null;
-					
-					if (valuePairName != null && "prefix".equals(valuePairName)
-							&& valuePair.getValue() != null && valuePair.getValue() instanceof StringLiteral) {
-						StringLiteral prefixLiteral = (StringLiteral) valuePair.getValue();
-						String valuePairValue = ASTUtils.getLiteralValue(prefixLiteral);
-						return valuePairValue;
-					}
-				}
-				
-			}
+		if (annotationNode instanceof NormalAnnotation annotation) {
+			return ASTUtils.getAttribute(annotation, "prefix")
+					.map(ASTUtils::getExpressionValueAsString)
+					.orElse(null);
 		}
 		
 		return null;

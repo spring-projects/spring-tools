@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.eclipse.jdt.core.JavaCore;
@@ -33,19 +35,26 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
 import org.eclipse.jdt.core.dom.IExtendedModifier;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.NodeFinder;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils.AnnotationAttribute;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaParserUtils;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
+import org.springframework.ide.vscode.commons.util.text.LanguageId;
+import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 
 public class ASTUtilsTest {
@@ -58,6 +67,8 @@ public class ASTUtilsTest {
 
 	private Path mySimpleMain;
 	private Path myComponent;
+	private Path myConcatenatedComponent;
+	private Path myConcatenatedConfig;
 
 	
 	@BeforeEach
@@ -266,6 +277,16 @@ public class ASTUtilsTest {
 		public class MyComponent extends MySuperclass implements MyInterface {
 		}
 		""");
+
+		createFile(projectName, "test", "MyConstants.java", """
+		package test;
+		public class MyConstants {
+			public static final String SUFFIX = "Suffix";
+		}
+		""");
+
+		this.myConcatenatedComponent = createFile(projectName, "test", MY_CONCATENATED_COMPONENT_NAME, MY_CONCATENATED_COMPONENT);
+		this.myConcatenatedConfig = createFile(projectName, "test", MY_CONCATENATED_CONFIG_NAME, MY_CONCATENATED_CONFIG);
 	}
 	
 	private Path createFile(String projectName, String packageName, String name, String content) throws Exception {
@@ -438,6 +459,176 @@ public class ASTUtilsTest {
 
 		int anchor = ASTUtils.bodyDeclarationAnchorOffset(type);
 		assertEquals(type.getName().getStartPosition(), anchor);
+	}
+
+	// -----------------------------------------------------------------------
+	// concatenated annotation attribute values (GH-1486)
+	// -----------------------------------------------------------------------
+
+	private static final String MY_CONCATENATED_COMPONENT_NAME = "MyConcatenatedComponent.java";
+
+	private static final String MY_CONCATENATED_COMPONENT = """
+			package test;
+			import org.springframework.stereotype.Component;
+
+			@Component("special" + "Name" + MyConstants.SUFFIX)
+			public class MyConcatenatedComponent {
+			}
+			""";
+
+	private static final String MY_CONCATENATED_CONFIG_NAME = "MyConcatenatedConfig.java";
+
+	private static final String MY_CONCATENATED_CONFIG = """
+			package test;
+			import org.springframework.context.annotation.Bean;
+			import org.springframework.context.annotation.Configuration;
+
+			@Configuration
+			public class MyConcatenatedConfig {
+
+				@Bean(name = { "one" + "Bean", "two" + MyConstants.SUFFIX })
+				public String myBean() {
+					return "bean";
+				}
+
+				@Bean("plainBean")
+				public String myPlainBean() {
+					return "plain";
+				}
+
+			}
+			""";
+
+	@Test
+	void expressionValueResolvesConcatenationOfLiteralsAndConstants() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedComponent, MY_CONCATENATED_COMPONENT, (cu, offsets) -> {
+			// cursor in the middle of the first of three concatenated operands
+			Expression value = ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("\"special\""));
+
+			assertTrue(value instanceof InfixExpression, "expected the whole concatenation, got " + value.getClass().getSimpleName());
+			assertEquals("specialNameSuffix", ASTUtils.getExpressionValueAsString(value));
+		});
+	}
+
+	@Test
+	void expressionValueDependenciesIncludeConstantDeclaringType() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedComponent, MY_CONCATENATED_COMPONENT, (cu, offsets) -> {
+			Expression value = ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("MyConstants.SUFFIX"));
+
+			List<String> dependencies = new ArrayList<>();
+			assertEquals("specialNameSuffix", ASTUtils.getExpressionValueAsString(value, dep -> dependencies.add(dep.getQualifiedName())));
+			assertEquals(List.of("test.MyConstants"), dependencies);
+		});
+	}
+
+	@Test
+	void attributeValueExpressionIsResolvedFromAnyOperandOfTheConcatenation() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedComponent, MY_CONCATENATED_COMPONENT, (cu, offsets) -> {
+			Expression fromFirst = ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("\"special\""));
+			Expression fromSecond = ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("\"Name\""));
+			Expression fromConstant = ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("MyConstants.SUFFIX"));
+
+			assertSame(fromFirst, fromSecond);
+			assertSame(fromFirst, fromConstant);
+		});
+	}
+
+	@Test
+	void attributeValueExpressionIsNullOutsideOfAnnotations() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedConfig, MY_CONCATENATED_CONFIG, (cu, offsets) -> {
+			assertNull(ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("MyConcatenatedConfig {")));
+		});
+	}
+
+	@Test
+	void resolveAnnotationAttributeAtSingleMemberAnnotation() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedComponent, MY_CONCATENATED_COMPONENT, (cu, offsets) -> {
+			AnnotationAttribute attribute = ASTUtils.resolveAnnotationAttributeAt(offsets.nodeAt("\"Name\"")).get();
+
+			assertEquals("org.springframework.stereotype.Component", attribute.annotationType());
+			assertEquals("value", attribute.attributeName());
+			assertEquals("specialNameSuffix", attribute.value());
+		});
+	}
+
+	@Test
+	void resolveAnnotationAttributeAtArrayElementOfNamedAttribute() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedConfig, MY_CONCATENATED_CONFIG, (cu, offsets) -> {
+			AnnotationAttribute first = ASTUtils.resolveAnnotationAttributeAt(offsets.nodeAt("\"one\"")).get();
+			assertEquals("org.springframework.context.annotation.Bean", first.annotationType());
+			assertEquals("name", first.attributeName());
+			assertEquals("oneBean", first.value());
+
+			// the second array element must resolve independently of the first
+			AnnotationAttribute second = ASTUtils.resolveAnnotationAttributeAt(offsets.nodeAt("\"two\"")).get();
+			assertEquals("name", second.attributeName());
+			assertEquals("twoSuffix", second.value());
+		});
+	}
+
+	@Test
+	void resolveAnnotationAttributeAtIsEmptyOutsideOfAnnotations() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedConfig, MY_CONCATENATED_CONFIG, (cu, offsets) -> {
+			assertTrue(ASTUtils.resolveAnnotationAttributeAt(offsets.nodeAt("MyConcatenatedConfig {")).isEmpty());
+		});
+	}
+
+	@Test
+	void valueRegionStripsQuotesForLiteralsButNotForConcatenations() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedConfig, MY_CONCATENATED_CONFIG, (cu, offsets) -> {
+			TextDocument doc = new TextDocument("file:///MyConcatenatedConfig.java", LanguageId.JAVA, 0, MY_CONCATENATED_CONFIG);
+
+			Expression concatenation = ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("\"one\""));
+			assertEquals("\"one\" + \"Bean\"", ASTUtils.valueRegion(doc, concatenation).toString());
+
+			Expression literal = ASTUtils.getAttributeValueExpressionAt(offsets.nodeAt("\"plainBean\""));
+			assertEquals("plainBean", ASTUtils.valueRegion(doc, literal).toString());
+		});
+	}
+
+	@Test
+	void getFirstStringResolvesConcatenationsInsideArrays() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedConfig, MY_CONCATENATED_CONFIG, (cu, offsets) -> {
+			Annotation beanAnnotation = ASTUtils.resolveAnnotationAttributeAt(offsets.nodeAt("\"one\"")).get().annotation();
+
+			// the whole "name" attribute value, i.e. the array initializer
+			Expression arrayValue = ASTUtils.getAttribute(beanAnnotation, "name").get();
+			assertEquals("oneBean", ASTUtils.getFirstString(arrayValue).get());
+		});
+	}
+
+	@Test
+	void getFirstStringResolvesPlainConcatenations() throws Exception {
+		runTestsAgainstCompilationUnit(myConcatenatedComponent, MY_CONCATENATED_COMPONENT, (cu, offsets) -> {
+			Annotation componentAnnotation = ASTUtils.resolveAnnotationAttributeAt(offsets.nodeAt("\"Name\"")).get().annotation();
+
+			Expression value = ASTUtils.getAttribute(componentAnnotation, "value").get();
+			assertEquals("specialNameSuffix", ASTUtils.getFirstString(value).get());
+		});
+	}
+
+	/**
+	 * Locates AST nodes the way the language server does at runtime: by the offset of a marker in
+	 * the source text, resolved through {@link NodeFinder}.
+	 */
+	private record NodeLocator(CompilationUnit cu, String source) {
+
+		ASTNode nodeAt(String marker) {
+			int index = source.indexOf(marker);
+			assertTrue(index >= 0, "marker not found in source: " + marker);
+			// aim at the middle of the marker so we land inside the node, not on its boundary
+			return NodeFinder.perform(cu, index + marker.length() / 2, 0);
+		}
+	}
+
+	private void runTestsAgainstCompilationUnit(Path file, String source, BiConsumer<CompilationUnit, NodeLocator> test) throws Exception {
+		SpringIndexerJavaParserUtils.createParser(this.project, new AnnotationHierarchies(), true)
+			.createASTs(new String[] { file.toFile().toString() }, null, new String[0], new FileASTRequestor() {
+				@Override
+				public void acceptAST(String sourceFilePath, CompilationUnit cu) {
+					test.accept(cu, new NodeLocator(cu, source));
+				}
+			}, null);
 	}
 
 	private static CompilationUnit parseSource(String source) {

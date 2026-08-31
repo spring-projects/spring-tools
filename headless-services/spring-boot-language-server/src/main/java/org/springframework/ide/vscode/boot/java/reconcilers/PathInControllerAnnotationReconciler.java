@@ -93,7 +93,7 @@ public class PathInControllerAnnotationReconciler implements JdtAstReconciler {
 					return super.visit(typeDecl);
 				}
 
-				String stringValue = ASTUtils.getExpressionValueAsString(value, (t) -> {});
+				String stringValue = ASTUtils.getExpressionValueAsString(value);
 				if (stringValue != null && stringValue.contains("/")) {
 
 					ReconcileProblemImpl problem = new ReconcileProblemImpl(getProblemType(), PROBLEM_LABEL,

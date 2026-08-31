@@ -246,6 +246,16 @@ public class ConditionalOnPropertyCompletionTest {
     }
 
     @Test
+    public void testConditionalOnPropertyCompletionWithConcatenatedPrefixAndNameAttribute() throws Exception {
+        List<CompletionItem> completions = getCompletions("@ConditionalOnProperty(prefix = \"el\" + \"se\", name=\"<*>\")");
+        assertEquals(1, completions.size());
+        
+        assertEquals("else.prop3", completions.get(0).getLabel());
+        assertEquals("prop3", completions.get(0).getFilterText());
+        assertEquals("prop3", completions.get(0).getTextEdit().getLeft().getNewText());
+    }
+
+    @Test
     @Disabled // https://github.com/eclipse-jdt/eclipse.jdt.core/issues/3419
     public void testConditionalOnPropertyCompletionWithEmptyPrefixAndEmptyNameAttribute() throws Exception {
     	List<CompletionItem> completions = getCompletions("@ConditionalOnProperty(prefix = , name = <*>)");

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -73,6 +73,42 @@ public class ActiveProfilesHoverTest {
 
         String[] hoverSites = {
                 "@Profile", "local-profile", "testing-profile"
+        };
+        editor.assertHighlights(
+                hoverSites
+        );
+        for (String hoverOver : hoverSites) {
+            editor.assertHoverContains(hoverOver, "testing-profile");
+            editor.assertHoverContains(hoverOver, "local-profile");
+            editor.assertHoverContains(hoverOver, "foo.bar.RunningApp");
+            editor.assertHoverContains(hoverOver, "22022");
+        }
+    }
+
+    @Test
+    void testActiveProfileHoverWithConcatenatedString() throws Exception {
+        SpringProcessLiveData liveData = new SpringProcessLiveDataBuilder()
+                .processID("22022")
+                .processName("foo.bar.RunningApp")
+                .activeProfiles("testing-profile", "local-profile")
+                .build();
+        liveDataProvider.add("processkey", liveData);
+
+        Editor editor = harness.newEditor(LanguageId.JAVA,
+                "package hello;\n" +
+                        "\n" +
+                        "import org.springframework.context.annotation.Configuration;\n" +
+                        "import org.springframework.context.annotation.Profile;\n" +
+                        "\n" +
+                        "@Configuration\n" +
+                        "@Profile({\"local\" + \"-profile\", \"inactive\", \"testing\" + \"-profile\"})\n" +
+                        "public class LocalConfig {\n" +
+                        "}"
+        );
+
+        // a concatenated value has no single string literal, so the highlight covers the whole expression
+        String[] hoverSites = {
+                "@Profile", "\"local\" + \"-profile\"", "\"testing\" + \"-profile\""
         };
         editor.assertHighlights(
                 hoverSites

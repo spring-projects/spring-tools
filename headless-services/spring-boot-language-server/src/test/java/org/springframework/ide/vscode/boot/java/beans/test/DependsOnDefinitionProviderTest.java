@@ -100,6 +100,33 @@ public class DependsOnDefinitionProviderTest {
 	}
 
 	@Test
+	public void testDependsOnWithConcatenatedStringBeanDefinitionLink() throws Exception {
+        String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+        Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+        		import org.springframework.stereotype.Component;
+				import org.springframework.context.annotation.DependsOn;
+
+				@Component
+				@DependsOn("be" + "an1")
+				public class TestDependsOnClass {
+				}""", tempJavaDocUri);
+		
+        String expectedDefinitionUri = directory.toPath().resolve("src/main/java/org/test/MainClass.java").toUri().toString();
+        
+        Bean[] beans = springIndex.getBeansWithName(project.getElementName(), "bean1");
+        assertEquals(1, beans.length);
+
+		LocationLink expectedLocation = new LocationLink(expectedDefinitionUri,
+				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
+				null);
+
+		editor.assertDefinitionLinkTargets("an1", List.of(expectedLocation));
+	}
+
+	@Test
 	public void testMultipleDependsOnBeanDefinitionLink() throws Exception {
         String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
 

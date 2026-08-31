@@ -83,4 +83,26 @@ public class ConditionalOnResourceDefinitionProviderTest {
         editor.assertDefinitionLinkTargets("classpath:a-random-resource-root.md", List.of(expectedLocation));
     }
 
+    @Test
+    void testFindClasspathResourceWithConcatenatedString() throws Exception {
+        Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+				import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
+				import org.springframework.context.annotation.Configuration;
+				
+				@Configuration
+				@ConditionalOnResource("classpath:a-random-" + "resource-root.md")
+				public class TestConditionalOnResourceCompletion {
+					private String value1;
+				}""", testSourceUri);
+
+        // the origin range covers the whole concatenated expression, there is no single literal
+        LocationLink expectedLocation = new LocationLink(testResourceUri,
+                new Range(new Position(0, 0), new Position(0, 0)),
+                new Range(new Position(0, 0), new Position(0, 0)),
+                new Range(new Position(5, 23), new Position(5, 65)));
+
+        editor.assertDefinitionLinkTargets("resource-root.md", List.of(expectedLocation));
+    }
+
 }

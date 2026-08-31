@@ -138,7 +138,7 @@ public class ClasspathResourceTypeReconciler implements JdtAstReconciler {
 			private String extractValueString(Annotation annotation) {
 				// getAttribute handles both @Value("...") and @Value(value="...") cases
 				return ASTUtils.getAttribute(annotation, "value")
-					.map(expr -> ASTUtils.getExpressionValueAsString(expr, v -> {}))
+					.map(expr -> ASTUtils.getExpressionValueAsString(expr))
 					.orElse(null);
 			}
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -34,7 +34,6 @@ import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -89,11 +88,9 @@ public class ValuePropertyReferencesProvider implements ReferenceProvider {
 		cancelToken.checkCanceled();
 
 		try {
-			if (node instanceof StringLiteral) {
-				String propertyKey = this.propertyExtractor.extractPropertyKey((StringLiteral) node);
-				if (propertyKey != null) {
-					return findReferencesToPropertyKey(propertyKey);
-				}
+			String propertyKey = this.propertyExtractor.extractPropertyKey(node);
+			if (propertyKey != null) {
+				return findReferencesToPropertyKey(propertyKey);
 			}
 		}
 		catch (Exception e) {

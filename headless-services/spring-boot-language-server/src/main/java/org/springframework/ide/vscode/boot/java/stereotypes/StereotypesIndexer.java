@@ -258,14 +258,14 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		int priority = Stereotype.DEFAULT_PRIORITY;
 		Optional<Expression> attribute = ASTUtils.getAttribute(additionalDetails, "priority");
 		if (attribute.isPresent()) {
-			String priorityValue = ASTUtils.getExpressionValueAsString(attribute.get(), (a) -> {});
+			String priorityValue = ASTUtils.getExpressionValueAsString(attribute.get());
 			priority = Integer.valueOf(priorityValue);
 		}
 
 		String displayName = null;
 		Optional<Expression> name = ASTUtils.getAttribute(additionalDetails, "name");
 		if (name.isPresent()) {
-			displayName = ASTUtils.getExpressionValueAsString(name.get(), (a) -> {});
+			displayName = ASTUtils.getExpressionValueAsString(name.get());
 		}
 
 		String[] groups = null;

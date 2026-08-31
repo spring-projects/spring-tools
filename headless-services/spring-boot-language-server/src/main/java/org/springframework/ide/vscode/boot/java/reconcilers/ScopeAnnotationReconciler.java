@@ -132,7 +132,7 @@ public class ScopeAnnotationReconciler implements JdtAstReconciler {
 
 				String scopeName = ASTUtils.getAttribute(a, "value")
 						.or(() -> ASTUtils.getAttribute(a, "scopeName"))
-						.map(expr -> ASTUtils.getExpressionValueAsString(expr, dep -> {}))
+						.map(expr -> ASTUtils.getExpressionValueAsString(expr))
 						.orElse(null);
 
 				String targetFqn = scopeName == null ? null : SCOPE_NAME_TO_ANNOTATION_FQN.get(scopeName);
@@ -142,7 +142,7 @@ public class ScopeAnnotationReconciler implements JdtAstReconciler {
 
 				boolean proxyModeSpecified = ASTUtils.getAttribute(a, "proxyMode").isPresent();
 				String explicitProxyMode = ASTUtils.getAttribute(a, "proxyMode")
-						.map(expr -> ASTUtils.getExpressionValueAsString(expr, dep -> {}))
+						.map(expr -> ASTUtils.getExpressionValueAsString(expr))
 						.orElse(null);
 				if (proxyModeSpecified && explicitProxyMode == null) {
 					// proxyMode is set to something we can't resolve to a known constant - too risky to touch

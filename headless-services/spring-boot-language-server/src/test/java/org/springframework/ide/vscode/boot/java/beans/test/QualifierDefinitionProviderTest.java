@@ -94,6 +94,62 @@ public class QualifierDefinitionProviderTest {
 	}
 
 	@Test
+	public void testQualifierWithConcatenatedStringRefersToBeanDefinitionLink() throws Exception {
+        String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+        Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+        		import org.springframework.stereotype.Component;
+				import org.springframework.beans.factory.annotation.Qualifier;
+
+				@Component
+				@Qualifier("be" + "an1")
+				public class TestDependsOnClass {
+				}""", tempJavaDocUri);
+		
+        String expectedDefinitionUri = directory.toPath().resolve("src/main/java/org/test/MainClass.java").toUri().toString();
+        
+        Bean[] beans = springIndex.getBeansWithName(project.getElementName(), "bean1");
+        assertEquals(1, beans.length);
+
+		LocationLink expectedLocation = new LocationLink(expectedDefinitionUri,
+				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
+				null);
+
+		// the cursor has to land on text that really exists in the source, so only the
+		// second operand of the concatenation can be used to position it
+		editor.assertDefinitionLinkTargets("an1", List.of(expectedLocation));
+	}
+
+	@Test
+	public void testQualifierWithConcatenatedStringInArrayRefersToBeanDefinitionLink() throws Exception {
+        String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
+
+        Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+        		import org.springframework.stereotype.Component;
+				import org.springframework.beans.factory.annotation.Qualifier;
+
+				@Component
+				@Qualifier(value = "be" + "an1")
+				public class TestDependsOnClass {
+				}""", tempJavaDocUri);
+		
+        String expectedDefinitionUri = directory.toPath().resolve("src/main/java/org/test/MainClass.java").toUri().toString();
+        
+        Bean[] beans = springIndex.getBeansWithName(project.getElementName(), "bean1");
+        assertEquals(1, beans.length);
+
+		LocationLink expectedLocation = new LocationLink(expectedDefinitionUri,
+				beans[0].getLocation().getRange(), beans[0].getLocation().getRange(),
+				null);
+
+		editor.assertDefinitionLinkTargets("an1", List.of(expectedLocation));
+	}
+
+	@Test
 	public void testQualifierRefersToRandomQualifierWithoutDefinitionLink() throws Exception {
         String tempJavaDocUri = directory.toPath().resolve("src/main/java/org/test/TempClass.java").toUri().toString();
 

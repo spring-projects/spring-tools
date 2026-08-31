@@ -436,7 +436,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 							else if (arguments.size() == 2 && "java.lang.String".equals(types.get(0).getQualifiedName()) && "java.lang.Class".equals(types.get(1).getBinaryName())) {
 								// <T> void registerBean(String name, Class<T> beanClass);
 
-								String beanName = ASTUtils.getExpressionValueAsString(arguments.get(0), (dep) -> {});
+								String beanName = ASTUtils.getExpressionValueAsString(arguments.get(0));
 
 								ITypeBinding typeBinding = types.get(1);
 								ITypeBinding[] typeParameters = typeBinding.getTypeArguments();
@@ -465,7 +465,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 									&& "java.lang.Class".equals(types.get(1).getBinaryName()) && "java.util.function.Consumer".equals(types.get(2).getBinaryName())) {
 								// <T> void registerBean(String name, Class<T> beanClass, Consumer<Spec<T>> customizer);
 
-								String beanName = ASTUtils.getExpressionValueAsString(arguments.get(0), (dep) -> {});
+								String beanName = ASTUtils.getExpressionValueAsString(arguments.get(0));
 
 								ITypeBinding typeBinding = types.get(1);
 								ITypeBinding[] typeParameters = typeBinding.getTypeArguments();

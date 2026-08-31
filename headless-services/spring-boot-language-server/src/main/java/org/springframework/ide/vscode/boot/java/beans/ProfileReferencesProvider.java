@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024, 2025 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,10 +16,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.Annotation;
-import org.eclipse.jdt.core.dom.ArrayInitializer;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.slf4j.Logger;
@@ -51,26 +48,12 @@ public class ProfileReferencesProvider implements ReferenceProvider {
 		cancelToken.checkCanceled();
 
 		try {
-			while (node != null
-					&& !(node.getParent() instanceof Annotation)
-					&& !(node.getParent() instanceof MemberValuePair)
-					&& !(node.getParent() instanceof ArrayInitializer)) {
-				node = node.getParent();
-			}
-
-			// case: @Value("prefix<*>")
-			if (node instanceof Expression expression && node.getParent() instanceof Annotation) {
-				return provideReferences(project, ASTUtils.getExpressionValueAsString(expression, v -> {}));
-			}
-			// case: @Value(value="prefix<*>")
-			else if (node instanceof Expression expression && node.getParent() instanceof MemberValuePair
-					&& "value".equals(((MemberValuePair)node.getParent()).getName().toString())) {
-				return provideReferences(project, ASTUtils.getExpressionValueAsString(expression, v -> {}));
-			}
-			// case: @Qualifier({"prefix<*>"})
-			else if (node instanceof Expression expression && node.getParent() instanceof ArrayInitializer) {
-				return provideReferences(project, ASTUtils.getExpressionValueAsString(expression, v -> {}));
-			}
+			return ASTUtils.resolveAnnotationAttributeAt(node)
+					.filter(attribute -> "value".equals(attribute.attributeName()))
+					.map(attribute -> attribute.value())
+					.filter(value -> value != null)
+					.map(value -> provideReferences(project, value))
+					.orElse(null);
 		}
 		catch (Exception e) {
 			log.error("error finding references for profile", e);

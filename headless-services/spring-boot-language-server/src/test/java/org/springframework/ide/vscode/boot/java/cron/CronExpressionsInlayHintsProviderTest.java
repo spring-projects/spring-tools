@@ -96,6 +96,22 @@ public class CronExpressionsInlayHintsProviderTest {
 	}
 
 	@Test
+	public void test_cronExpressionInlayHintsForConcatenatedStrings() throws Exception {
+
+		String docUri = directory.toPath().resolve("src/main/java/org/test/ConcatenatedCronScheduler.java").toUri().toString();
+		TextDocumentInfo doc = harness.getOrReadFile(new File(new URI(docUri)), LanguageId.JAVA.getId());
+		TextDocumentInfo openedDoc = harness.openDocument(doc);
+
+		List<InlayHint> inlayHints = harness.getInlayHints(openedDoc);
+
+		assertEquals(2, inlayHints.size());
+
+		// hints appear at the end of the whole annotation, no matter how the value is written
+		assertTrue(containsInlayHints(inlayHints.get(0), 6, 38, "every hour"));
+		assertTrue(containsInlayHints(inlayHints.get(1), 10, 56, "every hour between 8 and 10"));
+	}
+
+	@Test
 	public void test_noInlayHintsForInvalidCronExp() throws Exception {
 
 		String docUri = directory.toPath().resolve("src/main/java/org/test/Scheduler.java").toUri().toString();

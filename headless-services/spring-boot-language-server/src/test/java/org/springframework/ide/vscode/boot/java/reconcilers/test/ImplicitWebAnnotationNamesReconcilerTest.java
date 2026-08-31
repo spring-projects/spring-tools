@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom
+ * Copyright (c) 2024, 2026 Broadcom
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -85,6 +85,37 @@ public class ImplicitWebAnnotationNamesReconcilerTest extends BaseReconcilerTest
 		assertEquals("Remove implicit web annotation names in file", problems.get(0).getQuickfixes().get(1).title);
 		assertEquals("Remove implicit web annotation names in project", problems.get(0).getQuickfixes().get(2).title);
 		
+	}
+	
+	@Test
+	void webAnnotationNameFromConcatenatedString() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.stereotype.Controller;
+				import org.springframework.web.bind.annotation.GetMapping;
+				import org.springframework.web.bind.annotation.PathVariable;
+				
+				@Controller
+				class A {
+				
+					@GetMapping("/hello/{message}")
+					public String hello(@PathVariable("mess" + "age") String message) {
+						return "Hello "+ message; 
+					}
+				}
+				""";
+		
+		List<ReconcileProblem> problems = reconcile("A.java", source, false);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		
+		assertEquals(Boot2JavaProblemType.WEB_ANNOTATION_NAMES, problem.getType());
+		
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("\"mess\" + \"age\"", markedStr);
 	}
 	
 	@Test

@@ -109,7 +109,7 @@ public class MovePathToRequestMappingRefactoring implements JdtRefactoring {
 		}
 
 		if (value != null) {
-			String stringValue = ASTUtils.getExpressionValueAsString(value, t -> {});
+			String stringValue = ASTUtils.getExpressionValueAsString(value);
 			if (stringValue != null && stringValue.contains("/")) {
 				return stringValue;
 			}

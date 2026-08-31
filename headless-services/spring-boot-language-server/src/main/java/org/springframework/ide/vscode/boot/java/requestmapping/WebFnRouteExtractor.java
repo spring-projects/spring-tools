@@ -23,14 +23,15 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ExpressionStatement;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.MethodReference;
 import org.eclipse.jdt.core.dom.ReturnStatement;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.lsp4j.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -137,15 +138,30 @@ public class WebFnRouteExtractor {
     }
     
     /**
-     * Extracts a string literal or expression as a route element.
-     * If the expression is a StringLiteral, uses its literal value.
-     * Otherwise, uses the toString() representation of the expression.
+     * Extracts a string expression as a route element. Resolves string literals, concatenations and
+     * constant references; falls back to the source text of the expression when the value cannot be
+     * resolved at all.
      */
     private WebfluxRouteElement extractStringOrExpression(Expression expr, TextDocument doc) throws BadLocationException {
-        if (expr instanceof StringLiteral literal) {
-            return createRouteElement(literal.getLiteralValue(), literal, doc);
+        String value = ASTUtils.getExpressionValueAsString(expr);
+        return createRouteElement(value != null ? value : expr.toString(), expr, doc);
+    }
+
+    /**
+     * Extracts an argument that is expected to hold a string value (a route path or version) as a
+     * route element, or {@code null} when the value cannot be resolved. Resolves string literals,
+     * concatenations and constant references.
+     * <p>
+     * Arguments of any other type - a handler function passed by name, for example - are rejected,
+     * because resolving them would yield their identifier rather than a path.
+     */
+    private WebfluxRouteElement extractStringArgument(Expression expr, TextDocument doc) throws BadLocationException {
+        ITypeBinding type = expr.resolveTypeBinding();
+        if (type != null && !String.class.getName().equals(type.getQualifiedName())) {
+            return null;
         }
-        return createRouteElement(expr.toString(), expr, doc);
+        String value = ASTUtils.getExpressionValueAsString(expr);
+        return value != null ? createRouteElement(value, expr, doc) : null;
     }
     
     /**
@@ -187,11 +203,13 @@ public class WebFnRouteExtractor {
         LambdaExpression lambda = null;
         
         for (Object arg : args) {
-            if (arg instanceof StringLiteral) {
-                StringLiteral literal = (StringLiteral) arg;
-                pathPrefix = createRouteElement(literal.getLiteralValue(), literal, doc);
-            } else if (arg instanceof LambdaExpression) {
-                lambda = (LambdaExpression) arg;
+            if (arg instanceof LambdaExpression lambdaArg) {
+                lambda = lambdaArg;
+            } else if (arg instanceof Expression expression) {
+                WebfluxRouteElement extracted = extractStringArgument(expression, doc);
+                if (extracted != null) {
+                    pathPrefix = extracted;
+                }
             }
         }
         
@@ -275,10 +293,7 @@ public class WebFnRouteExtractor {
         List<Expression> args = method.arguments();
         for (Expression expr : args) {
             
-            if (expr instanceof StringLiteral) {
-                StringLiteral literal = (StringLiteral) expr;
-                localPath = createRouteElement(literal.getLiteralValue(), literal, doc);
-            } else if (expr instanceof MethodReference || expr instanceof LambdaExpression) {
+            if (expr instanceof MethodReference || expr instanceof LambdaExpression) {
                 typeChecker.extractHandlerInfo(expr, route);
             } else if (expr instanceof MethodInvocation) {
                 // Local predicates (accept, contentType, version on this specific route)
@@ -287,6 +302,11 @@ public class WebFnRouteExtractor {
                 WebfluxRouteElement extractedVersion = extractPredicateInfo(mi, localAcceptTypes, localContentTypes, doc);
                 if (extractedVersion != null) {
                     localVersion = extractedVersion;
+                }
+            } else {
+                WebfluxRouteElement extracted = extractStringArgument(expr, doc);
+                if (extracted != null) {
+                    localPath = extracted;
                 }
             }
         }
@@ -419,9 +439,11 @@ public class WebFnRouteExtractor {
         if (isHttpMethod(methodName)) {
             route.addHttpMethod(createRouteElement(methodName, predicate.getName(), doc));
             List<?> args = predicate.arguments();
-            if (!args.isEmpty() && args.get(0) instanceof StringLiteral) {
-                StringLiteral literal = (StringLiteral) args.get(0);
-                route.setPath(createRouteElement(literal.getLiteralValue(), literal, doc));
+            if (!args.isEmpty() && args.get(0) instanceof Expression pathArg) {
+                WebfluxRouteElement path = extractStringArgument(pathArg, doc);
+                if (path != null) {
+                    route.setPath(path);
+                }
             }
         } else if (methodName.equals(PREDICATE_METHOD)) {
             // Handle method(HttpMethod.GET) predicate

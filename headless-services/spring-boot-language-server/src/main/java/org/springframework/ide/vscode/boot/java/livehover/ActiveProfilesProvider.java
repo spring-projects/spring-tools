@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2019 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,14 +14,14 @@ import static org.springframework.ide.vscode.boot.java.utils.ASTUtils.nameRange;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
+import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Range;
@@ -96,16 +96,13 @@ public class ActiveProfilesProvider implements HoverProvider {
 				nameRange(doc, annotation).map(CodeLens::new).ifPresent(codeLenses::add);
 			}
 
-			annotation.accept(new ASTVisitor() {
-				@Override
-				public boolean visit(StringLiteral node) {
-					String value = ASTUtils.getLiteralValue(node);
-					if (value!=null && allActiveProfiles.contains(value)) {
-						rangeOf(doc, node).map(CodeLens::new).ifPresent(codeLenses::add);
-					}
-					return true;
+			for (Expression profileExpression : profileExpressions(annotation)) {
+				String value = ASTUtils.getExpressionValueAsString(profileExpression);
+				if (value != null && allActiveProfiles.contains(value)) {
+					rangeOf(doc, profileExpression).map(CodeLens::new).ifPresent(codeLenses::add);
 				}
-			});
+			}
+
 			return codeLenses.build();
 		}
 		return ImmutableList.of();
@@ -122,17 +119,19 @@ public class ActiveProfilesProvider implements HoverProvider {
 		return builder.build();
 	}
 
-	private static Optional<Range> rangeOf(TextDocument doc, StringLiteral node) {
+	/**
+	 * The individual profile value expressions of a {@code @Profile} annotation, so that a
+	 * concatenated value is resolved as a whole rather than per string literal.
+	 */
+	private static List<Expression> profileExpressions(Annotation annotation) {
+		return ASTUtils.getAttribute(annotation, "value")
+				.map(ASTUtils::expandExpressionsFromPotentialArray)
+				.orElse(List.of());
+	}
+
+	private static Optional<Range> rangeOf(TextDocument doc, Expression node) {
 		try {
-			int start = node.getStartPosition();
-			int end = start + node.getLength();
-			if (doc.getSafeChar(start)=='"') {
-				start++;
-			}
-			if (doc.getSafeChar(end-1)=='"') {
-				end--;
-			}
-			return Optional.of(doc.toRange(start, end-start));
+			return Optional.of(ASTUtils.valueRegion(doc, node).asRange());
 		} catch (Exception e) {
 			log.error("", e);
 			return Optional.empty();

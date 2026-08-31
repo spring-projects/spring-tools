@@ -64,6 +64,12 @@ public class CronExpressionsInlayHintsProviderTest {
 		String projectDir = directory.toURI().toString();
 		server = mock(SimpleLanguageServer.class);
 
+		// Ensure test-annotations is built (compiled classes are required to resolve
+		// cross-file constants like CronConstants.HOURS_8_TO_10 via JDT bindings).
+		// Other test classes build this project as a side effect, but relying on
+		// that shared, unordered side effect is racy, so build it explicitly here too.
+		ProjectsHarness.INSTANCE.mavenProject("test-annotations");
+
 		// trigger project creation
 		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
 

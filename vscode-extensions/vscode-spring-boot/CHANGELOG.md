@@ -12,6 +12,7 @@
 * _(Spring Boot)_ add validation + quickfix to adopt `@ApplicationModuleListener` [#1800](https://github.com/spring-projects/spring-tools/issues/1800)
 * _(Spring Boot)_ exception thrown around internal compilation unit cache [#1777](https://github.com/spring-projects/spring-tools/issues/1777)
 * _(Spring Boot)_ improve validation for Spring Data queries [#1516](https://github.com/spring-projects/spring-tools/issues/1516)
+* _(Spring Boot)_ correctly deal with concatenated values in annotation attributes - cont. [#1486](https://github.com/spring-projects/spring-tools/issues/1486)
 * _(Spring Boot)_ introduce validation and quick fix for conversion to `@SpringJUnitConfig` [#1403](https://github.com/spring-projects/spring-tools/issues/1403)
 * _(Spring Boot)_ introduce validation and quick fix for conversion to `@RestController` [#1402](https://github.com/spring-projects/spring-tools/issues/1402)
 * _(Spring Boot)_ introduce validation and quick fixes for specific scope annotations [#1401](https://github.com/spring-projects/spring-tools/issues/1401)

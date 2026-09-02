@@ -127,7 +127,7 @@ public class WebConfigJavaIndexer {
 				if (invocationExtractor != null) {
 
 					IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
-					ITypeBinding declaringClass = methodBinding.getDeclaringClass();
+					ITypeBinding declaringClass = methodBinding != null ? methodBinding.getDeclaringClass() : null;
 
 					if (declaringClass != null && invocationExtractor.getTargetInvocationType().contains(declaringClass.getQualifiedName())) {
 						invocationExtractor.extractParameters(doc, methodInvocation, builder);
@@ -165,6 +165,10 @@ public class WebConfigJavaIndexer {
 		
 		for (MethodDeclaration method : methods) {
 			IMethodBinding binding = method.resolveBinding();
+			if (binding == null) {
+				continue;
+			}
+
 			boolean overrides = binding.overrides(configureVersioningMethod);
 			if (overrides) {
 				return method;

@@ -16,11 +16,13 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -73,7 +75,9 @@ public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 
 					// lombok annotation around -> don't check for constructors
 					if (ASTUtils.getAnnotations(typeDecl).stream()
-							.map(annotation -> annotation.resolveTypeBinding().getQualifiedName())
+							.map(Annotation::resolveTypeBinding)
+							.filter(Objects::nonNull)
+							.map(ITypeBinding::getQualifiedName)
 							.filter(annotationType -> Annotations.LOMBOK_CONSTRUCTOR_ANNOTATIONS.contains(annotationType))
 							.findAny().isPresent()) {
 						return super.visit(typeDecl);

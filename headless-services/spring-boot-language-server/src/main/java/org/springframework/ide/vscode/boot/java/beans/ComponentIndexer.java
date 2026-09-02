@@ -177,8 +177,13 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		SpringIndexElement parent = bean;
 
 		if (bean == null) {
+			ITypeBinding typeBinding = type.resolveBinding();
+			if (typeBinding == null) {
+				return;
+			}
+
 			Location location = new Location(doc.getUri(), doc.toRange(type.getName().getStartPosition(), type.getName().getLength()));
-			String typeName = type.resolveBinding().getQualifiedName();
+			String typeName = typeBinding.getQualifiedName();
 			parent = new BeanMethodContainerElement(location, typeName);
 		}
 		else if (!bean.isConfiguration()) {
@@ -246,7 +251,9 @@ public class ComponentIndexer implements SpringComponentIndexer {
 					if ("publishEvent".equals(methodName)) {
 
 						IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
-						boolean doesInvokeEventPublisher = Annotations.EVENT_PUBLISHER.equals(methodBinding.getDeclaringClass().getQualifiedName());
+						ITypeBinding invocationDeclaringClass = methodBinding != null ? methodBinding.getDeclaringClass() : null;
+						boolean doesInvokeEventPublisher = invocationDeclaringClass != null
+								&& Annotations.EVENT_PUBLISHER.equals(invocationDeclaringClass.getQualifiedName());
 						if (doesInvokeEventPublisher) {
 							List<?> arguments = methodInvocation.arguments();
 							if (arguments != null && arguments.size() == 1) {
@@ -326,8 +333,12 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		
 		for (MethodDeclaration method : methods) {
 			IMethodBinding binding = method.resolveBinding();
+			if (binding == null) {
+				continue;
+			}
+
 			String name = binding.getName();
-			
+
 			if (name != null && name.equals("onApplicationEvent")) {
 				return method;
 			}
@@ -345,6 +356,10 @@ public class ComponentIndexer implements SpringComponentIndexer {
 		
 		for (MethodDeclaration method : methods) {
 			IMethodBinding binding = method.resolveBinding();
+			if (binding == null) {
+				continue;
+			}
+
 			boolean overrides = binding.overrides(beanRegistrarMethods[0]);
 			if (overrides) {
 				return method;
@@ -400,7 +415,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 				if ("registerBean".equals(methodName)) {
 
 					IMethodBinding methodBinding = methodInvocation.resolveMethodBinding();
-					ITypeBinding declaringClass = methodBinding.getDeclaringClass();
+					ITypeBinding declaringClass = methodBinding != null ? methodBinding.getDeclaringClass() : null;
 
 					if (declaringClass != null && Annotations.BEAN_REGISTRY_INTERFACE.equals(declaringClass.getQualifiedName())) {
 

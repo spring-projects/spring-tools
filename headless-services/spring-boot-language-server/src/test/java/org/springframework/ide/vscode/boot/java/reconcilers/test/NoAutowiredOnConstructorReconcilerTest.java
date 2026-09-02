@@ -153,4 +153,46 @@ public class NoAutowiredOnConstructorReconcilerTest {
 		editor.assertProblems();
 	}
 
+	@Test
+	void duplicatedTypeDeclarationDoesNotStopReconcilingTheRestOfTheFile() throws Exception {
+		String docUri = directory.toPath()
+				.resolve("src/main/java/org/test/DuplicatedTypeConstructors.java").toUri().toString();
+
+		// broken source code: DuplicatedType is declared twice, so the type level annotation of
+		// the second declaration has no type binding. Looking up the lombok annotations used to
+		// throw an NPE there, and since all reconcilers share a single AST visitor pass, that
+		// took down reconciling for everything after it in the file (GH-1980).
+		Editor editor = harness.newEditor(LanguageId.JAVA, """
+				package org.test;
+
+				import org.springframework.beans.factory.annotation.Autowired;
+				import org.springframework.stereotype.Component;
+
+				@Component
+				class DuplicatedType {
+				}
+
+				@Component
+				class DuplicatedType {
+				}
+
+				@Component
+				class ReconciledAfterTheBrokenType {
+
+					private final String value;
+
+					@Autowired
+					ReconciledAfterTheBrokenType(String value) {
+						this.value = value;
+					}
+
+				}
+				""", docUri);
+
+		// the type declared after the broken one still gets reconciled
+		Diagnostic problem = editor.assertProblem("@Autowired");
+		assertNotNull(problem);
+		assertEquals(Boot2JavaProblemType.JAVA_AUTOWIRED_CONSTRUCTOR.getCode(), problem.getCode().getLeft());
+	}
+
 }

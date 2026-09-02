@@ -178,6 +178,11 @@ public class DataRepositoryIndexer {
 		
 		// second option: lookup repository metadata service to see if there is a matching entry
 		IMethodBinding methodBinding = method.resolveBinding();
+		if (methodBinding == null || methodBinding.getDeclaringClass() == null
+				|| methodBinding.getDeclaringClass().getBinaryName() == null) {
+			return null;
+		}
+
 		final String repositoryClass = methodBinding.getDeclaringClass().getBinaryName().trim();
 
 		DataRepositoryAotMetadata repositoryMetadata = this.repositoryMetadataService.getRepositoryMetadata(context.getProject(), repositoryClass).orElse(null);

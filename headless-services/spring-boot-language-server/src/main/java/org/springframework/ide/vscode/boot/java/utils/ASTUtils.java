@@ -1131,9 +1131,12 @@ public class ASTUtils {
 	}
 	
 	public static String getMethodSignature(MethodDeclaration method, boolean fullyQualifiedTypeNames) {
-		StringBuilder result = new StringBuilder();
-		
 		IMethodBinding binding = method.resolveBinding();
+		if (binding == null) {
+			return null;
+		}
+
+		StringBuilder result = new StringBuilder();
 
 		// class name
 		String className = fullyQualifiedTypeNames ? binding.getDeclaringClass().getBinaryName() : binding.getDeclaringClass().getName();

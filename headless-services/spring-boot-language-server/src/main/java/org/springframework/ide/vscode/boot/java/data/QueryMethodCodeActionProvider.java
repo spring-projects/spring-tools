@@ -77,7 +77,7 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 
 						IMethodBinding binding = node.resolveBinding();
 						AnnotationHierarchies hierarchyAnnot = AnnotationHierarchies.get(node);
-						if (hierarchyAnnot != null
+						if (binding != null && hierarchyAnnot != null
 								&& !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_JPA_QUERY)
 								&& !hierarchyAnnot.isAnnotatedWith(binding, Annotations.DATA_MONGODB_QUERY)) {
 

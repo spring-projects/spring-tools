@@ -221,8 +221,10 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 				String methodSignature = ASTUtils.getMethodSignature(method, true);
 				String methodLabel = ASTUtils.getMethodSignature(method, false);
 	
-				StereotypeMethodElement methodElement = new StereotypeMethodElement(methodName, methodLabel, methodSignature, location, annotationTypes);
-				indexElement.addChild(methodElement);
+				if (methodSignature != null && methodLabel != null) {
+					StereotypeMethodElement methodElement = new StereotypeMethodElement(methodName, methodLabel, methodSignature, location, annotationTypes);
+					indexElement.addChild(methodElement);
+				}
 			}
 		}
 	}

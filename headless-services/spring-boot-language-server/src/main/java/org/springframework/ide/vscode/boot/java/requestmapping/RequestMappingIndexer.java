@@ -91,27 +91,29 @@ public class RequestMappingIndexer {
 			try {
 				String methodSignature = ASTUtils.getMethodSignature((MethodDeclaration) node.getParent(), true);
 				
-				Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
-				String[] path = getPath(node, context);
-				String[] parentPath = getParentPath(node, context);
-				String[] methods = getMethod(node, context);
-				String[] contentTypes = getContentTypes(node, context);
-				String[] acceptTypes = getAcceptTypes(node, context);
-				String version = getVersion(node, context);
-
-				Stream<String> stream = parentPath == null ? Stream.of("") : Arrays.stream(parentPath);
-				stream.filter(Objects::nonNull)
-						.flatMap(parent -> (path == null ? Stream.<String>empty() : Arrays.stream(path))
-								.filter(Objects::nonNull).map(p -> {
-									return WebEndpointIndexer.combinePath(parent, p);
-								}))
-						.forEach(p -> {
-							String label = RouteUtils.createRouteLabel(location, p, methods, contentTypes, acceptTypes, version);
-							RequestMappingIndexElement requestMappingIndexElement =
-									new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), label, methodSignature);
-
-							controller.addChild(requestMappingIndexElement);
-						});
+				if (methodSignature != null) {
+					Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
+					String[] path = getPath(node, context);
+					String[] parentPath = getParentPath(node, context);
+					String[] methods = getMethod(node, context);
+					String[] contentTypes = getContentTypes(node, context);
+					String[] acceptTypes = getAcceptTypes(node, context);
+					String version = getVersion(node, context);
+	
+					Stream<String> stream = parentPath == null ? Stream.of("") : Arrays.stream(parentPath);
+					stream.filter(Objects::nonNull)
+							.flatMap(parent -> (path == null ? Stream.<String>empty() : Arrays.stream(path))
+									.filter(Objects::nonNull).map(p -> {
+										return WebEndpointIndexer.combinePath(parent, p);
+									}))
+							.forEach(p -> {
+								String label = RouteUtils.createRouteLabel(location, p, methods, contentTypes, acceptTypes, version);
+								RequestMappingIndexElement requestMappingIndexElement =
+										new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), label, methodSignature);
+	
+								controller.addChild(requestMappingIndexElement);
+							});
+				}
 
 			} catch (Exception e) {
 				log.error("problem occurred while scanning for request mapping symbols from " + doc.getUri(), e);

@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -202,6 +204,63 @@ public class StereotypesIndexerTest {
     	assertEquals("ClassWithMethods.methodWithAnnotations(String) : void", methodWithAnnotations.getMethodLabel());
     }
     
+    @Test
+    void testMethodElementsForTypeWithUnresolvableMethodBinding() throws Exception {
+    	// broken source code: 'duplicated' is declared twice, so JDT resolves a method binding
+    	// for the first declaration only and hands out a null binding for the second one (GH-1980)
+    	Path brokenSource = directory.toPath().resolve("src/main/java/example/application/ClassWithDuplicatedMethods.java");
+    	String docUri = brokenSource.toUri().toString();
+
+    	Files.writeString(brokenSource, """
+    			package example.application;
+
+    			import org.springframework.web.bind.annotation.GetMapping;
+
+    			public class ClassWithDuplicatedMethods {
+
+    				@GetMapping
+    				public void duplicated(String name) {
+    				}
+
+    				@GetMapping
+    				public void duplicated(String name) {
+    				}
+
+    				@GetMapping
+    				public void intact(String name) {
+    				}
+
+    			}
+    			""");
+
+    	try {
+    		indexer.createDocument(docUri).get(5, TimeUnit.SECONDS);
+
+    		// the unresolvable method binding must not abort indexing of the enclosing type
+    		Optional<StereotypeClassElement> element = springIndex.getNodesOfType(StereotypeClassElement.class).stream()
+    				.filter(node -> node.getType().equals("example.application.ClassWithDuplicatedMethods"))
+    				.findFirst();
+    		assertTrue(element.isPresent(), "the broken class should still show up in the index");
+
+    		List<StereotypeMethodElement> methods = element.get().getMethods();
+
+    		// the intact method plus the one duplicate that JDT can still resolve
+    		assertEquals(2, methods.size());
+    		assertEquals(1, methods.stream().filter(method -> method.getMethodName().equals("intact")).count());
+    		assertEquals(1, methods.stream().filter(method -> method.getMethodName().equals("duplicated")).count());
+
+    		// no method element gets indexed without a signature and a label
+    		for (StereotypeMethodElement method : methods) {
+    			assertNotNull(method.getMethodSignature());
+    			assertNotNull(method.getMethodLabel());
+    		}
+    	}
+    	finally {
+    		Files.deleteIfExists(brokenSource);
+    		indexer.deleteDocument(docUri).get(5, TimeUnit.SECONDS);
+    	}
+    }
+
     @Test
     void testIdentifyMainApplicationPackage() throws Exception {
     	StereotypePackageElement mainPackage = StructureViewUtil.identifyMainApplicationPackage(project, new CachedSpringMetamodelIndex(springIndex));

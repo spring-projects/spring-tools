@@ -11,10 +11,13 @@
 package org.springframework.ide.vscode.boot.java.requestmapping.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -109,6 +112,67 @@ public class RequestMappingIndexerTest {
         
         RequestMappingIndexElement mappingElement = (RequestMappingIndexElement) mappingChildren.get(0);
         assertEquals("/greeting", mappingElement.getPath());
+    }
+
+    @Test
+    void testRequestMappingIndexElementsWithUnresolvableMethodBinding() throws Exception {
+    	// broken source code: 'duplicated' is declared twice, so JDT resolves a method binding
+    	// for the first declaration only and hands out a null binding for the second one (GH-1980)
+    	Path brokenSource = directory.toPath().resolve("src/main/java/org/test/DuplicatedMappingClass.java");
+    	String docUri = brokenSource.toUri().toString();
+
+    	Files.writeString(brokenSource, """
+    			package org.test;
+
+    			import org.springframework.web.bind.annotation.GetMapping;
+    			import org.springframework.web.bind.annotation.RestController;
+
+    			@RestController
+    			public class DuplicatedMappingClass {
+
+    				@GetMapping("/duplicated")
+    				public String duplicated() {
+    					return "duplicated";
+    				}
+
+    				@GetMapping("/duplicated")
+    				public String duplicated() {
+    					return "duplicated";
+    				}
+
+    				@GetMapping("/intact")
+    				public String intact() {
+    					return "intact";
+    				}
+
+    			}
+    			""");
+
+    	try {
+    		indexer.createDocument(docUri).get(5, TimeUnit.SECONDS);
+
+    		Bean[] beans = springIndex.getBeansWithName("test-request-mapping-symbols", "duplicatedMappingClass");
+    		assertEquals(1, beans.length);
+
+    		List<RequestMappingIndexElement> mappings = beans[0].getChildren().stream()
+    			.filter(child -> child instanceof RequestMappingIndexElement)
+    			.map(child -> (RequestMappingIndexElement) child)
+    			.toList();
+
+    		// the intact mapping plus the one duplicate that JDT can still resolve
+    		assertEquals(2, mappings.size());
+    		assertEquals(1, mappings.stream().filter(mapping -> "/intact".equals(mapping.getPath())).count());
+    		assertEquals(1, mappings.stream().filter(mapping -> "/duplicated".equals(mapping.getPath())).count());
+
+    		// no mapping element gets indexed without a method signature
+    		for (RequestMappingIndexElement mapping : mappings) {
+    			assertNotNull(mapping.getMethodSignature());
+    		}
+    	}
+    	finally {
+    		Files.deleteIfExists(brokenSource);
+    		indexer.deleteDocument(docUri).get(5, TimeUnit.SECONDS);
+    	}
     }
 
     @Test

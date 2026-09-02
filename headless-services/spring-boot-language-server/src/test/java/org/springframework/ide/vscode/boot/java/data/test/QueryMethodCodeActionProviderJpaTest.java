@@ -11,15 +11,24 @@
 package org.springframework.ide.vscode.boot.java.data.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FileASTRequestor;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,9 +38,16 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
+import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
+import org.springframework.ide.vscode.boot.java.data.QueryMethodCodeActionProvider;
+import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaParserUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.reconcile.BasicCollector;
+import org.springframework.ide.vscode.commons.util.text.IRegion;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
+import org.springframework.ide.vscode.commons.util.text.Region;
+import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.languageserver.testharness.CodeAction;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -46,7 +62,8 @@ public class QueryMethodCodeActionProviderJpaTest {
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
-	
+	@Autowired private QueryMethodCodeActionProvider codeActionProvider;
+
 	private IJavaProject testProject;
 
 	@BeforeEach
@@ -136,6 +153,65 @@ public class QueryMethodCodeActionProviderJpaTest {
 
 				}
 				""", editor.getRawText().replace("\r", ""));
+	}
+
+	/**
+	 * The LSP code action handler swallows exceptions and answers an empty list, so this test
+	 * drives the provider's AST visitor directly - otherwise an NPE from an unresolvable method
+	 * binding would be indistinguishable from "no code action available" (GH-1980).
+	 */
+	@Test
+	void noConvertToQueryCodeActionForUnresolvableMethodBinding() throws Exception {
+		// broken source code: declaring the query method twice leaves JDT without a method
+		// binding for the second of the two declarations
+		String source = """
+				package example.springdata.aot;
+
+				import java.util.List;
+
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface DuplicatedQueryMethodRepository extends CrudRepository<User, String> {
+
+				    List<User> findUserByLastnameLike(String lastname);
+
+				    List<User> findUserByLastnameLike(String lastname);
+
+				}
+				""";
+
+		Path filePath = Paths.get(testProject.getLocationUri())
+				.resolve("src/main/java/example/springdata/aot/DuplicatedQueryMethodRepository.java");
+		Files.writeString(filePath, source);
+
+		try {
+			List<org.eclipse.lsp4j.CodeAction> collected = new ArrayList<>();
+			TextDocument doc = new TextDocument(filePath.toUri().toASCIIString(), LanguageId.JAVA, 0, source);
+
+			SpringIndexerJavaParserUtils.createParser(testProject, new AnnotationHierarchies(), true)
+				.createASTs(new String[] { filePath.toString() }, null, new String[0], new FileASTRequestor() {
+					@Override
+					public void acceptAST(String sourceFilePath, CompilationUnit cu) {
+						MethodDeclaration[] methods = ((TypeDeclaration) cu.types().get(0)).getMethods();
+						assertEquals(2, methods.length);
+
+						// the fixture only makes sense as long as JDT gives up on the second declaration
+						assertNotNull(methods[0].resolveBinding());
+						assertNull(methods[1].resolveBinding());
+
+						SimpleName brokenMethodName = methods[1].getName();
+						IRegion region = new Region(brokenMethodName.getStartPosition(), brokenMethodName.getLength());
+
+						codeActionProvider.createVisitor(() -> {}, testProject, filePath.toUri(), cu, doc, region,
+								new BasicCollector<>(collected)).ifPresent(cu::accept);
+					}
+				}, null);
+
+			assertTrue(collected.isEmpty(), "no quick fix without a method binding");
+		}
+		finally {
+			Files.deleteIfExists(filePath);
+		}
 	}
 
 	@Test

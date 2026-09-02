@@ -69,6 +69,7 @@ public class ASTUtilsTest {
 	private Path myComponent;
 	private Path myConcatenatedComponent;
 	private Path myConcatenatedConfig;
+	private Path myBrokenComponent;
 
 	
 	@BeforeEach
@@ -287,6 +288,7 @@ public class ASTUtilsTest {
 
 		this.myConcatenatedComponent = createFile(projectName, "test", MY_CONCATENATED_COMPONENT_NAME, MY_CONCATENATED_COMPONENT);
 		this.myConcatenatedConfig = createFile(projectName, "test", MY_CONCATENATED_CONFIG_NAME, MY_CONCATENATED_CONFIG);
+		this.myBrokenComponent = createFile(projectName, "test", MY_BROKEN_COMPONENT_NAME, MY_BROKEN_COMPONENT);
 	}
 	
 	private Path createFile(String projectName, String packageName, String name, String content) throws Exception {
@@ -647,6 +649,89 @@ public class ASTUtilsTest {
 		MethodDeclaration[] methods = type.getMethods();
 		assertTrue(methods.length > 0, "fixture should declare at least one method");
 		return methods[0];
+	}
+
+	// -----------------------------------------------------------------------
+	// ASTUtils.getMethodSignature with unresolvable method bindings (GH-1980)
+	// -----------------------------------------------------------------------
+
+	private static final String MY_BROKEN_COMPONENT_NAME = "MyBrokenComponent.java";
+
+	/**
+	 * Broken source code: 'duplicated' is declared twice, so JDT resolves a binding for the
+	 * first declaration only and hands out a null binding for the second one.
+	 */
+	private static final String MY_BROKEN_COMPONENT = """
+			package test;
+			import org.springframework.stereotype.Component;
+
+			@Component
+			public class MyBrokenComponent {
+
+				public String duplicated(int number) {
+					return "one";
+				}
+
+				public String duplicated(int number) {
+					return "two";
+				}
+
+				public String intact(String input) {
+					return input;
+				}
+
+			}
+			""";
+
+	@Test
+	void duplicatedMethodHasNoResolvableBinding() throws Exception {
+		runTestsAgainstCompilationUnit(myBrokenComponent, MY_BROKEN_COMPONENT, (cu, offsets) -> {
+			List<MethodDeclaration> duplicated = methodsNamed(cu, "duplicated");
+			assertEquals(2, duplicated.size());
+
+			// the broken source code is the whole point of this fixture: JDT resolves the first
+			// of the two declarations and gives up on the second one
+			assertNotNull(duplicated.get(0).resolveBinding());
+			assertNull(duplicated.get(1).resolveBinding());
+		});
+	}
+
+	@Test
+	void getMethodSignatureReturnsNullForUnresolvableBinding() throws Exception {
+		runTestsAgainstCompilationUnit(myBrokenComponent, MY_BROKEN_COMPONENT, (cu, offsets) -> {
+			MethodDeclaration withoutBinding = methodsNamed(cu, "duplicated").get(1);
+
+			// must not throw an NPE, must not invent a signature
+			assertNull(ASTUtils.getMethodSignature(withoutBinding, true));
+			assertNull(ASTUtils.getMethodSignature(withoutBinding, false));
+		});
+	}
+
+	@Test
+	void getMethodSignatureStillWorksForIntactMethodsOfBrokenSourceFile() throws Exception {
+		runTestsAgainstCompilationUnit(myBrokenComponent, MY_BROKEN_COMPONENT, (cu, offsets) -> {
+			MethodDeclaration intact = methodsNamed(cu, "intact").get(0);
+			assertNotNull(intact.resolveBinding());
+
+			assertEquals("test.MyBrokenComponent.intact(java.lang.String) : java.lang.String",
+					ASTUtils.getMethodSignature(intact, true));
+			assertEquals("MyBrokenComponent.intact(String) : String",
+					ASTUtils.getMethodSignature(intact, false));
+		});
+	}
+
+	private static List<MethodDeclaration> methodsNamed(CompilationUnit cu, String name) {
+		List<MethodDeclaration> result = new ArrayList<>();
+		cu.accept(new ASTVisitor() {
+			@Override
+			public boolean visit(MethodDeclaration node) {
+				if (name.equals(node.getName().getIdentifier())) {
+					result.add(node);
+				}
+				return super.visit(node);
+			}
+		});
+		return result;
 	}
 
 }

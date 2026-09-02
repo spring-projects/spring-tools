@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -149,6 +151,70 @@ public class SpringAiIndexerTest {
 		assertEquals("b", paramB.getName());
 		assertEquals("int", paramB.getType());
 		assertNotNull(paramB.getLocation());
+	}
+
+	@Test
+	void testToolMethodsWithUnresolvableMethodBinding() throws Exception {
+		// broken source code: 'duplicated' is declared twice, so JDT resolves a method binding
+		// for the first declaration only and hands out a null binding for the second one (GH-1980)
+		Path brokenSource = directory.toPath()
+				.resolve("src/main/java/com/example/springai/demo/ToolsWithDuplicatedMethods.java");
+		String docUri = brokenSource.toUri().toString();
+
+		Files.writeString(brokenSource, """
+				package com.example.springai.demo;
+
+				import org.springframework.ai.tool.annotation.Tool;
+				import org.springframework.stereotype.Component;
+
+				@Component
+				public class ToolsWithDuplicatedMethods {
+
+					@Tool(description = "A duplicated tool")
+					public int duplicated(int a) {
+						return a;
+					}
+
+					@Tool(description = "A duplicated tool")
+					public int duplicated(int a) {
+						return a;
+					}
+
+					@Tool(description = "An intact tool")
+					public int intact(int a) {
+						return a;
+					}
+
+				}
+				""");
+
+		try {
+			indexer.createDocument(docUri).get(5, TimeUnit.SECONDS);
+
+			// the unresolvable method binding must not abort indexing of the surrounding bean
+			Bean[] beans = springIndex.getBeansOfDocument(docUri);
+			assertEquals(1, beans.length);
+			assertEquals("com.example.springai.demo.ToolsWithDuplicatedMethods", beans[0].getType());
+
+			List<SpringAiAnnotationIndexElement> tools = beans[0].getChildren().stream()
+					.filter(child -> child instanceof SpringAiAnnotationIndexElement)
+					.map(child -> (SpringAiAnnotationIndexElement) child)
+					.toList();
+
+			// the intact tool plus the one duplicate that JDT can still resolve
+			assertEquals(2, tools.size());
+			assertEquals(1, tools.stream().filter(tool -> "intact".equals(tool.getName())).count());
+			assertEquals(1, tools.stream().filter(tool -> "duplicated".equals(tool.getName())).count());
+
+			// no tool element gets indexed without a method signature
+			for (SpringAiAnnotationIndexElement tool : tools) {
+				assertNotNull(tool.getMethodSignature());
+			}
+		}
+		finally {
+			Files.deleteIfExists(brokenSource);
+			indexer.deleteDocument(docUri).get(5, TimeUnit.SECONDS);
+		}
 	}
 
 	@Test

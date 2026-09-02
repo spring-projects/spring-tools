@@ -116,7 +116,13 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	private final Map<String, CompletableFuture<Void>> latestScheduledTaskByProject = new ConcurrentHashMap<String, CompletableFuture<Void>>();
 	
 	private SpringIndexer[] indexers;
-	private ListenerList<Void> listeners = new ListenerList<Void>();
+
+	/**
+	 * Notified whenever the index changes, with the names of the projects affected by that
+	 * particular change - so listeners can react only to the projects they care about, instead of
+	 * blindly re-computing state for every project on every update.
+	 */
+	private ListenerList<Set<String>> listeners = new ListenerList<Set<String>>();
 	
 	private static final Logger log = LoggerFactory.getLogger(SpringSymbolIndex.class);
 
@@ -376,14 +382,15 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 						}
 						
 						CompletableFuture<Void> future = CompletableFuture.allOf(futures);
-						
+						Set<String> affectedProjects = Set.of(project.getElementName());
+
 						future = future
 								.thenAccept(v -> {
 									if (server.getClient() != null) {
-										server.getClient().indexUpdated(IndexUpdatedParams.of(Set.of(project.getElementName())));
+										server.getClient().indexUpdated(IndexUpdatedParams.of(affectedProjects));
 									}
 								})
-								.thenAccept(v -> listeners.fire(v));
+								.thenAccept(v -> listeners.fire(affectedProjects));
 
 						this.latestScheduledTaskByProject.put(project.getElementName(), future);
 						return future;
@@ -461,7 +468,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 							server.getClient().indexUpdated(IndexUpdatedParams.of(affectedProjects));
 						}
 					})
-					.thenAccept(v -> listeners.fire(v));
+					.thenAccept(v -> listeners.fire(affectedProjects));
 			return future;
 		}
 	}
@@ -525,7 +532,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 							server.getClient().indexUpdated(IndexUpdatedParams.of(affectedProjects));
 						}
 					})
-					.thenAccept(v -> listeners.fire(v));
+					.thenAccept(v -> listeners.fire(affectedProjects));
 			return future;
 		}
 	}
@@ -565,7 +572,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 							server.getClient().indexUpdated(IndexUpdatedParams.of(affectedProjects));
 						}
 					})
-					.thenAccept(v -> listeners.fire(v));
+					.thenAccept(v -> listeners.fire(affectedProjects));
 			return future;
 		}
 	}
@@ -659,7 +666,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 									server.getClient().indexUpdated(IndexUpdatedParams.of(affectedProjects));
 								}
 							})
-							.thenAccept(v -> listeners.fire(v));
+							.thenAccept(v -> listeners.fire(affectedProjects));
 					return future;
 				}
 				else {
@@ -975,7 +982,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 				if (server.getClient() != null) {
 					server.getClient().indexUpdated(IndexUpdatedParams.of(project.getElementName()));
 				}
-				
+
+				listeners.fire(Set.of(project.getElementName()));
+
 				log.debug("{} completed", this);
 			} catch (Throwable e) {
 				log.error("{} threw exception", this, e);
@@ -984,7 +993,11 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 
 	}
 
-	public void onUpdate(Consumer<Void> listener) {
+	/**
+	 * Registers a listener that is notified whenever the index changes, with the names of the
+	 * projects affected by that particular change.
+	 */
+	public void onUpdate(Consumer<Set<String>> listener) {
 		listeners.add(listener);
 	}
 

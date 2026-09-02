@@ -11,10 +11,10 @@
 package org.springframework.ide.vscode.boot.mcp;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.api.Stereotypes;
 import org.jmolecules.stereotype.catalog.StereotypeDefinition;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
@@ -24,10 +24,14 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.AsciiStructureRenderer;
 import org.springframework.ide.vscode.boot.java.commands.CachedSpringMetamodelIndex;
-import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore;
+import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
+import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.StructureTreeDiff;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider;
+import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
@@ -46,15 +50,17 @@ public class StereotypeInformation {
 	private final SpringMetamodelIndex springIndex;
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
 	private final StructureViewProvider structureViewProvider;
+	private final StructureSnapshotStore structureSnapshotStore;
 	private final SpringSymbolIndex symbolIndex;
 
 	public StereotypeInformation(ProjectLookup projects, SpringMetamodelIndex springIndex,
 			StereotypeCatalogRegistry stereotypeCatalogRegistry, StructureViewProvider structureViewProvider,
-			SpringSymbolIndex symbolIndex) {
+			StructureSnapshotStore structureSnapshotStore, SpringSymbolIndex symbolIndex) {
 		this.projects = projects;
 		this.springIndex = springIndex;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		this.structureViewProvider = structureViewProvider;
+		this.structureSnapshotStore = structureSnapshotStore;
 		this.symbolIndex = symbolIndex;
 	}
 
@@ -153,73 +159,65 @@ public class StereotypeInformation {
 			throw new Exception("no logical structure available for project with name " + projectName);
 		}
 
-		return structureNodeFrom(root);
+		return StructureViewProvider.toStructureNode(root);
 	}
 
-	/**
-	 * A node of the logical structure tree, mirroring the nodes that the language server sends to the
-	 * IDE clients via the {@code sts/spring-boot/structure} command.
-	 *
-	 * @param nodeId    stable identifier of the node within the tree, built from the path of its ancestors
-	 * @param text      the label to display for this node
-	 * @param icon      identifier of the icon to display for this node (may be null)
-	 * @param hover     additional details to show on hover (may be null)
-	 * @param location  where the element that this node represents is defined in the source code (may be null)
-	 * @param reference where the stereotype of this node is defined, either in source code or in a
-	 *                  stereotype catalog file (may be null)
-	 * @param children  the child nodes of this node
-	 */
-	public static record StructureNode(
-			String nodeId,
-			String text,
-			String icon,
-			String hover,
-			SourceLocation location,
-			SourceLocation reference,
-			List<StructureNode> children
-	) {}
+	@Tool(description = """
+			Captures the current logical structure of the given project as a baseline snapshot, so that a later
+			call to getLogicalStructureChanges can show what changed in the logical structure of the project since
+			this point in time (e.g. after a refactoring or a series of edits).
+			Capturing a new baseline replaces any previously captured baseline for the same project.
+			Use getProjectList to obtain valid project names.
+			""")
+	public String captureLogicalStructureBaseline(
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
+			throws Exception {
 
-	/**
-	 * A range within a source file, with 0-based line and character offsets.
-	 */
-	public static record SourceLocation(
-			String uri,
-			int startLine,
-			int startColumn,
-			int endLine,
-			int endColumn
-	) {}
+		IJavaProject project = projects.get(projectName);
+		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 
-	private StructureNode structureNodeFrom(Node node) {
-		List<StructureNode> children = node.getChildren().stream()
-				.map(this::structureNodeFrom)
-				.toList();
-
-		return new StructureNode(
-				stringAttribute(node, JsonNodeHandler.NODE_ID),
-				stringAttribute(node, JsonNodeHandler.TEXT),
-				stringAttribute(node, JsonNodeHandler.ICON),
-				stringAttribute(node, JsonNodeHandler.HOVER),
-				sourceLocationFrom(node.getAttribute(JsonNodeHandler.LOCATION)),
-				sourceLocationFrom(node.getAttribute(JsonNodeHandler.REFERENCE)),
-				children);
+		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
+		return "captured logical structure baseline for project '%s' with %d node(s) at %s"
+				.formatted(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt());
 	}
 
-	private static String stringAttribute(Node node, String key) {
-		Object value = node.getAttribute(key);
-		return value == null ? null : value.toString();
-	}
+	@Tool(description = """
+			Shows what changed in the logical structure of the given project since a previous snapshot, rendered as
+			an ascii-art tree with +/-/~ markers for added, removed and modified nodes.
+			Compares the current logical structure against the baseline captured via captureLogicalStructureBaseline
+			by default, or against the structure right before the most recent Spring index update when compareWith
+			is "previous". Returns a plain message instead of a tree when no baseline/previous snapshot exists yet
+			for the project, or when nothing changed.
+			Use getProjectList to obtain valid project names.
+			""")
+	public String getLogicalStructureChanges(
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
+			@ToolParam(description = "what to compare the current structure against: \"baseline\" (default) or \"previous\"", required = false) String compareWith,
+			@ToolParam(description = "whether to also show the unchanged parts of the tree instead of collapsing them, defaults to false", required = false) Boolean includeUnchanged)
+			throws Exception {
 
-	private static SourceLocation sourceLocationFrom(Object attribute) {
-		if (attribute instanceof Location location && location.getRange() != null) {
-			return new SourceLocation(
-					location.getUri(),
-					location.getRange().getStart().getLine(),
-					location.getRange().getStart().getCharacter(),
-					location.getRange().getEnd().getLine(),
-					location.getRange().getEnd().getCharacter());
+		IJavaProject project = projects.get(projectName);
+		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
+
+		boolean comparedToPrevious = "previous".equalsIgnoreCase(compareWith);
+		Optional<StructureTreeDiff> diff = comparedToPrevious
+				? structureSnapshotStore.diffAgainstPrevious(project)
+				: structureSnapshotStore.diffAgainstBaseline(project);
+
+		if (diff.isEmpty()) {
+			return comparedToPrevious
+					? "no previous logical structure snapshot available yet for project '%s' - call this again after the Spring index has updated at least once".formatted(project.getElementName())
+					: "no logical structure baseline captured yet for project '%s' - call captureLogicalStructureBaseline first".formatted(project.getElementName());
 		}
-		return null;
+
+		StructureTreeDiff structureTreeDiff = diff.get();
+		if (structureTreeDiff.stats().hasChanges()) {
+			return AsciiStructureRenderer.render(structureTreeDiff, includeUnchanged != null && includeUnchanged);
+		}
+		else {
+			return "no changes detected in the logical structure of project '%s' since the %s snapshot"
+					.formatted(project.getElementName(), comparedToPrevious ? "previous" : "baseline");
+		}
 	}
 
 	public static record ComponentWithStereotypes(String name, List<String> stereotypes) {

@@ -3,6 +3,7 @@ import { StereotypedNode } from "./nodes";
 import { ExtensionAPI } from "../api";
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
+const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 
 interface StructureCommandParams {
     updateMetadata: boolean;
@@ -50,8 +51,24 @@ export class StructureManager {
             }
         }));
 
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.captureBaseline", (node: StereotypedNode) => this.captureBaseline(node)));
+
         context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(indexUpdateDetails => this.refresh(false, indexUpdateDetails.affectedProjects)));
-        
+
+    }
+
+    private async captureBaseline(node: StereotypedNode): Promise<void> {
+        const projectName = node?.projectId;
+        if (!projectName) {
+            return;
+        }
+
+        try {
+            const result = await commands.executeCommand<CaptureBaselineResult>(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, projectName);
+            window.showInformationMessage(`Captured logical structure baseline for '${projectName}' (${result.nodeCount} node(s)). Use the "Show Logical Structure Changes" MCP tool to see what changes since this point.`);
+        } catch (e) {
+            window.showErrorMessage(`Failed to capture logical structure baseline for '${projectName}': ${e}`);
+        }
     }
 
     get rootElements(): Thenable<StereotypedNode[]> {
@@ -168,6 +185,12 @@ interface Group {
 interface Groups {
     projectName: string;
     groups?: Group[];
+}
+
+interface CaptureBaselineResult {
+    projectName: string;
+    nodeCount: number;
+    capturedAt: string;
 }
 
 interface GroupQuickPickItem extends QuickPickItem {

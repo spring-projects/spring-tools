@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -22,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
@@ -33,20 +35,24 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.reflect.TypeToken;
 
 public class SpringIndexCommands {
-	
+
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 	private static final String SPRING_STRUCTURE_GROUPS_CMD = "sts/spring-boot/structure/groups";
+	private static final String SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 
 	private final StructureViewProvider structureViewProvider;
+	private final StructureSnapshotStore structureSnapshotStore;
 
 	private final Executor messageWorkerThreadPool;
 
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
-			JavaProjectFinder projectFinder, StructureViewProvider structureViewProvider) {
+			JavaProjectFinder projectFinder, StructureViewProvider structureViewProvider,
+			StructureSnapshotStore structureSnapshotStore) {
 
 		this.structureViewProvider = structureViewProvider;
+		this.structureSnapshotStore = structureSnapshotStore;
 		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
-	
+
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
 			return CompletableFuture.supplyAsync(() -> {
 				StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
@@ -69,24 +75,52 @@ public class SpringIndexCommands {
 		
 		server.onCommand(SPRING_STRUCTURE_GROUPS_CMD, params -> {
 			return CompletableFuture.supplyAsync(() -> {
-				if (params.getArguments().size() == 1) {
-					Object o = params.getArguments().get(0);
-					String name = null;
-					if (o instanceof JsonElement) {
-						name = ((JsonElement) o).getAsString();
-					} else if (o instanceof String) {
-						name = (String) o;
-					}
-					if (name != null) {
-						final String projectName = name;
-						return projectFinder.all().stream().filter(p -> projectName.equals(p.getElementName())).findFirst().map(structureViewProvider::getGroups).orElseThrow();
-					}
+				Optional<String> projectName = singleStringArg(params);
+				if (projectName.isPresent()) {
+					return projectFinder.all().stream().filter(p -> projectName.get().equals(p.getElementName())).findFirst().map(structureViewProvider::getGroups).orElseThrow();
 				}
 				return projectFinder.all().stream().map(structureViewProvider::getGroups).toList();
 
 			}, messageWorkerThreadPool);
 		});
+
+		server.onCommand(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, params -> {
+			return CompletableFuture.supplyAsync(() -> {
+				String projectName = singleStringArg(params)
+						.orElseThrow(() -> new IllegalArgumentException(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD + " requires a project name argument"));
+
+				IJavaProject project = projectFinder.all().stream()
+						.filter(p -> projectName.equals(p.getElementName()))
+						.findFirst()
+						.orElseThrow(() -> new IllegalArgumentException("no project found with name " + projectName));
+
+				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
+				return new CaptureBaselineResult(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt().toString());
+			}, messageWorkerThreadPool);
+		});
 	}
+
+	/**
+	 * Several structure commands take a single project name as their only argument, sent either as
+	 * a plain JSON string or (depending on the JSON-RPC client) as a {@link JsonElement}.
+	 */
+	private static Optional<String> singleStringArg(ExecuteCommandParams params) {
+		List<Object> arguments = params.getArguments();
+		if (arguments == null || arguments.size() != 1) {
+			return Optional.empty();
+		}
+
+		Object argument = arguments.get(0);
+		if (argument instanceof JsonElement jsonElement && jsonElement.isJsonPrimitive()) {
+			return Optional.of(jsonElement.getAsString());
+		}
+		else if (argument instanceof String string) {
+			return Optional.of(string);
+		}
+		return Optional.empty();
+	}
+
+	public static record CaptureBaselineResult(String projectName, int nodeCount, String capturedAt) {}
 
 	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups) {
 		

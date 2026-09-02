@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.Misc;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
+import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider;
 import org.springframework.ide.vscode.boot.java.commands.WorkspaceBootExecutableProjects;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
@@ -38,10 +39,17 @@ public class CommandsConfig {
 
 	@Bean
 	SpringIndexCommands springIndexCommands(SimpleLanguageServer server, JavaProjectFinder projectFinder,
-			SpringMetamodelIndex symbolIndex, StructureViewProvider structureViewProvider) {
-		return new SpringIndexCommands(server, symbolIndex, projectFinder, structureViewProvider);
+			SpringMetamodelIndex symbolIndex, StructureViewProvider structureViewProvider,
+			StructureSnapshotStore structureSnapshotStore) {
+		return new SpringIndexCommands(server, symbolIndex, projectFinder, structureViewProvider, structureSnapshotStore);
 	}
-	
+
+	@Bean
+	StructureSnapshotStore structureSnapshotStore(StructureViewProvider structureViewProvider, SpringSymbolIndex symbolIndex,
+			JavaProjectFinder projectFinder) {
+		return new StructureSnapshotStore(structureViewProvider, symbolIndex, projectFinder);
+	}
+
 	@Bean
 	Misc misc(SimpleLanguageServer server) {
 		return new Misc(server);

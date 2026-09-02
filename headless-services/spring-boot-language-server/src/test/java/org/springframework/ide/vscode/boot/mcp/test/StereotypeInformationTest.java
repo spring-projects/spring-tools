@@ -12,16 +12,20 @@ package org.springframework.ide.vscode.boot.mcp.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,9 +35,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
+import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.SourceLocation;
+import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
 import org.springframework.ide.vscode.boot.mcp.StereotypeInformation;
-import org.springframework.ide.vscode.boot.mcp.StereotypeInformation.SourceLocation;
-import org.springframework.ide.vscode.boot.mcp.StereotypeInformation.StructureNode;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -55,13 +59,14 @@ public class StereotypeInformationTest {
 	@Autowired private SpringSymbolIndex indexer;
 	@Autowired private StereotypeInformation stereotypeInformation;
 
+	private File directory;
 	private IJavaProject project;
 
 	@BeforeEach
 	public void setup() throws Exception {
 		harness.intialize(null);
 
-		File directory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
 		project = projectFinder.find(new TextDocumentIdentifier(directory.toURI().toString())).get();
 
 		CompletableFuture<Void> initProject = indexer.waitOperation();
@@ -127,6 +132,50 @@ public class StereotypeInformationTest {
 	@Test
 	void logicalStructureOfUnknownProjectFails() throws Exception {
 		assertThrows(Exception.class, () -> stereotypeInformation.getLogicalStructure("no-such-project"));
+	}
+
+	@Test
+	void changesWithoutACapturedBaselineReturnAHelpfulMessage() throws Exception {
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "baseline", null);
+
+		assertTrue(changes.contains("captureLogicalStructureBaseline"),
+				"expected a hint to capture a baseline first but got: " + changes);
+	}
+
+	@Test
+	void changesAgainstPreviousWithoutAnIndexUpdateYetReturnAHelpfulMessage() throws Exception {
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "previous", null);
+
+		assertTrue(changes.contains("previous"), "expected a hint about the previous snapshot but got: " + changes);
+	}
+
+	@Test
+	void baselineWithoutLaterChangesReportsNoChanges() throws Exception {
+		stereotypeInformation.captureLogicalStructureBaseline(project.getElementName());
+
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "baseline", null);
+
+		assertTrue(changes.contains("no changes detected"), "expected a no-changes message but got: " + changes);
+	}
+
+	@Test
+	void addingARequestMappingMethodShowsUpAsAddedInTheDiffAgainstTheBaseline() throws Exception {
+		stereotypeInformation.captureLogicalStructureBaseline(project.getElementName());
+
+		String controllerUri = directory.toPath().resolve("src/main/java/example/application/SampleController.java").toUri().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace(
+				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
+				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}\n\n\t@GetMapping(\"/goodbye\")\n\tpublic String sayGoodbye() {\n\t\treturn \"goodbye!!!\";\n\t}");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+
+		CompletableFuture<Void> updateFuture = indexer.updateDocument(controllerUri, newContent, "test triggered");
+		updateFuture.get(5, TimeUnit.SECONDS);
+
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "baseline", null);
+
+		assertTrue(changes.contains("+") && changes.contains("/goodbye"),
+				"expected the new mapping to show up as added but got:\n" + changes);
 	}
 
 	private static List<StructureNode> flatten(StructureNode node) {

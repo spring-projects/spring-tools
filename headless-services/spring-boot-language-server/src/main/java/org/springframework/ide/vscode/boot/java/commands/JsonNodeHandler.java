@@ -72,6 +72,20 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 
 	public static final String NODE_ID = "nodeId";
 
+	/**
+	 * Discriminates the kind of element a node represents, independent of its label or icon
+	 * (several kinds of node can share the same icon). Used to identify nodes across two
+	 * structure trees when diffing them.
+	 */
+	public static final String KIND = "kind";
+	public static final String KIND_APPLICATION = "application";
+	public static final String KIND_PACKAGE = "package";
+	public static final String KIND_STEREOTYPE = "stereotype";
+	public static final String KIND_TYPE = "type";
+	public static final String KIND_MEMBER = "member";
+	public static final String KIND_METHOD = "method";
+	public static final String KIND_CUSTOM = "custom";
+
 	private final Node root;
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
 	private final BiConsumer<Node, C> customHandler;
@@ -105,6 +119,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			addChild(node -> node
 					.withAttribute(TEXT, labels.getStereotypeLabel(stereotype))
 					.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
+					.withAttribute(KIND, KIND_STEREOTYPE)
 				);
 		} else {
 			var definition = catalog.getDefinition(stereotype);
@@ -116,6 +131,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 				.withAttribute(ICON, StereotypeIcons.getIcon(stereotype))
 				.withAttribute(HOVER, "defined in: " + sources.toString())
 				.withAttribute(REFERENCE, referenceLocation)
+				.withAttribute(KIND, KIND_STEREOTYPE)
 			);
 		}
 	}
@@ -182,6 +198,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(TEXT, labels.getApplicationLabel(application))
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.APPLICATION_KEY))
 			.withAttribute(PROJECT_ID, project.getElementName())
+			.withAttribute(KIND, KIND_APPLICATION)
 		;
 		assignNodeId(root, null);
 	}
@@ -192,6 +209,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getPackageLabel(pkg))
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.MODULE_KEY))
+			.withAttribute(KIND, KIND_PACKAGE)
 		);
 	}
 
@@ -201,6 +219,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(TEXT, labels.getTypeLabel(type))
 			.withAttribute(LOCATION, type.getLocation())
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.TYPE_KEY))
+			.withAttribute(KIND, KIND_TYPE)
 			.withChildren(createTypeSubnotes(node, type))
 		);
 	}
@@ -228,7 +247,8 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 					Node childNode = new Node(parent)
 							.withAttribute(TEXT, symbol.getName())
 							.withAttribute(LOCATION, new Location(docUri, symbol.getRange()))
-							.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY));
+							.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
+							.withAttribute(KIND, KIND_MEMBER);
 
 					assignNodeId(childNode, parent);
 
@@ -244,12 +264,16 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(TEXT, labels.getMethodLabel(method, context.getContextualType()))
 			.withAttribute(LOCATION, method.getLocation())
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
+			.withAttribute(KIND, KIND_METHOD)
 		);
 	}
 
 	@Override
 	public void handleCustom(C custom, NodeContext context) {
-		addChild(node -> customHandler.accept(node, custom));
+		addChild(node -> {
+			node.withAttribute(KIND, KIND_CUSTOM);
+			customHandler.accept(node, custom);
+		});
 	}
 
 	public Node createNested() {

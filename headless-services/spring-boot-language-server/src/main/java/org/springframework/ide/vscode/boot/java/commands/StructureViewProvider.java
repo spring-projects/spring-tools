@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.util.Collection;
 import java.util.List;
 
+import org.eclipse.lsp4j.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
@@ -117,5 +118,84 @@ public class StructureViewProvider {
 
 	public static record Groups (String projectName, List<Group> groups) {}
 	public static record Group (String identifier, String displayName) {}
+
+	/**
+	 * Converts a {@link Node} tree, as built by {@link #createTree}, into a protocol-agnostic
+	 * {@link StructureNode} tree - the shape used by MCP tools and by the snapshot/diff machinery,
+	 * decoupled from {@link JsonNodeHandler}'s internal attribute map.
+	 */
+	public static StructureNode toStructureNode(Node node) {
+		if (node == null) {
+			return null;
+		}
+
+		List<StructureNode> children = node.getChildren().stream()
+				.map(StructureViewProvider::toStructureNode)
+				.toList();
+
+		return new StructureNode(
+				stringAttribute(node, JsonNodeHandler.NODE_ID),
+				stringAttribute(node, JsonNodeHandler.TEXT),
+				stringAttribute(node, JsonNodeHandler.ICON),
+				stringAttribute(node, JsonNodeHandler.KIND),
+				stringAttribute(node, JsonNodeHandler.HOVER),
+				sourceLocationFrom(node.getAttribute(JsonNodeHandler.LOCATION)),
+				sourceLocationFrom(node.getAttribute(JsonNodeHandler.REFERENCE)),
+				children);
+	}
+
+	private static String stringAttribute(Node node, String key) {
+		Object value = node.getAttribute(key);
+		return value == null ? null : value.toString();
+	}
+
+	private static SourceLocation sourceLocationFrom(Object attribute) {
+		if (attribute instanceof Location location && location.getRange() != null) {
+			return new SourceLocation(
+					location.getUri(),
+					location.getRange().getStart().getLine(),
+					location.getRange().getStart().getCharacter(),
+					location.getRange().getEnd().getLine(),
+					location.getRange().getEnd().getCharacter());
+		}
+		return null;
+	}
+
+	/**
+	 * A node of the logical structure tree, mirroring the nodes that the language server sends to the
+	 * IDE clients via the {@code sts/spring-boot/structure} command.
+	 *
+	 * @param nodeId    stable identifier of the node within the tree, built from the path of its ancestors
+	 * @param text      the label to display for this node
+	 * @param icon      identifier of the icon to display for this node (may be null)
+	 * @param kind      discriminates the kind of element this node represents (e.g. "type", "method",
+	 *                  "stereotype"), independent of its label or icon
+	 * @param hover     additional details to show on hover (may be null)
+	 * @param location  where the element that this node represents is defined in the source code (may be null)
+	 * @param reference where the stereotype of this node is defined, either in source code or in a
+	 *                  stereotype catalog file (may be null)
+	 * @param children  the child nodes of this node
+	 */
+	public static record StructureNode(
+			String nodeId,
+			String text,
+			String icon,
+			String kind,
+			String hover,
+			SourceLocation location,
+			SourceLocation reference,
+			List<StructureNode> children
+	) {}
+
+	/**
+	 * A range within a source file, with 0-based line and character offsets.
+	 */
+	public static record SourceLocation(
+			String uri,
+			int startLine,
+			int startColumn,
+			int endLine,
+			int endColumn
+	) {}
 
 }

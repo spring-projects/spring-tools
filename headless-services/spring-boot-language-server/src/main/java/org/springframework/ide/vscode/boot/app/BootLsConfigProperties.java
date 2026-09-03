@@ -50,13 +50,27 @@ public class BootLsConfigProperties {
 	 * symbol information
 	 */
 	private String symbolCacheDir = System.getProperty("user.home") + File.separatorChar + ".sts4" + File.separatorChar + ".symbolCache";
-	
+
 	public String getSymbolCacheDir() {
 		return symbolCacheDir;
 	}
-	
+
 	public void setSymbolCacheDir(String symbolCacheDir) {
 		this.symbolCacheDir = symbolCacheDir;
+	}
+
+	/**
+	 * The path to the directory where the language server persists logical structure view
+	 * baselines, so they survive a language server restart.
+	 */
+	private String structureBaselineDir = System.getProperty("user.home") + File.separatorChar + ".sts4" + File.separatorChar + ".structureBaselines";
+
+	public String getStructureBaselineDir() {
+		return structureBaselineDir;
+	}
+
+	public void setStructureBaselineDir(String structureBaselineDir) {
+		this.structureBaselineDir = structureBaselineDir;
 	}
 
 }

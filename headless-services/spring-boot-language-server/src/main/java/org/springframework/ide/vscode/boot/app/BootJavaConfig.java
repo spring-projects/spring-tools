@@ -249,6 +249,16 @@ public class BootJavaConfig implements InitializingBean {
 		Boolean b = settings.getBoolean("boot-java", "java", "codelens-web-configs-on-controller-classes");
 		return Boolean.TRUE.equals(b);
 	}
+
+	/**
+	 * Whether the logical structure view automatically captures and refreshes a diff baseline from
+	 * git activity (see {@code GitBaselineTracker}). Defaults to on, unlike most flags in this
+	 * class, so it needs to be explicitly turned off rather than explicitly turned on.
+	 */
+	public boolean isStructureGitBaselineEnabled() {
+		Boolean b = settings.getBoolean("boot-java", "structure", "git-baseline-enabled");
+		return b == null || b.booleanValue();
+	}
 	
 	public Settings getRawSettings() {
 		return settings;

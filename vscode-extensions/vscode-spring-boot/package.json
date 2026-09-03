@@ -456,6 +456,11 @@
             "default": true,
             "description": "Beans structure tree in the outline view (experimental)"
           },
+          "boot-java.structure.git-baseline-enabled": {
+            "type": "boolean",
+            "default": true,
+            "description": "Logical Structure view: automatically capture and refresh a diff baseline from git commits, so changes are highlighted without manually capturing one. Turn off to rely on manual baseline capture only."
+          },
           "boot-java.java.codelens-over-query-methods": {
             "type": "boolean",
             "default": true,

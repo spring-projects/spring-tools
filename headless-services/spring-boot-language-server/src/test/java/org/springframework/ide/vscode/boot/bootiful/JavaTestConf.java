@@ -37,7 +37,7 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 
 @Configuration
 public class JavaTestConf {
-	
+
 	@Bean JavaProjectsService javaProjectsService(SimpleLanguageServer server) {
 		CompositeJavaProjectFinder javaProjectFinder = new CompositeJavaProjectFinder();
 

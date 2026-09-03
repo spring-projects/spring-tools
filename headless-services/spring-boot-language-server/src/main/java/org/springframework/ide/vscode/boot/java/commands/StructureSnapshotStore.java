@@ -10,80 +10,85 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
-import java.time.Duration;
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
-import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.ChangeType;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.StructureTreeDiff;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
-
-import reactor.core.Disposable;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
-import reactor.core.scheduler.Schedulers;
 
 /**
- * Keeps track of the logical structure of projects over time, so that MCP tools can show what
- * changed since a pinned baseline or since the last Spring index update.
+ * Keeps track of the logical structure baseline of projects, so MCP tools and IDE clients can show
+ * what changed in a project's logical structure since that baseline was captured.
  *
- * <p>A project is <em>tracked</em> from the first time {@link #captureBaseline} or one of the
- * {@code diffAgainst...} methods is called for it. Once tracked, its "previous" snapshot is kept
- * up to date automatically whenever the Spring index reports that project as affected by an update
- * (debounced, so a burst of file changes only triggers one recompute per project). Index updates
- * for projects that aren't tracked - the common case - cost nothing here.
+ * <p>Diffing is entirely on-demand: the "current" structure is (re-)computed fresh every time it's
+ * needed (a diff request, or building the structure tree for a client) and compared against the
+ * baseline right there - nothing beyond the baseline itself needs to be kept in memory. Baselines
+ * are persisted via {@link StructureBaselineStorage}, so they survive a language server restart.
+ *
+ * <p>Implements {@link GitBaselineTracker.BaselineAccess} so {@link GitBaselineTracker} can drive
+ * baseline capture from git activity without this class knowing anything about git.
  *
  * @author Martin Lippert
  */
-public class StructureSnapshotStore {
-
-	private static final Logger log = LoggerFactory.getLogger(StructureSnapshotStore.class);
-
-	private static final long DEBOUNCE_MILLIS = 500;
+public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess {
 
 	private final StructureViewProvider structureViewProvider;
-	private final JavaProjectFinder projectFinder;
-	private final Scheduler scheduler = Schedulers.newSingle("structure-snapshot-store", true);
+	private final StructureBaselineStorage storage;
 
-	private final Map<String, ProjectSnapshots> snapshots = new ConcurrentHashMap<>();
-	private final Set<String> pendingAffectedProjects = ConcurrentHashMap.newKeySet();
-	private volatile Disposable pendingRefresh;
+	private final Map<String, StructureSnapshot> baselines = new ConcurrentHashMap<>();
 
-	public StructureSnapshotStore(StructureViewProvider structureViewProvider, SpringSymbolIndex symbolIndex,
-			JavaProjectFinder projectFinder) {
+	public StructureSnapshotStore(StructureViewProvider structureViewProvider, StructureBaselineStorage storage) {
 		this.structureViewProvider = structureViewProvider;
-		this.projectFinder = projectFinder;
-
-		symbolIndex.onUpdate(this::scheduleRollingRefresh);
+		this.storage = storage;
 	}
 
 	/**
 	 * Computes the current logical structure of the project and pins it as the baseline to compare
 	 * against in {@link #diffAgainstBaseline}. Replaces any baseline previously captured for the
-	 * same project.
+	 * same project. Does not associate the baseline with a git commit - use
+	 * {@link #captureBaseline(IJavaProject, String)} for that.
 	 */
 	public StructureSnapshot captureBaseline(IJavaProject project) {
-		StructureSnapshot snapshot = snapshotNow(project);
+		return captureBaseline(project, null);
+	}
 
-		ProjectSnapshots tracked = trackedSnapshotsOf(project);
-		synchronized (tracked) {
-			tracked.baseline = snapshot;
-			tracked.current = snapshot;
-		}
+	/**
+	 * Same as {@link #captureBaseline(IJavaProject)}, but records the given git commit SHA
+	 * alongside the baseline (may be {@code null} if the project isn't git-backed or the commit is
+	 * unknown). {@link GitBaselineTracker} uses the recorded SHA to tell whether the project's
+	 * {@code HEAD} has moved since this baseline was captured.
+	 */
+	@Override
+	public StructureSnapshot captureBaseline(IJavaProject project, String commitSha) {
+		StructureSnapshot snapshot = snapshotNow(project, commitSha);
+		String projectName = project.getElementName();
+
+		baselines.put(projectName, snapshot);
+		storage.save(projectName, snapshot);
 
 		return snapshot;
+	}
+
+	/**
+	 * The git commit SHA the project's baseline was captured at, if it has a baseline and that
+	 * baseline is associated with a commit.
+	 */
+	@Override
+	public Optional<String> capturedCommitShaOf(IJavaProject project) {
+		StructureSnapshot baseline = baselineOf(project);
+		return baseline == null ? Optional.empty() : Optional.ofNullable(baseline.commitSha());
+	}
+
+	/**
+	 * Whether a baseline has been captured for the project, regardless of whether anything has
+	 * changed since then.
+	 */
+	public boolean hasBaseline(IJavaProject project) {
+		return baselineOf(project) != null;
 	}
 
 	/**
@@ -92,61 +97,26 @@ public class StructureSnapshotStore {
 	 * @return empty when no baseline has been captured yet for this project
 	 */
 	public Optional<StructureTreeDiff> diffAgainstBaseline(IJavaProject project) {
-		return diffAgainst(project, tracked -> tracked.baseline);
-	}
-
-	/**
-	 * Diffs the current logical structure of the project against the structure it had right before
-	 * the most recent Spring index update.
-	 *
-	 * @return empty when the project has not been tracked through at least one index update yet
-	 */
-	public Optional<StructureTreeDiff> diffAgainstPrevious(IJavaProject project) {
-		return diffAgainst(project, tracked -> tracked.previous);
-	}
-
-	private Optional<StructureTreeDiff> diffAgainst(IJavaProject project, Function<ProjectSnapshots, StructureSnapshot> reference) {
-		String projectName = project.getElementName();
-		StructureSnapshot current = snapshotNow(project);
-
-		ProjectSnapshots tracked = trackedSnapshotsOf(project);
-		StructureSnapshot comparedTo;
-		synchronized (tracked) {
-			comparedTo = reference.apply(tracked);
-			tracked.current = current;
-		}
-
-		if (comparedTo == null) {
+		StructureSnapshot baseline = baselineOf(project);
+		if (baseline == null) {
 			return Optional.empty();
 		}
 
-		return Optional.of(StructureTreeDiffer.diff(projectName, comparedTo.capturedAt(), current.capturedAt(),
-				comparedTo.root(), current.root()));
-	}
-
-	/**
-	 * Whether a baseline has been captured for the project, regardless of whether anything has
-	 * changed since then.
-	 */
-	public boolean hasBaseline(IJavaProject project) {
-		ProjectSnapshots tracked = snapshots.get(project.getElementName());
-		return tracked != null && tracked.baseline != null;
+		StructureSnapshot current = snapshotNow(project, null);
+		return Optional.of(StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(),
+				current.capturedAt(), baseline.root(), current.root()));
 	}
 
 	/**
 	 * Annotates the nodes of a freshly built structure tree with how they changed compared to the
 	 * pinned baseline of that project, so clients can highlight the changed parts of the tree.
 	 *
-	 * <p>Does nothing when no baseline was captured for the project. Deliberately does not start
-	 * tracking the project either - rendering the structure view must not turn every project in the
-	 * workspace into one whose snapshots are kept up to date in the background.
+	 * <p>Does nothing when no baseline was captured for the project.
 	 *
 	 * @param root the root of the tree to annotate, modified in place
 	 */
-	public void annotateWithChangesSinceBaseline(IJavaProject project, Node root) {
-		ProjectSnapshots tracked = snapshots.get(project.getElementName());
-		StructureSnapshot baseline = tracked == null ? null : tracked.baseline;
-
+	public void annotateWithChangesSinceBaseline(IJavaProject project, JsonNodeHandler.Node root) {
+		StructureSnapshot baseline = baselineOf(project);
 		if (baseline == null || root == null) {
 			return;
 		}
@@ -160,7 +130,7 @@ public class StructureSnapshotStore {
 		}
 	}
 
-	private static void applyChanges(Node node, Map<String, ChangeType> changes) {
+	private static void applyChanges(JsonNodeHandler.Node node, Map<String, ChangeType> changes) {
 		Object nodeId = node.getAttribute(JsonNodeHandler.NODE_ID);
 		ChangeType change = nodeId == null ? null : changes.get(nodeId.toString());
 
@@ -171,12 +141,16 @@ public class StructureSnapshotStore {
 		node.getChildren().forEach(child -> applyChanges(child, changes));
 	}
 
-	private ProjectSnapshots trackedSnapshotsOf(IJavaProject project) {
-		return snapshots.computeIfAbsent(project.getElementName(), name -> new ProjectSnapshots());
+	/**
+	 * The project's baseline, loading it from disk on first touch (per language server run) if it
+	 * isn't in memory yet.
+	 */
+	private StructureSnapshot baselineOf(IJavaProject project) {
+		return baselines.computeIfAbsent(project.getElementName(), storage::load);
 	}
 
-	private StructureSnapshot snapshotNow(IJavaProject project) {
-		Node root = structureViewProvider.createTree(project, false, null);
+	private StructureSnapshot snapshotNow(IJavaProject project, String commitSha) {
+		JsonNodeHandler.Node root = structureViewProvider.createTree(project, false, null);
 
 		if (root == null) {
 			// for Spring Modulith projects the tree cannot be created without the module metadata,
@@ -188,81 +162,10 @@ public class StructureSnapshotStore {
 			throw new IllegalStateException("no logical structure available for project with name " + project.getElementName());
 		}
 
-		return new StructureSnapshot(Instant.now(), StructureViewProvider.toStructureNode(root));
+		return new StructureSnapshot(Instant.now(), commitSha, StructureViewProvider.toStructureNode(root));
 	}
 
-	private void scheduleRollingRefresh(Set<String> affectedProjects) {
-		pendingAffectedProjects.addAll(affectedProjects);
-
-		Disposable previous = pendingRefresh;
-		pendingRefresh = Mono.delay(Duration.ofMillis(DEBOUNCE_MILLIS))
-				.publishOn(scheduler)
-				.doOnSuccess(v -> refreshAffectedTrackedProjects())
-				.subscribe();
-
-		if (previous != null) {
-			previous.dispose();
-		}
-	}
-
-	private void refreshAffectedTrackedProjects() {
-		Set<String> dueForRefresh = new HashSet<>();
-		Iterator<String> pending = pendingAffectedProjects.iterator();
-		while (pending.hasNext()) {
-			dueForRefresh.add(pending.next());
-			pending.remove();
-		}
-
-		for (String projectName : dueForRefresh) {
-			ProjectSnapshots tracked = snapshots.get(projectName);
-			if (tracked == null) {
-				// not a project any of the MCP tools have tracked, nothing to refresh
-				continue;
-			}
-
-			projectFinder.all().stream()
-					.filter(p -> p.getElementName().equals(projectName))
-					.findFirst()
-					.ifPresent(project -> refreshTrackedProject(project, tracked));
-		}
-	}
-
-	private void refreshTrackedProject(IJavaProject project, ProjectSnapshots tracked) {
-		try {
-			StructureSnapshot fresh = snapshotNow(project);
-			StructureSnapshot baseline;
-
-			synchronized (tracked) {
-				tracked.previous = tracked.current;
-				tracked.current = fresh;
-				baseline = tracked.baseline;
-			}
-
-			// diffing and rendering happens outside of the lock, it only needs the two snapshots
-			logChangesSinceBaseline(project, baseline, fresh);
-		} catch (Exception e) {
-			log.warn("failed to refresh logical structure snapshot for project: " + project.getElementName(), e);
-		}
-	}
-
-	/**
-	 * Logs the ascii-art diff between the pinned baseline and the structure that was just computed,
-	 * reusing that already computed snapshot instead of creating another one.
-	 */
-	private void logChangesSinceBaseline(IJavaProject project, StructureSnapshot baseline, StructureSnapshot current) {
-		if (baseline == null) {
-			return;
-		}
-
-		StructureTreeDiff diff = StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(),
-				current.capturedAt(), baseline.root(), current.root());
-
-		if (diff.stats().hasChanges()) {
-			log.info("\n\n" + AsciiStructureRenderer.render(diff, true) + "\n\n");
-		}
-	}
-
-	public static record StructureSnapshot(Instant capturedAt, StructureNode root) {
+	public static record StructureSnapshot(Instant capturedAt, String commitSha, StructureNode root) {
 
 		public int nodeCount() {
 			return nodeCount(root);
@@ -275,12 +178,6 @@ public class StructureSnapshotStore {
 			}
 			return count;
 		}
-	}
-
-	private static class ProjectSnapshots {
-		volatile StructureSnapshot baseline;
-		volatile StructureSnapshot previous;
-		volatile StructureSnapshot current;
 	}
 
 }

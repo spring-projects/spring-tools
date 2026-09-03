@@ -33,6 +33,13 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 @Import(AdHocPropertyHarnessTestConf.class)
 public class IndexerTestConf {
 
+	static {
+		// Test project fixtures live inside this repository's own git working tree, so without
+		// this, every test that builds a structure tree would auto-capture a logical structure
+		// baseline against *this repository's* real git history - see GitBaselineTracker.
+		System.setProperty("disable-structure-git-baseline", "true");
+	}
+
 	@Bean public IndexCache symbolCache() {
 		return new IndexCacheVoid();
 	}

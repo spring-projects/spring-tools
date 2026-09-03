@@ -26,6 +26,7 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.AsciiStructureRenderer;
 import org.springframework.ide.vscode.boot.java.commands.CachedSpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.GitBaselineTracker;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
@@ -51,16 +52,18 @@ public class StereotypeInformation {
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
 	private final StructureViewProvider structureViewProvider;
 	private final StructureSnapshotStore structureSnapshotStore;
+	private final GitBaselineTracker gitBaselineTracker;
 	private final SpringSymbolIndex symbolIndex;
 
 	public StereotypeInformation(ProjectLookup projects, SpringMetamodelIndex springIndex,
 			StereotypeCatalogRegistry stereotypeCatalogRegistry, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore, SpringSymbolIndex symbolIndex) {
+			StructureSnapshotStore structureSnapshotStore, GitBaselineTracker gitBaselineTracker, SpringSymbolIndex symbolIndex) {
 		this.projects = projects;
 		this.springIndex = springIndex;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		this.structureViewProvider = structureViewProvider;
 		this.structureSnapshotStore = structureSnapshotStore;
+		this.gitBaselineTracker = gitBaselineTracker;
 		this.symbolIndex = symbolIndex;
 	}
 
@@ -146,6 +149,7 @@ public class StereotypeInformation {
 		IJavaProject project = projects.get(projectName);
 
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
+		gitBaselineTracker.syncBaselineWithGit(project);
 
 		Node root = structureViewProvider.createTree(project, false, null);
 
@@ -166,7 +170,10 @@ public class StereotypeInformation {
 			Captures the current logical structure of the given project as a baseline snapshot, so that a later
 			call to getLogicalStructureChanges can show what changed in the logical structure of the project since
 			this point in time (e.g. after a refactoring or a series of edits).
-			Capturing a new baseline replaces any previously captured baseline for the same project.
+			Capturing a new baseline replaces any previously captured baseline for the same project. Usually not
+			needed for git-backed projects: those get a baseline automatically the first time their structure is
+			looked at, refreshed automatically on every commit - call this only to pin a baseline mid-branch,
+			without committing.
 			Use getProjectList to obtain valid project names.
 			""")
 	public String captureLogicalStructureBaseline(
@@ -176,38 +183,33 @@ public class StereotypeInformation {
 		IJavaProject project = projects.get(projectName);
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 
-		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
+		String commitSha = gitBaselineTracker.currentCommitSha(project).orElse(null);
+		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha);
 		return "captured logical structure baseline for project '%s' with %d node(s) at %s"
 				.formatted(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt());
 	}
 
 	@Tool(description = """
-			Shows what changed in the logical structure of the given project since a previous snapshot, rendered as
-			an ascii-art tree with +/-/~ markers for added, removed and modified nodes.
-			Compares the current logical structure against the baseline captured via captureLogicalStructureBaseline
-			by default, or against the structure right before the most recent Spring index update when compareWith
-			is "previous". Returns a plain message instead of a tree when no baseline/previous snapshot exists yet
-			for the project, or when nothing changed.
+			Shows what changed in the logical structure of the given project since the baseline captured via
+			captureLogicalStructureBaseline (or automatically from the project's git history, if it's git-backed -
+			see the note on captureLogicalStructureBaseline), rendered as an ascii-art tree with +/-/~ markers for
+			added, removed and modified nodes.
+			Returns a plain message instead of a tree when no baseline exists yet for the project, or when nothing
+			changed since it.
 			Use getProjectList to obtain valid project names.
 			""")
 	public String getLogicalStructureChanges(
 			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
-			@ToolParam(description = "what to compare the current structure against: \"baseline\" (default) or \"previous\"", required = false) String compareWith,
 			@ToolParam(description = "whether to also show the unchanged parts of the tree instead of collapsing them, defaults to false", required = false) Boolean includeUnchanged)
 			throws Exception {
 
 		IJavaProject project = projects.get(projectName);
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 
-		boolean comparedToPrevious = "previous".equalsIgnoreCase(compareWith);
-		Optional<StructureTreeDiff> diff = comparedToPrevious
-				? structureSnapshotStore.diffAgainstPrevious(project)
-				: structureSnapshotStore.diffAgainstBaseline(project);
+		Optional<StructureTreeDiff> diff = structureSnapshotStore.diffAgainstBaseline(project);
 
 		if (diff.isEmpty()) {
-			return comparedToPrevious
-					? "no previous logical structure snapshot available yet for project '%s' - call this again after the Spring index has updated at least once".formatted(project.getElementName())
-					: "no logical structure baseline captured yet for project '%s' - call captureLogicalStructureBaseline first".formatted(project.getElementName());
+			return "no logical structure baseline captured yet for project '%s' - call captureLogicalStructureBaseline first".formatted(project.getElementName());
 		}
 
 		StructureTreeDiff structureTreeDiff = diff.get();
@@ -215,8 +217,8 @@ public class StereotypeInformation {
 			return AsciiStructureRenderer.render(structureTreeDiff, includeUnchanged != null && includeUnchanged);
 		}
 		else {
-			return "no changes detected in the logical structure of project '%s' since the %s snapshot"
-					.formatted(project.getElementName(), comparedToPrevious ? "previous" : "baseline");
+			return "no changes detected in the logical structure of project '%s' since the baseline snapshot"
+					.formatted(project.getElementName());
 		}
 	}
 

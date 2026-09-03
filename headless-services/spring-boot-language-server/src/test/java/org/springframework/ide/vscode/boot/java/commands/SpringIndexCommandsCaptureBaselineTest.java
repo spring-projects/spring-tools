@@ -96,7 +96,7 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	void baselineCapturedThroughTheLspCommandIsVisibleToTheMcpTools() throws Exception {
 		captureBaseline(project.getElementName());
 
-		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "baseline", null);
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), null);
 
 		assertTrue(changes.contains("no changes detected"),
 				"expected the MCP tool to see the baseline captured via the LSP command, but got: " + changes);

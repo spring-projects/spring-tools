@@ -136,24 +136,17 @@ public class StereotypeInformationTest {
 
 	@Test
 	void changesWithoutACapturedBaselineReturnAHelpfulMessage() throws Exception {
-		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "baseline", null);
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), null);
 
 		assertTrue(changes.contains("captureLogicalStructureBaseline"),
 				"expected a hint to capture a baseline first but got: " + changes);
 	}
 
 	@Test
-	void changesAgainstPreviousWithoutAnIndexUpdateYetReturnAHelpfulMessage() throws Exception {
-		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "previous", null);
-
-		assertTrue(changes.contains("previous"), "expected a hint about the previous snapshot but got: " + changes);
-	}
-
-	@Test
 	void baselineWithoutLaterChangesReportsNoChanges() throws Exception {
 		stereotypeInformation.captureLogicalStructureBaseline(project.getElementName());
 
-		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "baseline", null);
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), null);
 
 		assertTrue(changes.contains("no changes detected"), "expected a no-changes message but got: " + changes);
 	}
@@ -172,7 +165,7 @@ public class StereotypeInformationTest {
 		CompletableFuture<Void> updateFuture = indexer.updateDocument(controllerUri, newContent, "test triggered");
 		updateFuture.get(5, TimeUnit.SECONDS);
 
-		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), "baseline", null);
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), null);
 
 		assertTrue(changes.contains("+") && changes.contains("/goodbye"),
 				"expected the new mapping to show up as added but got:\n" + changes);

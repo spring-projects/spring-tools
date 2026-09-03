@@ -43,15 +43,17 @@ public class SpringIndexCommands {
 
 	private final StructureViewProvider structureViewProvider;
 	private final StructureSnapshotStore structureSnapshotStore;
+	private final GitBaselineTracker gitBaselineTracker;
 
 	private final Executor messageWorkerThreadPool;
 
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
 			JavaProjectFinder projectFinder, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore) {
+			StructureSnapshotStore structureSnapshotStore, GitBaselineTracker gitBaselineTracker) {
 
 		this.structureViewProvider = structureViewProvider;
 		this.structureSnapshotStore = structureSnapshotStore;
+		this.gitBaselineTracker = gitBaselineTracker;
 		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
 
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
@@ -94,7 +96,8 @@ public class SpringIndexCommands {
 						.findFirst()
 						.orElseThrow(() -> new IllegalArgumentException("no project found with name " + projectName));
 
-				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
+				String commitSha = gitBaselineTracker.currentCommitSha(project).orElse(null);
+				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha);
 				return new CaptureBaselineResult(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt().toString());
 			}, messageWorkerThreadPool);
 		});
@@ -103,8 +106,14 @@ public class SpringIndexCommands {
 	/**
 	 * Builds the structure tree of a project and, if a baseline was captured for that project,
 	 * marks the nodes that changed since then, so clients can highlight them in their tree.
+	 *
+	 * <p>Before building the tree, gives the project a baseline for free if it's git-backed and
+	 * doesn't have one yet (or its git HEAD moved since its last baseline) - see
+	 * {@link GitBaselineTracker#syncBaselineWithGit}.
 	 */
 	private Node createAnnotatedTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, StructureCommandArgs args) {
+		gitBaselineTracker.syncBaselineWithGit(project);
+
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
 				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
 

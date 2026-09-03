@@ -153,7 +153,7 @@ public class PomInlayHintHandlerTest {
 		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
 		when(resolvedProject.getGenerations()).thenReturn(null);
 		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
-		when(resolvedProject.getReleases()).thenReturn(List.of(
+		when(resolvedProject.getLatestPatchVersions()).thenReturn(List.of(
 				Version.parse("1.5.6"),
 				Version.parse("1.5.7"),
 				Version.parse("1.5.8"),
@@ -186,7 +186,51 @@ public class PomInlayHintHandlerTest {
 		assertEquals(jp.getLocationUri().toASCIIString(), cmd.getArguments().get(0));
 		assertEquals("1.5.10", cmd.getArguments().get(1));
 	}
-	
+
+	@Test
+	void upgradePatchVersionInlayOssAndEnterprise() throws Exception {
+		MavenJavaProject jp =  projects.mavenProject("empty-boot-15-web-app");
+
+		TextDocument doc = new TextDocument(jp.getProjectBuild().getBuildFile().toASCIIString(), LanguageId.XML, 0, Files.readString(Paths.get(jp.getProjectBuild().getBuildFile())));
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		when(projectFinder.find(any())).thenReturn(Optional.of(jp));
+
+		SimpleTextDocumentService documents = mock(SimpleTextDocumentService.class);
+		when(documents.getLatestSnapshot(anyString())).thenReturn(doc);
+
+		SimpleLanguageServer server = mock(SimpleLanguageServer.class);
+		when(server.getTextDocumentService()).thenReturn(documents);
+
+		Generation generation = mock(Generation.class);
+		when(generation.getLatestPatchByType()).thenReturn(java.util.Map.of(
+				"oss", Version.parse("1.5.10"),
+				"enterprise", Version.parse("1.5.12")
+		));
+
+		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
+		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
+		when(resolvedProject.getLatestPatchVersions()).thenReturn(List.of(Version.parse("1.5.8")));
+		when(resolvedProject.findGeneration(any())).thenReturn(Optional.of(generation));
+
+		SpringProjectsProvider projectProvider = mock(SpringProjectsProvider.class);
+		when(projectProvider.getProject(SpringProjectUtil.SPRING_BOOT)).thenReturn(resolvedProject);
+
+		MavenMetadataProvider mavenMetadataProvider = mock(MavenMetadataProvider.class);
+		PomInlayHintHandler inlayHandler = new PomInlayHintHandler(server, projectFinder, ProjectObserver.NULL, projectProvider, mavenMetadataProvider, new BootJavaConfig(new SettingsStore()));
+
+		List<InlayHint> hints = inlayHandler.handle(doc, doc.toRange(0, doc.getLength()), mock(CancelChecker.class));
+		assertEquals(2, hints.size());
+
+		InlayHintLabelPart enterpriseLabel = hints.get(0).getLabel().getRight().get(0);
+		assertEquals("Upgrade to the Latest Patch (Enterprise)", enterpriseLabel.getValue());
+		assertEquals("1.5.12", enterpriseLabel.getCommand().getArguments().get(1));
+
+		InlayHintLabelPart ossLabel = hints.get(1).getLabel().getRight().get(0);
+		assertEquals("Upgrade to the Latest Patch (OSS)", ossLabel.getValue());
+		assertEquals("1.5.10", ossLabel.getCommand().getArguments().get(1));
+	}
+
 	@Test
 	void noInlayHintOnEmptyVersionTag() throws Exception {
 		MavenJavaProject jp =  projects.mavenProject("empty-boot-15-web-app");
@@ -210,7 +254,7 @@ public class PomInlayHintHandlerTest {
 		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
 		when(resolvedProject.getGenerations()).thenReturn(null);
 		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
-		when(resolvedProject.getReleases()).thenReturn(List.of(
+		when(resolvedProject.getLatestPatchVersions()).thenReturn(List.of(
 				Version.parse("1.5.6"),
 				Version.parse("1.5.7"),
 				Version.parse("1.5.8"),
@@ -252,7 +296,7 @@ public class PomInlayHintHandlerTest {
 		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
 		when(resolvedProject.getGenerations()).thenReturn(null);
 		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
-		when(resolvedProject.getReleases()).thenReturn(List.of(
+		when(resolvedProject.getLatestPatchVersions()).thenReturn(List.of(
 				Version.parse("1.5.6"),
 				Version.parse("1.5.7"),
 				Version.parse("1.5.8"),
@@ -294,7 +338,7 @@ public class PomInlayHintHandlerTest {
 		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
 		when(resolvedProject.getGenerations()).thenReturn(null);
 		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
-		when(resolvedProject.getReleases()).thenReturn(List.of(
+		when(resolvedProject.getLatestPatchVersions()).thenReturn(List.of(
 				Version.parse("1.5.6"),
 				Version.parse("1.5.7"),
 				Version.parse("1.5.8"),
@@ -393,7 +437,7 @@ public class PomInlayHintHandlerTest {
 		ResolvedSpringProject resolvedProject = mock(ResolvedSpringProject.class);
 		when(resolvedProject.getGenerations()).thenReturn(null);
 		when(resolvedProject.getSlug()).thenReturn(SpringProjectUtil.SPRING_BOOT);
-		when(resolvedProject.getReleases()).thenReturn(List.of(
+		when(resolvedProject.getLatestPatchVersions()).thenReturn(List.of(
 				Version.parse("1.5.6"),
 				Version.parse("1.5.7"),
 				Version.parse("1.5.8"),

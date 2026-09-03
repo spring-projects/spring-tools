@@ -42,5 +42,17 @@ public class VersionValidationUtils {
 		List<Version> rls = springProject.getReleases();
 		return rls.isEmpty() ? null : rls.get(rls.size() - 1);
 	}
-	
+
+	/**
+	 * Human-readable label for a {@code Generation.latestPatch} entry key
+	 * ({@code oss} or {@code enterprise}).
+	 */
+	public static String patchTypeLabel(String type) {
+		return switch (type) {
+			case "oss" -> "OSS";
+			case "enterprise" -> "Enterprise";
+			default -> type;
+		};
+	}
+
 }

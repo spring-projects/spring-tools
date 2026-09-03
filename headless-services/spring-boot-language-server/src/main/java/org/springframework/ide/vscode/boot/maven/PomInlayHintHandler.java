@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -135,11 +136,13 @@ public class PomInlayHintHandler implements InlayHintHandler {
 			
 			try {
 				SortedVersions versions = null;
+				boolean usedMavenMetadata = false;
 				if (bootJavaConfig.isUseProjectBuildFileForVersionValidation() && ProjectBuild.MAVEN_PROJECT_TYPE.equals(jp.getProjectBuild().getType())) {
 					try {
 						MavenMetadata metadata = mavenMetadataProvider.getMetadata(jp, "org.springframework.boot", "spring-boot");
 						if (metadata != null) {
 							versions = metadata.getReleaseVersions();
+							usedMavenMetadata = true;
 						}
 					} catch (Exception e) {
 						// Logged in provider, fallback will happen below
@@ -148,19 +151,45 @@ public class PomInlayHintHandler implements InlayHintHandler {
 
 				ResolvedSpringProject genProject = generationsProvider.getProject(SpringProjectUtil.SPRING_BOOT);
 				if (versions == null && genProject != null) {
-					versions = new SortedVersions(genProject.getReleases());
+					versions = new SortedVersions(genProject.getLatestPatchVersions());
 				}
 
 				if (versions != null) {
-					Version latestPatch = versions.getNewerLatestPatchRelease(currentVersion).orElse(null);
-					if (latestPatch != null) {
+					// type is "oss"/"enterprise" when sourced from a generation's latestPatch map,
+					// or "" for the generic Maven-metadata/single-candidate case.
+					Optional<Generation> currentGeneration = usedMavenMetadata || genProject == null
+							? Optional.empty()
+							: genProject.findGeneration(currentVersion);
+
+					Map<String, Version> patchCandidatesByType;
+					if (currentGeneration.isPresent()) {
+						patchCandidatesByType = currentGeneration.get().getLatestPatchByType();
+					} else {
+						// Maven metadata and "generation not found" both have no oss/enterprise
+						// concept - just the single, generic candidate from the sorted version list.
+						patchCandidatesByType = versions.getNewerLatestPatchRelease(currentVersion)
+								.map(latest -> Map.of("", latest))
+								.orElse(Map.of());
+					}
+
+					List<Map.Entry<String, Version>> patchTargets = patchCandidatesByType.entrySet().stream()
+							.filter(e -> e.getValue().compareTo(currentVersion) > 0)
+							.sorted(Map.Entry.<String, Version>comparingByValue().reversed())
+							.collect(Collectors.toList());
+
+					for (Map.Entry<String, Version> patchTarget : patchTargets) {
+						String type = patchTarget.getKey();
+						Version latestPatch = patchTarget.getValue();
+						String title = type.isEmpty() ? "Upgrade to the Latest Patch"
+								: "Upgrade to the Latest Patch (" + VersionValidationUtils.patchTypeLabel(type) + ")";
+
 						inlayHintProviders.add(new InlayHintWithLazyPosition(() -> {
 							Command command = new Command();
-							command.setTitle("Upgrade to the Latest Patch");
+							command.setTitle(title);
 							command.setCommand(SpringBootPatchUpgrade.CMD_UPGRADE_SPRING_BOOT_PATCH);
 							command.setArguments(List.of(jp.getLocationUri().toASCIIString(), latestPatch.toString(), false));
 
-							InlayHintLabelPart label = new InlayHintLabelPart("Upgrade to the Latest Patch");
+							InlayHintLabelPart label = new InlayHintLabelPart(title);
 							label.setCommand(command);
 
 							InlayHint hint = new InlayHint();
@@ -195,7 +224,7 @@ public class PomInlayHintHandler implements InlayHintHandler {
 							return Collections.emptyList();
 						}));
 					}
-					
+
 					if (genProject != null) {
 						Generation generation = GenerationsValidator.getGenerationForJavaProject(jp, genProject, genProject.getSlug());
 						if (generation != null && VersionValidationUtils.isOssValid(generation)) {

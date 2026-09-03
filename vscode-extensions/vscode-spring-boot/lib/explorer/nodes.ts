@@ -49,7 +49,7 @@ export function deepestChangedNodes(nodes: StereotypedNode[]): StereotypedNode[]
 export class StereotypedNode {
     constructor(private n: LsStereoTypedNode, public children: StereotypedNode[], protected parent?: StereotypedNode) {}
         
-    getTreeItem(savedState?: TreeItemCollapsibleState, hideUnchanged = false): TreeItem {
+    getTreeItem(savedState?: TreeItemCollapsibleState, hideUnchanged = false, highlightChanges = true): TreeItem {
         const defaultState = savedState !== undefined ? savedState : TreeItemCollapsibleState.Collapsed;
         const visibleChildren = this.visibleChildren(hideUnchanged);
         const item = new TreeItem(this.label, visibleChildren.length ? defaultState : TreeItemCollapsibleState.None);
@@ -57,8 +57,9 @@ export class StereotypedNode {
         item.id = this.nodeId;
 
         // nodes that changed since the captured baseline get their icon colored, and a colored
-        // label plus a badge via the file decoration provider for the synthetic resource URI
-        const change = this.change;
+        // label plus a badge via the file decoration provider for the synthetic resource URI -
+        // unless highlighting is turned off, in which case the tree looks entirely normal
+        const change = highlightChanges ? this.change : undefined;
         if (change) {
             item.iconPath = new ThemeIcon(this.n.attributes.icon, new ThemeColor(CHANGE_ICON_COLORS[change]));
             item.resourceUri = structureDiffUri(change, this.nodeId);
@@ -106,18 +107,28 @@ export class StereotypedNode {
     }
 
     /**
+     * Whether a baseline was captured for this node's project, regardless of whether anything
+     * actually changed since then. Only the root of a project's tree carries this attribute, so
+     * nodes further down walk up to it.
+     */
+    get hasBaseline(): boolean {
+        return !!(this.parent ? this.parent.hasBaseline : this.n.attributes.hasBaseline);
+    }
+
+    /**
      * The children to show for this node.
      *
-     * With `hideUnchanged` on, a node that changed only shows the children that changed as well -
-     * which is exactly the path towards the changes, since a node containing a change is reported
-     * as changed too. Nodes in branches without any change (and the whole tree of a project
-     * without a captured baseline) are not filtered, otherwise they would look empty.
+     * With `hideUnchanged` on and a baseline captured for this node's project, only the children
+     * that changed are shown - which is exactly the path towards the changes, since a node
+     * containing a change is reported as changed too. If nothing changed at all since the
+     * baseline, this legitimately hides every child. Projects without a captured baseline are
+     * never filtered, otherwise their whole tree would look empty.
      */
     visibleChildren(hideUnchanged: boolean): StereotypedNode[] {
         if (!Array.isArray(this.children)) {
             return [];
         }
-        if (!hideUnchanged || !this.change) {
+        if (!hideUnchanged || !this.hasBaseline) {
             return this.children;
         }
         return this.children.filter(child => !!child.change);

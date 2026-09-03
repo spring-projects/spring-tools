@@ -125,6 +125,15 @@ public class StructureSnapshotStore {
 	}
 
 	/**
+	 * Whether a baseline has been captured for the project, regardless of whether anything has
+	 * changed since then.
+	 */
+	public boolean hasBaseline(IJavaProject project) {
+		ProjectSnapshots tracked = snapshots.get(project.getElementName());
+		return tracked != null && tracked.baseline != null;
+	}
+
+	/**
 	 * Annotates the nodes of a freshly built structure tree with how they changed compared to the
 	 * pinned baseline of that project, so clients can highlight the changed parts of the tree.
 	 *

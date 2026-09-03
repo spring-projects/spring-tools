@@ -140,6 +140,32 @@ public class SpringIndexCommandsCaptureBaselineTest {
 				"expected the new mapping to be marked as changed, but got: " + changed.keySet());
 	}
 
+	@Test
+	void rootNodeReportsNoBaselineBeforeOneIsCaptured() throws Exception {
+		Node root = rootOf(project.getElementName());
+
+		assertEquals(Boolean.FALSE, root.getAttribute(JsonNodeHandler.HAS_BASELINE));
+	}
+
+	@Test
+	void rootNodeReportsABaselineEvenWhenNothingChangedSinceIt() throws Exception {
+		captureBaseline(project.getElementName());
+
+		Node root = rootOf(project.getElementName());
+
+		// hasBaseline must not be confused with "something changed" - it says a baseline exists,
+		// which is what the client needs to tell "no baseline" apart from "baseline, no changes yet"
+		assertEquals(Boolean.TRUE, root.getAttribute(JsonNodeHandler.HAS_BASELINE));
+		assertTrue(changedNodesOf(structureTrees()).isEmpty());
+	}
+
+	private Node rootOf(String projectName) throws Exception {
+		return structureTrees().stream()
+				.filter(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID)))
+				.findFirst()
+				.orElseThrow();
+	}
+
 	/**
 	 * The node ids of all nodes carrying a change marker, mapped to that marker.
 	 */

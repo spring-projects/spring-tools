@@ -80,6 +80,14 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String CHANGE = "change";
 
 	/**
+	 * Whether a baseline has been captured for this project, set on the root node only.
+	 * Independent of whether anything actually changed since that baseline - clients need this to
+	 * tell "no baseline captured" apart from "baseline captured, nothing changed (yet)", which both
+	 * look the same from the absence of {@link #CHANGE} attributes alone.
+	 */
+	public static final String HAS_BASELINE = "hasBaseline";
+
+	/**
 	 * Discriminates the kind of element a node represents, independent of its label or icon
 	 * (several kinds of node can share the same icon). Used to identify nodes across two
 	 * structure trees when diffing them.

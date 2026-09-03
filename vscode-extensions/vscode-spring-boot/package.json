@@ -95,6 +95,26 @@
     "menus": {
       "view/title": [
         {
+          "command": "vscode-spring-boot.structure.highlightChanges",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.highlightChanges",
+          "group": "navigation@3"
+        },
+        {
+          "command": "vscode-spring-boot.structure.stopHighlightingChanges",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && vscode-spring-boot.structure.highlightChanges",
+          "group": "navigation@3"
+        },
+        {
+          "command": "vscode-spring-boot.structure.hideUnchangedNodes",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.hideUnchanged",
+          "group": "navigation@4"
+        },
+        {
+          "command": "vscode-spring-boot.structure.showAllNodes",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && vscode-spring-boot.structure.hideUnchanged",
+          "group": "navigation@4"
+        },
+        {
           "command": "vscode-spring-boot.structure.refresh",
           "when": "vscode-spring-boot.ls.started && view == explorer.spring",
           "group": "navigation@5"
@@ -132,6 +152,22 @@
         {
           "command": "vscode-spring-boot.structure.captureBaseline",
           "when": "false"
+        },
+        {
+          "command": "vscode-spring-boot.structure.highlightChanges",
+          "when": "!vscode-spring-boot.structure.highlightChanges"
+        },
+        {
+          "command": "vscode-spring-boot.structure.stopHighlightingChanges",
+          "when": "vscode-spring-boot.structure.highlightChanges"
+        },
+        {
+          "command": "vscode-spring-boot.structure.hideUnchangedNodes",
+          "when": "!vscode-spring-boot.structure.hideUnchanged"
+        },
+        {
+          "command": "vscode-spring-boot.structure.showAllNodes",
+          "when": "vscode-spring-boot.structure.hideUnchanged"
         },
         {
           "command": "vscode-spring-boot.props-to-yaml",
@@ -286,6 +322,34 @@
         "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(bookmark)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.highlightChanges",
+        "title": "Highlight Changes",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.stopHighlightingChanges",
+        "title": "Stop Highlighting Changes",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.hideUnchangedNodes",
+        "title": "Hide Unchanged Nodes",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.showAllNodes",
+        "title": "Show All Nodes",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(filter-filled)"
       },
       {
         "command": "vscode-spring-boot.ls.start",
@@ -465,11 +529,6 @@
             "type": "boolean",
             "default": false,
             "description": "Explain SpEL expressions, Spring Data queries, and AOP annotations using AI Assistant"
-          },
-          "boot-java.structure.hide-unchanged-nodes": {
-            "type": "boolean",
-            "default": true,
-            "description": "Logical Structure view: once a baseline is captured, show only the nodes that changed since then, together with the path leading to them. Turn this off to always show the full structure with the changed nodes highlighted."
           }
         }
       },

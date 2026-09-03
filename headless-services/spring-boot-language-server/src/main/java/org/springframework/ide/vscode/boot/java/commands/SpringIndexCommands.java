@@ -108,7 +108,10 @@ public class SpringIndexCommands {
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
 				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
 
-		structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree);
+		if (tree != null) {
+			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));
+			structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree);
+		}
 
 		return tree;
 	}

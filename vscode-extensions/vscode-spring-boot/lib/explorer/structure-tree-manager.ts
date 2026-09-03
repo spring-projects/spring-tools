@@ -5,10 +5,44 @@ import { ExtensionAPI } from "../api";
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 
+const HIDE_UNCHANGED_KEY = "vscode-spring-boot.structure.hideUnchanged";
+const HIGHLIGHT_CHANGES_KEY = "vscode-spring-boot.structure.highlightChanges";
+
 interface StructureCommandParams {
     updateMetadata: boolean;
     groups?: Record<string, string[]>;
     affectedProjects?: string[];
+}
+
+/**
+ * A boolean switch that is persisted per workspace, mirrored into a `when`-clause context key
+ * (same name as the storage key) so package.json can show/hide the two commands that flip it, and
+ * fires an event so the tree view can react.
+ */
+class PersistedToggle {
+
+    private value: boolean;
+    private readonly emitter = new EventEmitter<boolean>();
+
+    constructor(private workspaceState: Memento, private key: string, defaultValue: boolean) {
+        this.value = this.workspaceState.get<boolean>(this.key, defaultValue);
+        commands.executeCommand('setContext', this.key, this.value);
+    }
+
+    get(): boolean {
+        return this.value;
+    }
+
+    get onDidChange(): Event<boolean> {
+        return this.emitter.event;
+    }
+
+    async set(value: boolean): Promise<void> {
+        this.value = value;
+        await this.workspaceState.update(this.key, value);
+        await commands.executeCommand('setContext', this.key, value);
+        this.emitter.fire(value);
+    }
 }
 
 export class StructureManager {
@@ -17,9 +51,16 @@ export class StructureManager {
     private _rootElements: StereotypedNode[] = [];
     private _onDidChange = new EventEmitter<undefined | StereotypedNode | StereotypedNode[]>();
     private workspaceState: Memento;
+    private hideUnchangedToggle: PersistedToggle;
+    private highlightChangesToggle: PersistedToggle;
 
     constructor(context: ExtensionContext, api: ExtensionAPI) {
         this.workspaceState = context.workspaceState;
+        // both default to on: once a baseline is captured, changes are highlighted and everything
+        // else is hidden, which is the most useful state right after capturing one
+        this.hideUnchangedToggle = new PersistedToggle(this.workspaceState, HIDE_UNCHANGED_KEY, true);
+        this.highlightChangesToggle = new PersistedToggle(this.workspaceState, HIGHLIGHT_CHANGES_KEY, true);
+
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => this.refresh(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node: StereotypedNode) => {
             const reference = node?.referenceValue;
@@ -53,8 +94,39 @@ export class StructureManager {
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.captureBaseline", (node: StereotypedNode) => this.captureBaseline(node)));
 
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.hideUnchangedNodes", () => this.hideUnchangedToggle.set(true)));
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.showAllNodes", () => this.hideUnchangedToggle.set(false)));
+
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.highlightChanges", () => this.highlightChangesToggle.set(true)));
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.stopHighlightingChanges", () => this.highlightChangesToggle.set(false)));
+
         context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(indexUpdateDetails => this.refresh(false, indexUpdateDetails.affectedProjects)));
 
+    }
+
+    /**
+     * Whether unchanged nodes are hidden once a baseline was captured, showing only the changes
+     * and the path leading to them. Toggled from the "Logical Structure" view's title bar.
+     */
+    get hideUnchanged(): boolean {
+        return this.hideUnchangedToggle.get();
+    }
+
+    get onHideUnchangedChanged(): Event<boolean> {
+        return this.hideUnchangedToggle.onDidChange;
+    }
+
+    /**
+     * Whether nodes that changed since the captured baseline are visually highlighted (colored
+     * icon/label plus a badge). Independent of {@link hideUnchanged} - either, both or neither can
+     * be on. Toggled from the "Logical Structure" view's title bar.
+     */
+    get highlightChanges(): boolean {
+        return this.highlightChangesToggle.get();
+    }
+
+    get onHighlightChangesChanged(): Event<boolean> {
+        return this.highlightChangesToggle.onDidChange;
     }
 
     private async captureBaseline(node: StereotypedNode): Promise<void> {

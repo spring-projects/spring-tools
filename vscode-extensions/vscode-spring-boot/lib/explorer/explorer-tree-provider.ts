@@ -1,4 +1,4 @@
-import { ConfigurationChangeEvent, Event, EventEmitter, ExtensionContext, ProviderResult, TreeDataProvider, TreeItem, TreeView, window, workspace } from "vscode";
+import { Event, EventEmitter, ExtensionContext, ProviderResult, TreeDataProvider, TreeItem, TreeView, window } from "vscode";
 import { StructureManager } from "./structure-tree-manager";
 import { deepestChangedNodes, StereotypedNode } from "./nodes";
 import { StructureDiffDecorationProvider } from "./diff-decorations";
@@ -9,8 +9,6 @@ import { StructureDiffDecorationProvider } from "./diff-decorations";
  * reveal round trips to the tree widget.
  */
 const MAX_REVEALED_NODES = 50;
-
-const HIDE_UNCHANGED_NODES_SETTING = "boot-java.structure.hide-unchanged-nodes";
 
 export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
 
@@ -27,6 +25,16 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
             this.emitter.fire(e);
             this.revealChangedNodes();
         });
+        // the tree keeps the same data when either toggle flips, but which of it is visible (hide
+        // unchanged) or how it looks (highlight changes) changes, so re-render and re-reveal
+        this.manager.onHideUnchangedChanged(() => this.rerender());
+        this.manager.onHighlightChangesChanged(() => this.rerender());
+    }
+
+    private rerender(): void {
+        this.lastRevealedChanges = undefined;
+        this.emitter.fire(undefined);
+        this.revealChangedNodes();
     }
 
     createTreeView(context: ExtensionContext, viewId: string) {
@@ -39,17 +47,7 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
                 this.revealChangedNodes();
             }
         }));
-        context.subscriptions.push(workspace.onDidChangeConfiguration(e => this.onConfigurationChanged(e)));
         return treeView;
-    }
-
-    private onConfigurationChanged(event: ConfigurationChangeEvent) {
-        if (event.affectsConfiguration(HIDE_UNCHANGED_NODES_SETTING)) {
-            // the tree keeps the same data, but which of it is visible changes
-            this.lastRevealedChanges = undefined;
-            this.emitter.fire(undefined);
-            this.revealChangedNodes();
-        }
     }
 
     /**
@@ -57,7 +55,14 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
      * and the path leading to them.
      */
     private get hideUnchanged(): boolean {
-        return workspace.getConfiguration().get<boolean>(HIDE_UNCHANGED_NODES_SETTING, true);
+        return this.manager.hideUnchanged;
+    }
+
+    /**
+     * Whether nodes that changed since the captured baseline are visually highlighted.
+     */
+    private get highlightChanges(): boolean {
+        return this.manager.highlightChanges;
     }
 
     /**
@@ -69,6 +74,10 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
         if (!treeView || !treeView.visible) {
             // revealing would pop the view open, and there is nothing to expand while it is hidden.
             // Once it becomes visible again, onDidChangeVisibility brings us back here.
+            return;
+        }
+        if (!this.hideUnchanged && !this.highlightChanges) {
+            // neither toggle is on, so there is no visual cue that would explain an auto-expand
             return;
         }
 
@@ -101,7 +110,7 @@ export class ExplorerTreeProvider implements TreeDataProvider<StereotypedNode> {
     }
 
     getTreeItem(element: StereotypedNode): TreeItem | Thenable<TreeItem> {
-        return element.getTreeItem(undefined, this.hideUnchanged);
+        return element.getTreeItem(undefined, this.hideUnchanged, this.highlightChanges);
     }
 
     getChildren(element?: StereotypedNode): ProviderResult<StereotypedNode[]> {

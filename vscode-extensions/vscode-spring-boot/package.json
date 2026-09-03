@@ -1,0 +1,1689 @@
+{
+  "name": "vscode-spring-boot",
+  "displayName": "Spring Boot Tools",
+  "description": "Provides validation and content assist for Spring Boot `application.properties`, `application.yml` properties files. As well as Boot-specific support for `.java` files.",
+  "icon": "spring-boot-logo.png",
+  "version": "2.4.0",
+  "publisher": "vmware",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spring-projects/spring-tools.git"
+  },
+  "license": "EPL-1.0",
+  "engines": {
+    "npm": ">=6.0.0",
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "AI",
+    "Chat"
+  ],
+  "keywords": [
+    "java-properties",
+    "spring-boot",
+    "java",
+    "application-properties",
+    "application-yaml"
+  ],
+  "contributes": {
+    "javaExtensions": [
+      "./jars/io.projectreactor.reactor-core.jar",
+      "./jars/org.reactivestreams.reactive-streams.jar",
+      "./jars/jdt-ls-commons.jar",
+      "./jars/jdt-ls-extension.jar",
+      "./jars/sts-gradle-tooling.jar"
+    ],
+    "languages": [
+      {
+        "id": "spring-boot-properties-yaml",
+        "aliases": [
+          "Spring Boot Properties Yaml"
+        ],
+        "filenamePatterns": [
+          "application*.yml",
+          "application*.yaml",
+          "bootstrap*.yml",
+          "bootstrap*.yaml"
+        ],
+        "configuration": "./yaml-support/language-configuration.json"
+      },
+      {
+        "id": "spring-boot-properties",
+        "aliases": [
+          "Spring Boot Properties"
+        ],
+        "filenamePatterns": [
+          "application*.properties",
+          "bootstrap*.properties"
+        ],
+        "configuration": "./properties-support/language-configuration.json"
+      },
+      {
+        "id": "spring-factories",
+        "aliases": [
+          "Spring Factories"
+        ],
+        "filenamePatterns": [
+          "*.factories"
+        ],
+        "configuration": "./properties-support/language-configuration.json"
+      },
+      {
+        "id": "jpa-query-properties",
+        "aliases": [
+          "JPA Query Properties"
+        ],
+        "filenamePatterns": [
+          "jpa-named-queries.properties"
+        ],
+        "configuration": "./properties-support/language-configuration.json"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "explorer.spring",
+          "name": "Logical Structure",
+          "when": "vscode-spring-boot.ls.started",
+          "contextualTitle": "Logical Structure",
+          "icon": "resources/logo.png"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vscode-spring-boot.structure.refresh",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring",
+          "group": "navigation@5"
+        }
+      ],
+      "editor/context": [
+        {
+          "when": "vscode-spring-boot.ls.started && editorLangId == spring-boot-properties",
+          "command": "vscode-spring-boot.props-to-yaml",
+          "group": "SpringBoot"
+        },
+        {
+          "when": "vscode-spring-boot.ls.started && editorLangId == spring-boot-properties-yaml",
+          "command": "vscode-spring-boot.yaml-to-props",
+          "group": "SpringBoot"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "vscode-spring-boot.ls.started && resourceExtname == .properties",
+          "command": "vscode-spring-boot.props-to-yaml",
+          "group": "SpringBoot"
+        },
+        {
+          "when": "vscode-spring-boot.ls.started && (resourceExtname == .yml || resourceExtname == .yaml)",
+          "command": "vscode-spring-boot.yaml-to-props",
+          "group": "SpringBoot"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "vscode-spring-boot.structure.refresh",
+          "when": "false"
+        },
+        {
+          "command": "vscode-spring-boot.props-to-yaml",
+          "when": "false"
+        },
+        {
+          "command": "vscode-spring-boot.yaml-to-props",
+          "when": "false"
+        },
+        {
+          "command": "vscode-spring-boot.live.show.active",
+          "when": "false"
+        },
+        {
+          "command": "vscode-spring-boot.live.hide.active",
+          "when": "false"
+        },
+        {
+          "command": "vscode-spring-boot.live.refresh.active",
+          "when": "false"
+        }
+      ],
+      "debug/toolBar": [
+        {
+          "when": "vscode-spring-boot.ls.started && inDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'disconnected' || vscode-spring-boot.active-app-state == 'connecting')",
+          "command": "vscode-spring-boot.live.show.active",
+          "group": "Spring Boot"
+        },
+        {
+          "when": "vscode-spring-boot.ls.started && inDebugMode && debugType == 'java' && vscode-spring-boot.active-app-state == 'connected'",
+          "command": "vscode-spring-boot.live.refresh.active",
+          "group": "Spring Boot"
+        },
+        {
+          "when": "vscode-spring-boot.ls.started && inDebugMode && debugType == 'java' && (vscode-spring-boot.active-app-state == 'connected' || vscode-spring-boot.active-app-state == 'disconnecting')",
+          "command": "vscode-spring-boot.live.hide.active",
+          "group": "Spring Boot"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vscode-spring-boot.structure.openReference",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == stereotypedNodeWithReference",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-spring-boot.structure.grouping",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == project",
+          "group": "inline"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vscode-spring-boot.structure.refresh",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Refresh",
+        "category": "Spring Boot",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "vscode-spring-boot.live-hover.connect",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Show/Refresh/Hide Live Data from Spring Boot Processes",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "sts/common-properties/reload",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Reload Shared Properties Metadata",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.spring.modulith.metadata.refresh",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Refresh Modulith Metadata",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.set.log-levels",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Set Log Levels",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.open.url",
+        "title": "Open Boot App Page URL",
+        "category": "Spring Boot",
+        "enablement": "never"
+      },
+      {
+        "command": "vscode-spring-boot.props-to-yaml",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Convert .properties to .yaml",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.yaml-to-props",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Convert .yaml to .properties",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.live.show.active",
+        "title": "Show Live Data from launched Spring Boot App",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'disconnected'",
+        "icon": "./images/light-bulb-off.svg",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.live.hide.active",
+        "title": "Hide Live Data from launched Spring Boot App",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'connected'",
+        "icon": "./images/light-bulb-on.svg",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.live.refresh.active",
+        "title": "Refresh Live Data from launched Spring Boot App",
+        "enablement": "vscode-spring-boot.ls.started && vscode-spring-boot.active-app-state == 'connected'",
+        "icon": "$(refresh)",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.query.explain",
+        "enablement": "vscode-spring-boot.ls.started",
+        "title": "Explain SpEL expressions, Spring Data queries, and AOP annotations (AI assistant)",
+        "category": "Spring Boot"
+      },
+      {
+        "command": "vscode-spring-boot.structure.openReference",
+        "title": "Open Reference",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.grouping",
+        "title": "Select Groups to Show/Hide",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "vscode-spring-boot.ls.start",
+        "title": "Start Spring Boot Language Server",
+        "category": "Spring Boot",
+        "enablement": "!vscode-spring-boot.ls.started"
+      }
+    ],
+    "configuration": [
+      {
+        "id": "features",
+        "title": "Features",
+        "order": 100,
+        "properties": {
+          "boot-java.embedded-syntax-highlighting": {
+            "type": "boolean",
+            "default": true,
+            "description": "Syntax Hyghlighting for Languages embedded into Java source code"
+          },
+          "boot-java.java.reconcilers": {
+            "type": "boolean",
+            "default": true,
+            "description": "Reconciling Java Sources"
+          },
+          "boot-java.live-information.automatic-connection.on": {
+            "type": "boolean",
+            "default": true,
+            "description": "Live Information - Automatic addition of JVM arguments enabling JMX and Process Connection via JMX Enabled"
+          },
+          "boot-java.live-information.all-local-java-processes": {
+            "type": "boolean",
+            "description": "Show all local JVM processes when connecting to Live Spring Boot App processes",
+            "default": false
+          },
+          "boot-java.live-information.fetch-data.max-retries": {
+            "type": "number",
+            "default": 10,
+            "description": "Live Information - Max number of retries (before giving up)"
+          },
+          "boot-java.live-information.fetch-data.retry-delay-in-seconds": {
+            "type": "number",
+            "default": 3,
+            "description": "Live Information - Delay between retries in seconds"
+          },
+          "boot-java.scan-java-test-sources.on": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable/Disable Java test sources files scanning"
+          },
+          "boot-java.support-spring-xml-config.on": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable/Disable Support for Spring XML Config files"
+          },
+          "boot-java.support-spring-xml-config.hyperlinks": {
+            "type": "boolean",
+            "description": "Enable/Disable Hyperlinks in Spring XML Config file editor",
+            "default": true
+          },
+          "boot-java.support-spring-xml-config.content-assist": {
+            "type": "boolean",
+            "description": "Enable/Disable Content Assist in Spring XML Config file editor",
+            "default": true
+          },
+          "boot-java.support-spring-xml-config.scan-folders": {
+            "type": "string",
+            "default": "src/main",
+            "description": "Scan Spring XML in folders"
+          },
+          "boot-java.highlight-codelens.on": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable/Disable Spring running Boot application Code Lenses"
+          },
+          "boot-java.common.properties-metadata": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The path to a shared properties metadata JSON file."
+          },
+          "boot-java.properties.completions.elide-prefix": {
+            "type": "boolean",
+            "default": false,
+            "description": "Elide common prefix in property key auto completions"
+          },
+          "boot-java.jpql": {
+            "type": "boolean",
+            "default": true,
+            "description": "JPA Query language support"
+          },
+          "boot-java.cron.inlay-hints": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show CRON expressions inlay-hints"
+          },
+          "boot-java.java.completions.inject-bean": {
+            "type": "boolean",
+            "default": true,
+            "description": "Inject Bean completion proposals in Java editor"
+          },
+          "boot-java.java.beans-structure-tree": {
+            "type": "boolean",
+            "default": true,
+            "description": "Beans structure tree in the outline view (experimental)"
+          },
+          "boot-java.java.codelens-over-query-methods": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show CodeLens with AOT generated query over Data Query methods"
+          },
+          "boot-java.code-action.data-query-multiline": {
+            "type": "boolean",
+            "default": false,
+            "description": "Generate @Query annotations as Java text blocks with formatted multi-line layout"
+          },
+          "boot-java.java.codelens-web-configs-on-controller-classes": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show CodeLens with web config details on controller classes"
+          },
+          "boot-java.remote-apps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "jmxurl": {
+                  "type": "string"
+                },
+                "host": {
+                  "type": "string"
+                },
+                "urlScheme": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "jmxurl",
+                "host"
+              ]
+            },
+            "description": "Array of jmx urls pointing to remote spring boot applications to poll for live hover information. A typical url looks something like this: `service:jmx:rmi://localhost:9111/jndi/rmi://localhost:9111/jmxrmi`"
+          },
+          "boot-java.modulith-project-tracking": {
+            "type": "boolean",
+            "default": true,
+            "description": "Spring Boot Modulith automatic project tracking and metadata update"
+          },
+          "boot-java-vscode-only.test-jars": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable/Disable Spring Boot TestJars launch environment variables"
+          },
+          "spring.tools.properties.replace-converted-file": {
+            "type": "boolean",
+            "default": false,
+            "description": "Replace converted properties file"
+          },
+          "spring.tools.openWith": {
+            "default": "integrated",
+            "type": "string",
+            "enum": [
+              "integrated",
+              "external"
+            ],
+            "enumDescriptions": [
+              "VS Code's integrated browser",
+              "External default browser"
+            ],
+            "scope": "window",
+            "description": "Defines which browser to use when opening Spring Boot apps web pages."
+          },
+          "boot-java.highlight-copilot-codelens.on": {
+            "type": "boolean",
+            "default": false,
+            "description": "Explain SpEL expressions, Spring Data queries, and AOP annotations using AI Assistant"
+          }
+        }
+      },
+      {
+        "id": "ls",
+        "title": "Language Server",
+        "order": 1000,
+        "properties": {
+          "spring-boot.ls.logfile": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The path of a file to write language server logs. If not set or null, then logs are discarded."
+          },
+          "spring-boot.ls.java.home": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Override JAVA_HOME used for launching the spring-boot-language-server JVM process.",
+            "scope": "machine-overridable"
+          },
+          "spring-boot.ls.java.heap": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Max JVM heap value, passed via -Xmx argument when launching spring-boot-language-server JVM process."
+          },
+          "spring-boot.ls.java.vmargs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Additional 'user defined' VM args to pass to the language server process.",
+            "scope": "machine-overridable"
+          },
+          "spring-boot.ls.checkJVM": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable/Disable Java VM validation"
+          },
+          "spring-boot.ls.logLevel": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warn",
+              "info",
+              "debug",
+              "trace",
+              "off"
+            ],
+            "default": "error",
+            "description": "Log level for the Spring Boot Language Server"
+          },
+          "spring-boot.ls.cds.enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable Class Data Sharing (AOT Cache) for faster Language Server startup. Requires Java 25+."
+          }
+        }
+      },
+      {
+        "id": "ai",
+        "title": "AI",
+        "order": 420,
+        "properties": {
+          "boot-java.ai.mcp-server-enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable embedded MCP server (experimental)"
+          },
+          "boot-java.ai.mcp-server-port": {
+            "type": "integer",
+            "default": 50627,
+            "description": "Port used by the embedded MCP serverr"
+          }
+        }
+      },
+      {
+        "id": "boot2",
+        "title": "Boot 2.x Best Practices & Optimizations",
+        "order": 401,
+        "properties": {
+          "boot-java.validation.java.boot2": {
+            "type": "string",
+            "default": "AUTO",
+            "description": "Enablement",
+            "enum": [
+              "AUTO",
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.PATH_IN_CONTROLLER_ANNOTATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Controller annotation default attribute might contain a path",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_AUTOWIRED_CONSTRUCTOR": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Unnecessary `@Autowired` over the only constructor",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_PUBLIC_BEAN_METHOD": {
+            "type": "string",
+            "default": "HINT",
+            "description": "Public modifier on `@Bean` method. They no longer have to be public visibility to be usable by Spring.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_TEST_SPRING_EXTENSION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "`@SpringBootTest` and all test slice annotations already applies `@SpringExtension` as of Spring Boot 2.1.0.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_CONSTRUCTOR_PARAMETER_INJECTION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Use constructor parameter injection",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_PRECISE_REQUEST_MAPPING": {
+            "type": "string",
+            "default": "HINT",
+            "description": "Use precise mapping annotation, i.e. '@GetMapping', '@PostMapping', etc.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_PRECISE_SCOPE": {
+            "type": "string",
+            "default": "HINT",
+            "description": "Use precise scope annotation, i.e. '@RequestScope', '@SessionScope', '@ApplicationScope'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_REPOSITORY": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Unnecessary `@Repository`",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_LAMBDA_DSL": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Consider switching to Lambda DSL syntax",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.MISSING_CONFIGURATION_ANNOTATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Class likely missing '@Configuration' annotation, i.e. has Bean methods but no '@Configuration' annotation",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.HTTP_SECURITY_AUTHORIZE_HTTP_REQUESTS": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "'HttpSecurity.authroizeRequests(...)' API and related classes are to be deprecated use new `authorizeHttpRequests(...) and related classes",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.WEB_SECURITY_CONFIGURER_ADAPTER": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "'WebSecurityConfigurerAdapter' is removed in Spring-Security 6.x. Refactor classes extending the 'WebSecurityConfigurerAdapter' into 'Configuration' beans and methods into 'Bean' definitions ",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.DOMAIN_ID_FOR_REPOSITORY": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Invalid Domain ID type for Spring Data Repository",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.WEB_ANNOTATION_NAMES": {
+            "type": "string",
+            "default": "HINT",
+            "description": "Web annotation names are unnecessary when it is the same as method parameter name",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.VALUE_CLASSPATH_RESOURCE_TYPE": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Type is not compatible with classpath resource injection",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.WEB_CONFIGURER_CONFIGURATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Class implementing a web configurer interface should be annotated with '@Configuration'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.MISSING_VALIDATED_ANNOTATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Component class using bean validation annotations should be annotated with '@Validated'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.JAVA_FINAL_AUTOWIRED_FIELD": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "`@Autowired` field should not be `final`",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.EXTRACT_REQUEST_MAPPING_PARENT_PATH": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping`",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.REST_CONTROLLER_COMBINATION": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Class annotated with both `@Controller` and `@ResponseBody` could use `@RestController` instead",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot2.SPRING_JUNIT_CONFIG_COMBINATION": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Test class annotated with both `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration` could use `@SpringJUnitConfig` instead",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "boot3",
+        "title": "Boot 3.x Best Practices & Optimizations",
+        "order": 402,
+        "properties": {
+          "boot-java.validation.java.boot3": {
+            "type": "string",
+            "default": "AUTO",
+            "description": "Enablement",
+            "enum": [
+              "AUTO",
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.boot3.JAVA_TYPE_NOT_SUPPORTED": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Type no supported as of Spring Boot 3",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot3.FACTORIES_KEY_NOT_SUPPORTED": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Spring factories key not supported",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot3.MODULITH_TYPE_REF_VIOLATION": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Modulith restricted type reference",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot3.MODULITH_APPLICATION_MODULE_LISTENER": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Use '@ApplicationModuleListener' instead of '@Async'/'@Transactional'/'@TransactionalEventListener'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "boot4",
+        "title": "Boot 4.x Best Practices & Optimizations",
+        "order": 403,
+        "properties": {
+          "boot-java.validation.java.boot4": {
+            "type": "string",
+            "default": "AUTO",
+            "description": "Enablement",
+            "enum": [
+              "AUTO",
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.REGISTRAR_BEAN_INVALID_ANNOTATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Bean Registrar cannot be registered as a bean via `@Component` annotations",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.REGISTRAR_BEAN_DECLARATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Bean Registrar should be added to a configuration bean via `@Import`",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSIONING_NOT_CONFIGURED": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API Versioning used but not configured anywhere",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSION_SYNTAX_ERROR": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API version cannot be parsed into a standard semantic version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API versioninig path segment strategy should not be mixed with other strategies",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "API versioninig strategy is configured multiple times with the same strategy",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.boot4.SPRING_DATA_STRING_PROPERTY_REFERENCE": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Non type-safe String-based property reference for a Spring Data domain type",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "spring-aot",
+        "title": "AOT Optimizations",
+        "order": 404,
+        "properties": {
+          "boot-java.validation.java.spring-aot": {
+            "type": "string",
+            "default": "OFF",
+            "description": "Enablement",
+            "enum": [
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.spring-aot.JAVA_CONCRETE_BEAN_TYPE": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Bean definition should have precise type",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.spring-aot.JAVA_BEAN_POST_PROCESSOR_IGNORED_IN_AOT": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "'BeanPostProcessor' behaviour is ignored",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.spring-aot.JAVA_BEAN_NOT_REGISTERED_IN_AOT": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Not registered as Bean",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "application-properties",
+        "title": "Property Config Files",
+        "order": 405,
+        "properties": {
+          "spring-boot.ls.problem.application-properties.PROP_INVALID_BEAN_NAVIGATION": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Accessing a 'bean property' in a type that doesn't have properties (e.g. like String or Integer)",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_INVALID_INDEXED_NAVIGATION": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Accessing a property using [] in a type that doesn't support that",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_EXPECTED_DOT_OR_LBRACK": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Unexpected character found where a '.' or '[' was expected",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_NO_MATCHING_RBRACK": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Found a '[' but no matching ']'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_NON_INTEGER_IN_BRACKETS": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Use of [..] navigation with non-integer value",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_VALUE_TYPE_MISMATCH": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Expecting a value of a certain type, but value doesn't parse as such",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_INVALID_BEAN_PROPERTY": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Accessing a named property in a type that doesn't provide a property accessor with that name",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_UNKNOWN_PROPERTY": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Property-key not found in any configuration metadata on the project's classpath",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_DEPRECATED": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Property is marked as Deprecated",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_DUPLICATE_KEY": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Multiple assignments to the same property value",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-properties.PROP_SYNTAX_ERROR": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Syntax Error",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "application-yaml",
+        "title": "YAML Config Files",
+        "order": 406,
+        "properties": {
+          "spring-boot.ls.problem.application-yaml.YAML_SYNTAX_ERROR": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Error parsing the input using snakeyaml",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_UNKNOWN_PROPERTY": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Property-key not found in the configuration metadata on the project's classpath",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_VALUE_TYPE_MISMATCH": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Expecting a value of a certain type, but value doesn't parse as such",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_EXPECT_SCALAR": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Expecting a 'scalar' value but found something more complex.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_EXPECT_TYPE_FOUND_SEQUENCE": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Found a 'sequence' node where a non 'list-like' type is expected",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_EXPECT_TYPE_FOUND_MAPPING": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Found a 'mapping' node where a type that can't be treated as a 'property map' is expected",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_EXPECT_MAPPING": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Expecting a 'mapping' node but found something else",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_EXPECT_BEAN_PROPERTY_NAME": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Expecting a 'bean property' name but found something more complex",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_INVALID_BEAN_PROPERTY": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Accessing a named property in a type that doesn't provide a property accessor with that name",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_DEPRECATED_ERROR": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Property is marked as Deprecated(Error)",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_DEPRECATED_WARNING": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Property is marked as Deprecated(Warning)",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_DUPLICATE_KEY": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "A mapping node contains multiple entries for the same key",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.application-yaml.YAML_SHOULD_ESCAPE": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "This key contains special characters and should probably be escaped by surrounding it with '[]'",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "spel",
+        "title": "SpEL Expressions",
+        "order": 407,
+        "properties": {
+          "boot-java.validation.spel.on": {
+            "type": "string",
+            "default": "ON",
+            "description": "Enablement",
+            "enum": [
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.spel.JAVA_SPEL_EXPRESSION_SYNTAX": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "SpEL parser raised a ParseException",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.spel.PROPERTY_PLACE_HOLDER_SYNTAX": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Property place holder raised a ParseException",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "version-validation",
+        "title": "Versions and Support Ranges",
+        "order": 408,
+        "properties": {
+          "boot-java.validation.java.version-validation": {
+            "type": "string",
+            "default": "ON",
+            "description": "Enablement",
+            "enum": [
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.SUPPORTED_OSS_VERSION": {
+            "type": "string",
+            "default": "IGNORE",
+            "description": "Supported OSS Boot Version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.UNSUPPORTED_OSS_VERSION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Unsupported OSS Version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.UNSUPPORTED_COMMERCIAL_VERSION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Unsupported Commercial Version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.SUPPORTED_COMMERCIAL_VERSION": {
+            "type": "string",
+            "default": "IGNORE",
+            "description": "Supported Commercial Version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.UPDATE_LATEST_MAJOR_VERSION": {
+            "type": "string",
+            "default": "IGNORE",
+            "description": "Update to Latest Major Version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.UPDATE_LATEST_MINOR_VERSION": {
+            "type": "string",
+            "default": "INFO",
+            "description": "Update to Latest Minor Version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.UPDATE_LATEST_PATCH_VERSION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Update to Latest Patch Version",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.version-validation.SPRING_CLOUD_INCOMPATIBLE_BOOT_VERSION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Incompatible Spring Boot Version for Spring Cloud",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem-parameters.version-validation.use-project-build-file": {
+            "type": "boolean",
+            "default": true,
+            "description": "Check project repositories for available versions",
+            "markdownDescription": "Check project repositories for available versions - _(when enabled, uses the Maven repositories configured in the project build file to look up available Spring Boot versions. Falls back to spring.io if the repositories cannot be queried.)_"
+          }
+        }
+      },
+      {
+        "id": "data-query",
+        "title": "Data Queries",
+        "order": 409,
+        "properties": {
+          "boot-java.validation.data-query": {
+            "type": "string",
+            "default": "ON",
+            "description": "Enablement",
+            "enum": [
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.data-query.JPQL_SYNTAX": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Syntax",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.data-query.HQL_SYNTAX": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Syntax",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.data-query.SQL_SYNTAX": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Syntax",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "cron",
+        "title": "CRON Expressions",
+        "order": 410,
+        "properties": {
+          "boot-java.validation.cron": {
+            "type": "string",
+            "default": "ON",
+            "description": "Enablement",
+            "enum": [
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.cron.SYNTAX": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Syntax",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.cron.FIELD": {
+            "type": "string",
+            "default": "ERROR",
+            "description": "Field",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          }
+        }
+      },
+      {
+        "id": "spring-ai",
+        "title": "Spring AI",
+        "order": 411,
+        "properties": {
+          "boot-java.validation.spring-ai": {
+            "type": "string",
+            "default": "ON",
+            "description": "Enablement",
+            "enum": [
+              "OFF",
+              "ON"
+            ]
+          },
+          "spring-boot.ls.problem.spring-ai.SPRING_AI_TOOL_MISSING_DESCRIPTION": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Spring AI tool/prompt/resource is missing a description. Descriptions are critical for the LLM to correctly select and invoke the tool.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem.spring-ai.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT": {
+            "type": "string",
+            "default": "WARNING",
+            "description": "Spring AI tool/prompt/resource description is too short. A meaningful description helps the LLM decide when and how to invoke the tool.",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
+          },
+          "spring-boot.ls.problem-parameters.spring-ai.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT.minimum-length": {
+            "type": "integer",
+            "default": 30,
+            "minimum": 1,
+            "description": "Minimum required character length for Spring AI tool descriptions (@Tool, @McpTool, @McpPrompt, @McpResource)."
+          }
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "spring-boot-properties-yaml",
+        "scopeName": "source.spring-boot-properties-yaml",
+        "path": "./yaml-support/spring-boot-properties-yaml.tmLanguage.json"
+      },
+      {
+        "language": "spring-boot-properties",
+        "scopeName": "source.spring-boot-properties",
+        "path": "./properties-support/spring-boot-properties.tmLanguage.json"
+      },
+      {
+        "language": "jpa-query-properties",
+        "scopeName": "source.jpa-query-properties",
+        "path": "./properties-support/jpa-query-properties.tmLanguage.json"
+      },
+      {
+        "language": "spring-factories",
+        "scopeName": "source.spring-factories",
+        "path": "./properties-support/spring-factories.tmLanguage.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[spring-boot-properties-yaml]": {
+        "editor.quickSuggestions": {
+          "strings": true
+        }
+      },
+      "[spring-boot-properties]": {
+        "editor.quickSuggestions": {
+          "strings": true
+        }
+      },
+      "[jpa-query-properties]": {
+        "editor.quickSuggestions": {
+          "strings": true
+        }
+      },
+      "[spring-factories]": {
+        "editor.quickSuggestions": {
+          "strings": true
+        }
+      }
+    }
+  },
+  "main": "./dist/extension",
+  "scripts": {
+    "vscode:prepublish": "npm run check-types && npm run lint && npm run package",
+    "package": "node esbuild.js --production",
+    "check-types": "tsc --noEmit",
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "lint": "eslint lib",
+    "clean": "rm -fr node_modules out dist *.vsix package-lock.json",
+    "vsce-package": "vsce package",
+    "vsce-pre-release-package": "vsce package --pre-release"
+  },
+  "dependencies": {
+    "@pivotal-tools/commons-vscode": "file:../commons-vscode/pivotal-tools-commons-vscode-0.2.4.tgz",
+    "ps-list": "^7.2.0",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "1.92.0",
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.28.1",
+    "eslint": "^10.0.1",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.56.0"
+  }
+}

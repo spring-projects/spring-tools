@@ -465,6 +465,11 @@
             "type": "boolean",
             "default": false,
             "description": "Explain SpEL expressions, Spring Data queries, and AOP annotations using AI Assistant"
+          },
+          "boot-java.structure.hide-unchanged-nodes": {
+            "type": "boolean",
+            "default": true,
+            "description": "Logical Structure view: once a baseline is captured, show only the nodes that changed since then, together with the path leading to them. Turn this off to always show the full structure with the changed nodes highlighted."
           }
         }
       },

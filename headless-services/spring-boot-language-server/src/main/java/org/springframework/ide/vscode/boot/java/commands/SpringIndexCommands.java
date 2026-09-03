@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -66,8 +67,7 @@ public class SpringIndexCommands {
 
 				return projects
 						.parallel()
-						.map(project -> structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
-								args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName())))
+						.map(project -> createAnnotatedTree(project, cachedIndex, args))
 						.filter(Objects::nonNull)
 						.collect(Collectors.toList());
 			}, messageWorkerThreadPool);
@@ -98,6 +98,19 @@ public class SpringIndexCommands {
 				return new CaptureBaselineResult(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt().toString());
 			}, messageWorkerThreadPool);
 		});
+	}
+
+	/**
+	 * Builds the structure tree of a project and, if a baseline was captured for that project,
+	 * marks the nodes that changed since then, so clients can highlight them in their tree.
+	 */
+	private Node createAnnotatedTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, StructureCommandArgs args) {
+		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
+				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
+
+		structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree);
+
+		return tree;
 	}
 
 	/**

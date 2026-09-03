@@ -23,6 +23,8 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
+import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.ChangeType;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.StructureTreeDiff;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -122,12 +124,50 @@ public class StructureSnapshotStore {
 				comparedTo.root(), current.root()));
 	}
 
+	/**
+	 * Annotates the nodes of a freshly built structure tree with how they changed compared to the
+	 * pinned baseline of that project, so clients can highlight the changed parts of the tree.
+	 *
+	 * <p>Does nothing when no baseline was captured for the project. Deliberately does not start
+	 * tracking the project either - rendering the structure view must not turn every project in the
+	 * workspace into one whose snapshots are kept up to date in the background.
+	 *
+	 * @param root the root of the tree to annotate, modified in place
+	 */
+	public void annotateWithChangesSinceBaseline(IJavaProject project, Node root) {
+		ProjectSnapshots tracked = snapshots.get(project.getElementName());
+		StructureSnapshot baseline = tracked == null ? null : tracked.baseline;
+
+		if (baseline == null || root == null) {
+			return;
+		}
+
+		StructureTreeDiff diff = StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(),
+				Instant.now(), baseline.root(), StructureViewProvider.toStructureNode(root));
+
+		Map<String, ChangeType> changes = StructureTreeDiffer.changesByNodeId(diff.root());
+		if (!changes.isEmpty()) {
+			applyChanges(root, changes);
+		}
+	}
+
+	private static void applyChanges(Node node, Map<String, ChangeType> changes) {
+		Object nodeId = node.getAttribute(JsonNodeHandler.NODE_ID);
+		ChangeType change = nodeId == null ? null : changes.get(nodeId.toString());
+
+		if (change != null) {
+			node.withAttribute(JsonNodeHandler.CHANGE, change.name().toLowerCase());
+		}
+
+		node.getChildren().forEach(child -> applyChanges(child, changes));
+	}
+
 	private ProjectSnapshots trackedSnapshotsOf(IJavaProject project) {
 		return snapshots.computeIfAbsent(project.getElementName(), name -> new ProjectSnapshots());
 	}
 
 	private StructureSnapshot snapshotNow(IJavaProject project) {
-		JsonNodeHandler.Node root = structureViewProvider.createTree(project, false, null);
+		Node root = structureViewProvider.createTree(project, false, null);
 
 		if (root == null) {
 			// for Spring Modulith projects the tree cannot be created without the module metadata,
@@ -181,24 +221,35 @@ public class StructureSnapshotStore {
 	private void refreshTrackedProject(IJavaProject project, ProjectSnapshots tracked) {
 		try {
 			StructureSnapshot fresh = snapshotNow(project);
+			StructureSnapshot baseline;
+
 			synchronized (tracked) {
 				tracked.previous = tracked.current;
 				tracked.current = fresh;
-
-				Optional<StructureTreeDiff> diff = this.diffAgainstBaseline(project);
-				if (diff.isPresent()) {
-
-					StructureTreeDiff structureTreeDiff = diff.get();
-					if (structureTreeDiff.stats().hasChanges()) {
-						String treeWithDiff = AsciiStructureRenderer.render(structureTreeDiff, true);
-						
-						log.info("\n\n" + treeWithDiff + "\n\n");
-					}
-
-				}
+				baseline = tracked.baseline;
 			}
+
+			// diffing and rendering happens outside of the lock, it only needs the two snapshots
+			logChangesSinceBaseline(project, baseline, fresh);
 		} catch (Exception e) {
 			log.warn("failed to refresh logical structure snapshot for project: " + project.getElementName(), e);
+		}
+	}
+
+	/**
+	 * Logs the ascii-art diff between the pinned baseline and the structure that was just computed,
+	 * reusing that already computed snapshot instead of creating another one.
+	 */
+	private void logChangesSinceBaseline(IJavaProject project, StructureSnapshot baseline, StructureSnapshot current) {
+		if (baseline == null) {
+			return;
+		}
+
+		StructureTreeDiff diff = StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(),
+				current.capturedAt(), baseline.root(), current.root());
+
+		if (diff.stats().hasChanges()) {
+			log.info("\n\n" + AsciiStructureRenderer.render(diff, true) + "\n\n");
 		}
 	}
 

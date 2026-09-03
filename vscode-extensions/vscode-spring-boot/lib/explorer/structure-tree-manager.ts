@@ -65,7 +65,9 @@ export class StructureManager {
 
         try {
             const result = await commands.executeCommand<CaptureBaselineResult>(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, projectName);
-            window.showInformationMessage(`Captured logical structure baseline for '${projectName}' (${result.nodeCount} node(s)). Use the "Show Logical Structure Changes" MCP tool to see what changes since this point.`);
+            // re-fetch the tree so that change markers left over from a previous baseline disappear
+            this.refresh(false);
+            window.showInformationMessage(`Captured logical structure baseline for '${projectName}' (${result.nodeCount} node(s)). Changes since this point are highlighted in the Logical Structure view.`);
         } catch (e) {
             window.showErrorMessage(`Failed to capture logical structure baseline for '${projectName}': ${e}`);
         }

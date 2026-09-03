@@ -73,6 +73,13 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String NODE_ID = "nodeId";
 
 	/**
+	 * How this node changed compared to the captured baseline of its project ("added" or
+	 * "modified"), attached only when a baseline was captured for that project. Clients use this
+	 * to highlight the changed parts of the structure tree.
+	 */
+	public static final String CHANGE = "change";
+
+	/**
 	 * Discriminates the kind of element a node represents, independent of its label or icon
 	 * (several kinds of node can share the same icon). Used to identify nodes across two
 	 * structure trees when diffing them.

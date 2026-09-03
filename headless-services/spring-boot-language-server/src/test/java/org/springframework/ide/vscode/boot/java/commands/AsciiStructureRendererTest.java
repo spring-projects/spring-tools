@@ -72,17 +72,17 @@ public class AsciiStructureRendererTest {
 	}
 
 	private static StructureTreeDiff sampleDiff() {
-		DiffNode findAll = new DiffNode("findAll()", "method", ChangeType.ADDED, List.of());
-		DiffNode ownerRestController = new DiffNode("OwnerRestController", "type", ChangeType.ADDED, List.of(findAll));
+		DiffNode findAll = new DiffNode("id-findAll", "findAll()", "method", ChangeType.ADDED, List.of());
+		DiffNode ownerRestController = new DiffNode("id-OwnerRestController", "OwnerRestController", "type", ChangeType.ADDED, List.of(findAll));
 
-		DiffNode m1 = new DiffNode("m1", "method", ChangeType.UNCHANGED, List.of());
-		DiffNode m2 = new DiffNode("m2", "method", ChangeType.UNCHANGED, List.of());
-		DiffNode ownerController = new DiffNode("OwnerController", "type", ChangeType.UNCHANGED, List.of(m1, m2));
+		DiffNode m1 = new DiffNode("id-m1", "m1", "method", ChangeType.UNCHANGED, List.of());
+		DiffNode m2 = new DiffNode("id-m2", "m2", "method", ChangeType.UNCHANGED, List.of());
+		DiffNode ownerController = new DiffNode("id-OwnerController", "OwnerController", "type", ChangeType.UNCHANGED, List.of(m1, m2));
 
-		DiffNode webLayer = new DiffNode("Web Layer", "stereotype", ChangeType.MODIFIED, List.of(ownerRestController, ownerController));
-		DiffNode springData = new DiffNode("Spring Data", "stereotype", ChangeType.UNCHANGED, List.of());
+		DiffNode webLayer = new DiffNode("id-WebLayer", "Web Layer", "stereotype", ChangeType.MODIFIED, List.of(ownerRestController, ownerController));
+		DiffNode springData = new DiffNode("id-SpringData", "Spring Data", "stereotype", ChangeType.UNCHANGED, List.of());
 
-		DiffNode root = new DiffNode("spring-petclinic", "application", ChangeType.MODIFIED, List.of(webLayer, springData));
+		DiffNode root = new DiffNode("id-root", "spring-petclinic", "application", ChangeType.MODIFIED, List.of(webLayer, springData));
 		DiffStats stats = new DiffStats(2, 0, 2, 4);
 
 		return new StructureTreeDiff("spring-petclinic", BASELINE_AT, CURRENT_AT, root, stats);

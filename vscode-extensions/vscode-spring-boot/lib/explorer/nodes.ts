@@ -1,17 +1,71 @@
-import { TextDocumentShowOptions, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
+import { TextDocumentShowOptions, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { Location } from "vscode-languageclient";
 import { LsStereoTypedNode } from "./structure-tree-manager";
+import { StructureChange, structureDiffUri } from "./diff-decorations";
 import * as ls from 'vscode-languageserver-protocol';
+
+const CHANGE_ICON_COLORS: Record<StructureChange, string> = {
+    added: "gitDecoration.addedResourceForeground",
+    removed: "gitDecoration.deletedResourceForeground",
+    modified: "gitDecoration.modifiedResourceForeground"
+};
+
+const CHANGE_TOOLTIPS: Record<StructureChange, string> = {
+    added: "added since the captured baseline",
+    removed: "removed since the captured baseline",
+    modified: "contains changes since the captured baseline"
+};
+
+/**
+ * The deepest changed nodes of the given trees, i.e. the changed nodes that have no changed child
+ * of their own.
+ *
+ * Revealing exactly these is enough to make every changed node visible: revealing a node expands
+ * all of its ancestors, and the ancestors of a changed node are reported as changed as well. Nodes
+ * in branches without any change are left alone.
+ */
+export function deepestChangedNodes(nodes: StereotypedNode[]): StereotypedNode[] {
+    const deepest: StereotypedNode[] = [];
+
+    const visit = (node: StereotypedNode) => {
+        let hasChangedChild = false;
+
+        for (const child of node.children) {
+            if (child.change) {
+                hasChangedChild = true;
+            }
+            visit(child);
+        }
+
+        if (node.change && !hasChangedChild) {
+            deepest.push(node);
+        }
+    };
+
+    nodes.forEach(visit);
+    return deepest;
+}
 
 export class StereotypedNode {
     constructor(private n: LsStereoTypedNode, public children: StereotypedNode[], protected parent?: StereotypedNode) {}
         
-    getTreeItem(savedState?: TreeItemCollapsibleState): TreeItem {
+    getTreeItem(savedState?: TreeItemCollapsibleState, hideUnchanged = false): TreeItem {
         const defaultState = savedState !== undefined ? savedState : TreeItemCollapsibleState.Collapsed;
-        const item = new TreeItem(this.label, Array.isArray(this.children) && this.children.length ? defaultState : TreeItemCollapsibleState.None);
+        const visibleChildren = this.visibleChildren(hideUnchanged);
+        const item = new TreeItem(this.label, visibleChildren.length ? defaultState : TreeItemCollapsibleState.None);
         item.iconPath = new ThemeIcon(this.n.attributes.icon);
         item.id = this.nodeId;
-        
+
+        // nodes that changed since the captured baseline get their icon colored, and a colored
+        // label plus a badge via the file decoration provider for the synthetic resource URI
+        const change = this.change;
+        if (change) {
+            item.iconPath = new ThemeIcon(this.n.attributes.icon, new ThemeColor(CHANGE_ICON_COLORS[change]));
+            item.resourceUri = structureDiffUri(change, this.nodeId);
+            // set explicitly, otherwise the synthetic resource URI shows up as the tooltip
+            item.tooltip = `${this.label} (${CHANGE_TOOLTIPS[change]})`;
+        }
+
         // Add context value if reference attribute exists
         if (this.n.attributes.reference) {
             item.contextValue = "stereotypedNodeWithReference";
@@ -40,6 +94,33 @@ export class StereotypedNode {
     
     get nodeId(): string {
         return this.n.attributes.nodeId || this.n.attributes.text;
+    }
+
+    /**
+     * How this node changed since the baseline captured for its project, if a baseline was
+     * captured at all and this node is affected by a change.
+     */
+    get change(): StructureChange | undefined {
+        const change = this.n.attributes.change;
+        return change === "added" || change === "removed" || change === "modified" ? change : undefined;
+    }
+
+    /**
+     * The children to show for this node.
+     *
+     * With `hideUnchanged` on, a node that changed only shows the children that changed as well -
+     * which is exactly the path towards the changes, since a node containing a change is reported
+     * as changed too. Nodes in branches without any change (and the whole tree of a project
+     * without a captured baseline) are not filtered, otherwise they would look empty.
+     */
+    visibleChildren(hideUnchanged: boolean): StereotypedNode[] {
+        if (!Array.isArray(this.children)) {
+            return [];
+        }
+        if (!hideUnchanged || !this.change) {
+            return this.children;
+        }
+        return this.children.filter(child => !!child.change);
     }
     
     get label(): string {

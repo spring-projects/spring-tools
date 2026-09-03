@@ -11,16 +11,23 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +38,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
+import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands.CaptureBaselineResult;
 import org.springframework.ide.vscode.boot.mcp.StereotypeInformation;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -38,6 +46,8 @@ import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFin
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import com.google.gson.JsonObject;
 
 /**
  * Tests for the {@code sts/spring-boot/structure/captureBaseline} LSP command, the entry point the
@@ -52,19 +62,21 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 public class SpringIndexCommandsCaptureBaselineTest {
 
 	private static final String CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
+	private static final String STRUCTURE_CMD = "sts/spring-boot/structure";
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
 	@Autowired private StereotypeInformation stereotypeInformation;
 
+	private File directory;
 	private IJavaProject project;
 
 	@BeforeEach
 	public void setup() throws Exception {
 		harness.intialize(null);
 
-		File directory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
 		project = projectFinder.find(new TextDocumentIdentifier(directory.toURI().toString())).get();
 
 		CompletableFuture<Void> initProject = indexer.waitOperation();
@@ -94,6 +106,64 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	void capturingABaselineForAnUnknownProjectFails() {
 		ExecutionException exception = assertThrows(ExecutionException.class, () -> captureBaseline("no-such-project"));
 		assertTrue(exception.getCause().getMessage().contains("no-such-project"));
+	}
+
+	@Test
+	void structureTreeCarriesNoChangeMarkersWithoutABaseline() throws Exception {
+		List<Node> roots = structureTrees();
+
+		assertTrue(changedNodesOf(roots).isEmpty(),
+				"expected no change markers before a baseline was captured, but got: " + changedNodesOf(roots));
+	}
+
+	@Test
+	void structureTreeMarksNodesThatChangedSinceTheBaseline() throws Exception {
+		captureBaseline(project.getElementName());
+
+		// right after capturing, current == baseline, so nothing is marked
+		assertTrue(changedNodesOf(structureTrees()).isEmpty(), "expected no change markers directly after capturing a baseline");
+
+		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace(
+				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
+				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}\n\n\t@GetMapping(\"/goodbye\")\n\tpublic String sayGoodbye() {\n\t\treturn \"goodbye!!!\";\n\t}");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+
+		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
+
+		Map<String, String> changed = changedNodesOf(structureTrees());
+
+		assertFalse(changed.isEmpty(), "expected change markers in the structure tree after changing a controller");
+		assertTrue(changed.values().contains("added"), "expected at least one node marked as added, but got: " + changed);
+		assertTrue(changed.keySet().stream().anyMatch(nodeId -> nodeId.contains("/goodbye")),
+				"expected the new mapping to be marked as changed, but got: " + changed.keySet());
+	}
+
+	/**
+	 * The node ids of all nodes carrying a change marker, mapped to that marker.
+	 */
+	private static Map<String, String> changedNodesOf(List<Node> roots) {
+		Map<String, String> changed = new LinkedHashMap<>();
+		roots.forEach(root -> collectChanges(root, changed));
+		return changed;
+	}
+
+	private static void collectChanges(Node node, Map<String, String> changed) {
+		Object change = node.getAttribute(JsonNodeHandler.CHANGE);
+		if (change != null) {
+			changed.put(String.valueOf(node.getAttribute(JsonNodeHandler.NODE_ID)), change.toString());
+		}
+		node.getChildren().forEach(child -> collectChanges(child, changed));
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<Node> structureTrees() throws Exception {
+		JsonObject params = new JsonObject();
+		params.addProperty("updateMetadata", false);
+
+		return (List<Node>) harness.getServer().getWorkspaceService()
+				.executeCommand(new ExecuteCommandParams(STRUCTURE_CMD, List.of(params))).get();
 	}
 
 	@SuppressWarnings("unchecked")

@@ -79,7 +79,7 @@ public class StructureTreeDiffer {
 
 		ChangeType change = (anyChildChanged || attributesChanged) ? ChangeType.MODIFIED : ChangeType.UNCHANGED;
 
-		return new DiffNode(after.text(), after.kind(), change, children);
+		return new DiffNode(after.nodeId(), after.text(), after.kind(), change, children);
 	}
 
 	private static DiffNode wholeSubtree(StructureNode node, ChangeType change) {
@@ -87,7 +87,7 @@ public class StructureTreeDiffer {
 				.map(child -> wholeSubtree(child, change))
 				.toList();
 
-		return new DiffNode(node.text(), node.kind(), change, children);
+		return new DiffNode(node.nodeId(), node.text(), node.kind(), change, children);
 	}
 
 	/**
@@ -143,9 +143,30 @@ public class StructureTreeDiffer {
 	}
 
 	/**
+	 * Indexes the changed nodes of a diff tree by the node id they have in the tree they were
+	 * diffed from, so the changes can be applied back onto that tree. Unchanged nodes are left out.
+	 *
+	 * <p>Removed nodes carry the node id they had in the baseline, which no longer exists in the
+	 * current tree - they show up in the current tree only indirectly, through their surviving
+	 * ancestors being reported as {@link ChangeType#MODIFIED}.
+	 */
+	public static Map<String, ChangeType> changesByNodeId(DiffNode root) {
+		Map<String, ChangeType> changes = new LinkedHashMap<>();
+		collectChanges(root, changes);
+		return changes;
+	}
+
+	private static void collectChanges(DiffNode node, Map<String, ChangeType> changes) {
+		if (node.change() != ChangeType.UNCHANGED && node.nodeId() != null) {
+			changes.put(node.nodeId(), node.change());
+		}
+		node.children().forEach(child -> collectChanges(child, changes));
+	}
+
+	/**
 	 * A single node of the diff tree.
 	 */
-	public static record DiffNode(String label, String kind, ChangeType change, List<DiffNode> children) {
+	public static record DiffNode(String nodeId, String label, String kind, ChangeType change, List<DiffNode> children) {
 
 		/**
 		 * The number of nodes in this subtree, including this node itself. Only meaningful when

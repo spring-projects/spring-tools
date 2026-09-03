@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.ChangeType;
@@ -147,6 +148,30 @@ public class StructureTreeDifferTest {
 		DiffNode root = diff(node("application", "app", before), node("application", "app", after)).root();
 
 		assertThat(root.children().get(0).change()).isEqualTo(ChangeType.MODIFIED);
+	}
+
+	@Test
+	void changesAreIndexedByTheNodeIdOfTheCurrentTree() {
+		StructureNode unchanged = new StructureNode("app/type:A", "A", null, "type", null, null, null, List.of());
+		StructureNode added = new StructureNode("app/type:B", "B", null, "type", null, null, null, List.of());
+
+		StructureNode before = node("application", "app", unchanged);
+		StructureNode after = new StructureNode("app", "app", null, "application", null, null, null, List.of(unchanged, added));
+
+		Map<String, ChangeType> changes = StructureTreeDiffer.changesByNodeId(diff(before, after).root());
+
+		// the root is modified because of the added child, the added node itself is added, and the
+		// unchanged node isn't listed at all
+		assertThat(changes).containsExactlyInAnyOrderEntriesOf(
+				Map.of("app", ChangeType.MODIFIED, "app/type:B", ChangeType.ADDED));
+	}
+
+	@Test
+	void unchangedTreesProduceNoChangesToApply() {
+		StructureNode before = node("application", "app", node("type", "A"));
+		StructureNode after = node("application", "app", node("type", "A"));
+
+		assertThat(StructureTreeDiffer.changesByNodeId(diff(before, after).root())).isEmpty();
 	}
 
 	private static StructureTreeDiff diff(StructureNode before, StructureNode after) {

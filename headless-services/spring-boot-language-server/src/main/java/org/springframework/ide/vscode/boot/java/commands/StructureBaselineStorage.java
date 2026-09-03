@@ -107,6 +107,17 @@ public class StructureBaselineStorage {
 		}
 	}
 
+	/**
+	 * Removes the persisted baseline for the project, if any. A no-op (not an error) if there is
+	 * none.
+	 */
+	public void delete(String projectName) {
+		File file = fileFor(projectName);
+		if (file.isFile() && !file.delete()) {
+			log.warn("failed to delete persisted structure baseline for project: " + projectName);
+		}
+	}
+
 	private File fileFor(String projectName) {
 		if (projectName == null || projectName.indexOf('/') >= 0 || projectName.indexOf('\\') >= 0) {
 			throw new IllegalArgumentException("invalid project name for structure baseline storage: " + projectName);

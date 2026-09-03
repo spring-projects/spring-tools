@@ -190,6 +190,25 @@ public class StereotypeInformation {
 	}
 
 	@Tool(description = """
+			Removes the captured logical structure baseline for the given project, if any, so getLogicalStructureChanges
+			reports "no baseline" again until a new one is captured. Purely a manual undo: for a git-backed project
+			with automatic baseline capture enabled, the next look at the project's structure simply captures a fresh
+			baseline again, same as if none had ever existed.
+			Use getProjectList to obtain valid project names.
+			""")
+	public String clearLogicalStructureBaseline(
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
+			throws Exception {
+
+		IJavaProject project = projects.get(projectName);
+		boolean hadBaseline = structureSnapshotStore.clearBaseline(project);
+
+		return hadBaseline
+				? "cleared the logical structure baseline for project '%s'".formatted(project.getElementName())
+				: "project '%s' did not have a logical structure baseline captured".formatted(project.getElementName());
+	}
+
+	@Tool(description = """
 			Shows what changed in the logical structure of the given project since the baseline captured via
 			captureLogicalStructureBaseline (or automatically from the project's git history, if it's git-backed -
 			see the note on captureLogicalStructureBaseline), rendered as an ascii-art tree with +/-/~ markers for

@@ -92,6 +92,24 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
+	 * Removes the project's baseline, if any - both from memory and from disk. Purely a manual
+	 * undo: for a git-backed project with automatic capture enabled, the next structure request
+	 * or index update will simply bootstrap a fresh baseline again, same as if none had ever been
+	 * captured.
+	 *
+	 * @return whether the project actually had a baseline to remove
+	 */
+	public boolean clearBaseline(IJavaProject project) {
+		String projectName = project.getElementName();
+		boolean hadBaseline = baselineOf(project) != null;
+
+		baselines.remove(projectName);
+		storage.delete(projectName);
+
+		return hadBaseline;
+	}
+
+	/**
 	 * Diffs the current logical structure of the project against its pinned baseline.
 	 *
 	 * @return empty when no baseline has been captured yet for this project

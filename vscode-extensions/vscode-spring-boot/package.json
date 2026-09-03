@@ -154,6 +154,10 @@
           "when": "false"
         },
         {
+          "command": "vscode-spring-boot.structure.clearBaseline",
+          "when": "false"
+        },
+        {
           "command": "vscode-spring-boot.structure.highlightChanges",
           "when": "!vscode-spring-boot.structure.highlightChanges"
         },
@@ -220,6 +224,11 @@
         },
         {
           "command": "vscode-spring-boot.structure.captureBaseline",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == project",
+          "group": "1_structure"
+        },
+        {
+          "command": "vscode-spring-boot.structure.clearBaseline",
           "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == project",
           "group": "1_structure"
         }
@@ -322,6 +331,13 @@
         "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(bookmark)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.clearBaseline",
+        "title": "Clear Logical Structure Baseline",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(trash)"
       },
       {
         "command": "vscode-spring-boot.structure.highlightChanges",

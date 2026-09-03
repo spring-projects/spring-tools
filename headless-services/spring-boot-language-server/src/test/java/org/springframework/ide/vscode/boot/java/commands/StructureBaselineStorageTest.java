@@ -90,6 +90,29 @@ public class StructureBaselineStorageTest {
 	}
 
 	@Test
+	void deleteRemovesAPersistedBaseline(@TempDir Path dir) {
+		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,
+				new StructureNode("app", "app", null, "application", null, null, null, List.of()));
+
+		storage.save("my-project", snapshot);
+		assertThat(storage.load("my-project")).isNotNull();
+
+		storage.delete("my-project");
+
+		assertThat(storage.load("my-project")).isNull();
+	}
+
+	@Test
+	void deletingAProjectThatWasNeverSavedIsANoOp(@TempDir Path dir) {
+		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+
+		storage.delete("never-saved");
+
+		assertThat(storage.load("never-saved")).isNull();
+	}
+
+	@Test
 	void rejectsProjectNamesThatWouldEscapeTheStorageDirectory(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,

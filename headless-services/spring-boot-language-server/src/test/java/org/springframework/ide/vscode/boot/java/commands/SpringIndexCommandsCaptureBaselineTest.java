@@ -40,6 +40,7 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands.CaptureBaselineResult;
+import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands.ClearBaselineResult;
 import org.springframework.ide.vscode.boot.mcp.StereotypeInformation;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -62,6 +63,7 @@ import com.google.gson.JsonObject;
 public class SpringIndexCommandsCaptureBaselineTest {
 
 	private static final String CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
+	private static final String CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 	private static final String STRUCTURE_CMD = "sts/spring-boot/structure";
 
 	@Autowired private BootLanguageServerHarness harness;
@@ -159,6 +161,36 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		assertTrue(changedNodesOf(structureTrees()).isEmpty());
 	}
 
+	@Test
+	void clearingAnUncapturedBaselineReportsItHadNone() throws Exception {
+		ClearBaselineResult result = clearBaseline(project.getElementName());
+
+		assertEquals(project.getElementName(), result.projectName());
+		assertFalse(result.hadBaseline());
+	}
+
+	@Test
+	void clearingARemovesItSoTheTreeGoesBackToNoBaseline() throws Exception {
+		captureBaseline(project.getElementName());
+		assertEquals(Boolean.TRUE, rootOf(project.getElementName()).getAttribute(JsonNodeHandler.HAS_BASELINE));
+
+		ClearBaselineResult result = clearBaseline(project.getElementName());
+
+		assertTrue(result.hadBaseline());
+		assertEquals(Boolean.FALSE, rootOf(project.getElementName()).getAttribute(JsonNodeHandler.HAS_BASELINE));
+	}
+
+	@Test
+	void clearingIsVisibleToTheMcpTools() throws Exception {
+		captureBaseline(project.getElementName());
+		clearBaseline(project.getElementName());
+
+		String changes = stereotypeInformation.getLogicalStructureChanges(project.getElementName(), null);
+
+		assertTrue(changes.contains("captureLogicalStructureBaseline"),
+				"expected the MCP tool to see the baseline cleared via the LSP command, but got: " + changes);
+	}
+
 	private Node rootOf(String projectName) throws Exception {
 		return structureTrees().stream()
 				.filter(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID)))
@@ -197,6 +229,13 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		CompletableFuture<Object> future = (CompletableFuture<Object>) harness.getServer().getWorkspaceService()
 				.executeCommand(new ExecuteCommandParams(CAPTURE_BASELINE_CMD, List.of(projectName)));
 		return (CaptureBaselineResult) future.get(5, TimeUnit.SECONDS);
+	}
+
+	@SuppressWarnings("unchecked")
+	private ClearBaselineResult clearBaseline(String projectName) throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+		CompletableFuture<Object> future = (CompletableFuture<Object>) harness.getServer().getWorkspaceService()
+				.executeCommand(new ExecuteCommandParams(CLEAR_BASELINE_CMD, List.of(projectName)));
+		return (ClearBaselineResult) future.get(5, TimeUnit.SECONDS);
 	}
 
 }

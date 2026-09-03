@@ -4,6 +4,7 @@ import { ExtensionAPI } from "../api";
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
+const SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 
 const HIDE_UNCHANGED_KEY = "vscode-spring-boot.structure.hideUnchanged";
 const HIGHLIGHT_CHANGES_KEY = "vscode-spring-boot.structure.highlightChanges";
@@ -93,6 +94,7 @@ export class StructureManager {
         }));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.captureBaseline", (node: StereotypedNode) => this.captureBaseline(node)));
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.clearBaseline", (node: StereotypedNode) => this.clearBaseline(node)));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.hideUnchangedNodes", () => this.hideUnchangedToggle.set(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.showAllNodes", () => this.hideUnchangedToggle.set(false)));
@@ -142,6 +144,25 @@ export class StructureManager {
             window.showInformationMessage(`Captured logical structure baseline for '${projectName}' (${result.nodeCount} node(s)). Changes since this point are highlighted in the Logical Structure view.`);
         } catch (e) {
             window.showErrorMessage(`Failed to capture logical structure baseline for '${projectName}': ${e}`);
+        }
+    }
+
+    private async clearBaseline(node: StereotypedNode): Promise<void> {
+        const projectName = node?.projectId;
+        if (!projectName) {
+            return;
+        }
+
+        try {
+            const result = await commands.executeCommand<ClearBaselineResult>(SPRING_STRUCTURE_CLEAR_BASELINE_CMD, projectName);
+            // re-fetch the tree so that leftover change markers disappear (a git-backed project may
+            // get a fresh baseline right back on this same refresh, which is expected)
+            this.refresh(false);
+            window.showInformationMessage(result.hadBaseline
+                ? `Cleared the logical structure baseline for '${projectName}'.`
+                : `Project '${projectName}' had no logical structure baseline to clear.`);
+        } catch (e) {
+            window.showErrorMessage(`Failed to clear logical structure baseline for '${projectName}': ${e}`);
         }
     }
 
@@ -265,6 +286,11 @@ interface CaptureBaselineResult {
     projectName: string;
     nodeCount: number;
     capturedAt: string;
+}
+
+interface ClearBaselineResult {
+    projectName: string;
+    hadBaseline: boolean;
 }
 
 interface GroupQuickPickItem extends QuickPickItem {

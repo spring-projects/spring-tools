@@ -40,6 +40,7 @@ public class SpringIndexCommands {
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 	private static final String SPRING_STRUCTURE_GROUPS_CMD = "sts/spring-boot/structure/groups";
 	private static final String SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
+	private static final String SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 
 	private final StructureViewProvider structureViewProvider;
 	private final StructureSnapshotStore structureSnapshotStore;
@@ -88,17 +89,20 @@ public class SpringIndexCommands {
 
 		server.onCommand(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, params -> {
 			return CompletableFuture.supplyAsync(() -> {
-				String projectName = singleStringArg(params)
-						.orElseThrow(() -> new IllegalArgumentException(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD + " requires a project name argument"));
-
-				IJavaProject project = projectFinder.all().stream()
-						.filter(p -> projectName.equals(p.getElementName()))
-						.findFirst()
-						.orElseThrow(() -> new IllegalArgumentException("no project found with name " + projectName));
+				IJavaProject project = resolveProject(params, SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, projectFinder);
 
 				String commitSha = gitBaselineTracker.currentCommitSha(project).orElse(null);
 				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha);
 				return new CaptureBaselineResult(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt().toString());
+			}, messageWorkerThreadPool);
+		});
+
+		server.onCommand(SPRING_STRUCTURE_CLEAR_BASELINE_CMD, params -> {
+			return CompletableFuture.supplyAsync(() -> {
+				IJavaProject project = resolveProject(params, SPRING_STRUCTURE_CLEAR_BASELINE_CMD, projectFinder);
+
+				boolean hadBaseline = structureSnapshotStore.clearBaseline(project);
+				return new ClearBaselineResult(project.getElementName(), hadBaseline);
 			}, messageWorkerThreadPool);
 		});
 	}
@@ -126,6 +130,21 @@ public class SpringIndexCommands {
 	}
 
 	/**
+	 * Resolves the single project name argument of a structure command (see {@link #singleStringArg})
+	 * to the matching project, failing with a message identifying which command and project name
+	 * were involved.
+	 */
+	private static IJavaProject resolveProject(ExecuteCommandParams params, String commandId, JavaProjectFinder projectFinder) {
+		String projectName = singleStringArg(params)
+				.orElseThrow(() -> new IllegalArgumentException(commandId + " requires a project name argument"));
+
+		return projectFinder.all().stream()
+				.filter(p -> projectName.equals(p.getElementName()))
+				.findFirst()
+				.orElseThrow(() -> new IllegalArgumentException("no project found with name " + projectName));
+	}
+
+	/**
 	 * Several structure commands take a single project name as their only argument, sent either as
 	 * a plain JSON string or (depending on the JSON-RPC client) as a {@link JsonElement}.
 	 */
@@ -146,6 +165,8 @@ public class SpringIndexCommands {
 	}
 
 	public static record CaptureBaselineResult(String projectName, int nodeCount, String capturedAt) {}
+
+	public static record ClearBaselineResult(String projectName, boolean hadBaseline) {}
 
 	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups) {
 		

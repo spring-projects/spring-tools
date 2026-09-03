@@ -2,6 +2,7 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ NPE while indexing broken source code [#1980](https://github.com/spring-projects/spring-tools/issues/1980)
 * _(Spring Boot)_ improve performance of repository-based version validation [#1963](https://github.com/spring-projects/spring-tools/issues/1963)
 * _(Spring Boot)_ version validations for supported commercial versions activated on wrong setting [#1959](https://github.com/spring-projects/spring-tools/issues/1959)
 * _(Spring Boot)_ show web config summary code lens in general [#1926](https://github.com/spring-projects/spring-tools/issues/1926)

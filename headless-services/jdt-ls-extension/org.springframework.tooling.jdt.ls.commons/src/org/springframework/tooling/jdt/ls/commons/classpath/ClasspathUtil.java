@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.buildship.core.internal.configuration.GradleProjectNature;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
@@ -210,6 +211,18 @@ public class ClasspathUtil {
 	
 	private static IPath resolveWorkspacePath(IPath path) {
 		if (path.segmentCount() > 0) {
+			// A workspace path is not always <project location> + <the rest of the path>: a source
+			// folder can be a linked resource, whose location is somewhere else entirely, and the
+			// arithmetic below then yields a directory that does not exist - so the indexer walks
+			// nothing. Ask the resource model first, and keep the arithmetic for paths it does not
+			// know about.
+			IResource member = ResourcesPlugin.getWorkspace().getRoot().findMember(path);
+			if (member != null) {
+				IPath location = member.getLocation();
+				if (location != null) {
+					return location;
+				}
+			}
 			String projectName = path.segment(0);
 			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
 			IPath projectRoot = project.getLocation();

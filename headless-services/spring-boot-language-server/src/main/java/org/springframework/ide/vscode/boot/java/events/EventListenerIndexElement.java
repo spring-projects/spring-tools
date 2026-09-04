@@ -26,12 +26,14 @@ public class EventListenerIndexElement extends AbstractSpringIndexElement implem
 	private final Location location;
 	private final String containerBeanType;
 	private final AnnotationMetadata[] annotations;
+	private final String contentHash;
 
-	public EventListenerIndexElement(String eventType, Location location, String containerBeanType, AnnotationMetadata[] annotations) {
+	public EventListenerIndexElement(String eventType, Location location, String containerBeanType, AnnotationMetadata[] annotations, String contentHash) {
 		this.eventType = eventType;
 		this.location = location;
 		this.containerBeanType = containerBeanType;
 		this.annotations = annotations;
+		this.contentHash = contentHash;
 	}
 
 	public String getEventType() {
@@ -48,6 +50,15 @@ public class EventListenerIndexElement extends AbstractSpringIndexElement implem
 
 	public String getContainerBeanType() {
 		return containerBeanType;
+	}
+
+	/**
+	 * Hashed over the whole listener method, so that changes to its body show up as changes of
+	 * the listener.
+	 */
+	@Override
+	public String getContentHash() {
+		return contentHash;
 	}
 
 	@Override

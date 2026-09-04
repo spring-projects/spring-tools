@@ -73,6 +73,14 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String NODE_ID = "nodeId";
 
 	/**
+	 * A hash of the source code behind this node, computed while indexing. Lets the diff detect
+	 * changes that leave the node itself looking identical - an edited method body, for instance -
+	 * which are invisible to a comparison of labels, icons and children alone. Absent for nodes
+	 * that don't stand for a piece of source code (packages and stereotype groups).
+	 */
+	public static final String CONTENT_HASH = "contentHash";
+
+	/**
 	 * How this node changed compared to the captured baseline of its project ("added" or
 	 * "modified"), attached only when a baseline was captured for that project. Clients use this
 	 * to highlight the changed parts of the structure tree.
@@ -235,6 +243,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(LOCATION, type.getLocation())
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.TYPE_KEY))
 			.withAttribute(KIND, KIND_TYPE)
+			.withAttribute(CONTENT_HASH, type.getContentHash())
 			.withChildren(createTypeSubnotes(node, type))
 		);
 	}
@@ -263,7 +272,8 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 							.withAttribute(TEXT, symbol.getName())
 							.withAttribute(LOCATION, new Location(docUri, symbol.getRange()))
 							.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
-							.withAttribute(KIND, KIND_MEMBER);
+							.withAttribute(KIND, KIND_MEMBER)
+							.withAttribute(CONTENT_HASH, symbolElement.getContentHash());
 
 					assignNodeId(childNode, parent);
 
@@ -280,6 +290,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			.withAttribute(LOCATION, method.getLocation())
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
 			.withAttribute(KIND, KIND_METHOD)
+			.withAttribute(CONTENT_HASH, method.getContentHash())
 		);
 	}
 

@@ -266,7 +266,12 @@ public class ComponentIndexer implements SpringComponentIndexer {
 
 									Set<String> typesFromhierarchy = ASTUtils.findSupertypes(eventTypeBinding);
 
-									EventPublisherIndexElement eventPublisherIndexElement = new EventPublisherIndexElement(eventTypeBinding.getQualifiedName(), location, typesFromhierarchy);
+									// hashed over the method that publishes the event where there is one, so that
+									// changes around the publishing call are detected, not just changes to the call
+									MethodDeclaration publishingMethod = findEnclosingMethod(methodInvocation);
+									String contentHash = ASTUtils.contentHash(doc, publishingMethod != null ? publishingMethod : methodInvocation);
+
+									EventPublisherIndexElement eventPublisherIndexElement = new EventPublisherIndexElement(eventTypeBinding.getQualifiedName(), location, typesFromhierarchy, contentHash);
 									component.addChild(eventPublisherIndexElement);
 								}
 							}
@@ -317,7 +322,8 @@ public class ComponentIndexer implements SpringComponentIndexer {
 			Collection<Annotation> annotationsOnHandleEventMethod = ASTUtils.getAnnotations(handleEventMethod);
 			AnnotationMetadata[] handleEventMethodAnnotations = ASTUtils.getAnnotationsMetadata(annotationsOnHandleEventMethod, doc);
 
-			EventListenerIndexElement eventElement = new EventListenerIndexElement(eventTypeFq, handleMethodLocation, typeBinding.getQualifiedName(), handleEventMethodAnnotations);
+			EventListenerIndexElement eventElement = new EventListenerIndexElement(eventTypeFq, handleMethodLocation, typeBinding.getQualifiedName(), handleEventMethodAnnotations,
+					ASTUtils.contentHash(doc, handleEventMethod));
 
 			if (bean != null) {
 				bean.addChild(eventElement);
@@ -326,6 +332,15 @@ public class ComponentIndexer implements SpringComponentIndexer {
 				context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), eventElement));
 			}
 		}
+	}
+
+	private static MethodDeclaration findEnclosingMethod(ASTNode node) {
+		for (ASTNode current = node.getParent(); current != null; current = current.getParent()) {
+			if (current instanceof MethodDeclaration method) {
+				return method;
+			}
+		}
+		return null;
 	}
 
 	private MethodDeclaration findHandleEventMethod(TypeDeclaration type) {

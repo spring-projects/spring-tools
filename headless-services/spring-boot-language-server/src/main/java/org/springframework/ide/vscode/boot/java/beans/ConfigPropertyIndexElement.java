@@ -24,13 +24,25 @@ public class ConfigPropertyIndexElement extends AbstractSpringIndexElement imple
 	private final String name;
 	private final String type;
 	private final Range range;
+	private final String contentHash;
 
-	public ConfigPropertyIndexElement(String name, String type, Range range) {
+	public ConfigPropertyIndexElement(String name, String type, Range range, String contentHash) {
 		this.name = name;
 		this.type = type;
 		this.range = range;
+		this.contentHash = contentHash;
 	}
-	
+
+	/**
+	 * Hashed over the whole field or record component declaration, so that a changed initializer
+	 * or annotation shows up even when name and type stay the same.
+	 */
+	@Override
+	public String getContentHash() {
+		return contentHash;
+	}
+
+
 	public String getName() {
 		return name;
 	}

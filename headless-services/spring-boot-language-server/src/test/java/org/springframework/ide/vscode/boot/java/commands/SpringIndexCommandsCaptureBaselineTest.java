@@ -143,6 +143,27 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	}
 
 	@Test
+	void structureTreeMarksNodesWhoseSourceChangedWithoutChangingTheTree() throws Exception {
+		captureBaseline(project.getElementName());
+
+		// change the body of the mapping method only: same route, same signature, same label, so
+		// every node in the tree still looks exactly as it did - only the source behind it changed
+		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace("return \"hello!!!\";", "return \"hello, world!!!\";");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+
+		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
+
+		Map<String, String> changed = changedNodesOf(structureTrees());
+
+		assertFalse(changed.isEmpty(), "expected the changed method body to be marked in the structure tree");
+		assertFalse(changed.values().contains("added"), "expected no node to be reported as added, but got: " + changed);
+		assertTrue(changed.keySet().stream().anyMatch(nodeId -> nodeId.contains("SampleController")),
+				"expected the controller and its members to be marked as changed, but got: " + changed.keySet());
+	}
+
+	@Test
 	void rootNodeReportsNoBaselineBeforeOneIsCaptured() throws Exception {
 		Node root = rootOf(project.getElementName());
 

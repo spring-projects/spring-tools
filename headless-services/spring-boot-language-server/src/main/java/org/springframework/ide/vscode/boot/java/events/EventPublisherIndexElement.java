@@ -26,11 +26,13 @@ public class EventPublisherIndexElement extends AbstractSpringIndexElement imple
 	private final String eventType;
 	private final Location location;
 	private final Set<String> eventTypesFromHierarchy;
+	private final String contentHash;
 
-	public EventPublisherIndexElement(String eventType, Location location, Set<String> eventTypesFromHierarchy) {
+	public EventPublisherIndexElement(String eventType, Location location, Set<String> eventTypesFromHierarchy, String contentHash) {
 		this.eventType = eventType;
 		this.location = location;
 		this.eventTypesFromHierarchy = eventTypesFromHierarchy;
+		this.contentHash = contentHash;
 	}
 
 	public String getEventType() {
@@ -43,6 +45,15 @@ public class EventPublisherIndexElement extends AbstractSpringIndexElement imple
 
 	public Set<String> getEventTypesFromHierarchy() {
 		return eventTypesFromHierarchy;
+	}
+
+	/**
+	 * Hashed over the method that publishes the event, rather than just the publishing call this
+	 * element points at, so that changes around the call show up as changes of the publisher.
+	 */
+	@Override
+	public String getContentHash() {
+		return contentHash;
 	}
 
 	@Override

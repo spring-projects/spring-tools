@@ -157,7 +157,8 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		
 		Name astNodeForLocation = packageDeclaration.getName();
 		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
-		StereotypeClassElement classElement = new StereotypeClassElement(packageBinding.getName() + ".package-info", location, Set.of(), annotationTypes);
+		StereotypeClassElement classElement = new StereotypeClassElement(packageBinding.getName() + ".package-info", location, Set.of(), annotationTypes,
+				ASTUtils.contentHash(doc, packageDeclaration));
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), classElement));
 	}
 
@@ -187,7 +188,8 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		SimpleName astNodeForLocation = typeDeclaration.getName();
 		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
 		
-		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes);
+		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes,
+				ASTUtils.contentHash(doc, typeDeclaration));
 		
 		indexMethods(indexElement, typeDeclaration, annotationHierarchies, doc);
 		
@@ -222,7 +224,8 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 				String methodLabel = ASTUtils.getMethodSignature(method, false);
 	
 				if (methodSignature != null && methodLabel != null) {
-					StereotypeMethodElement methodElement = new StereotypeMethodElement(methodName, methodLabel, methodSignature, location, annotationTypes);
+					StereotypeMethodElement methodElement = new StereotypeMethodElement(methodName, methodLabel, methodSignature, location, annotationTypes,
+							ASTUtils.contentHash(doc, method));
 					indexElement.addChild(methodElement);
 				}
 			}

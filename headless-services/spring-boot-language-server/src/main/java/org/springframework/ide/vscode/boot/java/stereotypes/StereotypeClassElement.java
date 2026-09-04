@@ -22,20 +22,32 @@ public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 	private final String type;
 	private final Location location;
 	private final Set<String> supertypes;
-	
-	public StereotypeClassElement(String type, Location location, Set<String> supertypes, Set<String> annotationTypes) {
+	private final String contentHash;
+
+	public StereotypeClassElement(String type, Location location, Set<String> supertypes, Set<String> annotationTypes, String contentHash) {
 		super(annotationTypes);
 		this.type = type;
 		this.location = location;
 		this.supertypes = supertypes;
+		this.contentHash = contentHash;
 	}
-	
+
 	public String getType() {
 		return type;
 	}
-	
+
 	public Location getLocation() {
 		return location;
+	}
+
+	/**
+	 * A hash of the source text of the whole type declaration, so that changes to the type that
+	 * leave the logical structure looking the same (an edited method body, an added field, a
+	 * changed supertype) can still be detected. May be null for elements restored from an older
+	 * index cache.
+	 */
+	public String getContentHash() {
+		return contentHash;
 	}
 
 	public boolean doesImplement(String fqn) {

@@ -58,7 +58,7 @@ public class ApplicationModulesNamedInterfacesGroupingProvider extends Applicati
 	private StereotypeClassElement findClassElement(String className, IJavaProject project, CachedSpringMetamodelIndex springIndex) {
 		return springIndex.getClassesForProject(project.getElementName()).stream()
 			.filter(classElement -> classElement.getType().equals(className))
-			.findAny().orElse(new StereotypeClassElement(className, null, Set.of(), Set.of()));
+			.findAny().orElse(new StereotypeClassElement(className, null, Set.of(), Set.of(), null));
 	}
 
 	private Collection<StereotypeClassElement> getInternalTypes(ApplicationModule module) {

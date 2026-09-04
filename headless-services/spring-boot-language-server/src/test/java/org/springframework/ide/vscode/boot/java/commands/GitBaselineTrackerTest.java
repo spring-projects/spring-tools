@@ -245,7 +245,7 @@ public class GitBaselineTrackerTest {
 			commitShaByProject.put(project.getElementName(), commitSha);
 			capturesByProject.computeIfAbsent(project.getElementName(), name -> new ArrayList<>()).add(commitSha);
 			return new StructureSnapshot(Instant.now(), commitSha,
-					new StructureViewProvider.StructureNode("app", project.getElementName(), null, "application", null, null, null, List.of()));
+					new StructureViewProvider.StructureNode("app", project.getElementName(), null, "application", null, null, null, null, List.of()));
 		}
 
 		int captureCount(IJavaProject project) {

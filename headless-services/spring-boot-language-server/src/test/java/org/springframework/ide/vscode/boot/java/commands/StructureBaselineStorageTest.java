@@ -33,8 +33,8 @@ public class StructureBaselineStorageTest {
 	void roundTripsASnapshot(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.parse("2026-01-01T00:00:00Z"), "abc123",
-				new StructureNode("app", "app", "icon", "application", "hover", null, null, List.of(
-						new StructureNode("app/type:A", "A", null, "type", null, null, null, List.of()))));
+				new StructureNode("app", "app", "icon", "application", "hover", null, null, null, List.of(
+						new StructureNode("app/type:A", "A", null, "type", null, null, null, null, List.of()))));
 
 		storage.save("my-project", snapshot);
 		StructureSnapshot loaded = storage.load("my-project");
@@ -51,7 +51,7 @@ public class StructureBaselineStorageTest {
 	void roundTripsANullCommitSha(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,
-				new StructureNode("app", "app", null, "application", null, null, null, List.of()));
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
 		storage.save("my-project", snapshot);
 
@@ -93,7 +93,7 @@ public class StructureBaselineStorageTest {
 	void deleteRemovesAPersistedBaseline(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,
-				new StructureNode("app", "app", null, "application", null, null, null, List.of()));
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
 		storage.save("my-project", snapshot);
 		assertThat(storage.load("my-project")).isNotNull();
@@ -116,7 +116,7 @@ public class StructureBaselineStorageTest {
 	void rejectsProjectNamesThatWouldEscapeTheStorageDirectory(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,
-				new StructureNode("app", "app", null, "application", null, null, null, List.of()));
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
 		assertThrows(IllegalArgumentException.class, () -> storage.save("../escape", snapshot));
 	}

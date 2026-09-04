@@ -89,9 +89,14 @@ public class RequestMappingIndexer {
 
 		if (node.getParent() instanceof MethodDeclaration) {
 			try {
-				String methodSignature = ASTUtils.getMethodSignature((MethodDeclaration) node.getParent(), true);
-				
+				MethodDeclaration methodDecl = (MethodDeclaration) node.getParent();
+				String methodSignature = ASTUtils.getMethodSignature(methodDecl, true);
+
 				if (methodSignature != null) {
+					// hashed over the whole method, not just the annotation, so that changes to the
+					// method body are detectable even though they leave the mapping itself unchanged
+					String contentHash = ASTUtils.contentHash(doc, methodDecl);
+
 					Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 					String[] path = getPath(node, context);
 					String[] parentPath = getParentPath(node, context);
@@ -99,7 +104,7 @@ public class RequestMappingIndexer {
 					String[] contentTypes = getContentTypes(node, context);
 					String[] acceptTypes = getAcceptTypes(node, context);
 					String version = getVersion(node, context);
-	
+
 					Stream<String> stream = parentPath == null ? Stream.of("") : Arrays.stream(parentPath);
 					stream.filter(Objects::nonNull)
 							.flatMap(parent -> (path == null ? Stream.<String>empty() : Arrays.stream(path))
@@ -109,8 +114,8 @@ public class RequestMappingIndexer {
 							.forEach(p -> {
 								String label = RouteUtils.createRouteLabel(location, p, methods, contentTypes, acceptTypes, version);
 								RequestMappingIndexElement requestMappingIndexElement =
-										new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), label, methodSignature);
-	
+										new RequestMappingIndexElement(p, methods, contentTypes, acceptTypes, version, location.getRange(), label, methodSignature, contentHash);
+
 								controller.addChild(requestMappingIndexElement);
 							});
 				}

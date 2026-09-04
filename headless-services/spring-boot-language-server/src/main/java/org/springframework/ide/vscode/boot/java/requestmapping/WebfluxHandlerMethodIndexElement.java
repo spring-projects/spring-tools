@@ -19,7 +19,9 @@ public class WebfluxHandlerMethodIndexElement extends RequestMappingIndexElement
 	
 	public WebfluxHandlerMethodIndexElement(String handlerClass, String handlerMethod, String path, String[] httpMethods, String[] contentTypes, String[] acceptTypes,
 			String version, Range range, String symbolLabel) {
-		super(path, httpMethods, contentTypes, acceptTypes, version, range, symbolLabel, null);
+		// no content hash: a webflux route and the handler method implementing it live in
+		// different places, so there is no single declaration to hash here
+		super(path, httpMethods, contentTypes, acceptTypes, version, range, symbolLabel, null, null);
 
 		this.handlerClass = handlerClass;
 		this.handlerMethod = handlerMethod;

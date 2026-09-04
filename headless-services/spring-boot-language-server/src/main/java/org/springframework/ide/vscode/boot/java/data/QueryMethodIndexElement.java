@@ -23,19 +23,30 @@ public class QueryMethodIndexElement extends AbstractSpringIndexElement implemen
 	private final String methodName;
 	private final String queryString;
 	private final Range range;
-	
-	public QueryMethodIndexElement(String methodName, String queryString, Range range) {
+	private final String contentHash;
+
+	public QueryMethodIndexElement(String methodName, String queryString, Range range, String contentHash) {
 		this.methodName = methodName;
 		this.queryString = queryString;
 		this.range = range;
+		this.contentHash = contentHash;
 	}
-	
+
 	public String getMethodName() {
 		return methodName;
 	}
-	
+
 	public String getQueryString() {
 		return queryString;
+	}
+
+	/**
+	 * Hashed over the whole query method declaration, so that a changed query annotation or
+	 * signature detail shows up even when the method name stays the same.
+	 */
+	@Override
+	public String getContentHash() {
+		return contentHash;
 	}
 	
 	@Override

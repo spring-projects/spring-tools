@@ -131,9 +131,9 @@ public class StructureTreeDifferTest {
 		SourceLocation after = new SourceLocation("file:///A.java", 40, 0, 40, 10);
 
 		StructureNode beforeTree = node("application", "app",
-				new StructureNode("app/type:A", "A", "icon", "type", null, before, null, List.of()));
+				new StructureNode("app/type:A", "A", "icon", "type", null, null, before, null, List.of()));
 		StructureNode afterTree = node("application", "app",
-				new StructureNode("app/type:A", "A", "icon", "type", null, after, null, List.of()));
+				new StructureNode("app/type:A", "A", "icon", "type", null, null, after, null, List.of()));
 
 		DiffNode root = diff(beforeTree, afterTree).root();
 
@@ -142,8 +142,8 @@ public class StructureTreeDifferTest {
 
 	@Test
 	void iconOrHoverChangeIsReportedAsModified() {
-		StructureNode before = new StructureNode("app/type:A", "A", "icon-1", "type", "old hover", null, null, List.of());
-		StructureNode after = new StructureNode("app/type:A", "A", "icon-2", "type", "old hover", null, null, List.of());
+		StructureNode before = new StructureNode("app/type:A", "A", "icon-1", "type", "old hover", null, null, null, List.of());
+		StructureNode after = new StructureNode("app/type:A", "A", "icon-2", "type", "old hover", null, null, null, List.of());
 
 		DiffNode root = diff(node("application", "app", before), node("application", "app", after)).root();
 
@@ -151,12 +151,45 @@ public class StructureTreeDifferTest {
 	}
 
 	@Test
+	void contentHashChangeIsReportedAsModified() {
+		// the node looks identical - same label, kind, icon, hover, no children - and only the
+		// source behind it changed, which is exactly what the content hash is there to catch
+		StructureNode before = new StructureNode("app/type:A", "A", "icon", "type", "hover", "hash-before", null, null, List.of());
+		StructureNode after = new StructureNode("app/type:A", "A", "icon", "type", "hover", "hash-after", null, null, List.of());
+
+		DiffNode root = diff(node("application", "app", before), node("application", "app", after)).root();
+
+		assertThat(root.children().get(0).change()).isEqualTo(ChangeType.MODIFIED);
+		assertThat(root.change()).isEqualTo(ChangeType.MODIFIED);
+	}
+
+	@Test
+	void sameContentHashIsUnchanged() {
+		StructureNode before = new StructureNode("app/type:A", "A", "icon", "type", "hover", "hash", null, null, List.of());
+		StructureNode after = new StructureNode("app/type:A", "A", "icon", "type", "hover", "hash", null, null, List.of());
+
+		DiffNode root = diff(node("application", "app", before), node("application", "app", after)).root();
+
+		assertThat(root.change()).isEqualTo(ChangeType.UNCHANGED);
+	}
+
+	@Test
+	void nodesWithoutAContentHashAreUnchanged() {
+		// packages and stereotype groups don't stand for a piece of source code and never carry a
+		// hash, so they must not be reported as modified just for that
+		DiffNode root = diff(node("application", "app", node("package", "example")),
+				node("application", "app", node("package", "example"))).root();
+
+		assertThat(root.change()).isEqualTo(ChangeType.UNCHANGED);
+	}
+
+	@Test
 	void changesAreIndexedByTheNodeIdOfTheCurrentTree() {
-		StructureNode unchanged = new StructureNode("app/type:A", "A", null, "type", null, null, null, List.of());
-		StructureNode added = new StructureNode("app/type:B", "B", null, "type", null, null, null, List.of());
+		StructureNode unchanged = new StructureNode("app/type:A", "A", null, "type", null, null, null, null, List.of());
+		StructureNode added = new StructureNode("app/type:B", "B", null, "type", null, null, null, null, List.of());
 
 		StructureNode before = node("application", "app", unchanged);
-		StructureNode after = new StructureNode("app", "app", null, "application", null, null, null, List.of(unchanged, added));
+		StructureNode after = new StructureNode("app", "app", null, "application", null, null, null, null, List.of(unchanged, added));
 
 		Map<String, ChangeType> changes = StructureTreeDiffer.changesByNodeId(diff(before, after).root());
 
@@ -187,7 +220,7 @@ public class StructureTreeDifferTest {
 	}
 
 	private static StructureNode node(String kind, String text, StructureNode... children) {
-		return new StructureNode(text, text, null, kind, null, null, null, List.of(children));
+		return new StructureNode(text, text, null, kind, null, null, null, null, List.of(children));
 	}
 
 }

@@ -100,7 +100,7 @@ public class DataRepositoryIndexer {
 				if (methodName != null) {
 					String queryString = identifyQueryString(method, annotationHierarchies, context);
 					String methodSignature = identifyMethodSignature(method);
-					beanDefinition.addChild(new QueryMethodIndexElement(methodSignature, queryString, range));
+					beanDefinition.addChild(new QueryMethodIndexElement(methodSignature, queryString, range, ASTUtils.contentHash(doc, method)));
 				}
 			}
 		}

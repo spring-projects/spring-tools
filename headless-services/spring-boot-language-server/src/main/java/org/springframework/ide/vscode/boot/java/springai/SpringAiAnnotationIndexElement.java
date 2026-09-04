@@ -43,10 +43,11 @@ public class SpringAiAnnotationIndexElement extends AbstractSpringIndexElement i
 	private final String containerBeanType;
 	private final AnnotationMetadata[] annotations;
 	private final List<SpringAiToolParameter> parameters;
+	private final String contentHash;
 
 	public SpringAiAnnotationIndexElement(AnnotationType annotationType, String name, String description,
 			String methodSignature, Location location, String containerBeanType, AnnotationMetadata[] annotations,
-			List<SpringAiToolParameter> parameters) {
+			List<SpringAiToolParameter> parameters, String contentHash) {
 		this.annotationType = annotationType;
 		this.name = name;
 		this.description = description;
@@ -55,10 +56,20 @@ public class SpringAiAnnotationIndexElement extends AbstractSpringIndexElement i
 		this.containerBeanType = containerBeanType;
 		this.annotations = annotations;
 		this.parameters = parameters != null ? parameters : Collections.emptyList();
+		this.contentHash = contentHash;
 	}
 
 	public AnnotationType getAnnotationType() {
 		return annotationType;
+	}
+
+	/**
+	 * Hashed over the whole annotated method, so that changes to its body show up as changes of
+	 * the tool, prompt or resource it defines.
+	 */
+	@Override
+	public String getContentHash() {
+		return contentHash;
 	}
 
 	public String getName() {

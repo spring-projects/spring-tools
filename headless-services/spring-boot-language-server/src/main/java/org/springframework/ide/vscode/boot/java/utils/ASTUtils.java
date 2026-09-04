@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
@@ -128,6 +129,21 @@ public class ASTUtils {
 		int start = node.getStartPosition();
 		int end = start + node.getLength();
 		return new DocumentRegion(doc, start, end);
+	}
+
+	/**
+	 * A hash of the exact source text that the given AST node spans, used to tell whether the source
+	 * behind an index element changed, even when nothing about the element itself looks different.
+	 * <p>
+	 * Hashes the raw source, so reformatting and comment-only edits count as changes, too. Truncated
+	 * to 12 hex characters: this value travels with every node of the logical structure tree and is
+	 * persisted in every structure baseline, and 48 bits are plenty to detect a change.
+	 */
+	public static String contentHash(TextDocument doc, ASTNode node) {
+		if (doc == null || node == null) {
+			return null;
+		}
+		return DigestUtils.md5Hex(nodeRegion(doc, node).toString()).substring(0, 12);
 	}
 
 	public static Optional<Expression> getAttribute(Annotation annotation, String name) {

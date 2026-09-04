@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,13 +21,15 @@ public class StereotypeMethodElement extends AbstractStereotypeIndexElement {
 	private final String methodSignature;
 	
 	private final Location location;
-	
-	public StereotypeMethodElement(String methodName, String methodLabel, String methodSignature, Location location, Set<String> annotationTypes) {
+	private final String contentHash;
+
+	public StereotypeMethodElement(String methodName, String methodLabel, String methodSignature, Location location, Set<String> annotationTypes, String contentHash) {
 		super(annotationTypes);
 		this.methodName = methodName;
 		this.methodLabel = methodLabel;
 		this.methodSignature = methodSignature;
 		this.location = location;
+		this.contentHash = contentHash;
 	}
 	
 	public String getMethodName() {
@@ -45,5 +47,14 @@ public class StereotypeMethodElement extends AbstractStereotypeIndexElement {
 	public Location getLocation() {
 		return location;
 	}
-	
+
+	/**
+	 * A hash of the source text of the whole method declaration, so that changes to the method that
+	 * leave its label unchanged (an edited body, most notably) can still be detected. May be null
+	 * for elements restored from an older index cache.
+	 */
+	public String getContentHash() {
+		return contentHash;
+	}
+
 }

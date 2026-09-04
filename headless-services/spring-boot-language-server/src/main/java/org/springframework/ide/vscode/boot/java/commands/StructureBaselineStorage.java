@@ -47,8 +47,12 @@ public class StructureBaselineStorage {
 	 * Bumped whenever the shape of {@link StructureSnapshot} (or anything it references) changes
 	 * in a way that could break deserializing an older file; such files are discarded rather than
 	 * risking a broken read.
+	 * <p>
+	 * Version 2 added the content hash to the nodes. Discarding older baselines matters here:
+	 * they carry no hashes, so comparing them against a freshly indexed tree would report every
+	 * node as modified.
 	 */
-	private static final int SCHEMA_VERSION = 1;
+	private static final int SCHEMA_VERSION = 2;
 
 	private final File directory;
 	private final Gson gson = new GsonBuilder()

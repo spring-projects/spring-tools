@@ -136,7 +136,8 @@ public class ConfigurationPropertiesIndexer {
 
 								DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, field);
 								Range range = doc.toRange(nodeRegion);
-								ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range);
+								ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range,
+										ASTUtils.contentHash(doc, field));
 								
 								beanDefinition.addChild(configPropElement);
 							}
@@ -166,7 +167,8 @@ public class ConfigurationPropertiesIndexer {
 
 							DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, field);
 							Range range = doc.toRange(nodeRegion);
-							ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range);
+							ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range,
+									ASTUtils.contentHash(doc, field));
 								
 							beanDefinition.addChild(configPropElement);
 						}

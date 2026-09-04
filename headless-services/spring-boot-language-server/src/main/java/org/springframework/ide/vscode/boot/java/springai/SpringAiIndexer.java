@@ -123,15 +123,16 @@ public class SpringAiIndexer {
 			SimpleName methodNameNode = method.getName();
 			Location location = new Location(doc.getUri(),
 					doc.toRange(methodNameNode.getStartPosition(), methodNameNode.getLength()));
-	
+
 			Collection<Annotation> annotationsOnMethod = ASTUtils.getAnnotations(method);
 			AnnotationMetadata[] annotationsMetadata = ASTUtils.getAnnotationsMetadata(annotationsOnMethod, doc);
-	
+
 			List<SpringAiToolParameter> parameters = extractParameters(method, doc);
-	
+
 			SpringAiAnnotationIndexElement element = new SpringAiAnnotationIndexElement(annotationType, name, description,
-					methodSignature, location, containerBeanType, annotationsMetadata, parameters);
-	
+					methodSignature, location, containerBeanType, annotationsMetadata, parameters,
+					ASTUtils.contentHash(doc, method));
+
 			addElement(parent, element, context);
 		}
 	}

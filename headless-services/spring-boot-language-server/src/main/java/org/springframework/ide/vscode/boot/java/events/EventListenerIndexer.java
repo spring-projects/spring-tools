@@ -66,7 +66,8 @@ public class EventListenerIndexer {
 				}
 			}
 
-			EventListenerIndexElement eventListenerIndexElement = new EventListenerIndexElement(eventType != null ? eventType.getQualifiedName() : "", location, containerBeanType, annotations);
+			EventListenerIndexElement eventListenerIndexElement = new EventListenerIndexElement(eventType != null ? eventType.getQualifiedName() : "", location, containerBeanType, annotations,
+					ASTUtils.contentHash(doc, method));
 			component.addChild(eventListenerIndexElement);
 			
 		} catch (BadLocationException e) {

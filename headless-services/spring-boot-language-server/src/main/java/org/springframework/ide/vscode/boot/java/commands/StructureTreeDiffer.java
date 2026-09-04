@@ -74,8 +74,12 @@ public class StructureTreeDiffer {
 			}
 		}
 
+		// the content hash catches changes to the source behind a node that leave the node itself
+		// looking the same, e.g. an edited method body; nodes without a hash on either side (or
+		// baselines captured before hashes existed) simply compare equal here
 		boolean attributesChanged = !Objects.equals(before.icon(), after.icon())
-				|| !Objects.equals(before.hover(), after.hover());
+				|| !Objects.equals(before.hover(), after.hover())
+				|| !Objects.equals(before.contentHash(), after.contentHash());
 
 		ChangeType change = (anyChildChanged || attributesChanged) ? ChangeType.MODIFIED : ChangeType.UNCHANGED;
 

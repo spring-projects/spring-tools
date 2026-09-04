@@ -139,6 +139,7 @@ public class StructureViewProvider {
 				stringAttribute(node, JsonNodeHandler.ICON),
 				stringAttribute(node, JsonNodeHandler.KIND),
 				stringAttribute(node, JsonNodeHandler.HOVER),
+				stringAttribute(node, JsonNodeHandler.CONTENT_HASH),
 				sourceLocationFrom(node.getAttribute(JsonNodeHandler.LOCATION)),
 				sourceLocationFrom(node.getAttribute(JsonNodeHandler.REFERENCE)),
 				children);
@@ -182,6 +183,7 @@ public class StructureViewProvider {
 			String icon,
 			String kind,
 			String hover,
+			String contentHash,
 			SourceLocation location,
 			SourceLocation reference,
 			List<StructureNode> children

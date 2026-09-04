@@ -119,7 +119,7 @@ async function handleCustomDebugEvent(e: DebugSessionCustomEvent): Promise<void>
                 if (workspace.getConfiguration("boot-java.live-information.automatic-connection").get("on")) {
                     await commands.executeCommand("vscode-spring-boot.live.show.active");
                 }
-            }, 500);
+            }, 1500);
         }
     }
 }

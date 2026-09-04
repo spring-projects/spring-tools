@@ -67,17 +67,26 @@ export class StereotypedNode {
             item.tooltip = `${this.label} (${CHANGE_TOOLTIPS[change]})`;
         }
 
-        // Add context value if reference attribute exists
+        // a space separated list of markers, matched by the `when` clauses of the context menu
+        // commands with `viewItem =~ /\bmarker\b/`, so that a node can carry several of them
+        const markers: string[] = [];
         if (this.n.attributes.reference) {
-            item.contextValue = "stereotypedNodeWithReference";
+            markers.push("stereotypedNodeWithReference");
+        }
+        if (this.projectId) {
+            markers.push("project");
+        }
+        if (this.change && this.location) {
+            // deliberately keyed off the actual change state rather than the highlighting toggle:
+            // the changes are there to look at either way
+            markers.push("changed");
+        }
+        if (markers.length) {
+            item.contextValue = markers.join(" ");
         }
 
-        if (this.projectId) {
-            item.contextValue = "project";
-        }
-        
-        if (this.n.attributes.location) {
-            const location = this.n.attributes.location as Location;
+        const location = this.location;
+        if (location) {
             item.command = {
                 command: "vscode.open",
                 title: "Navigate",
@@ -95,6 +104,14 @@ export class StereotypedNode {
     
     get nodeId(): string {
         return this.n.attributes.nodeId || this.n.attributes.text;
+    }
+
+    /**
+     * The place in the source this node stands for, for the nodes that stand for one at all -
+     * types, methods and the members below them, but not packages or stereotype groups.
+     */
+    get location(): Location | undefined {
+        return this.n.attributes.location as Location;
     }
 
     /**

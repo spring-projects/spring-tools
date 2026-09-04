@@ -150,6 +150,10 @@
           "when": "false"
         },
         {
+          "command": "vscode-spring-boot.structure.openChanges",
+          "when": "false"
+        },
+        {
           "command": "vscode-spring-boot.structure.captureBaseline",
           "when": "false"
         },
@@ -214,22 +218,27 @@
       "view/item/context": [
         {
           "command": "vscode-spring-boot.structure.openReference",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == stereotypedNodeWithReference",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bstereotypedNodeWithReference\\b/",
           "group": "inline"
         },
         {
           "command": "vscode-spring-boot.structure.grouping",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == project",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
           "group": "inline"
         },
         {
+          "command": "vscode-spring-boot.structure.openChanges",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bchanged\\b/",
+          "group": "1_structure"
+        },
+        {
           "command": "vscode-spring-boot.structure.captureBaseline",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == project",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
           "group": "1_structure"
         },
         {
           "command": "vscode-spring-boot.structure.clearBaseline",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem == project",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
           "group": "1_structure"
         }
       ]
@@ -324,6 +333,13 @@
         "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(checklist)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.openChanges",
+        "title": "Open Changes",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(git-compare)"
       },
       {
         "command": "vscode-spring-boot.structure.captureBaseline",

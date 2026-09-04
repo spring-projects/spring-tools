@@ -1,17 +1,41 @@
-## 2.4.0 PRE-RELEASE
+## 2026-09-09 (5.4.0.RELEASE, incl. language servers version 2.4.0)
+
+#### important highlights
+
+* _(Spring Boot)_ **New Validations & Quick Fixes:** Added validations and quick fixes to convert to `@ApplicationModuleListener`, `@SpringJUnitConfig`, `@RestController`, and specific `@Scope` annotations
+* _(Spring Boot)_ **Claude Code / MCP Enhancements:** Enabled the Claude Code plugin to render a project's logical structure
+* _(Spring Boot)_ **Stability & Performance:** Significant speedups around various quick fixes and repository-based version validation, fixed NPEs while indexing broken source code
+
+#### updates to the Spring Tools for Eclipse distribution
+
+* updated to the latest Eclipse 2026-09 release ([new and noteworthy](https://eclipseide.org/release/noteworthy/))
 
 #### all fixes and improvements in detail
 
 * _(Spring Boot)_ NPE while indexing broken source code [#1980](https://github.com/spring-projects/spring-tools/issues/1980)
+* _(Spring Boot)_ Featuring Spring Modulith in Spring Tools wiki [#1978](https://github.com/spring-projects/spring-tools/issues/1978)
+* _(Spring Boot)_ [mcp] allow Claude Code plugin to easily render logical structure of a project [#1973](https://github.com/spring-projects/spring-tools/issues/1973)
+* _(Spring Boot)_ Make proper parsing call for HQL and JPQL parser [#1969](https://github.com/spring-projects/spring-tools/issues/1969)
+* _(Spring Boot)_ navigate to web config doesn't work in Eclipse [#1968](https://github.com/spring-projects/spring-tools/issues/1968)
+* _(Spring Boot)_ PreciseBean refactoring to JDT [#1967](https://github.com/spring-projects/spring-tools/issues/1967)
+* _(Spring Boot)_ No path in Controller annotations to JDT [#1966](https://github.com/spring-projects/spring-tools/issues/1966)
 * _(Spring Boot)_ improve performance of repository-based version validation [#1963](https://github.com/spring-projects/spring-tools/issues/1963)
+* _(Spring Boot)_ line comment gets removed and causes indentation errors during AST rewrite operations [#1962](https://github.com/spring-projects/spring-tools/issues/1962)
 * _(Spring Boot)_ version validations for supported commercial versions activated on wrong setting [#1959](https://github.com/spring-projects/spring-tools/issues/1959)
+* _(Spring Boot)_ Avoid logging expected cache cancellation [#1953](https://github.com/spring-projects/spring-tools/issues/1953)
+* _(Spring Boot)_ Consume output and error streams for build command process [#1952](https://github.com/spring-projects/spring-tools/issues/1952)
+* _(Spring Boot)_ sts.maven.goal deadlocks on builds that outgrow the pipe buffer: executeMaven never drains the child process [#1950](https://github.com/spring-projects/spring-tools/issues/1950)
+* _(Spring Boot)_ MCP tool getResolvedProjectClasspath throws NPE when a classpath jar's file name is not strict SemVer (e.g. snakeyaml-2.4.jar) [#1949](https://github.com/spring-projects/spring-tools/issues/1949)
 * _(Spring Boot)_ show web config summary code lens in general [#1926](https://github.com/spring-projects/spring-tools/issues/1926)
 * _(Spring Boot)_ web config codelens does not appear immediately [#1925](https://github.com/spring-projects/spring-tools/issues/1925)
 * _(Spring Boot)_ extract parent path in controllers [#1924](https://github.com/spring-projects/spring-tools/issues/1924)
 * _(Spring Boot)_ add action to convert sql statements in query annotations from string literals into text blocks [#1923](https://github.com/spring-projects/spring-tools/issues/1923)
 * _(Spring Boot)_ Quick Fix for the latest patch release is slow [#1902](https://github.com/spring-projects/spring-tools/issues/1902)
+* _(Spring Boot)_ Pass environment to refresh AOT maven/gralde command on the client [#1867](https://github.com/spring-projects/spring-tools/issues/1867)
 * _(Spring Boot)_ add validation + quickfix to adopt `@ApplicationModuleListener` [#1800](https://github.com/spring-projects/spring-tools/issues/1800)
 * _(Spring Boot)_ exception thrown around internal compilation unit cache [#1777](https://github.com/spring-projects/spring-tools/issues/1777)
+* _(Spring Boot)_ [structure view] jump to the position of the stereotype definition in catalog file [#1676](https://github.com/spring-projects/spring-tools/issues/1676)
+* _(Spring Boot)_ Wrong multiple choices of SpringBootApplication [#1587](https://github.com/spring-projects/spring-tools/issues/1587)
 * _(Spring Boot)_ improve validation for Spring Data queries [#1516](https://github.com/spring-projects/spring-tools/issues/1516)
 * _(Spring Boot)_ correctly deal with concatenated values in annotation attributes - cont. [#1486](https://github.com/spring-projects/spring-tools/issues/1486)
 * _(Spring Boot)_ introduce validation and quick fix for conversion to `@SpringJUnitConfig` [#1403](https://github.com/spring-projects/spring-tools/issues/1403)
@@ -19,15 +43,13 @@
 * _(Spring Boot)_ introduce validation and quick fixes for specific scope annotations [#1401](https://github.com/spring-projects/spring-tools/issues/1401)
 * _(Spring Boot)_ Go To Definition in SpEL expressions should work for other annotations [#1371](https://github.com/spring-projects/spring-tools/issues/1371)
 * _(Spring Boot)_ Go To Definition in SpEL expressions does not find methods in type hierarchy [#1370](https://github.com/spring-projects/spring-tools/issues/1370)
-* _(Spring Boot)_ additional quick fix to split request mapping method [#1110](https://github.com/spring-projects/spring-tools/issues/1110)
-* _(Spring Boot)_ refactoring recipe doesn't work with compile errors [#1064](https://github.com/spring-projects/spring-tools/issues/1064)
-* _(Spring Boot)_ Java tooling in VSCode doesn't re-validate Java sources after migrating to newer Spring Boot [#1061](https://github.com/spring-projects/spring-tools/issues/1061)
-* _(Spring Boot)_ decouple concrete upgrade recipes and mechanics from tools releases [#1052](https://github.com/spring-projects/spring-tools/issues/1052)
-* _(Spring Boot)_ Use OpenRewrite Properties AST and Parser [#949](https://github.com/spring-projects/spring-tools/issues/949)
 * _(Spring Boot)_ The configuration in the "spring.factories" file cannot be accessed by Ctrl+left mouse button. [#686](https://github.com/spring-projects/spring-tools/issues/686)
-* _(Spring Boot)_ Spring Boot Tools for VS Code shows unhelpful/incorrect warning [#621](https://github.com/spring-projects/spring-tools/issues/621)
+* _(Spring Boot, VSCode)_ Spring Boot Tools for VS Code shows unhelpful/incorrect warning [#621](https://github.com/spring-projects/spring-tools/issues/621)
+* _(Spring Boot, Eclipse)_ Support Prototype launch cofigurations [#1964](https://github.com/spring-projects/spring-tools/issues/1964)
+* _(Spring Boot, Eclipse)_ New Spring Starter Project wizard shows "-1" instead of "demo" as default project name [#1927](https://github.com/spring-projects/spring-tools/issues/1927)
+* _(Spring Boot, Eclipse)_ remember the scope in the spring symbols dialog [#1423](https://github.com/spring-projects/spring-tools/issues/1423)
 
-## 2026-07-29 (5.4.0 RELEASE, incl. language servers version 2.3.0)
+## 2026-07-29 (5.3.0 RELEASE, incl. language servers version 2.3.0)
 
 #### important highlights
 

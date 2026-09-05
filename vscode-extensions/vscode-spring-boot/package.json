@@ -150,7 +150,7 @@
           "when": "false"
         },
         {
-          "command": "vscode-spring-boot.structure.openChanges",
+          "command": "vscode-spring-boot.structure.showChanges",
           "when": "false"
         },
         {
@@ -227,7 +227,7 @@
           "group": "inline"
         },
         {
-          "command": "vscode-spring-boot.structure.openChanges",
+          "command": "vscode-spring-boot.structure.showChanges",
           "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bchanged\\b/",
           "group": "1_structure"
         },
@@ -335,8 +335,8 @@
         "icon": "$(checklist)"
       },
       {
-        "command": "vscode-spring-boot.structure.openChanges",
-        "title": "Open Changes",
+        "command": "vscode-spring-boot.structure.showChanges",
+        "title": "Show Changes",
         "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(git-compare)"

@@ -1,7 +1,7 @@
 import { commands, EventEmitter, Event, ExtensionContext, window, Memento, QuickPickItem } from "vscode";
 import { StereotypedNode } from "./nodes";
 import { ExtensionAPI } from "../api";
-import { openChangesAgainstHead } from "./git-diff";
+import { showChangesAgainstHead } from "./git-diff";
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
@@ -94,13 +94,13 @@ export class StructureManager {
             }
         }));
 
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openChanges", (node: StereotypedNode) => {
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.showChanges", (node: StereotypedNode) => {
             const location = node?.location;
             if (!location) {
                 return undefined;
             }
             const converted = api.client.protocol2CodeConverter.asLocation(location);
-            return openChangesAgainstHead(converted.uri, converted.range);
+            return showChangesAgainstHead(converted.uri, converted.range);
         }));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.captureBaseline", (node: StereotypedNode) => this.captureBaseline(node)));

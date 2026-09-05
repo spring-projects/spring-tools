@@ -59,7 +59,7 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
 
     const options : commons.ActivatorOptions = {
         DEBUG: false,
-        CONNECT_TO_LS: false,
+        CONNECT_TO_LS: true,
         extensionId: 'vscode-spring-boot',
         preferJdk: true,
         jvmHeap: '1024m',

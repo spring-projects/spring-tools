@@ -18,14 +18,14 @@ interface GitExtension {
 }
 
 /**
- * Opens the working tree version of the given file next to its last committed version, scrolled to
+ * Shows the working tree version of the given file next to its last committed version, scrolled to
  * the given range - the same diff editor the SCM view opens for a modified file.
  *
  * Note this diffs against `HEAD`, not against the commit a structure baseline was captured at.
  * Those are the same as long as baselines follow the git history (which they do by default, see
  * `GitBaselineTracker`), and differ only for a baseline pinned manually mid-branch.
  */
-export async function openChangesAgainstHead(uri: Uri, selection?: Range): Promise<void> {
+export async function showChangesAgainstHead(uri: Uri, selection?: Range): Promise<void> {
     const git = await gitApi();
 
     if (!git) {

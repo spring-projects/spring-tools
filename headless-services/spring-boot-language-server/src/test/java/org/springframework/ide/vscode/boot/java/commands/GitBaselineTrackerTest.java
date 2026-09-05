@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -37,6 +38,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
+import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 
@@ -70,7 +72,124 @@ public class GitBaselineTrackerTest {
 	}
 
 	@Test
-	void bootstrapCapturesOnFirstStructureRequest(@TempDir Path dir) throws Exception {
+	void capturesNothingForAProjectOpenedWithPendingSourceChanges(@TempDir Path dir) throws Exception {
+		commit(dir, "Sample.java", "class Sample {}");
+		writeWithoutCommitting(dir, "Sample.java", "class Sample { void added() {} }");
+
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+
+		// a baseline captured now would contain the pending change and hide it from every later
+		// diff, so there must be no baseline at all until the next commit
+		assertThat(baselines.captureCount(project)).isZero();
+		assertThat(baselines.capturedCommitShaOf(project)).isEmpty();
+	}
+
+	@Test
+	void capturesOnceThePendingSourceChangesAreCommitted(@TempDir Path dir) throws Exception {
+		commit(dir, "Sample.java", "class Sample {}");
+		writeWithoutCommitting(dir, "Sample.java", "class Sample { void added() {} }");
+
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+		assertThat(baselines.captureCount(project)).isZero();
+
+		commit(dir, "Sample.java", "class Sample { void added() {} }");
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+		assertThat(baselines.capturedCommitShaOf(project)).isPresent();
+	}
+
+	@Test
+	void capturesWhenOnlyStructurallyIrrelevantFilesArePending(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		// an edited text file and an untracked note cannot move a node in the logical structure,
+		// so they must not keep the project from ever getting a baseline
+		writeWithoutCommitting(dir, "content.txt", "edited outside of any source file");
+		writeWithoutCommitting(dir, "NOTES.md", "scratch notes");
+
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+	}
+
+	@Test
+	void capturesNothingForAnUntrackedSourceFile(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		writeWithoutCommitting(dir, "BrandNew.java", "class BrandNew {}");
+
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isZero();
+	}
+
+	@Test
+	void leavesAManualBaselineAtTheCurrentCommitAloneWhileChangesArePending(@TempDir Path dir) throws Exception {
+		commit(dir, "Sample.java", "class Sample {}");
+
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		// what a manual capture leaves behind: a baseline recorded against the current HEAD
+		String headSha = tracker.currentCommitSha(project).orElseThrow();
+		baselines.captureBaseline(project, headSha);
+
+		writeWithoutCommitting(dir, "Sample.java", "class Sample { void added() {} }");
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+
+		// ... and the git-driven model takes over again at the next commit
+		commit(dir, "Sample.java", "class Sample { void added() {} }");
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isEqualTo(2);
+		assertThat(baselines.capturedCommitShaOf(project)).isPresent().get().isNotEqualTo(headSha);
+	}
+
+	@Test
+	void pollCapturesForEveryOpenProject(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		// a commit changes no file and so triggers no index update - the poll is what notices it
+		tracker.pollForCommits();
+
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+	}
+
+	@Test
+	void pollDoesNothingWhenDisabled(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, false);
+
+		tracker.pollForCommits();
+
+		assertThat(baselines.captureCount(project)).isZero();
+	}
+
+	@Test
+	void capturesOnTheFirstLookWhenTheWorkingTreeIsClean(@TempDir Path dir) throws Exception {
 		commit(dir, "initial content");
 		IJavaProject project = projectAt(dir);
 		FakeBaselineAccess baselines = new FakeBaselineAccess();
@@ -182,7 +301,8 @@ public class GitBaselineTrackerTest {
 		BootJavaConfig config = mock(BootJavaConfig.class);
 		when(config.isStructureGitBaselineEnabled()).thenReturn(true);
 
-		new GitBaselineTracker(projectFinder, symbolIndex, config, baselines);
+		new GitBaselineTracker(projectFinder, symbolIndex, config, baselines,
+				new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()));
 		verify(symbolIndex).onUpdate(listenerCaptor.capture());
 
 		// an update for an unrelated project must not trigger anything
@@ -197,12 +317,27 @@ public class GitBaselineTrackerTest {
 		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
 		doReturn(List.of(project)).when(projectFinder).all();
 
-		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
-
 		BootJavaConfig config = mock(BootJavaConfig.class);
 		when(config.isStructureGitBaselineEnabled()).thenReturn(gitBaselineEnabled);
 
-		return new GitBaselineTracker(projectFinder, symbolIndex, config, baselines);
+		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+
+		// deliberately the real working tree status against the real repository, so these tests
+		// cover the actual "is anything the index reads pending?" rule rather than a stand-in
+		return new GitBaselineTracker(projectFinder, symbolIndex, config, baselines,
+				new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()));
+	}
+
+	/**
+	 * A {@link SpringSymbolIndex} whose Java indexer answers {@code isInterestedIn} with the real
+	 * production implementation. That method reads no instance state, so calling it on an
+	 * unconstructed mock is safe - and it keeps these tests honest about which files actually
+	 * count, instead of restating that rule here.
+	 */
+	private static SpringSymbolIndex indexWithRealJavaIndexerPredicate() {
+		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		when(symbolIndex.getJavaIndexer()).thenReturn(mock(SpringIndexerJava.class, CALLS_REAL_METHODS));
+		return symbolIndex;
 	}
 
 	private static IJavaProject projectAt(Path dir) {
@@ -213,10 +348,20 @@ public class GitBaselineTrackerTest {
 	}
 
 	private static void commit(Path dir, String content) throws Exception {
+		commit(dir, "content.txt", content);
+	}
+
+	/**
+	 * Commits the given file, leaving the working tree clean. Which file matters: only paths the
+	 * Spring index reads (notably {@code *.java}) keep a baseline from being captured, so
+	 * {@code content.txt} is the right fixture whenever a test wants a commit without touching
+	 * anything structurally relevant.
+	 */
+	private static void commit(Path dir, String fileName, String content) throws Exception {
 		boolean firstCommit = !new File(dir.toFile(), ".git").exists();
 
 		try (Git git = firstCommit ? Git.init().setDirectory(dir.toFile()).call() : Git.open(dir.toFile())) {
-			Files.writeString(dir.resolve("content.txt"), content);
+			Files.writeString(dir.resolve(fileName), content);
 			git.add().addFilepattern(".").call();
 			git.commit()
 					.setMessage("test commit")
@@ -224,6 +369,13 @@ public class GitBaselineTrackerTest {
 					.setCommitter("Test", "test@example.com")
 					.call();
 		}
+	}
+
+	/**
+	 * Writes a file without committing it, leaving the working tree dirty.
+	 */
+	private static void writeWithoutCommitting(Path dir, String fileName, String content) throws Exception {
+		Files.writeString(dir.resolve(fileName), content);
 	}
 
 	/**

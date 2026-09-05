@@ -93,9 +93,10 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 
 	/**
 	 * Removes the project's baseline, if any - both from memory and from disk. Purely a manual
-	 * undo: for a git-backed project with automatic capture enabled, the next structure request
-	 * or index update will simply bootstrap a fresh baseline again, same as if none had ever been
-	 * captured.
+	 * undo: for a git-backed project with automatic capture enabled, a fresh baseline is captured
+	 * again as soon as the working tree holds no pending source changes, same as if none had ever
+	 * been captured. While changes are pending, the project stays without a baseline until its
+	 * next commit.
 	 *
 	 * @return whether the project actually had a baseline to remove
 	 */

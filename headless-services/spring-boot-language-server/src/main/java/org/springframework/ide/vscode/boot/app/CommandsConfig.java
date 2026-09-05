@@ -24,6 +24,7 @@ import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
 import org.springframework.ide.vscode.boot.java.commands.StructureBaselineStorage;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider;
+import org.springframework.ide.vscode.boot.java.commands.WorkingTreeStatus;
 import org.springframework.ide.vscode.boot.java.commands.WorkspaceBootExecutableProjects;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
@@ -89,8 +90,9 @@ public class CommandsConfig {
 
 	@Bean
 	GitBaselineTracker gitBaselineTracker(JavaProjectFinder projectFinder, SpringSymbolIndex symbolIndex,
-			BootJavaConfig config, StructureSnapshotStore structureSnapshotStore) {
-		return new GitBaselineTracker(projectFinder, symbolIndex, config, structureSnapshotStore);
+			BootJavaConfig config, StructureSnapshotStore structureSnapshotStore, SimpleLanguageServer server) {
+		return new GitBaselineTracker(projectFinder, symbolIndex, config, structureSnapshotStore,
+				new WorkingTreeStatus.IndexRelevant(symbolIndex), server);
 	}
 
 	@Bean

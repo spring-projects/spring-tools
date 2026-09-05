@@ -171,9 +171,9 @@ public class StereotypeInformation {
 			call to getLogicalStructureChanges can show what changed in the logical structure of the project since
 			this point in time (e.g. after a refactoring or a series of edits).
 			Capturing a new baseline replaces any previously captured baseline for the same project. Usually not
-			needed for git-backed projects: those get a baseline automatically the first time their structure is
-			looked at, refreshed automatically on every commit - call this only to pin a baseline mid-branch,
-			without committing.
+			needed for git-backed projects: those get a baseline automatically on every commit, so that changes
+			are always shown against the last commit - call this only to pin a baseline mid-branch, on top of
+			uncommitted changes. Note such a manual baseline is replaced automatically by the next commit's.
 			Use getProjectList to obtain valid project names.
 			""")
 	public String captureLogicalStructureBaseline(
@@ -192,8 +192,8 @@ public class StereotypeInformation {
 	@Tool(description = """
 			Removes the captured logical structure baseline for the given project, if any, so getLogicalStructureChanges
 			reports "no baseline" again until a new one is captured. Purely a manual undo: for a git-backed project
-			with automatic baseline capture enabled, the next look at the project's structure simply captures a fresh
-			baseline again, same as if none had ever existed.
+			with automatic baseline capture enabled, a fresh baseline is captured again as soon as no source changes
+			are pending, and otherwise at its next commit.
 			Use getProjectList to obtain valid project names.
 			""")
 	public String clearLogicalStructureBaseline(

@@ -44,15 +44,21 @@ public class StructureBaselineStorage {
 	private static final Logger log = LoggerFactory.getLogger(StructureBaselineStorage.class);
 
 	/**
-	 * Bumped whenever the shape of {@link StructureSnapshot} (or anything it references) changes
-	 * in a way that could break deserializing an older file; such files are discarded rather than
-	 * risking a broken read.
+	 * Bumped whenever the shape <i>or the meaning</i> of {@link StructureSnapshot} changes in a way
+	 * that makes an older file unusable; such files are discarded rather than risking a broken read
+	 * or misleading diffs.
 	 * <p>
-	 * Version 2 added the content hash to the nodes. Discarding older baselines matters here:
-	 * they carry no hashes, so comparing them against a freshly indexed tree would report every
-	 * node as modified.
+	 * Version 2 added the content hash to the nodes: older baselines carry no hashes, so comparing
+	 * them against a freshly indexed tree would report every node as modified.
+	 * <p>
+	 * Version 3 changed what a stored baseline means - it now always represents the state of the
+	 * commit it names, because it is only ever captured while no source changes are pending (see
+	 * {@link GitBaselineTracker}). Baselines written before that could have been captured from a
+	 * dirty working tree while still naming {@code HEAD}, and would keep hiding those changes until
+	 * the next commit. Discarding them settles every project into a correct state at once: a clean
+	 * project re-captures within one poll, a dirty one correctly waits for its next commit.
 	 */
-	private static final int SCHEMA_VERSION = 2;
+	private static final int SCHEMA_VERSION = 3;
 
 	private final File directory;
 	private final Gson gson = new GsonBuilder()

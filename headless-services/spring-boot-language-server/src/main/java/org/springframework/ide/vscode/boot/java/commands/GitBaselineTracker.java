@@ -191,7 +191,7 @@ public class GitBaselineTracker {
 				return;
 			}
 
-			if (!workingTreeStatus.isStructureClean(repository.get())) {
+			if (!workingTreeStatus.isStructureClean(repository.get(), new File(project.getLocationUri()))) {
 				// snapshotting now would bake the pending changes into the baseline and hide them
 				// from every later diff, so leave any existing baseline alone and wait for the
 				// next commit

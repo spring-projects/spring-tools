@@ -125,6 +125,47 @@ public class GitBaselineTrackerTest {
 	}
 
 	@Test
+	void capturesWhenOnlyFilesOutsideTheProjectArePending(@TempDir Path dir) throws Exception {
+		// one repository, several projects (a monorepo, a multi-module build): pending Java changes
+		// in a sibling say nothing about whether *this* project matches its commit, and must not
+		// keep it from ever getting a baseline
+		Files.createDirectories(dir.resolve("my-project/src"));
+		Files.createDirectories(dir.resolve("sibling-project/src"));
+		Files.writeString(dir.resolve("my-project/src/App.java"), "class App {}");
+		Files.writeString(dir.resolve("sibling-project/src/Other.java"), "class Other {}");
+		commitEverything(dir, "initial");
+
+		writeWithoutCommitting(dir, "sibling-project/src/Other.java", "class Other { void added() {} }");
+
+		IJavaProject project = projectAt(dir.resolve("my-project"));
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+	}
+
+	@Test
+	void capturesNothingWhenTheProjectsOwnSourcesArePendingInAMultiProjectRepository(@TempDir Path dir) throws Exception {
+		// the flip side of the test above: scoping to the project must not lose track of the
+		// project's *own* pending changes when it lives in a subdirectory
+		Files.createDirectories(dir.resolve("my-project/src"));
+		Files.writeString(dir.resolve("my-project/src/App.java"), "class App {}");
+		commitEverything(dir, "initial");
+
+		writeWithoutCommitting(dir, "my-project/src/App.java", "class App { void added() {} }");
+
+		IJavaProject project = projectAt(dir.resolve("my-project"));
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isZero();
+	}
+
+	@Test
 	void capturesNothingForAnUntrackedSourceFile(@TempDir Path dir) throws Exception {
 		commit(dir, "initial content");
 		writeWithoutCommitting(dir, "BrandNew.java", "class BrandNew {}");
@@ -379,6 +420,23 @@ public class GitBaselineTrackerTest {
 
 		try (Git git = firstCommit ? Git.init().setDirectory(dir.toFile()).call() : Git.open(dir.toFile())) {
 			Files.writeString(dir.resolve(fileName), content);
+			git.add().addFilepattern(".").call();
+			git.commit()
+					.setMessage(message)
+					.setAuthor("Test", "test@example.com")
+					.setCommitter("Test", "test@example.com")
+					.call();
+		}
+	}
+
+	/**
+	 * Commits whatever is currently in the working tree, initializing the repository first if
+	 * needed - for tests that lay out several files (several projects) up front.
+	 */
+	private static void commitEverything(Path dir, String message) throws Exception {
+		boolean firstCommit = !new File(dir.toFile(), ".git").exists();
+
+		try (Git git = firstCommit ? Git.init().setDirectory(dir.toFile()).call() : Git.open(dir.toFile())) {
 			git.add().addFilepattern(".").call();
 			git.commit()
 					.setMessage(message)

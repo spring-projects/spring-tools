@@ -48,6 +48,7 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 /**
@@ -227,6 +228,21 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		assertEquals("sha2", history.get(0).commitSha());
 		assertEquals("second message", history.get(0).commitMessage());
 		assertEquals("sha1", history.get(1).commitSha());
+	}
+
+	/**
+	 * Command results are serialized with Gson on their way to the IDE clients, and Gson cannot
+	 * reflect over {@code java.time} types - a field like {@link java.time.Instant} in a result DTO
+	 * only blows up once a real client asks for it, never in a test that inspects the returned Java
+	 * objects. So serialize what these commands actually return, exactly as the JSON-RPC layer does.
+	 */
+	@Test
+	void baselineCommandResultsAreGsonSerializable() throws Exception {
+		structureSnapshotStore.captureBaseline(project, "sha1", "first message");
+
+		assertNotNull(new Gson().toJson(baselineHistory(project.getElementName())));
+		assertNotNull(new Gson().toJson(captureBaseline(project.getElementName())));
+		assertNotNull(new Gson().toJson(clearBaseline(project.getElementName())));
 	}
 
 	@Test

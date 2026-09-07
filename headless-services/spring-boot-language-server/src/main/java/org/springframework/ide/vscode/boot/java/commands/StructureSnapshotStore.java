@@ -137,7 +137,8 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 */
 	public List<BaselineHistoryEntry> historyEntriesOf(IJavaProject project) {
 		return historyOf(project).stream()
-				.map(snapshot -> new BaselineHistoryEntry(snapshot.commitSha(), snapshot.commitMessage(), snapshot.capturedAt(), snapshot.nodeCount()))
+				.map(snapshot -> new BaselineHistoryEntry(snapshot.commitSha(), snapshot.commitMessage(),
+						snapshot.capturedAt() == null ? null : snapshot.capturedAt().toString(), snapshot.nodeCount()))
 				.toList();
 	}
 
@@ -264,8 +265,13 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	/**
 	 * A retained baseline snapshot without its structure tree, for callers that only want to list or
 	 * pick one (an IDE QuickPick, an MCP tool) rather than diff against it.
+	 *
+	 * <p>{@code capturedAt} is an ISO-8601 string rather than an {@link Instant} on purpose: this
+	 * record travels over JSON-RPC to the IDE clients, and lsp4j's Gson cannot reflect over
+	 * {@code java.time} types ({@code module java.base does not "opens java.time"}). The same
+	 * reason {@code SpringIndexCommands.CaptureBaselineResult} keeps its timestamp as a string.
 	 */
-	public static record BaselineHistoryEntry(String commitSha, String commitMessage, Instant capturedAt, int nodeCount) {
+	public static record BaselineHistoryEntry(String commitSha, String commitMessage, String capturedAt, int nodeCount) {
 	}
 
 	public static record StructureSnapshot(Instant capturedAt, String commitSha, String commitMessage, StructureNode root) {

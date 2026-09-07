@@ -75,9 +75,15 @@ export class StereotypedNode {
             tooltipLines.push(`(${CHANGE_TOOLTIPS[change]})`);
         }
         if (this.projectId) {
-            tooltipLines.push(this.comparedAgainstSha
-                ? `Comparing against ${shortSha(this.comparedAgainstSha)} - ${this.comparedAgainstMessage || '(no commit message)'}`
-                : 'No logical structure baseline captured yet');
+            if (this.comparedAgainstSha) {
+                tooltipLines.push(`Comparing against ${shortSha(this.comparedAgainstSha)} - ${this.comparedAgainstMessage || '(no commit message)'}`);
+            } else if (this.hasBaseline) {
+                // a baseline captured manually, or on a project without a git repository, has no
+                // commit associated with it at all
+                tooltipLines.push('Comparing against a manually captured baseline');
+            } else {
+                tooltipLines.push('No logical structure baseline captured yet');
+            }
         }
         if (tooltipLines.length > 1) {
             item.tooltip = tooltipLines.join(' ');

@@ -105,6 +105,12 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String COMPARED_AGAINST_MESSAGE = "comparedAgainstMessage";
 
 	/**
+	 * When that baseline was captured, always set alongside the two attributes above. This is the
+	 * only thing there is to show for a manually captured snapshot, which carries no commit at all.
+	 */
+	public static final String COMPARED_AGAINST_CAPTURED_AT = "comparedAgainstCapturedAt";
+
+	/**
 	 * Discriminates the kind of element a node represents, independent of its label or icon
 	 * (several kinds of node can share the same icon). Used to identify nodes across two
 	 * structure trees when diffing them.

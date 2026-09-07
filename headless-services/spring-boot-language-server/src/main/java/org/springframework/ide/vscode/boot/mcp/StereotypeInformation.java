@@ -184,9 +184,9 @@ public class StereotypeInformation {
 		IJavaProject project = projects.get(projectName);
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 
-		String commitSha = gitBaselineTracker.currentCommitSha(project).orElse(null);
-		String commitMessage = gitBaselineTracker.currentCommitMessage(project).orElse(null);
-		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha, commitMessage);
+		// no commit information on purpose: a manual capture is normally taken over uncommitted
+		// work, so it represents no commit even though one is checked out
+		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
 		return "captured logical structure baseline for project '%s' with %d node(s) at %s"
 				.formatted(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt());
 	}

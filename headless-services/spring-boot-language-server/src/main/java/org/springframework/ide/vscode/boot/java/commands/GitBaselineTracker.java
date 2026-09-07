@@ -134,35 +134,6 @@ public class GitBaselineTracker {
 	}
 
 	/**
-	 * Resolves the project's current git {@code HEAD} commit, if it has a repository and at least
-	 * one commit. Read-only - does not capture or change anything.
-	 */
-	public Optional<String> currentCommitSha(IJavaProject project) {
-		return isEnabled() ? repositoryOf(project).map(this::resolveHead) : Optional.empty();
-	}
-
-	/**
-	 * The short (first-line) commit message of the project's current git {@code HEAD} commit, if it
-	 * has a repository, at least one commit, and that commit's message could be read. Read-only -
-	 * does not capture or change anything.
-	 */
-	public Optional<String> currentCommitMessage(IJavaProject project) {
-		if (!isEnabled()) {
-			return Optional.empty();
-		}
-
-		return repositoryOf(project).flatMap(repository -> {
-			try {
-				ObjectId head = repository.resolve("HEAD");
-				return head == null ? Optional.empty() : Optional.ofNullable(resolveCommitMessage(repository, head));
-			} catch (Exception e) {
-				log.warn("failed to resolve HEAD for git repository: " + repository.getDirectory(), e);
-				return Optional.empty();
-			}
-		});
-	}
-
-	/**
 	 * Captures the baseline for the project if it is git-backed, its {@code HEAD} differs from the
 	 * commit its current baseline (if any) was captured at, and the working tree holds no pending
 	 * source changes - see this class' description for why all three are required. Safe and cheap

@@ -74,25 +74,25 @@ public class StructureSnapshotStoreTest {
 	}
 
 	@Test
-	void annotateWithChangesSinceBaselineComparesAgainstTheGivenTargetSha(@TempDir Path dir) throws Exception {
+	void annotateWithChangesSinceBaselineComparesAgainstTheRequestedSnapshot(@TempDir Path dir) throws Exception {
 		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
 		IJavaProject project = project();
 
-		store.captureBaseline(project, "sha1", "first commit");
+		String olderKey = keyOf(store.captureBaseline(project, "sha1", "first commit"));
 		store.captureBaseline(project, "sha2", "second commit");
 
 		JsonNodeHandler.Node tree = new JsonNodeHandler.Node(null)
 				.withAttribute(JsonNodeHandler.TEXT, "app")
 				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
 
-		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, "sha1");
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, olderKey);
 
 		assertThat(comparedAgainst.commitSha()).isEqualTo("sha1");
 		assertThat(comparedAgainst.commitMessage()).isEqualTo("first commit");
 	}
 
 	@Test
-	void annotateWithChangesSinceBaselineFallsBackToTheNewestWhenTheTargetShaIsUnknown(@TempDir Path dir) throws Exception {
+	void annotateWithChangesSinceBaselineFallsBackToTheNewestWhenTheRequestedSnapshotIsGone(@TempDir Path dir) throws Exception {
 		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
 		IJavaProject project = project();
 
@@ -103,9 +103,9 @@ public class StructureSnapshotStoreTest {
 				.withAttribute(JsonNodeHandler.TEXT, "app")
 				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
 
-		// "evicted" (or simply unknown) target sha - failing open to the default view rather than
-		// showing nothing, since the picked commit is no longer available to compare against
-		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, "sha-does-not-exist");
+		// an evicted (or simply unknown) snapshot key - failing open to the default view rather than
+		// showing nothing, since the picked snapshot is no longer available to compare against
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, "2020-01-01T00:00:00Z");
 
 		assertThat(comparedAgainst.commitSha()).isEqualTo("sha2");
 	}
@@ -120,7 +120,44 @@ public class StructureSnapshotStoreTest {
 				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
 
 		assertThat(store.annotateWithChangesSinceBaseline(project, tree, null)).isNull();
-		assertThat(store.annotateWithChangesSinceBaseline(project, tree, "sha1")).isNull();
+		assertThat(store.annotateWithChangesSinceBaseline(project, tree, "2020-01-01T00:00:00Z")).isNull();
+	}
+
+	@Test
+	void aManuallyCapturedSnapshotCarriesNoCommitButIsStillSelectable(@TempDir Path dir) throws Exception {
+		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
+		IJavaProject project = project();
+
+		String manualKey = keyOf(store.captureBaseline(project));
+		store.captureBaseline(project, "sha2", "a later commit");
+
+		assertThat(store.historyEntriesOf(project)).anySatisfy(entry -> {
+			assertThat(entry.commitSha()).isNull();
+			assertThat(entry.commitMessage()).isNull();
+			assertThat(entry.capturedAt()).isEqualTo(manualKey);
+		});
+
+		JsonNodeHandler.Node tree = new JsonNodeHandler.Node(null)
+				.withAttribute(JsonNodeHandler.TEXT, "app")
+				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
+
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, manualKey);
+
+		assertThat(comparedAgainst.commitSha()).isNull();
+		assertThat(keyOf(comparedAgainst)).isEqualTo(manualKey);
+	}
+
+	@Test
+	void capturedCommitShaSkipsManualSnapshots(@TempDir Path dir) throws Exception {
+		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
+		IJavaProject project = project();
+
+		store.captureBaseline(project, "sha1", "a commit");
+		store.captureBaseline(project);
+
+		// the newest snapshot is the manual one, but "which commit do I already have a baseline
+		// for?" must still answer with the commit - otherwise the git tracker captures a duplicate
+		assertThat(store.capturedCommitShaOf(project)).contains("sha1");
 	}
 
 	@Test
@@ -170,6 +207,11 @@ public class StructureSnapshotStoreTest {
 						.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION));
 
 		return new StructureSnapshotStore(structureViewProvider, storage, config);
+	}
+
+	/** The key a client uses to ask for one specific snapshot - see StructureSnapshotStore#keyOf. */
+	private static String keyOf(StructureSnapshot snapshot) {
+		return snapshot.capturedAt().toString();
 	}
 
 	private static IJavaProject project() {

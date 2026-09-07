@@ -35,10 +35,10 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
  * server restart.
  *
  * <p>Up to {@link BootJavaConfig#getStructureBaselineHistorySize()} snapshots are retained per
- * project, newest first; capturing one more than that drops the oldest. The most recent one is
- * always what {@link #diffAgainstBaseline} and {@link #annotateWithChangesSinceBaseline} compare
- * against - older ones are kept only so a past commit's snapshot can still be recognized (by its
- * commit message) later.
+ * project, newest first; capturing one more than that drops the oldest. The most recent one is what
+ * {@link #diffAgainstBaseline} and {@link #annotateWithChangesSinceBaseline} compare against by
+ * default - older ones are kept so a client can list them (a commit's sha and message, or the
+ * capture time of a manual snapshot) and ask to compare against one of them instead.
  *
  * <p>Implements {@link GitBaselineTracker.BaselineAccess} so {@link GitBaselineTracker} can drive
  * baseline capture from git activity without this class knowing anything about git.
@@ -67,8 +67,12 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 
 	/**
 	 * Computes the current logical structure of the project and pins it as the baseline to compare
-	 * against in {@link #diffAgainstBaseline}. Does not associate the baseline with a git commit -
-	 * use {@link #captureBaseline(IJavaProject, String, String)} for that.
+	 * against in {@link #diffAgainstBaseline}.
+	 *
+	 * <p>Deliberately records no commit information: this is what a <i>manual</i> capture uses, and
+	 * a manual capture is normally taken over uncommitted work, so it does not represent any commit
+	 * even though some commit happens to be checked out. {@link GitBaselineTracker} uses
+	 * {@link #captureBaseline(IJavaProject, String, String)} for the snapshots that do.
 	 */
 	public StructureSnapshot captureBaseline(IJavaProject project) {
 		return captureBaseline(project, null, null);
@@ -105,13 +109,20 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
-	 * The git commit SHA the project's most recent baseline was captured at, if it has one and it
-	 * is associated with a commit.
+	 * The git commit SHA of the most recent snapshot that represents a commit, which is what
+	 * answers "have I already captured a baseline for this commit?".
+	 *
+	 * <p>Deliberately skips manual snapshots rather than just looking at the newest one: a manual
+	 * snapshot carries no commit, so treating it as "no commit captured yet" would have the tracker
+	 * immediately capture a duplicate of a commit it already has - and push the user's manual
+	 * snapshot out of the way seconds after they took it.
 	 */
 	@Override
 	public Optional<String> capturedCommitShaOf(IJavaProject project) {
-		StructureSnapshot baseline = baselineOf(project);
-		return baseline == null ? Optional.empty() : Optional.ofNullable(baseline.commitSha());
+		return historyOf(project).stream()
+				.map(StructureSnapshot::commitSha)
+				.filter(sha -> sha != null)
+				.findFirst();
 	}
 
 	/**
@@ -138,7 +149,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	public List<BaselineHistoryEntry> historyEntriesOf(IJavaProject project) {
 		return historyOf(project).stream()
 				.map(snapshot -> new BaselineHistoryEntry(snapshot.commitSha(), snapshot.commitMessage(),
-						snapshot.capturedAt() == null ? null : snapshot.capturedAt().toString(), snapshot.nodeCount()))
+						keyOf(snapshot), snapshot.nodeCount()))
 				.toList();
 	}
 
@@ -184,15 +195,16 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 * <p>Does nothing when no baseline was captured for the project.
 	 *
 	 * @param root the root of the tree to annotate, modified in place
-	 * @param targetSha the commit sha to compare against, or {@code null} for the most recent
-	 *        baseline. Falls back to the most recent baseline if this sha is no longer in the
-	 *        retained history (evicted, or simply unknown) - failing open to the default view
-	 *        rather than showing nothing.
+	 * @param snapshotKey the key of the retained snapshot to compare against (its capture time, as
+	 *        reported by {@link BaselineHistoryEntry#capturedAt()}), or {@code null} for the most
+	 *        recent one. Falls back to the most recent one if that snapshot is no longer retained
+	 *        (evicted, or simply unknown) - failing open to the default view rather than showing
+	 *        nothing.
 	 * @return the baseline snapshot actually compared against, so the caller can report it (e.g. in
 	 *         a tooltip) without a second lookup - {@code null} if the project has no baseline at all
 	 */
-	public StructureSnapshot annotateWithChangesSinceBaseline(IJavaProject project, JsonNodeHandler.Node root, String targetSha) {
-		StructureSnapshot baseline = baselineOf(project, targetSha);
+	public StructureSnapshot annotateWithChangesSinceBaseline(IJavaProject project, JsonNodeHandler.Node root, String snapshotKey) {
+		StructureSnapshot baseline = baselineOf(project, snapshotKey);
 		if (baseline == null || root == null) {
 			return baseline;
 		}
@@ -228,22 +240,34 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
-	 * Same as {@link #baselineOf(IJavaProject)}, except a non-null {@code targetSha} looks up that
-	 * specific commit's snapshot in the retained history instead of the most recent one - falling
-	 * back to the most recent one if {@code targetSha} isn't retained (or never existed).
+	 * Same as {@link #baselineOf(IJavaProject)}, except a non-null {@code snapshotKey} looks up that
+	 * one specific snapshot in the retained history instead of the most recent one - falling back to
+	 * the most recent one if it isn't retained anymore (or never existed).
+	 *
+	 * <p>Keyed by {@link StructureSnapshot#capturedAt()} rather than by commit sha, because manual
+	 * snapshots have no commit and still need to be selectable - and because two snapshots can share
+	 * a commit while the capture time identifies exactly one.
 	 */
-	private StructureSnapshot baselineOf(IJavaProject project, String targetSha) {
+	private StructureSnapshot baselineOf(IJavaProject project, String snapshotKey) {
 		List<StructureSnapshot> snapshots = historyOf(project);
 		if (snapshots.isEmpty()) {
 			return null;
 		}
-		if (targetSha == null) {
+		if (snapshotKey == null) {
 			return snapshots.get(0);
 		}
 		return snapshots.stream()
-				.filter(snapshot -> targetSha.equals(snapshot.commitSha()))
+				.filter(snapshot -> snapshotKey.equals(keyOf(snapshot)))
 				.findFirst()
 				.orElseGet(() -> snapshots.get(0));
+	}
+
+	/**
+	 * The stable key a client uses to ask for one specific retained snapshot - see
+	 * {@link #baselineOf(IJavaProject, String)} for why it is the capture time.
+	 */
+	private static String keyOf(StructureSnapshot snapshot) {
+		return snapshot.capturedAt() == null ? null : snapshot.capturedAt().toString();
 	}
 
 	private StructureSnapshot snapshotNow(IJavaProject project, String commitSha, String commitMessage) {

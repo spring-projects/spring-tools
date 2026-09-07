@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -171,7 +172,8 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		// captured directly with distinct known shas, bypassing git sha resolution (disabled in this
 		// test harness - see GitBaselineTracker's isEnabled()) to simulate two commits' worth of
 		// retained history
-		structureSnapshotStore.captureBaseline(project, "sha1", "before adding goodbye");
+		String olderKey = structureSnapshotStore.captureBaseline(project, "sha1", "before adding goodbye")
+				.capturedAt().toString();
 
 		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
 		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
@@ -186,35 +188,54 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		assertTrue(changedNodesOf(structureTrees(null)).isEmpty(),
 				"expected no changes when comparing against the newest baseline (the default)");
 
-		Map<String, String> changed = changedNodesOf(structureTrees(Map.of(project.getElementName(), "sha1")));
+		Map<String, String> changed = changedNodesOf(structureTrees(Map.of(project.getElementName(), olderKey)));
 		assertFalse(changed.isEmpty(), "expected changes when comparing against an older, explicitly requested baseline");
 		assertTrue(changed.values().contains("added"), "expected the new mapping to show up as added, but got: " + changed);
 		assertTrue(changed.keySet().stream().anyMatch(nodeId -> nodeId.contains("/goodbye")));
 	}
 
 	@Test
-	void structureTreeFallsBackToTheNewestBaselineForAnUnknownTargetSha() throws Exception {
+	void structureTreeFallsBackToTheNewestBaselineForAnUnknownSnapshotKey() throws Exception {
 		structureSnapshotStore.captureBaseline(project, "sha1", "first commit");
 
-		assertTrue(changedNodesOf(structureTrees(Map.of(project.getElementName(), "sha-does-not-exist"))).isEmpty(),
-				"expected no changes: falling back to the (only, and current) newest baseline");
+		Map<String, String> unknown = Map.of(project.getElementName(), "2020-01-01T00:00:00Z");
 
-		Node root = rootOf(project.getElementName(), Map.of(project.getElementName(), "sha-does-not-exist"));
-		assertEquals("sha1", root.getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
+		assertTrue(changedNodesOf(structureTrees(unknown)).isEmpty(),
+				"expected no changes: falling back to the (only, and current) newest baseline");
+		assertEquals("sha1", rootOf(project.getElementName(), unknown).getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
 	}
 
 	@Test
 	void rootNodeReportsWhichBaselineItIsComparedAgainst() throws Exception {
-		structureSnapshotStore.captureBaseline(project, "sha1", "first message");
-		structureSnapshotStore.captureBaseline(project, "sha2", "second message");
+		String olderKey = structureSnapshotStore.captureBaseline(project, "sha1", "first message").capturedAt().toString();
+		String newestKey = structureSnapshotStore.captureBaseline(project, "sha2", "second message").capturedAt().toString();
 
 		Node defaultRoot = rootOf(project.getElementName(), null);
 		assertEquals("sha2", defaultRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
 		assertEquals("second message", defaultRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_MESSAGE));
+		assertEquals(newestKey, defaultRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_CAPTURED_AT));
 
-		Node pinnedRoot = rootOf(project.getElementName(), Map.of(project.getElementName(), "sha1"));
+		Node pinnedRoot = rootOf(project.getElementName(), Map.of(project.getElementName(), olderKey));
 		assertEquals("sha1", pinnedRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
 		assertEquals("first message", pinnedRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_MESSAGE));
+		assertEquals(olderKey, pinnedRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_CAPTURED_AT));
+	}
+
+	@Test
+	void manuallyCapturedSnapshotsCarryNoCommitInformation() throws Exception {
+		captureBaseline(project.getElementName());
+
+		List<StructureSnapshotStore.BaselineHistoryEntry> history = baselineHistory(project.getElementName());
+
+		assertEquals(1, history.size());
+		assertNull(history.get(0).commitSha(), "a manual snapshot represents no commit");
+		assertNull(history.get(0).commitMessage(), "a manual snapshot represents no commit");
+		assertNotNull(history.get(0).capturedAt(), "but it still says when it was taken");
+
+		// ... and the tree reports it the same way: no commit, just the capture time
+		Node root = rootOf(project.getElementName(), null);
+		assertNull(root.getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
+		assertEquals(history.get(0).capturedAt(), root.getAttribute(JsonNodeHandler.COMPARED_AGAINST_CAPTURED_AT));
 	}
 
 	@Test

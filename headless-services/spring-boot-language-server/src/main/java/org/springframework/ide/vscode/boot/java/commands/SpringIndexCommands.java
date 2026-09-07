@@ -92,9 +92,9 @@ public class SpringIndexCommands {
 			return CompletableFuture.supplyAsync(() -> {
 				IJavaProject project = resolveProject(params, SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, projectFinder);
 
-				String commitSha = gitBaselineTracker.currentCommitSha(project).orElse(null);
-				String commitMessage = gitBaselineTracker.currentCommitMessage(project).orElse(null);
-				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha, commitMessage);
+				// no commit information on purpose: a manual capture is normally taken over
+				// uncommitted work, so it represents no commit even though one is checked out
+				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
 				return new CaptureBaselineResult(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt().toString());
 			}, messageWorkerThreadPool);
 		});
@@ -131,14 +131,18 @@ public class SpringIndexCommands {
 				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
 
 		if (tree != null) {
-			String targetSha = args.compareAgainst == null ? null : args.compareAgainst.get(project.getElementName());
+			String snapshotKey = args.compareAgainst == null ? null : args.compareAgainst.get(project.getElementName());
 
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));
 
-			StructureSnapshot comparedAgainst = structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree, targetSha);
+			StructureSnapshot comparedAgainst = structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree, snapshotKey);
 			if (comparedAgainst != null) {
+				// sha and message stay null for a manually captured snapshot - the capture time is
+				// all there is to identify it by
 				tree.withAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA, comparedAgainst.commitSha());
 				tree.withAttribute(JsonNodeHandler.COMPARED_AGAINST_MESSAGE, comparedAgainst.commitMessage());
+				tree.withAttribute(JsonNodeHandler.COMPARED_AGAINST_CAPTURED_AT,
+						comparedAgainst.capturedAt() == null ? null : comparedAgainst.capturedAt().toString());
 			}
 		}
 

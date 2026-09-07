@@ -199,31 +199,33 @@ export class StructureManager {
             return;
         }
 
-        const currentSha = this.getCompareAgainst(projectName);
-        const currentLabel = currentSha ? shortSha(currentSha) : 'latest commit';
+        const currentKey = this.getCompareAgainst(projectName);
+        const current = history.find(entry => entry.capturedAt === currentKey);
 
         const items: BaselineQuickPickItem[] = [
             {
-                label: "$(sync) Latest commit",
-                description: "always compare against the most recently captured baseline",
-                sha: undefined
+                label: "$(sync) Most recent snapshot",
+                description: "always compare against the newest captured snapshot",
+                snapshotKey: undefined
             },
             ...history.map(entry => ({
-                label: `$(git-commit) ${shortSha(entry.commitSha)}`,
-                description: entry.commitMessage || '(no commit message)',
-                detail: new Date(entry.capturedAt).toLocaleString(),
-                sha: entry.commitSha
+                // a manually captured snapshot has no commit: it is normally taken over
+                // uncommitted work, so only its capture time says anything about it
+                label: entry.commitSha ? `$(git-commit) ${shortSha(entry.commitSha)}` : '$(bookmark) Manual snapshot',
+                description: entry.commitSha ? (entry.commitMessage || '(no commit message)') : undefined,
+                detail: formatCapturedAt(entry.capturedAt),
+                snapshotKey: entry.capturedAt
             } as BaselineQuickPickItem))
         ];
 
         const picked = await window.showQuickPick(items, {
             ignoreFocusOut: true,
-            title: `Select the baseline to compare '${projectName}' against (currently: ${currentLabel})`,
-            placeHolder: "Choose a commit snapshot, or 'Latest commit' for the default"
+            title: `Select the baseline to compare '${projectName}' against (currently: ${describeBaseline(current)})`,
+            placeHolder: "Choose a snapshot, or 'Most recent snapshot' for the default"
         });
 
         if (picked) {
-            await this.setCompareAgainst(projectName, picked.sha);
+            await this.setCompareAgainst(projectName, picked.snapshotKey);
             this.refresh(false);
         }
     }
@@ -329,8 +331,8 @@ export class StructureManager {
     }
 
     /**
-     * The commit sha the given project is pinned to compare against, if the user picked one via
-     * "Select Baseline to Compare Against" - `undefined` means "the most recent baseline", the
+     * Identifies the snapshot the given project is pinned to compare against, if the user picked one
+     * via "Select Baseline to Compare Against" - `undefined` means "the most recent one", the
      * default the server itself falls back to.
      */
     private getCompareAgainst(projectName: string): string | undefined {
@@ -341,17 +343,17 @@ export class StructureManager {
         return this.workspaceState.get<Record<string, string>>(COMPARE_AGAINST_KEY, undefined);
     }
 
-    private async setCompareAgainst(projectName: string, sha: string | undefined): Promise<void> {
+    private async setCompareAgainst(projectName: string, snapshotKey: string | undefined): Promise<void> {
         let compareAgainst = this.getCompareAgainstMap();
         if (compareAgainst) {
-            if (sha) {
-                compareAgainst[projectName] = sha;
+            if (snapshotKey) {
+                compareAgainst[projectName] = snapshotKey;
             } else {
                 delete compareAgainst[projectName];
             }
         } else {
-            if (sha) {
-                compareAgainst = { [projectName]: sha };
+            if (snapshotKey) {
+                compareAgainst = { [projectName]: snapshotKey };
             }
         }
         await this.workspaceState.update(COMPARE_AGAINST_KEY, compareAgainst);
@@ -397,10 +399,33 @@ interface GroupQuickPickItem extends QuickPickItem {
 }
 
 interface BaselineQuickPickItem extends QuickPickItem {
-    /** The commit sha to pin the comparison to, or `undefined` for "the most recent baseline". */
-    sha: string | undefined;
+    /**
+     * Identifies the retained snapshot to pin the comparison to (its capture time), or `undefined`
+     * for "whichever is the most recent". Not the commit sha: a manually captured snapshot has no
+     * commit, and still has to be selectable.
+     */
+    snapshotKey: string | undefined;
 }
 
 export function shortSha(sha: string): string {
     return sha.substring(0, 7);
+}
+
+export function formatCapturedAt(capturedAt: string): string {
+    const captured = new Date(capturedAt);
+    return isNaN(captured.getTime()) ? capturedAt : captured.toLocaleString();
+}
+
+/**
+ * How to describe a retained snapshot in one line: its commit if it has one, otherwise the fact
+ * that it was captured manually, plus when. `undefined` means "no snapshot pinned".
+ */
+export function describeBaseline(entry?: { commitSha?: string, commitMessage?: string, capturedAt?: string }): string {
+    if (!entry) {
+        return 'most recent snapshot';
+    }
+    if (entry.commitSha) {
+        return `${shortSha(entry.commitSha)} - ${entry.commitMessage || '(no commit message)'}`;
+    }
+    return `manual snapshot from ${entry.capturedAt ? formatCapturedAt(entry.capturedAt) : 'an unknown time'}`;
 }

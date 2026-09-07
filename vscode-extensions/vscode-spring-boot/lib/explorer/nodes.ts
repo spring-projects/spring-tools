@@ -1,6 +1,6 @@
 import { TextDocumentShowOptions, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { Location } from "vscode-languageclient";
-import { LsStereoTypedNode, shortSha } from "./structure-tree-manager";
+import { describeBaseline, LsStereoTypedNode } from "./structure-tree-manager";
 import { StructureChange, structureDiffUri } from "./diff-decorations";
 import * as ls from 'vscode-languageserver-protocol';
 
@@ -75,15 +75,13 @@ export class StereotypedNode {
             tooltipLines.push(`(${CHANGE_TOOLTIPS[change]})`);
         }
         if (this.projectId) {
-            if (this.comparedAgainstSha) {
-                tooltipLines.push(`Comparing against ${shortSha(this.comparedAgainstSha)} - ${this.comparedAgainstMessage || '(no commit message)'}`);
-            } else if (this.hasBaseline) {
-                // a baseline captured manually, or on a project without a git repository, has no
-                // commit associated with it at all
-                tooltipLines.push('Comparing against a manually captured baseline');
-            } else {
-                tooltipLines.push('No logical structure baseline captured yet');
-            }
+            tooltipLines.push(this.hasBaseline
+                ? `Comparing against ${describeBaseline({
+                    commitSha: this.comparedAgainstSha,
+                    commitMessage: this.comparedAgainstMessage,
+                    capturedAt: this.comparedAgainstCapturedAt
+                })}`
+                : 'No logical structure baseline captured yet');
         }
         if (tooltipLines.length > 1) {
             item.tooltip = tooltipLines.join(' ');
@@ -166,6 +164,14 @@ export class StereotypedNode {
 
     get comparedAgainstMessage(): string | undefined {
         return this.parent ? this.parent.comparedAgainstMessage : this.n.attributes.comparedAgainstMessage;
+    }
+
+    /**
+     * When the baseline this node's project tree was compared against was captured. For a manually
+     * captured snapshot this is the only thing identifying it, since it has no commit.
+     */
+    get comparedAgainstCapturedAt(): string | undefined {
+        return this.parent ? this.parent.comparedAgainstCapturedAt : this.n.attributes.comparedAgainstCapturedAt;
     }
 
     /**

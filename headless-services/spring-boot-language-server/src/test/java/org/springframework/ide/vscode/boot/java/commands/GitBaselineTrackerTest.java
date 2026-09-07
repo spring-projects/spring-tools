@@ -180,20 +180,20 @@ public class GitBaselineTrackerTest {
 	}
 
 	@Test
-	void leavesAManualBaselineAtTheCurrentCommitAloneWhileChangesArePending(@TempDir Path dir) throws Exception {
+	void leavesAManualSnapshotAloneWhileChangesArePending(@TempDir Path dir) throws Exception {
 		commit(dir, "Sample.java", "class Sample {}");
 
 		IJavaProject project = projectAt(dir);
 		FakeBaselineAccess baselines = new FakeBaselineAccess();
 		GitBaselineTracker tracker = tracker(project, baselines, true);
 
-		// what a manual capture leaves behind: a baseline recorded against the current HEAD
-		String headSha = tracker.currentCommitSha(project).orElseThrow();
-		baselines.captureBaseline(project, headSha, "manual pin");
-
 		writeWithoutCommitting(dir, "Sample.java", "class Sample { void added() {} }");
-		tracker.syncBaselineWithGit(project);
 
+		// what a manual capture leaves behind: a snapshot with no commit information, because it
+		// was taken over uncommitted work and so represents no commit
+		baselines.captureBaseline(project, null, null);
+
+		tracker.syncBaselineWithGit(project);
 		assertThat(baselines.captureCount(project)).isEqualTo(1);
 
 		// ... and the git-driven model takes over again at the next commit
@@ -201,7 +201,26 @@ public class GitBaselineTrackerTest {
 		tracker.syncBaselineWithGit(project);
 
 		assertThat(baselines.captureCount(project)).isEqualTo(2);
-		assertThat(baselines.capturedCommitShaOf(project)).isPresent().get().isNotEqualTo(headSha);
+		assertThat(baselines.capturedCommitShaOf(project)).isPresent();
+	}
+
+	@Test
+	void doesNotRecaptureACommitItAlreadyHasAfterAManualSnapshot(@TempDir Path dir) throws Exception {
+		commit(dir, "Sample.java", "class Sample {}");
+
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+
+		// a manual snapshot on a clean tree must not look like "this commit has no baseline yet",
+		// or the very next tick would capture a duplicate and displace the manual one
+		baselines.captureBaseline(project, null, null);
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isEqualTo(2);
 	}
 
 	@Test
@@ -252,7 +271,6 @@ public class GitBaselineTrackerTest {
 		tracker.syncBaselineWithGit(project);
 
 		assertThat(baselines.capturedCommitMessageOf(project)).contains("add the Sample class");
-		assertThat(tracker.currentCommitMessage(project)).contains("add the Sample class");
 	}
 
 	@Test
@@ -296,7 +314,6 @@ public class GitBaselineTrackerTest {
 		tracker.syncBaselineWithGit(project);
 
 		assertThat(baselines.captureCount(project)).isZero();
-		assertThat(tracker.currentCommitSha(project)).isEmpty();
 	}
 
 	@Test
@@ -322,7 +339,6 @@ public class GitBaselineTrackerTest {
 		tracker.syncBaselineWithGit(project);
 
 		assertThat(baselines.captureCount(project)).isZero();
-		assertThat(tracker.currentCommitSha(project)).isEmpty();
 	}
 
 	@Test
@@ -463,9 +479,15 @@ public class GitBaselineTrackerTest {
 		private final Map<String, String> commitMessageByProject = new HashMap<>();
 		private final Map<String, List<String>> capturesByProject = new HashMap<>();
 
+		/**
+		 * Mirrors the real store: the most recent sha of a snapshot that <em>represents a commit</em>,
+		 * so a later manual snapshot (which has none) doesn't read as "no commit captured yet".
+		 */
 		@Override
 		public Optional<String> capturedCommitShaOf(IJavaProject project) {
-			return Optional.ofNullable(commitShaByProject.get(project.getElementName()));
+			return capturesByProject.getOrDefault(project.getElementName(), List.of()).stream()
+					.filter(sha -> sha != null)
+					.reduce((first, second) -> second);
 		}
 
 		@Override

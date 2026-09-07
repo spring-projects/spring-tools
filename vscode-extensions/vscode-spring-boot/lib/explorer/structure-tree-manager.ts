@@ -6,14 +6,17 @@ import { showChangesAgainstHead } from "./git-diff";
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 const SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
+const SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
 
 const HIDE_UNCHANGED_KEY = "vscode-spring-boot.structure.hideUnchanged";
 const HIGHLIGHT_CHANGES_KEY = "vscode-spring-boot.structure.highlightChanges";
+const COMPARE_AGAINST_KEY = "vscode-spring-boot.structure.compareAgainst";
 
 interface StructureCommandParams {
     updateMetadata: boolean;
     groups?: Record<string, string[]>;
     affectedProjects?: string[];
+    compareAgainst?: Record<string, string>;
 }
 
 /**
@@ -105,6 +108,7 @@ export class StructureManager {
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.captureBaseline", (node: StereotypedNode) => this.captureBaseline(node)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.clearBaseline", (node: StereotypedNode) => this.clearBaseline(node)));
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.selectBaseline", (node: StereotypedNode) => this.selectBaseline(node)));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.hideUnchangedNodes", () => this.hideUnchangedToggle.set(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.showAllNodes", () => this.hideUnchangedToggle.set(false)));
@@ -176,6 +180,54 @@ export class StructureManager {
         }
     }
 
+    private async selectBaseline(node: StereotypedNode): Promise<void> {
+        const projectName = node?.projectId;
+        if (!projectName) {
+            return;
+        }
+
+        let history: BaselineHistoryEntry[];
+        try {
+            history = await commands.executeCommand<BaselineHistoryEntry[]>(SPRING_STRUCTURE_BASELINE_HISTORY_CMD, projectName);
+        } catch (e) {
+            window.showErrorMessage(`Failed to load the baseline history for '${projectName}': ${e}`);
+            return;
+        }
+
+        if (!history || history.length === 0) {
+            window.showInformationMessage(`Project '${projectName}' has no captured logical structure baseline yet.`);
+            return;
+        }
+
+        const currentSha = this.getCompareAgainst(projectName);
+        const currentLabel = currentSha ? shortSha(currentSha) : 'latest commit';
+
+        const items: BaselineQuickPickItem[] = [
+            {
+                label: "$(sync) Latest commit",
+                description: "always compare against the most recently captured baseline",
+                sha: undefined
+            },
+            ...history.map(entry => ({
+                label: `$(git-commit) ${shortSha(entry.commitSha)}`,
+                description: entry.commitMessage || '(no commit message)',
+                detail: new Date(entry.capturedAt).toLocaleString(),
+                sha: entry.commitSha
+            } as BaselineQuickPickItem))
+        ];
+
+        const picked = await window.showQuickPick(items, {
+            ignoreFocusOut: true,
+            title: `Select the baseline to compare '${projectName}' against (currently: ${currentLabel})`,
+            placeHolder: "Choose a commit snapshot, or 'Latest commit' for the default"
+        });
+
+        if (picked) {
+            await this.setCompareAgainst(projectName, picked.sha);
+            this.refresh(false);
+        }
+    }
+
     get rootElements(): Thenable<StereotypedNode[]> {
         return this._rootElementsRequest;
     }
@@ -191,6 +243,7 @@ export class StructureManager {
             updateMetadata,
             affectedProjects,
             groups: this.getGroupings(),
+            compareAgainst: this.getCompareAgainstMap(),
         } as StructureCommandParams;
         this._rootElementsRequest = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
             const nodes = this.parseArray(json);
@@ -275,6 +328,35 @@ export class StructureManager {
         await this.workspaceState.update(`vscode-spring-boot.structure.group`, groupings);
     }
 
+    /**
+     * The commit sha the given project is pinned to compare against, if the user picked one via
+     * "Select Baseline to Compare Against" - `undefined` means "the most recent baseline", the
+     * default the server itself falls back to.
+     */
+    private getCompareAgainst(projectName: string): string | undefined {
+        return this.getCompareAgainstMap()?.[projectName];
+    }
+
+    private getCompareAgainstMap(): Record<string, string> | undefined {
+        return this.workspaceState.get<Record<string, string>>(COMPARE_AGAINST_KEY, undefined);
+    }
+
+    private async setCompareAgainst(projectName: string, sha: string | undefined): Promise<void> {
+        let compareAgainst = this.getCompareAgainstMap();
+        if (compareAgainst) {
+            if (sha) {
+                compareAgainst[projectName] = sha;
+            } else {
+                delete compareAgainst[projectName];
+            }
+        } else {
+            if (sha) {
+                compareAgainst = { [projectName]: sha };
+            }
+        }
+        await this.workspaceState.update(COMPARE_AGAINST_KEY, compareAgainst);
+    }
+
 }
 
 export interface LsStereoTypedNode {
@@ -303,6 +385,22 @@ interface ClearBaselineResult {
     hadBaseline: boolean;
 }
 
+interface BaselineHistoryEntry {
+    commitSha: string;
+    commitMessage: string;
+    capturedAt: string;
+    nodeCount: number;
+}
+
 interface GroupQuickPickItem extends QuickPickItem {
     group: Group;
+}
+
+interface BaselineQuickPickItem extends QuickPickItem {
+    /** The commit sha to pin the comparison to, or `undefined` for "the most recent baseline". */
+    sha: string | undefined;
+}
+
+export function shortSha(sha: string): string {
+    return sha.substring(0, 7);
 }

@@ -74,6 +74,73 @@ public class StructureSnapshotStoreTest {
 	}
 
 	@Test
+	void annotateWithChangesSinceBaselineComparesAgainstTheGivenTargetSha(@TempDir Path dir) throws Exception {
+		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
+		IJavaProject project = project();
+
+		store.captureBaseline(project, "sha1", "first commit");
+		store.captureBaseline(project, "sha2", "second commit");
+
+		JsonNodeHandler.Node tree = new JsonNodeHandler.Node(null)
+				.withAttribute(JsonNodeHandler.TEXT, "app")
+				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
+
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, "sha1");
+
+		assertThat(comparedAgainst.commitSha()).isEqualTo("sha1");
+		assertThat(comparedAgainst.commitMessage()).isEqualTo("first commit");
+	}
+
+	@Test
+	void annotateWithChangesSinceBaselineFallsBackToTheNewestWhenTheTargetShaIsUnknown(@TempDir Path dir) throws Exception {
+		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
+		IJavaProject project = project();
+
+		store.captureBaseline(project, "sha1", "first commit");
+		store.captureBaseline(project, "sha2", "second commit");
+
+		JsonNodeHandler.Node tree = new JsonNodeHandler.Node(null)
+				.withAttribute(JsonNodeHandler.TEXT, "app")
+				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
+
+		// "evicted" (or simply unknown) target sha - failing open to the default view rather than
+		// showing nothing, since the picked commit is no longer available to compare against
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, "sha-does-not-exist");
+
+		assertThat(comparedAgainst.commitSha()).isEqualTo("sha2");
+	}
+
+	@Test
+	void annotateWithChangesSinceBaselineReturnsNullWithoutAnyBaseline(@TempDir Path dir) throws Exception {
+		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
+		IJavaProject project = project();
+
+		JsonNodeHandler.Node tree = new JsonNodeHandler.Node(null)
+				.withAttribute(JsonNodeHandler.TEXT, "app")
+				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
+
+		assertThat(store.annotateWithChangesSinceBaseline(project, tree, null)).isNull();
+		assertThat(store.annotateWithChangesSinceBaseline(project, tree, "sha1")).isNull();
+	}
+
+	@Test
+	void historyEntriesOfMapsFieldsWithoutTheTree(@TempDir Path dir) throws Exception {
+		StructureSnapshotStore store = storeWithHistorySize(dir, 10);
+		IJavaProject project = project();
+
+		store.captureBaseline(project, "sha1", "first commit");
+		store.captureBaseline(project, "sha2", "second commit");
+
+		List<StructureSnapshotStore.BaselineHistoryEntry> entries = store.historyEntriesOf(project);
+
+		assertThat(entries).hasSize(2);
+		assertThat(entries.get(0).commitSha()).isEqualTo("sha2");
+		assertThat(entries.get(0).commitMessage()).isEqualTo("second commit");
+		assertThat(entries.get(0).nodeCount()).isEqualTo(1);
+		assertThat(entries.get(1).commitSha()).isEqualTo("sha1");
+	}
+
+	@Test
 	void historyIsReloadedFromDiskByAFreshStoreInstance(@TempDir Path dir) throws Exception {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 		IJavaProject project = project();

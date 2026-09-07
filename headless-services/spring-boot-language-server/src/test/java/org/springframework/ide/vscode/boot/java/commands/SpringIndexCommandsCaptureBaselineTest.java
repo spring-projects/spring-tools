@@ -64,12 +64,14 @@ public class SpringIndexCommandsCaptureBaselineTest {
 
 	private static final String CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 	private static final String CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
+	private static final String BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
 	private static final String STRUCTURE_CMD = "sts/spring-boot/structure";
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
 	@Autowired private StereotypeInformation stereotypeInformation;
+	@Autowired private StructureSnapshotStore structureSnapshotStore;
 
 	private File directory;
 	private IJavaProject project;
@@ -164,6 +166,70 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	}
 
 	@Test
+	void structureTreeComparesAgainstTheRequestedHistoricalBaseline() throws Exception {
+		// captured directly with distinct known shas, bypassing git sha resolution (disabled in this
+		// test harness - see GitBaselineTracker's isEnabled()) to simulate two commits' worth of
+		// retained history
+		structureSnapshotStore.captureBaseline(project, "sha1", "before adding goodbye");
+
+		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace(
+				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
+				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}\n\n\t@GetMapping(\"/goodbye\")\n\tpublic String sayGoodbye() {\n\t\treturn \"goodbye!!!\";\n\t}");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
+
+		structureSnapshotStore.captureBaseline(project, "sha2", "after adding goodbye");
+
+		assertTrue(changedNodesOf(structureTrees(null)).isEmpty(),
+				"expected no changes when comparing against the newest baseline (the default)");
+
+		Map<String, String> changed = changedNodesOf(structureTrees(Map.of(project.getElementName(), "sha1")));
+		assertFalse(changed.isEmpty(), "expected changes when comparing against an older, explicitly requested baseline");
+		assertTrue(changed.values().contains("added"), "expected the new mapping to show up as added, but got: " + changed);
+		assertTrue(changed.keySet().stream().anyMatch(nodeId -> nodeId.contains("/goodbye")));
+	}
+
+	@Test
+	void structureTreeFallsBackToTheNewestBaselineForAnUnknownTargetSha() throws Exception {
+		structureSnapshotStore.captureBaseline(project, "sha1", "first commit");
+
+		assertTrue(changedNodesOf(structureTrees(Map.of(project.getElementName(), "sha-does-not-exist"))).isEmpty(),
+				"expected no changes: falling back to the (only, and current) newest baseline");
+
+		Node root = rootOf(project.getElementName(), Map.of(project.getElementName(), "sha-does-not-exist"));
+		assertEquals("sha1", root.getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
+	}
+
+	@Test
+	void rootNodeReportsWhichBaselineItIsComparedAgainst() throws Exception {
+		structureSnapshotStore.captureBaseline(project, "sha1", "first message");
+		structureSnapshotStore.captureBaseline(project, "sha2", "second message");
+
+		Node defaultRoot = rootOf(project.getElementName(), null);
+		assertEquals("sha2", defaultRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
+		assertEquals("second message", defaultRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_MESSAGE));
+
+		Node pinnedRoot = rootOf(project.getElementName(), Map.of(project.getElementName(), "sha1"));
+		assertEquals("sha1", pinnedRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
+		assertEquals("first message", pinnedRoot.getAttribute(JsonNodeHandler.COMPARED_AGAINST_MESSAGE));
+	}
+
+	@Test
+	void baselineHistoryCommandReturnsTheRetainedSnapshotsNewestFirst() throws Exception {
+		structureSnapshotStore.captureBaseline(project, "sha1", "first message");
+		structureSnapshotStore.captureBaseline(project, "sha2", "second message");
+
+		List<StructureSnapshotStore.BaselineHistoryEntry> history = baselineHistory(project.getElementName());
+
+		assertEquals(2, history.size());
+		assertEquals("sha2", history.get(0).commitSha());
+		assertEquals("second message", history.get(0).commitMessage());
+		assertEquals("sha1", history.get(1).commitSha());
+	}
+
+	@Test
 	void rootNodeReportsNoBaselineBeforeOneIsCaptured() throws Exception {
 		Node root = rootOf(project.getElementName());
 
@@ -213,7 +279,11 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	}
 
 	private Node rootOf(String projectName) throws Exception {
-		return structureTrees().stream()
+		return rootOf(projectName, null);
+	}
+
+	private Node rootOf(String projectName, Map<String, String> compareAgainst) throws Exception {
+		return structureTrees(compareAgainst).stream()
 				.filter(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID)))
 				.findFirst()
 				.orElseThrow();
@@ -236,10 +306,19 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		node.getChildren().forEach(child -> collectChanges(child, changed));
 	}
 
-	@SuppressWarnings("unchecked")
 	private List<Node> structureTrees() throws Exception {
+		return structureTrees(null);
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<Node> structureTrees(Map<String, String> compareAgainst) throws Exception {
 		JsonObject params = new JsonObject();
 		params.addProperty("updateMetadata", false);
+		if (compareAgainst != null) {
+			JsonObject compareAgainstJson = new JsonObject();
+			compareAgainst.forEach(compareAgainstJson::addProperty);
+			params.add("compareAgainst", compareAgainstJson);
+		}
 
 		return (List<Node>) harness.getServer().getWorkspaceService()
 				.executeCommand(new ExecuteCommandParams(STRUCTURE_CMD, List.of(params))).get();
@@ -257,6 +336,13 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		CompletableFuture<Object> future = (CompletableFuture<Object>) harness.getServer().getWorkspaceService()
 				.executeCommand(new ExecuteCommandParams(CLEAR_BASELINE_CMD, List.of(projectName)));
 		return (ClearBaselineResult) future.get(5, TimeUnit.SECONDS);
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<StructureSnapshotStore.BaselineHistoryEntry> baselineHistory(String projectName) throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+		CompletableFuture<Object> future = (CompletableFuture<Object>) harness.getServer().getWorkspaceService()
+				.executeCommand(new ExecuteCommandParams(BASELINE_HISTORY_CMD, List.of(projectName)));
+		return (List<StructureSnapshotStore.BaselineHistoryEntry>) future.get(5, TimeUnit.SECONDS);
 	}
 
 }

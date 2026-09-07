@@ -131,6 +131,17 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
+	 * Same as {@link #historyOf(IJavaProject)}, mapped to the lightweight {@link BaselineHistoryEntry}
+	 * DTO - without the structure tree itself, which callers that just want to list or pick a
+	 * snapshot (an IDE QuickPick, an MCP tool) have no use for.
+	 */
+	public List<BaselineHistoryEntry> historyEntriesOf(IJavaProject project) {
+		return historyOf(project).stream()
+				.map(snapshot -> new BaselineHistoryEntry(snapshot.commitSha(), snapshot.commitMessage(), snapshot.capturedAt(), snapshot.nodeCount()))
+				.toList();
+	}
+
+	/**
 	 * Removes the project's entire retained baseline history, if any - both from memory and from
 	 * disk. Purely a manual undo: for a git-backed project with automatic capture enabled, a fresh
 	 * baseline is captured again as soon as the working tree holds no pending source changes, same
@@ -166,17 +177,23 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
-	 * Annotates the nodes of a freshly built structure tree with how they changed compared to the
-	 * most recent baseline of that project, so clients can highlight the changed parts of the tree.
+	 * Annotates the nodes of a freshly built structure tree with how they changed compared to a
+	 * baseline of that project, so clients can highlight the changed parts of the tree.
 	 *
 	 * <p>Does nothing when no baseline was captured for the project.
 	 *
 	 * @param root the root of the tree to annotate, modified in place
+	 * @param targetSha the commit sha to compare against, or {@code null} for the most recent
+	 *        baseline. Falls back to the most recent baseline if this sha is no longer in the
+	 *        retained history (evicted, or simply unknown) - failing open to the default view
+	 *        rather than showing nothing.
+	 * @return the baseline snapshot actually compared against, so the caller can report it (e.g. in
+	 *         a tooltip) without a second lookup - {@code null} if the project has no baseline at all
 	 */
-	public void annotateWithChangesSinceBaseline(IJavaProject project, JsonNodeHandler.Node root) {
-		StructureSnapshot baseline = baselineOf(project);
+	public StructureSnapshot annotateWithChangesSinceBaseline(IJavaProject project, JsonNodeHandler.Node root, String targetSha) {
+		StructureSnapshot baseline = baselineOf(project, targetSha);
 		if (baseline == null || root == null) {
-			return;
+			return baseline;
 		}
 
 		StructureTreeDiff diff = StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(),
@@ -186,6 +203,8 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		if (!changes.isEmpty()) {
 			applyChanges(root, changes);
 		}
+
+		return baseline;
 	}
 
 	private static void applyChanges(JsonNodeHandler.Node node, Map<String, ChangeType> changes) {
@@ -204,8 +223,26 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 * history from disk on first touch (per language server run) if it isn't in memory yet.
 	 */
 	private StructureSnapshot baselineOf(IJavaProject project) {
+		return baselineOf(project, null);
+	}
+
+	/**
+	 * Same as {@link #baselineOf(IJavaProject)}, except a non-null {@code targetSha} looks up that
+	 * specific commit's snapshot in the retained history instead of the most recent one - falling
+	 * back to the most recent one if {@code targetSha} isn't retained (or never existed).
+	 */
+	private StructureSnapshot baselineOf(IJavaProject project, String targetSha) {
 		List<StructureSnapshot> snapshots = historyOf(project);
-		return snapshots.isEmpty() ? null : snapshots.get(0);
+		if (snapshots.isEmpty()) {
+			return null;
+		}
+		if (targetSha == null) {
+			return snapshots.get(0);
+		}
+		return snapshots.stream()
+				.filter(snapshot -> targetSha.equals(snapshot.commitSha()))
+				.findFirst()
+				.orElseGet(() -> snapshots.get(0));
 	}
 
 	private StructureSnapshot snapshotNow(IJavaProject project, String commitSha, String commitMessage) {
@@ -222,6 +259,13 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		}
 
 		return new StructureSnapshot(Instant.now(), commitSha, commitMessage, StructureViewProvider.toStructureNode(root));
+	}
+
+	/**
+	 * A retained baseline snapshot without its structure tree, for callers that only want to list or
+	 * pick one (an IDE QuickPick, an MCP tool) rather than diff against it.
+	 */
+	public static record BaselineHistoryEntry(String commitSha, String commitMessage, Instant capturedAt, int nodeCount) {
 	}
 
 	public static record StructureSnapshot(Instant capturedAt, String commitSha, String commitMessage, StructureNode root) {

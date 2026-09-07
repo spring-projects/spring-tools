@@ -96,6 +96,15 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String HAS_BASELINE = "hasBaseline";
 
 	/**
+	 * The git commit sha and short message of the baseline this project's tree was actually compared
+	 * against, set on the root node only alongside {@link #HAS_BASELINE}. Lets a client show the
+	 * user which snapshot the highlighted changes are relative to - the most recent one by default,
+	 * or an older one the user explicitly picked to compare against instead.
+	 */
+	public static final String COMPARED_AGAINST_SHA = "comparedAgainstSha";
+	public static final String COMPARED_AGAINST_MESSAGE = "comparedAgainstMessage";
+
+	/**
 	 * Discriminates the kind of element a node represents, independent of its label or icon
 	 * (several kinds of node can share the same icon). Used to identify nodes across two
 	 * structure trees when diffing them.

@@ -41,6 +41,7 @@ public class SpringIndexCommands {
 	private static final String SPRING_STRUCTURE_GROUPS_CMD = "sts/spring-boot/structure/groups";
 	private static final String SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 	private static final String SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
+	private static final String SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
 
 	private final StructureViewProvider structureViewProvider;
 	private final StructureSnapshotStore structureSnapshotStore;
@@ -106,6 +107,13 @@ public class SpringIndexCommands {
 				return new ClearBaselineResult(project.getElementName(), hadBaseline);
 			}, messageWorkerThreadPool);
 		});
+
+		server.onCommand(SPRING_STRUCTURE_BASELINE_HISTORY_CMD, params -> {
+			return CompletableFuture.supplyAsync(() -> {
+				IJavaProject project = resolveProject(params, SPRING_STRUCTURE_BASELINE_HISTORY_CMD, projectFinder);
+				return structureSnapshotStore.historyEntriesOf(project);
+			}, messageWorkerThreadPool);
+		});
 	}
 
 	/**
@@ -123,8 +131,15 @@ public class SpringIndexCommands {
 				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
 
 		if (tree != null) {
+			String targetSha = args.compareAgainst == null ? null : args.compareAgainst.get(project.getElementName());
+
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));
-			structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree);
+
+			StructureSnapshot comparedAgainst = structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree, targetSha);
+			if (comparedAgainst != null) {
+				tree.withAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA, comparedAgainst.commitSha());
+				tree.withAttribute(JsonNodeHandler.COMPARED_AGAINST_MESSAGE, comparedAgainst.commitMessage());
+			}
 		}
 
 		return tree;
@@ -169,35 +184,42 @@ public class SpringIndexCommands {
 
 	public static record ClearBaselineResult(String projectName, boolean hadBaseline) {}
 
-	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups) {
-		
+	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups,
+			Map<String, String> compareAgainst) {
+
 		public static StructureCommandArgs parseFrom(ExecuteCommandParams params) {
 			boolean updateMetadata = false;
 			Map<String, Set<String>> selectedGroups = null;
 			List<String> affectedProjects = null;
-			
+			Map<String, String> compareAgainst = null;
+
 			List<Object> arguments = params.getArguments();
 			if (arguments != null && arguments.size() == 1) {
 				Object object = arguments.get(0);
 				if (object instanceof JsonObject) {
 					JsonObject paramObject = (JsonObject) object;
-					
+
 					JsonElement jsonElement = paramObject.get("updateMetadata");
 					updateMetadata = jsonElement != null && jsonElement instanceof JsonPrimitive ? jsonElement.getAsBoolean() : false;
-					
+
 					JsonElement affectedProjectsElement = paramObject.get("affectedProjects");
 					if (affectedProjectsElement != null) {
 						affectedProjects = new Gson().fromJson(affectedProjectsElement, new TypeToken<List<String>>(){}.getType());
 					}
-					
+
 					JsonElement groupsElement = paramObject.get("groups");
 					if (groupsElement != null) {
 						selectedGroups = new Gson().fromJson(groupsElement, new TypeToken<Map<String, Set<String>>>() {});
 					}
+
+					JsonElement compareAgainstElement = paramObject.get("compareAgainst");
+					if (compareAgainstElement != null) {
+						compareAgainst = new Gson().fromJson(compareAgainstElement, new TypeToken<Map<String, String>>() {});
+					}
 				}
 			}
-			
-			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups);
+
+			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups, compareAgainst);
 		}
 	}
 

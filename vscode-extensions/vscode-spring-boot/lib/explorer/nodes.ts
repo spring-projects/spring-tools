@@ -1,6 +1,6 @@
 import { TextDocumentShowOptions, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { Location } from "vscode-languageclient";
-import { LsStereoTypedNode } from "./structure-tree-manager";
+import { LsStereoTypedNode, shortSha } from "./structure-tree-manager";
 import { StructureChange, structureDiffUri } from "./diff-decorations";
 import * as ls from 'vscode-languageserver-protocol';
 
@@ -63,8 +63,24 @@ export class StereotypedNode {
         if (change) {
             item.iconPath = new ThemeIcon(this.n.attributes.icon, new ThemeColor(CHANGE_ICON_COLORS[change]));
             item.resourceUri = structureDiffUri(change, this.nodeId);
-            // set explicitly, otherwise the synthetic resource URI shows up as the tooltip
-            item.tooltip = `${this.label} (${CHANGE_TOOLTIPS[change]})`;
+        }
+
+        // the tooltip combines the change status (any row can have one) with which baseline the
+        // project as a whole is being compared against (project rows only) - built as lines rather
+        // than a single string so either part can be present without the other
+        const tooltipLines: string[] = [this.label];
+        if (change) {
+            // set explicitly whenever there's a change, otherwise the synthetic resource URI set
+            // above shows up as the tooltip instead
+            tooltipLines.push(`(${CHANGE_TOOLTIPS[change]})`);
+        }
+        if (this.projectId) {
+            tooltipLines.push(this.comparedAgainstSha
+                ? `Comparing against ${shortSha(this.comparedAgainstSha)} - ${this.comparedAgainstMessage || '(no commit message)'}`
+                : 'No logical structure baseline captured yet');
+        }
+        if (tooltipLines.length > 1) {
+            item.tooltip = tooltipLines.join(' ');
         }
 
         // a space separated list of markers, matched by the `when` clauses of the context menu
@@ -130,6 +146,20 @@ export class StereotypedNode {
      */
     get hasBaseline(): boolean {
         return !!(this.parent ? this.parent.hasBaseline : this.n.attributes.hasBaseline);
+    }
+
+    /**
+     * The commit sha of the baseline this node's project tree was actually compared against - the
+     * most recent one by default, or whichever one the user picked via "Select Baseline to Compare
+     * Against". Only the root of a project's tree carries this attribute, so nodes further down
+     * walk up to it, same as {@link hasBaseline}. `undefined` when there is no baseline at all.
+     */
+    get comparedAgainstSha(): string | undefined {
+        return this.parent ? this.parent.comparedAgainstSha : this.n.attributes.comparedAgainstSha;
+    }
+
+    get comparedAgainstMessage(): string | undefined {
+        return this.parent ? this.parent.comparedAgainstMessage : this.n.attributes.comparedAgainstMessage;
     }
 
     /**

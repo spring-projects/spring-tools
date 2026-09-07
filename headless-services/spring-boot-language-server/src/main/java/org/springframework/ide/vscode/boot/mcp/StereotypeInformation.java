@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +29,7 @@ import org.springframework.ide.vscode.boot.java.commands.CachedSpringMetamodelIn
 import org.springframework.ide.vscode.boot.java.commands.GitBaselineTracker;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore;
+import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.BaselineHistoryEntry;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.StructureTreeDiff;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider;
@@ -256,13 +256,7 @@ public class StereotypeInformation {
 			throws Exception {
 
 		IJavaProject project = projects.get(projectName);
-
-		return structureSnapshotStore.historyOf(project).stream()
-				.map(snapshot -> new BaselineHistoryEntry(snapshot.commitSha(), snapshot.commitMessage(), snapshot.capturedAt(), snapshot.nodeCount()))
-				.toList();
-	}
-
-	public static record BaselineHistoryEntry(String commitSha, String commitMessage, Instant capturedAt, int nodeCount) {
+		return structureSnapshotStore.historyEntriesOf(project);
 	}
 
 	public static record ComponentWithStereotypes(String name, List<String> stereotypes) {

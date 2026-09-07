@@ -162,6 +162,10 @@
           "when": "false"
         },
         {
+          "command": "vscode-spring-boot.structure.selectBaseline",
+          "when": "false"
+        },
+        {
           "command": "vscode-spring-boot.structure.highlightChanges",
           "when": "!vscode-spring-boot.structure.highlightChanges"
         },
@@ -238,6 +242,11 @@
         },
         {
           "command": "vscode-spring-boot.structure.clearBaseline",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
+          "group": "1_structure"
+        },
+        {
+          "command": "vscode-spring-boot.structure.selectBaseline",
           "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
           "group": "1_structure"
         }
@@ -354,6 +363,13 @@
         "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(trash)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.selectBaseline",
+        "title": "Select Baseline to Compare Against",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(history)"
       },
       {
         "command": "vscode-spring-boot.structure.highlightChanges",

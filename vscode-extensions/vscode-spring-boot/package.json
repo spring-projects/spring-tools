@@ -493,6 +493,12 @@
             "default": true,
             "description": "Logical Structure view: automatically capture a diff baseline on every git commit, so changes are always highlighted against the last commit without manually capturing a baseline. A project opened with uncommitted changes gets its first baseline at its next commit, so that those changes stay visible. Turn off to rely on manual baseline capture only."
           },
+          "boot-java.structure.baseline-history-size": {
+            "type": "integer",
+            "default": 10,
+            "minimum": 1,
+            "description": "Logical Structure view: how many past commit snapshots to retain per project. The most recent one is always what changes are highlighted against; older ones are kept so a commit's snapshot can be recognized later by its message."
+          },
           "boot-java.java.codelens-over-query-methods": {
             "type": "boolean",
             "default": true,

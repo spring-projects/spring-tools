@@ -15,6 +15,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,13 +30,13 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
 /**
- * Persists structure baselines to disk, one file per project, so they survive a language server
- * restart. Mirrors the conventions of the on-disk symbol cache
+ * Persists each project's structure baseline history to disk, one file per project, so it survives
+ * a language server restart. Mirrors the conventions of the on-disk symbol cache
  * ({@code boot.index.cache.IndexCacheOnDiscDeltaBased}): a directory under {@code ~/.sts4}, keyed
  * purely by project name, project names rejected outright if they'd escape that directory.
  *
- * <p>Never throws on a missing, corrupt, or otherwise unreadable file - callers get {@code null}
- * as if no baseline had ever been captured, and the language server keeps running.
+ * <p>Never throws on a missing, corrupt, or otherwise unreadable file - callers get an empty
+ * history as if none had ever been captured, and the language server keeps running.
  *
  * @author Martin Lippert
  */
@@ -57,8 +58,13 @@ public class StructureBaselineStorage {
 	 * dirty working tree while still naming {@code HEAD}, and would keep hiding those changes until
 	 * the next commit. Discarding them settles every project into a correct state at once: a clean
 	 * project re-captures within one poll, a dirty one correctly waits for its next commit.
+	 * <p>
+	 * Version 4 changed a project's persisted content from a single {@link StructureSnapshot} to a
+	 * history of them (newest first), and added the commit message to each. Discarding older files
+	 * loses nothing but the history itself - the current baseline they held is simply re-captured
+	 * (or re-derived from the next commit) exactly as an empty history would be.
 	 */
-	private static final int SCHEMA_VERSION = 3;
+	private static final int SCHEMA_VERSION = 4;
 
 	private final File directory;
 	private final Gson gson = new GsonBuilder()
@@ -83,37 +89,42 @@ public class StructureBaselineStorage {
 		}
 	}
 
-	public void save(String projectName, StructureSnapshot snapshot) {
+	/**
+	 * Persists the project's whole retained baseline history (newest first). The caller is
+	 * responsible for capping its size - this class stores exactly what it is given.
+	 */
+	public void save(String projectName, List<StructureSnapshot> history) {
 		File file = fileFor(projectName);
 		try (FileWriter writer = new FileWriter(file)) {
-			gson.toJson(new PersistedBaseline(SCHEMA_VERSION, snapshot), writer);
+			gson.toJson(new PersistedBaseline(SCHEMA_VERSION, history), writer);
 		} catch (IOException | JsonIOException e) {
-			log.warn("failed to persist structure baseline for project: " + projectName, e);
+			log.warn("failed to persist structure baseline history for project: " + projectName, e);
 		}
 	}
 
 	/**
-	 * @return the persisted baseline for the project, or {@code null} if there is none, or it
-	 *         couldn't be read (missing file, corrupt content, or a schema version mismatch)
+	 * @return the persisted baseline history for the project (newest first), or an empty list if
+	 *         there is none, or it couldn't be read (missing file, corrupt content, or a schema
+	 *         version mismatch)
 	 */
-	public StructureSnapshot load(String projectName) {
+	public List<StructureSnapshot> load(String projectName) {
 		File file = fileFor(projectName);
 		if (!file.isFile()) {
-			return null;
+			return List.of();
 		}
 
 		try (FileReader reader = new FileReader(file)) {
 			PersistedBaseline persisted = gson.fromJson(reader, PersistedBaseline.class);
 
-			if (persisted == null || persisted.schemaVersion() != SCHEMA_VERSION || persisted.snapshot() == null) {
-				log.info("discarding structure baseline on disk for project '{}' - schema version mismatch or empty", projectName);
-				return null;
+			if (persisted == null || persisted.schemaVersion() != SCHEMA_VERSION || persisted.history() == null) {
+				log.info("discarding structure baseline history on disk for project '{}' - schema version mismatch or empty", projectName);
+				return List.of();
 			}
 
-			return persisted.snapshot();
+			return persisted.history();
 		} catch (IOException | JsonSyntaxException e) {
-			log.warn("failed to read persisted structure baseline for project: " + projectName, e);
-			return null;
+			log.warn("failed to read persisted structure baseline history for project: " + projectName, e);
+			return List.of();
 		}
 	}
 
@@ -135,6 +146,6 @@ public class StructureBaselineStorage {
 		return new File(directory, projectName + ".json");
 	}
 
-	private static record PersistedBaseline(int schemaVersion, StructureSnapshot snapshot) {}
+	private static record PersistedBaseline(int schemaVersion, List<StructureSnapshot> history) {}
 
 }

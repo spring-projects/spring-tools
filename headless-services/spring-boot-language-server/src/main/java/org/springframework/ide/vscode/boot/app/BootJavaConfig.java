@@ -259,7 +259,17 @@ public class BootJavaConfig implements InitializingBean {
 		Boolean b = settings.getBoolean("boot-java", "structure", "git-baseline-enabled");
 		return b == null || b.booleanValue();
 	}
-	
+
+	/**
+	 * How many past commit snapshots to retain per project for the logical structure baseline
+	 * history. Defaults to 10 and falls back to it for any non-positive value, since at least the
+	 * current baseline itself must always be kept.
+	 */
+	public int getStructureBaselineHistorySize() {
+		Integer size = settings.getInt("boot-java", "structure", "baseline-history-size");
+		return size == null || size < 1 ? 10 : size;
+	}
+
 	public Settings getRawSettings() {
 		return settings;
 	}

@@ -142,6 +142,27 @@ public class GitBaselineTracker {
 	}
 
 	/**
+	 * The short (first-line) commit message of the project's current git {@code HEAD} commit, if it
+	 * has a repository, at least one commit, and that commit's message could be read. Read-only -
+	 * does not capture or change anything.
+	 */
+	public Optional<String> currentCommitMessage(IJavaProject project) {
+		if (!isEnabled()) {
+			return Optional.empty();
+		}
+
+		return repositoryOf(project).flatMap(repository -> {
+			try {
+				ObjectId head = repository.resolve("HEAD");
+				return head == null ? Optional.empty() : Optional.ofNullable(resolveCommitMessage(repository, head));
+			} catch (Exception e) {
+				log.warn("failed to resolve HEAD for git repository: " + repository.getDirectory(), e);
+				return Optional.empty();
+			}
+		});
+	}
+
+	/**
 	 * Captures the baseline for the project if it is git-backed, its {@code HEAD} differs from the
 	 * commit its current baseline (if any) was captured at, and the working tree holds no pending
 	 * source changes - see this class' description for why all three are required. Safe and cheap
@@ -158,12 +179,13 @@ public class GitBaselineTracker {
 				return;
 			}
 
-			String headSha = resolveHead(repository.get());
-			if (headSha == null) {
+			ObjectId head = repository.get().resolve("HEAD");
+			if (head == null) {
 				// an "unborn" branch - a repository without any commit to snapshot yet
 				return;
 			}
 
+			String headSha = head.getName();
 			String capturedSha = baselines.capturedCommitShaOf(project).orElse(null);
 			if (headSha.equals(capturedSha)) {
 				return;
@@ -178,7 +200,8 @@ public class GitBaselineTracker {
 				return;
 			}
 
-			baselines.captureBaseline(project, headSha);
+			String commitMessage = resolveCommitMessage(repository.get(), head);
+			baselines.captureBaseline(project, headSha, commitMessage);
 		} catch (Exception e) {
 			log.warn("failed to synchronize logical structure baseline with git for project: " + project.getElementName(), e);
 		}
@@ -206,6 +229,20 @@ public class GitBaselineTracker {
 	 */
 	private boolean isEnabled() {
 		return config.isStructureGitBaselineEnabled() && System.getProperty("disable-structure-git-baseline") == null;
+	}
+
+	/**
+	 * The short (first-line) message of the given, already-resolved commit. {@code null} (rather
+	 * than throwing) if it cannot be read - a missing message is a cosmetic loss, not a reason to
+	 * abort a capture that already has everything else it needs.
+	 */
+	private String resolveCommitMessage(Repository repository, ObjectId commit) {
+		try {
+			return repository.parseCommit(commit).getShortMessage();
+		} catch (Exception e) {
+			log.warn("failed to read the commit message for " + commit.getName() + " in " + repository.getDirectory(), e);
+			return null;
+		}
 	}
 
 	private String resolveHead(Repository repository) {
@@ -248,9 +285,9 @@ public class GitBaselineTracker {
 
 		/**
 		 * Captures the project's current logical structure as its new baseline, associated with
-		 * the given commit SHA (may be {@code null}).
+		 * the given commit SHA and message (either may be {@code null}).
 		 */
-		StructureSnapshotStore.StructureSnapshot captureBaseline(IJavaProject project, String commitSha);
+		StructureSnapshotStore.StructureSnapshot captureBaseline(IJavaProject project, String commitSha, String commitMessage);
 
 	}
 

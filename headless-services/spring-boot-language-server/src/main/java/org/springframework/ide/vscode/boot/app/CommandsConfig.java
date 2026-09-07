@@ -84,8 +84,9 @@ public class CommandsConfig {
 	}
 
 	@Bean
-	StructureSnapshotStore structureSnapshotStore(StructureViewProvider structureViewProvider, StructureBaselineStorage structureBaselineStorage) {
-		return new StructureSnapshotStore(structureViewProvider, structureBaselineStorage);
+	StructureSnapshotStore structureSnapshotStore(StructureViewProvider structureViewProvider, StructureBaselineStorage structureBaselineStorage,
+			BootJavaConfig config) {
+		return new StructureSnapshotStore(structureViewProvider, structureBaselineStorage, config);
 	}
 
 	@Bean

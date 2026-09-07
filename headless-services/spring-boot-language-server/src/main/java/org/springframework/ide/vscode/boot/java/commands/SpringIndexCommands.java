@@ -92,7 +92,8 @@ public class SpringIndexCommands {
 				IJavaProject project = resolveProject(params, SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, projectFinder);
 
 				String commitSha = gitBaselineTracker.currentCommitSha(project).orElse(null);
-				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha);
+				String commitMessage = gitBaselineTracker.currentCommitMessage(project).orElse(null);
+				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha, commitMessage);
 				return new CaptureBaselineResult(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt().toString());
 			}, messageWorkerThreadPool);
 		});

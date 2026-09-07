@@ -30,39 +30,45 @@ import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.S
 public class StructureBaselineStorageTest {
 
 	@Test
-	void roundTripsASnapshot(@TempDir Path dir) {
+	void roundTripsAHistory(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
-		StructureSnapshot snapshot = new StructureSnapshot(Instant.parse("2026-01-01T00:00:00Z"), "abc123",
+		StructureSnapshot newest = new StructureSnapshot(Instant.parse("2026-01-02T00:00:00Z"), "def456", "second commit",
 				new StructureNode("app", "app", "icon", "application", "hover", null, null, null, List.of(
 						new StructureNode("app/type:A", "A", null, "type", null, null, null, null, List.of()))));
-
-		storage.save("my-project", snapshot);
-		StructureSnapshot loaded = storage.load("my-project");
-
-		assertThat(loaded).isNotNull();
-		assertThat(loaded.capturedAt()).isEqualTo(snapshot.capturedAt());
-		assertThat(loaded.commitSha()).isEqualTo("abc123");
-		assertThat(loaded.root().text()).isEqualTo("app");
-		assertThat(loaded.root().children()).hasSize(1);
-		assertThat(loaded.root().children().get(0).text()).isEqualTo("A");
-	}
-
-	@Test
-	void roundTripsANullCommitSha(@TempDir Path dir) {
-		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
-		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,
+		StructureSnapshot older = new StructureSnapshot(Instant.parse("2026-01-01T00:00:00Z"), "abc123", "first commit",
 				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
-		storage.save("my-project", snapshot);
+		storage.save("my-project", List.of(newest, older));
+		List<StructureSnapshot> loaded = storage.load("my-project");
 
-		assertThat(storage.load("my-project").commitSha()).isNull();
+		assertThat(loaded).hasSize(2);
+		assertThat(loaded.get(0).commitSha()).isEqualTo("def456");
+		assertThat(loaded.get(0).commitMessage()).isEqualTo("second commit");
+		assertThat(loaded.get(0).root().text()).isEqualTo("app");
+		assertThat(loaded.get(0).root().children()).hasSize(1);
+		assertThat(loaded.get(0).root().children().get(0).text()).isEqualTo("A");
+		assertThat(loaded.get(1).commitSha()).isEqualTo("abc123");
+		assertThat(loaded.get(1).commitMessage()).isEqualTo("first commit");
 	}
 
 	@Test
-	void loadingAProjectThatWasNeverSavedReturnsNull(@TempDir Path dir) {
+	void roundTripsANullCommitShaAndMessage(@TempDir Path dir) {
+		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null, null,
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
+
+		storage.save("my-project", List.of(snapshot));
+
+		List<StructureSnapshot> loaded = storage.load("my-project");
+		assertThat(loaded.get(0).commitSha()).isNull();
+		assertThat(loaded.get(0).commitMessage()).isNull();
+	}
+
+	@Test
+	void loadingAProjectThatWasNeverSavedReturnsAnEmptyList(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 
-		assertThat(storage.load("never-saved")).isNull();
+		assertThat(storage.load("never-saved")).isEmpty();
 	}
 
 	@Test
@@ -74,7 +80,7 @@ public class StructureBaselineStorageTest {
 			writer.write("{ not valid json ");
 		}
 
-		assertThat(storage.load("my-project")).isNull();
+		assertThat(storage.load("my-project")).isEmpty();
 	}
 
 	@Test
@@ -83,24 +89,24 @@ public class StructureBaselineStorageTest {
 
 		File file = new File(dir.toFile(), "my-project.json");
 		try (FileWriter writer = new FileWriter(file)) {
-			writer.write("{ \"schemaVersion\": 999999, \"snapshot\": { \"capturedAt\": \"2026-01-01T00:00:00Z\", \"root\": { \"text\": \"app\" } } }");
+			writer.write("{ \"schemaVersion\": 999999, \"history\": [ { \"capturedAt\": \"2026-01-01T00:00:00Z\", \"root\": { \"text\": \"app\" } } ] }");
 		}
 
-		assertThat(storage.load("my-project")).isNull();
+		assertThat(storage.load("my-project")).isEmpty();
 	}
 
 	@Test
 	void deleteRemovesAPersistedBaseline(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
-		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,
+		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null, null,
 				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
-		storage.save("my-project", snapshot);
-		assertThat(storage.load("my-project")).isNotNull();
+		storage.save("my-project", List.of(snapshot));
+		assertThat(storage.load("my-project")).isNotEmpty();
 
 		storage.delete("my-project");
 
-		assertThat(storage.load("my-project")).isNull();
+		assertThat(storage.load("my-project")).isEmpty();
 	}
 
 	@Test
@@ -109,16 +115,16 @@ public class StructureBaselineStorageTest {
 
 		storage.delete("never-saved");
 
-		assertThat(storage.load("never-saved")).isNull();
+		assertThat(storage.load("never-saved")).isEmpty();
 	}
 
 	@Test
 	void rejectsProjectNamesThatWouldEscapeTheStorageDirectory(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
-		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null,
+		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null, null,
 				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
-		assertThrows(IllegalArgumentException.class, () -> storage.save("../escape", snapshot));
+		assertThrows(IllegalArgumentException.class, () -> storage.save("../escape", List.of(snapshot)));
 	}
 
 }

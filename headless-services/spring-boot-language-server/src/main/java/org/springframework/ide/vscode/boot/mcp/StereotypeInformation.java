@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -184,7 +185,8 @@ public class StereotypeInformation {
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 
 		String commitSha = gitBaselineTracker.currentCommitSha(project).orElse(null);
-		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha);
+		String commitMessage = gitBaselineTracker.currentCommitMessage(project).orElse(null);
+		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project, commitSha, commitMessage);
 		return "captured logical structure baseline for project '%s' with %d node(s) at %s"
 				.formatted(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt());
 	}
@@ -239,6 +241,28 @@ public class StereotypeInformation {
 			return "no changes detected in the logical structure of project '%s' since the baseline snapshot"
 					.formatted(project.getElementName());
 		}
+	}
+
+	@Tool(description = """
+			Lists the retained logical structure baseline snapshots for the given project, most recent first, each
+			with the git commit it was captured at (sha and message) and when it was captured. The most recent entry
+			is always the one getLogicalStructureChanges compares against; how many are retained is controlled by
+			the boot-java.structure.baseline-history-size setting (10 by default). Useful to see recent history or
+			to recognize which commit a highlighted diff is being compared against.
+			Use getProjectList to obtain valid project names.
+			""")
+	public List<BaselineHistoryEntry> getLogicalStructureBaselineHistory(
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
+			throws Exception {
+
+		IJavaProject project = projects.get(projectName);
+
+		return structureSnapshotStore.historyOf(project).stream()
+				.map(snapshot -> new BaselineHistoryEntry(snapshot.commitSha(), snapshot.commitMessage(), snapshot.capturedAt(), snapshot.nodeCount()))
+				.toList();
+	}
+
+	public static record BaselineHistoryEntry(String commitSha, String commitMessage, Instant capturedAt, int nodeCount) {
 	}
 
 	public static record ComponentWithStereotypes(String name, List<String> stereotypes) {

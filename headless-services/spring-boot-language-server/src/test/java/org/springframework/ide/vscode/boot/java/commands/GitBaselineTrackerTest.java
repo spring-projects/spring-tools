@@ -148,7 +148,7 @@ public class GitBaselineTrackerTest {
 
 		// what a manual capture leaves behind: a baseline recorded against the current HEAD
 		String headSha = tracker.currentCommitSha(project).orElseThrow();
-		baselines.captureBaseline(project, headSha);
+		baselines.captureBaseline(project, headSha, "manual pin");
 
 		writeWithoutCommitting(dir, "Sample.java", "class Sample { void added() {} }");
 		tracker.syncBaselineWithGit(project);
@@ -199,6 +199,19 @@ public class GitBaselineTrackerTest {
 
 		assertThat(baselines.captureCount(project)).isEqualTo(1);
 		assertThat(baselines.capturedCommitShaOf(project)).isPresent();
+	}
+
+	@Test
+	void capturedBaselineCarriesTheCommitsShortMessage(@TempDir Path dir) throws Exception {
+		commit(dir, "Sample.java", "class Sample {}", "add the Sample class");
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.capturedCommitMessageOf(project)).contains("add the Sample class");
+		assertThat(tracker.currentCommitMessage(project)).contains("add the Sample class");
 	}
 
 	@Test
@@ -358,13 +371,17 @@ public class GitBaselineTrackerTest {
 	 * anything structurally relevant.
 	 */
 	private static void commit(Path dir, String fileName, String content) throws Exception {
+		commit(dir, fileName, content, "test commit");
+	}
+
+	private static void commit(Path dir, String fileName, String content, String message) throws Exception {
 		boolean firstCommit = !new File(dir.toFile(), ".git").exists();
 
 		try (Git git = firstCommit ? Git.init().setDirectory(dir.toFile()).call() : Git.open(dir.toFile())) {
 			Files.writeString(dir.resolve(fileName), content);
 			git.add().addFilepattern(".").call();
 			git.commit()
-					.setMessage("test commit")
+					.setMessage(message)
 					.setAuthor("Test", "test@example.com")
 					.setCommitter("Test", "test@example.com")
 					.call();
@@ -385,6 +402,7 @@ public class GitBaselineTrackerTest {
 	private static class FakeBaselineAccess implements GitBaselineTracker.BaselineAccess {
 
 		private final Map<String, String> commitShaByProject = new HashMap<>();
+		private final Map<String, String> commitMessageByProject = new HashMap<>();
 		private final Map<String, List<String>> capturesByProject = new HashMap<>();
 
 		@Override
@@ -393,15 +411,20 @@ public class GitBaselineTrackerTest {
 		}
 
 		@Override
-		public StructureSnapshot captureBaseline(IJavaProject project, String commitSha) {
+		public StructureSnapshot captureBaseline(IJavaProject project, String commitSha, String commitMessage) {
 			commitShaByProject.put(project.getElementName(), commitSha);
+			commitMessageByProject.put(project.getElementName(), commitMessage);
 			capturesByProject.computeIfAbsent(project.getElementName(), name -> new ArrayList<>()).add(commitSha);
-			return new StructureSnapshot(Instant.now(), commitSha,
+			return new StructureSnapshot(Instant.now(), commitSha, commitMessage,
 					new StructureViewProvider.StructureNode("app", project.getElementName(), null, "application", null, null, null, null, List.of()));
 		}
 
 		int captureCount(IJavaProject project) {
 			return capturesByProject.getOrDefault(project.getElementName(), List.of()).size();
+		}
+
+		Optional<String> capturedCommitMessageOf(IJavaProject project) {
+			return Optional.ofNullable(commitMessageByProject.get(project.getElementName()));
 		}
 	}
 

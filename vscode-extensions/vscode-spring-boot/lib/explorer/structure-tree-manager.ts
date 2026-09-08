@@ -64,10 +64,10 @@ export class StructureManager {
 
     constructor(context: ExtensionContext, api: ExtensionAPI) {
         this.workspaceState = context.workspaceState;
-        // both default to on: once a baseline is captured, changes are highlighted and everything
-        // else is hidden, which is the most useful state right after capturing one
-        this.hideUnchangedToggle = new PersistedToggle(this.workspaceState, HIDE_UNCHANGED_KEY, true);
-        this.highlightChangesToggle = new PersistedToggle(this.workspaceState, HIGHLIGHT_CHANGES_KEY, true);
+        // both default to off, matching the tree's pre-diff-feature behavior: everything shown,
+        // nothing highlighted, until the user explicitly turns diffing on
+        this.hideUnchangedToggle = new PersistedToggle(this.workspaceState, HIDE_UNCHANGED_KEY, false);
+        this.highlightChangesToggle = new PersistedToggle(this.workspaceState, HIGHLIGHT_CHANGES_KEY, false);
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => this.refresh(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node: StereotypedNode) => {

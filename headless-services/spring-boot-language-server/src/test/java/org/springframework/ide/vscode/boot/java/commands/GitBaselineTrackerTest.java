@@ -223,17 +223,54 @@ public class GitBaselineTrackerTest {
 		assertThat(baselines.captureCount(project)).isEqualTo(2);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
-	void pollCapturesForEveryOpenProject(@TempDir Path dir) throws Exception {
+	void pollCapturesForEveryOpenProjectOnceItsInitialIndexingHasCompleted(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		doReturn(List.of(project)).when(projectFinder).all();
+
+		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		ArgumentCaptor<Consumer<Set<String>>> listenerCaptor = ArgumentCaptor.forClass(Consumer.class);
+
+		BootJavaConfig config = mock(BootJavaConfig.class);
+		when(config.isStructureGitBaselineEnabled()).thenReturn(true);
+
+		GitBaselineTracker tracker = new GitBaselineTracker(projectFinder, symbolIndex, config, baselines,
+				new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()));
+		verify(symbolIndex).onUpdate(listenerCaptor.capture());
+
+		// simulates the project's initial indexing having completed, which is what makes the poll
+		// trustworthy for it in the first place - see GitBaselineTracker's class doc
+		listenerCaptor.getValue().accept(Set.of(project.getElementName()));
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+
+		// a further commit changes no file and so triggers no index update - the poll is what
+		// notices it
+		commit(dir, "changed content");
+		tracker.pollForCommits();
+
+		assertThat(baselines.captureCount(project)).isEqualTo(2);
+	}
+
+	@Test
+	void pollDoesNotCaptureBeforeTheProjectsInitialIndexingHasCompleted(@TempDir Path dir) throws Exception {
 		commit(dir, "initial content");
 		IJavaProject project = projectAt(dir);
 		FakeBaselineAccess baselines = new FakeBaselineAccess();
 		GitBaselineTracker tracker = tracker(project, baselines, true);
 
-		// a commit changes no file and so triggers no index update - the poll is what notices it
+		// the working tree is clean, but no index update for this project has been observed yet -
+		// e.g. it was just opened and its initial scan is still running. A poll tick right now must
+		// not capture whatever incomplete tree can be built for it, since that would become the
+		// permanent baseline for this commit (see the bug this guards against in GitBaselineTracker's
+		// class doc)
 		tracker.pollForCommits();
 
-		assertThat(baselines.captureCount(project)).isEqualTo(1);
+		assertThat(baselines.captureCount(project)).isZero();
 	}
 
 	@Test

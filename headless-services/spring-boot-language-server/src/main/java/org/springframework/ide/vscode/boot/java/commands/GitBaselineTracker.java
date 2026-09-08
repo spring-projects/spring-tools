@@ -59,6 +59,14 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
  * typically come once the user has started editing again - too late, since the tree is dirty by
  * then and the commit would never get a baseline.
  *
+ * <p>The poll must not, however, be the thing that captures a project's <em>very first</em>
+ * baseline: a project can look git-clean (nothing pending on disk) well before its initial indexing
+ * has actually finished, since that only reflects git status, not indexing progress. Capturing then
+ * would permanently record an empty or partial tree as the baseline for the current commit - "have
+ * I already captured this commit?" never revisits it afterward. So the poll only acts on a project
+ * once its index has updated at least once; until then, only the index-update listener itself
+ * (which by definition fires once indexing genuinely completes) is allowed to capture.
+ *
  * <p>Depends on {@link BaselineAccess} and {@link WorkingTreeStatus} rather than on
  * {@link StructureSnapshotStore} and JGit status directly, so the policy in this class can be
  * tested without the rest of the structure-view machinery.
@@ -87,6 +95,14 @@ public class GitBaselineTracker {
 	 * project only takes effect after a restart - a deliberately simple tradeoff for now.
 	 */
 	private final Map<String, Optional<Repository>> repositoriesByProject = new ConcurrentHashMap<>();
+
+	/**
+	 * Names of projects for which at least one index update has been observed since this tracker was
+	 * created. Gates {@link #pollForCommits()} - see this class' description for why - but
+	 * deliberately not {@link #syncBaselineWithGit}, which the index-update listener itself calls
+	 * directly regardless of this set.
+	 */
+	private final Set<String> indexedProjects = ConcurrentHashMap.newKeySet();
 
 	/**
 	 * Without a {@link SimpleLanguageServer} no poll is started, which is what the tests use to
@@ -118,8 +134,13 @@ public class GitBaselineTracker {
 	}
 
 	/**
-	 * Checks every open project for a commit that has no baseline yet. Called from the poll, and
-	 * directly by tests.
+	 * Checks every open project that has completed at least one index update for a commit that has
+	 * no baseline yet. Called from the poll, and directly by tests.
+	 *
+	 * <p>Skips a project with no observed index update yet rather than trusting whatever tree can be
+	 * built for it right now - see this class' description for why. Its first baseline is left to
+	 * the index-update listener, which fires exactly once its indexing genuinely completes; every
+	 * later commit is then fair game for the poll, same as before.
 	 */
 	void pollForCommits() {
 		if (!isEnabled()) {
@@ -127,7 +148,9 @@ public class GitBaselineTracker {
 		}
 
 		try {
-			projectFinder.all().forEach(this::syncBaselineWithGit);
+			projectFinder.all().stream()
+					.filter(project -> indexedProjects.contains(project.getElementName()))
+					.forEach(this::syncBaselineWithGit);
 		} catch (Exception e) {
 			// never let a failing tick kill the poll
 			log.warn("failed to check the open projects for new commits", e);
@@ -180,7 +203,15 @@ public class GitBaselineTracker {
 	}
 
 	private void onIndexUpdate(Set<String> affectedProjects) {
-		if (!isEnabled() || affectedProjects == null || affectedProjects.isEmpty()) {
+		if (affectedProjects == null || affectedProjects.isEmpty()) {
+			return;
+		}
+
+		// recorded unconditionally, even while disabled: a pure fact about indexing, independent of
+		// whether git-driven capture is currently switched on
+		indexedProjects.addAll(affectedProjects);
+
+		if (!isEnabled()) {
 			return;
 		}
 

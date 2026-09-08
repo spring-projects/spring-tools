@@ -163,8 +163,52 @@ public class SpringIndexCommandsCaptureBaselineTest {
 
 		assertFalse(changed.isEmpty(), "expected the changed method body to be marked in the structure tree");
 		assertFalse(changed.values().contains("added"), "expected no node to be reported as added, but got: " + changed);
-		assertTrue(changed.keySet().stream().anyMatch(nodeId -> nodeId.contains("SampleController")),
-				"expected the controller and its members to be marked as changed, but got: " + changed.keySet());
+		assertTrue(changed.values().contains("modified"), "expected something to be reported as modified, but got: " + changed);
+	}
+
+	@Test
+	void changingAMethodMarksThatMethodButNotItsEnclosingClass() throws Exception {
+		captureBaseline(project.getElementName());
+
+		// a body-only edit of an annotated method: nothing about the class itself changed
+		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace("return \"hello!!!\";", "return \"hello, world!!!\";");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+
+		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
+
+		List<Node> roots = structureTrees();
+
+		// the method the edit happened in is the one that gets highlighted - both where it shows up
+		// as a method of its own and as a member of its controller (it is labelled by its route)
+		assertEquals("modified", findNode(roots, JsonNodeHandler.KIND_METHOD, "/greeting").getAttribute(JsonNodeHandler.CHANGE));
+		assertEquals("modified", findNode(roots, JsonNodeHandler.KIND_MEMBER, "/greeting").getAttribute(JsonNodeHandler.CHANGE));
+
+		// ... while its class, and everything above it, only carry the change without being
+		// highlighted, so one edit lights up one row instead of the whole path down to it
+		Node type = findNode(roots, JsonNodeHandler.KIND_TYPE, "SampleController");
+		assertEquals("containsChanges", type.getAttribute(JsonNodeHandler.CHANGE),
+				"the enclosing class must not be highlighted for a change inside one of its methods");
+		assertEquals("containsChanges", rootOf(project.getElementName()).getAttribute(JsonNodeHandler.CHANGE));
+	}
+
+	@Test
+	void changingSomethingWithoutANodeOfItsOwnStillMarksTheClass() throws Exception {
+		captureBaseline(project.getElementName());
+
+		// a field has no node in the tree, so the class is the only place its change can show up -
+		// leaving out the annotated methods must not make the class blind to everything else
+		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace("public class SampleController {",
+				"public class SampleController {\n\n\tprivate int counter;\n");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+
+		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
+
+		Node type = findNode(structureTrees(), JsonNodeHandler.KIND_TYPE, "SampleController");
+		assertEquals("modified", type.getAttribute(JsonNodeHandler.CHANGE));
 	}
 
 	@Test
@@ -324,6 +368,34 @@ public class SpringIndexCommandsCaptureBaselineTest {
 				.filter(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID)))
 				.findFirst()
 				.orElseThrow();
+	}
+
+	/**
+	 * The one node of the given kind whose label contains the given text, searched depth first.
+	 */
+	private static Node findNode(List<Node> roots, String kind, String labelPart) {
+		for (Node root : roots) {
+			Node found = findNode(root, kind, labelPart);
+			if (found != null) {
+				return found;
+			}
+		}
+		throw new AssertionError("no " + kind + " node with a label containing '" + labelPart + "' in the structure tree");
+	}
+
+	private static Node findNode(Node node, String kind, String labelPart) {
+		Object label = node.getAttribute(JsonNodeHandler.TEXT);
+		if (kind.equals(node.getAttribute(JsonNodeHandler.KIND)) && label != null && label.toString().contains(labelPart)) {
+			return node;
+		}
+
+		for (Node child : node.getChildren()) {
+			Node found = findNode(child, kind, labelPart);
+			if (found != null) {
+				return found;
+			}
+		}
+		return null;
 	}
 
 	/**

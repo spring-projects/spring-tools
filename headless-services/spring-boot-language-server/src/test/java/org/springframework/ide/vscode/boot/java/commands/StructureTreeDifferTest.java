@@ -38,7 +38,8 @@ public class StructureTreeDifferTest {
 
 		DiffNode root = diff(before, after).root();
 
-		assertThat(root.change()).isEqualTo(ChangeType.MODIFIED);
+		// the container is only on the path to the change, so it is not reported as changed itself
+		assertThat(root.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
 		assertThat(changesByLabel(root)).containsEntry("A", ChangeType.UNCHANGED).containsEntry("B", ChangeType.ADDED);
 	}
 
@@ -109,7 +110,7 @@ public class StructureTreeDifferTest {
 
 		DiffNode root = diff(before, after).root();
 
-		assertThat(root.change()).isEqualTo(ChangeType.MODIFIED);
+		assertThat(root.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
 		assertThat(root.children()).extracting(DiffNode::change).containsOnly(ChangeType.ADDED);
 	}
 
@@ -160,7 +161,50 @@ public class StructureTreeDifferTest {
 		DiffNode root = diff(node("application", "app", before), node("application", "app", after)).root();
 
 		assertThat(root.children().get(0).change()).isEqualTo(ChangeType.MODIFIED);
-		assertThat(root.change()).isEqualTo(ChangeType.MODIFIED);
+		assertThat(root.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
+	}
+
+	@Test
+	void onlyTheChangedNodeIsReportedAsChangedNotItsContainers() {
+		StructureNode before = node("application", "app",
+				node("package", "example", node("type", "A", node("method", "m"))));
+		StructureNode after = node("application", "app",
+				node("package", "example", node("type", "A", node("method", "m"), node("method", "added"))));
+
+		DiffNode root = diff(before, after).root();
+		DiffNode pkg = root.children().get(0);
+		DiffNode type = pkg.children().get(0);
+
+		// every container on the way down knows a change is below it, but none of them is reported
+		// as changed itself - only the added method is
+		assertThat(root.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
+		assertThat(pkg.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
+		assertThat(type.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
+		assertThat(changesByLabel(type)).containsEntry("m", ChangeType.UNCHANGED).containsEntry("added", ChangeType.ADDED);
+	}
+
+	@Test
+	void aNestedChangeStillCountsAsAChange() {
+		StructureNode before = node("application", "app", node("package", "example", node("type", "A")));
+		StructureNode after = node("application", "app",
+				node("package", "example", node("type", "A"), node("type", "B")));
+
+		// containers reporting CONTAINS_CHANGES must not make the diff look empty
+		assertThat(diff(before, after).stats().hasChanges()).isTrue();
+	}
+
+	@Test
+	void aRemovedChildIsReportedOnTheNodeItWasRemovedFrom() {
+		StructureNode before = node("application", "app", node("type", "A", node("method", "gone")));
+		StructureNode after = node("application", "app", node("type", "A"));
+
+		DiffNode root = diff(before, after).root();
+		DiffNode type = root.children().get(0);
+
+		// the removed node is not in the current tree, so the only place left to report it is the
+		// node it was removed from - otherwise a deletion would be invisible
+		assertThat(type.change()).isEqualTo(ChangeType.MODIFIED);
+		assertThat(root.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
 	}
 
 	@Test
@@ -193,10 +237,10 @@ public class StructureTreeDifferTest {
 
 		Map<String, ChangeType> changes = StructureTreeDiffer.changesByNodeId(diff(before, after).root());
 
-		// the root is modified because of the added child, the added node itself is added, and the
-		// unchanged node isn't listed at all
+		// the added node is added, the root only contains the change, and the unchanged node isn't
+		// listed at all
 		assertThat(changes).containsExactlyInAnyOrderEntriesOf(
-				Map.of("app", ChangeType.MODIFIED, "app/type:B", ChangeType.ADDED));
+				Map.of("app", ChangeType.CONTAINS_CHANGES, "app/type:B", ChangeType.ADDED));
 	}
 
 	@Test

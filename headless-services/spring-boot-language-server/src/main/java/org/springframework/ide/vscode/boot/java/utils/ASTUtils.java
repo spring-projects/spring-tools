@@ -14,6 +14,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -143,7 +144,52 @@ public class ASTUtils {
 		if (doc == null || node == null) {
 			return null;
 		}
-		return DigestUtils.md5Hex(nodeRegion(doc, node).toString()).substring(0, 12);
+		return hashOf(nodeRegion(doc, node).toString());
+	}
+
+	/**
+	 * Same as {@link #contentHash(TextDocument, ASTNode)}, but leaves the source of the given nested
+	 * nodes out of the hash.
+	 * <p>
+	 * Used for the members that get a tree node of their own: their changes are reported on that
+	 * node, so counting them in the enclosing type's hash as well would light up the type for every
+	 * edit inside any of its methods. What is left - fields, plain methods, the type's own
+	 * annotations and supertypes - has no node of its own, so it has to keep counting here.
+	 */
+	public static String contentHash(TextDocument doc, ASTNode node, Collection<? extends ASTNode> excluded) {
+		if (doc == null || node == null) {
+			return null;
+		}
+		if (excluded == null || excluded.isEmpty()) {
+			return contentHash(doc, node);
+		}
+
+		String text = nodeRegion(doc, node).toString();
+		int start = node.getStartPosition();
+
+		StringBuilder kept = new StringBuilder(text.length());
+		int cursor = 0;
+
+		for (ASTNode skip : excluded.stream().sorted(Comparator.comparingInt(ASTNode::getStartPosition)).toList()) {
+			int from = skip.getStartPosition() - start;
+			int to = from + skip.getLength();
+
+			// ignore anything that isn't cleanly nested inside this node, or that overlaps a span
+			// already skipped, rather than producing a garbled hash out of it
+			if (from < cursor || to > text.length()) {
+				continue;
+			}
+
+			kept.append(text, cursor, from);
+			cursor = to;
+		}
+		kept.append(text, cursor, text.length());
+
+		return hashOf(kept.toString());
+	}
+
+	private static String hashOf(String text) {
+		return DigestUtils.md5Hex(text).substring(0, 12);
 	}
 
 	public static Optional<Expression> getAttribute(Annotation annotation, String name) {

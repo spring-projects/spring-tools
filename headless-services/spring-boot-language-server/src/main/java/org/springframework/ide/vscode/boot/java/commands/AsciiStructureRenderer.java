@@ -74,6 +74,8 @@ public class AsciiStructureRenderer {
 			case ADDED -> "+";
 			case REMOVED -> "-";
 			case MODIFIED -> "~";
+			// on the path to a change, but unchanged itself - shown, but not marked
+			case CONTAINS_CHANGES -> " ";
 			case UNCHANGED -> " ";
 		};
 	}

@@ -32,6 +32,13 @@ import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.S
  * as a change. A node whose label changed is therefore reported as one node removed and a
  * different node added, rather than a modification in place.
  *
+ * <p>Only the node that actually changed is reported as changed. Its containers are reported as
+ * {@link ChangeType#CONTAINS_CHANGES} instead, so a client can keep the path to a change visible
+ * (and an ascii diff can keep it uncollapsed) without lighting up every package and group above it.
+ * The one exception is a <em>removed</em> node: it no longer exists in the current tree, so there
+ * is nowhere to report it except on the node it was removed from, which is reported as
+ * {@link ChangeType#MODIFIED}.
+ *
  * @author Martin Lippert
  */
 public class StructureTreeDiffer {
@@ -81,7 +88,20 @@ public class StructureTreeDiffer {
 				|| !Objects.equals(before.hover(), after.hover())
 				|| !Objects.equals(before.contentHash(), after.contentHash());
 
-		ChangeType change = (anyChildChanged || attributesChanged) ? ChangeType.MODIFIED : ChangeType.UNCHANGED;
+		// a removed child is the one change that cannot be reported on the node it happened to -
+		// that node is gone from the tree - so it counts as a change of the node it was removed from
+		boolean childRemoved = children.stream().anyMatch(child -> child.change() == ChangeType.REMOVED);
+
+		ChangeType change;
+		if (attributesChanged || childRemoved) {
+			change = ChangeType.MODIFIED;
+		}
+		else if (anyChildChanged) {
+			change = ChangeType.CONTAINS_CHANGES;
+		}
+		else {
+			change = ChangeType.UNCHANGED;
+		}
 
 		return new DiffNode(after.nodeId(), after.text(), after.kind(), change, children);
 	}
@@ -120,9 +140,9 @@ public class StructureTreeDiffer {
 	}
 
 	private static DiffStats statsOf(DiffNode node) {
-		int[] counts = new int[4];
+		int[] counts = new int[5];
 		accumulate(node, counts);
-		return new DiffStats(counts[0], counts[1], counts[2], counts[3]);
+		return new DiffStats(counts[0], counts[1], counts[2], counts[3], counts[4]);
 	}
 
 	private static void accumulate(DiffNode node, int[] counts) {
@@ -131,12 +151,39 @@ public class StructureTreeDiffer {
 			case REMOVED -> counts[1]++;
 			case MODIFIED -> counts[2]++;
 			case UNCHANGED -> counts[3]++;
+			case CONTAINS_CHANGES -> counts[4]++;
 		}
 		node.children().forEach(child -> accumulate(child, counts));
 	}
 
 	public enum ChangeType {
-		ADDED, REMOVED, MODIFIED, UNCHANGED
+
+		ADDED("added"),
+		REMOVED("removed"),
+		MODIFIED("modified"),
+
+		/**
+		 * The node itself is unchanged, but something below it is. Kept apart from
+		 * {@link #MODIFIED} so clients can show the path to a change without highlighting every
+		 * container along the way, while still knowing not to collapse or filter it away.
+		 */
+		CONTAINS_CHANGES("containsChanges"),
+
+		UNCHANGED("unchanged");
+
+		private final String label;
+
+		ChangeType(String label) {
+			this.label = label;
+		}
+
+		/**
+		 * How this change is named on the wire, for the {@code change} attribute of a structure
+		 * tree node.
+		 */
+		public String label() {
+			return label;
+		}
 	}
 
 	/**
@@ -151,8 +198,8 @@ public class StructureTreeDiffer {
 	 * diffed from, so the changes can be applied back onto that tree. Unchanged nodes are left out.
 	 *
 	 * <p>Removed nodes carry the node id they had in the baseline, which no longer exists in the
-	 * current tree - they show up in the current tree only indirectly, through their surviving
-	 * ancestors being reported as {@link ChangeType#MODIFIED}.
+	 * current tree - they show up in the current tree only indirectly, through the node they were
+	 * removed from being reported as {@link ChangeType#MODIFIED}.
 	 */
 	public static Map<String, ChangeType> changesByNodeId(DiffNode root) {
 		Map<String, ChangeType> changes = new LinkedHashMap<>();
@@ -189,7 +236,7 @@ public class StructureTreeDiffer {
 	/**
 	 * Aggregate counts of nodes by change type across an entire diff tree.
 	 */
-	public static record DiffStats(int added, int removed, int modified, int unchanged) {
+	public static record DiffStats(int added, int removed, int modified, int unchanged, int containsChanges) {
 
 		public boolean hasChanges() {
 			return added > 0 || removed > 0 || modified > 0;

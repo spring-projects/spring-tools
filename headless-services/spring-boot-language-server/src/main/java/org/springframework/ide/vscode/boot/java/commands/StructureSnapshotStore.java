@@ -225,7 +225,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		ChangeType change = nodeId == null ? null : changes.get(nodeId.toString());
 
 		if (change != null) {
-			node.withAttribute(JsonNodeHandler.CHANGE, change.name().toLowerCase());
+			node.withAttribute(JsonNodeHandler.CHANGE, change.label());
 		}
 
 		node.getChildren().forEach(child -> applyChanges(child, changes));

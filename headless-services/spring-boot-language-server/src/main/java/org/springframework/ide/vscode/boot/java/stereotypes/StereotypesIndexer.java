@@ -14,8 +14,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -188,46 +190,65 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		SimpleName astNodeForLocation = typeDeclaration.getName();
 		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
 		
+		// resolved up front: the methods that get a node of their own are left out of the type's
+		// content hash, so that editing one of them lights up that method rather than its type
+		Map<MethodDeclaration, Set<String>> annotatedMethods = annotatedMethodsOf(typeDeclaration, annotationHierarchies);
+
 		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes,
-				ASTUtils.contentHash(doc, typeDeclaration));
-		
-		indexMethods(indexElement, typeDeclaration, annotationHierarchies, doc);
+				ASTUtils.contentHash(doc, typeDeclaration, annotatedMethods.keySet()));
+
+		indexMethods(indexElement, annotatedMethods, doc);
 		
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), indexElement));
 	}
 
-	private void indexMethods(StereotypeClassElement indexElement, AbstractTypeDeclaration typeDeclaration, AnnotationHierarchies annotationHierarchies, TextDocument doc) throws BadLocationException {
+	/**
+	 * The methods of the type that get an index element of their own, mapped to their annotation
+	 * types - only annotated ones, to avoid creating a useless element for each and every method.
+	 */
+	private Map<MethodDeclaration, Set<String>> annotatedMethodsOf(AbstractTypeDeclaration typeDeclaration, AnnotationHierarchies annotationHierarchies) {
 		MethodDeclaration[] methods = null;
-		
+
 		if (typeDeclaration instanceof TypeDeclaration) {
 			methods = ((TypeDeclaration) typeDeclaration).getMethods();
 		}
 		else if (typeDeclaration instanceof RecordDeclaration) {
 			methods = ((RecordDeclaration) typeDeclaration).getMethods();
 		}
-		
-		if (methods == null) {
-			return;
-		}
-		
-		for (MethodDeclaration method : methods) {
-			String methodName = method.getName().getFullyQualifiedName();
 
+		if (methods == null) {
+			return Map.of();
+		}
+
+		Map<MethodDeclaration, Set<String>> annotatedMethods = new LinkedHashMap<>();
+
+		for (MethodDeclaration method : methods) {
 			Collection<Annotation> annotations = ASTUtils.getAnnotations(method);
 			Set<String> annotationTypes = getAnnotationTypes(annotationHierarchies, List.of(), annotations);
-			
+
 			if (annotationTypes.size() > 0) { // only index annotated methods to avoid creating all those useless index elements for each and every method
+				annotatedMethods.put(method, annotationTypes);
+			}
+		}
+
+		return annotatedMethods;
+	}
+
+	private void indexMethods(StereotypeClassElement indexElement, Map<MethodDeclaration, Set<String>> annotatedMethods, TextDocument doc) throws BadLocationException {
+		for (Map.Entry<MethodDeclaration, Set<String>> annotatedMethod : annotatedMethods.entrySet()) {
+			MethodDeclaration method = annotatedMethod.getKey();
+			String methodName = method.getName().getFullyQualifiedName();
+
+			String methodSignature = ASTUtils.getMethodSignature(method, true);
+			String methodLabel = ASTUtils.getMethodSignature(method, false);
+
+			if (methodSignature != null && methodLabel != null) {
 				SimpleName astNodeForLocation = method.getName();
 				Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
-				
-				String methodSignature = ASTUtils.getMethodSignature(method, true);
-				String methodLabel = ASTUtils.getMethodSignature(method, false);
-	
-				if (methodSignature != null && methodLabel != null) {
-					StereotypeMethodElement methodElement = new StereotypeMethodElement(methodName, methodLabel, methodSignature, location, annotationTypes,
-							ASTUtils.contentHash(doc, method));
-					indexElement.addChild(methodElement);
-				}
+
+				StereotypeMethodElement methodElement = new StereotypeMethodElement(methodName, methodLabel, methodSignature, location, annotatedMethod.getValue(),
+						ASTUtils.contentHash(doc, method));
+				indexElement.addChild(methodElement);
 			}
 		}
 	}

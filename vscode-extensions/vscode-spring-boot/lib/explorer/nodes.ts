@@ -13,16 +13,15 @@ const CHANGE_ICON_COLORS: Record<StructureChange, string> = {
 const CHANGE_TOOLTIPS: Record<StructureChange, string> = {
     added: "added since the captured baseline",
     removed: "removed since the captured baseline",
-    modified: "contains changes since the captured baseline"
+    modified: "changed since the captured baseline"
 };
 
 /**
  * The deepest changed nodes of the given trees, i.e. the changed nodes that have no changed child
  * of their own.
  *
- * Revealing exactly these is enough to make every changed node visible: revealing a node expands
- * all of its ancestors, and the ancestors of a changed node are reported as changed as well. Nodes
- * in branches without any change are left alone.
+ * Revealing exactly these is enough to make every changed node visible, since revealing a node
+ * expands all of its ancestors. Nodes in branches without any change are left alone.
  */
 export function deepestChangedNodes(nodes: StereotypedNode[]): StereotypedNode[] {
     const deepest: StereotypedNode[] = [];
@@ -135,12 +134,22 @@ export class StereotypedNode {
     }
 
     /**
-     * How this node changed since the baseline captured for its project, if a baseline was
-     * captured at all and this node is affected by a change.
+     * How this node itself changed since the baseline captured for its project - only set for the
+     * node a change actually happened to, never for the packages and groups above it, so that a
+     * change highlights one row instead of the whole path leading to it.
      */
     get change(): StructureChange | undefined {
         const change = this.n.attributes.change;
         return change === "added" || change === "removed" || change === "modified" ? change : undefined;
+    }
+
+    /**
+     * Whether this node changed, or anything below it did. This is what keeps the path to a change
+     * visible while "hide unchanged nodes" is on, even though the containers along it are not
+     * highlighted themselves.
+     */
+    get containsChanges(): boolean {
+        return !!this.n.attributes.change;
     }
 
     /**
@@ -190,7 +199,7 @@ export class StereotypedNode {
         if (!hideUnchanged || !this.hasBaseline) {
             return this.children;
         }
-        return this.children.filter(child => !!child.change);
+        return this.children.filter(child => child.containsChanges);
     }
     
     get label(): string {

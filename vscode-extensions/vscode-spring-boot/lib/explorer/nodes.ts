@@ -1,6 +1,7 @@
 import { TextDocumentShowOptions, ThemeColor, ThemeIcon, TreeItem, TreeItemCollapsibleState, Uri } from "vscode";
 import { Location } from "vscode-languageclient";
-import { describeBaseline, LsStereoTypedNode } from "./structure-tree-manager";
+import { LsStereoTypedNode } from "./structure-tree-manager";
+import { describeBaseline } from "./baseline-labels";
 import { StructureChange, structureDiffUri } from "./diff-decorations";
 import * as ls from 'vscode-languageserver-protocol';
 
@@ -46,6 +47,9 @@ export function deepestChangedNodes(nodes: StereotypedNode[]): StereotypedNode[]
 }
 
 export class StereotypedNode {
+
+    private _hasBaseline?: boolean;
+
     constructor(private n: LsStereoTypedNode, public children: StereotypedNode[], protected parent?: StereotypedNode) {}
         
     getTreeItem(savedState?: TreeItemCollapsibleState, hideUnchanged = false, highlightChanges = true): TreeItem {
@@ -158,7 +162,12 @@ export class StereotypedNode {
      * nodes further down walk up to it.
      */
     get hasBaseline(): boolean {
-        return !!(this.parent ? this.parent.hasBaseline : this.n.attributes.hasBaseline);
+        // walks up to the root, and every rendered row asks - the tree is rebuilt on every refresh,
+        // so the answer is fixed for the life of this node
+        if (this._hasBaseline === undefined) {
+            this._hasBaseline = !!(this.parent ? this.parent.hasBaseline : this.n.attributes.hasBaseline);
+        }
+        return this._hasBaseline;
     }
 
     /**
@@ -193,9 +202,6 @@ export class StereotypedNode {
      * never filtered, otherwise their whole tree would look empty.
      */
     visibleChildren(hideUnchanged: boolean): StereotypedNode[] {
-        if (!Array.isArray(this.children)) {
-            return [];
-        }
         if (!hideUnchanged || !this.hasBaseline) {
             return this.children;
         }

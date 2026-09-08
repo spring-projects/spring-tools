@@ -10,9 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.utils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
@@ -132,8 +134,13 @@ public class SpringIndexerJavaAstScanner {
 
 		for (Map.Entry<AbstractTypeDeclaration, StereotypeClassElement> type : context.getTypesToHash().entrySet()) {
 			try {
-				type.getValue().setContentHash(
-						ASTUtils.contentHash(context.getDoc(), type.getKey(), context.getNodesWithOwnIndexElement()));
+				// everything with a node of its own is left out - except this type itself, which is
+				// marked as well so that the types around it leave it out
+				List<ASTNode> excluded = context.getNodesWithOwnIndexElement().stream()
+						.filter(node -> node != type.getKey())
+						.toList();
+
+				type.getValue().setContentHash(ASTUtils.contentHash(context.getDoc(), type.getKey(), excluded));
 			}
 			catch (Exception e) {
 				log.error("error computing the content hash of a type in '{}'", context.getDocURI(), e);

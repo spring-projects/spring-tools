@@ -81,9 +81,10 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String CONTENT_HASH = "contentHash";
 
 	/**
-	 * How this node changed compared to the captured baseline of its project ("added" or
-	 * "modified"), attached only when a baseline was captured for that project. Clients use this
-	 * to highlight the changed parts of the structure tree.
+	 * How this node changed compared to the captured baseline of its project, attached only when a
+	 * baseline was captured for it: "added", "removed" or "modified" for the node a change actually
+	 * happened to, and "containsChanges" for the packages and groups on the way down to one. Clients
+	 * highlight the first three and use the last only to keep the path to a change visible.
 	 */
 	public static final String CHANGE = "change";
 

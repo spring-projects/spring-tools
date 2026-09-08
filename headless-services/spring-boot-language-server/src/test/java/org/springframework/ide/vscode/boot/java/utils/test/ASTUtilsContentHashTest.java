@@ -43,6 +43,16 @@ public class ASTUtilsContentHashTest {
 			}
 			""";
 
+	private static final String OTHER_SOURCE = """
+			package example;
+
+			public class B {
+				public int other() {
+					return 42;
+				}
+			}
+			""";
+
 	@Test
 	void identicalSourceProducesTheSameHash() {
 		assertThat(methodHashOf(SOURCE)).isEqualTo(methodHashOf(SOURCE));
@@ -93,11 +103,14 @@ public class ASTUtilsContentHashTest {
 	}
 
 	@Test
-	void excludingEverySpanLeavesAStableHashRatherThanBlowingUp() {
+	void excludingEverySpanLeavesNothingToHashRatherThanBlowingUp() {
 		TypeDeclaration type = typeDeclarationOf(SOURCE);
+		String nothingLeft = ASTUtils.contentHash(documentOf(SOURCE), type, List.of(type));
 
-		assertThat(ASTUtils.contentHash(documentOf(SOURCE), type, List.of(type)))
-				.isEqualTo(ASTUtils.contentHash(documentOf(SOURCE), type, List.of(type)));
+		assertThat(nothingLeft).isNotNull().isNotEqualTo(typeHashOf(SOURCE));
+		// whatever is excluded, what is left of an empty span is the same for any type
+		assertThat(nothingLeft).isEqualTo(
+				ASTUtils.contentHash(documentOf(OTHER_SOURCE), typeDeclarationOf(OTHER_SOURCE), List.of(typeDeclarationOf(OTHER_SOURCE))));
 	}
 
 	@Test

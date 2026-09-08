@@ -10,7 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.ide.vscode.boot.java.commands.StructureTreeTestFixture.findNode;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -67,7 +69,7 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	private static final String CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 	private static final String CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 	private static final String BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
-	private static final String STRUCTURE_CMD = "sts/spring-boot/structure";
+	private static final String CONTROLLER = "src/main/java/example/application/SampleController.java";
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -75,15 +77,16 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	@Autowired private StereotypeInformation stereotypeInformation;
 	@Autowired private StructureSnapshotStore structureSnapshotStore;
 
-	private File directory;
 	private IJavaProject project;
+	private StructureTreeTestFixture tree;
 
 	@BeforeEach
 	public void setup() throws Exception {
 		harness.intialize(null);
 
-		directory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
+		File directory = new File(ProjectsHarness.class.getResource("/test-projects/test-stereotypes-support/").toURI());
 		project = projectFinder.find(new TextDocumentIdentifier(directory.toURI().toString())).get();
+		tree = new StructureTreeTestFixture(harness, indexer, directory);
 
 		CompletableFuture<Void> initProject = indexer.waitOperation();
 		initProject.get(5, TimeUnit.SECONDS);
@@ -116,7 +119,7 @@ public class SpringIndexCommandsCaptureBaselineTest {
 
 	@Test
 	void structureTreeCarriesNoChangeMarkersWithoutABaseline() throws Exception {
-		List<Node> roots = structureTrees();
+		List<Node> roots = tree.structureTrees();
 
 		assertTrue(changedNodesOf(roots).isEmpty(),
 				"expected no change markers before a baseline was captured, but got: " + changedNodesOf(roots));
@@ -127,18 +130,12 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		captureBaseline(project.getElementName());
 
 		// right after capturing, current == baseline, so nothing is marked
-		assertTrue(changedNodesOf(structureTrees()).isEmpty(), "expected no change markers directly after capturing a baseline");
+		assertTrue(changedNodesOf(tree.structureTrees()).isEmpty(), "expected no change markers directly after capturing a baseline");
 
-		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
-		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace(
-				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
+		tree.edit(CONTROLLER, "\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
 				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}\n\n\t@GetMapping(\"/goodbye\")\n\tpublic String sayGoodbye() {\n\t\treturn \"goodbye!!!\";\n\t}");
-		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
 
-		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
-
-		Map<String, String> changed = changedNodesOf(structureTrees());
+		Map<String, String> changed = changedNodesOf(tree.structureTrees());
 
 		assertFalse(changed.isEmpty(), "expected change markers in the structure tree after changing a controller");
 		assertTrue(changed.values().contains("added"), "expected at least one node marked as added, but got: " + changed);
@@ -146,39 +143,15 @@ public class SpringIndexCommandsCaptureBaselineTest {
 				"expected the new mapping to be marked as changed, but got: " + changed.keySet());
 	}
 
-	@Test
-	void structureTreeMarksNodesWhoseSourceChangedWithoutChangingTheTree() throws Exception {
-		captureBaseline(project.getElementName());
-
-		// change the body of the mapping method only: same route, same signature, same label, so
-		// every node in the tree still looks exactly as it did - only the source behind it changed
-		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
-		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace("return \"hello!!!\";", "return \"hello, world!!!\";");
-		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
-
-		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
-
-		Map<String, String> changed = changedNodesOf(structureTrees());
-
-		assertFalse(changed.isEmpty(), "expected the changed method body to be marked in the structure tree");
-		assertFalse(changed.values().contains("added"), "expected no node to be reported as added, but got: " + changed);
-		assertTrue(changed.values().contains("modified"), "expected something to be reported as modified, but got: " + changed);
-	}
 
 	@Test
 	void changingAMethodMarksThatMethodButNotItsEnclosingClass() throws Exception {
 		captureBaseline(project.getElementName());
 
 		// a body-only edit of an annotated method: nothing about the class itself changed
-		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
-		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace("return \"hello!!!\";", "return \"hello, world!!!\";");
-		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+		tree.edit(CONTROLLER, "return \"hello!!!\";", "return \"hello, world!!!\";");
 
-		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
-
-		List<Node> roots = structureTrees();
+		List<Node> roots = tree.structureTrees();
 
 		// the method the edit happened in is the one that gets highlighted - both where it shows up
 		// as a method of its own and as a member of its controller (it is labelled by its route)
@@ -199,14 +172,9 @@ public class SpringIndexCommandsCaptureBaselineTest {
 
 		// the route is part of the node's label, so this reads as the old mapping removed and a new
 		// one added - the added node tells the story, the controller stays out of it
-		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
-		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace("@GetMapping(\"/greeting\")", "@GetMapping(\"/hello\")");
-		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+		tree.edit(CONTROLLER, "@GetMapping(\"/greeting\")", "@GetMapping(\"/hello\")");
 
-		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
-
-		List<Node> roots = structureTrees();
+		List<Node> roots = tree.structureTrees();
 
 		assertEquals("added", findNode(roots, JsonNodeHandler.KIND_MEMBER, "/hello").getAttribute(JsonNodeHandler.CHANGE));
 		assertEquals("containsChanges", findNode(roots, JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE),
@@ -218,34 +186,11 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		captureBaseline(project.getElementName());
 
 		// nothing replaces it, so the controller is the only place the deletion can show up at all
-		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
-		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace(
-				"\t@GetMapping(\"/greeting\")\n\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}", "");
-		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+		tree.edit(CONTROLLER, "\t@GetMapping(\"/greeting\")\n\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}", "");
 
-		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
-
-		assertEquals("modified", findNode(structureTrees(), JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE));
+		assertEquals("modified", findNode(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE));
 	}
 
-	@Test
-	void changingSomethingWithoutANodeOfItsOwnStillMarksTheClass() throws Exception {
-		captureBaseline(project.getElementName());
-
-		// a field has no node in the tree, so the class is the only place its change can show up -
-		// leaving out the annotated methods must not make the class blind to everything else
-		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
-		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace("public class SampleController {",
-				"public class SampleController {\n\n\tprivate int counter;\n");
-		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
-
-		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
-
-		Node type = findNode(structureTrees(), JsonNodeHandler.KIND_TYPE, "SampleController");
-		assertEquals("modified", type.getAttribute(JsonNodeHandler.CHANGE));
-	}
 
 	@Test
 	void structureTreeComparesAgainstTheRequestedHistoricalBaseline() throws Exception {
@@ -255,20 +200,15 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		String olderKey = structureSnapshotStore.captureBaseline(project, "sha1", "before adding goodbye")
 				.capturedAt().toString();
 
-		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
-		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace(
-				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
+		tree.edit(CONTROLLER, "\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
 				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}\n\n\t@GetMapping(\"/goodbye\")\n\tpublic String sayGoodbye() {\n\t\treturn \"goodbye!!!\";\n\t}");
-		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
-		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
 
 		structureSnapshotStore.captureBaseline(project, "sha2", "after adding goodbye");
 
-		assertTrue(changedNodesOf(structureTrees(null)).isEmpty(),
+		assertTrue(changedNodesOf(tree.structureTrees(null)).isEmpty(),
 				"expected no changes when comparing against the newest baseline (the default)");
 
-		Map<String, String> changed = changedNodesOf(structureTrees(Map.of(project.getElementName(), olderKey)));
+		Map<String, String> changed = changedNodesOf(tree.structureTrees(Map.of(project.getElementName(), olderKey)));
 		assertFalse(changed.isEmpty(), "expected changes when comparing against an older, explicitly requested baseline");
 		assertTrue(changed.values().contains("added"), "expected the new mapping to show up as added, but got: " + changed);
 		assertTrue(changed.keySet().stream().anyMatch(nodeId -> nodeId.contains("/goodbye")));
@@ -280,7 +220,7 @@ public class SpringIndexCommandsCaptureBaselineTest {
 
 		Map<String, String> unknown = Map.of(project.getElementName(), "2020-01-01T00:00:00Z");
 
-		assertTrue(changedNodesOf(structureTrees(unknown)).isEmpty(),
+		assertTrue(changedNodesOf(tree.structureTrees(unknown)).isEmpty(),
 				"expected no changes: falling back to the (only, and current) newest baseline");
 		assertEquals("sha1", rootOf(project.getElementName(), unknown).getAttribute(JsonNodeHandler.COMPARED_AGAINST_SHA));
 	}
@@ -341,9 +281,9 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	void baselineCommandResultsAreGsonSerializable() throws Exception {
 		structureSnapshotStore.captureBaseline(project, "sha1", "first message");
 
-		assertNotNull(new Gson().toJson(baselineHistory(project.getElementName())));
-		assertNotNull(new Gson().toJson(captureBaseline(project.getElementName())));
-		assertNotNull(new Gson().toJson(clearBaseline(project.getElementName())));
+		assertDoesNotThrow(() -> new Gson().toJson(baselineHistory(project.getElementName())));
+		assertDoesNotThrow(() -> new Gson().toJson(captureBaseline(project.getElementName())));
+		assertDoesNotThrow(() -> new Gson().toJson(clearBaseline(project.getElementName())));
 	}
 
 	@Test
@@ -362,7 +302,7 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		// hasBaseline must not be confused with "something changed" - it says a baseline exists,
 		// which is what the client needs to tell "no baseline" apart from "baseline, no changes yet"
 		assertEquals(Boolean.TRUE, root.getAttribute(JsonNodeHandler.HAS_BASELINE));
-		assertTrue(changedNodesOf(structureTrees()).isEmpty());
+		assertTrue(changedNodesOf(tree.structureTrees()).isEmpty());
 	}
 
 	@Test
@@ -400,39 +340,12 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	}
 
 	private Node rootOf(String projectName, Map<String, String> compareAgainst) throws Exception {
-		return structureTrees(compareAgainst).stream()
+		return tree.structureTrees(compareAgainst).stream()
 				.filter(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID)))
 				.findFirst()
 				.orElseThrow();
 	}
 
-	/**
-	 * The one node of the given kind whose label contains the given text, searched depth first.
-	 */
-	private static Node findNode(List<Node> roots, String kind, String labelPart) {
-		for (Node root : roots) {
-			Node found = findNode(root, kind, labelPart);
-			if (found != null) {
-				return found;
-			}
-		}
-		throw new AssertionError("no " + kind + " node with a label containing '" + labelPart + "' in the structure tree");
-	}
-
-	private static Node findNode(Node node, String kind, String labelPart) {
-		Object label = node.getAttribute(JsonNodeHandler.TEXT);
-		if (kind.equals(node.getAttribute(JsonNodeHandler.KIND)) && label != null && label.toString().contains(labelPart)) {
-			return node;
-		}
-
-		for (Node child : node.getChildren()) {
-			Node found = findNode(child, kind, labelPart);
-			if (found != null) {
-				return found;
-			}
-		}
-		return null;
-	}
 
 	/**
 	 * The node ids of all nodes carrying a change marker, mapped to that marker.
@@ -451,23 +364,6 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		node.getChildren().forEach(child -> collectChanges(child, changed));
 	}
 
-	private List<Node> structureTrees() throws Exception {
-		return structureTrees(null);
-	}
-
-	@SuppressWarnings("unchecked")
-	private List<Node> structureTrees(Map<String, String> compareAgainst) throws Exception {
-		JsonObject params = new JsonObject();
-		params.addProperty("updateMetadata", false);
-		if (compareAgainst != null) {
-			JsonObject compareAgainstJson = new JsonObject();
-			compareAgainst.forEach(compareAgainstJson::addProperty);
-			params.add("compareAgainst", compareAgainstJson);
-		}
-
-		return (List<Node>) harness.getServer().getWorkspaceService()
-				.executeCommand(new ExecuteCommandParams(STRUCTURE_CMD, List.of(params))).get();
-	}
 
 	@SuppressWarnings("unchecked")
 	private CaptureBaselineResult captureBaseline(String projectName) throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {

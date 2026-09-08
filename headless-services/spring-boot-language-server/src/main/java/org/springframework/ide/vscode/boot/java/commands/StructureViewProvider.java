@@ -104,6 +104,27 @@ public class StructureViewProvider {
 	}
 
 	/**
+	 * Creates the structure tree for a project, fetching the module metadata and retrying if the
+	 * first attempt comes back empty - for Spring Modulith projects the tree cannot be built without
+	 * it.
+	 *
+	 * @throws IllegalStateException if no tree can be built for the project even then
+	 */
+	public Node createCompleteTree(IJavaProject project) {
+		Node root = createTree(project, false, null);
+
+		if (root == null) {
+			root = createTree(project, true, null);
+		}
+
+		if (root == null) {
+			throw new IllegalStateException("no logical structure available for project with name " + project.getElementName());
+		}
+
+		return root;
+	}
+
+	/**
 	 * The groups that the structure tree of the given project can be structured by.
 	 */
 	public Groups getGroups(IJavaProject project) {
@@ -118,6 +139,30 @@ public class StructureViewProvider {
 
 	public static record Groups (String projectName, List<Group> groups) {}
 	public static record Group (String identifier, String displayName) {}
+
+	/**
+	 * Same as {@link #toStructureNode(Node)}, but without the source locations.
+	 *
+	 * <p>For the trees that only ever get diffed: nodes are matched by kind and label and compared
+	 * on icon, hover and content hash, so a location is never read - while being roughly a third of
+	 * what a persisted baseline costs on disk, rewritten on every capture.
+	 */
+	public static StructureNode toComparableNode(Node node) {
+		if (node == null) {
+			return null;
+		}
+
+		return new StructureNode(
+				stringAttribute(node, JsonNodeHandler.NODE_ID),
+				stringAttribute(node, JsonNodeHandler.TEXT),
+				stringAttribute(node, JsonNodeHandler.ICON),
+				stringAttribute(node, JsonNodeHandler.KIND),
+				stringAttribute(node, JsonNodeHandler.HOVER),
+				stringAttribute(node, JsonNodeHandler.CONTENT_HASH),
+				null,
+				null,
+				node.getChildren().stream().map(StructureViewProvider::toComparableNode).toList());
+	}
 
 	/**
 	 * Converts a {@link Node} tree, as built by {@link #createTree}, into a protocol-agnostic

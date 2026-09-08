@@ -152,19 +152,7 @@ public class StereotypeInformation {
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 		gitBaselineTracker.syncBaselineWithGit(project);
 
-		Node root = structureViewProvider.createTree(project, false, null);
-
-		if (root == null) {
-			// for Spring Modulith projects the tree cannot be created without the module metadata,
-			// so try again and let the provider fetch that metadata first
-			root = structureViewProvider.createTree(project, true, null);
-		}
-
-		if (root == null) {
-			throw new Exception("no logical structure available for project with name " + projectName);
-		}
-
-		return StructureViewProvider.toStructureNode(root);
+		return StructureViewProvider.toStructureNode(structureViewProvider.createCompleteTree(project));
 	}
 
 	@Tool(description = """

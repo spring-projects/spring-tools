@@ -6,7 +6,7 @@ import { CancellationToken, FileDecoration, FileDecorationProvider, ProviderResu
  * (stereotypes, groups, packages) have no file of their own, and for the ones that do, decorating
  * the file itself would collide with the SCM decorations of that file.
  */
-export const STRUCTURE_DIFF_SCHEME = "spring-structure-diff";
+const STRUCTURE_DIFF_SCHEME = "spring-structure-diff";
 
 export type StructureChange = "added" | "removed" | "modified";
 

@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -201,7 +202,7 @@ public class StructureSnapshotStoreTest {
 		when(config.getStructureBaselineHistorySize()).thenReturn(historySize);
 
 		StructureViewProvider structureViewProvider = mock(StructureViewProvider.class);
-		when(structureViewProvider.createTree(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(false), org.mockito.ArgumentMatchers.any()))
+		when(structureViewProvider.createCompleteTree(any()))
 				.thenAnswer(invocation -> new JsonNodeHandler.Node(null)
 						.withAttribute(JsonNodeHandler.TEXT, "app")
 						.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION));

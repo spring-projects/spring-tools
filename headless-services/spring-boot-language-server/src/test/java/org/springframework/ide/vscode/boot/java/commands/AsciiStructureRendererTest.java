@@ -83,7 +83,7 @@ public class AsciiStructureRendererTest {
 		DiffNode springData = new DiffNode("id-SpringData", "Spring Data", "stereotype", ChangeType.UNCHANGED, List.of());
 
 		DiffNode root = new DiffNode("id-root", "spring-petclinic", "application", ChangeType.MODIFIED, List.of(webLayer, springData));
-		DiffStats stats = new DiffStats(2, 0, 2, 4, 0);
+		DiffStats stats = new DiffStats(2, 0, 2, 4);
 
 		return new StructureTreeDiff("spring-petclinic", BASELINE_AT, CURRENT_AT, root, stats);
 	}

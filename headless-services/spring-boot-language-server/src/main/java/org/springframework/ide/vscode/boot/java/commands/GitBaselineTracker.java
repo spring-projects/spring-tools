@@ -113,6 +113,7 @@ public class GitBaselineTracker {
 			// not let ticks pile up behind each other
 			poll.scheduleWithFixedDelay(this::pollForCommits, POLL_SECONDS, POLL_SECONDS, TimeUnit.SECONDS);
 			server.onShutdown(poll::shutdownNow);
+			server.onShutdown(this::closeRepositories);
 		}
 	}
 
@@ -183,12 +184,9 @@ public class GitBaselineTracker {
 			return;
 		}
 
-		for (String projectName : affectedProjects) {
-			projectFinder.all().stream()
-					.filter(p -> p.getElementName().equals(projectName))
-					.findFirst()
-					.ifPresent(this::syncBaselineWithGit);
-		}
+		projectFinder.all().stream()
+				.filter(project -> affectedProjects.contains(project.getElementName()))
+				.forEach(this::syncBaselineWithGit);
 	}
 
 	/**
@@ -216,15 +214,13 @@ public class GitBaselineTracker {
 		}
 	}
 
-	private String resolveHead(Repository repository) {
-		try {
-			ObjectId head = repository.resolve("HEAD");
-			// null HEAD means an "unborn" branch - a repo with no commits yet
-			return head == null ? null : head.getName();
-		} catch (Exception e) {
-			log.warn("failed to resolve HEAD for git repository: " + repository.getDirectory(), e);
-			return null;
-		}
+	/**
+	 * Releases the discovered repositories - each one holds on to pack file handles for as long as
+	 * it is open, and they are cached for the lifetime of the server.
+	 */
+	private void closeRepositories() {
+		repositoriesByProject.values().forEach(repository -> repository.ifPresent(Repository::close));
+		repositoriesByProject.clear();
 	}
 
 	private Optional<Repository> repositoryOf(IJavaProject project) {

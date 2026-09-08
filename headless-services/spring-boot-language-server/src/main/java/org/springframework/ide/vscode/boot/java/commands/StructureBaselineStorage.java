@@ -11,9 +11,11 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Instant;
 import java.util.List;
 
@@ -95,7 +97,7 @@ public class StructureBaselineStorage {
 	 */
 	public void save(String projectName, List<StructureSnapshot> history) {
 		File file = fileFor(projectName);
-		try (FileWriter writer = new FileWriter(file)) {
+		try (Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
 			gson.toJson(new PersistedBaseline(SCHEMA_VERSION, history), writer);
 		} catch (IOException | JsonIOException e) {
 			log.warn("failed to persist structure baseline history for project: " + projectName, e);
@@ -113,7 +115,7 @@ public class StructureBaselineStorage {
 			return List.of();
 		}
 
-		try (FileReader reader = new FileReader(file)) {
+		try (Reader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
 			PersistedBaseline persisted = gson.fromJson(reader, PersistedBaseline.class);
 
 			if (persisted == null || persisted.schemaVersion() != SCHEMA_VERSION || persisted.history() == null) {

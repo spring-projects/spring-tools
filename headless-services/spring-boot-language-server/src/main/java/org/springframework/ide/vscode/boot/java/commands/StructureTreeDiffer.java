@@ -56,6 +56,14 @@ public class StructureTreeDiffer {
 		return new StructureTreeDiff(projectName, baselineAt, currentAt, root, stats);
 	}
 
+	/**
+	 * The diff tree on its own, for callers that only apply the changes back onto a tree and have no
+	 * use for {@link DiffStats} - computing those walks the whole result a second time.
+	 */
+	public static DiffNode diffTree(StructureNode before, StructureNode after) {
+		return diffNodes(before, after);
+	}
+
 	private static DiffNode diffNodes(StructureNode before, StructureNode after) {
 		if (before == null) {
 			return wholeSubtree(after, ChangeType.ADDED);
@@ -146,9 +154,9 @@ public class StructureTreeDiffer {
 	}
 
 	private static DiffStats statsOf(DiffNode node) {
-		int[] counts = new int[5];
+		int[] counts = new int[4];
 		accumulate(node, counts);
-		return new DiffStats(counts[0], counts[1], counts[2], counts[3], counts[4]);
+		return new DiffStats(counts[0], counts[1], counts[2], counts[3]);
 	}
 
 	private static void accumulate(DiffNode node, int[] counts) {
@@ -157,7 +165,9 @@ public class StructureTreeDiffer {
 			case REMOVED -> counts[1]++;
 			case MODIFIED -> counts[2]++;
 			case UNCHANGED -> counts[3]++;
-			case CONTAINS_CHANGES -> counts[4]++;
+			// not counted: a node that only contains changes is neither a change of its own nor
+			// unchanged, and no caller has a use for the number of them
+			case CONTAINS_CHANGES -> { }
 		}
 		node.children().forEach(child -> accumulate(child, counts));
 	}
@@ -243,7 +253,7 @@ public class StructureTreeDiffer {
 	/**
 	 * Aggregate counts of nodes by change type across an entire diff tree.
 	 */
-	public static record DiffStats(int added, int removed, int modified, int unchanged, int containsChanges) {
+	public static record DiffStats(int added, int removed, int modified, int unchanged) {
 
 		public boolean hasChanges() {
 			return added > 0 || removed > 0 || modified > 0;

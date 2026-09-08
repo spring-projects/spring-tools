@@ -2,6 +2,7 @@ import { commands, EventEmitter, Event, ExtensionContext, window, Memento, Quick
 import { StereotypedNode } from "./nodes";
 import { ExtensionAPI } from "../api";
 import { showChangesAgainstHead } from "./git-diff";
+import { describeBaseline, formatCapturedAt, shortSha } from "./baseline-labels";
 
 const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
@@ -31,7 +32,9 @@ class PersistedToggle {
 
     constructor(private workspaceState: Memento, private key: string, defaultValue: boolean) {
         this.value = this.workspaceState.get<boolean>(this.key, defaultValue);
-        commands.executeCommand('setContext', this.key, this.value);
+        // nothing to await in a constructor, but an unobserved rejection would surface as a
+        // spurious extension error
+        Promise.resolve(commands.executeCommand('setContext', this.key, this.value)).then(undefined, () => {});
     }
 
     get(): boolean {
@@ -407,25 +410,3 @@ interface BaselineQuickPickItem extends QuickPickItem {
     snapshotKey: string | undefined;
 }
 
-export function shortSha(sha: string): string {
-    return sha.substring(0, 7);
-}
-
-export function formatCapturedAt(capturedAt: string): string {
-    const captured = new Date(capturedAt);
-    return isNaN(captured.getTime()) ? capturedAt : captured.toLocaleString();
-}
-
-/**
- * How to describe a retained snapshot in one line: its commit if it has one, otherwise the fact
- * that it was captured manually, plus when. `undefined` means "no snapshot pinned".
- */
-export function describeBaseline(entry?: { commitSha?: string, commitMessage?: string, capturedAt?: string }): string {
-    if (!entry) {
-        return 'most recent snapshot';
-    }
-    if (entry.commitSha) {
-        return `${shortSha(entry.commitSha)} - ${entry.commitMessage || '(no commit message)'}`;
-    }
-    return `manual snapshot from ${entry.capturedAt ? formatCapturedAt(entry.capturedAt) : 'an unknown time'}`;
-}

@@ -214,6 +214,11 @@ public class SpringIndexerJavaContext {
 	}
 	
 	public void resetDocumentRelatedElements(String docURI) {
+		// whatever this pass found out about members and types goes with the elements it produced:
+		// the pass is being thrown away, and a fresh one will work it out again
+		nodesWithOwnIndexElement.clear();
+		typesToHash.clear();
+
 		Iterator<CachedIndexElement> beansIterator = getGeneratedIndexElements().iterator();
 		while (beansIterator.hasNext()) {
 			if (beansIterator.next().getDocURI().equals(docURI)) {

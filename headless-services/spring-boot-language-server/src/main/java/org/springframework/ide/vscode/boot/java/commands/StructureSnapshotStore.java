@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.ChangeType;
+import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.DiffNode;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.StructureTreeDiff;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -90,19 +91,25 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 * per project, never a hot path, so a coarse lock is simplest and sufficient.
 	 */
 	@Override
-	public synchronized StructureSnapshot captureBaseline(IJavaProject project, String commitSha, String commitMessage) {
+	public StructureSnapshot captureBaseline(IJavaProject project, String commitSha, String commitMessage) {
+		// deliberately outside the lock: building the tree is by far the expensive part here, and
+		// nothing about it depends on the retained history
 		StructureSnapshot snapshot = snapshotNow(project, commitSha, commitMessage);
 		String projectName = project.getElementName();
 
-		List<StructureSnapshot> updated = new ArrayList<>(historyOf(project));
-		updated.add(0, snapshot);
+		List<StructureSnapshot> updated;
+		synchronized (this) {
+			updated = new ArrayList<>(historyOf(project));
+			updated.add(0, snapshot);
 
-		int maxSize = config.getStructureBaselineHistorySize();
-		while (updated.size() > maxSize) {
-			updated.remove(updated.size() - 1);
+			int maxSize = config.getStructureBaselineHistorySize();
+			while (updated.size() > maxSize) {
+				updated.remove(updated.size() - 1);
+			}
+
+			history.put(projectName, List.copyOf(updated));
 		}
 
-		history.put(projectName, List.copyOf(updated));
 		storage.save(projectName, updated);
 
 		return snapshot;
@@ -138,7 +145,9 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 * commits still have a snapshot. Empty if none has been captured yet.
 	 */
 	public List<StructureSnapshot> historyOf(IJavaProject project) {
-		return history.computeIfAbsent(project.getElementName(), name -> storage.load(name));
+		// copied on load: what the storage hands back is a plain mutable list, and this one is
+		// cached and handed out to callers
+		return history.computeIfAbsent(project.getElementName(), name -> List.copyOf(storage.load(name)));
 	}
 
 	/**
@@ -209,10 +218,9 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 			return baseline;
 		}
 
-		StructureTreeDiff diff = StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(),
-				Instant.now(), baseline.root(), StructureViewProvider.toStructureNode(root));
+		DiffNode diff = StructureTreeDiffer.diffTree(baseline.root(), StructureViewProvider.toComparableNode(root));
 
-		Map<String, ChangeType> changes = StructureTreeDiffer.changesByNodeId(diff.root());
+		Map<String, ChangeType> changes = StructureTreeDiffer.changesByNodeId(diff);
 		if (!changes.isEmpty()) {
 			applyChanges(root, changes);
 		}
@@ -270,20 +278,15 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		return snapshot.capturedAt() == null ? null : snapshot.capturedAt().toString();
 	}
 
+	/**
+	 * Deliberately builds its own tree rather than reusing one a caller may already have: a snapshot
+	 * has to cover the whole project, while the tree a structure request builds is filtered down to
+	 * the groups that client selected. Baselines captured from a filtered tree would diff against
+	 * whatever the user happened to have switched on at the time.
+	 */
 	private StructureSnapshot snapshotNow(IJavaProject project, String commitSha, String commitMessage) {
-		JsonNodeHandler.Node root = structureViewProvider.createTree(project, false, null);
-
-		if (root == null) {
-			// for Spring Modulith projects the tree cannot be created without the module metadata,
-			// so try again and let the provider fetch that metadata first
-			root = structureViewProvider.createTree(project, true, null);
-		}
-
-		if (root == null) {
-			throw new IllegalStateException("no logical structure available for project with name " + project.getElementName());
-		}
-
-		return new StructureSnapshot(Instant.now(), commitSha, commitMessage, StructureViewProvider.toStructureNode(root));
+		JsonNodeHandler.Node root = structureViewProvider.createCompleteTree(project);
+		return new StructureSnapshot(Instant.now(), commitSha, commitMessage, StructureViewProvider.toComparableNode(root));
 	}
 
 	/**

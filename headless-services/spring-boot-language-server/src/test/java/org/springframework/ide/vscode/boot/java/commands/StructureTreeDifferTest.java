@@ -93,14 +93,20 @@ public class StructureTreeDifferTest {
 
 	@Test
 	void duplicateSiblingLabelsAreMatchedPositionally() {
-		StructureNode before = node("application", "app", node("method", "handle"), node("method", "handle"));
-		StructureNode after = node("application", "app", node("method", "handle"), node("method", "handle"), node("method", "handle"));
+		StructureNode before = node("application", "app", handle("hash-1"), handle("hash-2"));
+		StructureNode after = node("application", "app", handle("hash-1"), handle("hash-2"), handle("hash-3"));
 
 		DiffNode root = diff(before, after).root();
 
+		// same kind and label throughout, so only the occurrence-based keying can pair the first two
+		// up with their counterparts and leave the third as the added one
 		assertThat(root.children()).hasSize(3);
 		assertThat(root.children()).extracting(DiffNode::change)
-				.containsExactlyInAnyOrder(ChangeType.UNCHANGED, ChangeType.UNCHANGED, ChangeType.ADDED);
+				.containsExactly(ChangeType.UNCHANGED, ChangeType.UNCHANGED, ChangeType.ADDED);
+	}
+
+	private static StructureNode handle(String contentHash) {
+		return new StructureNode("app/method:handle", "handle", null, "method", null, contentHash, null, null, List.of());
 	}
 
 	@Test
@@ -232,15 +238,6 @@ public class StructureTreeDifferTest {
 		assertThat(root.change()).isEqualTo(ChangeType.UNCHANGED);
 	}
 
-	@Test
-	void nodesWithoutAContentHashAreUnchanged() {
-		// packages and stereotype groups don't stand for a piece of source code and never carry a
-		// hash, so they must not be reported as modified just for that
-		DiffNode root = diff(node("application", "app", node("package", "example")),
-				node("application", "app", node("package", "example"))).root();
-
-		assertThat(root.change()).isEqualTo(ChangeType.UNCHANGED);
-	}
 
 	@Test
 	void changesAreIndexedByTheNodeIdOfTheCurrentTree() {

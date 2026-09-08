@@ -197,6 +197,10 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes, null);
 		context.hashTypeAfterScanning(typeDeclaration, indexElement);
 
+		// a nested type gets a node of its own, so its whole source counts towards that node rather
+		// than towards the type it sits in (the type itself is skipped when hashing itself)
+		context.markAsOwnIndexElement(typeDeclaration);
+
 		indexMethods(indexElement, annotatedMethods, doc, context);
 		
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), indexElement));

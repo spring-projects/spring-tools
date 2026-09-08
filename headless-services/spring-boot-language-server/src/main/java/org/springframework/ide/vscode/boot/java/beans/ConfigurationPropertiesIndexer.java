@@ -136,6 +136,7 @@ public class ConfigurationPropertiesIndexer {
 
 								DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, field);
 								Range range = doc.toRange(nodeRegion);
+								context.markAsOwnIndexElement(field);
 								ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range,
 										ASTUtils.contentHash(doc, field));
 								
@@ -167,6 +168,7 @@ public class ConfigurationPropertiesIndexer {
 
 							DocumentRegion nodeRegion = ASTUtils.nodeRegion(doc, field);
 							Range range = doc.toRange(nodeRegion);
+							context.markAsOwnIndexElement(field);
 							ConfigPropertyIndexElement configPropElement = new ConfigPropertyIndexElement(prefix + name.getFullyQualifiedName(), fieldType.resolveBinding().getQualifiedName(), range,
 									ASTUtils.contentHash(doc, field));
 								

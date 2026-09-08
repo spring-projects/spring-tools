@@ -129,6 +129,7 @@ public class SpringAiIndexer {
 
 			List<SpringAiToolParameter> parameters = extractParameters(method, doc);
 
+			context.markAsOwnIndexElement(method);
 			SpringAiAnnotationIndexElement element = new SpringAiAnnotationIndexElement(annotationType, name, description,
 					methodSignature, location, containerBeanType, annotationsMetadata, parameters,
 					ASTUtils.contentHash(doc, method));

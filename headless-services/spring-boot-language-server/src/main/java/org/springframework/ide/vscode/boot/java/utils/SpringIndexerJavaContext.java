@@ -10,14 +10,20 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.utils;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -42,6 +48,15 @@ public class SpringIndexerJavaContext {
 	
 	private final Set<QualifiedTypeName> dependencies = new HashSet<>();
 	private final Set<QualifiedTypeName> scannedTypes = new HashSet<>();
+
+	/**
+	 * The declarations that got an index element of their own while scanning this file, and the
+	 * types whose content hash therefore has to leave them out - see
+	 * {@link #markAsOwnIndexElement(ASTNode)}. Filled by the indexers, consumed once they have all
+	 * run (see {@code SpringIndexerJavaAstScanner.scanAST}).
+	 */
+	private final List<ASTNode> nodesWithOwnIndexElement = new ArrayList<>();
+	private final Map<AbstractTypeDeclaration, StereotypeClassElement> typesToHash = new LinkedHashMap<>();
 
 	public SpringIndexerJavaContext(
 			IJavaProject project, 
@@ -138,6 +153,37 @@ public class SpringIndexerJavaContext {
 		if (qualifiedTypeName != null) {
 			dependencies.add(qualifiedTypeName);
 		}
+	}
+
+	/**
+	 * Records that the given declaration - a method, a field - produced an index element of its
+	 * own, and so gets its own node in the logical structure tree.
+	 *
+	 * <p>Changes to it are reported on that node, so its source is left out of the content hash of
+	 * the type around it: otherwise editing any member would light up its type as well. What is
+	 * left in the type's hash is everything with no node of its own (a plain private method, a
+	 * field, the type's own annotations), which the type is the only place to report.
+	 */
+	public void markAsOwnIndexElement(ASTNode node) {
+		if (node != null) {
+			nodesWithOwnIndexElement.add(node);
+		}
+	}
+
+	public List<ASTNode> getNodesWithOwnIndexElement() {
+		return nodesWithOwnIndexElement;
+	}
+
+	/**
+	 * Registers a type whose content hash can only be computed once every indexer has run for this
+	 * file, because it depends on which of its members got an element of their own.
+	 */
+	public void hashTypeAfterScanning(AbstractTypeDeclaration typeDeclaration, StereotypeClassElement element) {
+		typesToHash.put(typeDeclaration, element);
+	}
+
+	public Map<AbstractTypeDeclaration, StereotypeClassElement> getTypesToHash() {
+		return typesToHash;
 	}
 
 	public Set<QualifiedTypeName> getScannedTypes() {

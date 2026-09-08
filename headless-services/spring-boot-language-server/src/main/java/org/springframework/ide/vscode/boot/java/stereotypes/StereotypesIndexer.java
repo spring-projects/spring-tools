@@ -190,14 +190,14 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		SimpleName astNodeForLocation = typeDeclaration.getName();
 		Location location = new Location(doc.getUri(), doc.toRange(astNodeForLocation.getStartPosition(), astNodeForLocation.getLength()));
 		
-		// resolved up front: the methods that get a node of their own are left out of the type's
-		// content hash, so that editing one of them lights up that method rather than its type
 		Map<MethodDeclaration, Set<String>> annotatedMethods = annotatedMethodsOf(typeDeclaration, annotationHierarchies);
 
-		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes,
-				ASTUtils.contentHash(doc, typeDeclaration, annotatedMethods.keySet()));
+		// the content hash is filled in once every indexer has run for this file: it has to leave
+		// out the members that got a node of their own, and other indexers contribute those too
+		StereotypeClassElement indexElement = new StereotypeClassElement(qualifiedName, location, supertypes, annotationTypes, null);
+		context.hashTypeAfterScanning(typeDeclaration, indexElement);
 
-		indexMethods(indexElement, annotatedMethods, doc);
+		indexMethods(indexElement, annotatedMethods, doc, context);
 		
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), indexElement));
 	}
@@ -234,9 +234,12 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		return annotatedMethods;
 	}
 
-	private void indexMethods(StereotypeClassElement indexElement, Map<MethodDeclaration, Set<String>> annotatedMethods, TextDocument doc) throws BadLocationException {
+	private void indexMethods(StereotypeClassElement indexElement, Map<MethodDeclaration, Set<String>> annotatedMethods, TextDocument doc,
+			SpringIndexerJavaContext context) throws BadLocationException {
+
 		for (Map.Entry<MethodDeclaration, Set<String>> annotatedMethod : annotatedMethods.entrySet()) {
 			MethodDeclaration method = annotatedMethod.getKey();
+			context.markAsOwnIndexElement(method);
 			String methodName = method.getName().getFullyQualifiedName();
 
 			String methodSignature = ASTUtils.getMethodSignature(method, true);

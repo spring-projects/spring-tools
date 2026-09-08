@@ -269,6 +269,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 									// hashed over the method that publishes the event where there is one, so that
 									// changes around the publishing call are detected, not just changes to the call
 									MethodDeclaration publishingMethod = findEnclosingMethod(methodInvocation);
+									context.markAsOwnIndexElement(publishingMethod != null ? publishingMethod : methodInvocation);
 									String contentHash = ASTUtils.contentHash(doc, publishingMethod != null ? publishingMethod : methodInvocation);
 
 									EventPublisherIndexElement eventPublisherIndexElement = new EventPublisherIndexElement(eventTypeBinding.getQualifiedName(), location, typesFromhierarchy, contentHash);
@@ -322,6 +323,7 @@ public class ComponentIndexer implements SpringComponentIndexer {
 			Collection<Annotation> annotationsOnHandleEventMethod = ASTUtils.getAnnotations(handleEventMethod);
 			AnnotationMetadata[] handleEventMethodAnnotations = ASTUtils.getAnnotationsMetadata(annotationsOnHandleEventMethod, doc);
 
+			context.markAsOwnIndexElement(handleEventMethod);
 			EventListenerIndexElement eventElement = new EventListenerIndexElement(eventTypeFq, handleMethodLocation, typeBinding.getQualifiedName(), handleEventMethodAnnotations,
 					ASTUtils.contentHash(doc, handleEventMethod));
 

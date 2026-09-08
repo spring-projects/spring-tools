@@ -96,6 +96,7 @@ public class RequestMappingIndexer {
 					// hashed over the whole method, not just the annotation, so that changes to the
 					// method body are detectable even though they leave the mapping itself unchanged
 					String contentHash = ASTUtils.contentHash(doc, methodDecl);
+					context.markAsOwnIndexElement(methodDecl);
 
 					Location location = new Location(doc.getUri(), doc.toRange(node.getStartPosition(), node.getLength()));
 					String[] path = getPath(node, context);

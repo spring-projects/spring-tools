@@ -10,9 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.utils;
 
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
@@ -23,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.RequiredCompleteAstException;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 
 /**
  * Walks compilation unit ASTs to collect Spring index symbols and optionally run reconciliation.
@@ -108,12 +111,33 @@ public class SpringIndexerJavaAstScanner {
 			}
 		}
 
+		// every indexer has run for this file by now, so it is finally known which members got an
+		// element (and therefore a node) of their own - which is what a type's content hash has to
+		// leave out, so that editing a member lights up that member rather than its type
+		hashScannedTypes(context);
+
 		if (includeReconcile) {
 			reconcileAction.accept(context, reconcilingIndex);
 		}
 
 		if (updateDependencyTracking) {
 			dependencyTracker.update(context.getProject(), SourceJavaFile.of(context.getFile()), context.getDependencies());
+		}
+	}
+
+	private void hashScannedTypes(SpringIndexerJavaContext context) {
+		if (context.getTypesToHash().isEmpty()) {
+			return;
+		}
+
+		for (Map.Entry<AbstractTypeDeclaration, StereotypeClassElement> type : context.getTypesToHash().entrySet()) {
+			try {
+				type.getValue().setContentHash(
+						ASTUtils.contentHash(context.getDoc(), type.getKey(), context.getNodesWithOwnIndexElement()));
+			}
+			catch (Exception e) {
+				log.error("error computing the content hash of a type in '{}'", context.getDocURI(), e);
+			}
 		}
 	}
 

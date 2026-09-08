@@ -22,7 +22,12 @@ public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 	private final String type;
 	private final Location location;
 	private final Set<String> supertypes;
-	private final String contentHash;
+
+	/**
+	 * Not final: only known once every indexer has run for the file, since it depends on which
+	 * members got an element of their own - see {@code SpringIndexerJavaContext.markAsOwnIndexElement}.
+	 */
+	private String contentHash;
 
 	public StereotypeClassElement(String type, Location location, Set<String> supertypes, Set<String> annotationTypes, String contentHash) {
 		super(annotationTypes);
@@ -48,6 +53,10 @@ public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 	 */
 	public String getContentHash() {
 		return contentHash;
+	}
+
+	public void setContentHash(String contentHash) {
+		this.contentHash = contentHash;
 	}
 
 	public boolean doesImplement(String fqn) {

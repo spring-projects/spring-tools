@@ -194,6 +194,42 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	}
 
 	@Test
+	void changingAMappingsRouteMarksTheNewMappingButNotItsController() throws Exception {
+		captureBaseline(project.getElementName());
+
+		// the route is part of the node's label, so this reads as the old mapping removed and a new
+		// one added - the added node tells the story, the controller stays out of it
+		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace("@GetMapping(\"/greeting\")", "@GetMapping(\"/hello\")");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+
+		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
+
+		List<Node> roots = structureTrees();
+
+		assertEquals("added", findNode(roots, JsonNodeHandler.KIND_MEMBER, "/hello").getAttribute(JsonNodeHandler.CHANGE));
+		assertEquals("containsChanges", findNode(roots, JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE),
+				"a renamed route must not light up its controller as well");
+	}
+
+	@Test
+	void deletingAMappingMarksTheControllerItWasRemovedFrom() throws Exception {
+		captureBaseline(project.getElementName());
+
+		// nothing replaces it, so the controller is the only place the deletion can show up at all
+		String controllerUri = new File(directory, "src/main/java/example/application/SampleController.java").toURI().toString();
+		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
+		String newContent = originalContent.replace(
+				"\t@GetMapping(\"/greeting\")\n\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}", "");
+		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
+
+		indexer.updateDocument(controllerUri, newContent, "test triggered").get(5, TimeUnit.SECONDS);
+
+		assertEquals("modified", findNode(structureTrees(), JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE));
+	}
+
+	@Test
 	void changingSomethingWithoutANodeOfItsOwnStillMarksTheClass() throws Exception {
 		captureBaseline(project.getElementName());
 

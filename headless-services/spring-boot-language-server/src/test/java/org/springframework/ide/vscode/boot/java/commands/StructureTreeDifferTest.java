@@ -208,6 +208,21 @@ public class StructureTreeDifferTest {
 	}
 
 	@Test
+	void aRemovedChildAlongsideAnAddedOneIsLeftToTheAddedNode() {
+		// what a rename looks like here, since nodes are matched by label: the old node removed and
+		// a new one added. The added node already shows it, so the parent stays out of it.
+		StructureNode before = node("application", "app", node("type", "A", node("member", "@/greeting")));
+		StructureNode after = node("application", "app", node("type", "A", node("member", "@/hello")));
+
+		DiffNode root = diff(before, after).root();
+		DiffNode type = root.children().get(0);
+
+		assertThat(type.change()).isEqualTo(ChangeType.CONTAINS_CHANGES);
+		assertThat(changesByLabel(type)).containsEntry("@/hello", ChangeType.ADDED)
+				.containsEntry("@/greeting", ChangeType.REMOVED);
+	}
+
+	@Test
 	void sameContentHashIsUnchanged() {
 		StructureNode before = new StructureNode("app/type:A", "A", "icon", "type", "hover", "hash", null, null, List.of());
 		StructureNode after = new StructureNode("app/type:A", "A", "icon", "type", "hover", "hash", null, null, List.of());

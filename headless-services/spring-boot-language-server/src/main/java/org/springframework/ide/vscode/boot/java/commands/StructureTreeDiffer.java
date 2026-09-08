@@ -35,9 +35,10 @@ import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.S
  * <p>Only the node that actually changed is reported as changed. Its containers are reported as
  * {@link ChangeType#CONTAINS_CHANGES} instead, so a client can keep the path to a change visible
  * (and an ascii diff can keep it uncollapsed) without lighting up every package and group above it.
- * The one exception is a <em>removed</em> node: it no longer exists in the current tree, so there
- * is nowhere to report it except on the node it was removed from, which is reported as
- * {@link ChangeType#MODIFIED}.
+ * The one exception is a <em>removed</em> node with nothing added in its place: it no longer exists
+ * in the current tree, so there is nowhere to report it except on the node it was removed from,
+ * which is reported as {@link ChangeType#MODIFIED}. A removal alongside an addition is left to the
+ * added node to show, since that pair is what a rename looks like here.
  *
  * @author Martin Lippert
  */
@@ -89,11 +90,16 @@ public class StructureTreeDiffer {
 				|| !Objects.equals(before.contentHash(), after.contentHash());
 
 		// a removed child is the one change that cannot be reported on the node it happened to -
-		// that node is gone from the tree - so it counts as a change of the node it was removed from
+		// that node is gone from the tree - so it counts as a change of the node it was removed
+		// from. Unless something was added here too: then the removal is almost always the other
+		// half of a rename (a renamed route is a removed node plus an added one, since nodes are
+		// matched by label), and the added node already shows it.
 		boolean childRemoved = children.stream().anyMatch(child -> child.change() == ChangeType.REMOVED);
+		boolean childAdded = children.stream().anyMatch(child -> child.change() == ChangeType.ADDED);
+		boolean unaccompaniedRemoval = childRemoved && !childAdded;
 
 		ChangeType change;
-		if (attributesChanged || childRemoved) {
+		if (attributesChanged || unaccompaniedRemoval) {
 			change = ChangeType.MODIFIED;
 		}
 		else if (anyChildChanged) {
@@ -199,7 +205,8 @@ public class StructureTreeDiffer {
 	 *
 	 * <p>Removed nodes carry the node id they had in the baseline, which no longer exists in the
 	 * current tree - they show up in the current tree only indirectly, through the node they were
-	 * removed from being reported as {@link ChangeType#MODIFIED}.
+	 * removed from being reported as {@link ChangeType#MODIFIED} (unless something was added there
+	 * too, see this class' description).
 	 */
 	public static Map<String, ChangeType> changesByNodeId(DiffNode root) {
 		Map<String, ChangeType> changes = new LinkedHashMap<>();

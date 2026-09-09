@@ -159,7 +159,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 
 	@Override
 	public void didOpen(DidOpenTextDocumentParams params) {
-		log.info("doc opened: " + params.getTextDocument().getVersion());
+		log.debug("doc opened: " + params.getTextDocument().getVersion());
 
 		TextDocumentItem docId = params.getTextDocument();
 
@@ -191,7 +191,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 	public void didChange(DidChangeTextDocumentParams params) {
 		long start = System.currentTimeMillis();
 
-		log.info("change arrived: " + params.getTextDocument().getVersion());
+		log.debug("change arrived: " + params.getTextDocument().getVersion());
 
 		try {
 			VersionedTextDocumentIdentifier docId = params.getTextDocument();
@@ -214,12 +214,12 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 		}
 		
 		long end = System.currentTimeMillis();
-		log.info("change message work done in " + (end - start) + "ms");
+		log.debug("change message work done in " + (end - start) + "ms");
 	}
 
 	@Override
 	public void didClose(DidCloseTextDocumentParams params) {
-		log.info("doc closed: " + params.getTextDocument().getUri());
+		log.debug("doc closed: " + params.getTextDocument().getUri());
 		
 		String url = params.getTextDocument().getUri();
 
@@ -232,7 +232,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 					documents.remove(url);
 					TextDocument lastSnapshot = documentSnapshots.remove(url);
 
-					log.info("Closed: "+url);
+					log.debug("Closed: "+url);
 					//Clear diagnostics when a file is closed. This makes the errors disapear when the language is changed for
 					// a document (this resulst in a dicClose even as being sent to the language server if that changes make the
 					// document go 'out of scope'.
@@ -299,7 +299,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 
 	@Override
 	public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams position) {
-		log.info("completion request arrived: " + position.getTextDocument().getUri());
+		log.debug("completion request arrived: " + position.getTextDocument().getUri());
 		
 		return CompletableFutures.computeAsync(messageWorkerThreadPool, cancelToken -> {
 			CompletionHandler h = completionHandler;
@@ -308,20 +308,20 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 				return Either.forRight(completionHandler.handle(cancelToken, position));
 			}
 			
-			log.info("no completions computed due to no completion handler registered for: " + position.getTextDocument().getUri());
+			log.debug("no completions computed due to no completion handler registered for: " + position.getTextDocument().getUri());
 			return Either.forRight(NO_COMPLETIONS);
 		});
 	}
 
 	@Override
 	public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem unresolved) {
-		log.info("Completion item resolve request received: {}", unresolved.getLabel());
+		log.debug("Completion item resolve request received: {}", unresolved.getLabel());
 		
 		return CompletableFutures.computeAsync(messageWorkerThreadPool, cancelToken -> {
 			try {
 				CompletionResolveHandler h = completionResolveHandler;
 				if (h != null) {
-					log.info("Completion item resolve request starting {}", unresolved.getLabel());
+					log.debug("Completion item resolve request starting {}", unresolved.getLabel());
 					return h.handle(cancelToken, unresolved);
 				}
 			} catch (CancellationException e) {
@@ -329,7 +329,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 			} catch (Exception e) {
 				log.warn("exception resolving completion item", e);
 			} finally {
-				log.info("Completion item resolve request terminated.");
+				log.debug("Completion item resolve request terminated.");
 			}
 			return null;
 		});
@@ -368,7 +368,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 			
 		} finally {
 			long end = System.currentTimeMillis();
-			log.info("hover computation done in " + (end - start) + "ms");
+			log.debug("hover computation done in " + (end - start) + "ms");
 		}
 	}
 
@@ -648,7 +648,7 @@ public class SimpleTextDocumentService implements TextDocumentService, DocumentE
 
 	@Override
 	public void didSave(DidSaveTextDocumentParams params) {
-		log.info("doc save event: " + params.getTextDocument().getUri());
+		log.debug("doc save event: " + params.getTextDocument().getUri());
 		
 		
 		// Workaround for PT 147263283, where error markers in STS are lost on document save.

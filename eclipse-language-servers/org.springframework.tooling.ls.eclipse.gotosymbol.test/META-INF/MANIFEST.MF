@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Goto Symbol Popup Tests
 Bundle-SymbolicName: org.springframework.tooling.ls.eclipse.gotosymbol.test
-Bundle-Version: 5.4.0.qualifier
+Bundle-Version: 5.5.0.qualifier
 Import-Package: org.springframework.tooling.ls.eclipse.gotosymbol,
  org.springframework.tooling.ls.eclipse.gotosymbol.dialogs,
  org.springframework.tooling.ls.eclipse.gotosymbol.favourites,

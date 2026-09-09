@@ -31,13 +31,15 @@ import org.springframework.ide.vscode.commons.util.BadLocationException;
  * @author Kris De Volder
  */
 public class DocumentRegion implements CharSequence, IRegion {
-	final IDocument doc;
-	final int start;
-	final int end;
+	
+	private final IDocument doc;
+	private final int start;
+	private final int end;
+
 	public DocumentRegion(IDocument doc, IRegion r) {
 		this(doc,
 			r.getOffset(),
-			r.getOffset()+r.getLength()
+			r.getOffset() + r.getLength()
 		);
 	}
 
@@ -100,12 +102,12 @@ public class DocumentRegion implements CharSequence, IRegion {
 	public DocumentRegion trimEnd() {
 		int howMany = 0; //how many chars to remove from the end
 		int len = length();
-		int lastChar = len-1;
-		while (howMany < len && Character.isWhitespace(charAt(lastChar-howMany))) {
+		int lastChar = len - 1;
+		while (howMany < len && Character.isWhitespace(charAt(lastChar - howMany))) {
 			howMany++;
 		}
 		if (howMany > 0) {
-			return subSequence(0, len-howMany);
+			return subSequence(0, len - howMany);
 		}
 		return this;
 	}
@@ -117,12 +119,12 @@ public class DocumentRegion implements CharSequence, IRegion {
 	@Override
 	public char charAt(int offset) {
 		if (offset < 0 || offset >= length()) {
-			throw new IndexOutOfBoundsException(""+offset);
+			throw new IndexOutOfBoundsException("" + offset);
 		}
 		try {
-			return doc.getChar(start+offset);
+			return doc.getChar(start + offset);
 		} catch (BadLocationException e) {
-			throw new IndexOutOfBoundsException(""+offset);
+			throw new IndexOutOfBoundsException("" + offset);
 		}
 	}
 	
@@ -154,7 +156,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 
 	@Override
 	public int length() {
-		return end-start;
+		return end - start;
 	}
 
 	@Override
@@ -165,7 +167,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 		if (start == 0 && end == len) {
 			return this;
 		}
-		return new DocumentRegion(doc, this.start+start, this.start+end);
+		return new DocumentRegion(doc, this.start + start, this.start + end);
 	}
 
 	public boolean isEmpty() {
@@ -177,7 +179,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 	}
 
 	public IRegion asRegion() {
-		return new Region(start, end-start);
+		return new Region(start, end - start);
 	}
 
 	public int indexOf(char ch, int fromIndex) {
@@ -196,9 +198,10 @@ public class DocumentRegion implements CharSequence, IRegion {
 
 	public DocumentRegion[] split(char c) {
 		List<DocumentRegion> pieces = new ArrayList<>();
+		
 		int start = 0;
 		int end;
-		while ((end=indexOf(c, start)) >= 0) {
+		while ((end = indexOf(c, start)) >= 0) {
 			pieces.add(subSequence(start, end));
 			start = end+1;
 		}
@@ -209,6 +212,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 
 	public DocumentRegion[] split(Pattern delimiter) {
 		List<DocumentRegion> pieces = new ArrayList<>();
+		
 		int start = 0;
 		Matcher matcher = delimiter.matcher(this);
 		while (matcher.find(start)) {
@@ -225,7 +229,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 	 * Removes a single occurrence of pat from the start of this region.
 	 */
 	public DocumentRegion trimStart(Pattern pat) {
-		pat = Pattern.compile("^("+pat.pattern()+")");
+		pat = Pattern.compile("^(" + pat.pattern() + ")");
 		Matcher matcher = pat.matcher(this);
 		if (matcher.find()) {
 			return subSequence(matcher.end());
@@ -237,7 +241,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 	 * Removes a single occurrence of pat from the end of this region.
 	 */
 	public DocumentRegion trimEnd(Pattern pat) {
-		pat = Pattern.compile("("+pat.pattern()+")$");
+		pat = Pattern.compile("(" + pat.pattern() + ")$");
 		Matcher matcher = pat.matcher(this);
 		if (matcher.find()) {
 			return subSequence(0, matcher.start());
@@ -264,7 +268,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 	 */
 	public DocumentRegion textBefore(int len) {
 		Assert.isLegal(len >= 0);
-		return new DocumentRegion(doc, start-len, start);
+		return new DocumentRegion(doc, start - len, start);
 	}
 
 	public IDocument getDocument() {
@@ -289,7 +293,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 	 * Convert the given document offset into an offset relative to this region.
 	 */
 	public int toRelative(int offset) {
-		return offset-start;
+		return offset - start;
 	}
 
 	@Override
@@ -302,7 +306,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 		int strLen = string.length();
 		if (myLen >= strLen) {
 			for (int i = 0; i < strLen; i++) {
-				if (charAt(myLen-strLen+i) != string.charAt(i)) {
+				if (charAt(myLen - strLen + i) != string.charAt(i)) {
 					return false;
 				}
 			}
@@ -330,7 +334,7 @@ public class DocumentRegion implements CharSequence, IRegion {
 	 */
 	public DocumentRegion textAtEnd(int numChars) {
 		numChars = Math.min(getLength(), numChars);
-		return new DocumentRegion(doc, end-numChars, end);
+		return new DocumentRegion(doc, end - numChars, end);
 	}
 
 	public Range asRange() throws BadLocationException {

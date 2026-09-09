@@ -321,7 +321,7 @@
 						<phase>verify</phase>
 						<configuration>
 							<target>
-								<copy file="${project.build.directory}/../../common/html/nightly-generic-snippet-incl-apple-m1.html" tofile="${project.build.directory}/sts4-nightly-${dist.target.major}.html" overwrite="true"/>
+								<copy file="${project.build.directory}/../../common/html/nightly-generic-snippet.html" tofile="${project.build.directory}/sts4-nightly-${dist.target.major}.html" overwrite="true"/>
 
 								<replace file="${project.build.directory}/sts4-nightly-${dist.target.major}.html" token="@QUALIFIER@" value="${unqualifiedVersion}.${p2.qualifier}" summary="yes" />
 								<replace file="${project.build.directory}/sts4-nightly-${dist.target.major}.html" token="@TARGET@" value="${dist.target}" summary="yes" />

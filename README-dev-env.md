@@ -59,4 +59,4 @@ This lets the Eclipse language server extension connect to the locally running l
   https://github.com/spring-projects/spring-tools/actions
 
 - CI builds of the full Spring Tools for Eclipse distribution can be downloaded from here:
-  https://cdn.spring.io/spring-tools/snapshot/STS4/nightly-distributions.html
+  https://cdn.spring.io/spring-tools/snapshot/nightly-distributions.html

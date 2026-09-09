@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-Spring Tools (STS4) is a comprehensive IDE tooling suite for Spring Boot development. It provides extensions for Eclipse IDE, Visual Studio Code, and Eclipse Theia. The core architecture uses the Language Server Protocol (LSP): Java language servers run as separate processes, with thin client integrations for each IDE.
+Spring Tools is a comprehensive IDE tooling suite for Spring Boot development. It provides extensions for Eclipse IDE, Visual Studio Code, and Eclipse Theia. The core architecture uses the Language Server Protocol (LSP): Java language servers run as separate processes, with thin client integrations for each IDE.
 
 ## Directory Structure
 

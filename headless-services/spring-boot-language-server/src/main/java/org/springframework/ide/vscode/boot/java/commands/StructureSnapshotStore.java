@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.ChangeType;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.DiffNode;
@@ -47,6 +49,8 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
  * @author Martin Lippert
  */
 public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess {
+
+	private static final Logger log = LoggerFactory.getLogger(StructureSnapshotStore.class);
 
 	private final StructureViewProvider structureViewProvider;
 	private final StructureBaselineStorage storage;
@@ -112,6 +116,10 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 
 		storage.save(projectName, updated);
 
+		log.info("captured logical structure baseline for project '{}'{}, {} node(s), retaining {} of up to {} snapshot(s)",
+				projectName, commitSha == null ? " (manual, no commit)" : " at commit " + commitSha,
+				snapshot.nodeCount(), updated.size(), config.getStructureBaselineHistorySize());
+
 		return snapshot;
 	}
 
@@ -147,7 +155,12 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	public List<StructureSnapshot> historyOf(IJavaProject project) {
 		// copied on load: what the storage hands back is a plain mutable list, and this one is
 		// cached and handed out to callers
-		return history.computeIfAbsent(project.getElementName(), name -> List.copyOf(storage.load(name)));
+		return history.computeIfAbsent(project.getElementName(), name -> {
+			List<StructureSnapshot> loaded = List.copyOf(storage.load(name));
+			log.debug("loaded {} retained logical structure baseline snapshot(s) from disk for project '{}'",
+					loaded.size(), name);
+			return loaded;
+		});
 	}
 
 	/**
@@ -177,6 +190,9 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 
 		history.remove(projectName);
 		storage.delete(projectName);
+
+		log.info("cleared logical structure baseline history for project '{}' (had a baseline: {})",
+				projectName, hadBaseline);
 
 		return hadBaseline;
 	}
@@ -285,8 +301,13 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 * whatever the user happened to have switched on at the time.
 	 */
 	private StructureSnapshot snapshotNow(IJavaProject project, String commitSha, String commitMessage) {
+		log.debug("building logical structure snapshot for project '{}'", project.getElementName());
 		JsonNodeHandler.Node root = structureViewProvider.createCompleteTree(project);
-		return new StructureSnapshot(Instant.now(), commitSha, commitMessage, StructureViewProvider.toComparableNode(root));
+		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), commitSha, commitMessage,
+				StructureViewProvider.toComparableNode(root));
+		log.debug("built logical structure snapshot for project '{}' with {} node(s)",
+				project.getElementName(), snapshot.nodeCount());
+		return snapshot;
 	}
 
 	/**

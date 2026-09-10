@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -163,9 +164,16 @@ public class GitBaselineTracker {
 		}
 
 		try {
-			projectFinder.all().stream()
+			List<? extends IJavaProject> eligible = projectFinder.all().stream()
 					.filter(project -> indexedProjects.contains(project.getElementName()))
-					.forEach(this::syncBaselineWithGit);
+					.toList();
+
+			if (!eligible.isEmpty()) {
+				log.debug("poll tick: checking {} indexed project(s) for git commits: {}", eligible.size(),
+						eligible.stream().map(IJavaProject::getElementName).toList());
+			}
+
+			eligible.forEach(this::syncBaselineWithGit);
 		} catch (Exception e) {
 			// never let a failing tick kill the poll
 			log.warn("failed to check the open projects for new commits", e);
@@ -191,18 +199,23 @@ public class GitBaselineTracker {
 			synchronized (projectLocks.computeIfAbsent(project.getElementName(), name -> new Object())) {
 				Optional<Repository> repository = repositoryOf(project);
 				if (repository.isEmpty()) {
+					log.trace("project '{}' is not git-backed - nothing to synchronize", project.getElementName());
 					return;
 				}
 
 				ObjectId head = repository.get().resolve("HEAD");
 				if (head == null) {
 					// an "unborn" branch - a repository without any commit to snapshot yet
+					log.debug("project '{}' has a git repository but no commit yet (unborn branch) - nothing to synchronize",
+							project.getElementName());
 					return;
 				}
 
 				String headSha = head.getName();
 				String capturedSha = baselines.capturedCommitShaOf(project).orElse(null);
 				if (headSha.equals(capturedSha)) {
+					log.trace("project '{}' already has a baseline for HEAD ({}) - nothing to do",
+							project.getElementName(), headSha);
 					return;
 				}
 
@@ -216,6 +229,8 @@ public class GitBaselineTracker {
 				}
 
 				String commitMessage = resolveCommitMessage(repository.get(), head);
+				log.debug("HEAD for project '{}' moved to {} ({}) with a clean working tree - capturing a new logical structure baseline",
+						project.getElementName(), headSha, commitMessage);
 				baselines.captureBaseline(project, headSha, commitMessage);
 			}
 		} catch (Exception e) {
@@ -236,9 +251,16 @@ public class GitBaselineTracker {
 			return;
 		}
 
-		projectFinder.all().stream()
+		List<? extends IJavaProject> matched = projectFinder.all().stream()
 				.filter(project -> affectedProjects.contains(project.getElementName()))
-				.forEach(this::syncBaselineWithGit);
+				.toList();
+
+		if (!matched.isEmpty()) {
+			log.debug("index update for {} - synchronizing git baseline for {} matching open project(s)",
+					affectedProjects, matched.size());
+		}
+
+		matched.forEach(this::syncBaselineWithGit);
 	}
 
 	/**
@@ -271,6 +293,7 @@ public class GitBaselineTracker {
 	 * it is open, and they are cached for the lifetime of the server.
 	 */
 	private void closeRepositories() {
+		log.debug("closing {} cached git repository handle(s)", repositoriesByProject.size());
 		repositoriesByProject.values().forEach(repository -> repository.ifPresent(Repository::close));
 		repositoriesByProject.clear();
 	}
@@ -284,8 +307,15 @@ public class GitBaselineTracker {
 			File projectDir = new File(project.getLocationUri());
 			File gitDir = new FileRepositoryBuilder().findGitDir(projectDir).getGitDir();
 
-			return gitDir == null ? Optional.empty() : Optional.of(new FileRepositoryBuilder().setGitDir(gitDir).build());
+			if (gitDir == null) {
+				log.debug("no git repository found for project '{}' at {}", project.getElementName(), projectDir);
+				return Optional.empty();
+			}
+
+			log.debug("discovered git repository for project '{}' at {}", project.getElementName(), gitDir);
+			return Optional.of(new FileRepositoryBuilder().setGitDir(gitDir).build());
 		} catch (Exception e) {
+			log.warn("failed to discover a git repository for project: " + project.getElementName(), e);
 			return Optional.empty();
 		}
 	}

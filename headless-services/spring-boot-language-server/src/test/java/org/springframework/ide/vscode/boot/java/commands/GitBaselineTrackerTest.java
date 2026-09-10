@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.eclipse.jgit.api.Git;
@@ -274,6 +276,27 @@ public class GitBaselineTrackerTest {
 	}
 
 	@Test
+	void concurrentCallsForTheSameProjectDoNotDoubleCaptureTheSameCommit(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		IJavaProject project = projectAt(dir);
+		SlowBaselineAccess baselines = new SlowBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		// simulates the poll and the index-update listener racing to sync the very same project -
+		// e.g. right as its initial indexing completes, see GitBaselineTracker's class doc. Without
+		// serializing per project, both could read "not captured yet" before either capture lands.
+		Runnable sync = () -> tracker.syncBaselineWithGit(project);
+		Thread first = new Thread(sync);
+		Thread second = new Thread(sync);
+		first.start();
+		second.start();
+		first.join();
+		second.join();
+
+		assertThat(baselines.captureCount()).isEqualTo(1);
+	}
+
+	@Test
 	void pollDoesNothingWhenDisabled(@TempDir Path dir) throws Exception {
 		commit(dir, "initial content");
 		IJavaProject project = projectAt(dir);
@@ -420,7 +443,7 @@ public class GitBaselineTrackerTest {
 		assertThat(baselines.captureCount(project)).isEqualTo(1);
 	}
 
-	private static GitBaselineTracker tracker(IJavaProject project, FakeBaselineAccess baselines, boolean gitBaselineEnabled) {
+	private static GitBaselineTracker tracker(IJavaProject project, GitBaselineTracker.BaselineAccess baselines, boolean gitBaselineEnabled) {
 		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
 		doReturn(List.of(project)).when(projectFinder).all();
 
@@ -542,6 +565,45 @@ public class GitBaselineTrackerTest {
 
 		Optional<String> capturedCommitMessageOf(IJavaProject project) {
 			return Optional.ofNullable(commitMessageByProject.get(project.getElementName()));
+		}
+	}
+
+	/**
+	 * Widens the window between "checked, not captured yet" and "captured" with a short sleep, so a
+	 * test can reliably force two concurrent {@link GitBaselineTracker#syncBaselineWithGit} calls for
+	 * the same project to overlap instead of relying on them happening to interleave on their own.
+	 *
+	 * <p>Deliberately not built on {@link FakeBaselineAccess}'s plain {@link HashMap} bookkeeping:
+	 * that's just as unsynchronized as the bug under test, so two genuinely concurrent captures could
+	 * corrupt it and silently under-report - one capture's list entry lost to the other's non-atomic
+	 * {@code computeIfAbsent}, hiding the very race this is meant to catch. The counter and captured
+	 * sha here are both lock-free but individually atomic, so they report exactly what happened.
+	 */
+	private static class SlowBaselineAccess implements GitBaselineTracker.BaselineAccess {
+
+		private final AtomicInteger captureCount = new AtomicInteger();
+		private final AtomicReference<String> capturedSha = new AtomicReference<>();
+
+		@Override
+		public Optional<String> capturedCommitShaOf(IJavaProject project) {
+			return Optional.ofNullable(capturedSha.get());
+		}
+
+		@Override
+		public StructureSnapshot captureBaseline(IJavaProject project, String commitSha, String commitMessage) {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			captureCount.incrementAndGet();
+			capturedSha.set(commitSha);
+			return new StructureSnapshot(Instant.now(), commitSha, commitMessage,
+					new StructureViewProvider.StructureNode("app", project.getElementName(), null, "application", null, null, null, null, List.of()));
+		}
+
+		int captureCount() {
+			return captureCount.get();
 		}
 	}
 

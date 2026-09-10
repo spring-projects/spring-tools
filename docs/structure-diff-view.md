@@ -166,6 +166,22 @@ Discovered `Repository` handles are cached per project for the server's lifetime
 (`repositoriesByProject`) and released via `server.onShutdown` - each one holds pack file handles
 open, so leaving them unclosed would leak file descriptors for the life of the process.
 
+**`syncBaselineWithGit` is serialized per project (`projectLocks`).** Bug once observed in practice:
+the same commit occasionally got two snapshots, most visibly for a project's very first baseline.
+Cause: `syncBaselineWithGit` can run concurrently for the same project from two different threads -
+the poll has its own timer thread, while the index-update listener runs wherever
+`SpringSymbolIndex`'s own worker thread happens to fire `listeners.fire(...)` - and the method's
+"have I already captured this commit?" check (`capturedCommitShaOf`) was not atomic with the capture
+itself (`captureBaseline`). Two overlapping calls could both read "not captured yet" before either
+one's capture updated that state, and both would go on to capture the identical commit. Fixed by
+serializing the whole check-then-capture body per project name; this is exactly the same shape of bug
+as the "poll racing initial indexing" one above, and became more likely to actually manifest once
+that fix landed, since the poll and the index-update listener now tend to consider a fresh project at
+almost the same moment (the listener adds it to `indexedProjects` and immediately tries to sync it,
+right as a poll tick may independently be doing the same). Regression-tested with two real threads
+racing `syncBaselineWithGit` and a deliberately slow, lock-free `BaselineAccess` fake - a fake built
+on a plain `HashMap` would have been just as capable of masking the very race under test.
+
 ## Selecting a historical baseline to compare against
 
 `StructureSnapshotStore.baselineOf(project, snapshotKey)` is keyed by a snapshot's **capture time**

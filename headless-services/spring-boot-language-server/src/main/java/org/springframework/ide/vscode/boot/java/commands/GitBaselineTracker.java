@@ -67,6 +67,13 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
  * once its index has updated at least once; until then, only the index-update listener itself
  * (which by definition fires once indexing genuinely completes) is allowed to capture.
  *
+ * <p>{@link #syncBaselineWithGit} can run concurrently for the same project: the poll runs on its
+ * own timer thread, while the index-update listener runs on {@code SpringSymbolIndex}'s own worker
+ * thread, and both can decide to check a project around the same moment. Its "have I already
+ * captured this commit?" check and the capture itself are therefore serialized per project (see
+ * {@link #projectLocks}) - without that, two concurrent calls could both read "not captured yet"
+ * before either one's capture lands, and both go on to capture the very same commit.
+ *
  * <p>Depends on {@link BaselineAccess} and {@link WorkingTreeStatus} rather than on
  * {@link StructureSnapshotStore} and JGit status directly, so the policy in this class can be
  * tested without the rest of the structure-view machinery.
@@ -103,6 +110,14 @@ public class GitBaselineTracker {
 	 * directly regardless of this set.
 	 */
 	private final Set<String> indexedProjects = ConcurrentHashMap.newKeySet();
+
+	/**
+	 * One lock object per project, created on first use and never removed - see this class'
+	 * description for why {@link #syncBaselineWithGit} needs one at all. Cheap to keep around
+	 * indefinitely: a handful of bytes per project name, the same simple tradeoff already made for
+	 * {@link #repositoriesByProject}.
+	 */
+	private final Map<String, Object> projectLocks = new ConcurrentHashMap<>();
 
 	/**
 	 * Without a {@link SimpleLanguageServer} no poll is started, which is what the tests use to
@@ -162,6 +177,10 @@ public class GitBaselineTracker {
 	 * commit its current baseline (if any) was captured at, and the working tree holds no pending
 	 * source changes - see this class' description for why all three are required. Safe and cheap
 	 * to call redundantly: the common "nothing moved" case costs one small file read.
+	 *
+	 * <p>Serialized per project (see this class' description) so two calls racing for the same
+	 * project - typically the poll and the index-update listener, right as a project's initial
+	 * indexing completes - cannot both capture the same commit.
 	 */
 	public void syncBaselineWithGit(IJavaProject project) {
 		if (!isEnabled()) {
@@ -169,34 +188,36 @@ public class GitBaselineTracker {
 		}
 
 		try {
-			Optional<Repository> repository = repositoryOf(project);
-			if (repository.isEmpty()) {
-				return;
-			}
+			synchronized (projectLocks.computeIfAbsent(project.getElementName(), name -> new Object())) {
+				Optional<Repository> repository = repositoryOf(project);
+				if (repository.isEmpty()) {
+					return;
+				}
 
-			ObjectId head = repository.get().resolve("HEAD");
-			if (head == null) {
-				// an "unborn" branch - a repository without any commit to snapshot yet
-				return;
-			}
+				ObjectId head = repository.get().resolve("HEAD");
+				if (head == null) {
+					// an "unborn" branch - a repository without any commit to snapshot yet
+					return;
+				}
 
-			String headSha = head.getName();
-			String capturedSha = baselines.capturedCommitShaOf(project).orElse(null);
-			if (headSha.equals(capturedSha)) {
-				return;
-			}
+				String headSha = head.getName();
+				String capturedSha = baselines.capturedCommitShaOf(project).orElse(null);
+				if (headSha.equals(capturedSha)) {
+					return;
+				}
 
-			if (!workingTreeStatus.isStructureClean(repository.get(), new File(project.getLocationUri()))) {
-				// snapshotting now would bake the pending changes into the baseline and hide them
-				// from every later diff, so leave any existing baseline alone and wait for the
-				// next commit
-				log.debug("not capturing a logical structure baseline for project '{}' at commit {} - source changes are pending",
-						project.getElementName(), headSha);
-				return;
-			}
+				if (!workingTreeStatus.isStructureClean(repository.get(), new File(project.getLocationUri()))) {
+					// snapshotting now would bake the pending changes into the baseline and hide them
+					// from every later diff, so leave any existing baseline alone and wait for the
+					// next commit
+					log.debug("not capturing a logical structure baseline for project '{}' at commit {} - source changes are pending",
+							project.getElementName(), headSha);
+					return;
+				}
 
-			String commitMessage = resolveCommitMessage(repository.get(), head);
-			baselines.captureBaseline(project, headSha, commitMessage);
+				String commitMessage = resolveCommitMessage(repository.get(), head);
+				baselines.captureBaseline(project, headSha, commitMessage);
+			}
 		} catch (Exception e) {
 			log.warn("failed to synchronize logical structure baseline with git for project: " + project.getElementName(), e);
 		}

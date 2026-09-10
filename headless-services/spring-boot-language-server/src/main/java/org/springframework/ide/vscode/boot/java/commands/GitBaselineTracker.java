@@ -79,9 +79,16 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
  * {@link StructureSnapshotStore} and JGit status directly, so the policy in this class can be
  * tested without the rest of the structure-view machinery.
  *
+ * <p>Implements {@link AutoCloseable} rather than hooking cleanup to the real LSP {@code shutdown}
+ * request: Spring detects and calls {@link #close()} automatically once this bean's application
+ * context closes, which happens on normal server shutdown in production, but also - without this
+ * class ever needing to know it's under test - whenever a test run closes or evicts the context
+ * (the actual LSP {@code shutdown} request is never sent in a unit test, so relying on that alone
+ * would leak the poll thread for as long as the test JVM keeps running).
+ *
  * @author Martin Lippert
  */
-public class GitBaselineTracker {
+public class GitBaselineTracker implements AutoCloseable {
 
 	private static final Logger log = LoggerFactory.getLogger(GitBaselineTracker.class);
 
@@ -121,6 +128,11 @@ public class GitBaselineTracker {
 	private final Map<String, Object> projectLocks = new ConcurrentHashMap<>();
 
 	/**
+	 * The background poll, if one was started - {@code null} otherwise. Stopped by {@link #close()}.
+	 */
+	private final ScheduledExecutorService poll;
+
+	/**
 	 * Without a {@link SimpleLanguageServer} no poll is started, which is what the tests use to
 	 * drive {@link #pollForCommits()} themselves instead of waiting for a timer.
 	 */
@@ -139,14 +151,33 @@ public class GitBaselineTracker {
 		symbolIndex.onUpdate(this::onIndexUpdate);
 
 		if (server != null) {
-			ScheduledExecutorService poll = Executors.newSingleThreadScheduledExecutor(
+			this.poll = Executors.newSingleThreadScheduledExecutor(
 					r -> new Thread(r, "GitBaselineTracker-poll"));
 			// fixed delay rather than fixed rate: a slow working tree scan on a big repository must
 			// not let ticks pile up behind each other
 			poll.scheduleWithFixedDelay(this::pollForCommits, POLL_SECONDS, POLL_SECONDS, TimeUnit.SECONDS);
-			server.onShutdown(poll::shutdownNow);
-			server.onShutdown(this::closeRepositories);
+			log.debug("started the git baseline poll (every {}s)", POLL_SECONDS);
 		}
+		else {
+			this.poll = null;
+			log.debug("no SimpleLanguageServer given - git baseline poll not started");
+		}
+	}
+
+	/**
+	 * Stops the background poll (if one was started) and releases discovered git repository
+	 * handles. Not called directly - Spring detects and invokes this automatically when the bean's
+	 * application context closes, which is what keeps the poll from ever outliving its context:
+	 * in production that's on normal server shutdown, and in tests that's whenever the test
+	 * context cache evicts this context (or, at the latest, when the test JVM itself exits) - never
+	 * requiring this class to know it's under test at all.
+	 */
+	@Override
+	public void close() {
+		if (poll != null) {
+			poll.shutdownNow();
+		}
+		closeRepositories();
 	}
 
 	/**

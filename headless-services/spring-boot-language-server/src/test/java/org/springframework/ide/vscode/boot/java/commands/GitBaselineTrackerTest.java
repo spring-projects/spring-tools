@@ -43,6 +43,7 @@ import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
 /**
  * @author Martin Lippert
@@ -294,6 +295,43 @@ public class GitBaselineTrackerTest {
 		second.join();
 
 		assertThat(baselines.captureCount()).isEqualTo(1);
+	}
+
+	@Test
+	void closeStopsTheBackgroundPollThread(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		IJavaProject project = projectAt(dir);
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		doReturn(List.of(project)).when(projectFinder).all();
+
+		BootJavaConfig config = mock(BootJavaConfig.class);
+		when(config.isStructureGitBaselineEnabled()).thenReturn(true);
+
+		// a non-null server is what makes the constructor start the background poll in the first
+		// place - see GitBaselineTracker's javadoc for why cleanup relies on close() rather than
+		// this mock ever receiving a real onShutdown callback
+		GitBaselineTracker tracker = new GitBaselineTracker(projectFinder, mock(SpringSymbolIndex.class), config,
+				new FakeBaselineAccess(), new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()),
+				mock(SimpleLanguageServer.class));
+
+		assertThat(pollThreadExists()).isTrue();
+
+		tracker.close();
+
+		// shutdownNow() interrupts rather than instantly destroying the thread, so give it a brief,
+		// bounded window to actually terminate rather than asserting immediately
+		long deadline = System.currentTimeMillis() + 2000;
+		while (pollThreadExists() && System.currentTimeMillis() < deadline) {
+			Thread.sleep(20);
+		}
+
+		assertThat(pollThreadExists()).isFalse();
+	}
+
+	private static boolean pollThreadExists() {
+		return Thread.getAllStackTraces().keySet().stream()
+				.anyMatch(t -> t.getName().equals("GitBaselineTracker-poll"));
 	}
 
 	@Test

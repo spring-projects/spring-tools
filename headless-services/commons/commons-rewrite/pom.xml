@@ -110,4 +110,23 @@
 
 	</dependencies>
 
+	<build>
+		<plugins>
+			<!-- Ignore test classes from the nested test-project fixture that
+				MavenIJavaProjectParserTest builds in place: that build leaves compiled
+				classes sitting inside this module's own target/test-classes, and
+				without this exclude, a later (non-clean) run has Surefire pick one up
+				and try to run it as if it belonged to this module. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>test-projects/**</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 </project>

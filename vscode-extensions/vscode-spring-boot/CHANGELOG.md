@@ -1,3 +1,9 @@
+## 2.5.0 PRE-RELEASE
+
+#### all fixes and improvements in detail
+
+* _(Spring Boot)_ reduce logging for document changes [#1982](https://github.com/spring-projects/spring-tools/issues/1982)
+
 ## 2026-09-09 (5.4.0.RELEASE, incl. language servers version 2.4.0)
 
 #### important highlights

@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/spring-projects/sts4.git"
+    "url": "git+https://github.com/spring-projects/spring-tools.git"
   },
   "keywords": [
     "Java",
@@ -24,9 +24,9 @@
   "author": "Kris De Volder <kdevolder@pivotal.io>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/spring-projects/sts4/issues"
+    "url": "https://github.com/spring-projects/spring-tools/issues"
   },
-  "homepage": "https://github.com/spring-projects/sts4/nodejs-packages/jvm-launch-utils/README.md",
+  "homepage": "https://github.com/spring-projects/spring-tools/nodejs-packages/jvm-launch-utils/README.md",
   "devDependencies": {
     "@types/node": "^22.0.0",
     "ts-node": "^10.4.0",

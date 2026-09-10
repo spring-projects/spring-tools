@@ -157,9 +157,15 @@ public class StereotypeInformationTest {
 
 		String controllerUri = directory.toPath().resolve("src/main/java/example/application/SampleController.java").toUri().toString();
 		String originalContent = FileUtils.readFileToString(new File(new URI(controllerUri)), Charset.defaultCharset());
-		String newContent = originalContent.replace(
-				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}",
-				"\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}\n\n\t@GetMapping(\"/goodbye\")\n\tpublic String sayGoodbye() {\n\t\treturn \"goodbye!!!\";\n\t}");
+
+		// written with a bare \n, translated to whatever the checked-out file actually uses (e.g.
+		// \r\n on Windows) - matters both for the match itself and to avoid leaving the file with a
+		// mix of both line endings, which throws off content-hash offset accounting
+		String lineSeparator = originalContent.contains("\r\n") ? "\r\n" : "\n";
+		String from = "\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}".replace("\n", lineSeparator);
+		String to = ("\tpublic String sayHello() {\n\t\treturn \"hello!!!\";\n\t}\n\n\t@GetMapping(\"/goodbye\")\n\tpublic String sayGoodbye() {\n\t\treturn \"goodbye!!!\";\n\t}")
+				.replace("\n", lineSeparator);
+		String newContent = originalContent.replace(from, to);
 		assertNotEquals(originalContent, newContent, "test setup problem: replacement did not match the file content");
 
 		CompletableFuture<Void> updateFuture = indexer.updateDocument(controllerUri, newContent, "test triggered");

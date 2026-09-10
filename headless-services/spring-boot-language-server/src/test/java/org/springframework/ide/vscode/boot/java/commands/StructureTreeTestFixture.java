@@ -72,11 +72,21 @@ class StructureTreeTestFixture {
 	 * Replaces text in a source file of the project and waits for the re-index, failing loudly if
 	 * the text wasn't there - a silently unmatched replacement makes a test pass for the wrong
 	 * reason.
+	 *
+	 * <p>{@code from}/{@code to} are always written with a bare {@code \n}, but the checked-out
+	 * file may use {@code \r\n} (e.g. on Windows, depending on {@code core.autocrlf}). Translating
+	 * the patterns to whatever the file actually uses - rather than normalizing the file's own
+	 * content - keeps the match working either way, and just as importantly keeps a {@code to} that
+	 * inserts a new line from leaving a document with a mix of both line endings, which the AST
+	 * parser accepts but throws content-hash offset accounting off enough to make the edit silently
+	 * invisible to the diff.
 	 */
 	void edit(String relativeFile, String from, String to) throws Exception {
 		String uri = new File(projectDirectory, relativeFile).toURI().toString();
 		String original = FileUtils.readFileToString(new File(new URI(uri)), Charset.defaultCharset());
-		String changed = original.replace(from, to);
+
+		String lineSeparator = original.contains("\r\n") ? "\r\n" : "\n";
+		String changed = original.replace(from.replace("\n", lineSeparator), to.replace("\n", lineSeparator));
 
 		if (original.equals(changed)) {
 			throw new IllegalStateException("test setup problem: replacement did not match in " + relativeFile);

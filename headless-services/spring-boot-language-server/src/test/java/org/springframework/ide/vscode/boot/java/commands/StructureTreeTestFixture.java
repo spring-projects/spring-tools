@@ -13,9 +13,12 @@ package org.springframework.ide.vscode.boot.java.commands;
 import java.io.File;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.lsp4j.ExecuteCommandParams;
@@ -95,40 +98,71 @@ class StructureTreeTestFixture {
 		indexer.updateDocument(uri, changed, "test triggered").get(15, TimeUnit.SECONDS);
 	}
 
-	/** The first node of the given kind whose label contains the given text, searched depth first. */
+	/**
+	 * The one node of the given kind whose label contains the given text, searched depth first.
+	 *
+	 * <p>Fails loudly if more than one node matches, rather than silently returning whichever one
+	 * traversal happens to reach first - a {@code labelPart} that isn't actually unique (e.g.
+	 * "EventListener" also matching "EventListenerOnBean") has previously caused a test to find the
+	 * wrong node depending on tree/traversal order, which can differ between platforms (e.g. file
+	 * system directory enumeration order affects the order nodes get indexed and added in).
+	 */
 	static Node findNode(List<Node> roots, String kind, String labelPart) {
-		for (Node root : roots) {
-			Node found = findNodeOrNull(root, kind, labelPart);
-			if (found != null) {
-				return found;
-			}
-		}
-		throw new AssertionError("no " + kind + " node with a label containing '" + labelPart + "' in the structure tree");
+		return findNode(roots, kind, labelPart, label -> label.contains(labelPart), "containing");
 	}
 
 	/** Same, but only below the given node - the tree usually holds several similar members. */
 	static Node findNode(Node within, String kind, String labelPart) {
-		Node found = findNodeOrNull(within, kind, labelPart);
-		if (found == null) {
-			throw new AssertionError("no " + kind + " node with a label containing '" + labelPart + "' below "
-					+ within.getAttribute(JsonNodeHandler.TEXT));
-		}
-		return found;
+		return findNode(within, kind, labelPart, label -> label.contains(labelPart), "containing");
 	}
 
-	private static Node findNodeOrNull(Node node, String kind, String labelPart) {
+	/**
+	 * Same as {@link #findNode(List, String, String)}, but requires the label to <em>end with</em>
+	 * the given text rather than merely contain it.
+	 *
+	 * <p>Needed for a type whose simple name is a prefix of a sibling's (e.g.
+	 * "CustomEventPublisher" is a prefix of "CustomEventPublisherWithAdditionalElements") - no
+	 * amount of spelling out more of the label helps there, since a prefix of a prefix is still a
+	 * prefix and so still matches both. A simple class name, on the other hand, is never a suffix
+	 * of a genuinely different sibling's.
+	 */
+	static Node findNodeEndingWith(List<Node> roots, String kind, String labelSuffix) {
+		return findNode(roots, kind, labelSuffix, label -> label.endsWith(labelSuffix), "ending with");
+	}
+
+	private static Node findNode(List<Node> roots, String kind, String labelPart, Predicate<String> labelMatches, String relation) {
+		List<Node> matches = new ArrayList<>();
+		roots.forEach(root -> collectMatches(root, kind, labelMatches, matches));
+		return theOneMatch(matches, kind, labelPart, relation, "in the structure tree");
+	}
+
+	private static Node findNode(Node within, String kind, String labelPart, Predicate<String> labelMatches, String relation) {
+		List<Node> matches = new ArrayList<>();
+		collectMatches(within, kind, labelMatches, matches);
+		return theOneMatch(matches, kind, labelPart, relation, "below " + within.getAttribute(JsonNodeHandler.TEXT));
+	}
+
+	private static Node theOneMatch(List<Node> matches, String kind, String labelPart, String relation, String scope) {
+		if (matches.isEmpty()) {
+			throw new AssertionError("no " + kind + " node with a label " + relation + " '" + labelPart + "' " + scope);
+		}
+		if (matches.size() > 1) {
+			String labels = matches.stream()
+					.map(node -> String.valueOf(node.getAttribute(JsonNodeHandler.TEXT)))
+					.collect(Collectors.joining("', '", "'", "'"));
+			throw new AssertionError(matches.size() + " " + kind + " nodes have a label " + relation + " '" + labelPart
+					+ "' " + scope + " - use a more specific search to tell them apart: " + labels);
+		}
+		return matches.get(0);
+	}
+
+	private static void collectMatches(Node node, String kind, Predicate<String> labelMatches, List<Node> matches) {
 		Object label = node.getAttribute(JsonNodeHandler.TEXT);
-		if (kind.equals(node.getAttribute(JsonNodeHandler.KIND)) && label != null && label.toString().contains(labelPart)) {
-			return node;
+		if (kind.equals(node.getAttribute(JsonNodeHandler.KIND)) && label != null && labelMatches.test(label.toString())) {
+			matches.add(node);
 		}
 
-		for (Node child : node.getChildren()) {
-			Node found = findNodeOrNull(child, kind, labelPart);
-			if (found != null) {
-				return found;
-			}
-		}
-		return null;
+		node.getChildren().forEach(child -> collectMatches(child, kind, labelMatches, matches));
 	}
 
 }

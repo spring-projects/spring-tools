@@ -71,6 +71,27 @@ public class AsciiStructureRendererTest {
 				""");
 	}
 
+	@Test
+	void rendersAPlainTreeWithNoDiffMarkers() {
+		StructureViewProvider.StructureNode findAll = node("findAll()", List.of());
+		StructureViewProvider.StructureNode ownerController = node("OwnerController", List.of(findAll));
+		StructureViewProvider.StructureNode springData = node("Spring Data", List.of());
+		StructureViewProvider.StructureNode root = node("spring-petclinic", List.of(ownerController, springData));
+
+		String rendered = AsciiStructureRenderer.render(root);
+
+		assertThat(rendered).isEqualTo("""
+				spring-petclinic
+				├── OwnerController
+				│   └── findAll()
+				└── Spring Data
+				""");
+	}
+
+	private static StructureViewProvider.StructureNode node(String text, List<StructureViewProvider.StructureNode> children) {
+		return new StructureViewProvider.StructureNode(null, text, null, null, null, null, null, null, children);
+	}
+
 	private static StructureTreeDiff sampleDiff() {
 		DiffNode findAll = new DiffNode("id-findAll", "findAll()", "method", ChangeType.ADDED, List.of());
 		DiffNode ownerRestController = new DiffNode("id-OwnerRestController", "OwnerRestController", "type", ChangeType.ADDED, List.of(findAll));

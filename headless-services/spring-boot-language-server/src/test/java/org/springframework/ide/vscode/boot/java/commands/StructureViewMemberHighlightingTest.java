@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.ide.vscode.boot.java.commands.StructureTreeTestFixture.findNode;
+import static org.springframework.ide.vscode.boot.java.commands.StructureTreeTestFixture.findNodeEndingWith;
 
 import java.io.File;
 import java.net.URI;
@@ -83,8 +84,10 @@ public class StructureViewMemberHighlightingTest {
 				"System.out.println(\"Event received via listener implementation: \" + event);",
 				"System.out.println(\"changed: \" + event);");
 
-		// scoped to the edited class: the project holds several listeners and publishers
-		Node listenerClass = findNode(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, "EventListenerPerInterface");
+		// scoped to the edited class: the project also has an EventListenerPerInterfaceAndBeanMethod
+		// (a plain "contains" search can't tell that apart from this one no matter how much of the
+		// name is spelled out) - see findNodeEndingWith
+		Node listenerClass = findNodeEndingWith(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, ".EventListenerPerInterface");
 
 		assertEquals("modified", findNode(listenerClass, JsonNodeHandler.KIND_MEMBER, "listens on").getAttribute(JsonNodeHandler.CHANGE));
 		assertEquals("containsChanges", listenerClass.getAttribute(JsonNodeHandler.CHANGE),
@@ -100,7 +103,8 @@ public class StructureViewMemberHighlightingTest {
 				"\t\tthis.publisher.publishEvent(new CustomEvent());",
 				"\t\tSystem.out.println(\"about to publish\");\n\t\tthis.publisher.publishEvent(new CustomEvent());");
 
-		Node publisherClass = findNode(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, ".CustomEventPublisher");
+		// the project also has a CustomEventPublisherWithAdditionalElements - see findNodeEndingWith
+		Node publisherClass = findNodeEndingWith(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, ".CustomEventPublisher");
 
 		assertEquals("modified", findNode(publisherClass, JsonNodeHandler.KIND_MEMBER, "publishes").getAttribute(JsonNodeHandler.CHANGE));
 		assertEquals("containsChanges", publisherClass.getAttribute(JsonNodeHandler.CHANGE),
@@ -116,7 +120,8 @@ public class StructureViewMemberHighlightingTest {
 				"public class CustomEventPublisher {",
 				"public class CustomEventPublisher {\n\n\tprivate int counter;\n");
 
-		assertEquals("modified", findNode(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, ".CustomEventPublisher").getAttribute(JsonNodeHandler.CHANGE));
+		// the project also has a CustomEventPublisherWithAdditionalElements - see findNodeEndingWith
+		assertEquals("modified", findNodeEndingWith(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, ".CustomEventPublisher").getAttribute(JsonNodeHandler.CHANGE));
 	}
 
 	private void captureBaseline() throws Exception {

@@ -16,6 +16,7 @@ import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.Cha
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.DiffNode;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.DiffStats;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.StructureTreeDiff;
+import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
 
 /**
  * Renders a {@link StructureTreeDiff} as an ascii-art tree with +/-/~ markers for added, removed
@@ -66,6 +67,32 @@ public class AsciiStructureRenderer {
 
 			out.append(indent).append(branch).append(markerFor(child.change())).append(" ").append(child.label()).append("\n");
 			renderChildren(child.children(), childIndent, out, includeUnchanged);
+		}
+	}
+
+	/**
+	 * Renders a structure tree as plain ascii art, with no diff markers - for a freshly captured
+	 * baseline, which by definition has nothing to compare against yet.
+	 *
+	 * <p>Not wired into any command yet - kept here ready for a future caller (e.g. printing a
+	 * freshly captured baseline to the console) rather than invoked automatically.
+	 */
+	public static String render(StructureNode root) {
+		StringBuilder out = new StringBuilder();
+		out.append(root.text()).append("\n");
+		renderChildren(root.children(), "", out);
+		return out.toString();
+	}
+
+	private static void renderChildren(List<StructureNode> children, String indent, StringBuilder out) {
+		for (int i = 0; i < children.size(); i++) {
+			StructureNode child = children.get(i);
+			boolean last = i == children.size() - 1;
+			String branch = last ? "└── " : "├── ";
+			String childIndent = indent + (last ? "    " : "│   ");
+
+			out.append(indent).append(branch).append(child.text()).append("\n");
+			renderChildren(child.children(), childIndent, out);
 		}
 	}
 

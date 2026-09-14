@@ -2,7 +2,10 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ [structure view] showing diff viewer for new files causes error [#1990](https://github.com/spring-projects/spring-tools/issues/1990)
+* _(Spring Boot)_ [structure view] make name of stored baseline snapshots file more specific [#1989](https://github.com/spring-projects/spring-tools/issues/1989)
 * _(Spring Boot)_ reduce logging for document changes [#1982](https://github.com/spring-projects/spring-tools/issues/1982)
+* _(Spring Boot)_ visualize changes in the logical structure view [#1974](https://github.com/spring-projects/spring-tools/issues/1974)
 
 ## 2026-09-09 (5.4.0.RELEASE, incl. language servers version 2.4.0)
 

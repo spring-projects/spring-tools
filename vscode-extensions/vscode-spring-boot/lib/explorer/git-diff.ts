@@ -1,5 +1,5 @@
 import { basename } from "path";
-import { commands, extensions, Range, Uri, window } from "vscode";
+import { commands, extensions, Range, TextDocumentShowOptions, Uri, window, workspace } from "vscode";
 
 /**
  * The slice of the built-in Git extension's API that showing changes needs. Declared here instead
@@ -21,7 +21,14 @@ interface GitExtension {
  * Shows the working tree version of the given file next to its last committed version, scrolled to
  * the given range - the same diff editor the SCM view opens for a modified file.
  *
- * Note this diffs against `HEAD`, not against the commit a structure baseline was captured at.
+ * <p>A file that has no version at `HEAD` at all - brand new, never committed, whether or not it
+ * has been `git add`ed - has nothing to diff against: `git show HEAD:path` fails outright for a
+ * path that never existed at that ref, it does not resolve to empty content. VS Code's own SCM view
+ * recognizes exactly this case (a file whose status has no "original" side) and does not open a
+ * diff editor for it either - it just opens the file normally. This does the same, rather than
+ * surfacing that git failure as a broken or empty diff editor.
+ *
+ * <p>Note this diffs against `HEAD`, not against the commit a structure baseline was captured at.
  * Those are the same as long as baselines follow the git history (which they do by default, see
  * `GitBaselineTracker`), and differ only for a baseline pinned manually mid-branch.
  */
@@ -38,13 +45,28 @@ export async function showChangesAgainstHead(uri: Uri, selection?: Range): Promi
         return;
     }
 
-    // a file that isn't committed yet simply has empty contents at HEAD, which renders as an
-    // all-added diff - the same as what the SCM view shows for it
-    await commands.executeCommand("vscode.diff",
-        git.toGitUri(uri, "HEAD"),
-        uri,
-        `${basename(uri.fsPath)} (Working Tree)`,
-        { selection });
+    const headUri = git.toGitUri(uri, "HEAD");
+
+    if (await hasContentAt(headUri)) {
+        await commands.executeCommand("vscode.diff", headUri, uri, `${basename(uri.fsPath)} (Working Tree)`, { selection });
+    } else {
+        await commands.executeCommand("vscode.open", uri, { selection } satisfies TextDocumentShowOptions);
+    }
+}
+
+/**
+ * Whether the git extension's own content provider can resolve anything for the given `git:` URI -
+ * false for a file with no version at all at the ref it names, which it reports by rejecting
+ * (mirroring `git show`'s own exit code for a path that never existed at that ref) rather than
+ * resolving to an empty document.
+ */
+async function hasContentAt(gitUri: Uri): Promise<boolean> {
+    try {
+        await workspace.openTextDocument(gitUri);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 async function gitApi(): Promise<GitApi | undefined> {

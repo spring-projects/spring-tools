@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -218,6 +219,7 @@ public class StructureSnapshotStoreTest {
 	private static IJavaProject project() {
 		IJavaProject project = mock(IJavaProject.class);
 		when(project.getElementName()).thenReturn("test-project");
+		when(project.getLocationUri()).thenReturn(URI.create("file:///projects/test-project"));
 		return project;
 	}
 

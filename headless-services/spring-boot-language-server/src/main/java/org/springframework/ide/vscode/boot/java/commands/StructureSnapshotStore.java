@@ -114,7 +114,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 			history.put(projectName, List.copyOf(updated));
 		}
 
-		storage.save(projectName, updated);
+		storage.save(project, updated);
 
 		log.info("captured logical structure baseline for project '{}'{}, {} node(s), retaining {} of up to {} snapshot(s)",
 				projectName, commitSha == null ? " (manual, no commit)" : " at commit " + commitSha,
@@ -156,7 +156,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		// copied on load: what the storage hands back is a plain mutable list, and this one is
 		// cached and handed out to callers
 		return history.computeIfAbsent(project.getElementName(), name -> {
-			List<StructureSnapshot> loaded = List.copyOf(storage.load(name));
+			List<StructureSnapshot> loaded = List.copyOf(storage.load(project));
 			log.debug("loaded {} retained logical structure baseline snapshot(s) from disk for project '{}'",
 					loaded.size(), name);
 			return loaded;
@@ -189,7 +189,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		boolean hadBaseline = baselineOf(project) != null;
 
 		history.remove(projectName);
-		storage.delete(projectName);
+		storage.delete(project);
 
 		log.info("cleared logical structure baseline history for project '{}' (had a baseline: {})",
 				projectName, hadBaseline);

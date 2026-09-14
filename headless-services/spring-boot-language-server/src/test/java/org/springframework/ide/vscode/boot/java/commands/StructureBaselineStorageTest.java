@@ -12,9 +12,12 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -23,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 /**
  * @author Martin Lippert
@@ -32,14 +36,15 @@ public class StructureBaselineStorageTest {
 	@Test
 	void roundTripsAHistory(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject project = project("my-project", "file:///projects/my-project");
 		StructureSnapshot newest = new StructureSnapshot(Instant.parse("2026-01-02T00:00:00Z"), "def456", "second commit",
 				new StructureNode("app", "app", "icon", "application", "hover", null, null, null, List.of(
 						new StructureNode("app/type:A", "A", null, "type", null, null, null, null, List.of()))));
 		StructureSnapshot older = new StructureSnapshot(Instant.parse("2026-01-01T00:00:00Z"), "abc123", "first commit",
 				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
-		storage.save("my-project", List.of(newest, older));
-		List<StructureSnapshot> loaded = storage.load("my-project");
+		storage.save(project, List.of(newest, older));
+		List<StructureSnapshot> loaded = storage.load(project);
 
 		assertThat(loaded).hasSize(2);
 		assertThat(loaded.get(0).commitSha()).isEqualTo("def456");
@@ -54,12 +59,13 @@ public class StructureBaselineStorageTest {
 	@Test
 	void roundTripsANullCommitShaAndMessage(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject project = project("my-project", "file:///projects/my-project");
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null, null,
 				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
-		storage.save("my-project", List.of(snapshot));
+		storage.save(project, List.of(snapshot));
 
-		List<StructureSnapshot> loaded = storage.load("my-project");
+		List<StructureSnapshot> loaded = storage.load(project);
 		assertThat(loaded.get(0).commitSha()).isNull();
 		assertThat(loaded.get(0).commitMessage()).isNull();
 	}
@@ -68,63 +74,105 @@ public class StructureBaselineStorageTest {
 	void loadingAProjectThatWasNeverSavedReturnsAnEmptyList(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
 
-		assertThat(storage.load("never-saved")).isEmpty();
+		assertThat(storage.load(project("never-saved", "file:///projects/never-saved"))).isEmpty();
+	}
+
+	@Test
+	void twoProjectsWithTheSameNameAtDifferentLocationsDoNotShareAHistory(@TempDir Path dir) {
+		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject atHome = project("demo", "file:///home/demo");
+		IJavaProject atWork = project("demo", "file:///work/demo");
+
+		StructureSnapshot homeSnapshot = new StructureSnapshot(Instant.now(), "home-sha", "home commit",
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
+		StructureSnapshot workSnapshot = new StructureSnapshot(Instant.now(), "work-sha", "work commit",
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
+
+		storage.save(atHome, List.of(homeSnapshot));
+		storage.save(atWork, List.of(workSnapshot));
+
+		assertThat(storage.load(atHome)).extracting(StructureSnapshot::commitSha).containsExactly("home-sha");
+		assertThat(storage.load(atWork)).extracting(StructureSnapshot::commitSha).containsExactly("work-sha");
 	}
 
 	@Test
 	void corruptFileIsDiscardedRatherThanThrowing(@TempDir Path dir) throws Exception {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject project = project("my-project", "file:///projects/my-project");
 
-		File file = new File(dir.toFile(), "my-project.json");
-		try (FileWriter writer = new FileWriter(file)) {
+		storage.save(project, List.of(new StructureSnapshot(Instant.now(), null, null,
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()))));
+
+		try (FileWriter writer = new FileWriter(onlyFileIn(dir))) {
 			writer.write("{ not valid json ");
 		}
 
-		assertThat(storage.load("my-project")).isEmpty();
+		assertThat(storage.load(project)).isEmpty();
 	}
 
 	@Test
 	void schemaVersionMismatchIsDiscardedRatherThanThrowing(@TempDir Path dir) throws Exception {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject project = project("my-project", "file:///projects/my-project");
 
-		File file = new File(dir.toFile(), "my-project.json");
-		try (FileWriter writer = new FileWriter(file)) {
+		storage.save(project, List.of(new StructureSnapshot(Instant.now(), null, null,
+				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()))));
+
+		try (FileWriter writer = new FileWriter(onlyFileIn(dir))) {
 			writer.write("{ \"schemaVersion\": 999999, \"history\": [ { \"capturedAt\": \"2026-01-01T00:00:00Z\", \"root\": { \"text\": \"app\" } } ] }");
 		}
 
-		assertThat(storage.load("my-project")).isEmpty();
+		assertThat(storage.load(project)).isEmpty();
 	}
 
 	@Test
 	void deleteRemovesAPersistedBaseline(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject project = project("my-project", "file:///projects/my-project");
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null, null,
 				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
-		storage.save("my-project", List.of(snapshot));
-		assertThat(storage.load("my-project")).isNotEmpty();
+		storage.save(project, List.of(snapshot));
+		assertThat(storage.load(project)).isNotEmpty();
 
-		storage.delete("my-project");
+		storage.delete(project);
 
-		assertThat(storage.load("my-project")).isEmpty();
+		assertThat(storage.load(project)).isEmpty();
 	}
 
 	@Test
 	void deletingAProjectThatWasNeverSavedIsANoOp(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject project = project("never-saved", "file:///projects/never-saved");
 
-		storage.delete("never-saved");
+		storage.delete(project);
 
-		assertThat(storage.load("never-saved")).isEmpty();
+		assertThat(storage.load(project)).isEmpty();
 	}
 
 	@Test
 	void rejectsProjectNamesThatWouldEscapeTheStorageDirectory(@TempDir Path dir) {
 		StructureBaselineStorage storage = new StructureBaselineStorage(dir.toFile());
+		IJavaProject project = project("../escape", "file:///projects/escape");
 		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), null, null,
 				new StructureNode("app", "app", null, "application", null, null, null, null, List.of()));
 
-		assertThrows(IllegalArgumentException.class, () -> storage.save("../escape", List.of(snapshot)));
+		assertThrows(IllegalArgumentException.class, () -> storage.save(project, List.of(snapshot)));
+	}
+
+	private static IJavaProject project(String name, String location) {
+		IJavaProject project = mock(IJavaProject.class);
+		when(project.getElementName()).thenReturn(name);
+		when(project.getLocationUri()).thenReturn(URI.create(location));
+		return project;
+	}
+
+	/** The one file {@link StructureBaselineStorage} just wrote, so a test can corrupt it directly
+	 * without needing to know (or duplicate) the storage's own file naming scheme. */
+	private static File onlyFileIn(Path dir) {
+		File[] files = dir.toFile().listFiles();
+		assertThat(files).hasSize(1);
+		return files[0];
 	}
 
 }

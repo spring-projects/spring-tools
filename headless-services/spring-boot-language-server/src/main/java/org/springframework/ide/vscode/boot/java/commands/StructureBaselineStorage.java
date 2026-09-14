@@ -19,9 +19,11 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.List;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -34,8 +36,17 @@ import com.google.gson.stream.JsonWriter;
 /**
  * Persists each project's structure baseline history to disk, one file per project, so it survives
  * a language server restart. Mirrors the conventions of the on-disk symbol cache
- * ({@code boot.index.cache.IndexCacheOnDiscDeltaBased}): a directory under {@code ~/.sts4}, keyed
- * purely by project name, project names rejected outright if they'd escape that directory.
+ * ({@code boot.index.cache.IndexCacheOnDiscDeltaBased}): a directory under {@code ~/.sts4}.
+ *
+ * <p>The file name is the project name plus a short hash of its location URI, not the project name
+ * alone - project names are not unique across a whole machine, only within whatever single
+ * workspace happens to have them open at the time, so two unrelated projects that both happen to be
+ * called (say) "demo" would otherwise silently share - and corrupt - each other's baseline history
+ * the moment either one is opened on its own in a later session. The hash only has to disambiguate
+ * a handful of same-named projects on one machine, so a short, truncated one is plenty; it is not a
+ * security boundary, just a good-enough tiebreaker. Changing this naming scheme itself orphans
+ * previously-persisted files (they simply stop being found), which is fine for the same reason a
+ * {@link #SCHEMA_VERSION} bump is: a baseline is cheap to re-capture and never precious data.
  *
  * <p>Never throws on a missing, corrupt, or otherwise unreadable file - callers get an empty
  * history as if none had ever been captured, and the language server keeps running.
@@ -95,12 +106,12 @@ public class StructureBaselineStorage {
 	 * Persists the project's whole retained baseline history (newest first). The caller is
 	 * responsible for capping its size - this class stores exactly what it is given.
 	 */
-	public void save(String projectName, List<StructureSnapshot> history) {
-		File file = fileFor(projectName);
+	public void save(IJavaProject project, List<StructureSnapshot> history) {
+		File file = fileFor(project);
 		try (Writer writer = Files.newBufferedWriter(file.toPath(), StandardCharsets.UTF_8)) {
 			gson.toJson(new PersistedBaseline(SCHEMA_VERSION, history), writer);
 		} catch (IOException | JsonIOException e) {
-			log.warn("failed to persist structure baseline history for project: " + projectName, e);
+			log.warn("failed to persist structure baseline history for project: " + project.getElementName(), e);
 		}
 	}
 
@@ -109,8 +120,8 @@ public class StructureBaselineStorage {
 	 *         there is none, or it couldn't be read (missing file, corrupt content, or a schema
 	 *         version mismatch)
 	 */
-	public List<StructureSnapshot> load(String projectName) {
-		File file = fileFor(projectName);
+	public List<StructureSnapshot> load(IJavaProject project) {
+		File file = fileFor(project);
 		if (!file.isFile()) {
 			return List.of();
 		}
@@ -119,13 +130,13 @@ public class StructureBaselineStorage {
 			PersistedBaseline persisted = gson.fromJson(reader, PersistedBaseline.class);
 
 			if (persisted == null || persisted.schemaVersion() != SCHEMA_VERSION || persisted.history() == null) {
-				log.info("discarding structure baseline history on disk for project '{}' - schema version mismatch or empty", projectName);
+				log.info("discarding structure baseline history on disk for project '{}' - schema version mismatch or empty", project.getElementName());
 				return List.of();
 			}
 
 			return persisted.history();
 		} catch (IOException | JsonSyntaxException e) {
-			log.warn("failed to read persisted structure baseline history for project: " + projectName, e);
+			log.warn("failed to read persisted structure baseline history for project: " + project.getElementName(), e);
 			return List.of();
 		}
 	}
@@ -134,18 +145,26 @@ public class StructureBaselineStorage {
 	 * Removes the persisted baseline for the project, if any. A no-op (not an error) if there is
 	 * none.
 	 */
-	public void delete(String projectName) {
-		File file = fileFor(projectName);
+	public void delete(IJavaProject project) {
+		File file = fileFor(project);
 		if (file.isFile() && !file.delete()) {
-			log.warn("failed to delete persisted structure baseline for project: " + projectName);
+			log.warn("failed to delete persisted structure baseline for project: " + project.getElementName());
 		}
 	}
 
-	private File fileFor(String projectName) {
+	/**
+	 * The project name alone would be ambiguous (see this class' description), so the file name is
+	 * the name plus a short hash of the project's location URI - stable across restarts (the same
+	 * project, opened again, resolves to the same file) while still distinguishing two same-named
+	 * projects living at different locations.
+	 */
+	private File fileFor(IJavaProject project) {
+		String projectName = project.getElementName();
 		if (projectName == null || projectName.indexOf('/') >= 0 || projectName.indexOf('\\') >= 0) {
 			throw new IllegalArgumentException("invalid project name for structure baseline storage: " + projectName);
 		}
-		return new File(directory, projectName + ".json");
+		String locationHash = DigestUtils.md5Hex(project.getLocationUri().normalize().toString()).substring(0, 12);
+		return new File(directory, projectName + "-" + locationHash + ".json");
 	}
 
 	private static record PersistedBaseline(int schemaVersion, List<StructureSnapshot> history) {}

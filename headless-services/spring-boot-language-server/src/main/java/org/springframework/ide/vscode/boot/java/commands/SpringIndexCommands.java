@@ -45,17 +45,15 @@ public class SpringIndexCommands {
 
 	private final StructureViewProvider structureViewProvider;
 	private final StructureSnapshotStore structureSnapshotStore;
-	private final GitBaselineTracker gitBaselineTracker;
 
 	private final Executor messageWorkerThreadPool;
 
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
 			JavaProjectFinder projectFinder, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore, GitBaselineTracker gitBaselineTracker) {
+			StructureSnapshotStore structureSnapshotStore) {
 
 		this.structureViewProvider = structureViewProvider;
 		this.structureSnapshotStore = structureSnapshotStore;
-		this.gitBaselineTracker = gitBaselineTracker;
 		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
 
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
@@ -120,13 +118,15 @@ public class SpringIndexCommands {
 	 * Builds the structure tree of a project and, if a baseline was captured for that project,
 	 * marks the nodes that changed since then, so clients can highlight them in their tree.
 	 *
-	 * <p>Before building the tree, gives the project a baseline for free if it's git-backed and
-	 * doesn't have one yet (or its git HEAD moved since its last baseline) - see
-	 * {@link GitBaselineTracker#syncBaselineWithGit}.
+	 * <p>Deliberately does not capture a baseline itself, not even for a git-backed project without
+	 * one yet: a structure request arrives at an arbitrary moment, in particular right after an
+	 * external change to the working tree (a revert, a stash, a branch switch) that git already
+	 * reports as clean while the index still holds the pre-change content. Capturing then records a
+	 * baseline that describes neither state, and since it is recorded against the current commit,
+	 * nothing revisits it. {@link GitBaselineTracker} instead captures only from its own poll and
+	 * from index updates, both of which know the index is settled.
 	 */
 	private Node createAnnotatedTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, StructureCommandArgs args) {
-		gitBaselineTracker.syncBaselineWithGit(project);
-
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
 				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
 

@@ -99,7 +99,16 @@ public class GitBaselineTracker implements AutoCloseable {
 	 */
 	private static final long POLL_SECONDS = 5;
 
+	/**
+	 * How long a poll tick waits for the index to settle before giving up on that tick - see
+	 * {@link #pollForCommits()}. Generous, because the point is to wait out indexing that is
+	 * genuinely in progress; a tick that hits the timeout simply retries {@link #POLL_SECONDS}
+	 * later.
+	 */
+	private static final long INDEX_DRAIN_TIMEOUT_SECONDS = 30;
+
 	private final JavaProjectFinder projectFinder;
+	private final SpringSymbolIndex symbolIndex;
 	private final BootJavaConfig config;
 	private final BaselineAccess baselines;
 	private final WorkingTreeStatus workingTreeStatus;
@@ -144,6 +153,7 @@ public class GitBaselineTracker implements AutoCloseable {
 	public GitBaselineTracker(JavaProjectFinder projectFinder, SpringSymbolIndex symbolIndex, BootJavaConfig config,
 			BaselineAccess baselines, WorkingTreeStatus workingTreeStatus, SimpleLanguageServer server) {
 		this.projectFinder = projectFinder;
+		this.symbolIndex = symbolIndex;
 		this.config = config;
 		this.baselines = baselines;
 		this.workingTreeStatus = workingTreeStatus;
@@ -188,6 +198,22 @@ public class GitBaselineTracker implements AutoCloseable {
 	 * built for it right now - see this class' description for why. Its first baseline is left to
 	 * the index-update listener, which fires exactly once its indexing genuinely completes; every
 	 * later commit is then fair game for the poll, same as before.
+	 *
+	 * <p>Waits for the index to finish whatever it has queued before looking at any project. A tick
+	 * lands at an arbitrary moment, and the two sides of the capture decision read different
+	 * sources: whether to capture is answered from disk (git status), but what gets captured comes
+	 * from the in-memory index, which lags disk while a re-index is still queued. Right after a
+	 * revert, stash or branch switch, git already reports clean while the index still holds the
+	 * pre-change content - capturing in that window records a tree that matches neither state, and
+	 * because it is recorded against the current commit, the correct capture that the finishing
+	 * index update would otherwise trigger is skipped as "already captured". Draining the queue
+	 * first closes that window: by the time the decision is made, the index reflects the same disk
+	 * state git was asked about.
+	 *
+	 * <p>The wait must stay here rather than moving into {@link #syncBaselineWithGit}, which is also
+	 * called by {@link #onIndexUpdate} - and that runs on the index's own single worker thread, so
+	 * waiting for that same thread's queue from within it would deadlock. It needs no wait anyway:
+	 * being called from an index update is itself the signal that the index is up to date.
 	 */
 	void pollForCommits() {
 		if (!isEnabled()) {
@@ -199,15 +225,44 @@ public class GitBaselineTracker implements AutoCloseable {
 					.filter(project -> indexedProjects.contains(project.getElementName()))
 					.toList();
 
-			if (!eligible.isEmpty()) {
-				log.debug("poll tick: checking {} indexed project(s) for git commits: {}", eligible.size(),
-						eligible.stream().map(IJavaProject::getElementName).toList());
+			if (eligible.isEmpty()) {
+				return;
+			}
+
+			log.debug("poll tick: checking {} indexed project(s) for git commits: {}", eligible.size(),
+					eligible.stream().map(IJavaProject::getElementName).toList());
+
+			if (!awaitSettledIndex()) {
+				return;
 			}
 
 			eligible.forEach(this::syncBaselineWithGit);
 		} catch (Exception e) {
 			// never let a failing tick kill the poll
 			log.warn("failed to check the open projects for new commits", e);
+		}
+	}
+
+	/**
+	 * Blocks until the index has worked off everything queued at the moment of the call - see
+	 * {@link #pollForCommits()} for why a tick may not act before that.
+	 *
+	 * @return {@code false} if the index did not settle within
+	 *         {@link #INDEX_DRAIN_TIMEOUT_SECONDS}, meaning the caller should skip this tick rather
+	 *         than capture from an index it knows to be behind; the next tick tries again
+	 */
+	private boolean awaitSettledIndex() {
+		try {
+			symbolIndex.waitOperation().get(INDEX_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+			return true;
+		} catch (InterruptedException e) {
+			// the poll is being shut down - stop cleanly instead of capturing anything
+			Thread.currentThread().interrupt();
+			return false;
+		} catch (Exception e) {
+			log.debug("the index did not settle within {}s - skipping this git baseline poll tick",
+					INDEX_DRAIN_TIMEOUT_SECONDS, e);
+			return false;
 		}
 	}
 

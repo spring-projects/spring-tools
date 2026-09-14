@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -236,7 +239,7 @@ public class GitBaselineTrackerTest {
 		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
 		doReturn(List.of(project)).when(projectFinder).all();
 
-		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		SpringSymbolIndex symbolIndex = settledIndex();
 		ArgumentCaptor<Consumer<Set<String>>> listenerCaptor = ArgumentCaptor.forClass(Consumer.class);
 
 		BootJavaConfig config = mock(BootJavaConfig.class);
@@ -276,6 +279,89 @@ public class GitBaselineTrackerTest {
 		assertThat(baselines.captureCount(project)).isZero();
 	}
 
+	@SuppressWarnings("unchecked")
+	@Test
+	void pollCapturesOnlyOnceTheIndexHasWorkedOffWhatItHadQueued(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		IJavaProject project = projectAt(dir);
+
+		AtomicBoolean indexSettled = new AtomicBoolean();
+		AtomicReference<Boolean> indexSettledAtCapture = new AtomicReference<>();
+		FakeBaselineAccess baselines = new FakeBaselineAccess() {
+			@Override
+			public StructureSnapshot captureBaseline(IJavaProject project, String commitSha, String commitMessage) {
+				indexSettledAtCapture.set(indexSettled.get());
+				return super.captureBaseline(project, commitSha, commitMessage);
+			}
+		};
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		doReturn(List.of(project)).when(projectFinder).all();
+
+		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		// stands in for indexing that is queued but not done yet: the index only reflects what is on
+		// disk once this has run, which is exactly what the tick has to wait for
+		when(symbolIndex.waitOperation()).thenReturn(CompletableFuture.runAsync(() -> {
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+			indexSettled.set(true);
+		}));
+
+		ArgumentCaptor<Consumer<Set<String>>> listenerCaptor = ArgumentCaptor.forClass(Consumer.class);
+
+		BootJavaConfig config = mock(BootJavaConfig.class);
+		when(config.isStructureGitBaselineEnabled()).thenReturn(true);
+
+		GitBaselineTracker tracker = new GitBaselineTracker(projectFinder, symbolIndex, config, baselines,
+				new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()));
+		verify(symbolIndex).onUpdate(listenerCaptor.capture());
+
+		listenerCaptor.getValue().accept(Set.of(project.getElementName()));
+
+		commit(dir, "changed content");
+		indexSettledAtCapture.set(null);
+
+		tracker.pollForCommits();
+
+		assertThat(indexSettledAtCapture.get())
+				.as("the tick captured while the index was still behind disk - the snapshot would describe neither state")
+				.isTrue();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	void pollSkipsTheTickWhenTheIndexDoesNotSettleInTime(@TempDir Path dir) throws Exception {
+		commit(dir, "initial content");
+		IJavaProject project = projectAt(dir);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		doReturn(List.of(project)).when(projectFinder).all();
+
+		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		when(symbolIndex.waitOperation()).thenReturn(CompletableFuture.failedFuture(new TimeoutException("still indexing")));
+
+		ArgumentCaptor<Consumer<Set<String>>> listenerCaptor = ArgumentCaptor.forClass(Consumer.class);
+
+		BootJavaConfig config = mock(BootJavaConfig.class);
+		when(config.isStructureGitBaselineEnabled()).thenReturn(true);
+
+		GitBaselineTracker tracker = new GitBaselineTracker(projectFinder, symbolIndex, config, baselines,
+				new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()));
+		verify(symbolIndex).onUpdate(listenerCaptor.capture());
+
+		listenerCaptor.getValue().accept(Set.of(project.getElementName()));
+		commit(dir, "changed content");
+
+		tracker.pollForCommits();
+
+		// skipped rather than captured from an index known to be behind - the next tick tries again
+		assertThat(baselines.captureCount(project)).isEqualTo(1);
+	}
+
 	@Test
 	void concurrentCallsForTheSameProjectDoNotDoubleCaptureTheSameCommit(@TempDir Path dir) throws Exception {
 		commit(dir, "initial content");
@@ -311,7 +397,7 @@ public class GitBaselineTrackerTest {
 		// a non-null server is what makes the constructor start the background poll in the first
 		// place - see GitBaselineTracker's javadoc for why cleanup relies on close() rather than
 		// this mock ever receiving a real onShutdown callback
-		GitBaselineTracker tracker = new GitBaselineTracker(projectFinder, mock(SpringSymbolIndex.class), config,
+		GitBaselineTracker tracker = new GitBaselineTracker(projectFinder, settledIndex(), config,
 				new FakeBaselineAccess(), new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()),
 				mock(SimpleLanguageServer.class));
 
@@ -463,7 +549,7 @@ public class GitBaselineTrackerTest {
 		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
 		doReturn(List.of(project)).when(projectFinder).all();
 
-		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		SpringSymbolIndex symbolIndex = settledIndex();
 		ArgumentCaptor<Consumer<Set<String>>> listenerCaptor = ArgumentCaptor.forClass(Consumer.class);
 
 		BootJavaConfig config = mock(BootJavaConfig.class);
@@ -488,12 +574,23 @@ public class GitBaselineTrackerTest {
 		BootJavaConfig config = mock(BootJavaConfig.class);
 		when(config.isStructureGitBaselineEnabled()).thenReturn(gitBaselineEnabled);
 
-		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		SpringSymbolIndex symbolIndex = settledIndex();
 
 		// deliberately the real working tree status against the real repository, so these tests
 		// cover the actual "is anything the index reads pending?" rule rather than a stand-in
 		return new GitBaselineTracker(projectFinder, symbolIndex, config, baselines,
 				new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate()));
+	}
+
+	/**
+	 * A {@link SpringSymbolIndex} that reports nothing queued: every poll tick drains the index
+	 * before it acts (see {@link GitBaselineTracker#pollForCommits()}), so a plain mock - whose
+	 * {@code waitOperation()} returns {@code null} - would make every tick skip itself.
+	 */
+	private static SpringSymbolIndex settledIndex() {
+		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		when(symbolIndex.waitOperation()).thenReturn(CompletableFuture.completedFuture(null));
+		return symbolIndex;
 	}
 
 	/**
@@ -503,7 +600,7 @@ public class GitBaselineTrackerTest {
 	 * count, instead of restating that rule here.
 	 */
 	private static SpringSymbolIndex indexWithRealJavaIndexerPredicate() {
-		SpringSymbolIndex symbolIndex = mock(SpringSymbolIndex.class);
+		SpringSymbolIndex symbolIndex = settledIndex();
 		when(symbolIndex.getJavaIndexer()).thenReturn(mock(SpringIndexerJava.class, CALLS_REAL_METHODS));
 		return symbolIndex;
 	}

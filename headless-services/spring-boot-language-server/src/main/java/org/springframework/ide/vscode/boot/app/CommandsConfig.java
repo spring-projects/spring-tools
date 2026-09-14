@@ -48,8 +48,8 @@ public class CommandsConfig {
 	@Bean
 	SpringIndexCommands springIndexCommands(SimpleLanguageServer server, JavaProjectFinder projectFinder,
 			SpringMetamodelIndex symbolIndex, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore, GitBaselineTracker gitBaselineTracker) {
-		return new SpringIndexCommands(server, symbolIndex, projectFinder, structureViewProvider, structureSnapshotStore, gitBaselineTracker);
+			StructureSnapshotStore structureSnapshotStore) {
+		return new SpringIndexCommands(server, symbolIndex, projectFinder, structureViewProvider, structureSnapshotStore);
 	}
 
 	/**

@@ -163,8 +163,38 @@ snapshot would make the tracker think the current commit is uncovered and immedi
 duplicate, shoving the user's manual snapshot out of the retained history seconds after they took it.
 
 Discovered `Repository` handles are cached per project for the server's lifetime
-(`repositoriesByProject`) and released via `server.onShutdown` - each one holds pack file handles
-open, so leaving them unclosed would leak file descriptors for the life of the process.
+(`repositoriesByProject`) and released by `close()`, which Spring calls when the bean's application
+context shuts down (`AutoCloseable`) - each one holds pack file handles open, so leaving them
+unclosed would leak file descriptors for the life of the process. The same `close()` is what stops
+the poll thread; hooking it to the LSP `shutdown` request instead would leak that thread in every
+test, since no unit test ever sends one.
+
+**A poll tick drains the index queue (`SpringSymbolIndex.waitOperation()`) before it looks at any
+project, and nothing captures from a structure-tree request.** Bug once observed in practice: open a
+project with a dirty working tree (correctly: no baseline, nothing highlighted), then revert the
+dirty file from VSCode's git panel - and every element of the reverted file shows up as changed,
+even though the file now matches `HEAD` exactly. Cause: the two halves of the capture decision read
+different sources. *Whether* to capture is answered from disk (git status), but *what* gets captured
+comes from the in-memory index, which lags disk until the file change has been re-indexed. In the
+window right after a revert (and equally after a `git stash` or a branch switch), git already
+reports clean while the index still holds the pre-revert content - a capture landing there records a
+tree matching neither state, and since it is recorded against the current commit,
+`capturedCommitShaOf == HEAD` makes the *correct* capture that the finishing index update would have
+triggered short-circuit as "already captured". The wrong baseline then sticks until the next commit.
+Two changes close it: the poll now waits for the index to work off what it has queued before
+deciding anything, and `SpringIndexCommands.createAnnotatedTree` no longer calls
+`syncBaselineWithGit` at all. That third entry point was the one most likely to hit the window in
+the first place - a structure request arrives at an arbitrary moment, typically *immediately* after
+the user changed something externally, which is exactly when the index is behind - and it covered no
+case the poll and the index-update listener don't already cover.
+
+The wait belongs in `pollForCommits`, **not** in `syncBaselineWithGit`: the latter is also called
+from `onIndexUpdate`, which runs on `SpringSymbolIndex`'s own single-threaded `updateQueue` (the
+listener is fired by a non-async `thenAccept` on that executor), so waiting there for that same
+queue to drain would deadlock outright. It needs no wait anyway - being called from an index update
+is itself proof the index is current. A tick that times out waiting (`INDEX_DRAIN_TIMEOUT_SECONDS`)
+skips itself rather than capturing from an index it knows to be behind; the next tick retries 5s
+later.
 
 **`syncBaselineWithGit` is serialized per project (`projectLocks`).** Bug once observed in practice:
 the same commit occasionally got two snapshots, most visibly for a project's very first baseline.

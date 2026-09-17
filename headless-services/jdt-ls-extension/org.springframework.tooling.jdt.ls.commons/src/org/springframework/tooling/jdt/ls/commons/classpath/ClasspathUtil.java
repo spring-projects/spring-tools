@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2024 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.eclipse.buildship.core.internal.configuration.GradleProjectNature;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
@@ -208,14 +209,24 @@ public class ClasspathUtil {
 		return Collections.emptyList();
 	}
 	
+	/**
+	 * Turns a workspace path, like <code>/my-project/src/main/java</code>, into a location in the local file
+	 * system.
+	 * <p>
+	 * A workspace path is not simply the project location plus the rest of the path: a source folder can be a
+	 * linked resource that lives somewhere else entirely, and appending the path to the project location then
+	 * yields a directory that does not exist, so {@code SpringIndexerJava.getFiles()} walks nothing and the
+	 * project contributes no symbols at all. Ask the resource model instead - it resolves linked resources and
+	 * path variables, and it does so for resources that do not exist on disk yet, which is the normal state of
+	 * an output folder before the first build.
+	 */
 	private static IPath resolveWorkspacePath(IPath path) {
-		if (path.segmentCount() > 0) {
-			String projectName = path.segment(0);
-			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
-			IPath projectRoot = project.getLocation();
-			if (projectRoot != null) {
-				return projectRoot.append(path.removeFirstSegments(1));
-			}
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		if (path.segmentCount() == 1) {
+			return root.getProject(path.segment(0)).getLocation();
+		} else if (path.segmentCount() > 1) {
+			// resource handle operation: the folder does not need to exist, and a linked ancestor is resolved
+			return root.getFolder(path).getLocation();
 		}
 		return null;
 	}

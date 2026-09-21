@@ -212,6 +212,41 @@ right as a poll tick may independently be doing the same). Regression-tested wit
 racing `syncBaselineWithGit` and a deliberately slow, lock-free `BaselineAccess` fake - a fake built
 on a plain `HashMap` would have been just as capable of masking the very race under test.
 
+## Comparing needs a settled index too, not just capturing
+
+**A structure request drains the index queue before it builds anything
+(`SpringIndexCommands.awaitSettledIndex`).** Bug once observed in practice: shortly after starting
+the IDE, the stereotype definition nodes ("Request Mappings" and friends) showed up as *changed*
+with no changed child node anywhere underneath, on a project nobody had touched since the last
+session.
+
+Cause: everything above is about not *capturing* from an index that lags disk - but the "current"
+side of a diff is built on demand from that very same in-memory index, and the structure command
+gated nothing at all. A request landing while a project is still being indexed - on startup, and on
+every project or classpath change, since `SpringSymbolIndex._initializeProject` empties a project's
+index before refilling it - builds a tree that is simply missing whatever hasn't been indexed back
+yet. Diffed against a complete baseline, every missing node counts as removed, and a removal is
+reported on the node it was removed from (see "Only the changed node lights up"). Since this tree
+nests as `package -> stereotype -> type/method`, the parent of every type and mapping node *is* a
+stereotype node - so a handful of not-yet-reindexed types surfaces as exactly that symptom, and the
+removed nodes themselves are invisible because they don't exist in the current tree to carry a
+marker.
+
+Safe to wait here, unlike in `syncBaselineWithGit`: the structure commands run on
+`SpringIndexCommands`' own `messageWorkerThreadPool`, never on the index's `updateQueue`, so waiting
+for that queue cannot deadlock.
+
+On timeout (`INDEX_DRAIN_TIMEOUT_SECONDS`, 10s) the tree is still returned, but **with no baseline
+attributes at all** rather than with a baseline and nothing marked: those two are
+indistinguishable to a client, and the latter reads as "nothing changed since the baseline" - which
+would collapse the whole tree to nothing while "hide unchanged nodes" is on (`visibleChildren` in
+`nodes.ts`). The client refreshes on every index update, so the next refresh brings the comparison
+along.
+
+The manual `captureBaseline` command drains the queue too, and **fails** rather than falling back
+if it doesn't settle: an annotated tree is replaced by the next refresh, while a partial baseline is
+persisted and keeps misreporting until it's replaced by hand.
+
 ## Selecting a historical baseline to compare against
 
 `StructureSnapshotStore.baselineOf(project, snapshotKey)` is keyed by a snapshot's **capture time**

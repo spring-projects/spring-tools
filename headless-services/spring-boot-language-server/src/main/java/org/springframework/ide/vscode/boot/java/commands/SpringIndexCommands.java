@@ -18,10 +18,14 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
@@ -37,21 +41,33 @@ import com.google.gson.reflect.TypeToken;
 
 public class SpringIndexCommands {
 
+	private static final Logger log = LoggerFactory.getLogger(SpringIndexCommands.class);
+
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 	private static final String SPRING_STRUCTURE_GROUPS_CMD = "sts/spring-boot/structure/groups";
 	private static final String SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 	private static final String SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 	private static final String SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
 
+	/**
+	 * How long a structure request waits for the index to work off what it has queued - see
+	 * {@link #awaitSettledIndex()}. Bounded so that a busy index cannot leave the view waiting
+	 * indefinitely; a request that hits the timeout answers without a comparison, and the refresh
+	 * that the next index update triggers in the client brings the comparison along.
+	 */
+	private static final long INDEX_DRAIN_TIMEOUT_SECONDS = 10;
+
+	private final SpringSymbolIndex symbolIndex;
 	private final StructureViewProvider structureViewProvider;
 	private final StructureSnapshotStore structureSnapshotStore;
 
 	private final Executor messageWorkerThreadPool;
 
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
-			JavaProjectFinder projectFinder, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore) {
+			SpringSymbolIndex symbolIndex, JavaProjectFinder projectFinder,
+			StructureViewProvider structureViewProvider, StructureSnapshotStore structureSnapshotStore) {
 
+		this.symbolIndex = symbolIndex;
 		this.structureViewProvider = structureViewProvider;
 		this.structureSnapshotStore = structureSnapshotStore;
 		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
@@ -60,8 +76,13 @@ public class SpringIndexCommands {
 			return CompletableFuture.supplyAsync(() -> {
 				StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
 
+				// before anything is built, not per project: the trees are built from the
+				// in-memory index, and comparing one against a baseline is only meaningful once
+				// that index reflects the same state on disk the baseline was captured from
+				boolean indexSettled = awaitSettledIndex();
+
 				CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
-				
+
 				Stream<? extends IJavaProject> projects = projectFinder.all().stream();
 				if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
 					projects = projects.filter(project -> args.affectedProjects.contains(project.getElementName()));
@@ -69,7 +90,7 @@ public class SpringIndexCommands {
 
 				return projects
 						.parallel()
-						.map(project -> createAnnotatedTree(project, cachedIndex, args))
+						.map(project -> createAnnotatedTree(project, cachedIndex, args, indexSettled))
 						.filter(Objects::nonNull)
 						.collect(Collectors.toList());
 			}, messageWorkerThreadPool);
@@ -89,6 +110,15 @@ public class SpringIndexCommands {
 		server.onCommand(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, params -> {
 			return CompletableFuture.supplyAsync(() -> {
 				IJavaProject project = resolveProject(params, SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, projectFinder);
+
+				// a baseline is persisted and compared against from here on, so an index that
+				// hasn't caught up yet must not be captured - unlike an annotated tree, which the
+				// next refresh simply replaces, a partial baseline would keep misreporting until
+				// it is replaced by hand. Failing is the honest answer; the user can retry.
+				if (!awaitSettledIndex()) {
+					throw new IllegalStateException("the index of project " + project.getElementName()
+							+ " has not caught up with the files on disk yet - try again once indexing has finished");
+				}
 
 				// no commit information on purpose: a manual capture is normally taken over
 				// uncommitted work, so it represents no commit even though one is checked out
@@ -125,12 +155,21 @@ public class SpringIndexCommands {
 	 * baseline that describes neither state, and since it is recorded against the current commit,
 	 * nothing revisits it. {@link GitBaselineTracker} instead captures only from its own poll and
 	 * from index updates, both of which know the index is settled.
+	 *
+	 * @param indexSettled whether the index had caught up before this tree was built - when it had
+	 *        not, the tree is returned as if the project had no baseline at all (see
+	 *        {@link #awaitSettledIndex()})
 	 */
-	private Node createAnnotatedTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, StructureCommandArgs args) {
+	private Node createAnnotatedTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, StructureCommandArgs args,
+			boolean indexSettled) {
+
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
 				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
 
-		if (tree != null) {
+		// no baseline attributes at all rather than a baseline with nothing marked: those two look
+		// the same to a client, and the latter reads as "nothing changed" - which would hide the
+		// entire tree while "hide unchanged nodes" is on
+		if (tree != null && indexSettled) {
 			String snapshotKey = args.compareAgainst == null ? null : args.compareAgainst.get(project.getElementName());
 
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));
@@ -147,6 +186,39 @@ public class SpringIndexCommands {
 		}
 
 		return tree;
+	}
+
+	/**
+	 * Blocks until the index has worked off everything queued at the moment of the call, so that
+	 * what gets built from it afterwards describes the same state on disk that a baseline was
+	 * captured from.
+	 *
+	 * <p>Without this, a request landing while the index is still filling up - which is exactly
+	 * what happens on startup, and on every project or classpath change, since initializing a
+	 * project empties its index before refilling it - builds a tree that is missing whatever has
+	 * not been indexed back yet. Diffed against a complete baseline, every one of those missing
+	 * nodes counts as removed, and a removal is reported on the node it was removed from (see
+	 * {@link StructureTreeDiffer}), so the stereotype nodes above them light up as changed with
+	 * nothing marked underneath - for a project that never changed at all.
+	 *
+	 * <p>Safe to call from here: the structure commands run on {@link #messageWorkerThreadPool},
+	 * never on the index's own worker thread, so waiting for that thread's queue cannot deadlock -
+	 * the reason {@link GitBaselineTracker} can only do the same from its poll.
+	 *
+	 * @return whether the index settled within {@link #INDEX_DRAIN_TIMEOUT_SECONDS}
+	 */
+	private boolean awaitSettledIndex() {
+		try {
+			symbolIndex.waitOperation().get(INDEX_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+			return true;
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return false;
+		} catch (Exception e) {
+			log.info("the index did not catch up within {}s - answering the structure request without comparing against a baseline",
+					INDEX_DRAIN_TIMEOUT_SECONDS);
+			return false;
+		}
 	}
 
 	/**

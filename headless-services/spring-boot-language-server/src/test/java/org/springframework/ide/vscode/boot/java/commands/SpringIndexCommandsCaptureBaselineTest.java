@@ -192,6 +192,38 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	}
 
 
+	/**
+	 * A structure request lands at an arbitrary moment, in particular while a project is still
+	 * being indexed - on startup, and on every project or classpath change, since initializing a
+	 * project empties its index before refilling it. The tree built from such an index is missing
+	 * whatever hasn't been indexed back yet, and comparing that against a complete baseline reports
+	 * every missing node as removed, which surfaces as the stereotype node above it being modified
+	 * with nothing marked underneath - for a project nobody touched.
+	 */
+	@Test
+	void structureTreeReportsNoChangesWhileTheIndexIsStillCatchingUp() throws Exception {
+		captureBaseline(project.getElementName());
+		int settledNodeCount = nodeCountOf(tree.structureTrees());
+
+		// keeps the index busy - and the project's part of it incomplete - for as long as these
+		// take to work off, which is the window the bug used to happen in
+		List<CompletableFuture<Void>> reindexing = List.of(
+				indexer.initializeProject(project, true),
+				indexer.initializeProject(project, true),
+				indexer.initializeProject(project, true),
+				indexer.initializeProject(project, true),
+				indexer.initializeProject(project, true));
+
+		List<Node> roots = tree.structureTrees();
+
+		assertEquals(settledNodeCount, nodeCountOf(roots),
+				"expected a complete tree: the request must wait for the index rather than build from a partial one");
+		assertTrue(changedNodesOf(roots).isEmpty(),
+				"nothing changed on disk, so nothing may be marked as changed, but got: " + changedNodesOf(roots));
+
+		CompletableFuture.allOf(reindexing.toArray(CompletableFuture[]::new)).get(60, TimeUnit.SECONDS);
+	}
+
 	@Test
 	void structureTreeComparesAgainstTheRequestedHistoricalBaseline() throws Exception {
 		// captured directly with distinct known shas, bypassing git sha resolution (disabled in this
@@ -346,6 +378,14 @@ public class SpringIndexCommandsCaptureBaselineTest {
 				.orElseThrow();
 	}
 
+
+	private static int nodeCountOf(List<Node> roots) {
+		return roots.stream().mapToInt(SpringIndexCommandsCaptureBaselineTest::nodeCountOf).sum();
+	}
+
+	private static int nodeCountOf(Node node) {
+		return 1 + node.getChildren().stream().mapToInt(SpringIndexCommandsCaptureBaselineTest::nodeCountOf).sum();
+	}
 
 	/**
 	 * The node ids of all nodes carrying a change marker, mapped to that marker.

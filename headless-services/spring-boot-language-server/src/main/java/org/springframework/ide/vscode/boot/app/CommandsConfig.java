@@ -47,9 +47,10 @@ public class CommandsConfig {
 
 	@Bean
 	SpringIndexCommands springIndexCommands(SimpleLanguageServer server, JavaProjectFinder projectFinder,
-			SpringMetamodelIndex symbolIndex, StructureViewProvider structureViewProvider,
+			SpringMetamodelIndex springIndex, SpringSymbolIndex symbolIndex, StructureViewProvider structureViewProvider,
 			StructureSnapshotStore structureSnapshotStore) {
-		return new SpringIndexCommands(server, symbolIndex, projectFinder, structureViewProvider, structureSnapshotStore);
+		return new SpringIndexCommands(server, springIndex, symbolIndex, projectFinder, structureViewProvider,
+				structureSnapshotStore);
 	}
 
 	/**

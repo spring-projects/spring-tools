@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.IProjectBuild;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.util.FileObserver;
@@ -136,10 +137,29 @@ public class DataRepositoryAotMetadataService {
 		}
 	}
 	
+	/**
+	 * The project's build type, or <code>null</code> when it is not known.
+	 * <p>
+	 * Not every project has a build this server can classify: the invisible project the language server
+	 * creates for a plain folder has none, and neither does a project contributed by an importer that is
+	 * neither Maven nor Gradle - {@code ClasspathUtil.createProjectBuild} then reports a build whose type
+	 * is null. Switching on that throws, and the callers here are on the indexing path, where an
+	 * exception costs a whole type its symbols.
+	 */
+	private static String buildType(IJavaProject project) {
+		IProjectBuild build = project.getProjectBuild();
+		return build == null ? null : build.getType();
+	}
+	
 	public Optional<DataRepositoryAotMetadata> getRepositoryMetadata(IJavaProject project, String repositoryType) {
 		String metadataFilePath = repositoryType.replace('.', '/') + ".json";
 		
-		switch (project.getProjectBuild().getType()) {
+		String buildType = buildType(project);
+		if (buildType == null) {
+			return Optional.empty();
+		}
+		
+		switch (buildType) {
 		case ProjectBuild.MAVEN_PROJECT_TYPE:
 			return IClasspathUtil.getOutputFolders(project.getClasspath())
 					.map(outputFolder -> outputFolder.getParentFile().toPath().resolve("spring-aot/main/resources/").resolve(metadataFilePath))
@@ -167,7 +187,12 @@ public class DataRepositoryAotMetadataService {
 	}
 	
 	Optional<Command> regenerateMetadataCommand(IJavaProject jp) {
-		switch (jp.getProjectBuild().getType()) {
+		String buildType = buildType(jp);
+		if (buildType == null) {
+			return Optional.empty();
+		}
+		
+		switch (buildType) {
 		case ProjectBuild.MAVEN_PROJECT_TYPE:
 			List<String> goal = new ArrayList<>();
 			if (!IClasspathUtil.getOutputFolders(jp.getClasspath()).map(f -> f.toPath()).filter(Files::isDirectory).flatMap(d -> {

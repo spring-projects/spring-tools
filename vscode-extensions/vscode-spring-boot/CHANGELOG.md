@@ -5,6 +5,8 @@
 * _(Spring Boot)_ adjust parent process watcher to latest changes in JDT LS [#2000](https://github.com/spring-projects/spring-tools/issues/2000)
 * _(Spring Boot)_ [structure view] showing diff viewer for new files causes error [#1990](https://github.com/spring-projects/spring-tools/issues/1990)
 * _(Spring Boot)_ [structure view] make name of stored baseline snapshots file more specific [#1989](https://github.com/spring-projects/spring-tools/issues/1989)
+* _(Spring Boot)_ [structure view] new diff feature shows changed nodes for new projects when there is nothing new [#1987](https://github.com/spring-projects/spring-tools/issues/1987)
+* _(Spring Boot)_ Can't jump to the code via the URL [#1985](https://github.com/spring-projects/spring-tools/issues/1985)
 * _(Spring Boot)_ reduce logging for document changes [#1982](https://github.com/spring-projects/spring-tools/issues/1982)
 * _(Spring Boot)_ visualize changes in the logical structure view [#1974](https://github.com/spring-projects/spring-tools/issues/1974)
 

@@ -1,0 +1,91 @@
+/*******************************************************************************
+ * Copyright (c) 2026 Broadcom, Inc.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Broadcom, Inc. - initial API and implementation
+ *******************************************************************************/
+package org.springframework.ide.vscode.boot.java.commands;
+
+import java.util.List;
+
+import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.Location;
+import org.jmolecules.stereotype.api.StereotypeFactory;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
+
+/**
+ * {@link StructureElements} backed by the live, in-memory Spring index (via
+ * {@link CachedSpringMetamodelIndex}) - today's only implementation, and the one every structure
+ * tree is still built from.
+ *
+ * <p>Deliberately a thin, side-effect-free view: the stereotype factory it hands back
+ * ({@link #stereotypeFactory()}) is supplied already built - and, if applicable, already had its
+ * source-defined stereotype definitions registered - by whoever constructs this class
+ * ({@link StructureViewProvider#createTree}), so that decision (and the
+ * {@code disable-source-defined-stereotypes} toggle behind it) stays in one place rather than
+ * being duplicated here.
+ *
+ * @author Martin Lippert
+ */
+public class IndexStructureElements implements StructureElements {
+
+	private final IJavaProject project;
+	private final CachedSpringMetamodelIndex springIndex;
+	private final StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> factory;
+
+	public IndexStructureElements(IJavaProject project, CachedSpringMetamodelIndex springIndex,
+			StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> factory) {
+		this.project = project;
+		this.springIndex = springIndex;
+		this.factory = factory;
+	}
+
+	@Override
+	public List<StereotypeClassElement> types() {
+		return springIndex.getClassesForProject(project.getElementName());
+	}
+
+	@Override
+	public StereotypePackageElement mainApplicationPackage() {
+		return StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
+	}
+
+	@Override
+	public StereotypePackageElement packageNode(String packageName) {
+		return StructureViewUtil.findPackageNode(packageName, project, springIndex);
+	}
+
+	@Override
+	public String methodLabel(StereotypeMethodElement method, StereotypeClassElement type) {
+		return StructureViewUtil.getMethodLabel(project, springIndex, method, type);
+	}
+
+	@Override
+	public List<StructureMember> membersOf(StereotypeClassElement type) {
+		if (type.getLocation() == null) {
+			return List.of();
+		}
+
+		String docUri = type.getLocation().getUri();
+
+		return StructureViewUtil.membersOf(springIndex, type).stream()
+				.map(symbolElement -> {
+					DocumentSymbol symbol = symbolElement.getDocumentSymbol();
+					return new StructureMember(symbol.getName(), new Location(docUri, symbol.getRange()), symbolElement.getContentHash());
+				})
+				.toList();
+	}
+
+	@Override
+	public StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> stereotypeFactory() {
+		return factory;
+	}
+
+}

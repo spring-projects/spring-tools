@@ -175,8 +175,8 @@ public class StereotypeInformation {
 		// no commit information on purpose: a manual capture is normally taken over uncommitted
 		// work, so it represents no commit even though one is checked out
 		StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
-		return "captured logical structure baseline for project '%s' with %d node(s) at %s"
-				.formatted(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt());
+		return "captured logical structure baseline for project '%s' with %d element(s) at %s"
+				.formatted(project.getElementName(), snapshot.elementCount(), snapshot.capturedAt());
 	}
 
 	@Tool(description = """

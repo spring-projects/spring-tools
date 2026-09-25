@@ -20,7 +20,6 @@ import org.jmolecules.stereotype.tooling.ProjectTree;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
-import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
@@ -30,32 +29,30 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 public class JMoleculesStructureView {
 
 	private final AbstractStereotypeCatalog catalog;
-	private final CachedSpringMetamodelIndex springIndex;
 	private final SourceLinks sourceLinks;
 	private final StereotypeDefinitionLocator definitionLocator;
 
-	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks,
+	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, SourceLinks sourceLinks,
 			StereotypeDefinitionLocator definitionLocator) {
 		this.catalog = catalog;
-		this.springIndex = springIndex;
 		this.sourceLinks = sourceLinks;
 		this.definitionLocator = definitionLocator;
 	}
 
-	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, Collection<String> selectedGroups) {
-		
-		StereotypePackageElement mainApplicationPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
-		
+	public Node createTree(IJavaProject project, StructureElements elements, Collection<String> selectedGroups) {
+
+		StereotypePackageElement mainApplicationPackage = elements.mainApplicationPackage();
+
 		var labelProvider = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
 				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString)
 				.withTypeLabel(it -> StructureViewUtil.abbreviate(mainApplicationPackage, it))
-				.withMethodLabel((m, c) -> StructureViewUtil.getMethodLabel(project, springIndex, m, c))
+				.withMethodLabel((m, c) -> elements.methodLabel(m, c))
 				.withPackageLabel((p) -> StructureViewUtil.getPackageLabel(p))
 				.withStereotypeLabel((s) -> StructureViewUtil.getStereotypeLabeler(catalog).apply(s))
 				.withApplicationLabel((p) -> project.getElementName());
 
-		var structureProvider = new ToolsStructureProvider(springIndex, project);
-		
+		var structureProvider = new ToolsStructureProvider(elements);
+
 		// json output
 		BiConsumer<Node, Object> consumer = (node, c) -> {
 			node.withAttribute(HierarchicalNodeHandler.TEXT, labelProvider.getCustomLabel(c))
@@ -63,18 +60,18 @@ public class JMoleculesStructureView {
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labelProvider, consumer, springIndex, sourceLinks, definitionLocator, catalog, project);
-		
+		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labelProvider, consumer, elements, sourceLinks, definitionLocator, catalog, project);
+
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI
-		var jsonTree = new ProjectTree<>(factory, catalog, jsonHandler)
+		var jsonTree = new ProjectTree<>(elements.stereotypeFactory(), catalog, jsonHandler)
 				.withStructureProvider(structureProvider);
-		
+
 		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog, selectedGroups);
 		for (String[] grouper : groupers) {
 			jsonTree = jsonTree.withGrouper(grouper);
 		}
-		
+
 		jsonTree.process(mainApplicationPackage);
 
 		return jsonHandler.getRoot();

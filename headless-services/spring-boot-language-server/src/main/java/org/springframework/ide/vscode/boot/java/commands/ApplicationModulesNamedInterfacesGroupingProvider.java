@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,15 +21,14 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassEleme
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 import org.springframework.ide.vscode.boot.modulith.NamedInterface;
-import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 public class ApplicationModulesNamedInterfacesGroupingProvider extends ApplicationModulesStructureProvider implements
 		GroupingStructureProvider<ApplicationModules, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, NamedInterfaceNode> {
-	
+
 	private final ApplicationModules modules;
 
-	public ApplicationModulesNamedInterfacesGroupingProvider(ApplicationModules modules, IJavaProject project, CachedSpringMetamodelIndex springIndex) {
-		super(project, springIndex);
+	public ApplicationModulesNamedInterfacesGroupingProvider(ApplicationModules modules, StructureElements elements) {
+		super(elements);
 		this.modules = modules;
 	}
 
@@ -51,18 +50,18 @@ public class ApplicationModulesNamedInterfacesGroupingProvider extends Applicati
 
 	private Collection<StereotypeClassElement> getClassElements(NamedInterface namedInterface) {
 		return namedInterface.getClasses().stream()
-				.map(className -> findClassElement(className, project, springIndex))
+				.map(this::findClassElement)
 				.toList();
 	}
-	
-	private StereotypeClassElement findClassElement(String className, IJavaProject project, CachedSpringMetamodelIndex springIndex) {
-		return springIndex.getClassesForProject(project.getElementName()).stream()
+
+	private StereotypeClassElement findClassElement(String className) {
+		return elements.types().stream()
 			.filter(classElement -> classElement.getType().equals(className))
 			.findAny().orElse(new StereotypeClassElement(className, null, Set.of(), Set.of(), null));
 	}
 
 	private Collection<StereotypeClassElement> getInternalTypes(ApplicationModule module) {
-		return springIndex.getClassesForProject(project.getElementName()).stream()
+		return elements.types().stream()
 				.filter(classElement -> classElement.getType().startsWith(module.getBasePackage()))
 				.filter(classElement -> !(module.getNamedInterfaces().stream().filter(namedInterface -> namedInterface.getClasses().contains(classElement.getType())).findAny().isPresent()))
 			.toList();

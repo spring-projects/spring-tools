@@ -71,6 +71,15 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	private static final String BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
 	private static final String CONTROLLER = "src/main/java/example/application/SampleController.java";
 
+	/**
+	 * The original, on-disk content of {@code MyStereotypeMarkedClass.java} - restored by the tests
+	 * that edit or remove it, in a {@code finally} block, so a later test method (or a later,
+	 * separate test run without a {@code mvn clean}) always finds the file exactly as
+	 * {@code src/test/resources} has it.
+	 */
+	private static final String MY_STEREOTYPE_MARKED_CLASS_ORIGINAL =
+			"package example.application;\n\n@MyStereotype\npublic class MyStereotypeMarkedClass {\n\n}\n";
+
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
@@ -93,11 +102,11 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	}
 
 	@Test
-	void capturesABaselineWithNodeCountAndTimestamp() throws Exception {
+	void capturesABaselineWithElementCountAndTimestamp() throws Exception {
 		CaptureBaselineResult result = captureBaseline(project.getElementName());
 
 		assertEquals(project.getElementName(), result.projectName());
-		assertTrue(result.nodeCount() > 0, "expected at least one node in the captured baseline");
+		assertTrue(result.elementCount() > 0, "expected at least one element in the captured baseline");
 		assertNotNull(result.capturedAt());
 	}
 
@@ -191,6 +200,142 @@ public class SpringIndexCommandsCaptureBaselineTest {
 		assertEquals("modified", findNode(tree.structureTrees(), JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE));
 	}
 
+	/**
+	 * Parity scenario for the "R0" characterization step of {@code docs/structure-diff-elements.md}:
+	 * a brand-new type (as opposed to a new method inside an already-known type, which the other
+	 * tests here cover) must show up as added, without disturbing an unrelated, untouched type.
+	 */
+	@Test
+	void addingABrandNewTypeMarksItAsAddedWithoutMarkingAnUnrelatedType() throws Exception {
+		captureBaseline(project.getElementName());
+
+		String newController = "src/main/java/example/application/NewController.java";
+		try {
+			tree.addType(newController, """
+					package example.application;
+
+					import org.springframework.web.bind.annotation.GetMapping;
+					import org.springframework.web.bind.annotation.RestController;
+
+					@RestController
+					public class NewController {
+
+						@GetMapping("/new")
+						public String sayNew() {
+							return "new!!!";
+						}
+
+					}
+					""");
+
+			List<Node> roots = tree.structureTrees();
+
+			assertEquals("added", findNode(roots, JsonNodeHandler.KIND_TYPE, "NewController").getAttribute(JsonNodeHandler.CHANGE));
+			assertNull(findNode(roots, JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE),
+					"a brand-new, unrelated controller must not mark an existing one as changed");
+
+			// the golden-master this refactoring is checked against, see StructureTreeTestFixture#describeChanges
+			assertEquals("""
+					application:test-stereotypes-support=containsChanges
+					member:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.a.NewController > @/new -- GET=added
+					method:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Request Mappings (Spring Web) > @/new -- GET=added
+					package:test-stereotypes-support > example.application=containsChanges
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web)=containsChanges
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Request Mappings (Spring Web)=containsChanges
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture)=containsChanges
+					type:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.a.NewController=added""",
+					StructureTreeTestFixture.describeChanges(roots.get(0)));
+		} finally {
+			tree.removeType(newController);
+		}
+	}
+
+	/**
+	 * Parity scenario: removing a whole type - as opposed to a member or method within one - must be
+	 * reported as a modification of whatever it was removed from, per the "unaccompanied removal"
+	 * rule ({@code StructureTreeDiffer}), and must not affect an unrelated type.
+	 *
+	 * <p>Removes the type by blanking out its declaration in place (like
+	 * {@link #deletingAMappingMarksTheControllerItWasRemovedFrom} does for a single method), rather
+	 * than deleting the file and going through {@code SpringSymbolIndex.deleteDocument}: that path
+	 * turned out not to remove the type from the live index within the same test at all (confirmed
+	 * by a diagnostic run - the tree kept reporting the type as present), while a content edit
+	 * through {@code updateDocument} is the mechanism every other test in this class already relies
+	 * on and is known to work.
+	 *
+	 * <p>Targets {@code MyStereotypeMarkedClass} - confirmed by
+	 * {@link #movingATypeToADifferentStereotypeIsReportedAsRemovalAndAddition} to actually render as
+	 * a node (in the "Others" bucket, its custom stereotype belonging to no catalog group) - rather
+	 * than a plain, unannotated class: those turned out not to be rendered as nodes at all in this
+	 * project, so removing one produces no diff whatsoever to characterize.
+	 */
+	@Test
+	void removingATypeMarksWhatItWasRemovedFromWithoutMarkingAnUnrelatedType() throws Exception {
+		captureBaseline(project.getElementName());
+
+		String markedClass = "src/main/java/example/application/MyStereotypeMarkedClass.java";
+		try {
+			tree.edit(markedClass, "@MyStereotype\npublic class MyStereotypeMarkedClass {\n\n}", "");
+
+			List<Node> roots = tree.structureTrees();
+
+			assertNull(findNode(roots, JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE),
+					"removing an unrelated type must not mark an untouched one as changed");
+			assertTrue(changedNodesOf(roots).values().contains("modified"),
+					"expected the removal to be reported as a modification of whatever MyStereotypeMarkedClass was removed from, but got: "
+							+ changedNodesOf(roots));
+
+			// the golden-master this refactoring is checked against, see StructureTreeTestFixture#describeChanges
+			assertEquals("""
+					application:test-stereotypes-support=containsChanges
+					package:test-stereotypes-support > example.application=containsChanges
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Others=modified
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture)=containsChanges""",
+					StructureTreeTestFixture.describeChanges(roots.get(0)));
+		} finally {
+			tree.addType(markedClass, MY_STEREOTYPE_MARKED_CLASS_ORIGINAL);
+		}
+	}
+
+	/**
+	 * Parity scenario: a type moving from one stereotype to another (here via an annotation swap,
+	 * the same mechanism a real refactoring would use) is - like a renamed mapping - reported as a
+	 * removal from its old place and an addition at its new one, never as a modification in place,
+	 * because stereotype-grouping nodes are matched by label ({@code StructureTreeDiffer}). This is
+	 * also the scenario that removes the last type of a stereotype (custom, source-defined
+	 * {@code MyStereotype}), exercising both at once.
+	 */
+	@Test
+	void movingATypeToADifferentStereotypeIsReportedAsRemovalAndAddition() throws Exception {
+		captureBaseline(project.getElementName());
+
+		String markedClass = "src/main/java/example/application/MyStereotypeMarkedClass.java";
+		try {
+			tree.edit(markedClass, "package example.application;\n\n@MyStereotype\npublic class MyStereotypeMarkedClass {",
+					"package example.application;\n\nimport org.springframework.web.bind.annotation.RestController;\n\n@RestController\npublic class MyStereotypeMarkedClass {");
+
+			List<Node> roots = tree.structureTrees();
+
+			assertEquals("added", findNode(roots, JsonNodeHandler.KIND_TYPE, "MyStereotypeMarkedClass").getAttribute(JsonNodeHandler.CHANGE));
+			assertNull(findNode(roots, JsonNodeHandler.KIND_TYPE, "SampleController").getAttribute(JsonNodeHandler.CHANGE),
+					"an unrelated controller must not be marked as changed by another type's stereotype move");
+
+			// the golden-master this refactoring is checked against, see StructureTreeTestFixture#describeChanges
+			assertEquals("""
+					application:test-stereotypes-support=containsChanges
+					package:test-stereotypes-support > example.application=containsChanges
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web)=containsChanges
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Others=modified
+					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture)=containsChanges
+					type:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.a.MyStereotypeMarkedClass=added""",
+					StructureTreeTestFixture.describeChanges(roots.get(0)));
+		} finally {
+			// leaves the file re-annotated with @RestController otherwise - across separate mvn
+			// invocations without a clean, Maven's resource copy would not restore it on its own,
+			// since the copy under target/ would look up to date by timestamp alone
+			tree.addType(markedClass, MY_STEREOTYPE_MARKED_CLASS_ORIGINAL);
+		}
+	}
 
 	/**
 	 * A structure request lands at an arbitrary moment, in particular while a project is still

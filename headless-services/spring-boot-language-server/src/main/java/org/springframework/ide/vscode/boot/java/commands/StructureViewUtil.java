@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,7 +11,9 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +36,7 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElem
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 import com.google.common.collect.Streams;
 
@@ -106,9 +109,37 @@ public class StructureViewUtil {
 		else {
 			return method.getMethodLabel();
 		}
-		
+
 	}
-	
+
+	/**
+	 * The members a type contributes to the structure view beyond its own {@link StereotypeMethodElement}s
+	 * - the symbols of whatever bean matches the type, e.g. an event listener implementation or a
+	 * plain event-publishing method, neither of which is a stereotype-annotated method of its own.
+	 *
+	 * <p>Shared between {@link JsonNodeHandler#createTypeSubnotes} (which turns the result into
+	 * member nodes) and the structure snapshot builder that is to come (which will turn it into the
+	 * members a baseline snapshot stores for the type) - one rule, so a baseline can never show a
+	 * different set of members than the tree it is diffed against.
+	 *
+	 * @return empty when the type has no known source location (true of every type reconstructed
+	 *         from a baseline snapshot) - there is no document to look its beans up by
+	 */
+	public static List<SymbolElement> membersOf(CachedSpringMetamodelIndex springIndex, StereotypeClassElement type) {
+		if (type.getLocation() == null) {
+			return Collections.emptyList();
+		}
+
+		String docUri = type.getLocation().getUri();
+
+		return Arrays.stream(springIndex.getBeansOfDocument(docUri))
+				.filter(bean -> bean.getType().equals(type.getType()))
+				.flatMap(bean -> bean.getChildren().stream())
+				.filter(child -> child instanceof SymbolElement)
+				.map(child -> (SymbolElement) child)
+				.toList();
+	}
+
 	public static StereotypePackageElement identifyMainApplicationPackage(IJavaProject project, CachedSpringMetamodelIndex springIndex) {
 		List<SpringBootApplicationIndexElement> mainAppNodes = springIndex.getSpringBootApplicationElementsForProject(project.getElementName());
 		

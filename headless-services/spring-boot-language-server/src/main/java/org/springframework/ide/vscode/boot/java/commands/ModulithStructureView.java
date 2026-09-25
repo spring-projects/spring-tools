@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.commands.ApplicationModulesStructureProvider.SimpleApplicationModulesStructureProvider;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
-import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
 import org.springframework.ide.vscode.boot.modulith.AppModules;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
@@ -36,23 +35,21 @@ public class ModulithStructureView {
 	private static final Logger log = LoggerFactory.getLogger(ModulithStructureView.class);
 
 	private final AbstractStereotypeCatalog catalog;
-	private final CachedSpringMetamodelIndex springIndex;
 	private final ModulithService modulithService;
 	private SourceLinks sourceLinks;
 	private final StereotypeDefinitionLocator definitionLocator;
 
-	public ModulithStructureView(AbstractStereotypeCatalog catalog, CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks,
+	public ModulithStructureView(AbstractStereotypeCatalog catalog, SourceLinks sourceLinks,
 			StereotypeDefinitionLocator definitionLocator, ModulithService modulithService) {
 		this.catalog = catalog;
-		this.springIndex = springIndex;
 		this.sourceLinks = sourceLinks;
 		this.definitionLocator = definitionLocator;
 		this.modulithService = modulithService;
 	}
 
-	public Node createTree(IJavaProject project, IndexBasedStereotypeFactory factory, Collection<String> selectedGroups, boolean updateMetadata) {
+	public Node createTree(IJavaProject project, StructureElements elements, Collection<String> selectedGroups, boolean updateMetadata) {
 
-		var adapter = new ModulithStereotypeFactoryAdapter(factory);
+		var adapter = new ModulithStereotypeFactoryAdapter(elements.stereotypeFactory());
 
 		if (updateMetadata) {
 			log.info("update modulith metadata when reloading structure view for project: " + project.getElementName());
@@ -73,7 +70,7 @@ public class ModulithStructureView {
 
 		ApplicationModules modules = new ApplicationModules(modulesData);
 
-		var labelProvider = new ApplicationModulesLabelProvider(catalog, project, springIndex, modules);
+		var labelProvider = new ApplicationModulesLabelProvider(catalog, project, elements, modules);
 
 		// json output
 		BiConsumer<Node, NamedInterfaceNode> consumer = (node, c) -> {
@@ -82,16 +79,16 @@ public class ModulithStructureView {
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, springIndex, sourceLinks, definitionLocator, catalog, project);
+		var jsonHandler = new JsonNodeHandler<ApplicationModules, NamedInterfaceNode>(labelProvider, consumer, elements, sourceLinks, definitionLocator, catalog, project);
 
 		// create the project tree and apply all the groupers from the project
 		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI
 		var jsonTree = new ProjectTree<>(adapter, catalog, jsonHandler);
 
 		if (StructureViewUtil.hasNamedInterfaceNodesEnabled()) {
-			jsonTree = jsonTree.withStructureProvider(new ApplicationModulesNamedInterfacesGroupingProvider(modules, project, springIndex));
+			jsonTree = jsonTree.withStructureProvider(new ApplicationModulesNamedInterfacesGroupingProvider(modules, elements));
 		} else {
-			jsonTree = jsonTree.withStructureProvider(new SimpleApplicationModulesStructureProvider(project, springIndex));
+			jsonTree = jsonTree.withStructureProvider(new SimpleApplicationModulesStructureProvider(elements));
 		}
 
 		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog, selectedGroups);

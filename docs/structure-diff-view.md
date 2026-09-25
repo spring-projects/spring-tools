@@ -4,11 +4,24 @@ This documents the design of the "diff" feature on top of the Logical Structure 
 stereotypes / Modulith modules), for whoever next touches this area. It focuses on *why* things are
 built the way they are - the code itself is the source of truth for *what* they do.
 
+**A baseline is not a rendered tree.** It used to be - see the "history" note in this file's git log
+around the "R0"-"R4" commits for the change. `docs/structure-diff-elements.md` covers *why* and
+*how* in detail; the short version, needed to make sense of everything below: a baseline stores a
+project's types, methods, members and their resolved stereotypes
+(`StructureElementSnapshot`/`StructureSnapshotBuilder`), and diffing rebuilds it into a tree, with
+whatever presentation settings (groups, current Modulith metadata) the *other* side of that diff was
+built with (`SnapshotStructureElements`), before handing both trees to the same, unchanged
+`StructureTreeDiffer` described below. That rebuild step is what makes a group selection - or any
+other presentation change - unable to produce a spurious diff any more.
+
 Primary files:
 
 - Backend (`headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/java/commands/`):
   `StructureViewProvider`, `StructureTreeDiffer`, `StructureSnapshotStore`, `StructureBaselineStorage`,
-  `GitBaselineTracker`, `WorkingTreeStatus`, `JsonNodeHandler`, `SpringIndexCommands`
+  `GitBaselineTracker`, `WorkingTreeStatus`, `JsonNodeHandler`, `SpringIndexCommands` - and, for what a
+  baseline actually stores and how it's rebuilt into a tree: `StructureElements`,
+  `IndexStructureElements`, `StructureElementSnapshot`, `StructureSnapshotBuilder`,
+  `SnapshotStructureElements`, `SnapshotStereotypeFactory` (see `docs/structure-diff-elements.md`)
 - Content hashing (`.../boot/java/utils/`): `ASTUtils.contentHash`, `SpringIndexerJavaContext`,
   `SpringIndexerJavaAstScanner`
 - Per-element-kind indexers that populate hashes: `stereotypes/StereotypesIndexer`,
@@ -276,10 +289,11 @@ given the retention cap, not something worth surfacing as a hard failure.
   `StructureBaselineStorage`'s own Gson instance (used only for the on-disk file, never over
   JSON-RPC) *does* need a custom `Instant` `TypeAdapter`, since that one really does serialize
   `Instant` fields of the persisted `StructureSnapshot`.
-- A persisted/transmitted node (`StructureViewProvider.toComparableNode`) deliberately drops
-  `location` and `reference` - the differ never reads either, and on measured real baselines they
-  account for roughly a third of the bytes. This matters because history entries are retained (up to
-  10 by default) and each capture rewrites the whole per-project file.
+- What gets persisted per baseline (`StructureSnapshot.elements`, a `StructureElementSnapshot`) never
+  carries a source location at all - see `docs/structure-diff-elements.md` for what it holds instead
+  and why. A node built *for comparison* (`StructureViewProvider.toComparableNode`, used both to
+  rebuild a baseline into a tree and to render the live tree the same way for that comparison)
+  likewise drops `location` and `reference` - the differ never reads either.
 
 ## Client-side UI
 
@@ -332,10 +346,6 @@ given the retention cap, not something worth surfacing as a hard failure.
 - No visual cue in the tree beyond the project tooltip for "a non-default baseline is pinned."
 - No explicit warning when a pinned snapshot has aged out of history; the tooltip just reports
   whichever snapshot the fail-open fallback actually used.
-- The capture path (`StructureSnapshotStore.snapshotNow`) always builds its own, unfiltered tree
-  rather than reusing a tree a caller might already have on hand - a request's tree is filtered down
-  to whichever groups the client currently has selected, and a baseline captured from that would only
-  ever be valid for whatever the user happened to have toggled on at capture time.
 - No per-project eviction of the in-memory `history` map when a project is closed/removed - would
   need `ProjectObserver.Listener.deleted(IJavaProject)` wiring; judged out of scope so far since the
   in-memory footprint (structure trees stripped of location/reference) is small and per-project-name

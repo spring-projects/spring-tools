@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -26,21 +26,21 @@ public class ApplicationModulesLabelProvider implements
 
 	private final StereotypeCatalog catalog;
 	private final IJavaProject project;
-	private final CachedSpringMetamodelIndex springIndex;
+	private final StructureElements elements;
 	private final ApplicationModules modules;
-	
-	public ApplicationModulesLabelProvider(StereotypeCatalog catalog, IJavaProject project, CachedSpringMetamodelIndex springIndex, ApplicationModules modules) {
+
+	public ApplicationModulesLabelProvider(StereotypeCatalog catalog, IJavaProject project, StructureElements elements, ApplicationModules modules) {
 		this.catalog = catalog;
 		this.project = project;
-		this.springIndex = springIndex;
+		this.elements = elements;
 		this.modules = modules;
 	}
-	
+
 	@Override
 	public String getApplicationLabel(ApplicationModules application) {
-		
-		var mainPackage = StructureViewUtil.identifyMainApplicationPackage(project, springIndex);
-		
+
+		var mainPackage = elements.mainApplicationPackage();
+
 		return modules.getSystemName().orElse(project.getElementName()) + " (" + mainPackage.getPackageName() + ")";
 	}
 
@@ -74,7 +74,7 @@ public class ApplicationModulesLabelProvider implements
 
 	@Override
 	public String getMethodLabel(StereotypeMethodElement method, StereotypeClassElement contextual) {
-		return StructureViewUtil.getMethodLabel(project, springIndex, method, contextual);
+		return elements.methodLabel(method, contextual);
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,25 +16,22 @@ import org.jmolecules.stereotype.tooling.StructureProvider;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
-import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 public abstract class ApplicationModulesStructureProvider
 		implements StructureProvider<ApplicationModules, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
-	protected final IJavaProject project;
-	protected final CachedSpringMetamodelIndex springIndex;
-	
-	public ApplicationModulesStructureProvider(IJavaProject project, CachedSpringMetamodelIndex springIndex) {
-		this.project = project;
-		this.springIndex = springIndex;
+	protected final StructureElements elements;
+
+	public ApplicationModulesStructureProvider(StructureElements elements) {
+		this.elements = elements;
 	}
 
 	@Override
 	public Collection<StereotypePackageElement> extractPackages(ApplicationModules application) {
-		
+
 		return application.stream()
 				.map(ApplicationModule::getBasePackage)
-				.map(pkg -> StructureViewUtil.findPackageNode(pkg, project, springIndex))
+				.map(elements::packageNode)
 				.toList();
 	}
 
@@ -42,17 +39,17 @@ public abstract class ApplicationModulesStructureProvider
 	public Collection<StereotypeMethodElement> extractMethods(StereotypeClassElement type) {
 		return type.getMethods();
 	}
-	
+
 	static class SimpleApplicationModulesStructureProvider extends ApplicationModulesStructureProvider implements SimpleStructureProvider<ApplicationModules, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
-		SimpleApplicationModulesStructureProvider(IJavaProject project, CachedSpringMetamodelIndex springIndex) {
-			super(project, springIndex);
+		SimpleApplicationModulesStructureProvider(StructureElements elements) {
+			super(elements);
 		}
 
 		@Override
 		public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
-			
-			return springIndex.getNodesOfType(project.getElementName(), StereotypeClassElement.class).stream()
+
+			return elements.types().stream()
 					.filter(element -> element.getType().startsWith(pkg.getPackageName()))
 					.toList();
 		}

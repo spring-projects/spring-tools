@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,7 +24,6 @@ import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.ChangeType;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.DiffNode;
 import org.springframework.ide.vscode.boot.java.commands.StructureTreeDiffer.StructureTreeDiff;
-import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider.StructureNode;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 /**
@@ -116,9 +116,9 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 
 		storage.save(project, updated);
 
-		log.info("captured logical structure baseline for project '{}'{}, {} node(s), retaining {} of up to {} snapshot(s)",
+		log.info("captured logical structure baseline for project '{}'{}, {} element(s), retaining {} of up to {} snapshot(s)",
 				projectName, commitSha == null ? " (manual, no commit)" : " at commit " + commitSha,
-				snapshot.nodeCount(), updated.size(), config.getStructureBaselineHistorySize());
+				snapshot.elementCount(), updated.size(), config.getStructureBaselineHistorySize());
 
 		return snapshot;
 	}
@@ -171,7 +171,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	public List<BaselineHistoryEntry> historyEntriesOf(IJavaProject project) {
 		return historyOf(project).stream()
 				.map(snapshot -> new BaselineHistoryEntry(snapshot.commitSha(), snapshot.commitMessage(),
-						keyOf(snapshot), snapshot.nodeCount()))
+						keyOf(snapshot), snapshot.elementCount()))
 				.toList();
 	}
 
@@ -198,7 +198,9 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
-	 * Diffs the current logical structure of the project against its most recent baseline.
+	 * Diffs the current logical structure of the project against its most recent baseline, both
+	 * rendered with every group the project's catalog has - the same tree shape a baseline is
+	 * always captured with, so nothing about the group selection can affect this comparison.
 	 *
 	 * @return empty when no baseline has been captured yet for this project
 	 */
@@ -208,9 +210,13 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 			return Optional.empty();
 		}
 
-		StructureSnapshot current = snapshotNow(project, null, null);
-		return Optional.of(StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(),
-				current.capturedAt(), baseline.root(), current.root()));
+		JsonNodeHandler.Node baselineTree = structureViewProvider.createTree(project,
+				new SnapshotStructureElements(baseline.elements()), null, false);
+		JsonNodeHandler.Node currentTree = structureViewProvider.createCompleteTree(project);
+		Instant currentAt = Instant.now();
+
+		return Optional.of(StructureTreeDiffer.diff(project.getElementName(), baseline.capturedAt(), currentAt,
+				StructureViewProvider.toComparableNode(baselineTree), StructureViewProvider.toComparableNode(currentTree)));
 	}
 
 	/**
@@ -225,16 +231,26 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 *        recent one. Falls back to the most recent one if that snapshot is no longer retained
 	 *        (evicted, or simply unknown) - failing open to the default view rather than showing
 	 *        nothing.
+	 * @param selectedGroups the same group selection {@code root} was built with - the baseline is
+	 *        rebuilt into a tree with the exact same selection, which is what stops a group
+	 *        selection from ever causing a spurious change (see
+	 *        {@code docs/structure-diff-elements.md}); {@code null} means every group, same
+	 *        convention as {@link StructureViewProvider#createTree}
 	 * @return the baseline snapshot actually compared against, so the caller can report it (e.g. in
 	 *         a tooltip) without a second lookup - {@code null} if the project has no baseline at all
 	 */
-	public StructureSnapshot annotateWithChangesSinceBaseline(IJavaProject project, JsonNodeHandler.Node root, String snapshotKey) {
+	public StructureSnapshot annotateWithChangesSinceBaseline(IJavaProject project, JsonNodeHandler.Node root,
+			String snapshotKey, Collection<String> selectedGroups) {
+
 		StructureSnapshot baseline = baselineOf(project, snapshotKey);
 		if (baseline == null || root == null) {
 			return baseline;
 		}
 
-		DiffNode diff = StructureTreeDiffer.diffTree(baseline.root(), StructureViewProvider.toComparableNode(root));
+		JsonNodeHandler.Node baselineTree = structureViewProvider.createTree(project,
+				new SnapshotStructureElements(baseline.elements()), selectedGroups, false);
+
+		DiffNode diff = StructureTreeDiffer.diffTree(StructureViewProvider.toComparableNode(baselineTree), StructureViewProvider.toComparableNode(root));
 
 		Map<String, ChangeType> changes = StructureTreeDiffer.changesByNodeId(diff);
 		if (!changes.isEmpty()) {
@@ -295,18 +311,18 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
-	 * Deliberately builds its own tree rather than reusing one a caller may already have: a snapshot
-	 * has to cover the whole project, while the tree a structure request builds is filtered down to
-	 * the groups that client selected. Baselines captured from a filtered tree would diff against
-	 * whatever the user happened to have switched on at the time.
+	 * Captures every type, method and member of the project unconditionally - a snapshot has no
+	 * group selection of its own to be filtered by, and needs no Spring Modulith metadata either,
+	 * unlike building a tree for display does. Diffing it later rebuilds it into a tree with
+	 * whatever settings the *other* side of that diff was built with (see
+	 * {@link #annotateWithChangesSinceBaseline}), so it does not matter that none are applied here.
 	 */
 	private StructureSnapshot snapshotNow(IJavaProject project, String commitSha, String commitMessage) {
-		log.debug("building logical structure snapshot for project '{}'", project.getElementName());
-		JsonNodeHandler.Node root = structureViewProvider.createCompleteTree(project);
-		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), commitSha, commitMessage,
-				StructureViewProvider.toComparableNode(root));
-		log.debug("built logical structure snapshot for project '{}' with {} node(s)",
-				project.getElementName(), snapshot.nodeCount());
+		log.debug("capturing logical structure snapshot for project '{}'", project.getElementName());
+		StructureElementSnapshot elements = structureViewProvider.captureSnapshot(project);
+		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), commitSha, commitMessage, elements);
+		log.debug("captured logical structure snapshot for project '{}' with {} element(s)",
+				project.getElementName(), snapshot.elementCount());
 		return snapshot;
 	}
 
@@ -319,19 +335,15 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 * {@code java.time} types ({@code module java.base does not "opens java.time"}). The same
 	 * reason {@code SpringIndexCommands.CaptureBaselineResult} keeps its timestamp as a string.
 	 */
-	public static record BaselineHistoryEntry(String commitSha, String commitMessage, String capturedAt, int nodeCount) {
+	public static record BaselineHistoryEntry(String commitSha, String commitMessage, String capturedAt, int elementCount) {
 	}
 
-	public static record StructureSnapshot(Instant capturedAt, String commitSha, String commitMessage, StructureNode root) {
+	public static record StructureSnapshot(Instant capturedAt, String commitSha, String commitMessage, StructureElementSnapshot elements) {
 
-		public int nodeCount() {
-			return nodeCount(root);
-		}
-
-		private static int nodeCount(StructureNode node) {
-			int count = 1;
-			for (StructureNode child : node.children()) {
-				count += nodeCount(child);
+		public int elementCount() {
+			int count = 0;
+			for (StructureElementSnapshot.SnapshotType type : elements.types()) {
+				count += 1 + type.methods().size() + type.members().size();
 			}
 			return count;
 		}

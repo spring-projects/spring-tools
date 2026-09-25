@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2025 Broadcom, Inc.
+ * Copyright (c) 2025, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -17,17 +17,14 @@ import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvid
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
-import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 public class ToolsStructureProvider implements
 		SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
-	private final CachedSpringMetamodelIndex springIndex;
-	private final IJavaProject project;
+	private final StructureElements elements;
 
-	public ToolsStructureProvider(CachedSpringMetamodelIndex springIndex, IJavaProject project) {
-		this.springIndex = springIndex;
-		this.project = project;
+	public ToolsStructureProvider(StructureElements elements) {
+		this.elements = elements;
 	}
 
 	@Override
@@ -42,7 +39,7 @@ public class ToolsStructureProvider implements
 
 	@Override
 	public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
-		return springIndex.getClassesForProject(project.getElementName()).stream()
+		return elements.types().stream()
 			.filter(element -> element.getType().startsWith(pkg.getPackageName()))
 			.toList();
 	}

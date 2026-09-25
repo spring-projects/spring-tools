@@ -20,7 +20,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,7 +29,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
@@ -48,7 +46,6 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinition
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -128,7 +125,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private final Node root;
 	private final LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels;
 	private final BiConsumer<Node, C> customHandler;
-	private final CachedSpringMetamodelIndex springIndex;
+	private final StructureElements elements;
 	private final SourceLinks sourceLinks;
 	private final StereotypeDefinitionLocator definitionLocator;
 	private final IJavaProject project;
@@ -137,10 +134,10 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	private StereotypeCatalog catalog;
 
 	public JsonNodeHandler(LabelProvider<A, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement, C> labels, BiConsumer<Node, C> customHandler,
-			CachedSpringMetamodelIndex springIndex, SourceLinks sourceLinks, StereotypeDefinitionLocator definitionLocator,
+			StructureElements elements, SourceLinks sourceLinks, StereotypeDefinitionLocator definitionLocator,
 			StereotypeCatalog catalog, IJavaProject project) {
 		this.labels = labels;
-		this.springIndex = springIndex;
+		this.elements = elements;
 		this.customHandler = customHandler;
 		this.sourceLinks = sourceLinks;
 		this.definitionLocator = definitionLocator;
@@ -268,34 +265,22 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		if (System.getProperty("disable-structure-view-details") != null) {
 			return Collections.emptyList();
 		}
-		
-		if (type.getLocation() == null) {
-			return Collections.emptyList();
-		}
-		
-		String docUri = type.getLocation().getUri();
+
 		ArrayList<Node> result = new ArrayList<Node>();
 
-		Arrays.stream(springIndex.getBeansOfDocument(docUri))
-				.filter(bean -> bean.getType().equals(type.getType()))
-				.flatMap(bean -> bean.getChildren().stream())
-				.filter(child -> child instanceof SymbolElement)
-				.map(child -> ((SymbolElement) child))
-				.forEach(symbolElement -> {
-					DocumentSymbol symbol = symbolElement.getDocumentSymbol();
-					
-					Node childNode = new Node(parent)
-							.withAttribute(TEXT, symbol.getName())
-							.withAttribute(LOCATION, new Location(docUri, symbol.getRange()))
-							.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
-							.withAttribute(KIND, KIND_MEMBER)
-							.withAttribute(CONTENT_HASH, symbolElement.getContentHash());
+		elements.membersOf(type).forEach(member -> {
+			Node childNode = new Node(parent)
+					.withAttribute(TEXT, member.label())
+					.withAttribute(LOCATION, member.location())
+					.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
+					.withAttribute(KIND, KIND_MEMBER)
+					.withAttribute(CONTENT_HASH, member.contentHash());
 
-					assignNodeId(childNode, parent);
+			assignNodeId(childNode, parent);
 
-					result.add(childNode);
-				});
-						
+			result.add(childNode);
+		});
+
 		return result;
 	}
 

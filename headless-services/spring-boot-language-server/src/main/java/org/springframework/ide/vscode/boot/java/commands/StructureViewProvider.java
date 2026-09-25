@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.eclipse.lsp4j.Location;
+import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
@@ -65,7 +66,7 @@ public class StructureViewProvider {
 	}
 
 	/**
-	 * Creates the structure tree for a single project.
+	 * Creates the structure tree for a single project, from the live index.
 	 *
 	 * @param project        the project to create the tree for
 	 * @param cachedIndex    index cache to read the elements from, can be shared across projects
@@ -85,22 +86,74 @@ public class StructureViewProvider {
 		}
 
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
-		var factory = new IndexBasedStereotypeFactory(catalog, project, cachedIndex);
+		StructureElements elements = indexElementsOf(project, cachedIndex, catalog);
 
-		if (StructureViewUtil.hasSourceDefinedStereotypesEnabled()) {
-			factory.registerStereotypeDefinitions();
-		}
+		return createTree(project, elements, selectedGroups, updateMetadata);
+	}
+
+	/**
+	 * Creates the structure tree for a single project from the given elements - the live index
+	 * ({@link #createTree(IJavaProject, CachedSpringMetamodelIndex, boolean, Collection)} builds
+	 * one of those), or a captured baseline snapshot ({@link SnapshotStructureElements}), diffed
+	 * against by rebuilding it into a tree with the same tree-building code and the same
+	 * presentation settings the live tree was built with (see
+	 * {@code docs/structure-diff-elements.md}) - which is the entire reason this overload, rather
+	 * than only the index-specific one above, exists.
+	 *
+	 * @param updateMetadata whether to re-request modulith metadata first - only ever meaningful,
+	 *        and only ever passed as {@code true}, for the live tree; a rebuilt baseline tree is
+	 *        always diffed against whatever module metadata is current, so it never needs a fresh
+	 *        request of its own
+	 * @param selectedGroups identifiers of the groups to structure the tree by, all groups of the
+	 *                       project catalog are used when null
+	 * @return the root node of the tree, or null if no tree could be created for the project
+	 */
+	public Node createTree(IJavaProject project, StructureElements elements, Collection<String> selectedGroups, boolean updateMetadata) {
+
+		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 
 		if (selectedGroups == null) {
 			selectedGroups = catalog.getGroups().stream().map(group -> group.getIdentifier()).toList();
 		}
 
 		if (ModulithService.isModulithDependentProject(project) && StructureViewUtil.hasModulithStructureViewEnabled()) {
-			return new ModulithStructureView(catalog, cachedIndex, sourceLinks, definitionLocator, modulithService).createTree(project, factory, selectedGroups, updateMetadata);
+			return new ModulithStructureView(catalog, sourceLinks, definitionLocator, modulithService).createTree(project, elements, selectedGroups, updateMetadata);
 		}
 		else {
-			return new JMoleculesStructureView(catalog, cachedIndex, sourceLinks, definitionLocator).createTree(project, factory, selectedGroups);
+			return new JMoleculesStructureView(catalog, sourceLinks, definitionLocator).createTree(project, elements, selectedGroups);
 		}
+	}
+
+	private StructureElements indexElementsOf(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
+		var factory = new IndexBasedStereotypeFactory(catalog, project, cachedIndex);
+
+		if (StructureViewUtil.hasSourceDefinedStereotypesEnabled()) {
+			factory.registerStereotypeDefinitions();
+		}
+
+		return new IndexStructureElements(project, cachedIndex, factory);
+	}
+
+	/**
+	 * Captures the project's current logical structure as a {@link StructureElementSnapshot},
+	 * using a freshly created index cache - see {@code docs/structure-diff-elements.md}. Unlike
+	 * {@link #createTree}, needs no Spring Modulith metadata: a snapshot captures every type,
+	 * method and member unconditionally, leaving how they get grouped into a tree - by module or
+	 * otherwise - entirely to whoever rebuilds one from it later.
+	 */
+	public StructureElementSnapshot captureSnapshot(IJavaProject project) {
+		return captureSnapshot(project, new CachedSpringMetamodelIndex(springIndex));
+	}
+
+	/**
+	 * Same as {@link #captureSnapshot(IJavaProject)}, but with an index cache that can be shared
+	 * across projects.
+	 */
+	public StructureElementSnapshot captureSnapshot(IJavaProject project, CachedSpringMetamodelIndex cachedIndex) {
+		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
+		StructureElements elements = indexElementsOf(project, cachedIndex, catalog);
+
+		return StructureSnapshotBuilder.capture(elements);
 	}
 
 	/**

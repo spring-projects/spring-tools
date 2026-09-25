@@ -87,7 +87,7 @@ public class StructureSnapshotStoreTest {
 				.withAttribute(JsonNodeHandler.TEXT, "app")
 				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
 
-		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, olderKey);
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, olderKey, null);
 
 		assertThat(comparedAgainst.commitSha()).isEqualTo("sha1");
 		assertThat(comparedAgainst.commitMessage()).isEqualTo("first commit");
@@ -107,7 +107,7 @@ public class StructureSnapshotStoreTest {
 
 		// an evicted (or simply unknown) snapshot key - failing open to the default view rather than
 		// showing nothing, since the picked snapshot is no longer available to compare against
-		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, "2020-01-01T00:00:00Z");
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, "2020-01-01T00:00:00Z", null);
 
 		assertThat(comparedAgainst.commitSha()).isEqualTo("sha2");
 	}
@@ -121,8 +121,8 @@ public class StructureSnapshotStoreTest {
 				.withAttribute(JsonNodeHandler.TEXT, "app")
 				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
 
-		assertThat(store.annotateWithChangesSinceBaseline(project, tree, null)).isNull();
-		assertThat(store.annotateWithChangesSinceBaseline(project, tree, "2020-01-01T00:00:00Z")).isNull();
+		assertThat(store.annotateWithChangesSinceBaseline(project, tree, null, null)).isNull();
+		assertThat(store.annotateWithChangesSinceBaseline(project, tree, "2020-01-01T00:00:00Z", null)).isNull();
 	}
 
 	@Test
@@ -143,7 +143,7 @@ public class StructureSnapshotStoreTest {
 				.withAttribute(JsonNodeHandler.TEXT, "app")
 				.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
 
-		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, manualKey);
+		StructureSnapshot comparedAgainst = store.annotateWithChangesSinceBaseline(project, tree, manualKey, null);
 
 		assertThat(comparedAgainst.commitSha()).isNull();
 		assertThat(keyOf(comparedAgainst)).isEqualTo(manualKey);
@@ -175,7 +175,7 @@ public class StructureSnapshotStoreTest {
 		assertThat(entries).hasSize(2);
 		assertThat(entries.get(0).commitSha()).isEqualTo("sha2");
 		assertThat(entries.get(0).commitMessage()).isEqualTo("second commit");
-		assertThat(entries.get(0).nodeCount()).isEqualTo(1);
+		assertThat(entries.get(0).elementCount()).isEqualTo(1);
 		assertThat(entries.get(1).commitSha()).isEqualTo("sha1");
 	}
 
@@ -203,10 +203,10 @@ public class StructureSnapshotStoreTest {
 		when(config.getStructureBaselineHistorySize()).thenReturn(historySize);
 
 		StructureViewProvider structureViewProvider = mock(StructureViewProvider.class);
-		when(structureViewProvider.createCompleteTree(any()))
-				.thenAnswer(invocation -> new JsonNodeHandler.Node(null)
-						.withAttribute(JsonNodeHandler.TEXT, "app")
-						.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION));
+		when(structureViewProvider.captureSnapshot(any()))
+				.thenAnswer(invocation -> new StructureElementSnapshot("app",
+						List.of(new StructureElementSnapshot.SnapshotType("app.Type", null, List.of(), List.of(), List.of())),
+						List.of()));
 
 		return new StructureSnapshotStore(structureViewProvider, storage, config);
 	}

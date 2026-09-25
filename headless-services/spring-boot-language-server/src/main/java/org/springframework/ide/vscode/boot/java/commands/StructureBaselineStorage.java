@@ -76,8 +76,15 @@ public class StructureBaselineStorage {
 	 * history of them (newest first), and added the commit message to each. Discarding older files
 	 * loses nothing but the history itself - the current baseline they held is simply re-captured
 	 * (or re-derived from the next commit) exactly as an empty history would be.
+	 * <p>
+	 * Version 5 changed what a snapshot's {@code elements} field holds - a
+	 * {@link StructureElementSnapshot} (a project's types, methods, members and their resolved
+	 * stereotypes) instead of a rendered {@code StructureNode} tree - see
+	 * {@code docs/structure-diff-elements.md}. A version-4 file cannot be converted: its stereotype
+	 * nodes carry pluralized display labels, not stereotype identifiers, and it has no per-element
+	 * data to begin with. Discarding loses nothing lasting, same as every version bump before it.
 	 */
-	private static final int SCHEMA_VERSION = 4;
+	private static final int SCHEMA_VERSION = 5;
 
 	private final File directory;
 	private final Gson gson = new GsonBuilder()

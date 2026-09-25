@@ -123,7 +123,7 @@ public class SpringIndexCommands {
 				// no commit information on purpose: a manual capture is normally taken over
 				// uncommitted work, so it represents no commit even though one is checked out
 				StructureSnapshot snapshot = structureSnapshotStore.captureBaseline(project);
-				return new CaptureBaselineResult(project.getElementName(), snapshot.nodeCount(), snapshot.capturedAt().toString());
+				return new CaptureBaselineResult(project.getElementName(), snapshot.elementCount(), snapshot.capturedAt().toString());
 			}, messageWorkerThreadPool);
 		});
 
@@ -163,8 +163,8 @@ public class SpringIndexCommands {
 	private Node createAnnotatedTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, StructureCommandArgs args,
 			boolean indexSettled) {
 
-		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata,
-				args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName()));
+		Set<String> selectedGroups = args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName());
+		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups);
 
 		// no baseline attributes at all rather than a baseline with nothing marked: those two look
 		// the same to a client, and the latter reads as "nothing changed" - which would hide the
@@ -174,7 +174,9 @@ public class SpringIndexCommands {
 
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));
 
-			StructureSnapshot comparedAgainst = structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree, snapshotKey);
+			// the same group selection the tree above was just built with, so the baseline is
+			// rebuilt into the same shape - see StructureSnapshotStore.annotateWithChangesSinceBaseline
+			StructureSnapshot comparedAgainst = structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree, snapshotKey, selectedGroups);
 			if (comparedAgainst != null) {
 				// sha and message stay null for a manually captured snapshot - the capture time is
 				// all there is to identify it by
@@ -256,7 +258,7 @@ public class SpringIndexCommands {
 		return Optional.empty();
 	}
 
-	public static record CaptureBaselineResult(String projectName, int nodeCount, String capturedAt) {}
+	public static record CaptureBaselineResult(String projectName, int elementCount, String capturedAt) {}
 
 	public static record ClearBaselineResult(String projectName, boolean hadBaseline) {}
 

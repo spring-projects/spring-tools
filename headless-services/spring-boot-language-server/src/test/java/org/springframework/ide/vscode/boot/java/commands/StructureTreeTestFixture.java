@@ -16,6 +16,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -26,6 +27,7 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -56,8 +58,19 @@ class StructureTreeTestFixture {
 	 * @param compareAgainst the snapshot to compare each project against, keyed by project name -
 	 *        null to let the server use each project's most recent one
 	 */
-	@SuppressWarnings("unchecked")
 	List<Node> structureTrees(Map<String, String> compareAgainst) throws Exception {
+		return structureTrees(compareAgainst, null);
+	}
+
+	/**
+	 * @param compareAgainst the snapshot to compare each project against, keyed by project name -
+	 *        null to let the server use each project's most recent one
+	 * @param groups the stereotype group identifiers to structure each project's tree by, keyed by
+	 *        project name - null (for a project, or for the whole map) to use every group of that
+	 *        project's catalog, matching {@link StructureViewProvider#createTree}'s own default
+	 */
+	@SuppressWarnings("unchecked")
+	List<Node> structureTrees(Map<String, String> compareAgainst, Map<String, Set<String>> groups) throws Exception {
 		JsonObject params = new JsonObject();
 		params.addProperty("updateMetadata", false);
 
@@ -67,8 +80,30 @@ class StructureTreeTestFixture {
 			params.add("compareAgainst", compareAgainstJson);
 		}
 
+		if (groups != null) {
+			JsonObject groupsJson = new JsonObject();
+			groups.forEach((projectName, ids) -> {
+				JsonArray idsJson = new JsonArray();
+				ids.forEach(idsJson::add);
+				groupsJson.add(projectName, idsJson);
+			});
+			params.add("groups", groupsJson);
+		}
+
 		return (List<Node>) harness.getServer().getWorkspaceService()
 				.executeCommand(new ExecuteCommandParams(STRUCTURE_CMD, List.of(params))).get();
+	}
+
+	/**
+	 * The stereotype groups the given project's tree can be structured by, as returned by
+	 * {@code sts/spring-boot/structure/groups} - the identifiers a {@code groups} argument of
+	 * {@link #structureTrees(Map, Map)} can select among.
+	 */
+	static List<String> groupIdentifiersOf(BootLanguageServerHarness harness, String projectName) throws Exception {
+		StructureViewProvider.Groups result = (StructureViewProvider.Groups) harness.getServer().getWorkspaceService()
+				.executeCommand(new ExecuteCommandParams("sts/spring-boot/structure/groups", List.of(projectName))).get();
+
+		return result.groups().stream().map(StructureViewProvider.Group::identifier).toList();
 	}
 
 	/**
@@ -96,6 +131,29 @@ class StructureTreeTestFixture {
 		}
 
 		indexer.updateDocument(uri, changed, "test triggered").get(15, TimeUnit.SECONDS);
+	}
+
+	/**
+	 * Adds a brand-new source file to the project and waits for it to be indexed - for scenarios
+	 * {@link #edit} can't set up, since it requires the file to already exist.
+	 */
+	void addType(String relativeFile, String content) throws Exception {
+		File file = new File(projectDirectory, relativeFile);
+		FileUtils.writeStringToFile(file, content, Charset.defaultCharset());
+		indexer.createDocument(file.toURI().toString()).get(15, TimeUnit.SECONDS);
+	}
+
+	/**
+	 * Removes a source file from the project and waits for the removal to be indexed - the
+	 * counterpart to {@link #addType}.
+	 */
+	void removeType(String relativeFile) throws Exception {
+		File file = new File(projectDirectory, relativeFile);
+		String uri = file.toURI().toString();
+		if (!file.delete()) {
+			throw new IllegalStateException("test setup problem: could not delete " + relativeFile);
+		}
+		indexer.deleteDocument(uri).get(15, TimeUnit.SECONDS);
 	}
 
 	/**
@@ -163,6 +221,37 @@ class StructureTreeTestFixture {
 		}
 
 		node.getChildren().forEach(child -> collectMatches(child, kind, labelMatches, matches));
+	}
+
+	/**
+	 * A deterministic, sorted, one-line-per-changed-node description of every {@code change}
+	 * attribute in the given tree (added/removed/modified/containsChanges), qualified by the kind
+	 * and label path leading to it - e.g. {@code "type:MyApp > example > SampleController=removed"}.
+	 * Unchanged nodes contribute nothing, since {@code JsonNodeHandler} only ever sets the attribute
+	 * when there is a change to report.
+	 *
+	 * <p>This is the golden-master this refactoring is checked against (see "R0" in
+	 * {@code docs/structure-diff-elements.md}): a scenario's recorded output here must come out
+	 * byte-for-byte identical before and after the element-based snapshot rework, which is what
+	 * turns "pure refactoring" from a claim into something a test enforces.
+	 */
+	static String describeChanges(Node root) {
+		List<String> lines = new ArrayList<>();
+		collectChangeDescriptions(root, "", lines);
+		lines.sort(null);
+		return String.join("\n", lines);
+	}
+
+	private static void collectChangeDescriptions(Node node, String path, List<String> lines) {
+		String label = String.valueOf(node.getAttribute(JsonNodeHandler.TEXT));
+		String here = path.isEmpty() ? label : path + " > " + label;
+
+		Object change = node.getAttribute(JsonNodeHandler.CHANGE);
+		if (change != null) {
+			lines.add(node.getAttribute(JsonNodeHandler.KIND) + ":" + here + "=" + change);
+		}
+
+		node.getChildren().forEach(child -> collectChangeDescriptions(child, here, lines));
 	}
 
 }

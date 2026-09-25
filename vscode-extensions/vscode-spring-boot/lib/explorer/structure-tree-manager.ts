@@ -158,7 +158,7 @@ export class StructureManager {
             const result = await commands.executeCommand<CaptureBaselineResult>(SPRING_STRUCTURE_CAPTURE_BASELINE_CMD, projectName);
             // re-fetch the tree so that change markers left over from a previous baseline disappear
             this.refresh(false);
-            window.showInformationMessage(`Captured logical structure baseline for '${projectName}' (${result.nodeCount} node(s)). Changes since this point are highlighted in the Logical Structure view.`);
+            window.showInformationMessage(`Captured logical structure baseline for '${projectName}' (${result.elementCount} element(s)). Changes since this point are highlighted in the Logical Structure view.`);
         } catch (e) {
             window.showErrorMessage(`Failed to capture logical structure baseline for '${projectName}': ${e}`);
         }
@@ -381,7 +381,7 @@ interface Groups {
 
 interface CaptureBaselineResult {
     projectName: string;
-    nodeCount: number;
+    elementCount: number;
     capturedAt: string;
 }
 
@@ -394,7 +394,7 @@ interface BaselineHistoryEntry {
     commitSha: string;
     commitMessage: string;
     capturedAt: string;
-    nodeCount: number;
+    elementCount: number;
 }
 
 interface GroupQuickPickItem extends QuickPickItem {

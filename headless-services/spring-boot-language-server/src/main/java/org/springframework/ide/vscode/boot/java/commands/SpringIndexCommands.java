@@ -45,6 +45,7 @@ public class SpringIndexCommands {
 
 	private static final String SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 	private static final String SPRING_STRUCTURE_GROUPS_CMD = "sts/spring-boot/structure/groups";
+	private static final String SPRING_STRUCTURE_DEPENDENCIES_CMD = "sts/spring-boot/structure/dependencies";
 	private static final String SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 	private static final String SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 	private static final String SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
@@ -60,16 +61,19 @@ public class SpringIndexCommands {
 	private final SpringSymbolIndex symbolIndex;
 	private final StructureViewProvider structureViewProvider;
 	private final StructureSnapshotStore structureSnapshotStore;
+	private final StructureDependencySources dependencySources;
 
 	private final Executor messageWorkerThreadPool;
 
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
 			SpringSymbolIndex symbolIndex, JavaProjectFinder projectFinder,
-			StructureViewProvider structureViewProvider, StructureSnapshotStore structureSnapshotStore) {
+			StructureViewProvider structureViewProvider, StructureSnapshotStore structureSnapshotStore,
+			StructureDependencySources dependencySources) {
 
 		this.symbolIndex = symbolIndex;
 		this.structureViewProvider = structureViewProvider;
 		this.structureSnapshotStore = structureSnapshotStore;
+		this.dependencySources = dependencySources;
 		this.messageWorkerThreadPool = Executors.newCachedThreadPool();
 
 		server.onCommand(SPRING_STRUCTURE_CMD, params -> {
@@ -104,6 +108,16 @@ public class SpringIndexCommands {
 				}
 				return projectFinder.all().stream().map(structureViewProvider::getGroups).toList();
 
+			}, messageWorkerThreadPool);
+		});
+
+		server.onCommand(SPRING_STRUCTURE_DEPENDENCIES_CMD, params -> {
+			return CompletableFuture.supplyAsync(() -> {
+				Optional<String> projectName = singleStringArg(params);
+				if (projectName.isPresent()) {
+					return projectFinder.all().stream().filter(p -> projectName.get().equals(p.getElementName())).findFirst().map(this::dependenciesOf).orElseThrow();
+				}
+				return projectFinder.all().stream().map(this::dependenciesOf).toList();
 			}, messageWorkerThreadPool);
 		});
 
@@ -164,7 +178,10 @@ public class SpringIndexCommands {
 			boolean indexSettled) {
 
 		Set<String> selectedGroups = args.selectedGroups == null ? null : args.selectedGroups.get(project.getElementName());
-		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups);
+		List<DependencyDescriptor> selectedDependencies = dependencySources.resolve(project,
+				args.selectedDependencies == null ? null : args.selectedDependencies.get(project.getElementName()));
+
+		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups, selectedDependencies);
 
 		// no baseline attributes at all rather than a baseline with nothing marked: those two look
 		// the same to a client, and the latter reads as "nothing changed" - which would hide the
@@ -258,18 +275,37 @@ public class SpringIndexCommands {
 		return Optional.empty();
 	}
 
+	private Dependencies dependenciesOf(IJavaProject project) {
+		return new Dependencies(project.getElementName(), dependencySources.discoverAll(project));
+	}
+
+	/**
+	 * The dependencies a project offers for inclusion in its structure tree - the result of
+	 * {@code sts/spring-boot/structure/dependencies}.
+	 */
+	public static record Dependencies(String projectName, List<DependencyDescriptor> dependencies) {}
+
 	public static record CaptureBaselineResult(String projectName, int elementCount, String capturedAt) {}
 
 	public static record ClearBaselineResult(String projectName, boolean hadBaseline) {}
 
+	/**
+	 * @param selectedGroups per project, the groups to structure its tree by - a project that is
+	 *        missing (or the whole map being null) means <em>all</em> groups
+	 * @param selectedDependencies per project, the ids of the dependencies to include in its tree -
+	 *        a project that is missing (or the whole map being null) means <em>no</em> dependencies.
+	 *        Deliberately the opposite default of {@code selectedGroups}: including dependencies is
+	 *        something the user opts into.
+	 */
 	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups,
-			Map<String, String> compareAgainst) {
+			Map<String, String> compareAgainst, Map<String, List<String>> selectedDependencies) {
 
 		public static StructureCommandArgs parseFrom(ExecuteCommandParams params) {
 			boolean updateMetadata = false;
 			Map<String, Set<String>> selectedGroups = null;
 			List<String> affectedProjects = null;
 			Map<String, String> compareAgainst = null;
+			Map<String, List<String>> selectedDependencies = null;
 
 			List<Object> arguments = params.getArguments();
 			if (arguments != null && arguments.size() == 1) {
@@ -294,10 +330,15 @@ public class SpringIndexCommands {
 					if (compareAgainstElement != null) {
 						compareAgainst = new Gson().fromJson(compareAgainstElement, new TypeToken<Map<String, String>>() {});
 					}
+
+					JsonElement dependenciesElement = paramObject.get("dependencies");
+					if (dependenciesElement != null) {
+						selectedDependencies = new Gson().fromJson(dependenciesElement, new TypeToken<Map<String, List<String>>>() {});
+					}
 				}
 			}
 
-			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups, compareAgainst);
+			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups, compareAgainst, selectedDependencies);
 		}
 	}
 

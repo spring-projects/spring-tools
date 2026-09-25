@@ -60,6 +60,21 @@ public class Classpath {
 
 	public static class CPE {
 
+		/**
+		 * {@link #getExtra()} key of a source entry: the file system location of the workspace
+		 * project the source folder belongs to - the project itself for its own source folders
+		 * ({@link #isOwn()}), or another workspace project for folders contributed by a project
+		 * dependency. Also read under this literal name elsewhere, so it must not change.
+		 */
+		public static final String EXTRA_PROJECT_LOCATION = "project";
+
+		/**
+		 * {@link #getExtra()} key of a source entry: the name of the workspace project the source
+		 * folder belongs to, alongside {@link #EXTRA_PROJECT_LOCATION}. May be missing when the
+		 * classpath was sent by an older version of the tooling.
+		 */
+		public static final String EXTRA_PROJECT_NAME = "projectName";
+
 		// TODO: it seems like a good idea to make all classpath entries the same in that they all have
 		// - a place with source code
 		// - a place with compiled code
@@ -104,6 +119,22 @@ public class Classpath {
 
 		public void setExtra(Map<String, String> extra) {
 			this.extra = extra;
+		}
+
+		/**
+		 * The location of the workspace project this source entry belongs to, if the classpath
+		 * provider recorded one - see {@link #EXTRA_PROJECT_LOCATION}.
+		 */
+		public String getProjectLocation() {
+			return extra == null ? null : extra.get(EXTRA_PROJECT_LOCATION);
+		}
+
+		/**
+		 * The name of the workspace project this source entry belongs to, if the classpath provider
+		 * recorded one - see {@link #EXTRA_PROJECT_NAME}.
+		 */
+		public String getProjectName() {
+			return extra == null ? null : extra.get(EXTRA_PROJECT_NAME);
 		}
 
 		public String getOutputFolder() {
@@ -254,6 +285,16 @@ public class Classpath {
 	
 	public static boolean isProjectSource(CPE e) {
 		return isSource(e) && e.isOwn();
+	}
+
+	/**
+	 * Whether the entry is a source folder contributed by another workspace project the project
+	 * depends on, rather than one of the project's own source folders or a library. Only classpath
+	 * providers that resolve dependencies to workspace projects (the Java tooling, with Maven/Gradle
+	 * workspace resolution) produce such entries.
+	 */
+	public static boolean isWorkspaceProjectDependency(CPE e) {
+		return isSource(e) && !e.isOwn() && e.getProjectLocation() != null;
 	}
 	
 	public static boolean isProjectJavaSource(CPE cpe) {

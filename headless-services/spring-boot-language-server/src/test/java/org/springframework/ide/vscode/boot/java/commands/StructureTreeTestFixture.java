@@ -69,8 +69,17 @@ class StructureTreeTestFixture {
 	 *        project name - null (for a project, or for the whole map) to use every group of that
 	 *        project's catalog, matching {@link StructureViewProvider#createTree}'s own default
 	 */
-	@SuppressWarnings("unchecked")
 	List<Node> structureTrees(Map<String, String> compareAgainst, Map<String, Set<String>> groups) throws Exception {
+		return structureTrees(compareAgainst, groups, null);
+	}
+
+	/**
+	 * @param dependencies the ids of the dependencies to include in each project's tree, keyed by
+	 *        project name - null to send no selection at all
+	 */
+	@SuppressWarnings("unchecked")
+	List<Node> structureTrees(Map<String, String> compareAgainst, Map<String, Set<String>> groups,
+			Map<String, List<String>> dependencies) throws Exception {
 		JsonObject params = new JsonObject();
 		params.addProperty("updateMetadata", false);
 
@@ -88,6 +97,16 @@ class StructureTreeTestFixture {
 				groupsJson.add(projectName, idsJson);
 			});
 			params.add("groups", groupsJson);
+		}
+
+		if (dependencies != null) {
+			JsonObject dependenciesJson = new JsonObject();
+			dependencies.forEach((projectName, ids) -> {
+				JsonArray idsJson = new JsonArray();
+				ids.forEach(idsJson::add);
+				dependenciesJson.add(projectName, idsJson);
+			});
+			params.add("dependencies", dependenciesJson);
 		}
 
 		return (List<Node>) harness.getServer().getWorkspaceService()

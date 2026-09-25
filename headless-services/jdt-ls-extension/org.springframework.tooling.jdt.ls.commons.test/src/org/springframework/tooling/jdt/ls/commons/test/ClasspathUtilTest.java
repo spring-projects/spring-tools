@@ -20,11 +20,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
@@ -135,7 +140,61 @@ public class ClasspathUtilTest {
 		assertSameLocation(project.getLocation(), cpe.getOutputFolder());
 	}
 
+	@Test public void ownSourceFolderRecordsItsOwnProject() throws Exception {
+		IJavaProject javaProject = createTestProject();
+		IProject project = javaProject.getProject();
+
+		IClasspathEntry entry = JavaCore.newSourceEntry(project.getFolder("src").getFullPath());
+		setClasspath(javaProject, entry);
+
+		CPE cpe = sourceCpe(javaProject, entry);
+		assertEquals(project.getName(), cpe.getProjectName());
+		assertSameLocation(project.getLocation(), cpe.getProjectLocation());
+	}
+
+	/**
+	 * A dependency on another workspace project - what Maven/Gradle workspace resolution produces for a
+	 * sibling module - arrives as that project's source folders, recording which project they belong to.
+	 * That is what the language server finds workspace project dependencies by.
+	 */
+	@Test public void projectDependencyRecordsTheReferencedProject() throws Exception {
+		IJavaProject javaProject = createTestProject();
+		IJavaProject dependency = createTestProject(DEPENDENCY_PROJECT_NAME);
+
+		IClasspathEntry projectEntry = JavaCore.newProjectEntry(dependency.getProject().getFullPath());
+
+		List<CPE> cpes = ClasspathUtil.createCpes(javaProject, projectEntry);
+
+		assertTrue("expected the dependency project's source folders", cpes.size() > 0);
+		for (CPE cpe : cpes) {
+			assertTrue(Classpath.isWorkspaceProjectDependency(cpe));
+			assertEquals(DEPENDENCY_PROJECT_NAME, cpe.getProjectName());
+			assertSameLocation(dependency.getProject().getLocation(), cpe.getProjectLocation());
+		}
+	}
+
 	///////////// harness stuff below ///////////////////////////////////////////////
+
+	private static final String DEPENDENCY_PROJECT_NAME = "classpath-test-dependency-project";
+
+	/**
+	 * Another project with the same content as {@link #PROJECT_NAME}, under a different name - the
+	 * test fixture for a workspace project that {@link #PROJECT_NAME} depends on.
+	 */
+	private IJavaProject createTestProject(String name) throws Exception {
+		File location = tmp.newFolder(name);
+		File fixture = new File(FileLocator.toFileURL(Platform.getBundle("org.springframework.tooling.jdt.ls.commons.test")
+				.getEntry("test-projects/" + PROJECT_NAME)).toURI());
+		FileUtils.copyDirectory(fixture, location);
+
+		IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(name);
+		IProjectDescription desc = ResourcesPlugin.getWorkspace().newProjectDescription(name);
+		desc.setLocation(Path.fromOSString(location.toString()));
+		desc.setNatureIds(new String[] { JavaCore.NATURE_ID });
+		project.create(desc, null);
+		project.open(null);
+		return JavaCore.create(project);
+	}
 
 	private IJavaProject createTestProject() throws Exception {
 		IProject project = TestUtils.createTestProject(PROJECT_NAME, tmp);

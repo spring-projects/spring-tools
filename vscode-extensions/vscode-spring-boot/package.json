@@ -170,6 +170,10 @@
           "when": "false"
         },
         {
+          "command": "vscode-spring-boot.structure.dependencies",
+          "when": "false"
+        },
+        {
           "command": "vscode-spring-boot.structure.highlightChanges",
           "when": "!vscode-spring-boot.structure.highlightChanges"
         },
@@ -231,6 +235,11 @@
         },
         {
           "command": "vscode-spring-boot.structure.grouping",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
+          "group": "inline"
+        },
+        {
+          "command": "vscode-spring-boot.structure.dependencies",
           "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
           "group": "inline"
         },
@@ -346,6 +355,13 @@
         "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(checklist)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.dependencies",
+        "title": "Select Dependencies to Include",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(library)"
       },
       {
         "command": "vscode-spring-boot.structure.showChanges",

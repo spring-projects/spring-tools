@@ -8,16 +8,21 @@ const SPRING_STRUCTURE_CMD = "sts/spring-boot/structure";
 const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 const SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 const SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
+const SPRING_STRUCTURE_DEPENDENCIES_CMD = "sts/spring-boot/structure/dependencies";
 
 const HIDE_UNCHANGED_KEY = "vscode-spring-boot.structure.hideUnchanged";
 const HIGHLIGHT_CHANGES_KEY = "vscode-spring-boot.structure.highlightChanges";
 const COMPARE_AGAINST_KEY = "vscode-spring-boot.structure.compareAgainst";
+const DEPENDENCIES_KEY = "vscode-spring-boot.structure.dependencies";
 
 interface StructureCommandParams {
     updateMetadata: boolean;
     groups?: Record<string, string[]>;
     affectedProjects?: string[];
     compareAgainst?: Record<string, string>;
+    // per project, the ids of the dependencies to include in its tree - the server accepts the
+    // selection, but does not act on it yet (see docs/structure-view-dependencies.md)
+    dependencies?: Record<string, string[]>;
 }
 
 /**
@@ -99,6 +104,8 @@ export class StructureManager {
                 this.refresh(false);
             }
         }));
+
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.dependencies", (node: StereotypedNode) => this.selectDependencies(node)));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.showChanges", (node: StereotypedNode) => {
             const location = node?.location;
@@ -183,6 +190,51 @@ export class StructureManager {
         }
     }
 
+    private async selectDependencies(node: StereotypedNode): Promise<void> {
+        const projectName = node?.projectId;
+        if (!projectName) {
+            return;
+        }
+
+        let dependencies: Dependencies;
+        try {
+            dependencies = await commands.executeCommand<Dependencies>(SPRING_STRUCTURE_DEPENDENCIES_CMD, projectName);
+        } catch (e) {
+            window.showErrorMessage(`Failed to load the dependencies of '${projectName}': ${e}`);
+            return;
+        }
+
+        const offered = dependencies?.dependencies || [];
+        if (offered.length === 0) {
+            window.showInformationMessage(`Project '${projectName}' has no dependencies on other workspace projects to include.`);
+            return;
+        }
+
+        const selected = this.getSelectedDependencies(projectName);
+        const items = offered.map(d => ({
+            label: d.displayName,
+            description: d.groupId && d.artifactId ? `${d.groupId}:${d.artifactId}` : (d.kind === 'WORKSPACE_PROJECT' ? 'workspace project' : undefined),
+            detail: d.location,
+            picked: selected.includes(d.id),
+            dependency: d
+        } as DependencyQuickPickItem));
+
+        const picked = await window.showQuickPick(items, {
+            canPickMany: true,
+            ignoreFocusOut: true,
+            title: `Select dependencies to include in the structure of project ${projectName}`,
+            placeHolder: 'Select dependencies to include'
+        });
+
+        if (picked) {
+            // ids selected earlier that aren't offered right now (a project closed meanwhile, say)
+            // are kept, so the selection comes back once they are offered again
+            const notOffered = selected.filter(id => !offered.some(d => d.id === id));
+            await this.setSelectedDependencies(projectName, [...notOffered, ...picked.map(i => i.dependency.id)]);
+            this.refresh(false);
+        }
+    }
+
     private async selectBaseline(node: StereotypedNode): Promise<void> {
         const projectName = node?.projectId;
         if (!projectName) {
@@ -249,6 +301,7 @@ export class StructureManager {
             affectedProjects,
             groups: this.getGroupings(),
             compareAgainst: this.getCompareAgainstMap(),
+            dependencies: this.getDependenciesMap(),
         } as StructureCommandParams;
         this._rootElementsRequest = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
             const nodes = this.parseArray(json);
@@ -333,6 +386,24 @@ export class StructureManager {
         await this.workspaceState.update(`vscode-spring-boot.structure.group`, groupings);
     }
 
+    private getSelectedDependencies(projectName: string): string[] {
+        return this.getDependenciesMap()?.[projectName] || [];
+    }
+
+    private getDependenciesMap(): Record<string, string[]> | undefined {
+        return this.workspaceState.get<Record<string, string[]>>(DEPENDENCIES_KEY, undefined);
+    }
+
+    private async setSelectedDependencies(projectName: string, ids: string[]): Promise<void> {
+        const dependencies = { ...(this.getDependenciesMap() || {}) };
+        if (ids.length) {
+            dependencies[projectName] = ids;
+        } else {
+            delete dependencies[projectName];
+        }
+        await this.workspaceState.update(DEPENDENCIES_KEY, Object.keys(dependencies).length ? dependencies : undefined);
+    }
+
     /**
      * Identifies the snapshot the given project is pinned to compare against, if the user picked one
      * via "Select Baseline to Compare Against" - `undefined` means "the most recent one", the
@@ -395,6 +466,26 @@ interface BaselineHistoryEntry {
     commitMessage: string;
     capturedAt: string;
     elementCount: number;
+}
+
+interface DependencyDescriptor {
+    id: string;
+    kind: 'WORKSPACE_PROJECT' | 'JAR';
+    displayName: string;
+    groupId?: string;
+    artifactId?: string;
+    version?: string;
+    projectName?: string;
+    location?: string;
+}
+
+interface Dependencies {
+    projectName: string;
+    dependencies?: DependencyDescriptor[];
+}
+
+interface DependencyQuickPickItem extends QuickPickItem {
+    dependency: DependencyDescriptor;
 }
 
 interface GroupQuickPickItem extends QuickPickItem {

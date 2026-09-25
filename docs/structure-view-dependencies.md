@@ -3,14 +3,17 @@
 Design plan for letting users pick, per project, a set of *dependencies* whose elements are included
 in that project's tree in the Logical Structure view.
 
-Status: **plan only**, nothing implemented yet. Companion document to
+Issue: `GH-2004`.
+
+Status: **step 1 implemented**, steps 2-4 not started. Companion document to
 [`structure-diff-view.md`](structure-diff-view.md), which describes the existing diff feature on the
 same tree and is a good model for how this area is built and documented.
 
-**Prerequisite:** [`structure-diff-elements.md`](structure-diff-elements.md) — element-based
-structure snapshots — is implemented **first**, as a pure internal refactoring of the diff feature.
-It introduces the `StructureElements` abstraction that everything the tree builder reads goes
-through, and this plan builds on it (see 1.5 and 2.2).
+**Prerequisite, done:** [`structure-diff-elements.md`](structure-diff-elements.md) — element-based
+structure snapshots — has landed. It introduced the `StructureElements` abstraction that everything
+the tree builder reads goes through, and
+`StructureViewProvider.createTree(project, StructureElements, groups, updateMetadata)`, which builds
+a tree from any `StructureElements`. This plan plugs into exactly that seam (see 1.5 and 2.3).
 
 ## Goal
 
@@ -32,42 +35,45 @@ tree today.
 
 ## Including dependencies and the diff feature are mutually exclusive
 
-The structure view is in exactly one of two modes at any time:
+The user turns on one or the other, never both. Turning one on turns the other off. The structure
+view is therefore always in exactly one of two modes, for the whole view (not per project):
 
-| | **Diff mode** | **Dependency mode** |
+| | **Diff mode** (default) | **Dependency mode** |
 |---|---|---|
-| Tree content | each project's own elements only; dependency selections are ignored | each project's own elements **plus** those of its selected dependencies, in one tree |
+| Tree content | each project's own elements only | each project's own elements **plus** those of its selected dependencies, in one tree |
 | Change information | as today: per project, against that project's own baseline | none — no change attributes, no baseline information on the tree |
-| Diff UI (highlighting, hide unchanged, baseline commands, "Show Changes") | available | disabled/hidden |
-| Baseline capture and `GitBaselineTracker` | as today | **keep running unchanged in the background** |
+| Diff UI (highlighting, hide unchanged, baseline commands, "Show Changes") | available | hidden |
+| Baseline capture and `GitBaselineTracker` | as today | as today, untouched, in the background |
 
-Why this is the right cut: a baseline describes one project's own structure. A composed tree mixes
-elements of several projects, so it cannot be diffed against any single project's baseline, and
-merely including a dependency would otherwise make all of its elements show up as "new". Keeping the
-modes apart means **the diff feature continues to work exactly as it does today, per project, and
-nothing about baselines, snapshots or git tracking changes at all**.
+Why this cut: a baseline describes one project's own structure. A composed tree mixes several
+projects' elements, so no single baseline describes it, and merely including a dependency would make
+all of its elements look "new".
 
-Consequences that shape the rest of this plan:
+What the exclusion buys - everything below is simpler because of it:
 
-- **Baselines never contain dependency elements, by construction.** `createCompleteTree(project)`
-  — which every baseline capture goes through — never receives a dependency selection.
-- **Baselines stay current while in dependency mode.** `GitBaselineTracker` keeps capturing in the
-  background, since it works from each project's own tree. Switching back to diff mode shows
-  up-to-date diffs immediately; nothing is lost by the detour.
-- **The selection is a pure view concern.** It never influences what gets persisted as a baseline,
-  so it can live in the client alongside `groups` (see 1.3).
+- **The diff feature is not touched at all.** No code in `StructureSnapshotStore`,
+  `StructureBaselineStorage`, `GitBaselineTracker` or `StructureTreeDiffer` changes. Baselines never
+  see a dependency selection: capture goes through `StructureViewProvider.captureSnapshot`, which
+  only ever reads the project's own index.
+- **Dependency mode never diffs.** A composed tree is built and returned; no baseline is looked up,
+  no baseline tree is rebuilt, no change markers are computed. Composed elements therefore need
+  nothing the diff needs (stable node identities across captures, content hashes that mean
+  something, snapshot support) - which matters most for JAR elements in step 4.
+- **The selection is a pure view setting**, like `groups`: it lives in the client and travels with
+  each request (see 1.3). No server-side storage.
+- **Switching back to diff mode is instant and correct**: baselines kept being captured all along.
+- **The protocol needs no mode flag.** The client sends the `dependencies` selection only while in
+  dependency mode; the server treats a request carrying a non-empty selection as a dependency-mode
+  request and skips baseline annotation for every project in it (see 2.1).
 
-**To revisit once step 2 works:** the element-based snapshots make lifting this exclusion feasible.
-A composed tree's baseline side can be rebuilt from each contributing project's *own* snapshot plus
-the current selection, and diffed with the same differ. Since the dependency is included on both
-sides, including it is not a change, and a change in it shows up relative to its own project's last
-commit. That stays out of scope for this plan; the exclusion is the design until then.
+Deliberately not planned: diffing a composed tree. It would be possible on top of the element
+snapshots, but it is exactly the combination this design avoids.
 
 ## The four steps
 
 | Step | Scope | Outcome |
 |---|---|---|
-| **0** | Prerequisite: element-based snapshots, a separate plan ([`structure-diff-elements.md`](structure-diff-elements.md)) | No user-visible change except that group selection no longer disturbs the diff; `StructureElements` in place |
+| **0** | **Done.** Element-based snapshots ([`structure-diff-elements.md`](structure-diff-elements.md)) | Group selection no longer disturbs the diff; `StructureElements` in place |
 | **1** | Selection UI + persistence + the selection reaching the tree builder, which ignores it | Nothing changes in the tree. Everything around it is in place. |
 | **2** | Dependency mode: include the stereotype elements of selected **workspace project** dependencies; mutual exclusion with the diff feature | Works wherever the dependency's packages nest under the host's; disjoint packages contribute nothing yet |
 | **3** | Root packages | Dependencies with disjoint package roots appear too |
@@ -82,10 +88,12 @@ Step 0 has its own document. Steps 1–3 are detailed below; step 4 is sketched.
 Tree construction, in
 `headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/java/commands/`:
 
-- `StructureViewProvider.createTree(project, cachedIndex, updateMetadata, selectedGroups)` is the
-  single entry point. It picks `ModulithStructureView` or `JMoleculesStructureView` per project and
-  returns a `JsonNodeHandler.Node` root. `createCompleteTree(project)` is the variant that baseline
-  capture goes through.
+- `StructureViewProvider.createTree(project, cachedIndex, updateMetadata, selectedGroups)` builds a
+  project's live tree: it wraps the index in an `IndexStructureElements` and delegates to
+  `createTree(project, StructureElements, selectedGroups, updateMetadata)`, which picks
+  `ModulithStructureView` or `JMoleculesStructureView` and returns a `JsonNodeHandler.Node` root.
+  `createCompleteTree(project)` backs the MCP `getLogicalStructure` tool and `diffAgainstBaseline`;
+  baseline capture uses `captureSnapshot(project)` and builds no tree at all.
 - `JMoleculesStructureView` drives jMolecules' `ProjectTree`, which calls
   `StructureProvider.extractPackages(application)` once, renders one package node per returned
   package, and then groups `extractTypes(pkg)` by stereotype beneath it (`ProjectTree.process`).
@@ -101,8 +109,10 @@ Tree construction, in
   and `compareAgainst` maps keyed by project name) and `sts/spring-boot/structure/groups`.
   `createAnnotatedTree` builds a project's tree and then annotates it against the project's baseline
   (`HAS_BASELINE`, `COMPARED_AGAINST_*`, per-node `change`).
-- `StructureSnapshotStore` captures baselines from `createCompleteTree`; `GitBaselineTracker`
+- `StructureSnapshotStore` captures element snapshots via `captureSnapshot`; `GitBaselineTracker`
   captures automatically from git activity, per project, with no client request involved.
+  `annotateWithChangesSinceBaseline` rebuilds a baseline into a tree and diffs it against the live
+  one.
 - `CachedSpringMetamodelIndex` is keyed by project name already, so reading another project's index
   elements through the same cache instance costs nothing extra.
 - `StereotypeCatalogRegistry.getCatalogOf(project)` builds one catalog per project from
@@ -123,17 +133,29 @@ VSCode client, `vscode-extensions/vscode-spring-boot/lib/explorer/`:
 Eclipse: `eclipse-language-servers/org.springframework.tooling.boot.ls/src/.../views/`
 (`StructureClient`, `GroupingDialogModel`, `LogicalStructureView`).
 
-### The two gaps in the classpath model
+### What the classpath already tells us
 
+- **Workspace project dependencies are already on the classpath, as such**, whenever it comes from
+  the Java tooling (JDT-LS in VSCode, the Eclipse plugin - both via
+  `jdt-ls-extension/.../ClasspathUtil`). `ClasspathUtil.resolve` reads
+  `javaProject.getResolvedClasspath(true)`, which expands the Maven and Gradle classpath containers.
+  With m2e's workspace resolution on (and Buildship for Gradle project dependencies), a dependency
+  on an open workspace module arrives as a `CPE_PROJECT` entry, not a jar. `ClasspathUtil`
+  flattens it into the referenced project's source folders (`resolveDependencyProjectCPEs`), each a
+  CPE with `kind=source`, `isOwn()==false` and `extra["project"]` = the referenced project's
+  location. A project's own source folders carry `extra["project"]` too, but with `isOwn()==true`.
+  So *"source, not own, with `extra["project"]`"* already means *"comes from workspace project
+  X"* - and `SpringProjectUtil.hasDependencyStartingWith` already relies on exactly that.
+  - Not yet confirmed: that JDT-LS enables m2e's workspace resolution by default (the only m2e prefs
+    in this repo are for the Eclipse plugin's own projects, set to `true`). Check early in step 1.
+  - The project **name** is not carried, only its location - the index is keyed by name.
+- **The standalone LS does not have this.** `MavenProjectClasspath` / `GradleProjectClasspath` - the
+  standalone LS used by the Claude plugin, and **the test harness** - do no workspace resolution;
+  inter-module dependencies arrive as jars from the local repository. Accepted for now: the feature
+  simply offers no workspace-project dependencies there (see "Decisions").
 - **JAR dependencies have no GAV.** `CPE` knows a path plus a name/version *guessed from the jar
-  file name* (`Classpath.getDependencyName`/`getDependencyVersion`). There is no group id anywhere.
-- **Workspace project dependencies are only implicitly recognizable**, via `extra["project"]` +
-  `!isOwn()`, and only on the JDT-LS path (`ClasspathUtil.createSourceCPE` /
-  `resolveDependencyProjectCPEs` flatten a `CPE_PROJECT` entry into the referenced project's source
-  CPEs). The project *name* is not carried, only its location. `MavenProjectClasspath` /
-  `GradleProjectClasspath` — the standalone LS, the Claude plugin, **and the test harness** — carry
-  nothing at all and resolve inter-module dependencies to jars in the local repository, so there
-  they are indistinguishable from ordinary jars.
+  file name* (`Classpath.getDependencyName`/`getDependencyVersion`). No group id anywhere - a
+  step-4 concern.
 
 ---
 
@@ -144,6 +166,20 @@ project row, multi-select its dependency projects, and have that selection survi
 language server discovers the candidates and receives the selection with every structure request,
 and the tree builder ignores it. No mode switch yet, and no interaction with the diff feature — that
 arrives with step 2, when the selection starts to have an effect.
+
+> **As implemented** - where it differs from the text below:
+> - No `ProjectDependency`/`DependencyKind` types in `commons-java`. `ClasspathDependencyResolver`
+>   (commons-java) returns a plain `WorkspaceProjectDependency(projectName, location)` record, and
+>   the kind lives on the language server's `DependencyDescriptor.Kind`. A JAR model gets added in
+>   step 4, when something produces JAR dependencies.
+> - `ClasspathUtil.createSourceCPE` writes the name key (`CPE.EXTRA_PROJECT_NAME`) for *every*
+>   source entry, own ones included - simpler, and harmless. `CPE` gained `getProjectLocation()`,
+>   `getProjectName()` and `Classpath.isWorkspaceProjectDependency(cpe)`.
+> - `DependencyDescriptor` has a `location` field (shown in the picker) and no `supported` flag -
+>   nothing unsupported is offered yet.
+> - `SpringIndexCommands` resolves the selected ids (`StructureDependencySources.resolve`) and
+>   hands `StructureViewProvider.createTree` the resolved descriptors, which it ignores.
+> - Still to check against a real JDT-LS: that m2e's workspace resolution is on by default there.
 
 ### 1.1 Classpath dependency model and discovery
 
@@ -171,44 +207,33 @@ public sealed interface ProjectDependency {
 }
 ```
 
-`CPE` gains the raw fact the resolution needs:
+No Maven- or Gradle-specific resolution is needed: the classpath already says which dependencies
+are workspace projects (see "What the classpath already tells us").
 
-- `String getDependencyProjectName()` / `URI getDependencyProjectLocation()` — set on *source*
-  entries contributed by another workspace project, by adding the project name next to the existing
-  `extra["project"]` location in `ClasspathUtil.createSourceCPE`. Keep writing `extra["project"]`
-  unchanged: `SpringProjectUtil` reads it (`SpringProjectUtil.java:97`) and it crosses the LSP wire.
-- `Gav getGav()` on binary entries is **step 4**; nothing here depends on it.
-
-Resolution is *not* a pure `IClasspath` concern, because recognizing a workspace project needs the
-set of open projects:
+**One small addition to the classpath**, in `ClasspathUtil.resolveDependencyProjectCPEs`: add the
+referenced project's **name** (`projectPath.segment(0)`) as a second extra key, e.g.
+`extra["projectName"]`, next to the existing `extra["project"]` location. `CPE` gets typed accessors
+for both (`getDependencyProjectName()`, `getDependencyProjectLocation()`). Keep `extra["project"]`
+exactly as it is: `SpringProjectUtil` reads it, and it crosses the wire. Fallback for a classpath
+sent by an older JDT-LS extension without the name: look the project up by location among
+`projectFinder.all()`.
 
 ```java
 public class ClasspathDependencyResolver {
-    public ClasspathDependencyResolver(JavaProjectFinder projectFinder, ProjectGavCache gavs) {...}
+    public ClasspathDependencyResolver(JavaProjectFinder projectFinder) {...}
     public List<ProjectDependency> dependenciesOf(IJavaProject project);
 }
 ```
 
 It folds the flat CPE list into distinct dependencies:
 
-- source CPEs with `!isOwn()` and a dependency project name/location → one `WorkspaceProject` per
-  distinct project (a project contributes several source folders);
-- non-system, non-test binary CPEs → one `Jar` each;
-- **promotion**: a `Jar` whose GAV matches the GAV of an open project in `projectFinder.all()` is
-  reported as a `WorkspaceProject` instead. This is what makes requirement 3 hold on the
-  Maven/Gradle path, where inter-module dependencies arrive as jars — without it the feature is
-  dead on the standalone LS, the Claude plugin, and every test. Falls back to matching
-  `cpe.getName()` against the candidate project's artifact id when no GAV is available; a
-  documented heuristic, last resort only.
+- source CPEs with `!isOwn()` and `extra["project"]` → one `WorkspaceProject` per distinct
+  referenced project (a project contributes several source folders), named from
+  `extra["projectName"]` or, failing that, by location lookup;
+- non-system, non-test binary CPEs → one `Jar` each (listed only from step 4 on).
 
 Test-scope (`isTest()`) and system entries are excluded: the structure view is about the
-application.
-
-`ProjectGavCache` is a small new service caching `Gav` per project, populated lazily from
-`STS4LanguageClient.projectGAV` (JDT path) or `MavenCore.computeGav(pom)` (standalone path) and
-invalidated on classpath change via `ProjectObserver` — the pattern `StereotypeCatalogRegistry`
-already uses. It replaces the uncached ad-hoc request in
-`WorkspaceBootExecutableProjects.findExecutableProjects`, which should move onto it here.
+application. That is all - no GAV matching, no GAV cache, no heuristics.
 
 ### 1.2 The discovery half of the SPI
 
@@ -261,8 +286,8 @@ shape and mechanics as `vscode-spring-boot.structure.group` — and sent with ev
 
 This is consistent with how the view's other per-project settings (`groups`, `compareAgainst`) work,
 and needs no new server-side storage. It is safe because of the mutual exclusion: the selection
-never reaches baseline capture, which only ever sees `createCompleteTree`, so there is nothing
-server-side that would need to know it outside of a request.
+never reaches baseline capture (`captureSnapshot` reads only the project's own index), so nothing
+server-side needs to know it outside of a request.
 
 Accepted consequence: the MCP tools do not share the IDE's selection. They get their own explicit
 parameter instead (step 2), which is the more predictable contract for an agent anyway.
@@ -288,27 +313,19 @@ New command in `SpringIndexCommands`, on the existing `messageWorkerThreadPool`,
 Its javadoc must spell out the **deliberate asymmetry with `groups`**: `groups == null` means *all*
 groups, `dependencies == null` (or a project missing from the map) means *no* dependencies.
 
+That one field is the whole protocol change for both steps 1 and 2 - there is no separate mode flag
+(see 2.1).
+
 ### 1.5 The tree builder receives the selection and ignores it
 
-`StructureViewProvider.createTree` gets the selection as a parameter:
+`StructureViewProvider.createTree(project, cachedIndex, updateMetadata, selectedGroups)` gains a
+`Collection<String> selectedDependencyIds` parameter; the existing callers (`createCompleteTree`,
+the no-cache overload) pass `null`, so "no dependencies unless asked for" holds for the MCP tools
+too. Inside, the ids are resolved to descriptors (`discoverAll` → filter by id), and held — nothing
+more. The tree is still built from the host's `IndexStructureElements`, so it is provably unchanged.
 
-```java
-public Node createTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex,
-        boolean updateMetadata, Collection<String> selectedGroups,
-        Collection<String> selectedDependencyIds)
-```
-
-The existing overloads delegate with `null` (= none). `createCompleteTree` keeps its signature and
-passes `null`. After step 0 capture no longer builds a tree at all, but `createCompleteTree` still
-backs the MCP `getLogicalStructure` tool, and "no dependencies unless asked for" must hold there too.
-
-Inside, the ids are resolved to descriptors (`discoverAll` → filter by id), and held — nothing more.
-The threading this step would otherwise need is already done: step 0 routes everything the tree
-builder reads through `StructureElements` (see
-[`structure-diff-elements.md`](structure-diff-elements.md#the-element-source-abstraction)), so the
-tree builder takes a `StructureElements` instead of a bare project. Step 2 plugs a composite
-implementation in at exactly that point. In step 1 the tree is built from the host's
-`IndexStructureElements`, as after step 0, so it is provably unchanged.
+No further threading is needed: step 0 already made the tree builder take a `StructureElements`.
+Step 2 swaps in a composite at exactly that point.
 
 ### 1.6 VSCode client
 
@@ -322,28 +339,32 @@ Modeled on the existing `structure.grouping` command:
   `description` = `groupId:artifactId` when known, `detail` = the project location, and `picked`
   from the persisted selection. On confirm, persist and `this.refresh(false)`.
 - `StructureCommandParams` gains `dependencies?: Record<string, string[]>`, sent from `refresh`
-  alongside `groups` and `compareAgainst`.
+  alongside `groups`. In step 1 it can be sent unconditionally, since the server ignores it; from
+  step 2 on it is sent only in dependency mode, because its presence is what switches the server
+  into that mode (2.1).
 
 Eclipse gets the same via a `DependenciesDialogModel` alongside `GroupingDialogModel` — a later
 increment, as with the diff feature, which proved its protocol in VSCode first.
 
 ### 1.7 Tests for step 1
 
-- `ClasspathDependencyResolverTest` — synthetic CPE lists covering own source, foreign source with a
-  dependency project name, binary, system and test-scoped entries; GAV-based promotion of a jar to a
-  workspace project; the name-based fallback. **This is where requirement 3 is pinned down.**
-- `WorkspaceProjectDependencySourceTest` — discovery against a multi-project harness.
+- `ClasspathDependencyResolverTest` — synthetic CPE lists covering own source, several source
+  folders of one foreign project (one dependency, not several), foreign source without the name key
+  (location lookup), binary, system and test-scoped entries. **This is where requirement 3 is
+  pinned down.**
+- `ClasspathUtilTest` (jdt-ls-extension) — a project referencing another workspace project yields
+  source CPEs carrying both `extra["project"]` and the new name key.
+- `WorkspaceProjectDependencySourceTest` — only projects `projectFinder.all()` knows are offered.
 - Command test for `.../structure/dependencies`, and parsing of the new `dependencies` argument.
 - A regression test that the structure tree is identical with no selection and with a non-empty
   one — the contract of step 1.
-- `ProjectGavCacheTest` — caching and invalidation on classpath change.
 
-**Test fixtures.** `gs-multi-module-complete` and
-`test-annotation-indexing-large-multiproject-1/2` + `test-annotation-indexing-parent` already exist.
-The harness goes through `MavenProjectClasspath`, so inter-module dependencies arrive as **jars, not
-project references** — which makes these fixtures exactly the right test of the GAV-promotion path,
-and means a JDT-flavored `extra["project"]` case has to be covered by a synthetic CPE-level test
-instead.
+**Test fixtures.** The `spring-boot-language-server` harness goes through `MavenProjectClasspath`,
+which does no workspace resolution - the existing multi-module fixtures
+(`gs-multi-module-complete`, `test-annotation-indexing-large-multiproject-*`) produce jars, not
+workspace-project entries. So discovery is tested against hand-built CPE lists, and anything that
+needs a real multi-project setup injects such a classpath into the harness rather than relying on
+`MavenProjectClasspath`.
 
 ---
 
@@ -355,46 +376,43 @@ switched off.
 
 ### 2.1 The mode
 
-**One global mode for the whole view, not per project.** The diff toggles are already global, and a
-tree in which some project rows show diffs and others silently do not would be hard to read —
-"hide unchanged nodes" in particular would behave differently from row to row.
+One global mode for the whole view, not per project: the diff toggles are already global, and a tree
+where some project rows diff and others do not would be hard to read.
 
-Client (`structure-tree-manager.ts`):
+**Client** (`structure-tree-manager.ts`) owns the mode:
 
 - A third `PersistedToggle`, `vscode-spring-boot.structure.includeDependencies`, default **off**, so
-  the view looks exactly as it does today until the user opts in. Like the other two, it is
-  mirrored into a `when`-clause context key of the same name.
-- Title-bar command pair *"Include Dependencies"* / *"Exclude Dependencies"* (`$(library)` /
-  a filled variant), shown/hidden by that context key the same way the highlight and hide-unchanged
-  pairs are.
-- **Mutual exclusion, last action wins:**
+  the view looks exactly as today until the user opts in. Mirrored into a `when`-clause context key
+  of the same name, like the other two.
+- Title-bar command pair *"Include Dependencies"* / *"Exclude Dependencies"*, shown/hidden by that
+  context key, like the highlight and hide-unchanged pairs.
+- **Selecting one turns the other off:**
   - turning on *Include Dependencies* turns off `highlightChanges` and `hideUnchanged`;
-  - turning on *Highlight Changes* or *Hide Unchanged Nodes* turns off `includeDependencies`.
+  - turning on *Highlight Changes* or *Hide Unchanged Nodes* turns off `includeDependencies`;
+  - confirming a non-empty selection in the dependency picker turns on *Include Dependencies*
+    (and with it off the diff toggles) - otherwise the user picks something and sees nothing
+    happen.
 
-  The per-project selections are untouched by either direction — they are simply inactive while in
-  diff mode, and come back as they were.
-- Confirming a **non-empty** selection in the picker while in diff mode switches to dependency mode,
-  with an information message saying the diff view was turned off. Otherwise the user picks
-  something and sees nothing happen.
-- While in dependency mode, `package.json` `when` clauses hide the diff-specific context menu
-  entries: `captureBaseline`, `clearBaseline`, `selectBaseline`, `showChanges`.
-- `nodes.ts`: drop the project-row tooltip line about the baseline while in dependency mode.
-  Otherwise, because the server sends no `HAS_BASELINE` in that mode, every project would claim
-  "No logical structure baseline captured yet", which is false.
-- `StructureCommandParams` gains `includeDependencies: boolean`.
+  Selections are never cleared by switching; they are simply not sent in diff mode.
+- In dependency mode, `package.json` `when` clauses hide the diff-only entries: the two diff
+  toggles' "on" commands stay visible (clicking one is how you switch back), but `captureBaseline`,
+  `clearBaseline`, `selectBaseline` and `showChanges` are hidden.
+- `nodes.ts`: no baseline line in the project-row tooltip in dependency mode (the server sends no
+  `HAS_BASELINE` then, which would otherwise read as "no baseline captured").
+- `refresh` sends `dependencies` only while in dependency mode; `compareAgainst` only while not.
 
-Server (`SpringIndexCommands`) — **enforces the exclusion itself** rather than trusting the client to
-send a consistent combination:
+**Server** (`SpringIndexCommands.createAnnotatedTree`) needs just one rule, and no new argument:
 
-- `StructureCommandArgs` gains `boolean includeDependencies`.
-- When `includeDependencies` is true: build each tree with its project's selected dependency ids,
-  and **skip `annotateWithChangesSinceBaseline` entirely** — no `HAS_BASELINE`, no
-  `COMPARED_AGAINST_*`, no `change` attributes. `compareAgainst` is ignored. This also means no
-  diff work at all in that mode.
-- When it is false (or absent, i.e. every existing client): exactly today's behavior, and the
-  `dependencies` map is ignored.
+- the request carries a non-empty `dependencies` selection for any project → dependency mode for the
+  whole request: build each tree with its project's selection and **skip
+  `annotateWithChangesSinceBaseline` entirely** (no `HAS_BASELINE`, no `COMPARED_AGAINST_*`, no
+  `change`; `compareAgainst` ignored);
+- otherwise → exactly today's behavior.
 
-Nothing in `StructureSnapshotStore`, `StructureBaselineStorage` or `GitBaselineTracker` changes.
+The server enforcing this itself, rather than trusting the client's toggles, means a stray
+`compareAgainst` from a stale client can never produce change markers on a composed tree.
+
+Nothing in the diff machinery changes.
 
 ### 2.2 The element half of the SPI
 
@@ -414,8 +432,11 @@ Step 3 adds `rootPackages()` for dependency roots.
 ### 2.3 A composite `StructureElements`
 
 `CompositeStructureElements(host, dependencies)` is the third implementation of the interface, next
-to the index and the snapshot ones. The tree builder receives it in place of the host's
-`IndexStructureElements` whenever dependency mode is on and something is selected:
+to the index and the snapshot ones. `StructureViewProvider.createTree` hands it to
+`createTree(project, StructureElements, groups, updateMetadata)` in place of the host's
+`IndexStructureElements` whenever a selection is present. Since a composed tree is never diffed, the
+composite is only ever used for display - it never meets `StructureSnapshotBuilder` or
+`SnapshotStructureElements`:
 
 | Query | Composite answer |
 |---|---|
@@ -454,7 +475,7 @@ otherwise a confusing intermediate state.
 filter to those. In dependency mode, if `shared-domain` changes and `my-app` includes it, `my-app`
 has to be rebuilt too.
 
-Handle it server-side in `SpringIndexCommands`: when `includeDependencies` is set, widen the
+Handle it server-side in `SpringIndexCommands`: in a dependency-mode request, widen the
 `affectedProjects` filter to also include any project whose selection — present in the very same
 request — names one of the affected projects. The client keeps sending what it does today, but its
 partial-merge path in `structure-tree-manager.ts` then has to key off the *returned* project list
@@ -494,14 +515,13 @@ the dependency projects.
 - A dependency's request-mapping methods get their mapping label, not the plain method label.
 - `nodeId`s stay unique when host and dependency contain same-named types.
 - An A ↔ B cycle terminates.
-- **Mode exclusion, server side:**
-  - with `includeDependencies`, the tree carries no `change`, `HAS_BASELINE` or `COMPARED_AGAINST_*`
-    attributes, even for a project with a baseline;
-  - without it, a non-empty `dependencies` map is ignored and the tree is today's, including its
-    change annotations;
-  - capturing a baseline while dependencies are selected produces exactly the project's own tree.
+- **Mode exclusion, server side:** a request with a non-empty `dependencies` selection returns trees
+  with no `change`, `HAS_BASELINE` or `COMPARED_AGAINST_*` attributes - for every project in it,
+  even ones with a baseline and even with a `compareAgainst` sent along; a request without one is
+  today's, change annotations included.
 - A change in a dependency project refreshes the host's tree in dependency mode.
-- Client: the toggles flip each other off; a non-empty picker selection switches into dependency mode.
+- Client: the toggles turn each other off; a non-empty picker selection switches into dependency
+  mode; `dependencies` is only sent in dependency mode.
 
 ---
 
@@ -558,8 +578,9 @@ Sketch only; details when the step is picked up.
   `StereotypeClassElement`s.
 - Remove the picker's "supported only" filter from step 1.
 
-The mode exclusion makes this step simpler than it would otherwise be: jar-derived elements never
-take part in a diff, so they need no content hashes and no baseline story. Open questions for then:
+The mode exclusion makes this step much simpler: jar-derived elements are only ever displayed, never
+diffed, so they need no content hashes, no stable identities across captures and no snapshot
+support. Open questions for then:
 nodes with no navigable source location; how deep to index a jar (cost vs. depth); and whether a
 jar's stereotypes should come from its own catalog contribution or only the host's.
 
@@ -569,10 +590,10 @@ jar's stereotypes should come from its own catalog contribution or only the host
 
 | Decision | Alternative rejected |
 |---|---|
-| Including dependencies and the diff feature are **mutually exclusive** | Diffing the composed tree against the host's baseline — no single project's baseline describes it, and including a dependency would show all its elements as new. Rebuilding the composed baseline from each project's own element snapshot becomes possible after step 0, and is left as a later option (see the note under the mode table) |
+| Including dependencies and the diff feature are **mutually exclusive** - selecting one turns the other off | Diffing a composed tree — no single project's baseline describes it, and including a dependency would show all its elements as new; making it work would pull the diff machinery into this feature |
 | **One global mode**, not per project | Per-project mode — some rows diffing and others not, with "hide unchanged" behaving differently per row |
-| Mode switch is **last action wins**; selections survive switching | Clearing the selections when entering diff mode — forces the user to re-pick every time |
-| The server enforces the exclusion (no annotation when `includeDependencies`) | Relying on the client's toggles alone — a stray `compareAgainst` or stale client would produce misleading markers |
+| Selections survive switching modes | Clearing them when entering diff mode — forces the user to re-pick every time |
+| No mode flag in the protocol: a non-empty `dependencies` selection *is* dependency mode, and the server skips annotation for the whole request | A separate `includeDependencies` flag — two fields that must agree, and one more combination to handle |
 | Baseline capture and git tracking keep running in dependency mode | Pausing them — switching back would show stale or missing diffs |
 | Merge at **element** level; the tree-building logic is unchanged in shape | A synthetic `Dependencies` container with per-dependency subtrees — makes dependencies a visibly separate thing, which is not what this feature is for |
 | The SPI supplies stereotype **elements**, not nodes | An SPI returning finished subtrees — forces the separate-subtree shape and duplicates the Modulith/jMolecules branch |
@@ -583,13 +604,10 @@ jar's stereotypes should come from its own catalog contribution or only the host
 | Root packages reduced to non-overlapping prefixes (step 3) | Adding every dependency root unconditionally — a nested root yields a duplicate package node |
 | Default is diff mode with no dependencies included | Defaulting to dependency mode — changes the view for every existing user without being asked |
 | Direct dependencies only, depth 1 | Transitive expansion — unbounded trees, and the classpath is already flattened differently per build system |
-| Jar-to-project promotion by GAV, with an artifact-id-name fallback | Relying on `extra["project"]` alone — leaves the feature dead on the standalone LS, the Claude plugin, and the test harness |
+| Workspace-project dependencies come straight from the classpath the Java tooling sends (`extra["project"]`, plus a new name key) | Matching jars to open projects by GAV - only needed for the standalone LS, which does no workspace resolution; accepted there: no workspace-project dependencies offered, for now |
 
 ## Open questions
 
-- **Issue number.** Commits in this area reference `GH-XXXX`; this feature needs its own issue (the
-  diff feature was `GH-1974`, the LSP/MCP core split `GH-1965`). To be filled in before the first
-  commit — and if the four steps get their own issues, they should still cross-reference.
 - Should there be an "include all workspace project dependencies" shortcut in the picker, given that
   a large reactor build can have dozens of modules?
 - Performance (from step 2 on): a project's tree covers N projects' elements, and

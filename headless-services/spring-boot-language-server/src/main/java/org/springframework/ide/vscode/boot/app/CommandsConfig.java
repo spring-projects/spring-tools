@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,13 +23,17 @@ import org.springframework.ide.vscode.boot.java.commands.GitBaselineTracker;
 import org.springframework.ide.vscode.boot.java.commands.Misc;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
 import org.springframework.ide.vscode.boot.java.commands.StructureBaselineStorage;
+import org.springframework.ide.vscode.boot.java.commands.StructureDependencySource;
+import org.springframework.ide.vscode.boot.java.commands.StructureDependencySources;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore;
 import org.springframework.ide.vscode.boot.java.commands.StructureViewProvider;
 import org.springframework.ide.vscode.boot.java.commands.WorkingTreeStatus;
 import org.springframework.ide.vscode.boot.java.commands.WorkspaceBootExecutableProjects;
+import org.springframework.ide.vscode.boot.java.commands.WorkspaceProjectDependencySource;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
+import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
@@ -46,11 +51,21 @@ public class CommandsConfig {
 	}
 
 	@Bean
+	WorkspaceProjectDependencySource workspaceProjectDependencySource(JavaProjectFinder projectFinder) {
+		return new WorkspaceProjectDependencySource(new ClasspathDependencyResolver(projectFinder), projectFinder);
+	}
+
+	@Bean
+	StructureDependencySources structureDependencySources(List<StructureDependencySource> sources) {
+		return new StructureDependencySources(sources);
+	}
+
+	@Bean
 	SpringIndexCommands springIndexCommands(SimpleLanguageServer server, JavaProjectFinder projectFinder,
 			SpringMetamodelIndex springIndex, SpringSymbolIndex symbolIndex, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore) {
+			StructureSnapshotStore structureSnapshotStore, StructureDependencySources structureDependencySources) {
 		return new SpringIndexCommands(server, springIndex, symbolIndex, projectFinder, structureViewProvider,
-				structureSnapshotStore);
+				structureSnapshotStore, structureDependencySources);
 	}
 
 	/**

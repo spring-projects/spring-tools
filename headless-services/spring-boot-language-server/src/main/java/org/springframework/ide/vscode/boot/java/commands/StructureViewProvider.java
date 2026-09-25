@@ -77,6 +77,22 @@ public class StructureViewProvider {
 	 */
 	public Node createTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, boolean updateMetadata,
 			Collection<String> selectedGroups) {
+		return createTree(project, cachedIndex, updateMetadata, selectedGroups, List.of());
+	}
+
+	/**
+	 * Same as {@link #createTree(IJavaProject, CachedSpringMetamodelIndex, boolean, Collection)},
+	 * with the dependencies the user selected to include in the project's tree.
+	 *
+	 * <p>The selection is accepted, but not used yet: including the elements of selected
+	 * dependencies in the tree is the next step of {@code docs/structure-view-dependencies.md} -
+	 * until then the tree is exactly the project's own, whatever is selected.
+	 *
+	 * @param selectedDependencies the selected dependencies, already resolved against what the
+	 *        project currently offers - empty for none
+	 */
+	public Node createTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, boolean updateMetadata,
+			Collection<String> selectedGroups, List<DependencyDescriptor> selectedDependencies) {
 
 		log.info("create structural view tree information for project: " + project.getElementName());
 

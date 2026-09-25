@@ -183,7 +183,12 @@ public class ClasspathUtil {
 			} else {
 				absoluteOutFolder = resolveWorkspacePath(javaProject.getOutputLocation());
 			}
-			return CPE.source(absoluteSourcePath.toFile(), absoluteOutFolder.toFile(), Map.of("project", javaProject.getProject().getLocation().toString()));
+			// the project the source folder belongs to - the project itself for its own folders, or the
+			// referenced workspace project for folders contributed by a project dependency (see
+			// resolveDependencyProjectCPEs), which is how the language server tells the two apart
+			return CPE.source(absoluteSourcePath.toFile(), absoluteOutFolder.toFile(), Map.of(
+					CPE.EXTRA_PROJECT_LOCATION, javaProject.getProject().getLocation().toString(),
+					CPE.EXTRA_PROJECT_NAME, javaProject.getProject().getName()));
 		}
 		return null;
 	}

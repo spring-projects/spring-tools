@@ -5,7 +5,8 @@ in that project's tree in the Logical Structure view.
 
 Issue: `GH-2004`.
 
-Status: **step 1 implemented**, steps 2-4 not started. Companion document to
+Status: **step 1 implemented, including JAR dependencies in the picker** (pulled forward from step 4),
+steps 2-4 not started. Companion document to
 [`structure-diff-view.md`](structure-diff-view.md), which describes the existing diff feature on the
 same tree and is a good model for how this area is built and documented.
 
@@ -77,7 +78,8 @@ snapshots, but it is exactly the combination this design avoids.
 | **1** | Selection UI + persistence + the selection reaching the tree builder, which ignores it | Nothing changes in the tree. Everything around it is in place. |
 | **2** | Dependency mode: include the stereotype elements of selected **workspace project** dependencies; mutual exclusion with the diff feature | Works wherever the dependency's packages nest under the host's; disjoint packages contribute nothing yet |
 | **3** | Root packages | Dependencies with disjoint package roots appear too |
-| **4** | JAR dependencies | The second SPI implementation |
+| **1b** | **Done.** JAR dependencies offered in the picker, with group/artifact ids (pulled forward from step 4) | Jars can be selected; a selected jar contributes nothing yet |
+| **4** | JAR dependencies: scanning jars for stereotype elements | Selected jars contribute elements |
 
 Step 0 has its own document. Steps 1–3 are detailed below; step 4 is sketched.
 
@@ -153,9 +155,8 @@ Eclipse: `eclipse-language-servers/org.springframework.tooling.boot.ls/src/.../v
   standalone LS used by the Claude plugin, and **the test harness** - do no workspace resolution;
   inter-module dependencies arrive as jars from the local repository. Accepted for now: the feature
   simply offers no workspace-project dependencies there (see "Decisions").
-- **JAR dependencies have no GAV.** `CPE` knows a path plus a name/version *guessed from the jar
-  file name* (`Classpath.getDependencyName`/`getDependencyVersion`). No group id anywhere - a
-  step-4 concern.
+- **JAR dependencies had no GAV** - `CPE` knew a path plus a name/version *guessed from the jar
+  file name*. Step 1b added it, see there.
 
 ---
 
@@ -176,7 +177,7 @@ arrives with step 2, when the selection starts to have an effect.
 >   source entry, own ones included - simpler, and harmless. `CPE` gained `getProjectLocation()`,
 >   `getProjectName()` and `Classpath.isWorkspaceProjectDependency(cpe)`.
 > - `DependencyDescriptor` has a `location` field (shown in the picker) and no `supported` flag -
->   nothing unsupported is offered yet.
+>   selected jars are accepted and contribute nothing until step 4 (see step 1b).
 > - `SpringIndexCommands` resolves the selected ids (`StructureDependencySources.resolve`) and
 >   hands `StructureViewProvider.createTree` the resolved descriptors, which it ignores.
 > - Still to check against a real JDT-LS: that m2e's workspace resolution is on by default there.
@@ -270,12 +271,10 @@ public class StructureDependencySources {   // Spring List<StructureDependencySo
 
 Step 1 ships one implementation, `WorkspaceProjectDependencySource`: `discover` returns the
 `WORKSPACE_PROJECT` entries from `ClasspathDependencyResolver` that `projectFinder.all()` actually
-knows (open *and* indexed), each with `supported = true`. `JarDependencySource` arrives in step 4;
-until then the picker lists workspace projects only.
+knows (open *and* indexed), each with `supported = true`. `JarDependencySource` followed in step 1b.
 
-> **Decision:** jars stay out of the picker until step 4 rather than appearing greyed out.
-> Listing dozens of unusable rows is noise, and `kind`/`supported` are already on the descriptor, so
-> switching them on later needs no protocol change and no client change beyond removing a filter.
+> **Superseded by step 1b:** jars were first meant to stay out of the picker until step 4. They are
+> now offered already, and simply contribute nothing until jar scanning exists.
 
 ### 1.3 Persisting the selection — client-side, like `groups`
 
@@ -365,6 +364,32 @@ which does no workspace resolution - the existing multi-module fixtures
 workspace-project entries. So discovery is tested against hand-built CPE lists, and anything that
 needs a real multi-project setup injects such a classpath into the harness rather than relying on
 `MavenProjectClasspath`.
+
+---
+
+## Step 1b — JAR dependencies in the picker (done)
+
+Pulled forward from step 4: the picker lists the project's jars as well, identified by group and
+artifact id, so users can select them now. Scanning jars for stereotype elements is still step 4 -
+until then a selected jar is accepted and contributes nothing.
+
+- **Coordinates on binary CPEs.** `CPE` gained the extras `groupId`, `artifactId`, `version` and
+  `scope` (`CPE.EXTRA_*`), read back through `getGav()` and `getScope()`. Where they come from:
+  - JDT side (`ClasspathUtil`): m2e puts `maven.groupId`/`maven.artifactId`/`maven.version`/
+    `maven.scope` classpath attributes on the entries of its Maven container; they are copied over.
+  - Standalone Maven (`MavenProjectClasspath`): from the resolved `Artifact` (base version).
+  - Gradle - Buildship on the JDT side and `GradleProjectClasspath` standalone - carries no
+    coordinates, but its jars live in the Gradle cache, laid out as
+    `.../files-2.1/<group>/<artifact>/<version>/<hash>/<file>`. `ClasspathDependencyResolver`
+    reads the coordinates from that path when the CPE has none.
+- **Discovery.** `ClasspathDependencyResolver.jarDependenciesOf` returns one `JarDependency(gav,
+  name, path)` per group:artifact (first wins), leaving out the JRE (`isSystem`) and test-only jars
+  (`isTest`, or Maven scope `test`). `JarDependencySource` maps them to descriptors:
+  `gav:<groupId>:<artifactId>` when the coordinates are known, `jar:<name>` otherwise.
+- **Picker.** Workspace projects and libraries under separate separators; a jar shows
+  `groupId:artifactId:version` as its description, and the filter matches on it.
+- Not covered: a sibling module the standalone LS sees as a jar in the local repository is offered
+  as a jar, not as a workspace project (see "Decisions").
 
 ---
 
@@ -570,13 +595,9 @@ a sibling package node; degenerate/empty common prefix falls back safely; the Mo
 
 Sketch only; details when the step is picked up.
 
-- `Gav` on binary CPEs, end to end: m2e/Buildship on the JDT side, `MavenProjectClasspath` and
-  `GradleProjectClasspath` on the standalone side. This is what makes the picker's
-  `groupId:artifactId` identity real for jars.
-- `JarDependencySource`: `discover` returns the `Jar` dependencies; `elementsOf` reads types from
-  the jar (Jandex-style, as the standalone LS already does for type indexing) and synthesizes
-  `StereotypeClassElement`s.
-- Remove the picker's "supported only" filter from step 1.
+- Coordinates on binary CPEs, discovery and the picker are done (step 1b).
+- `JarDependencySource.elementsOf`: read types from the jar (Jandex-style, as the standalone LS
+  already does for type indexing) and synthesize `StereotypeClassElement`s.
 
 The mode exclusion makes this step much simpler: jar-derived elements are only ever displayed, never
 diffed, so they need no content hashes, no stable identities across captures and no snapshot
@@ -599,7 +620,8 @@ jar's stereotypes should come from its own catalog contribution or only the host
 | The SPI supplies stereotype **elements**, not nodes | An SPI returning finished subtrees — forces the separate-subtree shape and duplicates the Modulith/jMolecules branch |
 | Selection persisted **client-side** in `workspaceState` and sent per request, like `groups` | Server-side persistence — only needed if baselines had to see the selection, which the mode exclusion rules out; costs a new store and read/write commands |
 | Dependencies plug in as a composite `StructureElements`, reusing step 0's abstraction | A dependency-specific element abstraction, or passing project-name collections to each call site — duplicates what step 0 already threads through the tree builder |
-| Jars excluded from the picker until step 4 | Listing them greyed out — noise, and `kind`/`supported` already allow switching them on with no protocol change |
+| Jars offered in the picker before they can contribute elements (step 1b) | Keeping them out until jar scanning exists — the selection UI and ids would change once more later |
+| Jar ids are version-free (`gav:<g>:<a>`, else `jar:<name>`); coordinates from m2e attributes, the Maven `Artifact`, or the Gradle cache path | Ids with versions — a selection would get lost on every version bump |
 | A dependency's root package is the longest common prefix of its indexed types (step 3) | Reusing `identifyMainApplicationPackage` — a library has no `@SpringBootApplication`, and its empty-package fallback would collapse the tree |
 | Root packages reduced to non-overlapping prefixes (step 3) | Adding every dependency root unconditionally — a nested root yields a duplicate package node |
 | Default is diff mode with no dependencies included | Defaulting to dependency mode — changes the view for every existing user without being asked |

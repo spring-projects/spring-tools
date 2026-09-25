@@ -20,9 +20,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver.JarDependency;
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver.WorkspaceProjectDependency;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.Gav;
 
 /**
  * @author Martin Lippert
@@ -81,6 +83,67 @@ public class ClasspathDependencyResolverTest {
 				CPE.binary("/repo/shared-1.0.jar")));
 
 		assertEquals(List.of(), new ClasspathDependencyResolver(finder(app)).workspaceProjectDependenciesOf(app));
+	}
+
+	@Test
+	void findsJarsWithTheirMavenCoordinatesAndLeavesOutTheJreAndTestOnlyJars() throws Exception {
+		IJavaProject app = project("app", APP, List.of(
+				ownSource(APP, "src/main/java"),
+				dependencySource(SHARED, "shared", "src/main/java"),
+				jar("/repo/org/springframework/spring-web/7.0.1/spring-web-7.0.1.jar", "org.springframework", "spring-web", "7.0.1", "compile"),
+				jar("/repo/org/junit/junit-jupiter/5.12.0/junit-jupiter-5.12.0.jar", "org.junit", "junit-jupiter", "5.12.0", "test"),
+				testJar("/repo/org/assertj/assertj-core/3.27.0/assertj-core-3.27.0.jar"),
+				system("/jdk/lib/rt.jar")));
+
+		List<JarDependency> jars = new ClasspathDependencyResolver(finder(app)).jarDependenciesOf(app);
+
+		assertEquals(List.of(new JarDependency(new Gav("org.springframework", "spring-web", "7.0.1"), "spring-web",
+				"/repo/org/springframework/spring-web/7.0.1/spring-web-7.0.1.jar")), jars);
+	}
+
+	@Test
+	void takesTheCoordinatesOfAJarFromItsLocationInTheGradleCacheWhenTheClasspathHasNone() throws Exception {
+		String inGradleCache = "/home/me/.gradle/caches/modules-2/files-2.1/org.springframework/spring-core/7.0.1/0a1b2c/spring-core-7.0.1.jar";
+		IJavaProject app = project("app", APP, List.of(CPE.binary(inGradleCache), CPE.binary("/libs/local-helper-1.2.jar")));
+
+		List<JarDependency> jars = new ClasspathDependencyResolver(finder(app)).jarDependenciesOf(app);
+
+		assertEquals(List.of(
+				new JarDependency(new Gav("org.springframework", "spring-core", "7.0.1"), "spring-core", inGradleCache),
+				new JarDependency(null, "local-helper", "/libs/local-helper-1.2.jar")), jars);
+	}
+
+	@Test
+	void listsAJarOnlyOncePerGroupAndArtifact() throws Exception {
+		IJavaProject app = project("app", APP, List.of(
+				jar("/repo/a/lib-1.0.jar", "com.example", "lib", "1.0", "compile"),
+				jar("/repo/b/lib-2.0.jar", "com.example", "lib", "2.0", "runtime")));
+
+		List<JarDependency> jars = new ClasspathDependencyResolver(finder(app)).jarDependenciesOf(app);
+
+		assertEquals(1, jars.size());
+		assertEquals("1.0", jars.get(0).gav().version());
+	}
+
+	@Test
+	void recognizesOnlyTheExactGradleCacheLayout() {
+		assertEquals(new Gav("g", "a", "1"), ClasspathDependencyResolver.gavFromGradleCachePath("/x/files-2.1/g/a/1/hash/a-1.jar"));
+		assertEquals(null, ClasspathDependencyResolver.gavFromGradleCachePath("/x/files-2.1/g/a/1/a-1.jar"));
+		assertEquals(null, ClasspathDependencyResolver.gavFromGradleCachePath("/repo/g/a/1/a-1.jar"));
+		assertEquals(null, ClasspathDependencyResolver.gavFromGradleCachePath(null));
+	}
+
+	private static CPE jar(String path, String groupId, String artifactId, String version, String scope) {
+		CPE cpe = CPE.binary(path);
+		cpe.setExtra(Map.of(CPE.EXTRA_GROUP_ID, groupId, CPE.EXTRA_ARTIFACT_ID, artifactId, CPE.EXTRA_VERSION, version,
+				CPE.EXTRA_SCOPE, scope));
+		return cpe;
+	}
+
+	private static CPE testJar(String path) {
+		CPE cpe = CPE.binary(path);
+		cpe.setTest(true);
+		return cpe;
 	}
 
 	private static CPE ownSource(File project, String folder) {

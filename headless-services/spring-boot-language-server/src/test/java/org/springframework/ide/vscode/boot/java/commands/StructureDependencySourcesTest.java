@@ -45,6 +45,22 @@ public class StructureDependencySourcesTest {
 	}
 
 	@Test
+	void jarsAreOfferedByMavenCoordinatesWhenKnownAndByFileNameOtherwise() throws Exception {
+		CPE withGav = CPE.binary("/repo/spring-web-7.0.1.jar");
+		withGav.setExtra(Map.of(CPE.EXTRA_GROUP_ID, "org.springframework", CPE.EXTRA_ARTIFACT_ID, "spring-web", CPE.EXTRA_VERSION, "7.0.1"));
+		CPE withoutGav = CPE.binary("/libs/local-helper-1.2.jar");
+
+		IJavaProject app = project("app", List.of(withGav, withoutGav));
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(finder(app)));
+
+		assertEquals(List.of(
+				DependencyDescriptor.jar("org.springframework", "spring-web", "7.0.1", "/repo/spring-web-7.0.1.jar"),
+				DependencyDescriptor.jar("local-helper", "/libs/local-helper-1.2.jar")), source.discover(app));
+		assertEquals("gav:org.springframework:spring-web", source.discover(app).get(0).id());
+		assertEquals("jar:local-helper", source.discover(app).get(1).id());
+	}
+
+	@Test
 	void discoverAllMergesSourcesDedupedByIdAndSortsProjectsFirstThenByName() {
 		IJavaProject app = mock(IJavaProject.class);
 		DependencyDescriptor zeta = DependencyDescriptor.workspaceProject("zeta", "/ws/zeta");

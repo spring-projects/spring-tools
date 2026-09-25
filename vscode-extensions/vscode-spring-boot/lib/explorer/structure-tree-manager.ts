@@ -1,4 +1,4 @@
-import { commands, EventEmitter, Event, ExtensionContext, window, Memento, QuickPickItem } from "vscode";
+import { commands, EventEmitter, Event, ExtensionContext, window, Memento, QuickPickItem, QuickPickItemKind } from "vscode";
 import { StereotypedNode } from "./nodes";
 import { ExtensionAPI } from "../api";
 import { showChangesAgainstHead } from "./git-diff";
@@ -206,25 +206,39 @@ export class StructureManager {
 
         const offered = dependencies?.dependencies || [];
         if (offered.length === 0) {
-            window.showInformationMessage(`Project '${projectName}' has no dependencies on other workspace projects to include.`);
+            window.showInformationMessage(`Project '${projectName}' has no dependencies to include.`);
             return;
         }
 
         const selected = this.getSelectedDependencies(projectName);
-        const items = offered.map(d => ({
+        const toItem = (d: DependencyDescriptor) => ({
             label: d.displayName,
-            description: d.groupId && d.artifactId ? `${d.groupId}:${d.artifactId}` : (d.kind === 'WORKSPACE_PROJECT' ? 'workspace project' : undefined),
+            description: d.kind === 'WORKSPACE_PROJECT'
+                ? 'workspace project'
+                : (d.groupId && d.artifactId ? [d.groupId, d.artifactId, d.version].filter(Boolean).join(':') : undefined),
             detail: d.location,
             picked: selected.includes(d.id),
             dependency: d
-        } as DependencyQuickPickItem));
+        } as DependencyQuickPickItem);
+
+        // the server sends workspace projects first, then jars - both sorted by name
+        const projects = offered.filter(d => d.kind === 'WORKSPACE_PROJECT');
+        const jars = offered.filter(d => d.kind === 'JAR');
+        const items: (DependencyQuickPickItem | QuickPickItem)[] = [];
+        if (projects.length > 0) {
+            items.push({ label: 'Workspace projects', kind: QuickPickItemKind.Separator }, ...projects.map(toItem));
+        }
+        if (jars.length > 0) {
+            items.push({ label: 'Libraries', kind: QuickPickItemKind.Separator }, ...jars.map(toItem));
+        }
 
         const picked = await window.showQuickPick(items, {
             canPickMany: true,
             ignoreFocusOut: true,
             title: `Select dependencies to include in the structure of project ${projectName}`,
-            placeHolder: 'Select dependencies to include'
-        });
+            placeHolder: 'Select dependencies to include',
+            matchOnDescription: true
+        }) as DependencyQuickPickItem[] | undefined;
 
         if (picked) {
             // ids selected earlier that aren't offered right now (a project closed meanwhile, say)

@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.GitBaselineTracker;
+import org.springframework.ide.vscode.boot.java.commands.JarDependencySource;
 import org.springframework.ide.vscode.boot.java.commands.Misc;
 import org.springframework.ide.vscode.boot.java.commands.SpringIndexCommands;
 import org.springframework.ide.vscode.boot.java.commands.StructureBaselineStorage;
@@ -51,8 +52,18 @@ public class CommandsConfig {
 	}
 
 	@Bean
-	WorkspaceProjectDependencySource workspaceProjectDependencySource(JavaProjectFinder projectFinder) {
-		return new WorkspaceProjectDependencySource(new ClasspathDependencyResolver(projectFinder), projectFinder);
+	ClasspathDependencyResolver classpathDependencyResolver(JavaProjectFinder projectFinder) {
+		return new ClasspathDependencyResolver(projectFinder);
+	}
+
+	@Bean
+	WorkspaceProjectDependencySource workspaceProjectDependencySource(ClasspathDependencyResolver resolver, JavaProjectFinder projectFinder) {
+		return new WorkspaceProjectDependencySource(resolver, projectFinder);
+	}
+
+	@Bean
+	JarDependencySource jarDependencySource(ClasspathDependencyResolver resolver) {
+		return new JarDependencySource(resolver);
 	}
 
 	@Bean

@@ -75,6 +75,21 @@ public class Classpath {
 		 */
 		public static final String EXTRA_PROJECT_NAME = "projectName";
 
+		/**
+		 * {@link #getExtra()} keys of a binary entry: the Maven coordinates of the library, when the
+		 * classpath provider knows them (the Maven integration of the Java tooling, or the standalone
+		 * Maven classpath). All optional.
+		 */
+		public static final String EXTRA_GROUP_ID = "groupId";
+		public static final String EXTRA_ARTIFACT_ID = "artifactId";
+		public static final String EXTRA_VERSION = "version";
+
+		/**
+		 * {@link #getExtra()} key of a binary entry: the Maven scope of the library ({@code compile},
+		 * {@code test}, ...), when the classpath provider knows it. Optional.
+		 */
+		public static final String EXTRA_SCOPE = "scope";
+
 		// TODO: it seems like a good idea to make all classpath entries the same in that they all have
 		// - a place with source code
 		// - a place with compiled code
@@ -135,6 +150,25 @@ public class Classpath {
 		 */
 		public String getProjectName() {
 			return extra == null ? null : extra.get(EXTRA_PROJECT_NAME);
+		}
+
+		/**
+		 * The Maven coordinates of this binary entry, if the classpath provider recorded them -
+		 * see {@link #EXTRA_GROUP_ID}. Null when either the group or the artifact id is unknown.
+		 */
+		public Gav getGav() {
+			if (extra == null || extra.get(EXTRA_GROUP_ID) == null || extra.get(EXTRA_ARTIFACT_ID) == null) {
+				return null;
+			}
+			return new Gav(extra.get(EXTRA_GROUP_ID), extra.get(EXTRA_ARTIFACT_ID), extra.get(EXTRA_VERSION));
+		}
+
+		/**
+		 * The Maven scope of this binary entry, if the classpath provider recorded it - see
+		 * {@link #EXTRA_SCOPE}.
+		 */
+		public String getScope() {
+			return extra == null ? null : extra.get(EXTRA_SCOPE);
 		}
 
 		public String getOutputFolder() {

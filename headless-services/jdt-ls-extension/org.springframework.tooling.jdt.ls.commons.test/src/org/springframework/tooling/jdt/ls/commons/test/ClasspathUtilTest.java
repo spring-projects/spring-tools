@@ -30,6 +30,7 @@ import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.Gav;
 import org.springframework.tooling.jdt.ls.commons.classpath.ClasspathUtil;
 
 /**
@@ -171,6 +173,37 @@ public class ClasspathUtilTest {
 			assertEquals(DEPENDENCY_PROJECT_NAME, cpe.getProjectName());
 			assertSameLocation(dependency.getProject().getLocation(), cpe.getProjectLocation());
 		}
+	}
+
+	/**
+	 * m2e attaches a library's Maven coordinates to its classpath entry as attributes - carried over,
+	 * so the language server can offer the jar by group and artifact id.
+	 */
+	@Test public void libraryWithMavenAttributesRecordsItsCoordinates() throws Exception {
+		IJavaProject javaProject = createTestProject();
+		File jar = tmp.newFile("spring-web-7.0.1.jar");
+
+		IClasspathEntry entry = JavaCore.newLibraryEntry(new Path(jar.getAbsolutePath()), null, null, null, new IClasspathAttribute[] {
+				JavaCore.newClasspathAttribute("maven.groupId", "org.springframework"),
+				JavaCore.newClasspathAttribute("maven.artifactId", "spring-web"),
+				JavaCore.newClasspathAttribute("maven.version", "7.0.1"),
+				JavaCore.newClasspathAttribute("maven.scope", "compile") }, false);
+
+		List<CPE> cpes = ClasspathUtil.createCpes(javaProject, entry);
+
+		assertEquals(1, cpes.size());
+		assertEquals(new Gav("org.springframework", "spring-web", "7.0.1"), cpes.get(0).getGav());
+		assertEquals("compile", cpes.get(0).getScope());
+	}
+
+	@Test public void libraryWithoutMavenAttributesRecordsNoCoordinates() throws Exception {
+		IJavaProject javaProject = createTestProject();
+		File jar = tmp.newFile("local-helper-1.2.jar");
+
+		List<CPE> cpes = ClasspathUtil.createCpes(javaProject, JavaCore.newLibraryEntry(new Path(jar.getAbsolutePath()), null, null));
+
+		assertEquals(1, cpes.size());
+		assertEquals(null, cpes.get(0).getGav());
 	}
 
 	///////////// harness stuff below ///////////////////////////////////////////////

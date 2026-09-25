@@ -78,7 +78,29 @@ public class StructureDependenciesCommandTest {
 		assertEquals(project.getElementName(), dependencies.projectName());
 		// the harness builds classpaths with MavenProjectClasspath, which does no workspace
 		// resolution - so there is never a workspace project dependency to offer here
-		assertEquals(List.of(), dependencies.dependencies());
+		assertTrue(dependencies.dependencies().stream().noneMatch(d -> d.kind() == DependencyDescriptor.Kind.WORKSPACE_PROJECT));
+	}
+
+	@Test
+	void jarsAreOfferedWithTheirMavenCoordinates() throws Exception {
+		Dependencies dependencies = (Dependencies) harness.getServer().getWorkspaceService()
+				.executeCommand(new ExecuteCommandParams(DEPENDENCIES_CMD, List.of(project.getElementName()))).get();
+
+		DependencyDescriptor springWeb = dependencies.dependencies().stream()
+				.filter(d -> d.id().equals("gav:org.springframework:spring-web"))
+				.findFirst()
+				.orElseThrow(() -> new AssertionError("spring-web not offered, got: " + dependencies.dependencies()));
+
+		assertEquals(DependencyDescriptor.Kind.JAR, springWeb.kind());
+		assertEquals("spring-web", springWeb.displayName());
+		assertEquals("org.springframework", springWeb.groupId());
+		assertEquals("spring-web", springWeb.artifactId());
+		assertTrue(springWeb.version() != null && !springWeb.version().isBlank());
+		assertTrue(springWeb.location().endsWith(".jar"));
+
+		// the JRE never shows up as a dependency to include
+		assertTrue(dependencies.dependencies().stream().allMatch(d -> d.id().startsWith("gav:") || d.id().startsWith("jar:")));
+		assertTrue(dependencies.dependencies().stream().noneMatch(d -> d.location().contains("/jmods/") || d.location().endsWith("rt.jar")));
 	}
 
 	@SuppressWarnings("unchecked")

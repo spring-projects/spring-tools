@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.InstanceScope;
+import org.eclipse.jdt.core.IClasspathAttribute;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -132,6 +134,10 @@ public class ClasspathUtil {
 			if (systemLibs.contains(path)) {
 				cpe.setSystem(true);
 			}
+			Map<String, String> coordinates = mavenCoordinatesOf(entry);
+			if (!coordinates.isEmpty()) {
+				cpe.setExtra(coordinates);
+			}
 			IPath sp = entry.getSourceAttachmentPath();
 			if (sp != null) {
 				cpe.setSourceContainerUrl(sp.toFile().getAbsoluteFile().toURI().toURL());
@@ -169,6 +175,28 @@ public class ClasspathUtil {
 		return Collections.emptyList();
 	}
 	
+	/**
+	 * The classpath attributes m2e attaches to every library entry it contributes (see
+	 * {@code org.eclipse.m2e.jdt.IClasspathManager}), carried over as the library's Maven
+	 * coordinates. Other entries - Buildship's, for instance, which carry no coordinates - get none.
+	 */
+	private static Map<String, String> mavenCoordinatesOf(IClasspathEntry entry) {
+		Map<String, String> coordinates = new HashMap<>();
+		for (IClasspathAttribute attribute : entry.getExtraAttributes()) {
+			String key = switch (attribute.getName()) {
+				case "maven.groupId" -> CPE.EXTRA_GROUP_ID;
+				case "maven.artifactId" -> CPE.EXTRA_ARTIFACT_ID;
+				case "maven.version" -> CPE.EXTRA_VERSION;
+				case "maven.scope" -> CPE.EXTRA_SCOPE;
+				default -> null;
+			};
+			if (key != null && attribute.getValue() != null) {
+				coordinates.put(key, attribute.getValue());
+			}
+		}
+		return coordinates;
+	}
+
 	private static CPE createSourceCPE(IJavaProject javaProject, IClasspathEntry entry) throws JavaModelException {
 		IPath sourcePath = entry.getPath();
 		// log("source entry =" + sourcePath);

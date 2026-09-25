@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,7 +15,9 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
@@ -83,6 +85,25 @@ public class MavenProjectClasspath implements IClasspath {
 		return cachedData != null ? cachedData.getName() : null;
 	}
 		
+	/**
+	 * The library's Maven coordinates, recorded on its classpath entry the same way the Maven
+	 * integration of the Java tooling does (see {@link CPE#EXTRA_GROUP_ID}).
+	 */
+	private static Map<String, String> mavenCoordinatesOf(Artifact a) {
+		Map<String, String> coordinates = new HashMap<>();
+		putIfNotNull(coordinates, CPE.EXTRA_GROUP_ID, a.getGroupId());
+		putIfNotNull(coordinates, CPE.EXTRA_ARTIFACT_ID, a.getArtifactId());
+		putIfNotNull(coordinates, CPE.EXTRA_VERSION, a.getBaseVersion());
+		putIfNotNull(coordinates, CPE.EXTRA_SCOPE, a.getScope());
+		return coordinates;
+	}
+
+	private static void putIfNotNull(Map<String, String> map, String key, String value) {
+		if (value != null) {
+			map.put(key, value);
+		}
+	}
+
 	private ImmutableList<CPE> resolveClasspathEntries(MavenProject project) throws Exception {
 		LinkedHashSet<CPE> entries = new LinkedHashSet<>();
 		safe(() -> maven.getJreLibs().forEach(path -> safe(() -> {
@@ -123,6 +144,7 @@ public class MavenProjectClasspath implements IClasspath {
 					entries.add(cpe);
 				} else {
 					CPE cpe = CPE.binary(a.getFile().toPath().toString());
+					cpe.setExtra(mavenCoordinatesOf(a));
 					safe(() -> { //add javadoc
 						Artifact jdoc = maven.getJavadoc(a, project.getRemoteArtifactRepositories());
 						if (jdoc != null) {

@@ -15,8 +15,10 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,9 +28,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
+import org.springframework.ide.vscode.commons.protocol.java.Gav;
 
 /**
- * Finds the workspace projects a project depends on, straight from its classpath.
+ * Finds the dependencies of a project - the workspace projects and the JARs it depends on -
+ * straight from its classpath.
  *
  * <p>No build-tool specific resolution needed: when the classpath comes from the Java tooling
  * (JDT-LS, or the Eclipse plugin), Maven/Gradle workspace resolution already turns a dependency on
@@ -37,6 +41,11 @@ import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
  * tooling versions on, its name) in {@link CPE#getExtra()}. Classpath providers that do no workspace
  * resolution (the standalone language server's Maven/Gradle classpaths) produce no such entries, so
  * no workspace project dependencies are found there.
+ *
+ * <p>A JAR's Maven coordinates come from its classpath entry when the classpath provider recorded
+ * them (the Java tooling's Maven integration, the standalone Maven classpath), and otherwise from
+ * its location in the Gradle cache, whose layout encodes them - which covers Gradle projects in the
+ * Java tooling, which records none, and the standalone Gradle classpath.
  *
  * @author Martin Lippert
  */
@@ -74,6 +83,47 @@ public class ClasspathDependencyResolver {
 	}
 
 	/**
+	 * The distinct JARs the given project depends on, in classpath order - one per Maven group and
+	 * artifact id where those are known, one per file otherwise. Leaves out the JRE and whatever the
+	 * classpath provider marks as test-only.
+	 */
+	public List<JarDependency> jarDependenciesOf(IJavaProject project) {
+		Map<String, JarDependency> result = new LinkedHashMap<>();
+
+		try {
+			for (CPE cpe : project.getClasspath().getClasspathEntries()) {
+				if (Classpath.isBinary(cpe) && !cpe.isSystem() && !cpe.isTest() && !"test".equals(cpe.getScope())) {
+					Gav gav = cpe.getGav() != null ? cpe.getGav() : gavFromGradleCachePath(cpe.getPath());
+					JarDependency jar = new JarDependency(gav, cpe.getName(), cpe.getPath());
+					result.putIfAbsent(gav != null ? gav.groupId() + ":" + gav.artifactId() : cpe.getPath(), jar);
+				}
+			}
+		} catch (Exception e) {
+			log.error("cannot determine jar dependencies of project: " + project.getElementName(), e);
+		}
+
+		return new ArrayList<>(result.values());
+	}
+
+	/**
+	 * The Maven coordinates encoded in a path of the Gradle dependency cache,
+	 * {@code .../files-2.1/<group>/<artifact>/<version>/<hash>/<file>} - null for any other path.
+	 */
+	static Gav gavFromGradleCachePath(String path) {
+		if (path == null) {
+			return null;
+		}
+
+		Path p = Paths.get(path);
+		for (int i = 0; i < p.getNameCount(); i++) {
+			if ("files-2.1".equals(p.getName(i).toString()) && p.getNameCount() == i + 6) {
+				return new Gav(p.getName(i + 1).toString(), p.getName(i + 2).toString(), p.getName(i + 3).toString());
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Fallback for a classpath sent by a version of the tooling that recorded only the location of a
 	 * referenced project, not its name.
 	 */
@@ -103,6 +153,16 @@ public class ClasspathDependencyResolver {
 	 * @param location the dependency project's file system location
 	 */
 	public static record WorkspaceProjectDependency(String projectName, String location) {
+	}
+
+	/**
+	 * A JAR a project depends on.
+	 *
+	 * @param gav the JAR's Maven coordinates, null if unknown
+	 * @param name the JAR's file name without version and extension
+	 * @param path the JAR's file system location
+	 */
+	public static record JarDependency(Gav gav, String name, String path) {
 	}
 
 }

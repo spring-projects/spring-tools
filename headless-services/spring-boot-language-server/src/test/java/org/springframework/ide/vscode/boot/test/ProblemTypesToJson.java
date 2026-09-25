@@ -83,6 +83,7 @@ public class ProblemTypesToJson {
 		String description;
 		String type;
 		String defaultValue;
+		String[] enumValues;
 
 		public ProblemTypeParameterData() {}
 
@@ -92,6 +93,7 @@ public class ProblemTypesToJson {
 			this.description = p.getDescription();
 			this.type = p.getType().name().toLowerCase();
 			this.defaultValue = p.getDefaultValue();
+			this.enumValues = p.getEnumValues();
 		}
 
 		public String getKey() {
@@ -113,8 +115,12 @@ public class ProblemTypesToJson {
 		public String getDefaultValue() {
 			return defaultValue;
 		}
+
+		public String[] getEnumValues() {
+			return enumValues;
+		}
 	}
-	
+
 	public static class ProblemTypeData {
 		String code;
 		String label;
@@ -454,6 +460,13 @@ public class ProblemTypesToJson {
 			} else {
 				schema.addProperty("type", "string");
 				schema.addProperty("default", param.getDefaultValue());
+				if (param.getEnumValues() != null) {
+					JsonArray enumVals = new JsonArray();
+					for (String v : param.getEnumValues()) {
+						enumVals.add(v);
+					}
+					schema.add("enum", enumVals);
+				}
 			}
 			schema.addProperty("description", param.getDescription());
 			props.add(fullKey, schema);

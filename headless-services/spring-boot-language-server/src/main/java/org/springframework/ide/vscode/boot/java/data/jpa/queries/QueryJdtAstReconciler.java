@@ -41,13 +41,15 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 	private final Reconciler hqlReconciler;
 	private final Reconciler jpqlReconciler;
 	private final Map<SqlType, Reconciler> sqlReconcilers;
+	private final SqlDialectResolver sqlDialectResolver;
 
-	
+
 	public QueryJdtAstReconciler(Reconciler hqlReconciler, Reconciler jpqlReconciler,
-			Optional<SpelReconciler> spelReconciler) {
+			Optional<SpelReconciler> spelReconciler, SqlDialectResolver sqlDialectResolver) {
 		this.hqlReconciler = hqlReconciler;
 		this.jpqlReconciler = jpqlReconciler;
-		
+		this.sqlDialectResolver = sqlDialectResolver;
+
 		this.sqlReconcilers = new LinkedHashMap<>();
 		this.sqlReconcilers.put(SqlType.MYSQL, new AntlrReconcilerWithSpel("MySQL", MySqlParser.class, MySqlLexer.class, "sqlStatements", QueryProblemType.SQL_SYNTAX, spelReconciler, MySqlLexer.SPEL));
 		this.sqlReconcilers.put(SqlType.POSTGRESQL, new AntlrReconcilerWithSpel("PostgreSQL", PostgreSqlParser.class, PostgreSqlLexer.class, "root", QueryProblemType.SQL_SYNTAX, spelReconciler, PostgreSqlLexer.SPEL));
@@ -62,8 +64,7 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 			public boolean visit(NormalAnnotation node) {
 				EmbeddedQueryExpression q = JdtQueryVisitorUtils.extractQueryExpression(annotationHierarchies, node);
 				if (q != null) {
-					Optional<Reconciler> reconcilerOpt = q.isNative() ? getSqlReconciler(project) : Optional.of(getQueryReconciler(project));
-					reconcilerOpt.ifPresent(r -> r.reconcile(q.query().getText(), q.query()::toSingleJavaRange, context.getProblemCollector()));
+					reconcileQuery(project, q, context);
 				}
 				return super.visit(node);
 			}
@@ -72,8 +73,7 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 			public boolean visit(SingleMemberAnnotation node) {
 				EmbeddedQueryExpression q = JdtQueryVisitorUtils.extractQueryExpression(annotationHierarchies, node);
 				if (q != null) {
-					Optional<Reconciler> reconcilerOpt = q.isNative() ? getSqlReconciler(project) : Optional.of(getQueryReconciler(project));
-					reconcilerOpt.ifPresent(r -> r.reconcile(q.query().getText(), q.query()::toSingleJavaRange, context.getProblemCollector()));
+					reconcileQuery(project, q, context);
 				}
 				return super.visit(node);
 			}
@@ -96,7 +96,19 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 	private Reconciler getQueryReconciler(IJavaProject project) {
 		return SpringProjectUtil.hasDependencyStartingWith(project, "hibernate-core", null) ? hqlReconciler : jpqlReconciler;
 	}
-	
+
+	private void reconcileQuery(IJavaProject project, EmbeddedQueryExpression q, ReconcilingContext context) {
+		if (q.isNative()) {
+			SqlType resolved = sqlDialectResolver.resolve(project);
+			if (resolved == null) {
+				return;
+			}
+			sqlReconcilers.get(resolved).reconcile(q.query().getText(), q.query()::toSingleJavaRange, context.getProblemCollector());
+		} else {
+			getQueryReconciler(project).reconcile(q.query().getText(), q.query()::toSingleJavaRange, context.getProblemCollector());
+		}
+	}
+
 //	public static void reconcileExpression(Reconciler reconciler, Expression valueExp, IProblemCollector problemCollector) {
 //		String query = null;
 //		int offset = 0;
@@ -124,19 +136,6 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 	@Override
 	public ProblemType getProblemType() {
 		return QueryProblemType.JPQL_SYNTAX;
-	}
-	
-	private Optional<Reconciler> getSqlReconciler(IJavaProject project) {
-		if (SpringProjectUtil.hasDependencyStartingWith(project, "mysql-connector", null)
-				|| SpringProjectUtil.hasDependencyStartingWith(project, "mariadb-java-client", null)) {
-			return Optional.of(sqlReconcilers.get(SqlType.MYSQL));
-		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "postgresql", null)) {
-			return Optional.of(sqlReconcilers.get(SqlType.POSTGRESQL));
-		} else if (SpringProjectUtil.hasDependencyStartingWith(project, "h2", null)) {
-			// Keep H2 the last as it might be added in combination with other DB clients
-			return Optional.of(sqlReconcilers.get(SqlType.POSTGRESQL));
-		}
-		return Optional.empty();
 	}
 
 }

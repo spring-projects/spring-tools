@@ -41,6 +41,7 @@ public abstract class ProblemSeverityPreferityPageFromMetadata extends AbstractP
 		private String description;
 		private String type;
 		private String defaultValue;
+		private String[] enumValues;
 
 		public ProblemParameterData() {}
 
@@ -82,6 +83,14 @@ public abstract class ProblemSeverityPreferityPageFromMetadata extends AbstractP
 
 		public void setDefaultValue(String defaultValue) {
 			this.defaultValue = defaultValue;
+		}
+
+		public String[] getEnumValues() {
+			return enumValues;
+		}
+
+		public void setEnumValues(String[] enumValues) {
+			this.enumValues = enumValues;
 		}
 	}
 

@@ -38,6 +38,7 @@ import org.springframework.ide.vscode.boot.java.data.jpa.queries.JdtQueryDocHigh
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSemanticTokens;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSupportState;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.QueryJdtAstReconciler;
+import org.springframework.ide.vscode.boot.java.data.jpa.queries.SqlDialectResolver;
 import org.springframework.ide.vscode.boot.java.handlers.Reconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.AddConfigurationIfBeansPresentReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ApplicationModuleListenerReconciler;
@@ -263,8 +264,9 @@ public class JdtConfig {
 	@Bean QueryJdtAstReconciler dataQueryReconciler(
 			@Qualifier("hqlReconciler") Reconciler hqlReconciler,
 			@Qualifier("jpqlReconciler") Reconciler jpqlReconciler,
-			Optional<SpelReconciler> spelReconciler) {
-		return new QueryJdtAstReconciler(hqlReconciler, jpqlReconciler, spelReconciler);
+			Optional<SpelReconciler> spelReconciler,
+			SqlDialectResolver sqlDialectResolver) {
+		return new QueryJdtAstReconciler(hqlReconciler, jpqlReconciler, spelReconciler, sqlDialectResolver);
 	}
 
 	@Bean EmbeddedLanguagesSemanticTokensSupport embbededLanguagesSyntaxHighlighting(SimpleLanguageServer server, BootJavaConfig config) {

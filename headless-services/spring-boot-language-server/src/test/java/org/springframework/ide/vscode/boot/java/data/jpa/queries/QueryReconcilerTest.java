@@ -246,7 +246,7 @@ public class QueryReconcilerTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
 		editor.assertProblems("SELECTX|MySQL: mismatched input 'SELECTX' expecting {'ALTER',");
 	}
-	
+
 	@Test
 	void nativePostgreSql() throws Exception {
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-postgresql/").toURI());
@@ -272,7 +272,7 @@ public class QueryReconcilerTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
 		editor.assertProblems("SELECTX|PostgreSQL: mismatched input 'SELECTX'");
 	}
-	
+
 	@Test
 	void noErrorForHql() throws Exception {
 		String source = """
@@ -402,7 +402,7 @@ public class QueryReconcilerTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
 		editor.assertProblems("SELECTX|PostgreSQL: mismatched input 'SELECTX' expecting {");
 	}
-	
+
 	@Test
 	void jdbcOnlyProjectNoReconcilingWithoutDbConnector() throws Exception {
 		directory = new File(ProjectsHarness.class.getResource("/test-projects/aot-data-repositories-jdbc/").toURI());
@@ -444,8 +444,8 @@ public class QueryReconcilerTest {
 				public interface OwnerRepository extends CrudRepository<Object, Integer> {
 
 					@Query(value = ""\"
-							INSERT INTO `user_settings` (`user_id`, `theme_color`) 
-							VALUES (101, 'dark') 
+							INSERT INTO `user_settings` (`user_id`, `theme_color`)
+							VALUES (101, 'dark')
 							ON DUPLICATE KEY UPDATE `theme_color` = 'dark';
 							""\")
 					List<Object> findByLastName(String lastName);
@@ -474,9 +474,9 @@ public class QueryReconcilerTest {
 				public interface OwnerRepository extends CrudRepository<Object, Integer> {
 
 					@Query(value = ""\"
-							INSERT INTO "user_settings" ("user_id", "theme_color") 
-							VALUES (101, 'dark') 
-							ON CONFLICT ("user_id") 
+							INSERT INTO "user_settings" ("user_id", "theme_color")
+							VALUES (101, 'dark')
+							ON CONFLICT ("user_id")
 							DO UPDATE SET "theme_color" = EXCLUDED.theme_color;
 							""\")
 					List<Object> findByLastName(String lastName);
@@ -487,5 +487,128 @@ public class QueryReconcilerTest {
 				.toString();
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
 		editor.assertProblems("CONFLICT|MySQL: no viable alternative at input 'INSERT INTO");
+	}
+
+	// https://github.com/spring-projects/spring-tools/issues/1975
+	@Test
+	void queryWithBothMariaDbAndPostgresqlDriversMisdetectedAsMySql() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-mariadb-postgresql/").toURI());
+		String projectDir = directory.toURI().toString();
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface MachineRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = "SELECT * FROM machine WHERE management_ip = CAST(:managementIp AS inet)", nativeQuery = true)
+					List<Object> findByManagementIp(String managementIp);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/MachineRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		// Valid PostgreSQL syntax, but since a MariaDB driver is also on the classpath,
+		// the query is incorrectly validated against the MySQL grammar instead of PostgreSQL.
+		editor.assertProblems("inet|MySQL: no viable alternative at input 'SELECT * FROM machine WHERE management_ip = CAST(:managementIp AS inet'");
+	}
+
+	@Test
+	void queryDialectOverrideIsUsedForAmbiguousClasspath() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-mariadb-postgresql/").toURI());
+		String projectDir = directory.toURI().toString();
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+		harness.changeConfiguration("""
+				{
+				"spring-boot": {
+					"ls": {
+						"problem": {
+							"data-query": {
+								"SQL_SYNTAX": "ERROR"
+							}
+						},
+						"problem-parameters": {
+							"data-query": {
+								"sql-dialect": "postgresql"
+							}
+						}
+					}
+				}
+			}
+			""");
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface MachineRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = "SELECT * FROM machine WHERE management_ip = CAST(:managementIp AS inet)", nativeQuery = true)
+					List<Object> findByManagementIp(String managementIp);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/MachineRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		// The global override wins over the ambiguous classpath: PostgreSQL grammar is used,
+		// so the valid PostgreSQL query no longer raises a (bogus) syntax error.
+		editor.assertProblems();
+	}
+
+	@Test
+	void queryDialectOverrideIsUsedEvenWhenClasspathUnambiguouslyDisagrees() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-mariadb-h2/").toURI());
+		String projectDir = directory.toURI().toString();
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+		// The classpath here unambiguously resolves to MySQL (mariadb + h2, see
+		// queryMariaDbNoProblems above), but the user has explicitly forced PostgreSQL.
+		harness.changeConfiguration("""
+				{
+				"spring-boot": {
+					"ls": {
+						"problem": {
+							"data-query": {
+								"SQL_SYNTAX": "ERROR"
+							}
+						},
+						"problem-parameters": {
+							"data-query": {
+								"sql-dialect": "postgresql"
+							}
+						}
+					}
+				}
+			}
+			""");
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface OwnerRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = "INSERT INTO \\"user_settings\\" (\\"user_id\\", \\"theme_color\\") VALUES (101, 'dark') ON CONFLICT (\\"user_id\\") DO UPDATE SET \\"theme_color\\" = EXCLUDED.theme_color;")
+					List<Object> findByLastName(String lastName);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/OwnerRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		// The override always wins for reconciliation, regardless of what the classpath
+		// alone would resolve to: valid PostgreSQL syntax, so no syntax error.
+		editor.assertProblems();
 	}
 }

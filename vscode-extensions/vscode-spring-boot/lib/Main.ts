@@ -5,6 +5,7 @@ import {
     commands,
     window,
     workspace,
+    ConfigurationTarget,
     ExtensionContext,
     Uri,
     TextDocumentContentProvider
@@ -229,6 +230,17 @@ function registerMiscCommands(context: ExtensionContext) {
             const openWithExternalBrowser = workspace.getConfiguration("spring.tools").get("openWith") === "external";
             const browserCommand = openWithExternalBrowser ? "vscode.open" : "simpleBrowser.api.open";
             return commands.executeCommand(browserCommand, Uri.parse(openUrl));
+        }),
+
+        // Generic "set a configuration value" command the language server invokes from quick
+        // fixes (e.g. the SQL dialect quick fix) - reusable for future settings without a
+        // dedicated command per setting. Always targets the workspace scope.
+        commands.registerCommand('boot-ls.client.set-configuration', async (key: string, value: any) => {
+            const lastDot = key.lastIndexOf('.');
+            const section = key.substring(0, lastDot);
+            const settingName = key.substring(lastDot + 1);
+            const config = workspace.getConfiguration(section);
+            await config.update(settingName, value, ConfigurationTarget.Global);
         }),
     );
 }

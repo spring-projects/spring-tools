@@ -27,13 +27,24 @@ public final class ProblemTypeParameter {
 	private final String description;
 	private final ValueType type;
 	private final String defaultValue;
+	private final String[] enumValues;
 
 	public ProblemTypeParameter(String key, String label, String description, ValueType type, String defaultValue) {
+		this(key, label, description, type, defaultValue, null);
+	}
+
+	/**
+	 * @param enumValues when non-null, this parameter is rendered as a fixed
+	 * choice among these raw values, rather than a free-form field for {@code type}
+	 */
+	public ProblemTypeParameter(String key, String label, String description, ValueType type, String defaultValue,
+			String[] enumValues) {
 		this.key = key;
 		this.label = label;
 		this.description = description;
 		this.type = type;
 		this.defaultValue = defaultValue;
+		this.enumValues = enumValues;
 	}
 
 	public String getKey() {
@@ -54,6 +65,10 @@ public final class ProblemTypeParameter {
 
 	public String getDefaultValue() {
 		return defaultValue;
+	}
+
+	public String[] getEnumValues() {
+		return enumValues;
 	}
 
 }

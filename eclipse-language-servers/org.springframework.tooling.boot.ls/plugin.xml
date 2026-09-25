@@ -285,6 +285,10 @@
             class="org.springframework.tooling.boot.ls.commands.ConvertBootPropertiesHanlder$ConvertPropertiesToYamlHandler"
             commandId="org.springframework.tooling.boot.ls.properties.convert-props-to-yaml">
       </handler>
+      <handler
+            class="org.springframework.tooling.boot.ls.commands.SetConfigurationHandler"
+            commandId="boot-ls.client.set-configuration">
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.commands">
@@ -318,6 +322,24 @@
          <commandParameter
                id="org.eclipse.lsp4e.path.param"
                name="path"
+               optional="true"
+               typeId="org.eclipse.lsp4e.pathParameterType">
+         </commandParameter>
+      </command>
+      <command
+            categoryId="org.eclipse.lsp4e.commandCategory"
+            description="Sets a configuration value, as sent by a language server quick fix"
+            id="boot-ls.client.set-configuration"
+            name="Set Configuration">
+         <commandParameter
+               id="org.eclipse.lsp4e.command.param"
+               name="Command id (unnecessary, only to make lsp4e happy)"
+               optional="true"
+               typeId="org.eclipse.lsp4e.commandParameterType">
+         </commandParameter>
+         <commandParameter
+               id="org.eclipse.lsp4e.path.param"
+               name="Resource Path (unnecessary, only to make lsp4e happy)"
                optional="true"
                typeId="org.eclipse.lsp4e.pathParameterType">
          </commandParameter>

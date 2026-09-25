@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -18,6 +18,8 @@ import org.springframework.ide.vscode.boot.java.data.jpa.queries.HqlSemanticToke
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSemanticTokens;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSupportState;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.QueryProblemType;
+import org.springframework.ide.vscode.boot.java.data.jpa.queries.SqlDialectQuickFixProvider;
+import org.springframework.ide.vscode.boot.java.data.jpa.queries.SqlDialectResolver;
 import org.springframework.ide.vscode.boot.java.embedded.lang.AntlrReconcilerWithSpel;
 import org.springframework.ide.vscode.boot.java.spel.SpelReconciler;
 import org.springframework.ide.vscode.boot.java.spel.SpelSemanticTokens;
@@ -55,5 +57,15 @@ public class SpringDataConfig {
 	JpqlSupportState jpqlSupportState(SimpleLanguageServer server, ProjectObserver projectObserver, BootJavaConfig config) {
 		return new JpqlSupportState(server, projectObserver, config);
 	}
-	
+
+	@Bean
+	SqlDialectResolver sqlDialectResolver(BootJavaConfig config) {
+		return new SqlDialectResolver(config);
+	}
+
+	@Bean
+	SqlDialectQuickFixProvider sqlDialectQuickFixProvider(SqlDialectResolver sqlDialectResolver) {
+		return new SqlDialectQuickFixProvider(sqlDialectResolver);
+	}
+
 }

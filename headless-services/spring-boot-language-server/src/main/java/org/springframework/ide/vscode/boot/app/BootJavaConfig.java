@@ -203,6 +203,15 @@ public class BootJavaConfig implements InitializingBean {
 		listeners.add(l);
 	}
 
+	/**
+	 * The global override for the SQL dialect used to validate native
+	 * {@code @Query} statements: {@code auto} (default), {@code mysql}, or
+	 * {@code postgresql}. See {@code SqlDialectResolver}.
+	 */
+	public String getSqlDialect() {
+		return settings.getString("spring-boot", "ls", "problem-parameters", "data-query", "sql-dialect");
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		settingsStore.onDidChange(this::handleConfigurationChange);

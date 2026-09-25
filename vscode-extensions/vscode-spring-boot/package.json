@@ -1664,6 +1664,16 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem-parameters.data-query.sql-dialect": {
+            "type": "string",
+            "default": "auto",
+            "enum": [
+              "auto",
+              "mysql",
+              "postgresql"
+            ],
+            "description": "Overrides the SQL dialect used to validate native @Query SQL statements. By default the dialect is inferred from JDBC driver dependencies (MySQL/MariaDB take precedence over PostgreSQL when both are present)."
           }
         }
       },

@@ -66,9 +66,9 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 				defaults.put(getProblemParametersPreferencePrefix() + param.getKey(), param.getDefaultValue());
 			}
 		}
-		super.initializeDefaults();		
+		super.initializeDefaults();
 	}
-	
+
 	@Override
 	protected void createFieldEditors() {
 		if (category.getToggle() != null) {
@@ -84,7 +84,9 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 		if (category.getParameters() != null) {
 			for (ProblemParameterData param : category.getParameters()) {
 				String prefKey = getProblemParametersPreferencePrefix() + param.getKey();
-				if ("boolean".equals(param.getType())) {
+				if (param.getEnumValues() != null) {
+					addField(new ComboFieldEditor(prefKey, param.getLabel(), createToggleValues(param.getEnumValues()), getFieldEditorParent()));
+				} else if ("boolean".equals(param.getType())) {
 					addField(new BooleanFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));
 				} else if ("integer".equals(param.getType())) {
 					addField(new IntegerFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));
@@ -95,7 +97,7 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 		}
 		super.createFieldEditors();
 	}
-	
+
 	private static String[][] createToggleValues(String[] values) {
 		String[][] res = new String[values.length][2];
 		for (int i = 0; i < values.length; i++) {

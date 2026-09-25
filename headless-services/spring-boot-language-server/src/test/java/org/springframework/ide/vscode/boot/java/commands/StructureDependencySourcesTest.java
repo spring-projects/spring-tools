@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -69,8 +70,8 @@ public class StructureDependencySourcesTest {
 				"com.example", "aaa", "1.0", null, "/repo/aaa-1.0.jar");
 
 		StructureDependencySources sources = new StructureDependencySources(List.of(
-				project -> List.of(jar, zeta),
-				project -> List.of(alpha, zeta)));
+				offering(jar, zeta),
+				offering(alpha, zeta)));
 
 		assertEquals(List.of(alpha, zeta, jar), sources.discoverAll(app));
 	}
@@ -79,7 +80,7 @@ public class StructureDependencySourcesTest {
 	void resolveKeepsOnlySelectedIdsThatAreStillOffered() {
 		IJavaProject app = mock(IJavaProject.class);
 		DependencyDescriptor shared = DependencyDescriptor.workspaceProject("shared", "/ws/shared");
-		StructureDependencySources sources = new StructureDependencySources(List.of(project -> List.of(shared)));
+		StructureDependencySources sources = new StructureDependencySources(List.of(offering(shared)));
 
 		assertEquals(List.of(shared), sources.resolve(app, List.of("project:shared", "project:closed-meanwhile")));
 		assertEquals(List.of(), sources.resolve(app, List.of()));
@@ -91,10 +92,22 @@ public class StructureDependencySourcesTest {
 		IJavaProject app = mock(IJavaProject.class);
 		DependencyDescriptor shared = DependencyDescriptor.workspaceProject("shared", "/ws/shared");
 		StructureDependencySources sources = new StructureDependencySources(List.of(
-				project -> { throw new IllegalStateException("broken source"); },
-				project -> List.of(shared)));
+				failing(),
+				offering(shared)));
 
 		assertEquals(List.of(shared), sources.discoverAll(app));
+	}
+
+	private static StructureDependencySource offering(DependencyDescriptor... dependencies) {
+		StructureDependencySource source = mock(StructureDependencySource.class);
+		when(source.discover(any())).thenReturn(List.of(dependencies));
+		return source;
+	}
+
+	private static StructureDependencySource failing() {
+		StructureDependencySource source = mock(StructureDependencySource.class);
+		when(source.discover(any())).thenThrow(new IllegalStateException("broken source"));
+		return source;
 	}
 
 	private static CPE dependencySource(String projectName) {

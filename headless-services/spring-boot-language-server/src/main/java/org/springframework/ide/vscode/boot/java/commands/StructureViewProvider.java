@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
-import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
@@ -45,14 +44,16 @@ public class StructureViewProvider {
 	private final StereotypeCatalogRegistry stereotypeCatalogRegistry;
 	private final SourceLinks sourceLinks;
 	private final StereotypeDefinitionLocator definitionLocator;
+	private final StructureDependencySources dependencySources;
 
 	public StructureViewProvider(SpringMetamodelIndex springIndex, ModulithService modulithService,
-			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks) {
+			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks, StructureDependencySources dependencySources) {
 
 		this.springIndex = springIndex;
 		this.modulithService = modulithService;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		this.sourceLinks = sourceLinks;
+		this.dependencySources = dependencySources;
 		this.definitionLocator = new StereotypeDefinitionLocator();
 	}
 
@@ -82,14 +83,17 @@ public class StructureViewProvider {
 
 	/**
 	 * Same as {@link #createTree(IJavaProject, CachedSpringMetamodelIndex, boolean, Collection)},
-	 * with the dependencies the user selected to include in the project's tree.
+	 * with the dependencies the user selected to include in the project's tree: their elements are
+	 * built into the tree as if they were the project's own ({@link CompositeStructureElements}),
+	 * resolved against a catalog of their own
+	 * ({@link StereotypeCatalogRegistry#getCatalogOf(IJavaProject, Collection)}). See
+	 * {@code docs/structure-view-dependencies.md}.
 	 *
-	 * <p>The selection is accepted, but not used yet: including the elements of selected
-	 * dependencies in the tree is the next step of {@code docs/structure-view-dependencies.md} -
-	 * until then the tree is exactly the project's own, whatever is selected.
+	 * <p>Only the dependencies' types within the project's main application package show up - the
+	 * tree is rooted there.
 	 *
 	 * @param selectedDependencies the selected dependencies, already resolved against what the
-	 *        project currently offers - empty for none
+	 *        project currently offers - empty for none, which is the project's own tree
 	 */
 	public Node createTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, boolean updateMetadata,
 			Collection<String> selectedGroups, List<DependencyDescriptor> selectedDependencies) {
@@ -101,10 +105,27 @@ public class StructureViewProvider {
 			log.info("stereotype registry reset for project: " + project.getElementName());
 		}
 
-		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
-		StructureElements elements = indexElementsOf(project, cachedIndex, catalog);
+		if (selectedDependencies == null || selectedDependencies.isEmpty()) {
+			var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
+			return createTree(project, IndexStructureElements.of(project, cachedIndex, catalog), catalog, selectedGroups, updateMetadata);
+		}
 
-		return createTree(project, elements, selectedGroups, updateMetadata);
+		var catalog = stereotypeCatalogRegistry.getCatalogOf(project, selectedDependencies.stream().map(DependencyDescriptor::id).toList());
+
+		StructureElements elements = new CompositeStructureElements(
+				IndexStructureElements.of(project, cachedIndex, catalog),
+				dependencySources.elementsOf(withoutProject(selectedDependencies, project), cachedIndex, catalog));
+
+		return createTree(project, elements, catalog, selectedGroups, updateMetadata);
+	}
+
+	/**
+	 * A project can't include itself - it is already there.
+	 */
+	private static List<DependencyDescriptor> withoutProject(List<DependencyDescriptor> dependencies, IJavaProject project) {
+		return dependencies.stream()
+				.filter(dependency -> !project.getElementName().equals(dependency.projectName()))
+				.toList();
 	}
 
 	/**
@@ -125,8 +146,11 @@ public class StructureViewProvider {
 	 * @return the root node of the tree, or null if no tree could be created for the project
 	 */
 	public Node createTree(IJavaProject project, StructureElements elements, Collection<String> selectedGroups, boolean updateMetadata) {
+		return createTree(project, elements, stereotypeCatalogRegistry.getCatalogOf(project), selectedGroups, updateMetadata);
+	}
 
-		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
+	private Node createTree(IJavaProject project, StructureElements elements, AbstractStereotypeCatalog catalog,
+			Collection<String> selectedGroups, boolean updateMetadata) {
 
 		if (selectedGroups == null) {
 			selectedGroups = catalog.getGroups().stream().map(group -> group.getIdentifier()).toList();
@@ -138,16 +162,6 @@ public class StructureViewProvider {
 		else {
 			return new JMoleculesStructureView(catalog, sourceLinks, definitionLocator).createTree(project, elements, selectedGroups);
 		}
-	}
-
-	private StructureElements indexElementsOf(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
-		var factory = new IndexBasedStereotypeFactory(catalog, project, cachedIndex);
-
-		if (StructureViewUtil.hasSourceDefinedStereotypesEnabled()) {
-			factory.registerStereotypeDefinitions();
-		}
-
-		return new IndexStructureElements(project, cachedIndex, factory);
 	}
 
 	/**
@@ -167,7 +181,7 @@ public class StructureViewProvider {
 	 */
 	public StructureElementSnapshot captureSnapshot(IJavaProject project, CachedSpringMetamodelIndex cachedIndex) {
 		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
-		StructureElements elements = indexElementsOf(project, cachedIndex, catalog);
+		StructureElements elements = IndexStructureElements.of(project, cachedIndex, catalog);
 
 		return StructureSnapshotBuilder.capture(elements);
 	}
@@ -180,10 +194,17 @@ public class StructureViewProvider {
 	 * @throws IllegalStateException if no tree can be built for the project even then
 	 */
 	public Node createCompleteTree(IJavaProject project) {
-		Node root = createTree(project, false, null);
+		return createCompleteTree(project, List.of());
+	}
+
+	/**
+	 * Same as {@link #createCompleteTree(IJavaProject)}, with the given dependencies included.
+	 */
+	public Node createCompleteTree(IJavaProject project, List<DependencyDescriptor> selectedDependencies) {
+		Node root = createTree(project, new CachedSpringMetamodelIndex(springIndex), false, null, selectedDependencies);
 
 		if (root == null) {
-			root = createTree(project, true, null);
+			root = createTree(project, new CachedSpringMetamodelIndex(springIndex), true, null, selectedDependencies);
 		}
 
 		if (root == null) {

@@ -10,11 +10,13 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -69,6 +71,32 @@ public class StructureDependencySources {
 		return discoverAll(project).stream()
 				.filter(dependency -> selectedIds.contains(dependency.id()))
 				.toList();
+	}
+
+	/**
+	 * The elements of each of the given dependencies that some source can supply, in the given
+	 * order - a dependency no source supplies elements for (yet) is left out.
+	 */
+	public List<StructureElements> elementsOf(List<DependencyDescriptor> dependencies, CachedSpringMetamodelIndex cachedIndex,
+			AbstractStereotypeCatalog catalog) {
+
+		List<StructureElements> result = new ArrayList<>();
+
+		for (DependencyDescriptor dependency : dependencies) {
+			for (StructureDependencySource source : sources) {
+				try {
+					StructureElements elements = source.elementsOf(dependency, cachedIndex, catalog);
+					if (elements != null) {
+						result.add(elements);
+						break;
+					}
+				} catch (Exception e) {
+					log.error("cannot get the elements of structure dependency " + dependency.id() + " via " + source, e);
+				}
+			}
+		}
+
+		return result;
 	}
 
 }

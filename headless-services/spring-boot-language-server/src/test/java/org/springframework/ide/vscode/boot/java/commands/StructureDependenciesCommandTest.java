@@ -40,8 +40,8 @@ import com.google.gson.Gson;
 
 /**
  * Step 1 of {@code docs/structure-view-dependencies.md}: the dependencies a project offers can be
- * asked for, and a structure request can carry a selection - which, in this step, must not change
- * the tree at all.
+ * asked for, and a structure request can carry a selection. What a selection does to the tree is
+ * {@link StructureDependenciesTreeTest}'s.
  *
  * @author Martin Lippert
  */
@@ -121,7 +121,7 @@ public class StructureDependenciesCommandTest {
 	}
 
 	@Test
-	void aDependencySelectionDoesNotChangeTheTreeYet() throws Exception {
+	void aSelectionThatResolvesToNothingLeavesTheTreeAsItIs() throws Exception {
 		List<Node> without = tree.structureTrees(null, null, null);
 		List<Node> with = tree.structureTrees(null, null,
 				Map.of(project.getElementName(), List.of("project:some-dependency", "gav:com.example:lib")));

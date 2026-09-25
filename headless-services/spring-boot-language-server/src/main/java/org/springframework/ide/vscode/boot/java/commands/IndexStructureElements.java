@@ -15,6 +15,8 @@ import java.util.List;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.api.StereotypeFactory;
+import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
+import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
@@ -22,13 +24,13 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 /**
  * {@link StructureElements} backed by the live, in-memory Spring index (via
- * {@link CachedSpringMetamodelIndex}) - today's only implementation, and the one every structure
- * tree is still built from.
+ * {@link CachedSpringMetamodelIndex}) - the one every live structure tree is built from, and each
+ * part of a {@link CompositeStructureElements}.
  *
  * <p>Deliberately a thin, side-effect-free view: the stereotype factory it hands back
  * ({@link #stereotypeFactory()}) is supplied already built - and, if applicable, already had its
  * source-defined stereotype definitions registered - by whoever constructs this class
- * ({@link StructureViewProvider#createTree}), so that decision (and the
+ * (usually via {@link #of}), so that decision (and the
  * {@code disable-source-defined-stereotypes} toggle behind it) stays in one place rather than
  * being duplicated here.
  *
@@ -45,6 +47,20 @@ public class IndexStructureElements implements StructureElements {
 		this.project = project;
 		this.springIndex = springIndex;
 		this.factory = factory;
+	}
+
+	/**
+	 * The elements of the given project, with a stereotype factory on the given catalog - which, if
+	 * enabled, gets the project's source-defined stereotype definitions registered right away.
+	 */
+	public static IndexStructureElements of(IJavaProject project, CachedSpringMetamodelIndex springIndex, AbstractStereotypeCatalog catalog) {
+		var factory = new IndexBasedStereotypeFactory(catalog, project, springIndex);
+
+		if (StructureViewUtil.hasSourceDefinedStereotypesEnabled()) {
+			factory.registerStereotypeDefinitions();
+		}
+
+		return new IndexStructureElements(project, springIndex, factory);
 	}
 
 	@Override

@@ -22,12 +22,11 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageEle
  * {@link ModulithStructureView} and the providers/label providers they use) read about a project's
  * stereotype elements, abstracted from where those elements actually come from.
  *
- * <p>{@link IndexStructureElements} - today's only implementation - reads from the live
- * {@code SpringMetamodelIndex}. A second implementation reading from a captured baseline snapshot,
- * used to diff against instead of a rendered tree, is the point of
- * {@code docs/structure-diff-elements.md}; a third, composing several projects' elements, is the
- * point of {@code docs/structure-view-dependencies.md}. Neither exists yet - this interface is the
- * seam both build on.
+ * <p>{@link IndexStructureElements} reads from the live {@code SpringMetamodelIndex};
+ * {@link SnapshotStructureElements} from a captured baseline snapshot, diffed against instead of a
+ * rendered tree ({@code docs/structure-diff-elements.md}); {@link CompositeStructureElements}
+ * composes a project's elements with those of its included dependencies
+ * ({@code docs/structure-view-dependencies.md}).
  *
  * @author Martin Lippert
  */

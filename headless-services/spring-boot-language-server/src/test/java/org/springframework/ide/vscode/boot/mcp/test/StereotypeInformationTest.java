@@ -75,7 +75,7 @@ public class StereotypeInformationTest {
 
 	@Test
 	void logicalStructureRootRepresentsTheProject() throws Exception {
-		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName());
+		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName(), null);
 
 		assertEquals(project.getElementName(), root.text());
 		assertNotNull(root.icon());
@@ -85,14 +85,14 @@ public class StereotypeInformationTest {
 
 	@Test
 	void logicalStructureIsLookedUpCaseInsensitively() throws Exception {
-		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName().toUpperCase());
+		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName().toUpperCase(), null);
 
 		assertEquals(project.getElementName(), root.text());
 	}
 
 	@Test
 	void logicalStructureNodesCarryLabelsAndUniqueNodeIds() throws Exception {
-		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName());
+		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName(), null);
 
 		List<StructureNode> nodes = flatten(root);
 		List<String> nodeIds = new ArrayList<>();
@@ -113,7 +113,7 @@ public class StereotypeInformationTest {
 
 	@Test
 	void logicalStructureContainsTypesWithTheirSourceLocations() throws Exception {
-		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName());
+		StructureNode root = stereotypeInformation.getLogicalStructure(project.getElementName(), null);
 
 		List<SourceLocation> locations = flatten(root).stream()
 				.map(StructureNode::location)
@@ -131,7 +131,7 @@ public class StereotypeInformationTest {
 
 	@Test
 	void logicalStructureOfUnknownProjectFails() throws Exception {
-		assertThrows(Exception.class, () -> stereotypeInformation.getLogicalStructure("no-such-project"));
+		assertThrows(Exception.class, () -> stereotypeInformation.getLogicalStructure("no-such-project", null));
 	}
 
 	@Test

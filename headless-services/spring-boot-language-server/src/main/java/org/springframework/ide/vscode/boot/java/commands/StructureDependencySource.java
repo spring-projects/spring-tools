@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.List;
 
+import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 /**
@@ -19,9 +20,8 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
  * projects ({@link WorkspaceProjectDependencySource}) today, JAR dependencies later. See
  * {@code docs/structure-view-dependencies.md}.
  *
- * <p>Only the discovery half so far: which dependencies can be offered for selection. The half
- * that supplies a selected dependency's elements to the tree builder comes with the step of the
- * plan that actually includes them in the tree.
+ * <p>Two halves: which dependencies can be offered for selection ({@link #discover}), and the
+ * elements a selected one contributes to the tree ({@link #elementsOf}).
  *
  * @author Martin Lippert
  */
@@ -31,5 +31,13 @@ public interface StructureDependencySource {
 	 * The dependencies of the given project this source can offer for inclusion.
 	 */
 	List<DependencyDescriptor> discover(IJavaProject project);
+
+	/**
+	 * The elements the given dependency contributes to a tree, resolving stereotypes against the
+	 * given catalog - the one of the tree they are included in.
+	 *
+	 * @return null when the dependency is not one this source supplies elements for
+	 */
+	StructureElements elementsOf(DependencyDescriptor dependency, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog);
 
 }

@@ -47,8 +47,8 @@ public class CommandsConfig {
 
 	@Bean
 	StructureViewProvider structureViewProvider(SpringMetamodelIndex symbolIndex, ModulithService modulithService,
-			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks) {
-		return new StructureViewProvider(symbolIndex, modulithService, stereotypeCatalogRegistry, sourceLinks);
+			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks, StructureDependencySources structureDependencySources) {
+		return new StructureViewProvider(symbolIndex, modulithService, stereotypeCatalogRegistry, sourceLinks, structureDependencySources);
 	}
 
 	@Bean

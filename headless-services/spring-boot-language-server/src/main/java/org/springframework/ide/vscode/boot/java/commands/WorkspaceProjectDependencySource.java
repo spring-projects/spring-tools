@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -45,6 +46,19 @@ public class WorkspaceProjectDependencySource implements StructureDependencySour
 				.filter(dependency -> knownProjects.contains(dependency.projectName()))
 				.map(dependency -> DependencyDescriptor.workspaceProject(dependency.projectName(), dependency.location()))
 				.toList();
+	}
+
+	@Override
+	public StructureElements elementsOf(DependencyDescriptor dependency, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
+		if (dependency.kind() != DependencyDescriptor.Kind.WORKSPACE_PROJECT) {
+			return null;
+		}
+
+		return projectFinder.all().stream()
+				.filter(project -> project.getElementName().equals(dependency.projectName()))
+				.findFirst()
+				.map(project -> IndexStructureElements.of(project, cachedIndex, catalog))
+				.orElse(null);
 	}
 
 }

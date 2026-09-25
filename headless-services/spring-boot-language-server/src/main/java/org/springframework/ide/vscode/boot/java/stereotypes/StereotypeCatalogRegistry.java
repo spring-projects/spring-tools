@@ -10,8 +10,10 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.catalog.support.JsonPathStereotypeCatalog;
@@ -24,6 +26,8 @@ public class StereotypeCatalogRegistry {
 
 	private static final Logger log = LoggerFactory.getLogger(StereotypeCatalogRegistry.class);
 
+	private static final String COMPOSED_KEY_SEPARATOR = "\u0000";
+
 	private final Map<String, AbstractStereotypeCatalog> catalogs;
 	
 	public StereotypeCatalogRegistry(ProjectObserver projectObserver) {
@@ -35,6 +39,26 @@ public class StereotypeCatalogRegistry {
 		return catalogs.computeIfAbsent(project.getElementName(), (p) -> createCatalog(project));
 	}
 
+	/**
+	 * A catalog for the project's structure tree with the given dependencies included - separate
+	 * from {@link #getCatalogOf(IJavaProject)}, because the source-defined stereotypes of the
+	 * dependencies get registered with it. Registered into the project's own catalog, they would
+	 * linger there after the dependencies are excluded again and change the project's own tree
+	 * depending on what was included earlier. Reset together with the project's own catalog.
+	 *
+	 * @param includedDependencyIds identifies the set of included dependencies - the same set
+	 *        yields the same catalog, whatever the order
+	 */
+	public AbstractStereotypeCatalog getCatalogOf(IJavaProject project, Collection<String> includedDependencyIds) {
+		if (includedDependencyIds == null || includedDependencyIds.isEmpty()) {
+			return getCatalogOf(project);
+		}
+
+		String key = project.getElementName() + COMPOSED_KEY_SEPARATOR
+				+ includedDependencyIds.stream().sorted().distinct().collect(Collectors.joining(","));
+		return catalogs.computeIfAbsent(key, (p) -> createCatalog(project));
+	}
+
 	private AbstractStereotypeCatalog createCatalog(IJavaProject project) {
     	var source = new ProjectBasedCatalogSource(project);
 		return new JsonPathStereotypeCatalog(source);
@@ -42,6 +66,7 @@ public class StereotypeCatalogRegistry {
 
 	public void reset(IJavaProject project) {
 		this.catalogs.remove(project.getElementName());
+		this.catalogs.keySet().removeIf(key -> key.startsWith(project.getElementName() + COMPOSED_KEY_SEPARATOR));
 		log.info("stereotype catalog registry reset for project '" + project.getElementName() + "'");
 	}
 

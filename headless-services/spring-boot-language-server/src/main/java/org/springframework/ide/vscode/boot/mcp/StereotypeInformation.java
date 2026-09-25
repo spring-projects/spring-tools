@@ -26,8 +26,10 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.AsciiStructureRenderer;
 import org.springframework.ide.vscode.boot.java.commands.CachedSpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.DependencyDescriptor;
 import org.springframework.ide.vscode.boot.java.commands.GitBaselineTracker;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
+import org.springframework.ide.vscode.boot.java.commands.StructureDependencySources;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.BaselineHistoryEntry;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
@@ -55,10 +57,12 @@ public class StereotypeInformation {
 	private final StructureSnapshotStore structureSnapshotStore;
 	private final GitBaselineTracker gitBaselineTracker;
 	private final SpringSymbolIndex symbolIndex;
+	private final StructureDependencySources dependencySources;
 
 	public StereotypeInformation(ProjectLookup projects, SpringMetamodelIndex springIndex,
 			StereotypeCatalogRegistry stereotypeCatalogRegistry, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore, GitBaselineTracker gitBaselineTracker, SpringSymbolIndex symbolIndex) {
+			StructureSnapshotStore structureSnapshotStore, GitBaselineTracker gitBaselineTracker, SpringSymbolIndex symbolIndex,
+			StructureDependencySources dependencySources) {
 		this.projects = projects;
 		this.springIndex = springIndex;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
@@ -66,6 +70,7 @@ public class StereotypeInformation {
 		this.structureSnapshotStore = structureSnapshotStore;
 		this.gitBaselineTracker = gitBaselineTracker;
 		this.symbolIndex = symbolIndex;
+		this.dependencySources = dependencySources;
 	}
 
 	@Tool(description = """
@@ -138,11 +143,14 @@ public class StereotypeInformation {
 			so it shows how the application is organized logically instead of by files and folders.
 			Each node carries a display label, an icon identifier, a stable node id, the source location of the element it
 			represents, and its child nodes, which is everything a client needs to render the tree itself.
+			Optionally, dependencies of the project (ids from getStructureDependencies) can be included: their components
+			then appear in the tree as if they were the project's own.
 			Use getProjectList to obtain valid project names. Use getStereotypesList or getListOfComponentsAndTheirStereotypes
 			if you need the flat stereotype information instead of the tree.
 			""")
 	public StructureNode getLogicalStructure(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
+			@ToolParam(description = "ids of dependencies to include, from getStructureDependencies().id - none when omitted", required = false) List<String> dependencies)
 			throws Exception {
 
 		logger.info("get logical structure for project: {}", projectName);
@@ -152,7 +160,20 @@ public class StereotypeInformation {
 		symbolIndex.waitOperation().get(10, TimeUnit.SECONDS);
 		gitBaselineTracker.syncBaselineWithGit(project);
 
-		return StructureViewProvider.toStructureNode(structureViewProvider.createCompleteTree(project));
+		return StructureViewProvider.toStructureNode(structureViewProvider.createCompleteTree(project, dependencySources.resolve(project, dependencies)));
+	}
+
+	@Tool(description = """
+			Lists the dependencies of the given project that can be included in its logical structure (see getLogicalStructure):
+			other projects of the workspace it depends on, and its libraries, identified by group and artifact id where known.
+			The components of included libraries are not part of the logical structure yet - only workspace projects contribute.
+			Use getProjectList to obtain valid project names.
+			""")
+	public List<DependencyDescriptor> getStructureDependencies(
+			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
+			throws Exception {
+
+		return dependencySources.discoverAll(projects.get(projectName));
 	}
 
 	@Tool(description = """

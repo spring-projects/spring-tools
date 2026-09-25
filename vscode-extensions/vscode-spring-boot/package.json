@@ -99,6 +99,16 @@
     "menus": {
       "view/title": [
         {
+          "command": "vscode-spring-boot.structure.includeDependencies",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.includeDependencies",
+          "group": "navigation@2"
+        },
+        {
+          "command": "vscode-spring-boot.structure.excludeDependencies",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && vscode-spring-boot.structure.includeDependencies",
+          "group": "navigation@2"
+        },
+        {
           "command": "vscode-spring-boot.structure.highlightChanges",
           "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.highlightChanges",
           "group": "navigation@3"
@@ -174,6 +184,14 @@
           "when": "false"
         },
         {
+          "command": "vscode-spring-boot.structure.includeDependencies",
+          "when": "!vscode-spring-boot.structure.includeDependencies"
+        },
+        {
+          "command": "vscode-spring-boot.structure.excludeDependencies",
+          "when": "vscode-spring-boot.structure.includeDependencies"
+        },
+        {
           "command": "vscode-spring-boot.structure.highlightChanges",
           "when": "!vscode-spring-boot.structure.highlightChanges"
         },
@@ -245,22 +263,22 @@
         },
         {
           "command": "vscode-spring-boot.structure.showChanges",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bchanged\\b/",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.includeDependencies && viewItem =~ /\\bchanged\\b/",
           "group": "1_structure"
         },
         {
           "command": "vscode-spring-boot.structure.captureBaseline",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.includeDependencies && viewItem =~ /\\bproject\\b/",
           "group": "1_structure"
         },
         {
           "command": "vscode-spring-boot.structure.clearBaseline",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.includeDependencies && viewItem =~ /\\bproject\\b/",
           "group": "1_structure"
         },
         {
           "command": "vscode-spring-boot.structure.selectBaseline",
-          "when": "vscode-spring-boot.ls.started && view == explorer.spring && viewItem =~ /\\bproject\\b/",
+          "when": "vscode-spring-boot.ls.started && view == explorer.spring && !vscode-spring-boot.structure.includeDependencies && viewItem =~ /\\bproject\\b/",
           "group": "1_structure"
         }
       ]
@@ -390,6 +408,20 @@
         "enablement": "vscode-spring-boot.ls.started",
         "category": "Spring Boot",
         "icon": "$(history)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.includeDependencies",
+        "title": "Include Dependencies",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(layers)"
+      },
+      {
+        "command": "vscode-spring-boot.structure.excludeDependencies",
+        "title": "Exclude Dependencies",
+        "enablement": "vscode-spring-boot.ls.started",
+        "category": "Spring Boot",
+        "icon": "$(layers-active)"
       },
       {
         "command": "vscode-spring-boot.structure.highlightChanges",

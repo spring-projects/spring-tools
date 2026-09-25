@@ -5,8 +5,8 @@ in that project's tree in the Logical Structure view.
 
 Issue: `GH-2004`.
 
-Status: **step 1 implemented, including JAR dependencies in the picker** (pulled forward from step 4),
-steps 2-4 not started. Companion document to
+Status: **steps 1 and 2 implemented**, including JAR dependencies in the picker (step 1b, pulled
+forward from step 4); steps 3 and 4 not started. Companion document to
 [`structure-diff-view.md`](structure-diff-view.md), which describes the existing diff feature on the
 same tree and is a good model for how this area is built and documented.
 
@@ -76,7 +76,7 @@ snapshots, but it is exactly the combination this design avoids.
 |---|---|---|
 | **0** | **Done.** Element-based snapshots ([`structure-diff-elements.md`](structure-diff-elements.md)) | Group selection no longer disturbs the diff; `StructureElements` in place |
 | **1** | Selection UI + persistence + the selection reaching the tree builder, which ignores it | Nothing changes in the tree. Everything around it is in place. |
-| **2** | Dependency mode: include the stereotype elements of selected **workspace project** dependencies; mutual exclusion with the diff feature | Works wherever the dependency's packages nest under the host's; disjoint packages contribute nothing yet |
+| **2** | **Done.** Dependency mode: include the stereotype elements of selected **workspace project** dependencies; mutual exclusion with the diff feature | Works wherever the dependency's packages nest under the host's; disjoint packages contribute nothing yet |
 | **3** | Root packages | Dependencies with disjoint package roots appear too |
 | **1b** | **Done.** JAR dependencies offered in the picker, with group/artifact ids (pulled forward from step 4) | Jars can be selected; a selected jar contributes nothing yet |
 | **4** | JAR dependencies: scanning jars for stereotype elements | Selected jars contribute elements |
@@ -398,6 +398,36 @@ until then a selected jar is accepted and contributes nothing.
 Makes the selection do something: in dependency mode, the stereotype elements of the selected
 projects are merged into the host's tree as if they were the host's own, and the diff feature is
 switched off.
+
+> **As implemented** - where it differs from the text below:
+> - `StructureDependencySource.elementsOf(dependency, cachedIndex, catalog)` also takes the catalog
+>   to resolve against, and returns null for a dependency it doesn't supply (`JarDependencySource`
+>   always, until step 4). `StructureDependencySources.elementsOf` picks the first source that
+>   answers. `StructureViewProvider` does the composing and gets `StructureDependencySources`
+>   injected.
+> - **A catalog of its own for a composed tree:**
+>   `StereotypeCatalogRegistry.getCatalogOf(project, includedDependencyIds)`, cached per set of ids
+>   and reset along with the project's own. Registering a dependency's source-defined stereotypes in
+>   the project's own catalog would leave them there after leaving dependency mode, so the project's
+>   own tree would depend on what was included before.
+> - `IndexStructureElements.of(project, cachedIndex, catalog)` builds the factory and registers the
+>   source-defined stereotypes. Host and dependencies share it; `StructureViewProvider` no longer
+>   has its own copy.
+> - `CompositeStructureElements` routes by element identity. Stereotypes and method labels follow
+>   the part the type (or method) came from. Method labels route by the *method* first: in the
+>   "Request Mappings" group the contextual type is not the method's own type. A dependency's type
+>   also gets the stereotypes of the host's package of the same name, when the host has that package
+>   (a package split across both, with the host's `package-info` carrying the stereotype). This
+>   takes the place of `packageNode` looking at "the first part that knows the package":
+>   `packageNode` stays the host's, which is all the tree builders need while the tree is rooted in
+>   the host's main package.
+> - The ids decide the mode: the server is in dependency mode whenever any project's selection in
+>   the request is non-empty, even if it resolves to nothing.
+> - A project listed in its own selection is ignored. The client picker's `matchOnDescription` and
+>   separators came with step 1b.
+> - Client: the partial-refresh merge now also takes every tree the server returned. The existing
+>   restbucks TODO there is untouched.
+> - Not done: client-side tests. The extension has no test setup for the tree manager.
 
 ### 2.1 The mode
 

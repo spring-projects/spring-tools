@@ -77,7 +77,9 @@ export class StereotypedNode {
             // above shows up as the tooltip instead
             tooltipLines.push(`(${CHANGE_TOOLTIPS[change]})`);
         }
-        if (this.projectId) {
+        // no baseline information at all (as opposed to "no baseline") when dependencies are
+        // included - such a tree is never compared against one
+        if (this.projectId && this.n.attributes.hasBaseline !== undefined) {
             tooltipLines.push(this.hasBaseline
                 ? `Comparing against ${describeBaseline({
                     commitSha: this.comparedAgainstSha,

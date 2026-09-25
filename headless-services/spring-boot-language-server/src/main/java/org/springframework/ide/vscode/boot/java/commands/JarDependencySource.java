@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.List;
 
+import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
@@ -39,6 +40,14 @@ public class JarDependencySource implements StructureDependencySource {
 						? DependencyDescriptor.jar(jar.gav().groupId(), jar.gav().artifactId(), jar.gav().version(), jar.path())
 						: DependencyDescriptor.jar(jar.name(), jar.path()))
 				.toList();
+	}
+
+	/**
+	 * Nothing yet: reading stereotype elements out of a JAR is a later step.
+	 */
+	@Override
+	public StructureElements elementsOf(DependencyDescriptor dependency, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
+		return null;
 	}
 
 }

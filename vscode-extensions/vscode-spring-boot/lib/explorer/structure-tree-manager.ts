@@ -14,14 +14,16 @@ const HIDE_UNCHANGED_KEY = "vscode-spring-boot.structure.hideUnchanged";
 const HIGHLIGHT_CHANGES_KEY = "vscode-spring-boot.structure.highlightChanges";
 const COMPARE_AGAINST_KEY = "vscode-spring-boot.structure.compareAgainst";
 const DEPENDENCIES_KEY = "vscode-spring-boot.structure.dependencies";
+const INCLUDE_DEPENDENCIES_KEY = "vscode-spring-boot.structure.includeDependencies";
 
 interface StructureCommandParams {
     updateMetadata: boolean;
     groups?: Record<string, string[]>;
     affectedProjects?: string[];
     compareAgainst?: Record<string, string>;
-    // per project, the ids of the dependencies to include in its tree - the server accepts the
-    // selection, but does not act on it yet (see docs/structure-view-dependencies.md)
+    // per project, the ids of the dependencies to include in its tree - sent in dependency mode
+    // only, and a non-empty one is what puts the server into that mode: no change information on
+    // any tree then (see docs/structure-view-dependencies.md)
     dependencies?: Record<string, string[]>;
 }
 
@@ -66,6 +68,7 @@ export class StructureManager {
     private workspaceState: Memento;
     private hideUnchangedToggle: PersistedToggle;
     private highlightChangesToggle: PersistedToggle;
+    private includeDependenciesToggle: PersistedToggle;
 
     constructor(context: ExtensionContext, api: ExtensionAPI) {
         this.workspaceState = context.workspaceState;
@@ -73,6 +76,9 @@ export class StructureManager {
         // nothing highlighted, until the user explicitly turns diffing on
         this.hideUnchangedToggle = new PersistedToggle(this.workspaceState, HIDE_UNCHANGED_KEY, false);
         this.highlightChangesToggle = new PersistedToggle(this.workspaceState, HIGHLIGHT_CHANGES_KEY, false);
+        // off by default as well: the view shows each project's own elements, as it always did,
+        // until the user opts into including dependencies
+        this.includeDependenciesToggle = new PersistedToggle(this.workspaceState, INCLUDE_DEPENDENCIES_KEY, false);
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.refresh", () => this.refresh(true)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.openReference", (node: StereotypedNode) => {
@@ -120,11 +126,16 @@ export class StructureManager {
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.clearBaseline", (node: StereotypedNode) => this.clearBaseline(node)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.selectBaseline", (node: StereotypedNode) => this.selectBaseline(node)));
 
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.hideUnchangedNodes", () => this.hideUnchangedToggle.set(true)));
+        // including dependencies and the diff feature are mutually exclusive: turning on one turns
+        // off the other (see docs/structure-view-dependencies.md)
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.hideUnchangedNodes", () => this.turnOnDiffToggle(this.hideUnchangedToggle)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.showAllNodes", () => this.hideUnchangedToggle.set(false)));
 
-        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.highlightChanges", () => this.highlightChangesToggle.set(true)));
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.highlightChanges", () => this.turnOnDiffToggle(this.highlightChangesToggle)));
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.stopHighlightingChanges", () => this.highlightChangesToggle.set(false)));
+
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.includeDependencies", () => this.setIncludeDependencies(true)));
+        context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.excludeDependencies", () => this.setIncludeDependencies(false)));
 
         context.subscriptions.push(api.getSpringIndex().onSpringIndexUpdated(indexUpdateDetails => this.refresh(false, indexUpdateDetails.affectedProjects)));
 
@@ -153,6 +164,39 @@ export class StructureManager {
 
     get onHighlightChangesChanged(): Event<boolean> {
         return this.highlightChangesToggle.onDidChange;
+    }
+
+    /**
+     * Whether each project's tree includes the elements of the dependencies selected for it -
+     * dependency mode, in which the trees carry no change information and the diff feature is off.
+     * Toggled from the "Logical Structure" view's title bar.
+     */
+    get includeDependencies(): boolean {
+        return this.includeDependenciesToggle.get();
+    }
+
+    private async setIncludeDependencies(include: boolean): Promise<void> {
+        if (include === this.includeDependencies) {
+            return;
+        }
+        if (include) {
+            await this.hideUnchangedToggle.set(false);
+            await this.highlightChangesToggle.set(false);
+        }
+        await this.includeDependenciesToggle.set(include);
+        // a different tree: with or without the dependencies, and without or with change information
+        this.refresh(false);
+    }
+
+    private async turnOnDiffToggle(toggle: PersistedToggle): Promise<void> {
+        if (this.includeDependencies) {
+            await this.includeDependenciesToggle.set(false);
+            await toggle.set(true);
+            // the trees at hand carry no change information to show
+            this.refresh(false);
+        } else {
+            await toggle.set(true);
+        }
     }
 
     private async captureBaseline(node: StereotypedNode): Promise<void> {
@@ -245,7 +289,12 @@ export class StructureManager {
             // are kept, so the selection comes back once they are offered again
             const notOffered = selected.filter(id => !offered.some(d => d.id === id));
             await this.setSelectedDependencies(projectName, [...notOffered, ...picked.map(i => i.dependency.id)]);
-            this.refresh(false);
+            if (picked.length && !this.includeDependencies) {
+                // picking something and seeing nothing happen would be confusing
+                await this.setIncludeDependencies(true);
+            } else {
+                this.refresh(false);
+            }
         }
     }
 
@@ -314,8 +363,8 @@ export class StructureManager {
             updateMetadata,
             affectedProjects,
             groups: this.getGroupings(),
-            compareAgainst: this.getCompareAgainstMap(),
-            dependencies: this.getDependenciesMap(),
+            compareAgainst: this.includeDependencies ? undefined : this.getCompareAgainstMap(),
+            dependencies: this.includeDependencies ? this.getDependenciesMap() : undefined,
         } as StructureCommandParams;
         this._rootElementsRequest = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
             const nodes = this.parseArray(json);
@@ -323,6 +372,8 @@ export class StructureManager {
                 const newNodes = [] as StereotypedNode[];
                 const nodesMap = {} as Record<string, StereotypedNode>;
                 affectedProjects.forEach(projectName => nodesMap[projectName] = nodes.find(n => n.projectId === projectName));
+                // in dependency mode, the server also rebuilds the projects that include an affected one
+                nodes.forEach(n => nodesMap[n.projectId] = n);
                 // merge old and newly fetched stereotype root nodes
                 let _onlyMutations = true;
                 this._rootElements.forEach(n => {

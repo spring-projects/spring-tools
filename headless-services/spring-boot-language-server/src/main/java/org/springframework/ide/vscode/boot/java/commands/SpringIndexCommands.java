@@ -89,7 +89,7 @@ public class SpringIndexCommands {
 
 				Stream<? extends IJavaProject> projects = projectFinder.all().stream();
 				if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
-					projects = projects.filter(project -> args.affectedProjects.contains(project.getElementName()));
+					projects = projects.filter(project -> args.isAffected(project.getElementName()));
 				}
 
 				return projects
@@ -170,6 +170,11 @@ public class SpringIndexCommands {
 	 * nothing revisits it. {@link GitBaselineTracker} instead captures only from its own poll and
 	 * from index updates, both of which know the index is settled.
 	 *
+	 * <p>Not in dependency mode ({@link StructureCommandArgs#isDependencyMode()}): a tree with
+	 * dependencies included mixes several projects' elements, so no baseline describes it - it gets
+	 * no baseline attributes at all, for every project in the request, whatever {@code compareAgainst}
+	 * says. See {@code docs/structure-view-dependencies.md}.
+	 *
 	 * @param indexSettled whether the index had caught up before this tree was built - when it had
 	 *        not, the tree is returned as if the project had no baseline at all (see
 	 *        {@link #awaitSettledIndex()})
@@ -186,7 +191,7 @@ public class SpringIndexCommands {
 		// no baseline attributes at all rather than a baseline with nothing marked: those two look
 		// the same to a client, and the latter reads as "nothing changed" - which would hide the
 		// entire tree while "hide unchanged nodes" is on
-		if (tree != null && indexSettled) {
+		if (tree != null && indexSettled && !args.isDependencyMode()) {
 			String snapshotKey = args.compareAgainst == null ? null : args.compareAgainst.get(project.getElementName());
 
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));
@@ -299,6 +304,29 @@ public class SpringIndexCommands {
 	 */
 	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups,
 			Map<String, String> compareAgainst, Map<String, List<String>> selectedDependencies) {
+
+		/**
+		 * Whether this is a dependency-mode request: one that asks to include dependencies in any
+		 * project's tree. Clients send a selection only in dependency mode, so no separate flag.
+		 */
+		public boolean isDependencyMode() {
+			return selectedDependencies != null && selectedDependencies.values().stream()
+					.anyMatch(ids -> ids != null && !ids.isEmpty());
+		}
+
+		/**
+		 * Whether the tree of the given project needs rebuilding for this request's affected
+		 * projects - because it is one of them, or, in dependency mode, because it includes one.
+		 */
+		public boolean isAffected(String projectName) {
+			if (affectedProjects.contains(projectName)) {
+				return true;
+			}
+
+			List<String> selected = selectedDependencies == null ? null : selectedDependencies.get(projectName);
+			return selected != null && affectedProjects.stream()
+					.anyMatch(affected -> selected.contains(DependencyDescriptor.WORKSPACE_PROJECT_ID_PREFIX + affected));
+		}
 
 		public static StructureCommandArgs parseFrom(ExecuteCommandParams params) {
 			boolean updateMetadata = false;

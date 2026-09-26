@@ -21,8 +21,6 @@ workdir=$(pwd)
 #code --uninstall-extension redhat.java || echo "Not installed redhat.java"
 #code --install-extension *.vsix
 
-code --install-extension redhat.java
-
 # Build spring boot ls
 cd $workdir
 ./scripts/preinstall.sh

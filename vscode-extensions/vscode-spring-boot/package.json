@@ -27,6 +27,10 @@
     "application-properties",
     "application-yaml"
   ],
+  "activationEvents": [
+    "onLanguage:java",
+    "onLanguage:xml"
+  ],
   "contributes": {
     "javaExtensions": [
       "./jars/io.projectreactor.reactor-core.jar",
@@ -1834,9 +1838,5 @@
     "eslint": "^10.0.1",
     "typescript": "^5.8.0",
     "typescript-eslint": "^8.56.0"
-  },
-  "extensionDependencies": [
-    "redhat.java",
-    "vscjava.vscode-maven"
-  ]
+  }
 }

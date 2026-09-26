@@ -25,6 +25,7 @@ import { startPropertiesConversionSupport } from "./convert-props-yaml";
 import { activateCopilotFeatures, registerQueryExplainCommand } from "./copilot";
 import { StructureManager } from "./explorer/structure-tree-manager";
 import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
+import { JavaToolingDescriptor, JavaToolingManager } from "./java-tooling";
 
 const PROPERTIES_LANGUAGE_ID = "spring-boot-properties";
 const YAML_LANGUAGE_ID = "spring-boot-properties-yaml";
@@ -35,8 +36,25 @@ const JPA_QUERY_PROPERTIES_LANGUAGE_ID = "jpa-query-properties";
 
 const STOP_ASKING = "Stop Asking";
 
+const JAVA_TOOLING_DESCRIPTORS: JavaToolingDescriptor[] = [
+    {
+        extensionId: 'redhat.java',
+        installExtensionId: 'vscjava.vscode-java-pack',
+        installLabel: 'RedHat'
+    },
+    {
+        extensionId: 'jetbrains.intellij-server',
+        installExtensionId: 'jetbrains.intellij-server',
+        installLabel: 'JetBrains'
+    }
+];
+
 /** Called when extension is activated */
 export async function activate(context: ExtensionContext): Promise<ExtensionAPI> {
+
+    new JavaToolingManager(JAVA_TOOLING_DESCRIPTORS).ensureReady().catch(() => {
+        window.showInformationMessage('Spring Boot extension is running without language server support because no Java tooling extension was found.');
+    });
 
     registerQueryExplainCommand(context);
 

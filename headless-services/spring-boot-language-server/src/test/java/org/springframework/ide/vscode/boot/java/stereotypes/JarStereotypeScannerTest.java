@@ -145,4 +145,36 @@ public class JarStereotypeScannerTest {
 		assertEquals("annotated", type.getMethods().get(0).getMethodName());
 	}
 
+	/**
+	 * A method's own annotations are meta-expanded exactly like a class's - not doing so was a real
+	 * bug: a convenience annotation such as {@code @GetMapping} (meta-annotated with
+	 * {@code @RequestMapping}) has to resolve to the base annotation for a "Request Mappings"-style
+	 * stereotype assignment on {@code @RequestMapping} to match a JAR-scanned handler method, the
+	 * same way it already does for a workspace project's source-indexed one.
+	 */
+	@Test
+	void methodAnnotationsAreMetaExpandedJustLikeClassAnnotations() throws Exception {
+		File jar = JarFixtureBuilder.buildJar(tempDir, "mapping", Map.of(
+				"f.Mapping", "package f; import java.lang.annotation.*; @Retention(RetentionPolicy.RUNTIME) public @interface Mapping {}",
+				"f.GetMapping", "package f; import java.lang.annotation.*; @Mapping @Retention(RetentionPolicy.RUNTIME) public @interface GetMapping {}",
+				"f.Controller", """
+						package f;
+						public class Controller {
+							@GetMapping
+							public String greeting() { return "hi"; }
+						}
+						"""
+		), Map.of());
+
+		Indexer indexer = new Indexer();
+		Set<DotName> ownClasses = JarStereotypeScanner.indexInto(indexer, jar);
+		Index index = indexer.complete();
+
+		StereotypeClassElement type = JarStereotypeScanner.ownClassesOf(ownClasses, index).get(0);
+		StereotypeMethodElement method = type.getMethods().get(0);
+
+		assertTrue(method.isAnnotatedWith("f.GetMapping"), "the method's own direct annotation");
+		assertTrue(method.isAnnotatedWith("f.Mapping"), "resolved through @GetMapping's own meta-annotation");
+	}
+
 }

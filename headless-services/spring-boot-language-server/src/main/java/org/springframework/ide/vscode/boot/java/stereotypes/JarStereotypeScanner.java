@@ -123,9 +123,7 @@ public class JarStereotypeScanner {
 					supertypesOf(classInfo, index), annotationTypesOf(classInfo, index), null);
 
 			for (MethodInfo method : classInfo.methods()) {
-				Set<String> methodAnnotations = filterOutJavaLang(method.declaredAnnotations().stream()
-						.map(annotation -> annotation.name().toString())
-						.toList());
+				Set<String> methodAnnotations = annotationTypesOf(method, index);
 
 				if (!methodAnnotations.isEmpty()) {
 					element.addChild(new StereotypeMethodElement(method.name(), methodLabelOf(method), methodSignatureOf(method),
@@ -168,6 +166,26 @@ public class JarStereotypeScanner {
 		return result;
 	}
 
+	/**
+	 * A method's own direct annotations, expanded through their meta-annotation chain - the same
+	 * expansion {@link #annotationTypesOf(ClassInfo, Index)} does for a class's own annotations, so
+	 * a convenience annotation like {@code @GetMapping} (meta-annotated with
+	 * {@code @RequestMapping}) matches a stereotype assigned to the base annotation, exactly as it
+	 * would from source ({@code StereotypesIndexer.getAnnotationTypes} meta-expands a method's own
+	 * annotations too). Unlike a class, a method does <em>not</em> also pick up a superclass or
+	 * interface method's annotations - matching source there as well.
+	 */
+	static Set<String> annotationTypesOf(MethodInfo method, Index index) {
+		Set<String> result = new LinkedHashSet<>();
+		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
+
+		for (AnnotationInstance annotation : method.declaredAnnotations()) {
+			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations);
+		}
+
+		return result;
+	}
+
 	private static void addWithMetaAnnotations(DotName annotationName, Index index, Set<String> result, Set<DotName> visited) {
 		if (!visited.add(annotationName)) {
 			return; // a meta-annotation cycle - nothing further to add
@@ -188,16 +206,6 @@ public class JarStereotypeScanner {
 		if (!fqn.startsWith("java")) { // matches StereotypesIndexer.getAnnotationTypes's own filter
 			result.add(fqn);
 		}
-	}
-
-	private static Set<String> filterOutJavaLang(List<String> names) {
-		Set<String> result = new LinkedHashSet<>();
-		for (String name : names) {
-			if (!name.startsWith("java")) {
-				result.add(name);
-			}
-		}
-		return result;
 	}
 
 	/**

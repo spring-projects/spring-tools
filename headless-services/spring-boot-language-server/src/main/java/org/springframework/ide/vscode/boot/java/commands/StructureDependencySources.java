@@ -68,9 +68,24 @@ public class StructureDependencySources {
 			return List.of();
 		}
 
-		return discoverAll(project).stream()
+		List<DependencyDescriptor> offered = discoverAll(project);
+		List<DependencyDescriptor> resolved = offered.stream()
 				.filter(dependency -> selectedIds.contains(dependency.id()))
 				.toList();
+
+		if (resolved.size() < selectedIds.size()) {
+			List<String> resolvedIds = resolved.stream().map(DependencyDescriptor::id).toList();
+			List<String> dropped = selectedIds.stream().filter(id -> !resolvedIds.contains(id)).toList();
+
+			// worth an INFO, not silence: a JAR's id depends on GAV coordinates being found again
+			// at discovery time (see ClasspathDependencyResolver.jarDependenciesOf) - unlike a
+			// workspace project's stable "project:<name>", it can legitimately drift between
+			// requests, which otherwise looks indistinguishable from "nothing was ever selected"
+			log.info("project '{}': dropping previously selected dependency id(s) {} - not among what is offered now ({})",
+					project.getElementName(), dropped, offered.stream().map(DependencyDescriptor::id).toList());
+		}
+
+		return resolved;
 	}
 
 	/**

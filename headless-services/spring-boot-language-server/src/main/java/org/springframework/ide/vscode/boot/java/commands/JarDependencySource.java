@@ -81,7 +81,16 @@ public class JarDependencySource implements StructureDependencySource {
 		}
 
 		List<StereotypeClassElement> scannedTypes = scannedJars.computeIfAbsent(cacheKey(jarFile), key -> scan(including, jarFile));
-		return new JarStructureElements(scannedTypes, catalog);
+		JarStructureElements elements = new JarStructureElements(scannedTypes, catalog);
+
+		// worth an INFO on every request, not just on failure: this is the only place that shows
+		// whether a JAR selection is actually doing something - scanned classes found none matching
+		// the current catalog looks identical to "elementsOf was never even called" otherwise
+		int matching = elements.types().size();
+		log.info("structure dependency '{}': {} of {} scanned class(es) in '{}' match the current catalog", dependency.id(), matching,
+				scannedTypes.size(), jarFile.getName());
+
+		return elements;
 	}
 
 	/**
@@ -134,7 +143,11 @@ public class JarDependencySource implements StructureDependencySource {
 		}
 
 		Index index = indexer.complete();
-		return JarStereotypeScanner.ownClassesOf(ownClasses, index);
+		List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index);
+		log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
+				jarFile.getName(), scanned.size(), ownClasses.size());
+
+		return scanned;
 	}
 
 	private static String cacheKey(File jarFile) {

@@ -49,7 +49,8 @@ public class WorkspaceProjectDependencySource implements StructureDependencySour
 	}
 
 	@Override
-	public StructureElements elementsOf(DependencyDescriptor dependency, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
+	public StructureElements elementsOf(DependencyDescriptor dependency, IJavaProject including, CachedSpringMetamodelIndex cachedIndex,
+			AbstractStereotypeCatalog catalog) {
 		if (dependency.kind() != DependencyDescriptor.Kind.WORKSPACE_PROJECT) {
 			return null;
 		}

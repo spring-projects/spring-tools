@@ -10,24 +10,48 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.io.File;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.Index;
+import org.jboss.jandex.Indexer;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
+import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.protocol.java.Classpath;
+import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 
 /**
  * Offers the JARs a project depends on, as found on its classpath by
- * {@link ClasspathDependencyResolver}.
+ * {@link ClasspathDependencyResolver}, and reads the stereotype elements a selected one
+ * contributes via {@link JarStereotypeScanner}. See {@code docs/structure-view-dependencies.md}.
  *
- * <p>Offered for selection already, although nothing reads stereotype elements out of a JAR yet -
- * a selected JAR is accepted and simply contributes nothing to the tree until that part exists.
+ * <p>Only a JAR that is actually selected for some project's tree is ever scanned - never one
+ * merely offered in a picker. Scanning is cached by the JAR's own identity (path, size and last
+ * modified time), so the same JAR selected for several projects, or reselected later, is scanned
+ * once. What is <em>not</em> cached is which of a JAR's classes currently match a stereotype: that
+ * is decided fresh every time against whichever catalog is current, in
+ * {@link JarStructureElements}, so a change to the project's stereotype definitions is reflected
+ * immediately rather than only after the JAR happens to be rescanned.
  *
  * @author Martin Lippert
  */
 public class JarDependencySource implements StructureDependencySource {
 
+	private static final Logger log = LoggerFactory.getLogger(JarDependencySource.class);
+
 	private final ClasspathDependencyResolver resolver;
+	private final ConcurrentHashMap<String, List<StereotypeClassElement>> scannedJars = new ConcurrentHashMap<>();
 
 	public JarDependencySource(ClasspathDependencyResolver resolver) {
 		this.resolver = resolver;
@@ -42,12 +66,79 @@ public class JarDependencySource implements StructureDependencySource {
 				.toList();
 	}
 
-	/**
-	 * Nothing yet: reading stereotype elements out of a JAR is a later step.
-	 */
 	@Override
-	public StructureElements elementsOf(DependencyDescriptor dependency, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
-		return null;
+	public StructureElements elementsOf(DependencyDescriptor dependency, IJavaProject including, CachedSpringMetamodelIndex cachedIndex,
+			AbstractStereotypeCatalog catalog) {
+
+		if (dependency.kind() != DependencyDescriptor.Kind.JAR) {
+			return null;
+		}
+
+		File jarFile = new File(dependency.location());
+		if (!jarFile.isFile()) {
+			log.warn("cannot scan structure dependency '{}': '{}' is not a file", dependency.id(), jarFile);
+			return null;
+		}
+
+		List<StereotypeClassElement> scannedTypes = scannedJars.computeIfAbsent(cacheKey(jarFile), key -> scan(including, jarFile));
+		return new JarStructureElements(scannedTypes, catalog);
+	}
+
+	/**
+	 * Scans {@code jarFile}'s own classes, resolving their annotations and supertypes against a
+	 * combined index built over every JAR on {@code including}'s classpath - not just
+	 * {@code jarFile} in isolation, since an annotation's own meta-annotations are often declared
+	 * several JARs away from where the annotation itself is used (Spring's own annotations are the
+	 * textbook example: {@code @RestController} is meta-annotated with {@code @Controller}, which
+	 * lives in a different JAR). Every JAR {@code including} depends on is guaranteed to be
+	 * resolvable on its own classpath, so this is always sufficient.
+	 */
+	private List<StereotypeClassElement> scan(IJavaProject including, File jarFile) {
+		Indexer indexer = new Indexer();
+		Set<DotName> ownClasses = null;
+		Set<File> indexed = new HashSet<>();
+
+		Collection<CPE> classpathEntries;
+		try {
+			// IClasspath.getClasspathEntries() declares a checked Exception that every caller in
+			// this codebase catches locally rather than propagating - matching that here too
+			classpathEntries = including.getClasspath().getClasspathEntries();
+		} catch (Exception e) {
+			log.error("cannot read the classpath of '{}' to scan structure dependency JAR '{}'", including.getElementName(), jarFile, e);
+			classpathEntries = List.of();
+		}
+
+		for (CPE cpe : classpathEntries) {
+			if (!Classpath.isBinary(cpe) || cpe.isSystem()) {
+				continue;
+			}
+
+			File file = IClasspathUtil.binaryLocation(cpe).getAbsoluteFile();
+			if (!file.isFile() || !indexed.add(file)) {
+				continue;
+			}
+
+			Set<DotName> classesOfThisFile = JarStereotypeScanner.indexInto(indexer, file);
+			if (file.equals(jarFile.getAbsoluteFile())) {
+				ownClasses = classesOfThisFile;
+			}
+		}
+
+		if (ownClasses == null) {
+			// the JAR wasn't found among including's own classpath entries at all - a stale
+			// selection, or a discovery/classpath mismatch; index it directly so something is
+			// still shown, even though cross-JAR meta-annotations may not all resolve
+			log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
+					including.getElementName());
+			ownClasses = JarStereotypeScanner.indexInto(indexer, jarFile);
+		}
+
+		Index index = indexer.complete();
+		return JarStereotypeScanner.ownClassesOf(ownClasses, index);
+	}
+
+	private static String cacheKey(File jarFile) {
+		return jarFile.getAbsolutePath() + "@" + jarFile.lastModified() + ":" + jarFile.length();
 	}
 
 }

@@ -36,8 +36,12 @@ public interface StructureDependencySource {
 	 * The elements the given dependency contributes to a tree, resolving stereotypes against the
 	 * given catalog - the one of the tree they are included in.
 	 *
+	 * @param including the project the dependency is being included in - a JAR has no classpath of
+	 *        its own, so resolving its classes' annotations (which can be declared several JARs away
+	 *        from where they are used, e.g. a meta-annotation) needs the including project's
 	 * @return null when the dependency is not one this source supplies elements for
 	 */
-	StructureElements elementsOf(DependencyDescriptor dependency, CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog);
+	StructureElements elementsOf(DependencyDescriptor dependency, IJavaProject including, CachedSpringMetamodelIndex cachedIndex,
+			AbstractStereotypeCatalog catalog);
 
 }

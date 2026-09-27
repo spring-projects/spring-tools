@@ -5,8 +5,8 @@ in that project's tree in the Logical Structure view.
 
 Issue: `GH-2004`.
 
-Status: **steps 1 and 2 implemented**, including JAR dependencies in the picker (step 1b, pulled
-forward from step 4); steps 3 and 4 not started. Companion document to
+Status: **steps 1, 2, 1b and 4 implemented**; step 3 (root packages) deliberately deferred - see its
+section below. Companion document to
 [`structure-diff-view.md`](structure-diff-view.md), which describes the existing diff feature on the
 same tree and is a good model for how this area is built and documented.
 
@@ -77,11 +77,12 @@ snapshots, but it is exactly the combination this design avoids.
 | **0** | **Done.** Element-based snapshots ([`structure-diff-elements.md`](structure-diff-elements.md)) | Group selection no longer disturbs the diff; `StructureElements` in place |
 | **1** | Selection UI + persistence + the selection reaching the tree builder, which ignores it | Nothing changes in the tree. Everything around it is in place. |
 | **2** | **Done.** Dependency mode: include the stereotype elements of selected **workspace project** dependencies; mutual exclusion with the diff feature | Works wherever the dependency's packages nest under the host's; disjoint packages contribute nothing yet |
-| **3** | Root packages | Dependencies with disjoint package roots appear too |
-| **1b** | **Done.** JAR dependencies offered in the picker, with group/artifact ids (pulled forward from step 4) | Jars can be selected; a selected jar contributes nothing yet |
-| **4** | JAR dependencies: scanning jars for stereotype elements | Selected jars contribute elements |
+| **1b** | **Done.** JAR dependencies offered in the picker, with group/artifact ids (pulled forward from step 4) | Jars can be selected |
+| **4** | **Done, out of order** (see below). JAR dependencies: scanning JARs for stereotype elements | A selected JAR's own types contribute, same package-scoping as step 2 |
+| **3** | Root packages - **deferred, not started** | Dependencies with disjoint package roots would appear too |
 
-Step 0 has its own document. Steps 1–3 are detailed below; step 4 is sketched.
+Step 0 has its own document. Steps 1, 1b, 2 and 4 are detailed below in that order; step 3, done
+last of the four, is detailed last.
 
 ---
 
@@ -177,7 +178,8 @@ arrives with step 2, when the selection starts to have an effect.
 >   source entry, own ones included - simpler, and harmless. `CPE` gained `getProjectLocation()`,
 >   `getProjectName()` and `Classpath.isWorkspaceProjectDependency(cpe)`.
 > - `DependencyDescriptor` has a `location` field (shown in the picker) and no `supported` flag -
->   selected jars are accepted and contribute nothing until step 4 (see step 1b).
+>   at the time this step was written, no source could supply a JAR's elements yet; step 4 has
+>   since closed that gap (see step 1b and step 4).
 > - `SpringIndexCommands` resolves the selected ids (`StructureDependencySources.resolve`) and
 >   hands `StructureViewProvider.createTree` the resolved descriptors, which it ignores.
 > - Still to check against a real JDT-LS: that m2e's workspace resolution is on by default there.
@@ -370,8 +372,8 @@ needs a real multi-project setup injects such a classpath into the harness rathe
 ## Step 1b — JAR dependencies in the picker (done)
 
 Pulled forward from step 4: the picker lists the project's jars as well, identified by group and
-artifact id, so users can select them now. Scanning jars for stereotype elements is still step 4 -
-until then a selected jar is accepted and contributes nothing.
+artifact id, so users can select them now. Scanning jars for stereotype elements followed as step 4,
+also done - see that section.
 
 - **Coordinates on binary CPEs.** `CPE` gained the extras `groupId`, `artifactId`, `version` and
   `scope` (`CPE.EXTRA_*`), read back through `getGav()` and `getScope()`. Where they come from:
@@ -402,7 +404,9 @@ switched off.
 > **As implemented** - where it differs from the text below:
 > - `StructureDependencySource.elementsOf(dependency, cachedIndex, catalog)` also takes the catalog
 >   to resolve against, and returns null for a dependency it doesn't supply (`JarDependencySource`
->   always, until step 4). `StructureDependencySources.elementsOf` picks the first source that
+>   always in this step - `JarDependencySource` supplies them too as of step 4). Also takes the
+>   *including* project (a JAR has no classpath of its own to resolve its classes' annotations
+>   against - see step 4). `StructureDependencySources.elementsOf` picks the first source that
 >   answers. `StructureViewProvider` does the composing and gets `StructureDependencySources`
 >   injected.
 > - **A catalog of its own for a composed tree:**
@@ -582,6 +586,12 @@ the dependency projects.
 
 ## Step 3 — Root packages
 
+**Deferred.** Picked up out of order: step 4 (JAR scanning) was done first, on request, keeping JAR
+elements subject to the same "nests under the host's main package or is left out" rule step 2
+already applies to workspace-project dependencies - deliberately, so this section's own design work
+stays separate from where elements come from. The text below is therefore still a plan, not a
+report of what exists.
+
 Makes a dependency whose packages do not nest under the host's appear at all.
 
 `ProjectTree` renders one package node per package returned from `extractPackages`. So the
@@ -621,19 +631,153 @@ a sibling package node; degenerate/empty common prefix falls back safely; the Mo
 
 ---
 
-## Step 4 — JAR dependencies
+## Step 4 — JAR dependencies (done, ahead of step 3)
 
-Sketch only; details when the step is picked up.
+`JarDependencySource.elementsOf` reads a selected JAR's classes with
+[Jandex](https://github.com/smallrye/jandex) and turns them into the exact same
+`StereotypeClassElement`/`StereotypeMethodElement`s a workspace project's source contributes, so
+everything downstream of step 2 (`CompositeStructureElements`, package-scoped filtering, the shared
+catalog) needs no JAR-specific handling at all. Only *which elements a JAR source hands the tree
+builder* is new; the elements themselves are, as far as the rest of the tree is concerned,
+indistinguishable from an `IndexStructureElements` project's.
 
-- Coordinates on binary CPEs, discovery and the picker are done (step 1b).
-- `JarDependencySource.elementsOf`: read types from the jar (Jandex-style, as the standalone LS
-  already does for type indexing) and synthesize `StereotypeClassElement`s.
+### 4.1 Reading a JAR with Jandex
 
-The mode exclusion makes this step much simpler: jar-derived elements are only ever displayed, never
-diffed, so they need no content hashes, no stable identities across captures and no snapshot
-support. Open questions for then:
-nodes with no navigable source location; how deep to index a jar (cost vs. depth); and whether a
-jar's stereotypes should come from its own catalog contribution or only the host's.
+Built directly on the public `org.jboss.jandex` API (`Indexer`/`Index`/`ClassInfo`), not on
+`commons-java`'s own `commons.jandex` package: that package's classpath-wide indexing exists for a
+different job (type resolution for completion/hover, with JRT-module support and an on-disk index
+cache neither needed here), and its classes are package-private anyway.
+
+`JarStereotypeScanner` (in `boot.java.stereotypes`, alongside `StereotypesIndexer`, the equivalent
+for source) computes, per class:
+
+- **`annotationTypes`** - the class's own direct annotations, expanded through their meta-annotation
+  chain, plus the direct (not meta-expanded) annotations of every type in its superclass/interface
+  hierarchy. This mirrors `StereotypesIndexer.getAnnotationTypes` exactly - including its one
+  asymmetry (meta-expansion only for the class's own annotations, not a supertype's) - so a class is
+  never attributed differently depending on whether it came from a workspace project or a JAR.
+- **`supertypes`** - every superclass and interface in the hierarchy, recursively, by name -
+  regardless of whether that name is itself indexed. A supertype outside what got indexed (most
+  commonly a JDK type) still has to count for a stereotype assignment that matches on it
+  (`doesImplement`), and Jandex reads a class's supertype *names* straight from its bytecode without
+  needing the supertype's own class file at all.
+- Annotation type declarations and module-info classes are left out - matching source, where an
+  `AnnotationTypeDeclaration` becomes a stereotype *definition* candidate, never a tree node
+  (`StereotypesIndexer.index(AnnotationTypeDeclaration, ...)` never calls
+  `createStereotypeElementForType`).
+- A method becomes a `StereotypeMethodElement` only if it carries some (non-`java.*`) annotation -
+  same rule as `annotatedMethodsOf` for source.
+
+**Cross-JAR meta-annotations.** An annotation's own meta-annotations are often declared several
+JARs away from where the annotation is used - the textbook case is Spring's own
+`@RestController` (in `spring-web`) being meta-annotated with `@Controller` (in `spring-context`).
+Verified directly against those two real JARs while building this: indexing `spring-web` alone,
+`@Controller`'s own class is simply not found, and its meta-annotation (`@Component`) is invisible;
+indexing both JARs into the same `Indexer` resolves it correctly. So a JAR is never indexed in
+isolation - see 4.2.
+
+### 4.2 Where the annotation-resolution scope comes from
+
+`JarDependencySource.scan(including, jarFile)` builds one combined Jandex `Index` over every
+non-system, non-test binary classpath entry of `including` (the project the JAR is being included
+in) - not just the selected JAR. Every JAR a project's dependency's annotations could reference is,
+by construction, already resolvable somewhere on that same project's own classpath (the JVM has to
+be able to resolve them too, for the annotation to work at compile/runtime in the first place), so
+this is always sufficient without needing to model a dependency's own transitive closure
+separately. The JDK itself is skipped: its classes are never stereotype-relevant, and a supertype
+name is captured regardless of whether the JDK is indexed (see 4.1).
+
+If the selected JAR happens not to be found among `including`'s own classpath entries at all (a
+stale selection, or a discovery/classpath mismatch), it is indexed on its own, into the same
+`Indexer` that already holds the rest of the classpath - so it still benefits from whatever
+cross-referencing that combined index can offer, just without a guarantee of completeness.
+
+### 4.3 What is cached, and what deliberately is not
+
+Two different things could be cached here, and only one of them is:
+
+- **The scan** (Jandex parsing a JAR's classes and walking their hierarchies) is genuinely
+  expensive and does not depend on anything that changes often - so `JarDependencySource` caches
+  the *unfiltered* list of every `StereotypeClassElement` a JAR's classes produce, keyed by the
+  JAR's own identity (path, size, last-modified time). Shared across every project that selects the
+  same JAR, and only ever populated the first time a JAR is actually selected for some project's
+  tree - never for one merely offered in a picker's "Libraries" list, where most JARs will sit
+  unselected forever.
+- **Which of those elements currently match a stereotype is *never* cached.** A user can define
+  their own stereotypes - including by `implements`, not just by annotation - in a JSON catalog file
+  or in source, and that catalog can change at any point in a session (a file edited, a project's
+  own source-defined stereotype added or removed, a different set of dependencies selected -
+  composed catalogs are per set of included ids, see 2.2's "As implemented" note). Filtering a
+  JAR's classes against the catalog *once*, at scan time, and keeping only the matches would mean a
+  class that starts matching only after such a change can never be recovered without a full
+  rescan - and detecting exactly when a rescan is warranted would mean fingerprinting every possible
+  source of a catalog change, which is easy to get subtly wrong. `JarStructureElements.types()`
+  instead filters the cached, unfiltered list against whichever catalog is current, fresh on every
+  call - exactly what `IndexBasedStereotypeFactory` already does for a project's own source-indexed
+  types (never pre-filtered either), just scaled up to a JAR's class count. If that filtering ever
+  proves too slow for a very large JAR, caching the *matching* subset, keyed additionally by a
+  fingerprint of the catalog's own `getDefinitions()` (already an authoritative, already-computed
+  value - nothing to separately track), is the fallback to reach for then; not worth building before
+  it is shown to matter.
+
+### 4.4 The stereotype factory
+
+`JarStereotypeFactory` mirrors `IndexBasedStereotypeFactory`'s detection - both catalog queries a
+type needs (`getTypeBasedStereotypes` for `implements`-based assignments,
+`getAnnotationBasedStereotypes` for annotation-based ones; missing either would silently drop one
+kind of assignment) - without needing a live `SpringMetamodelIndex`, since a JAR element's
+`annotationTypes`/`supertypes` already mean the same thing `IndexBasedStereotypeFactory` would
+compute from source. It does no package-level detection of its own: the host's package-info of the
+same name is what a composed tree actually consults for that (`CompositeStructureElements`, see
+2.3), one level up.
+
+### 4.5 What a JAR element still cannot do
+
+- **No source location** - `membersOf` and `JsonNodeHandler`'s location attribute already handle a
+  null location gracefully (a type reconstructed from a baseline snapshot has the same property).
+- **No members** - no source-backed bean data exists for a type read out of a JAR.
+- **No request-mapping method labels** - no live index to consult one from; the label computed at
+  scan time (Jandex parameter/return type names) is used as-is, exactly like
+  `SnapshotStructureElements` does for the same reason.
+- **No content hash, never diffed** - the mode exclusion (see above) means a JAR element never
+  meets `StructureSnapshotBuilder`.
+- **A JAR's own `@Stereotype`-annotated custom annotation types are not picked up as stereotype
+  *definitions*.** A JAR's JSON catalog contribution (`META-INF/jmolecules-stereotypes.json`) is
+  unaffected by any of this and already worked before this step:
+  `ProjectBasedCatalogSource.getSources()` already reads it from any binary classpath entry,
+  selected or not. Only a definition declared by a custom annotation type *inside* the JAR's own
+  bytecode - the source-side equivalent of `IndexBasedStereotypeFactory.registerStereotypeDefinitions()`
+  - is out of scope: JAR catalogs seen so far all use the JSON file, not that mechanism, and it can
+  be added later if a real one needs it.
+
+### 4.6 Tests
+
+- `JarStereotypeScannerTest` - meta-annotations resolved across two JARs indexed together; a
+  missing meta-annotation's JAR skipped without failing the scan; supertypes collected recursively,
+  by name, even for a type outside the indexed set; annotation types and modules excluded from the
+  result; only annotated methods kept.
+- `JarStereotypeFactoryTest` - a type matching through both catalog buckets at once; **the same
+  element matching differently against two different catalogs, with no rescanning** (4.3's central
+  claim); methods matching only annotation-based assignments.
+- `JarStructureElementsTest` - `types()` filtering live against the given catalog; the same
+  scanned list answering differently for a different catalog; the no-live-index fallbacks (method
+  label, members, package node).
+- `JarDependencySourceTest` - a JAR's elements scanned and matched; a non-JAR dependency and a
+  missing JAR file both handled without throwing; the same JAR scanned only once across two calls
+  (proven by object identity of the resulting elements, not by deleting the file - a cache keyed by
+  file identity necessarily misses once the file's identity itself has changed); a JAR not found on
+  the including project's classpath still scanned, in isolation.
+- `StructureDependenciesJarTreeTest` - end to end through `StructureViewProvider`: a JAR class
+  implementing `test-stereotypes-support`'s own, already-catalog-assigned `DescribedStereotype`
+  interface appears in the composed tree, nested under the host's main package; a class outside
+  that package does not (yet - step 3); nothing appears without a selection. The fixture JAR is
+  compiled and packaged at test time (`JarFixtureBuilder`, using `javax.tools.JavaCompiler`), not
+  Maven-installed - keeping the test independent of the shared local Maven repository and of Maven
+  reactor ordering (see the "shared Maven repo across worktrees" note elsewhere in this repo's
+  memory of past sessions). `DescribedStereotype` itself is compiled alongside the fixture class,
+  from a copy of its source, purely so the fixture class type-checks - and deliberately left out of
+  the packaged JAR, doubling as a live demonstration of 4.1's "a supertype need not itself be
+  indexed" claim.
 
 ---
 
@@ -652,8 +796,13 @@ jar's stereotypes should come from its own catalog contribution or only the host
 | Dependencies plug in as a composite `StructureElements`, reusing step 0's abstraction | A dependency-specific element abstraction, or passing project-name collections to each call site — duplicates what step 0 already threads through the tree builder |
 | Jars offered in the picker before they can contribute elements (step 1b) | Keeping them out until jar scanning exists — the selection UI and ids would change once more later |
 | Jar ids are version-free (`gav:<g>:<a>`, else `jar:<name>`); coordinates from m2e attributes, the Maven `Artifact`, or the Gradle cache path | Ids with versions — a selection would get lost on every version bump |
-| A dependency's root package is the longest common prefix of its indexed types (step 3) | Reusing `identifyMainApplicationPackage` — a library has no `@SpringBootApplication`, and its empty-package fallback would collapse the tree |
-| Root packages reduced to non-overlapping prefixes (step 3) | Adding every dependency root unconditionally — a nested root yields a duplicate package node |
+| A dependency's root package is the longest common prefix of its indexed types (step 3, deferred) | Reusing `identifyMainApplicationPackage` — a library has no `@SpringBootApplication`, and its empty-package fallback would collapse the tree |
+| Root packages reduced to non-overlapping prefixes (step 3, deferred) | Adding every dependency root unconditionally — a nested root yields a duplicate package node |
+| Step 4 (JAR scanning) done before step 3 (root packages), keeping JAR elements under the same main-package-only scoping step 2 already has | Doing step 3 first — the two are independent: where elements come from vs. which packages of the composed tree are shown |
+| A JAR is read with the public Jandex API directly, not `commons-java`'s own `commons.jandex` package | Reusing that package's classpath-wide indexing — built for a different job (completion/hover type resolution, with JRT-module support and an on-disk cache neither needed here), and its classes are package-private |
+| A JAR's classes are resolved against a combined index over the *including* project's whole classpath, not the JAR in isolation | Indexing the JAR alone — an annotation's own meta-annotations are frequently declared in a different JAR (`@RestController`/`@Controller` across `spring-web`/`spring-context`, verified directly), so isolated scanning would silently miss them |
+| The unfiltered scan of a JAR's classes is cached by the JAR's own identity; which of them currently match a stereotype is never cached, only computed fresh per catalog | Caching the filtered (matching) result — a stereotype catalog can change at any point in a session (a JSON file edited, a source-defined stereotype added/removed, a different dependency selection), and detecting exactly when to invalidate that cache means fingerprinting every possible source of such a change |
+| A JAR is only ever scanned once it is actually selected for some project's tree | Scanning (or prefetching) every JAR a picker offers — most JARs on a typical classpath (third-party frameworks especially) are never selected at all |
 | Default is diff mode with no dependencies included | Defaulting to dependency mode — changes the view for every existing user without being asked |
 | Direct dependencies only, depth 1 | Transitive expansion — unbounded trees, and the classpath is already flattened differently per build system |
 | Workspace-project dependencies come straight from the classpath the Java tooling sends (`extra["project"]`, plus a new name key) | Matching jars to open projects by GAV - only needed for the standalone LS, which does no workspace resolution; accepted there: no workspace-project dependencies offered, for now |

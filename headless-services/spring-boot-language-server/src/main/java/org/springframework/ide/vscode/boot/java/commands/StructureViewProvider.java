@@ -114,7 +114,7 @@ public class StructureViewProvider {
 
 		StructureElements elements = new CompositeStructureElements(
 				IndexStructureElements.of(project, cachedIndex, catalog),
-				dependencySources.elementsOf(withoutProject(selectedDependencies, project), cachedIndex, catalog));
+				dependencySources.elementsOf(project, withoutProject(selectedDependencies, project), cachedIndex, catalog));
 
 		return createTree(project, elements, catalog, selectedGroups, updateMetadata);
 	}

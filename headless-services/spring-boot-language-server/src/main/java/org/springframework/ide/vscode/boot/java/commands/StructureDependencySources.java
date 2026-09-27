@@ -76,16 +76,18 @@ public class StructureDependencySources {
 	/**
 	 * The elements of each of the given dependencies that some source can supply, in the given
 	 * order - a dependency no source supplies elements for (yet) is left out.
+	 *
+	 * @param including the project the dependencies are being included in
 	 */
-	public List<StructureElements> elementsOf(List<DependencyDescriptor> dependencies, CachedSpringMetamodelIndex cachedIndex,
-			AbstractStereotypeCatalog catalog) {
+	public List<StructureElements> elementsOf(IJavaProject including, List<DependencyDescriptor> dependencies,
+			CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
 
 		List<StructureElements> result = new ArrayList<>();
 
 		for (DependencyDescriptor dependency : dependencies) {
 			for (StructureDependencySource source : sources) {
 				try {
-					StructureElements elements = source.elementsOf(dependency, cachedIndex, catalog);
+					StructureElements elements = source.elementsOf(dependency, including, cachedIndex, catalog);
 					if (elements != null) {
 						result.add(elements);
 						break;

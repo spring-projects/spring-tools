@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.List;
+import java.util.Map;
 
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
@@ -32,20 +33,33 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageEle
  * JAR's classes into raw elements is cached - by {@link JarDependencySource}, keyed by the JAR's own
  * identity - never the filtered result.
  *
+ * <p>{@code membersOf} is not catalog-dependent the same way: a type's "properties" or "query
+ * methods" (see {@code JarConfigurationPropertiesScanner}, {@code JarDataRepositoryScanner}) are a
+ * fact of its own bytecode, not of what stereotypes are currently defined, so that map is computed
+ * once alongside the scan and simply looked up here.
+ *
  * @author Martin Lippert
  */
 public class JarStructureElements implements StructureElements {
 
 	private final List<StereotypeClassElement> scannedTypes;
+	private final Map<StereotypeClassElement, List<StructureMember>> members;
 	private final JarStereotypeFactory factory;
 
 	/**
 	 * @param scannedTypes every class {@link JarStereotypeScanner} found in the JAR, unfiltered -
 	 *        see {@link JarDependencySource} for where this comes from and how it is cached
+	 * @param members the "properties"/"query methods" some of those classes contribute beyond
+	 *        their own stereotype-matched methods (see {@code JarConfigurationPropertiesScanner},
+	 *        {@code JarDataRepositoryScanner}) - by identity of the exact {@code scannedTypes}
+	 *        instances, computed alongside them and, unlike stereotype matching, not catalog
+	 *        dependent, so this needs no live re-filtering the way {@link #types()} does
 	 * @param catalog the catalog of the tree this JAR is being included in
 	 */
-	public JarStructureElements(List<StereotypeClassElement> scannedTypes, AbstractStereotypeCatalog catalog) {
+	public JarStructureElements(List<StereotypeClassElement> scannedTypes, Map<StereotypeClassElement, List<StructureMember>> members,
+			AbstractStereotypeCatalog catalog) {
 		this.scannedTypes = scannedTypes;
+		this.members = members;
 		this.factory = new JarStereotypeFactory(catalog);
 	}
 
@@ -76,8 +90,7 @@ public class JarStructureElements implements StructureElements {
 
 	@Override
 	public List<StructureMember> membersOf(StereotypeClassElement type) {
-		// no source-backed bean data exists for a type read out of a JAR
-		return List.of();
+		return members.getOrDefault(type, List.of());
 	}
 
 	@Override

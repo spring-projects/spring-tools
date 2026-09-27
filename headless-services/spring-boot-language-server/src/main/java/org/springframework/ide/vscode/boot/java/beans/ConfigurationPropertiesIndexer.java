@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.java.beans;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
@@ -34,7 +33,6 @@ import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
-import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
@@ -85,18 +83,9 @@ public class ConfigurationPropertiesIndexer {
 			beanDefinition = createBeanDefinition(abstractType, context, doc);
 			context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), beanDefinition));
 		}
-		
-		Optional<String> prefixValue = Arrays.stream(beanDefinition.getAnnotations())
-			.filter(annotation -> Annotations.CONFIGURATION_PROPERTIES.equals(annotation.getAnnotationType()))
-			.flatMap(annotation -> Arrays.stream(getPrefix(annotation)))
-			.map(attribute -> attribute.getName())
-			.findFirst();
-		
-		String prefix = "";
-		if (prefixValue.isPresent()) {
-			prefix = prefixValue.get() + ".";
-		}
-		
+
+		String prefix = resolvePrefix(attributeValue(beanDefinition, "prefix"), attributeValue(beanDefinition, "value"));
+
 		if (abstractType instanceof TypeDeclaration type) {
 			indexConfigurationPropertiesForType(beanDefinition, type, context, doc, prefix);
 		}
@@ -105,16 +94,30 @@ public class ConfigurationPropertiesIndexer {
 		}
 	}
 
-	private static AnnotationAttributeValue[] getPrefix(AnnotationMetadata annotation) {
-		if (annotation.getAttributes().containsKey("prefix")) {
-			return annotation.getAttributes().get("prefix");
-		}
-		else if (annotation.getAttributes().containsKey("value")) {
-			return annotation.getAttributes().get("value");
-		}
-		else {
-			return new AnnotationAttributeValue[0];
-		}
+	private static String attributeValue(Bean beanDefinition, String attributeName) {
+		return Arrays.stream(beanDefinition.getAnnotations())
+			.filter(annotation -> Annotations.CONFIGURATION_PROPERTIES.equals(annotation.getAnnotationType()))
+			.map(annotation -> annotation.getAttributes().get(attributeName))
+			.filter(values -> values != null && values.length > 0)
+			.map(values -> values[0].getName())
+			.findFirst()
+			.orElse(null);
+	}
+
+	/**
+	 * Resolves a {@code @ConfigurationProperties} prefix from its attribute values - {@code prefix},
+	 * falling back to {@code value} (aliases of one another on the annotation itself), with the
+	 * trailing dot a property name is joined to.
+	 *
+	 * <p>Shared between this AST-based indexer and the JAR-based one
+	 * ({@code JarConfigurationPropertiesScanner}, reading the same two attribute values off Jandex
+	 * bytecode instead), so the one piece of real logic in "which properties does a
+	 * {@code @ConfigurationProperties} class have" cannot drift between the two - see
+	 * {@code docs/structure-view-dependencies.md}'s discussion of that risk.
+	 */
+	static String resolvePrefix(String prefixAttributeValue, String valueAttributeValue) {
+		String prefix = prefixAttributeValue != null ? prefixAttributeValue : valueAttributeValue;
+		return prefix == null ? "" : prefix + ".";
 	}
 	
 	public static void indexConfigurationPropertiesForType(Bean beanDefinition, TypeDeclaration type, SpringIndexerJavaContext context, TextDocument doc, String prefix) {

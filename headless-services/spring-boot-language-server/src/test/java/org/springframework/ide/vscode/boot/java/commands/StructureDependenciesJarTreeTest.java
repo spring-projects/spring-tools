@@ -109,11 +109,37 @@ public class StructureDependenciesJarTreeTest {
 		assertFalse(render(tree).contains("FromJar"));
 	}
 
+	/**
+	 * The "members" piece added on top of step 4 - a {@code @ConfigurationProperties} class's
+	 * fields, read straight from the JAR by {@code JarConfigurationPropertiesScanner}, reach the
+	 * rendered tree the same way a workspace project's would: as plain member nodes under the
+	 * type, not through stereotype matching.
+	 */
+	@Test
+	void aJarScannedConfigurationPropertiesClassesFieldsAppearAsMembers() throws Exception {
+		File jar = fixtureJar("example.application.JarSettings", """
+				package example.application;
+				import org.springframework.boot.context.properties.ConfigurationProperties;
+				@ConfigurationProperties(prefix = "app.jar-settings")
+				public class JarSettings {
+					private String name;
+				}
+				""");
+
+		Node tree = tree(List.of(jarDependency(jar)));
+
+		assertEquals(1, nodesLabeled(tree, "app.jar-settings.name (String)").size());
+	}
+
 	private File fixtureJar(String fqn) throws Exception {
+		return fixtureJar(fqn, "package " + fqn.substring(0, fqn.lastIndexOf('.')) + "; public class "
+				+ fqn.substring(fqn.lastIndexOf('.') + 1) + " implements example.application.DescribedStereotype {}");
+	}
+
+	private File fixtureJar(String fqn, String source) throws Exception {
 		Path classesDir = JarFixtureBuilder.compileAll(tempDir, Map.of(
 				"example.application.DescribedStereotype", DESCRIBED_STEREOTYPE_SOURCE,
-				fqn, "package " + fqn.substring(0, fqn.lastIndexOf('.')) + "; public class "
-						+ fqn.substring(fqn.lastIndexOf('.') + 1) + " implements example.application.DescribedStereotype {}"));
+				fqn, source));
 
 		return JarFixtureBuilder.packageJar(classesDir, tempDir, "fixture-" + fqn, List.of(fqn), Map.of());
 	}

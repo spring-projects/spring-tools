@@ -11,18 +11,24 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.beans.JarConfigurationPropertiesScanner;
+import org.springframework.ide.vscode.boot.java.data.JarDataRepositoryScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
@@ -51,7 +57,7 @@ public class JarDependencySource implements StructureDependencySource {
 	private static final Logger log = LoggerFactory.getLogger(JarDependencySource.class);
 
 	private final ClasspathDependencyResolver resolver;
-	private final ConcurrentHashMap<String, List<StereotypeClassElement>> scannedJars = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, ScanResult> scannedJars = new ConcurrentHashMap<>();
 
 	public JarDependencySource(ClasspathDependencyResolver resolver) {
 		this.resolver = resolver;
@@ -80,15 +86,15 @@ public class JarDependencySource implements StructureDependencySource {
 			return null;
 		}
 
-		List<StereotypeClassElement> scannedTypes = scannedJars.computeIfAbsent(cacheKey(jarFile), key -> scan(including, jarFile));
-		JarStructureElements elements = new JarStructureElements(scannedTypes, catalog);
+		ScanResult scanned = scannedJars.computeIfAbsent(cacheKey(jarFile), key -> scan(including, jarFile));
+		JarStructureElements elements = new JarStructureElements(scanned.types(), scanned.members(), catalog);
 
 		// worth an INFO on every request, not just on failure: this is the only place that shows
 		// whether a JAR selection is actually doing something - scanned classes found none matching
 		// the current catalog looks identical to "elementsOf was never even called" otherwise
 		int matching = elements.types().size();
 		log.info("structure dependency '{}': {} of {} scanned class(es) in '{}' match the current catalog", dependency.id(), matching,
-				scannedTypes.size(), jarFile.getName());
+				scanned.types().size(), jarFile.getName());
 
 		return elements;
 	}
@@ -102,7 +108,7 @@ public class JarDependencySource implements StructureDependencySource {
 	 * lives in a different JAR). Every JAR {@code including} depends on is guaranteed to be
 	 * resolvable on its own classpath, so this is always sufficient.
 	 */
-	private List<StereotypeClassElement> scan(IJavaProject including, File jarFile) {
+	private ScanResult scan(IJavaProject including, File jarFile) {
 		Indexer indexer = new Indexer();
 		Set<DotName> ownClasses = null;
 		Set<File> indexed = new HashSet<>();
@@ -147,11 +153,45 @@ public class JarDependencySource implements StructureDependencySource {
 		log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
 				jarFile.getName(), scanned.size(), ownClasses.size());
 
-		return scanned;
+		return new ScanResult(scanned, membersOf(scanned, index));
+	}
+
+	/**
+	 * The "members" (properties, query methods) some of the scanned types contribute beyond their
+	 * own stereotype-matched methods - see {@link JarConfigurationPropertiesScanner} and
+	 * {@link JarDataRepositoryScanner}, the JAR/bytecode counterparts of
+	 * {@code ConfigurationPropertiesIndexer} and {@code DataRepositoryIndexer}. Computed once here,
+	 * alongside the rest of the (JAR-identity-cached, catalog-independent) scan: unlike stereotype
+	 * matching, neither of these depends on the tree's catalog at all - a class either is a
+	 * {@code @ConfigurationProperties} class or a repository, a fact of its own bytecode, not of
+	 * what stereotypes happen to be defined right now.
+	 */
+	private Map<StereotypeClassElement, List<StructureMember>> membersOf(List<StereotypeClassElement> scanned, Index index) {
+		Map<StereotypeClassElement, List<StructureMember>> result = new IdentityHashMap<>();
+
+		for (StereotypeClassElement element : scanned) {
+			ClassInfo classInfo = index.getClassByName(DotName.createSimple(element.getType()));
+			if (classInfo == null) {
+				continue;
+			}
+
+			List<StructureMember> members = new ArrayList<>();
+			members.addAll(JarConfigurationPropertiesScanner.membersOf(classInfo, element.getAnnotationTypes()));
+			members.addAll(JarDataRepositoryScanner.membersOf(classInfo, element));
+
+			if (!members.isEmpty()) {
+				result.put(element, members);
+			}
+		}
+
+		return result;
 	}
 
 	private static String cacheKey(File jarFile) {
 		return jarFile.getAbsolutePath() + "@" + jarFile.lastModified() + ":" + jarFile.length();
+	}
+
+	private record ScanResult(List<StereotypeClassElement> types, Map<StereotypeClassElement, List<StructureMember>> members) {
 	}
 
 }

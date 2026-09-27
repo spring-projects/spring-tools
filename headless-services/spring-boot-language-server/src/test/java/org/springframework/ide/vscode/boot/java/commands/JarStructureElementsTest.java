@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -42,7 +43,7 @@ public class JarStructureElementsTest {
 				Set.of("com.example.Marker"), null);
 		StereotypeClassElement notMatching = new StereotypeClassElement("com.example.NotMatching", null, Set.of(), Set.of(), null);
 
-		JarStructureElements elements = new JarStructureElements(List.of(matching, notMatching), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(matching, notMatching), Map.of(), catalogWithMarker());
 
 		assertEquals(List.of(matching), elements.types());
 	}
@@ -58,8 +59,8 @@ public class JarStructureElementsTest {
 		StereotypeClassElement element = new StereotypeClassElement("com.example.Marked", null, Set.of(), Set.of("com.example.Marker"), null);
 		List<StereotypeClassElement> scanned = List.of(element);
 
-		assertEquals(List.of(element), new JarStructureElements(scanned, catalogWithMarker()).types());
-		assertEquals(List.of(), new JarStructureElements(scanned, catalogWithoutMarker()).types());
+		assertEquals(List.of(element), new JarStructureElements(scanned, Map.of(), catalogWithMarker()).types());
+		assertEquals(List.of(), new JarStructureElements(scanned, Map.of(), catalogWithoutMarker()).types());
 	}
 
 	@Test
@@ -68,22 +69,37 @@ public class JarStructureElementsTest {
 				Set.of(), null);
 		StereotypeClassElement type = new StereotypeClassElement("com.example.Foo", null, Set.of(), Set.of(), null);
 
-		JarStructureElements elements = new JarStructureElements(List.of(type), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(), catalogWithMarker());
 
 		assertEquals("handle() : String", elements.methodLabel(method, type));
 	}
 
 	@Test
-	void membersOfIsAlwaysEmptySinceThereIsNoSourceBackedBeanData() throws Exception {
+	void membersOfIsEmptyForATypeTheScanFoundNonePropertiesOrQueryMethodsFor() throws Exception {
 		StereotypeClassElement type = new StereotypeClassElement("com.example.Foo", null, Set.of(), Set.of(), null);
-		JarStructureElements elements = new JarStructureElements(List.of(type), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(), catalogWithMarker());
 
 		assertEquals(List.of(), elements.membersOf(type));
 	}
 
+	/**
+	 * The members map is looked up by the exact scanned instance, not re-derived - unlike
+	 * {@code types()}, this is not catalog-dependent (see the class javadoc), so there is nothing
+	 * to filter live here.
+	 */
+	@Test
+	void membersOfReturnsWhateverWasComputedForThatExactScannedType() throws Exception {
+		StereotypeClassElement type = new StereotypeClassElement("com.example.Foo", null, Set.of(), Set.of(), null);
+		StructureMember property = new StructureMember("name (String)", null, null);
+
+		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(type, List.of(property)), catalogWithMarker());
+
+		assertEquals(List.of(property), elements.membersOf(type));
+	}
+
 	@Test
 	void packageNodeIsNeverConsultedByACompositeButStillAnsweredDefensively() throws Exception {
-		JarStructureElements elements = new JarStructureElements(List.of(), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(), Map.of(), catalogWithMarker());
 		assertEquals("com.example", elements.packageNode("com.example").getPackageName());
 	}
 

@@ -245,11 +245,11 @@ public class JarStereotypeScanner {
 
 	/**
 	 * Mirrors {@code ASTUtils.getMethodSignature(method, false)}'s label shape closely enough for
-	 * display - simple type names, not the fully qualified ones a signature (used for identity, not
-	 * display) would need.
+	 * display - the declaring class's simple name, then simple type names throughout, not the fully
+	 * qualified ones a signature (used for identity, not display) would need.
 	 */
 	private static String methodLabelOf(MethodInfo method) {
-		StringBuilder label = new StringBuilder(method.name()).append('(');
+		StringBuilder label = new StringBuilder(simpleName(method.declaringClass().name())).append('.').append(method.name()).append('(');
 		for (int i = 0; i < method.parametersCount(); i++) {
 			if (i > 0) {
 				label.append(", ");

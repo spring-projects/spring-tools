@@ -735,10 +735,12 @@ same name is what a composed tree actually consults for that (`CompositeStructur
 
 - **No source location** - `membersOf` and `JsonNodeHandler`'s location attribute already handle a
   null location gracefully (a type reconstructed from a baseline snapshot has the same property).
-- **No members** - no source-backed bean data exists for a type read out of a JAR.
-- **No request-mapping method labels** - no live index to consult one from; the label computed at
-  scan time (Jandex parameter/return type names) is used as-is, exactly like
-  `SnapshotStructureElements` does for the same reason.
+- **No request-mapping *label***, though the node now exists (see 4.7's amendment below): the
+  pretty route label (`@/greeting -- GET`) comes from a dedicated lookup
+  (`StructureViewUtil.getMethodLabel` → `RequestMappingIndexElement`) that resolves the mapping
+  annotation's own `path`/HTTP-method attribute values - a JAR-scanned mapping method shows up
+  under "Request Mappings" correctly, just with a plain signature label instead. Could be added
+  later by reading the same attribute values via Jandex; not done here.
 - **No content hash, never diffed** - the mode exclusion (see above) means a JAR element never
   meets `StructureSnapshotBuilder`.
 - **A JAR's own `@Stereotype`-annotated custom annotation types are not picked up as stereotype
@@ -748,14 +750,111 @@ same name is what a composed tree actually consults for that (`CompositeStructur
   selected or not. Only a definition declared by a custom annotation type *inside* the JAR's own
   bytecode - the source-side equivalent of `IndexBasedStereotypeFactory.registerStereotypeDefinitions()`
   - is out of scope: JAR catalogs seen so far all use the JSON file, not that mechanism, and it can
-  be added later if a real one needs it.
+  be added later if a real one needs it. Confirmed to matter in practice: the first real dependency
+  tried against this feature relied entirely on its own custom stereotype, and scanned it as
+  matching nothing until that turned out to be a build problem with the JAR itself, not this gap -
+  worth revisiting if a real case actually needs it.
 
-### 4.6 Tests
+### 4.6 Method-level information: two bugs found by using this for real, both fixed
+
+Trying this against a real dependency (not a test fixture) surfaced two gaps between the AST-based
+and JAR-based paths that no test had caught, because nothing had compared their output side by
+side:
+
+- **Method annotations were never meta-expanded.** `annotationTypesOf` (4.1) meta-expands a
+  *class's* own annotations, but the method loop in `ownClassesOf` originally used only
+  `method.declaredAnnotations()` directly. A convenience annotation like `@GetMapping` (itself
+  meta-annotated with `@RequestMapping`) never resolved to the base annotation a "Request Mappings"
+  stereotype is assigned to - so a JAR-scanned handler method using `@GetMapping`/`@PostMapping`
+  never matched at all, while the exact same method indexed from source (where
+  `StereotypesIndexer.getAnnotationTypes` already meta-expands a method's own annotations too)
+  matched correctly. Fixed by giving methods the same meta-expansion classes already had
+  (`JarStereotypeScanner.annotationTypesOf(MethodInfo, Index)`).
+- **The method label was missing its declaring class prefix.** `ASTUtils.getMethodSignature(method,
+  false)` - `StereotypeMethodElement.methodLabel`'s source - is `ClassName.method(Type) : Return`;
+  the JAR-scanned label was originally just `method(Type) : Return`. Fixed to match exactly.
+
+Both are now covered by tests that assert the exact label/matching format, citing the AST-side
+source they have to match (`JarStereotypeScannerTest`).
+
+**On the duplication risk this exposes.** Two independent implementations of "how does a method's
+stereotype membership get decided" is exactly the kind of thing that drifts, and just did. What
+keeps this bounded rather than open-ended:
+- *Class-level* detection (is this a Controller, a `@ConfigurationProperties` class, a Repository)
+  was never duplicated - it already goes through one shared thing, the stereotype catalog matched
+  against whichever `annotationTypes`/`supertypes` a `StereotypeClassElement` carries, computed
+  either from AST or from Jandex. Only the *data-producing* half exists twice; the *matching* half
+  never did.
+- Where a genuinely shared decision exists (the `@ConfigurationProperties` `prefix`/`value`
+  resolution rule - see 4.7), it is extracted into one function both sides call, not written twice.
+- Where the remaining duplication is close to irreducible (Jandex vs. JDT bindings have no common
+  type to share code against without a much larger abstraction), the acceptance is: keep the
+  AST-side format as the documented source of truth, and test the JAR side against it explicitly by
+  hardcoded, comment-linked assertions - not a guarantee against drift, but a fast, specific failure
+  when it happens, which is what actually caught this the first time.
+- The larger alternative considered - decompiling a JAR's classes to synthetic source and running
+  them through the existing AST-based indexers unchanged, eliminating the duplication rather than
+  managing it - was deliberately not pursued now: a bigger, less certain change (decompiler
+  correctness on real-world bytecode, a new dependency, unclear whether the existing indexing
+  pipeline can run against a non-file-backed document without deeper changes) that is worth a
+  dedicated spike if this keeps recurring, not a prerequisite for the two cases below.
+
+### 4.7 Members: `@ConfigurationProperties` fields and repository query methods
+
+Neither goes through stereotype matching at all - confirmed by investigation before writing any of
+this, specifically to avoid guessing at the wrong mechanism:
+
+- A `@ConfigurationProperties` class's "properties" are its **fields** (or record components), not
+  its methods - a completely separate, field-driven indexer (`ConfigurationPropertiesIndexer`)
+  keyed off the annotation's `prefix`/`value` attribute.
+- A Spring Data repository's "query methods" (`findByXxx`) usually carry **no annotation at all** -
+  recognized purely by the interface implementing `org.springframework.data.repository.Repository`,
+  then listing every non-`default` method (`DataRepositoryIndexer`).
+
+Both are rendered as **members** (`StructureElements.membersOf`), a different path than stereotype
+grouping - plain nodes attached directly under the type, independent of the catalog. `JarStructureElements.membersOf`
+previously hard-coded an empty list; it now looks up a `Map<StereotypeClassElement,
+List<StructureMember>>` computed once per scan.
+
+- **`JarConfigurationPropertiesScanner`** (`boot.java.beans`, alongside `ConfigurationPropertiesIndexer`):
+  gated on the class's already-computed, meta-annotation-expanded `annotationTypes` containing
+  `@ConfigurationProperties` (consistent with how the class itself gets grouped); reads
+  `ClassInfo.fields()` (or `recordComponents()` for a record) and prefixes each with the resolved
+  prefix. The one piece of real logic here - resolving `prefix`, falling back to `value` - is
+  **shared**: `ConfigurationPropertiesIndexer.resolvePrefix(String, String)`, extracted out of
+  that indexer and called from both sides, so it cannot drift between them the way the method
+  annotation rule just did.
+- **`JarDataRepositoryScanner`** (`boot.java.data`, alongside `DataRepositoryIndexer`): reuses the
+  class's own `doesImplement(Constants.REPOSITORY_TYPE)` (the exact same `supertypes` walk the
+  class-level stereotype match already does - no second interface-hierarchy walk), excludes
+  `@NoRepositoryBean`, and lists every non-`default` method via `MethodInfo.isDefault()`. This rule
+  has almost no logic to duplicate in the first place, so it is written directly on both sides
+  rather than extracted.
+- **Not reconstructed from bytecode**: a repository method's resolved SQL/JPQL - Spring Data's
+  AOT-generated metadata is a build output that does not generally ship inside a plain dependency
+  JAR. Investigation also found this is not actually wired into the tree even for a workspace
+  project today (`QueryMethodIndexElement`'s nested query-string `DocumentSymbol` is computed but
+  never read by `IndexStructureElements.membersOf`), so nothing here is a regression.
+
+**Tests**: `JarConfigurationPropertiesScannerTest` (regular class fields; record components instead
+of backing fields; `prefix` over `value`; no annotation → no members; no attribute → unprefixed
+name) and `JarDataRepositoryScannerTest` (non-default methods become members; the label has no
+class prefix, unlike a stereotype-grouped method's; `@NoRepositoryBean` excluded; a plain interface
+contributes nothing) - the latter compiles against a throwaway stub of
+`org.springframework.data.repository.Repository`/`NoRepositoryBean` (this module has no real
+dependency on `spring-data-commons`), left out of the packaged JAR, which doubles as another live
+check of 4.1's "a supertype need not itself be indexed" claim. Plus one end-to-end case in
+`StructureDependenciesJarTreeTest`: a JAR-scanned `@ConfigurationProperties` class's field reaches
+the rendered tree as a member node.
+
+### 4.8 Tests
 
 - `JarStereotypeScannerTest` - meta-annotations resolved across two JARs indexed together; a
   missing meta-annotation's JAR skipped without failing the scan; supertypes collected recursively,
   by name, even for a type outside the indexed set; annotation types and modules excluded from the
-  result; only annotated methods kept.
+  result; only annotated methods kept; **a method's own annotations meta-expanded the same way a
+  class's are** and **the method label carries its declaring class's simple name** (4.6's two
+  fixes).
 - `JarStereotypeFactoryTest` - a type matching through both catalog buckets at once; **the same
   element matching differently against two different catalogs, with no rescanning** (4.3's central
   claim); methods matching only annotation-based assignments.
@@ -777,7 +876,9 @@ same name is what a composed tree actually consults for that (`CompositeStructur
   memory of past sessions). `DescribedStereotype` itself is compiled alongside the fixture class,
   from a copy of its source, purely so the fixture class type-checks - and deliberately left out of
   the packaged JAR, doubling as a live demonstration of 4.1's "a supertype need not itself be
-  indexed" claim.
+  indexed" claim. Extended with a members case: a JAR-scanned `@ConfigurationProperties` class's
+  field reaches the tree as a member node.
+- `JarConfigurationPropertiesScannerTest`, `JarDataRepositoryScannerTest` - see 4.7.
 
 ---
 
@@ -803,6 +904,9 @@ same name is what a composed tree actually consults for that (`CompositeStructur
 | A JAR's classes are resolved against a combined index over the *including* project's whole classpath, not the JAR in isolation | Indexing the JAR alone — an annotation's own meta-annotations are frequently declared in a different JAR (`@RestController`/`@Controller` across `spring-web`/`spring-context`, verified directly), so isolated scanning would silently miss them |
 | The unfiltered scan of a JAR's classes is cached by the JAR's own identity; which of them currently match a stereotype is never cached, only computed fresh per catalog | Caching the filtered (matching) result — a stereotype catalog can change at any point in a session (a JSON file edited, a source-defined stereotype added/removed, a different dependency selection), and detecting exactly when to invalidate that cache means fingerprinting every possible source of such a change |
 | A JAR is only ever scanned once it is actually selected for some project's tree | Scanning (or prefetching) every JAR a picker offers — most JARs on a typical classpath (third-party frameworks especially) are never selected at all |
+| Members (`@ConfigurationProperties` fields, repository query methods) computed once alongside the scan and cached by JAR identity, unlike `types()` | Filtering/computing them live like stereotype matching — unlike stereotype matching, neither is catalog-dependent (a fact of the class's own bytecode), so there is nothing to go stale |
+| The `@ConfigurationProperties` prefix-resolution rule extracted into one function both the AST-based and JAR-based scanners call | Writing it twice — the one piece of real, non-mechanical logic in that case, and exactly the kind of thing that drifts (demonstrated by the method meta-annotation bug, 4.6) |
+| The decompile-to-source alternative (run JARs through the existing AST indexers unchanged) considered and deliberately not pursued | Adopting it now — would eliminate JAR/AST duplication entirely, but is a bigger, less certain change (decompiler correctness, a new dependency, unclear whether the indexing pipeline runs against a non-file-backed document); worth a dedicated spike only if duplication keeps recurring |
 | Default is diff mode with no dependencies included | Defaulting to dependency mode — changes the view for every existing user without being asked |
 | Direct dependencies only, depth 1 | Transitive expansion — unbounded trees, and the classpath is already flattened differently per build system |
 | Workspace-project dependencies come straight from the classpath the Java tooling sends (`extra["project"]`, plus a new name key) | Matching jars to open projects by GAV - only needed for the standalone LS, which does no workspace resolution; accepted there: no workspace-project dependencies offered, for now |

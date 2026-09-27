@@ -143,6 +143,9 @@ public class JarStereotypeScannerTest {
 
 		assertEquals(1, type.getMethods().size());
 		assertEquals("annotated", type.getMethods().get(0).getMethodName());
+		// matches ASTUtils.getMethodSignature(method, false)'s exact shape, including the class
+		// name prefix - see StereotypesIndexerTest's "ClassWithMethods.methodWithAnnotations(String) : void"
+		assertEquals("WithMethods.annotated(String) : String", type.getMethods().get(0).getMethodLabel());
 	}
 
 	/**

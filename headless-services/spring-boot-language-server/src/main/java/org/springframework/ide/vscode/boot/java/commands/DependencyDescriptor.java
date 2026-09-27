@@ -10,6 +10,13 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.io.IOException;
+
+import com.google.gson.TypeAdapter;
+import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 /**
  * A dependency of a project that the user can select to include in that project's logical
  * structure tree - what {@code sts/spring-boot/structure/dependencies} hands to the clients to
@@ -20,7 +27,8 @@ package org.springframework.ide.vscode.boot.java.commands;
  *        selection survives a version bump: {@code "project:<projectName>"} for a workspace project,
  *        {@code "gav:<groupId>:<artifactId>"} for a JAR with known Maven coordinates,
  *        {@code "jar:<name>"} (the file name without version) for any other JAR
- * @param kind whether the dependency is an open workspace project or a JAR
+ * @param kind whether the dependency is an open workspace project or a JAR - sent by name, see
+ *        {@link KindByName}
  * @param displayName what to show the user - the project name, or the artifact id
  * @param groupId the Maven group id, if known (may be null)
  * @param artifactId the Maven artifact id, if known (may be null)
@@ -32,7 +40,7 @@ package org.springframework.ide.vscode.boot.java.commands;
  */
 public record DependencyDescriptor(
 		String id,
-		Kind kind,
+		@JsonAdapter(KindByName.class) Kind kind,
 		String displayName,
 		String groupId,
 		String artifactId,
@@ -41,6 +49,25 @@ public record DependencyDescriptor(
 		String location) {
 
 	public enum Kind { WORKSPACE_PROJECT, JAR }
+
+	/**
+	 * Writes a {@link Kind} as its name. LSP4J's own enum adapter, which the command results go
+	 * through otherwise, writes an enum as a number, which the clients can't tell apart.
+	 */
+	static class KindByName extends TypeAdapter<Kind> {
+
+		@Override
+		public void write(JsonWriter out, Kind kind) throws IOException {
+			out.value(kind == null ? null : kind.name());
+		}
+
+		@Override
+		public Kind read(JsonReader in) throws IOException {
+			String name = in.nextString();
+			return name == null ? null : Kind.valueOf(name);
+		}
+
+	}
 
 	public static final String WORKSPACE_PROJECT_ID_PREFIX = "project:";
 

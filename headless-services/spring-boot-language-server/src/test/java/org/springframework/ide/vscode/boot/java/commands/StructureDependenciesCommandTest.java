@@ -20,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.jsonrpc.json.MessageJsonHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 /**
  * Step 1 of {@code docs/structure-view-dependencies.md}: the dependencies a project offers can be
@@ -113,11 +114,16 @@ public class StructureDependenciesCommandTest {
 	}
 
 	@Test
-	void dependenciesResultIsGsonSerializable() throws Exception {
+	void theKindOfADependencyIsSentByName() throws Exception {
 		Object result = harness.getServer().getWorkspaceService()
 				.executeCommand(new ExecuteCommandParams(DEPENDENCIES_CMD, List.of(project.getElementName()))).get();
 
-		new Gson().toJson(result);
+		// the Gson the language server actually sends command results with - LSP4J's own enum
+		// adapter would otherwise write the kind as a number
+		JsonObject json = new MessageJsonHandler(Map.of()).getGson().toJsonTree(result).getAsJsonObject();
+
+		JsonObject first = json.getAsJsonArray("dependencies").get(0).getAsJsonObject();
+		assertEquals("JAR", first.get("kind").getAsString());
 	}
 
 	@Test

@@ -19,6 +19,7 @@ import org.eclipse.lsp4j.Command;
 import org.springframework.tooling.boot.ls.BootLanguageServerPlugin;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Handles {@code boot-ls.client.set-configuration} - a generic "set a
@@ -32,11 +33,13 @@ public class SetConfigurationHandler extends AbstractHandler {
 
 	private static final String PROBLEM_SETTINGS_PREFIX = "spring-boot.ls.";
 
+	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		try {
 			String p = event.getParameter(LSPCommandHandler.LSP_COMMAND_PARAMETER_ID);
-			Command cmd = new Gson().fromJson(p, Command.class);
+			Command cmd = GSON.fromJson(p, Command.class);
 			if (cmd != null && cmd.getArguments() != null && cmd.getArguments().size() >= 2) {
 				String key = cmd.getArguments().get(0).toString();
 				String value = toPreferenceString(cmd.getArguments().get(1));
@@ -54,7 +57,7 @@ public class SetConfigurationHandler extends AbstractHandler {
 		if (value instanceof String || value instanceof Number || value instanceof Boolean) {
 			return value.toString();
 		}
-		return new Gson().toJson(value);
+		return GSON.toJson(value);
 	}
 
 }

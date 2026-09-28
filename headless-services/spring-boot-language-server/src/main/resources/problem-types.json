@@ -549,11 +549,11 @@
     },
     "parameters": [
       {
-        "key": "sql-dialect",
-        "label": "SQL Dialect",
-        "description": "Overrides the SQL dialect used to validate native @Query SQL statements. By default the dialect is inferred from JDBC driver dependencies (MySQL/MariaDB take precedence over PostgreSQL when both are present).",
-        "type": "string",
-        "defaultValue": "auto",
+        "key": "sql-dialect-overrides",
+        "label": "SQL Dialect Overrides",
+        "description": "Overrides the SQL dialect used to validate native @Query SQL statements, per Java package. A JSON object mapping a package name to \"mysql\" or \"postgresql\"; a subpackage inherits its nearest configured ancestor package's dialect. Packages with no applicable entry (and any entry with an unrecognized value) fall back to auto-detecting from JDBC driver dependencies on the classpath (MySQL/MariaDB take precedence over PostgreSQL when both are present).",
+        "type": "object",
+        "defaultValue": "{}",
         "enumValues": [
           "auto",
           "mysql",

@@ -19,7 +19,8 @@ public final class ProblemTypeParameter {
 	public enum ValueType {
 		INTEGER,
 		STRING,
-		BOOLEAN
+		BOOLEAN,
+		OBJECT
 	}
 
 	private final String key;

@@ -535,7 +535,9 @@ public class QueryReconcilerTest {
 						},
 						"problem-parameters": {
 							"data-query": {
-								"sql-dialect": "postgresql"
+								"sql-dialect-overrides": {
+									"example.demo": "postgresql"
+								}
 							}
 						}
 					}
@@ -559,7 +561,7 @@ public class QueryReconcilerTest {
 		String docUri = directory.toPath().resolve("src/main/java/example/demo/MachineRepository.java").toUri()
 				.toString();
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
-		// The global override wins over the ambiguous classpath: PostgreSQL grammar is used,
+		// The package override wins over the ambiguous classpath: PostgreSQL grammar is used,
 		// so the valid PostgreSQL query no longer raises a (bogus) syntax error.
 		editor.assertProblems();
 	}
@@ -583,7 +585,9 @@ public class QueryReconcilerTest {
 						},
 						"problem-parameters": {
 							"data-query": {
-								"sql-dialect": "postgresql"
+								"sql-dialect-overrides": {
+									"example.demo": "postgresql"
+								}
 							}
 						}
 					}
@@ -609,6 +613,54 @@ public class QueryReconcilerTest {
 		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
 		// The override always wins for reconciliation, regardless of what the classpath
 		// alone would resolve to: valid PostgreSQL syntax, so no syntax error.
+		editor.assertProblems();
+	}
+
+	@Test
+	void queryDialectOverrideIsInheritedBySubpackage() throws Exception {
+		directory = new File(ProjectsHarness.class.getResource("/test-projects/boot-mariadb-postgresql/").toURI());
+		String projectDir = directory.toURI().toString();
+		// trigger project creation
+		projectFinder.find(new TextDocumentIdentifier(projectDir)).get();
+		// Override is on the parent "example" package; "example.demo" has none of its own.
+		harness.changeConfiguration("""
+				{
+				"spring-boot": {
+					"ls": {
+						"problem": {
+							"data-query": {
+								"SQL_SYNTAX": "ERROR"
+							}
+						},
+						"problem-parameters": {
+							"data-query": {
+								"sql-dialect-overrides": {
+									"example": "postgresql"
+								}
+							}
+						}
+					}
+				}
+			}
+			""");
+
+		String source = """
+				package example.demo;
+
+				import org.springframework.data.jdbc.repository.query.Query;
+				import org.springframework.data.repository.CrudRepository;
+
+				public interface MachineRepository extends CrudRepository<Object, Integer> {
+
+					@Query(value = "SELECT * FROM machine WHERE management_ip = CAST(:managementIp AS inet)", nativeQuery = true)
+					List<Object> findByManagementIp(String managementIp);
+
+				}
+				""";
+		String docUri = directory.toPath().resolve("src/main/java/example/demo/MachineRepository.java").toUri()
+				.toString();
+		Editor editor = harness.newEditor(LanguageId.JAVA, source, docUri);
+		// Inherited PostgreSQL override wins over the ambiguous classpath.
 		editor.assertProblems();
 	}
 }

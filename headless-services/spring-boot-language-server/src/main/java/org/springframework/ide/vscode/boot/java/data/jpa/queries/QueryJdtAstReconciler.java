@@ -58,13 +58,14 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 	@Override
 	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) throws RequiredCompleteAstException {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
+		String packageName = cu.getPackage() == null ? "" : cu.getPackage().getName().getFullyQualifiedName();
 		return Optional.of(new ASTVisitor() {
 
 			@Override
 			public boolean visit(NormalAnnotation node) {
 				EmbeddedQueryExpression q = JdtQueryVisitorUtils.extractQueryExpression(annotationHierarchies, node);
 				if (q != null) {
-					reconcileQuery(project, q, context);
+					reconcileQuery(project, packageName, q, context);
 				}
 				return super.visit(node);
 			}
@@ -73,7 +74,7 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 			public boolean visit(SingleMemberAnnotation node) {
 				EmbeddedQueryExpression q = JdtQueryVisitorUtils.extractQueryExpression(annotationHierarchies, node);
 				if (q != null) {
-					reconcileQuery(project, q, context);
+					reconcileQuery(project, packageName, q, context);
 				}
 				return super.visit(node);
 			}
@@ -97,9 +98,9 @@ public class QueryJdtAstReconciler implements JdtAstReconciler {
 		return SpringProjectUtil.hasDependencyStartingWith(project, "hibernate-core", null) ? hqlReconciler : jpqlReconciler;
 	}
 
-	private void reconcileQuery(IJavaProject project, EmbeddedQueryExpression q, ReconcilingContext context) {
+	private void reconcileQuery(IJavaProject project, String packageName, EmbeddedQueryExpression q, ReconcilingContext context) {
 		if (q.isNative()) {
-			SqlType resolved = sqlDialectResolver.resolve(project);
+			SqlType resolved = sqlDialectResolver.resolve(project, packageName);
 			if (resolved == null) {
 				return;
 			}

@@ -84,7 +84,10 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 		if (category.getParameters() != null) {
 			for (ProblemParameterData param : category.getParameters()) {
 				String prefKey = getProblemParametersPreferencePrefix() + param.getKey();
-				if (param.getEnumValues() != null) {
+				if ("object".equals(param.getType())) {
+					addField(new StringFieldEditor(prefKey, param.getLabel(), StringFieldEditor.UNLIMITED, 8,
+							StringFieldEditor.VALIDATE_ON_KEY_STROKE, getFieldEditorParent()));
+				} else if (param.getEnumValues() != null) {
 					addField(new ComboFieldEditor(prefKey, param.getLabel(), createToggleValues(param.getEnumValues()), getFieldEditorParent()));
 				} else if ("boolean".equals(param.getType())) {
 					addField(new BooleanFieldEditor(prefKey, param.getLabel(), getFieldEditorParent()));

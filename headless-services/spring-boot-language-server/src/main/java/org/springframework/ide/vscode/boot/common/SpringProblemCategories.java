@@ -60,9 +60,13 @@ public class SpringProblemCategories {
 
 	public static final ProblemCategory DATA_QUERY = new ProblemCategory("data-query", "Data Queries",
 			new Toggle("Enablement", EnumSet.of(OFF, ON), ON, "boot-java.validation.data-query"),
-			List.of(new ProblemTypeParameter("sql-dialect", "SQL Dialect",
-					"Overrides the SQL dialect used to validate native @Query SQL statements. By default the dialect is inferred from JDBC driver dependencies (MySQL/MariaDB take precedence over PostgreSQL when both are present).",
-					ProblemTypeParameter.ValueType.STRING, "auto",
+			List.of(new ProblemTypeParameter("sql-dialect-overrides", "SQL Dialect Overrides",
+					"Overrides the SQL dialect used to validate native @Query SQL statements, per Java package. "
+					+ "A JSON object mapping a package name to \"mysql\" or \"postgresql\"; a subpackage inherits its "
+					+ "nearest configured ancestor package's dialect. Packages with no applicable entry (and any "
+					+ "entry with an unrecognized value) fall back to auto-detecting from JDBC driver dependencies "
+					+ "on the classpath (MySQL/MariaDB take precedence over PostgreSQL when both are present).",
+					ProblemTypeParameter.ValueType.OBJECT, "{}",
 					new String[] { "auto", "mysql", "postgresql" })));
 	
 	public static final ProblemCategory CRON = new ProblemCategory("cron", "CRON Expressions",

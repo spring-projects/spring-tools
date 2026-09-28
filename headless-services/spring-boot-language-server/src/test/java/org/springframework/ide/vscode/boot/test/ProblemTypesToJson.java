@@ -53,6 +53,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  * Helper that dumps out ProblemTypes to a json file. This file can 
@@ -457,6 +458,22 @@ public class ProblemTypesToJson {
 			} else if ("boolean".equals(t)) {
 				schema.addProperty("type", "boolean");
 				schema.addProperty("default", Boolean.parseBoolean(param.getDefaultValue()));
+			} else if ("object".equals(t)) {
+				// A JSON object value (e.g. a map): additionalProperties constrains each of
+				// the object's own values (param.getEnumValues(), for this type, is about
+				// those values, not the parameter's own value).
+				schema.addProperty("type", "object");
+				schema.add("default", JsonParser.parseString(param.getDefaultValue()));
+				JsonObject additionalProperties = new JsonObject();
+				additionalProperties.addProperty("type", "string");
+				if (param.getEnumValues() != null) {
+					JsonArray enumVals = new JsonArray();
+					for (String v : param.getEnumValues()) {
+						enumVals.add(v);
+					}
+					additionalProperties.add("enum", enumVals);
+				}
+				schema.add("additionalProperties", additionalProperties);
 			} else {
 				schema.addProperty("type", "string");
 				schema.addProperty("default", param.getDefaultValue());

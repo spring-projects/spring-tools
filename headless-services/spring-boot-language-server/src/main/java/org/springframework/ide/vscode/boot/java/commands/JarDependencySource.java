@@ -37,6 +37,8 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassEleme
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.PercentageProgressTask;
+import org.springframework.ide.vscode.commons.languageserver.ProgressService;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -60,13 +62,26 @@ public class JarDependencySource implements StructureDependencySource {
 
 	private static final Logger log = LoggerFactory.getLogger(JarDependencySource.class);
 
+	private static final String SCAN_JAR_TASK_ID = "scan-structure-dependency-jar-task-";
+
 	private final ClasspathDependencyResolver resolver;
+	private final ProgressService progressService;
 	// by the JAR's absolute path - one entry per JAR, replaced when the JAR changes, rather than one
 	// per version of it that happened to be scanned
 	private final ConcurrentHashMap<String, CachedScan> scannedJars = new ConcurrentHashMap<>();
 
 	public JarDependencySource(ClasspathDependencyResolver resolver) {
+		this(resolver, ProgressService.NO_PROGRESS);
+	}
+
+	/**
+	 * @param progressService reports the scan of a JAR to the client while it runs - the part of
+	 *        including a JAR the user may have to wait for, since it indexes the including project's
+	 *        whole classpath (see {@link #scan}); a cached scan reports nothing
+	 */
+	public JarDependencySource(ClasspathDependencyResolver resolver, ProgressService progressService) {
 		this.resolver = resolver;
+		this.progressService = progressService;
 	}
 
 	@Override
@@ -152,40 +167,50 @@ public class JarDependencySource implements StructureDependencySource {
 			classpathEntries = null;
 		}
 		boolean complete = classpathEntries != null;
+		List<CPE> binaryEntries = complete
+				? classpathEntries.stream().filter(cpe -> Classpath.isBinary(cpe) && !cpe.isSystem()).toList()
+				: List.of();
 
-		for (CPE cpe : complete ? classpathEntries : List.<CPE>of()) {
-			if (!Classpath.isBinary(cpe) || cpe.isSystem()) {
-				continue;
+		// one step per classpath entry to index, and a last one for reading the JAR's own classes
+		PercentageProgressTask progress = progressService.createPercentageProgressTask(SCAN_JAR_TASK_ID + jarFile.getAbsolutePath(),
+				binaryEntries.size() + 1, "Spring Tools: Indexing Library '" + jarFile.getName() + "' for the Logical Structure of '"
+						+ including.getElementName() + "'");
+		try {
+			for (CPE cpe : binaryEntries) {
+				File file = IClasspathUtil.binaryLocation(cpe).getAbsoluteFile();
+				if (file.isFile() && indexed.add(file)) {
+					Set<DotName> classesOfThisFile = JarStereotypeScanner.indexInto(indexer, file);
+					if (file.equals(jarFile.getAbsoluteFile())) {
+						ownClasses = classesOfThisFile;
+					}
+				}
+				progress.increment();
 			}
 
-			File file = IClasspathUtil.binaryLocation(cpe).getAbsoluteFile();
-			if (!file.isFile() || !indexed.add(file)) {
-				continue;
+			if (ownClasses == null) {
+				// the JAR wasn't found among including's own classpath entries at all - a stale
+				// selection, or a discovery/classpath mismatch; index it directly so something is
+				// still shown, even though cross-JAR meta-annotations may not all resolve
+				log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
+						including.getElementName());
+				ownClasses = JarStereotypeScanner.indexInto(indexer, jarFile);
+				complete = false;
 			}
 
-			Set<DotName> classesOfThisFile = JarStereotypeScanner.indexInto(indexer, file);
-			if (file.equals(jarFile.getAbsoluteFile())) {
-				ownClasses = classesOfThisFile;
-			}
+			Index index = indexer.complete();
+			Map<Object, String> bindingKeys = new IdentityHashMap<>();
+			List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index, bindingKeys);
+			Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, index, jarFile, bindingKeys);
+			progress.increment();
+
+			log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
+					jarFile.getName(), scanned.size(), ownClasses.size());
+
+			return new ScanResult(scanned, beans, bindingKeys, complete);
 		}
-
-		if (ownClasses == null) {
-			// the JAR wasn't found among including's own classpath entries at all - a stale
-			// selection, or a discovery/classpath mismatch; index it directly so something is
-			// still shown, even though cross-JAR meta-annotations may not all resolve
-			log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
-					including.getElementName());
-			ownClasses = JarStereotypeScanner.indexInto(indexer, jarFile);
-			complete = false;
+		finally {
+			progress.done();
 		}
-
-		Index index = indexer.complete();
-		Map<Object, String> bindingKeys = new IdentityHashMap<>();
-		List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index, bindingKeys);
-		log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
-				jarFile.getName(), scanned.size(), ownClasses.size());
-
-		return new ScanResult(scanned, beansOf(scanned, index, jarFile, bindingKeys), bindingKeys, complete);
 	}
 
 	/**

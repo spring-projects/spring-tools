@@ -62,8 +62,8 @@ public class CommandsConfig {
 	}
 
 	@Bean
-	JarDependencySource jarDependencySource(ClasspathDependencyResolver resolver) {
-		return new JarDependencySource(resolver);
+	JarDependencySource jarDependencySource(ClasspathDependencyResolver resolver, SimpleLanguageServer server) {
+		return new JarDependencySource(resolver, server.getProgressService());
 	}
 
 	@Bean

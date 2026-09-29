@@ -16,7 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -26,8 +31,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+import org.eclipse.lsp4j.WorkDoneProgressBegin;
+import org.eclipse.lsp4j.WorkDoneProgressEnd;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.catalog.support.CatalogSource;
 import org.jmolecules.stereotype.catalog.support.JsonPathStereotypeCatalog;
@@ -38,7 +46,9 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassEleme
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.languageserver.ProgressService;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.protocol.STS4LanguageClient;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 
 /**
@@ -176,6 +186,33 @@ public class JarDependencySourceTest {
 		StereotypeClassElement type = scan.types().get(0);
 		assertEquals("Lcom/example/Marked;", scan.bindingKeys().get(type));
 		assertEquals("Lcom/example/Marked;.handle(Ljava/lang/String;[I)V", scan.bindingKeys().get(type.getMethods().get(0)));
+	}
+
+	/**
+	 * Scanning a JAR indexes the including project's whole classpath, which can take a while - so it
+	 * is reported to the client as progress, the way indexing a project's sources is. A cached scan
+	 * has nothing to report.
+	 */
+	@Test
+	void scanningAJarIsReportedAsProgressButReusingTheScanIsNot() throws Exception {
+		File jar = markedJar("fixture");
+		STS4LanguageClient client = mock(STS4LanguageClient.class);
+		when(client.createProgress(any())).thenReturn(CompletableFuture.completedFuture(null));
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)),
+				ProgressService.create(() -> client));
+		DependencyDescriptor dependency = DependencyDescriptor.jar("fixture", jar.getAbsolutePath());
+		IJavaProject including = project(jar);
+
+		source.elementsOf(dependency, including, null, catalogWithMarker());
+
+		// the begin is sent once the client has created the progress - asynchronously, so not
+		// necessarily before the reports
+		verify(client, timeout(5000)).notifyProgress(argThat(params -> params.getValue().getLeft() instanceof WorkDoneProgressBegin begin
+				&& begin.getTitle().contains(jar.getName()) && begin.getTitle().contains("including")));
+		verify(client, timeout(5000)).notifyProgress(argThat(params -> params.getValue().getLeft() instanceof WorkDoneProgressEnd));
+
+		source.elementsOf(dependency, including, null, catalogWithMarker());
+		verify(client, times(1)).createProgress(any());
 	}
 
 	private File markedJar(String name) throws Exception {

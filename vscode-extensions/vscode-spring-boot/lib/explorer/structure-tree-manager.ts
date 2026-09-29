@@ -1,6 +1,7 @@
 import { commands, EventEmitter, Event, ExtensionContext, window, Memento, QuickPickItem, QuickPickItemKind } from "vscode";
-import { StereotypedNode } from "./nodes";
+import { JavaElementReference, OPEN_JAVA_ELEMENT_CMD, StereotypedNode } from "./nodes";
 import { ExtensionAPI } from "../api";
+import * as ls from "vscode-languageserver-protocol";
 import { showChangesAgainstHead } from "./git-diff";
 import { describeBaseline, formatCapturedAt, shortSha } from "./baseline-labels";
 
@@ -9,6 +10,7 @@ const SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/capture
 const SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 const SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
 const SPRING_STRUCTURE_DEPENDENCIES_CMD = "sts/spring-boot/structure/dependencies";
+const SPRING_STRUCTURE_RESOLVE_LOCATION_CMD = "sts/spring-boot/structure/resolveLocation";
 
 const HIDE_UNCHANGED_KEY = "vscode-spring-boot.structure.hideUnchanged";
 const HIGHLIGHT_CHANGES_KEY = "vscode-spring-boot.structure.highlightChanges";
@@ -87,6 +89,22 @@ export class StructureManager {
                 const location = api.client.protocol2CodeConverter.asLocation(reference)
                 window.showTextDocument(location.uri, { selection: location.range });
             }
+        }));
+
+        // a node read from a JAR dependency: the language server has the Java tooling resolve it
+        // into a location in the class file only now, when it is opened
+        context.subscriptions.push(commands.registerCommand(OPEN_JAVA_ELEMENT_CMD, async (reference: JavaElementReference, label?: string) => {
+            try {
+                const resolved = await commands.executeCommand<ls.Location | null>(SPRING_STRUCTURE_RESOLVE_LOCATION_CMD, reference);
+                if (resolved) {
+                    const location = api.client.protocol2CodeConverter.asLocation(resolved);
+                    await window.showTextDocument(location.uri, { selection: location.range });
+                    return;
+                }
+            } catch (error) {
+                console.error(`Failed to open ${reference.bindingKey}`, error);
+            }
+            window.setStatusBarMessage(`Cannot open '${label || reference.bindingKey}': not found by the Java tooling`, 5000);
         }));
 
         context.subscriptions.push(commands.registerCommand("vscode-spring-boot.structure.grouping", async (node: StereotypedNode) => {

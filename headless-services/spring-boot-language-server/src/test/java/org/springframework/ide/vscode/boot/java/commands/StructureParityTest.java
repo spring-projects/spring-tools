@@ -125,7 +125,7 @@ public class StructureParityTest {
 		Map<String, TypeView> fromSource = views(source, source.types());
 
 		JarDependencySource.ScanResult scan = jarDependencySource.scan(project, compileToJar(fixture, directory, project));
-		JarStructureElements jar = new JarStructureElements(scan.types(), scan.beans(), catalog);
+		JarStructureElements jar = new JarStructureElements(scan.types(), scan.beans(), scan.bindingKeys(), catalog);
 		Map<String, TypeView> fromJar = views(jar, scan.types());
 
 		Set<String> divergences = divergences(fromSource, fromJar);

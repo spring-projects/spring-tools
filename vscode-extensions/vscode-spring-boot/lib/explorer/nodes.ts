@@ -46,6 +46,18 @@ export function deepestChangedNodes(nodes: StereotypedNode[]): StereotypedNode[]
     return deepest;
 }
 
+/**
+ * What a node for an element read from a JAR dependency carries instead of a location: the
+ * element's JDT binding key, and the project whose classpath has the JAR - resolved into a
+ * location by the language server only once the node is opened.
+ */
+export interface JavaElementReference {
+    projectUri: string;
+    bindingKey: string;
+}
+
+export const OPEN_JAVA_ELEMENT_CMD = "vscode-spring-boot.structure.openJavaElement";
+
 export class StereotypedNode {
 
     private _hasBaseline?: boolean;
@@ -111,6 +123,7 @@ export class StereotypedNode {
         }
 
         const location = this.location;
+        const javaElement = this.javaElement;
         if (location) {
             item.command = {
                 command: "vscode.open",
@@ -118,6 +131,12 @@ export class StereotypedNode {
                 arguments: [Uri.parse(location.uri), {
                     selection: location.range
                 } as TextDocumentShowOptions]
+            };
+        } else if (javaElement) {
+            item.command = {
+                command: OPEN_JAVA_ELEMENT_CMD,
+                title: "Navigate",
+                arguments: [javaElement, this.label]
             };
         }
         return item;
@@ -137,6 +156,14 @@ export class StereotypedNode {
      */
     get location(): Location | undefined {
         return this.n.attributes.location as Location;
+    }
+
+    /**
+     * The element this node stands for when it has no location - one read from a JAR dependency,
+     * opened in the class file editor of the Java tooling.
+     */
+    get javaElement(): JavaElementReference | undefined {
+        return this.n.attributes.javaElement as JavaElementReference;
     }
 
     /**

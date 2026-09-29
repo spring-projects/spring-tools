@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.ExecuteCommandParams;
+import org.eclipse.lsp4j.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
@@ -32,6 +33,7 @@ import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.JavaDataParams;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -49,6 +51,14 @@ public class SpringIndexCommands {
 	private static final String SPRING_STRUCTURE_CAPTURE_BASELINE_CMD = "sts/spring-boot/structure/captureBaseline";
 	private static final String SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBaseline";
 	private static final String SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
+	private static final String SPRING_STRUCTURE_RESOLVE_LOCATION_CMD = "sts/spring-boot/structure/resolveLocation";
+
+	/**
+	 * How long resolving a node's {@link JavaElementReference} waits for the IDE's Java tooling -
+	 * generous, since the user is waiting on a click and a class file may have to be looked up in a
+	 * JAR first, but bounded: a client without Java tooling may never answer.
+	 */
+	private static final long RESOLVE_LOCATION_TIMEOUT_SECONDS = 10;
 
 	/**
 	 * How long a structure request waits for the index to work off what it has queued - see
@@ -155,6 +165,21 @@ public class SpringIndexCommands {
 				IJavaProject project = resolveProject(params, SPRING_STRUCTURE_BASELINE_HISTORY_CMD, projectFinder);
 				return structureSnapshotStore.historyEntriesOf(project);
 			}, messageWorkerThreadPool);
+		});
+
+		// a node for an element read from a JAR carries a reference instead of a location (see
+		// JsonNodeHandler.JAVA_ELEMENT) - resolved here, when it is opened, by the IDE's Java tooling;
+		// null when that cannot find it, for the client to tell the user
+		server.onCommand(SPRING_STRUCTURE_RESOLVE_LOCATION_CMD, params -> {
+			JavaElementReference reference = javaElementArg(params)
+					.orElseThrow(() -> new IllegalArgumentException(SPRING_STRUCTURE_RESOLVE_LOCATION_CMD + " requires a java element reference argument"));
+
+			// a method or field the Java tooling cannot find still opens its class
+			String classKey = reference.bindingKey().substring(0, reference.bindingKey().indexOf(';') + 1);
+			return javaLocation(server, reference.projectUri(), reference.bindingKey())
+					.thenCompose(location -> location != null || classKey.isEmpty() || classKey.equals(reference.bindingKey())
+							? CompletableFuture.completedFuture(location)
+							: javaLocation(server, reference.projectUri(), classKey));
 		});
 	}
 
@@ -278,6 +303,42 @@ public class SpringIndexCommands {
 			return Optional.of(string);
 		}
 		return Optional.empty();
+	}
+
+	private static CompletableFuture<Location> javaLocation(SimpleLanguageServer server, String projectUri, String bindingKey) {
+		return server.getClient().javaLocation(new JavaDataParams(projectUri, bindingKey, true))
+				.completeOnTimeout(null, RESOLVE_LOCATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+				.exceptionally(e -> {
+					log.warn("cannot resolve the location of '{}' in '{}'", bindingKey, projectUri, e);
+					return null;
+				})
+				.thenApply(location -> {
+					if (location == null) {
+						log.info("no location found for '{}' in '{}'", bindingKey, projectUri);
+					}
+					return location;
+				});
+	}
+
+	/**
+	 * The single {@link JavaElementReference} argument, sent as a JSON object - or, depending on the
+	 * JSON-RPC client, already as a map.
+	 */
+	private static Optional<JavaElementReference> javaElementArg(ExecuteCommandParams params) {
+		List<Object> arguments = params.getArguments();
+		if (arguments == null || arguments.size() != 1) {
+			return Optional.empty();
+		}
+
+		JsonElement argument = arguments.get(0) instanceof JsonElement json ? json : new Gson().toJsonTree(arguments.get(0));
+		if (!argument.isJsonObject()) {
+			return Optional.empty();
+		}
+
+		JsonObject object = argument.getAsJsonObject();
+		String projectUri = object.has("projectUri") && object.get("projectUri").isJsonPrimitive() ? object.get("projectUri").getAsString() : null;
+		String bindingKey = object.has("bindingKey") && object.get("bindingKey").isJsonPrimitive() ? object.get("bindingKey").getAsString() : null;
+		return bindingKey == null ? Optional.empty() : Optional.of(new JavaElementReference(projectUri, bindingKey));
 	}
 
 	private Dependencies dependenciesOf(IJavaProject project) {

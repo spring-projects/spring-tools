@@ -78,4 +78,19 @@ public interface StructureElements {
 		return false;
 	}
 
+	/**
+	 * The JDT binding key of a type that has no location of its own - one read from a JAR - by
+	 * which the IDE's Java tooling can find and open it instead; {@code null} otherwise.
+	 */
+	default String bindingKeyOf(StereotypeClassElement type) {
+		return null;
+	}
+
+	/**
+	 * As {@link #bindingKeyOf(StereotypeClassElement)}, for a method.
+	 */
+	default String bindingKeyOf(StereotypeMethodElement method) {
+		return null;
+	}
+
 }

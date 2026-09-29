@@ -277,6 +277,7 @@ public class StructureViewProvider {
 				stringAttribute(node, JsonNodeHandler.CONTENT_HASH),
 				sourceLocationFrom(node.getAttribute(JsonNodeHandler.LOCATION)),
 				sourceLocationFrom(node.getAttribute(JsonNodeHandler.REFERENCE)),
+				node.getAttribute(JsonNodeHandler.JAVA_ELEMENT) instanceof JavaElementReference javaElement ? javaElement : null,
 				children);
 	}
 
@@ -310,6 +311,8 @@ public class StructureViewProvider {
 	 * @param location  where the element that this node represents is defined in the source code (may be null)
 	 * @param reference where the stereotype of this node is defined, either in source code or in a
 	 *                  stereotype catalog file (may be null)
+	 * @param javaElement the element this node stands for, by binding key, when it has no location
+	 *                  - one read from a JAR dependency (may be null)
 	 * @param children  the child nodes of this node
 	 */
 	public static record StructureNode(
@@ -321,8 +324,18 @@ public class StructureViewProvider {
 			String contentHash,
 			SourceLocation location,
 			SourceLocation reference,
+			JavaElementReference javaElement,
 			List<StructureNode> children
-	) {}
+	) {
+
+		/**
+		 * A node that stands for no element read from a JAR.
+		 */
+		public StructureNode(String nodeId, String text, String icon, String kind, String hover, String contentHash,
+				SourceLocation location, SourceLocation reference, List<StructureNode> children) {
+			this(nodeId, text, icon, kind, hover, contentHash, location, reference, null, children);
+		}
+	}
 
 	/**
 	 * A range within a source file, with 0-based line and character offsets.

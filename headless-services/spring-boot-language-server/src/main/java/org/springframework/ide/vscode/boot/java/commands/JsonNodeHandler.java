@@ -63,6 +63,13 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String LOCATION = "location";
 	public static final String REFERENCE = "reference";
 
+	/**
+	 * A {@link JavaElementReference} to the element a node stands for, set instead of a
+	 * {@link #LOCATION} for one read from a JAR: clients resolve it into a location when the node is
+	 * opened, via {@code sts/spring-boot/structure/resolveLocation}.
+	 */
+	public static final String JAVA_ELEMENT = "javaElement";
+
 	public static final String ICON = "icon";
 	public static final String TEXT = "text";
 	public static final String HOVER = "hover";
@@ -254,6 +261,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		addChild(node -> node
 			.withAttribute(TEXT, labels.getTypeLabel(type))
 			.withAttribute(LOCATION, type.getLocation())
+			.withAttribute(JAVA_ELEMENT, javaElementOf(type.getLocation(), elements.bindingKeyOf(type)))
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.TYPE_KEY))
 			.withAttribute(KIND, KIND_TYPE)
 			.withAttribute(CONTENT_HASH, type.getContentHash())
@@ -272,6 +280,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 			Node childNode = new Node(parent)
 					.withAttribute(TEXT, member.label())
 					.withAttribute(LOCATION, member.location())
+					.withAttribute(JAVA_ELEMENT, javaElementOf(member.location(), member.bindingKey()))
 					.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
 					.withAttribute(KIND, KIND_MEMBER)
 					.withAttribute(CONTENT_HASH, member.contentHash());
@@ -289,10 +298,22 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		addChildFoo(node -> node
 			.withAttribute(TEXT, labels.getMethodLabel(method, context.getContextualType()))
 			.withAttribute(LOCATION, method.getLocation())
+			.withAttribute(JAVA_ELEMENT, javaElementOf(method.getLocation(), elements.bindingKeyOf(method)))
 			.withAttribute(ICON, StereotypeIcons.getIcon(StereotypeIcons.METHOD_KEY))
 			.withAttribute(KIND, KIND_METHOD)
 			.withAttribute(CONTENT_HASH, method.getContentHash())
 		);
+	}
+
+	/**
+	 * A reference by binding key for an element without a location - on the classpath of this tree's
+	 * project, which is the one including the JAR it was read from.
+	 */
+	private JavaElementReference javaElementOf(Location location, String bindingKey) {
+		if (location != null || bindingKey == null || project.getLocationUri() == null) {
+			return null;
+		}
+		return new JavaElementReference(project.getLocationUri().toASCIIString(), bindingKey);
 	}
 
 	@Override
@@ -321,7 +342,13 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 				: n.attributes.containsKey(TEXT) ? (String) n.attributes.get(TEXT) : "";
 		
 		Location location = (Location) n.attributes.get(LOCATION);
-		String locationId = location == null ? "" : "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter());
+		JavaElementReference javaElement = (JavaElementReference) n.attributes.get(JAVA_ELEMENT);
+
+		// an element read from a JAR has no location to tell it apart from a same-labelled sibling,
+		// but its binding key does just as well
+		String locationId = location != null
+				? "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter())
+				: javaElement != null ? javaElement.bindingKey() : "";
 		
 		Location reference = (Location) n.attributes.get(REFERENCE);
 		String referenceId = reference == null ? "" : reference.getUri();

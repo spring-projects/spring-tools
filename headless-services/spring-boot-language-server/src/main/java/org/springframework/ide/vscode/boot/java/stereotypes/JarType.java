@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Location;
@@ -29,9 +30,11 @@ import org.jboss.jandex.Index;
  *        and annotation types against
  * @param placeholderLocation the class entry inside the JAR, with an empty range - index elements
  *        need a non-null location; it is never sent to a client
+ * @param bindingKeys where a scanner records the JDT binding key ({@link JarBindingKeys}) of each
+ *        member element it adds, by the element's identity - what a tree node opens it by
  *
  * @author Martin Lippert
  */
 public record JarType(ClassInfo classInfo, StereotypeClassElement element, Set<String> ownAnnotationTypes, Index index,
-		Location placeholderLocation) {
+		Location placeholderLocation, Map<Object, String> bindingKeys) {
 }

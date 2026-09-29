@@ -68,6 +68,22 @@ public class JarConfigurationPropertiesScannerTest {
 				"""));
 	}
 
+	/**
+	 * A record component's member opens the component's backing field.
+	 */
+	@Test
+	void aRecordsComponentsAreReferencedByTheirBackingFields() throws Exception {
+		File jar = JarFixtureBuilder.buildJar(tempDir, "fixture", Map.of("com.example.Settings", """
+				package com.example;
+				import org.springframework.boot.context.properties.ConfigurationProperties;
+				@ConfigurationProperties(prefix = "app.settings")
+				public record Settings(String name, int port) {}
+				"""), Map.of());
+
+		assertEquals(List.of("Lcom/example/Settings;.name)Ljava/lang/String;", "Lcom/example/Settings;.port)I"),
+				JarTypes.memberKeys(JarTypes.scan(jar).get("com.example.Settings")));
+	}
+
 	@Test
 	void noPrefixOrValueAttributeYieldsAnUnprefixedName() throws Exception {
 		assertEquals(List.of("name (String)"), members("com.example.Settings", """

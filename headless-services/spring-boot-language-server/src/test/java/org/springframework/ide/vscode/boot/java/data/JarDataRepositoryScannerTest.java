@@ -97,6 +97,20 @@ public class JarDataRepositoryScannerTest {
 	}
 
 	@Test
+	void aQueryMethodIsReferencedByItsMethod() throws Exception {
+		File jar = jar(Map.of("com.example.Repo", """
+				package com.example;
+				import org.springframework.data.repository.Repository;
+				public interface Repo extends Repository<Object, Long> {
+					java.util.List<Object> findByNameIn(String... names);
+				}
+				"""), List.of("com.example.Repo"));
+
+		assertEquals(List.of("Lcom/example/Repo;.findByNameIn([Ljava/lang/String;)Ljava/util/List<Ljava/lang/Object;>;"),
+				JarTypes.memberKeys(JarTypes.scan(jar).get("com.example.Repo")));
+	}
+
+	@Test
 	void aNoRepositoryBeanInterfaceContributesNoMembers() throws Exception {
 		assertEquals(List.of(), members("com.example.BaseRepository", """
 				package com.example;

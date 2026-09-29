@@ -12,6 +12,8 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -129,6 +131,72 @@ public class StructureDependenciesJarTreeTest {
 		Node tree = tree(List.of(jarDependency(jar)));
 
 		assertEquals(1, nodesLabeled(tree, "app.jar-settings.name (String)").size());
+	}
+
+	/**
+	 * A node for an element read from the JAR has no location, but a reference the client can have
+	 * the IDE resolve and open (docs/structure-view-dependencies.md, 5.8) - by the including
+	 * project, whose classpath the JAR is on, and the element's JDT binding key, which also tells it
+	 * apart from a same-labelled sibling in its node id.
+	 */
+	@Test
+	void aNodeFromTheJarCarriesAReferenceToOpenItByInsteadOfALocation() throws Exception {
+		File jar = fixtureJar("example.application.JarSettings", """
+				package example.application;
+				import org.springframework.boot.context.properties.ConfigurationProperties;
+				@ConfigurationProperties(prefix = "app.jar-settings")
+				public class JarSettings implements DescribedStereotype {
+					private String name;
+				}
+				""");
+
+		Node tree = tree(List.of(jarDependency(jar)));
+		String projectUri = host.getLocationUri().toASCIIString();
+
+		Node type = nodesLabeled(tree, "e.a.JarSettings").get(0);
+		assertNull(type.getAttribute(JsonNodeHandler.LOCATION));
+		assertEquals(new JavaElementReference(projectUri, "Lexample/application/JarSettings;"), type.getAttribute(JsonNodeHandler.JAVA_ELEMENT));
+
+		Node member = nodesLabeled(tree, "app.jar-settings.name (String)").get(0);
+		assertNull(member.getAttribute(JsonNodeHandler.LOCATION));
+		assertEquals(new JavaElementReference(projectUri, "Lexample/application/JarSettings;.name)Ljava/lang/String;"),
+				member.getAttribute(JsonNodeHandler.JAVA_ELEMENT));
+		assertTrue(((String) member.getAttribute(JsonNodeHandler.NODE_ID)).endsWith("Lexample/application/JarSettings;.name)Ljava/lang/String;"));
+
+		// the MCP tools' view of the same node
+		assertEquals(new JavaElementReference(projectUri, "Lexample/application/JarSettings;"),
+				findStructureNode(StructureViewProvider.toStructureNode(tree), "e.a.JarSettings").javaElement());
+	}
+
+	@Test
+	void aNodeOfTheHostsOwnHasALocationAndNoReference() throws Exception {
+		Node tree = tree(List.of(jarDependency(fixtureJar("example.application.FromJar"))));
+
+		List<Node> withLocation = new ArrayList<>();
+		collect(tree, withLocation);
+
+		assertFalse(withLocation.isEmpty());
+		withLocation.forEach(node -> assertNull(node.getAttribute(JsonNodeHandler.JAVA_ELEMENT), node.getAttribute(JsonNodeHandler.TEXT) + " has both"));
+	}
+
+	private static void collect(Node node, List<Node> withLocation) {
+		if (node.getAttribute(JsonNodeHandler.LOCATION) != null) {
+			withLocation.add(node);
+		}
+		node.getChildren().forEach(child -> collect(child, withLocation));
+	}
+
+	private static StructureViewProvider.StructureNode findStructureNode(StructureViewProvider.StructureNode node, String label) {
+		if (label.equals(node.text())) {
+			return node;
+		}
+		for (StructureViewProvider.StructureNode child : node.children()) {
+			StructureViewProvider.StructureNode found = findStructureNode(child, label);
+			if (found != null) {
+				return found;
+			}
+		}
+		return null;
 	}
 
 	private File fixtureJar(String fqn) throws Exception {

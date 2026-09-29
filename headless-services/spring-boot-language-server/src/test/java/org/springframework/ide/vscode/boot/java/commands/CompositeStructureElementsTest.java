@@ -102,6 +102,18 @@ public class CompositeStructureElementsTest {
 		assertSame(methodStereotypes, composite.stereotypeFactory().fromMethod(dependencyMethod));
 	}
 
+	@Test
+	void bindingKeysComeFromThePartTheElementCameFrom() {
+		when(dependency.bindingKeyOf(dependencyType)).thenReturn("Lcom/example/app/shared/SharedType;");
+		when(dependency.bindingKeyOf(dependencyMethod)).thenReturn("Lcom/example/app/shared/SharedType;.handle()V");
+
+		CompositeStructureElements composite = new CompositeStructureElements(host, List.of(dependency));
+
+		assertEquals("Lcom/example/app/shared/SharedType;", composite.bindingKeyOf(dependencyType));
+		assertEquals("Lcom/example/app/shared/SharedType;.handle()V", composite.bindingKeyOf(dependencyMethod));
+		verify(host, never()).bindingKeyOf(dependencyType);
+	}
+
 	/**
 	 * A part that shows only stereotyped types - a JAR dependency - has its types filtered by the
 	 * composite, with the composite's own stereotype resolution: a stereotype of the type's own, one

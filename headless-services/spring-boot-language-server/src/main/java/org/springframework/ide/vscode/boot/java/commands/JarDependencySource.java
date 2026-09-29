@@ -30,6 +30,7 @@ import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.beans.JarBeanIndexer;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarBindingKeys;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
@@ -92,7 +93,7 @@ public class JarDependencySource implements StructureDependencySource {
 		}
 
 		ScanResult scanned = scanned(including, jarFile);
-		JarStructureElements elements = new JarStructureElements(scanned.types(), scanned.beans(), catalog);
+		JarStructureElements elements = new JarStructureElements(scanned.types(), scanned.beans(), scanned.bindingKeys(), catalog);
 
 		// worth an INFO on every request, not just on failure: this is the only place that shows
 		// whether a JAR selection is actually doing something - scanned classes found none matching
@@ -179,11 +180,12 @@ public class JarDependencySource implements StructureDependencySource {
 		}
 
 		Index index = indexer.complete();
-		List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index);
+		Map<Object, String> bindingKeys = new IdentityHashMap<>();
+		List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index, bindingKeys);
 		log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
 				jarFile.getName(), scanned.size(), ownClasses.size());
 
-		return new ScanResult(scanned, beansOf(scanned, index, jarFile), complete);
+		return new ScanResult(scanned, beansOf(scanned, index, jarFile, bindingKeys), bindingKeys, complete);
 	}
 
 	/**
@@ -193,7 +195,8 @@ public class JarDependencySource implements StructureDependencySource {
 	 * {@code @ConfigurationProperties} class is a fact of its own bytecode, not of what stereotypes
 	 * happen to be defined right now.
 	 */
-	private static Map<StereotypeClassElement, List<Bean>> beansOf(List<StereotypeClassElement> scanned, Index index, File jarFile) {
+	private static Map<StereotypeClassElement, List<Bean>> beansOf(List<StereotypeClassElement> scanned, Index index, File jarFile,
+			Map<Object, String> bindingKeys) {
 		Map<StereotypeClassElement, List<Bean>> result = new IdentityHashMap<>();
 
 		for (StereotypeClassElement element : scanned) {
@@ -203,7 +206,7 @@ public class JarDependencySource implements StructureDependencySource {
 			}
 
 			JarType type = new JarType(classInfo, element, JarStereotypeScanner.ownAnnotationTypesOf(classInfo, index), index,
-					placeholderLocation(jarFile, classInfo));
+					placeholderLocation(jarFile, classInfo), bindingKeys);
 
 			List<Bean> beans = JarBeanIndexer.beansOf(type);
 			if (!beans.isEmpty()) {
@@ -224,9 +227,12 @@ public class JarDependencySource implements StructureDependencySource {
 	}
 
 	/**
+	 * @param bindingKeys the JDT binding key of every type, method and member element of the scan,
+	 *        by the element's identity - see {@link JarBindingKeys}
 	 * @param complete whether the scan resolved against the including project's whole classpath
 	 */
-	record ScanResult(List<StereotypeClassElement> types, Map<StereotypeClassElement, List<Bean>> beans, boolean complete) {
+	record ScanResult(List<StereotypeClassElement> types, Map<StereotypeClassElement, List<Bean>> beans, Map<Object, String> bindingKeys,
+			boolean complete) {
 	}
 
 	private record CachedScan(long lastModified, long length, ScanResult result) {

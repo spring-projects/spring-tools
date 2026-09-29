@@ -160,6 +160,24 @@ public class JarDependencySourceTest {
 		assertNotSame(before.types().get(0), after.types().get(0));
 	}
 
+	/**
+	 * Every type and method element of the scan has the binding key its node opens it by.
+	 */
+	@Test
+	void typesAndMethodsAreScannedWithTheirBindingKeys() throws Exception {
+		File jar = JarFixtureBuilder.buildJar(tempDir, "fixture", Map.of(
+				"com.example.Marked", "package com.example; public class Marked { @Marker public void handle(String event, int[] ids) {} }",
+				"com.example.Marker", "package com.example; import java.lang.annotation.*; @Retention(RetentionPolicy.RUNTIME) public @interface Marker {}"
+		), Map.of());
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)));
+
+		JarDependencySource.ScanResult scan = source.scan(project(jar), jar);
+
+		StereotypeClassElement type = scan.types().get(0);
+		assertEquals("Lcom/example/Marked;", scan.bindingKeys().get(type));
+		assertEquals("Lcom/example/Marked;.handle(Ljava/lang/String;[I)V", scan.bindingKeys().get(type.getMethods().get(0)));
+	}
+
 	private File markedJar(String name) throws Exception {
 		return JarFixtureBuilder.buildJar(tempDir, name, Map.of(
 				"com.example.Marked", "package com.example; @Marker public class Marked {}",

@@ -1169,6 +1169,32 @@ refresh, so resolving eagerly is not an option. Instead:
 - Node-id uniqueness for same-labelled JAR nodes.
 - Client-side behaviour in both IDEs.
 
+
+**As implemented:**
+- **Keys: `JarBindingKeys`, not `BindingKeyUtils`.** A probe against JDT showed `BindingKeyUtils`
+  differs from JDT for arrays (it renders `null`), type variables, constructors (`<init>`), method
+  type parameters and thrown exceptions. It stays as it is, since the standalone language server's
+  Jandex types depend on it. `JarBindingKeys` produces JDT's keys, and `JarBindingKeysTest`
+  compares them with live JDT bindings for the same source. Two differences are deliberate:
+  - A constructor is named after its class (`Lp/A;.A(...)V`). JDT's own nameless form
+    (`Lp/A;.(...)V`) cannot be resolved by `IJavaProject.findElement` against a class file: it
+    matches nothing and throws internally.
+  - A wildcard in a *field's* type is rendered like one in a method's type. Fields are found by
+    name, so this does not affect the lookup.
+- **Keys are recorded during the scan**, per element identity, in the cached `ScanResult`. Types
+  and methods are recorded in `JarStereotypeScanner.ownClassesOf`; member elements by each JAR
+  scanner, through `JarType.bindingKeys()`. A record component's config property points to the
+  component's backing field.
+- **Nodes:** `JsonNodeHandler.JAVA_ELEMENT` is a `JavaElementReference(projectUri, bindingKey)`,
+  set only on nodes without a location. It is also exposed on the MCP `StructureNode`.
+- **Resolve:** `sts/spring-boot/structure/resolveLocation` waits up to 10 s. If a method or field
+  key doesn't resolve, it retries with its class's key, so the click still lands in the class.
+- **VSCode:** opens the result with `showTextDocument`, which the Java extension serves for
+  `jdt://`. If nothing is found, the status bar says so, naming the node.
+- **Eclipse: not changed.** Its Logical Structure view has no dependency mode yet (its structure
+  request carries no `dependencies`), so JAR nodes never reach it. The double-click fallback
+  belongs with adding that mode there.
+
 ---
 
 ## Decisions taken, and their alternatives

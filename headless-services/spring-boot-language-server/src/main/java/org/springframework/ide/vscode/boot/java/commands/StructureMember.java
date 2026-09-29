@@ -28,10 +28,27 @@ import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
  *        reconstructed from a snapshot has no source location)
  * @param contentHash a hash of the member's source, used to detect edits that leave its label
  *        unchanged (may be {@code null})
+ * @param bindingKey the JDT binding key the IDE can open the member by when it has no location -
+ *        one read from a JAR (see {@code JarBindingKeys}); {@code null} otherwise
  *
  * @author Martin Lippert
  */
-public record StructureMember(String label, Location location, String contentHash) {
+public record StructureMember(String label, Location location, String contentHash, String bindingKey) {
+
+	/**
+	 * A member with a location of its own - one of a project's, not of a JAR.
+	 */
+	public StructureMember(String label, Location location, String contentHash) {
+		this(label, location, contentHash, null);
+	}
+
+	/**
+	 * This member, identified by the given JDT binding key for the IDE to open it by - for a member
+	 * read from a JAR, which has no location.
+	 */
+	public StructureMember withBindingKey(String bindingKey) {
+		return new StructureMember(label, location, contentHash, bindingKey);
+	}
 
 	/**
 	 * The member an index element stands for - label and content hash from the element itself, so

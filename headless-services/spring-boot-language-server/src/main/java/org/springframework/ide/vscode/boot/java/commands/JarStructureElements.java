@@ -50,6 +50,7 @@ public class JarStructureElements implements StructureElements {
 
 	private final List<StereotypeClassElement> scannedTypes;
 	private final Map<StereotypeClassElement, List<Bean>> beans;
+	private final Map<Object, String> bindingKeys;
 	private final Map<StereotypeMethodElement, StereotypeClassElement> declaringTypes;
 	private final JarStereotypeFactory factory;
 
@@ -58,12 +59,15 @@ public class JarStructureElements implements StructureElements {
 	 *        see {@link JarDependencySource} for where this comes from and how it is cached
 	 * @param beans the beans {@code JarBeanIndexer} built for those classes, by identity of the exact
 	 *        {@code scannedTypes} instances - a class without any has no entry
+	 * @param bindingKeys the JDT binding keys of the scanned types, methods and bean children, by
+	 *        identity - what a node for one of them opens it by, having no location
 	 * @param catalog the catalog of the tree this JAR is being included in
 	 */
 	public JarStructureElements(List<StereotypeClassElement> scannedTypes, Map<StereotypeClassElement, List<Bean>> beans,
-			AbstractStereotypeCatalog catalog) {
+			Map<Object, String> bindingKeys, AbstractStereotypeCatalog catalog) {
 		this.scannedTypes = scannedTypes;
 		this.beans = beans;
+		this.bindingKeys = bindingKeys;
 		this.factory = new JarStereotypeFactory(catalog);
 
 		// a method label is looked up by the method's own type, not the contextual one - in a group of
@@ -120,7 +124,17 @@ public class JarStructureElements implements StructureElements {
 
 	@Override
 	public List<StructureMember> membersOf(StereotypeClassElement type) {
-		return childrenOf(type).stream().map(child -> StructureMember.of(child, null)).toList();
+		return childrenOf(type).stream().map(child -> StructureMember.of(child, null).withBindingKey(bindingKeys.get(child))).toList();
+	}
+
+	@Override
+	public String bindingKeyOf(StereotypeClassElement type) {
+		return bindingKeys.get(type);
+	}
+
+	@Override
+	public String bindingKeyOf(StereotypeMethodElement method) {
+		return bindingKeys.get(method);
 	}
 
 	/**

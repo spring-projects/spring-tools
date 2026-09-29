@@ -118,6 +118,16 @@ public class CompositeStructureElements implements StructureElements {
 	}
 
 	@Override
+	public String bindingKeyOf(StereotypeClassElement type) {
+		return ownerOf(type).bindingKeyOf(type);
+	}
+
+	@Override
+	public String bindingKeyOf(StereotypeMethodElement method) {
+		return ownerOf(method).bindingKeyOf(method);
+	}
+
+	@Override
 	public StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> stereotypeFactory() {
 		return factory;
 	}

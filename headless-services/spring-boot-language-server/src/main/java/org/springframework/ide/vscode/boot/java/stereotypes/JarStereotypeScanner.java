@@ -17,8 +17,10 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Enumeration;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
@@ -115,13 +117,24 @@ public class JarStereotypeScanner {
 	 * at all).
 	 */
 	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, Index index) {
+		return ownClassesOf(ownClasses, index, new IdentityHashMap<>());
+	}
+
+	/**
+	 * As {@link #ownClassesOf(Set, Index)}, recording the JDT binding key ({@link JarBindingKeys}) of
+	 * every type and method element built - by the element's identity - so that the tree can have
+	 * the IDE open it.
+	 */
+	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, Index index, Map<Object, String> bindingKeys) {
 		List<StereotypeClassElement> result = new ArrayList<>();
 
 		for (DotName name : ownClasses) {
 			ClassInfo classInfo = index.getClassByName(name);
 
 			if (isPackageInfo(classInfo)) {
-				result.add(packageInfoElementOf(classInfo));
+				StereotypeClassElement element = packageInfoElementOf(classInfo);
+				bindingKeys.put(element, JarBindingKeys.of(classInfo));
+				result.add(element);
 				continue;
 			}
 
@@ -131,13 +144,16 @@ public class JarStereotypeScanner {
 
 			StereotypeClassElement element = new StereotypeClassElement(name.toString(), null,
 					supertypesOf(classInfo, index), annotationTypesOf(classInfo, index), null);
+			bindingKeys.put(element, JarBindingKeys.of(classInfo));
 
 			for (MethodInfo method : sourceLevelMethodsOf(classInfo)) {
 				Set<String> methodAnnotations = annotationTypesOf(method, index);
 
 				if (!methodAnnotations.isEmpty()) {
-					element.addChild(new StereotypeMethodElement(sourceName(method), methodLabelOf(method), methodSignatureOf(method),
-							null, methodAnnotations, null));
+					StereotypeMethodElement methodElement = new StereotypeMethodElement(sourceName(method), methodLabelOf(method),
+							methodSignatureOf(method), null, methodAnnotations, null);
+					bindingKeys.put(methodElement, JarBindingKeys.of(method));
+					element.addChild(methodElement);
 				}
 			}
 

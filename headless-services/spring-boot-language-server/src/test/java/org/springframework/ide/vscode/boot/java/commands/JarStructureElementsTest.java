@@ -55,7 +55,7 @@ public class JarStructureElementsTest {
 				Set.of("com.example.Marker"), null);
 		StereotypeClassElement notMatching = new StereotypeClassElement("com.example.NotMatching", null, Set.of(), Set.of(), null);
 
-		JarStructureElements elements = new JarStructureElements(List.of(matching, notMatching), Map.of(), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(matching, notMatching), Map.of(), Map.of(), catalogWithMarker());
 
 		assertEquals(List.of(matching, notMatching), elements.types());
 		assertTrue(elements.showsOnlyStereotypedTypes());
@@ -70,8 +70,8 @@ public class JarStructureElementsTest {
 		StereotypeClassElement element = new StereotypeClassElement("com.example.Marked", null, Set.of(), Set.of("com.example.Marker"), null);
 		List<StereotypeClassElement> scanned = List.of(element);
 
-		assertEquals(1, new JarStructureElements(scanned, Map.of(), catalogWithMarker()).typesWithOwnStereotypeCount());
-		assertEquals(0, new JarStructureElements(scanned, Map.of(), catalogWithoutMarker()).typesWithOwnStereotypeCount());
+		assertEquals(1, new JarStructureElements(scanned, Map.of(), Map.of(), catalogWithMarker()).typesWithOwnStereotypeCount());
+		assertEquals(0, new JarStructureElements(scanned, Map.of(), Map.of(), catalogWithoutMarker()).typesWithOwnStereotypeCount());
 	}
 
 	@Test
@@ -80,7 +80,7 @@ public class JarStructureElementsTest {
 				Set.of(), null);
 		StereotypeClassElement type = new StereotypeClassElement("com.example.Foo", null, Set.of(), Set.of(), null);
 
-		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(), Map.of(), catalogWithMarker());
 
 		assertEquals("handle() : String", elements.methodLabel(method, type));
 	}
@@ -88,7 +88,7 @@ public class JarStructureElementsTest {
 	@Test
 	void membersOfIsEmptyForATypeWithoutBeans() throws Exception {
 		StereotypeClassElement type = new StereotypeClassElement("com.example.Foo", null, Set.of(), Set.of(), null);
-		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(), Map.of(), catalogWithMarker());
 
 		assertEquals(List.of(), elements.membersOf(type));
 	}
@@ -103,7 +103,7 @@ public class JarStructureElementsTest {
 		Bean bean = bean("com.example.Foo");
 		bean.addChild(new ConfigPropertyIndexElement("app.name", "java.lang.String", EMPTY, null));
 
-		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(type, List.of(bean)), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(type), Map.of(type, List.of(bean)), Map.of(), catalogWithMarker());
 
 		assertEquals(List.of(new StructureMember("app.name (String)", null, null)), elements.membersOf(type));
 	}
@@ -125,7 +125,7 @@ public class JarStructureElementsTest {
 		bean.addChild(new RequestMappingIndexElement("/greet", new String[] { "GET" }, null, null, null, EMPTY, "@/greet -- GET",
 				"com.example.Foo.greet() : java.lang.String", null));
 
-		JarStructureElements elements = new JarStructureElements(List.of(type, otherType), Map.of(type, List.of(bean)), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(type, otherType), Map.of(type, List.of(bean)), Map.of(), catalogWithMarker());
 
 		assertEquals("@/greet -- GET", elements.methodLabel(handler, otherType));
 	}
@@ -139,7 +139,7 @@ public class JarStructureElementsTest {
 
 	@Test
 	void packageNodeIsNeverConsultedByACompositeButStillAnsweredDefensively() throws Exception {
-		JarStructureElements elements = new JarStructureElements(List.of(), Map.of(), catalogWithMarker());
+		JarStructureElements elements = new JarStructureElements(List.of(), Map.of(), Map.of(), catalogWithMarker());
 		assertEquals("com.example", elements.packageNode("com.example").getPackageName());
 	}
 

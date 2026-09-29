@@ -17,6 +17,7 @@ import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.RecordComponentInfo;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.stereotypes.JdtStyleTypeNames;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarBindingKeys;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 
@@ -57,15 +58,23 @@ public class JarConfigurationPropertiesScanner {
 
 		if (type.classInfo().isRecord()) {
 			for (RecordComponentInfo component : type.classInfo().recordComponentsInDeclarationOrder()) {
-				bean.addChild(new ConfigPropertyIndexElement(prefix + component.name(), JdtStyleTypeNames.qualifiedName(component.type()),
-						type.placeholderLocation().getRange(), null));
+				ConfigPropertyIndexElement property = new ConfigPropertyIndexElement(prefix + component.name(),
+						JdtStyleTypeNames.qualifiedName(component.type()), type.placeholderLocation().getRange(), null);
+				// the component's backing field - there in every record's class file
+				FieldInfo field = type.classInfo().field(component.name());
+				if (field != null) {
+					type.bindingKeys().put(property, JarBindingKeys.of(field));
+				}
+				bean.addChild(property);
 			}
 		}
 		else {
 			for (FieldInfo field : type.classInfo().fieldsInDeclarationOrder()) {
 				if (!field.isSynthetic()) {
-					bean.addChild(new ConfigPropertyIndexElement(prefix + field.name(), JdtStyleTypeNames.qualifiedName(field.type()),
-							type.placeholderLocation().getRange(), null));
+					ConfigPropertyIndexElement property = new ConfigPropertyIndexElement(prefix + field.name(),
+							JdtStyleTypeNames.qualifiedName(field.type()), type.placeholderLocation().getRange(), null);
+					type.bindingKeys().put(property, JarBindingKeys.of(field));
+					bean.addChild(property);
 				}
 			}
 		}

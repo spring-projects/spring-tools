@@ -16,6 +16,7 @@ import java.util.List;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarBindingKeys;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
 import org.springframework.ide.vscode.boot.java.stereotypes.JdtStyleTypeNames;
@@ -54,7 +55,9 @@ public class JarDataRepositoryScanner {
 	public static void addQueryMethods(Bean bean, JarType type) {
 		for (MethodInfo method : JarStereotypeScanner.sourceLevelMethodsOf(type.classInfo())) {
 			if (!method.isDefault() && !method.isConstructor()) {
-				bean.addChild(new QueryMethodIndexElement(methodSignature(method), null, type.placeholderLocation().getRange(), null));
+				QueryMethodIndexElement queryMethod = new QueryMethodIndexElement(methodSignature(method), null, type.placeholderLocation().getRange(), null);
+				type.bindingKeys().put(queryMethod, JarBindingKeys.of(method));
+				bean.addChild(queryMethod);
 			}
 		}
 	}

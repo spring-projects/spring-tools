@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import java.io.File;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,9 +49,21 @@ public class JarTypes {
 			Location placeholder = new Location("jar:" + jar.toURI() + "!/" + element.getType().replace('.', '/') + ".class",
 					new Range(new Position(0, 0), new Position(0, 0)));
 			result.put(element.getType(), new JarType(classInfo, element, JarStereotypeScanner.ownAnnotationTypesOf(classInfo, index), index,
-					placeholder));
+					placeholder, new IdentityHashMap<>()));
 		}
 		return result;
+	}
+
+	/**
+	 * The binding keys the type's members were recorded with, in member order - what their nodes
+	 * open them by.
+	 */
+	public static List<String> memberKeys(JarType type) {
+		return JarBeanIndexer.beansOf(type).stream()
+				.flatMap(bean -> bean.getChildren().stream())
+				.filter(SymbolElement.class::isInstance)
+				.map(child -> type.bindingKeys().get(child))
+				.toList();
 	}
 
 	/**

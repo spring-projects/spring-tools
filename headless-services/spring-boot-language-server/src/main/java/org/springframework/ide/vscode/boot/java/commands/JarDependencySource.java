@@ -259,12 +259,16 @@ public class JarDependencySource implements StructureDependencySource {
 		PercentageProgressTask progress = progressService.createPercentageProgressTask(SCAN_JARS_TASK_ID + including.getElementName(),
 				binaryEntries.size() + jarFiles.size(), "Spring Tools: Indexing Libraries for the Logical Structure of '"
 						+ including.getElementName() + "'");
+		long scanStart = System.currentTimeMillis();
 		try {
 			for (CPE cpe : binaryEntries) {
 				File file = IClasspathUtil.binaryLocation(cpe).getAbsoluteFile();
 				progress.increment(file.getName());
 				if (file.isFile() && indexed.add(file)) {
+					long start = System.currentTimeMillis();
 					Set<DotName> classesOfThisFile = JarStereotypeScanner.indexInto(indexer, file);
+					log.info("indexed '{}' for the logical structure of '{}': {} class file(s) in {} ms", file.getName(),
+							including.getElementName(), classesOfThisFile.size(), System.currentTimeMillis() - start);
 					if (wanted.contains(file)) {
 						ownClasses.put(file, classesOfThisFile);
 					}
@@ -290,16 +294,21 @@ public class JarDependencySource implements StructureDependencySource {
 			for (File jarFile : jarFiles) {
 				File key = jarFile.getAbsoluteFile();
 				progress.increment(jarFile.getName());
+				long start = System.currentTimeMillis();
 
 				Map<Object, String> bindingKeys = new IdentityHashMap<>();
 				List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses.get(key), index, bindingKeys);
 				Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, index, jarFile, bindingKeys);
 
-				log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
-						jarFile.getName(), scanned.size(), ownClasses.get(key).size());
+				log.info("scanned structure dependency JAR '{}' for '{}': {} of its {} class(es) found (annotation types, module-info excluded) in {} ms",
+						jarFile.getName(), including.getElementName(), scanned.size(), ownClasses.get(key).size(),
+						System.currentTimeMillis() - start);
 
 				result.put(jarFile, new ScanResult(scanned, beans, bindingKeys, classpathRead && !isolated.contains(key)));
 			}
+
+			log.info("scanned {} structure dependency JAR(s) for '{}', indexing {} classpath entries, in {} ms", jarFiles.size(),
+					including.getElementName(), indexed.size(), System.currentTimeMillis() - scanStart);
 			return result;
 		}
 		finally {

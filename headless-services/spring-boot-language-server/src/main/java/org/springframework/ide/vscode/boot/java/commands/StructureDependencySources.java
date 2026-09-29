@@ -164,7 +164,11 @@ public class StructureDependencySources {
 		notReady.forEach((source, toPrepare) -> {
 			log.info("project '{}': preparing structure dependencies {} in the background", including.getElementName(),
 					toPrepare.stream().map(DependencyDescriptor::id).toList());
-			source.prepareInBackground(including, toPrepare, () -> onDependenciesReady.accept(including));
+			source.prepareInBackground(including, toPrepare, () -> {
+				log.info("project '{}': structure dependencies prepared in the background - asking for its tree to be built again",
+						including.getElementName());
+				onDependenciesReady.accept(including);
+			});
 		});
 
 		return result;

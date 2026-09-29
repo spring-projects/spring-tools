@@ -69,6 +69,8 @@ public class JarStereotypeScanner {
 	 */
 	public static Set<DotName> indexInto(Indexer indexer, File jarFile) {
 		Set<DotName> ownClasses = new LinkedHashSet<>();
+		int skipped = 0;
+		Exception firstSkipped = null;
 
 		try (JarFile jar = new JarFile(jarFile)) {
 			Enumeration<JarEntry> entries = jar.entries();
@@ -87,10 +89,19 @@ public class JarStereotypeScanner {
 					ownClasses.add(dotNameOfClassEntry(entry.getName()));
 				} catch (Exception e) {
 					log.debug("skipping unreadable class entry '{}' in '{}'", entry.getName(), jarFile, e);
+					skipped++;
+					firstSkipped = firstSkipped == null ? e : firstSkipped;
 				}
 			}
 		} catch (IOException e) {
 			log.warn("failed to read JAR '{}' for structure dependency scanning", jarFile, e);
+		}
+
+		if (skipped > 0) {
+			// not just at debug: a JAR the indexer cannot read (a class file version too new for it,
+			// say) otherwise looks like one that simply has nothing in it
+			log.warn("skipped {} unreadable class file(s) of {} in '{}', the first because of: {}", skipped, skipped + ownClasses.size(),
+					jarFile.getName(), firstSkipped.toString());
 		}
 
 		return ownClasses;

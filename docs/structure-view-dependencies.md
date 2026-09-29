@@ -6,7 +6,7 @@ in that project's tree in the Logical Structure view.
 Issue: `GH-2004`.
 
 Status: **steps 1, 2, 1b and 4 implemented**; step 3 (root packages) deliberately deferred - see its
-section below. Companion document to
+section below; step 5 (method-level nodes and members for JAR dependencies) planned, not started. Companion document to
 [`structure-diff-view.md`](structure-diff-view.md), which describes the existing diff feature on the
 same tree and is a good model for how this area is built and documented.
 
@@ -80,6 +80,7 @@ snapshots, but it is exactly the combination this design avoids.
 | **1b** | **Done.** JAR dependencies offered in the picker, with group/artifact ids (pulled forward from step 4) | Jars can be selected |
 | **4** | **Done, out of order** (see below). JAR dependencies: scanning JARs for stereotype elements | A selected JAR's own types contribute, same package-scoping as step 2 |
 | **3** | Root packages - **deferred, not started** | Dependencies with disjoint package roots would appear too |
+| **5** | **Planned.** Method-level nodes and members of JAR dependencies (request mappings, `@Bean` methods, event listeners, ...) | A JAR type's children look like a workspace project type's |
 
 Step 0 has its own document. Steps 1, 1b, 2 and 4 are detailed below in that order; step 3, done
 last of the four, is detailed last.
@@ -879,6 +880,294 @@ the rendered tree as a member node.
   indexed" claim. Extended with a members case: a JAR-scanned `@ConfigurationProperties` class's
   field reaches the tree as a member node.
 - `JarConfigurationPropertiesScannerTest`, `JarDataRepositoryScannerTest` - see 4.7.
+
+---
+
+## Step 5 — Method-level nodes and members for JAR dependencies (planned)
+
+Step 4 made a JAR's *types* appear, and 4.6/4.7 added the first method-level pieces (meta-expanded
+method annotations, `@ConfigurationProperties` fields, repository query methods). This step
+covers everything else that appears *below* a type node, so a JAR type's children look the way a
+workspace project type's do. Analysis first; nothing here is implemented yet.
+
+### 5.1 What appears below a type today
+
+Two independent channels put nodes under a type in `JsonNodeHandler`:
+
+- **Method nodes** (`KIND_METHOD`): one per annotated method (`StereotypeMethodElement`, from
+  `StereotypesIndexer`), grouped by the stereotype catalog. Labelled via
+  `StructureElements.methodLabel`, which only special-cases request mappings (the route label,
+  looked up by method signature). The catalog has only three method-level stereotypes:
+  `spring.web.RequestMapping` ("Request Mappings"), `spring.EventListener`, and
+  `spring.messaging.MessageListener` (`@KafkaListener`, `@RabbitListener`, `@MessageMapping`).
+  For JARs this channel already works (4.6); only the route label is missing.
+- **Member nodes** (`KIND_MEMBER`): *every* `SymbolElement` child of the type's `Bean` in the live
+  index (`StructureViewUtil.membersOf`), labelled with that element's
+  `getDocumentSymbol().getName()`, in the order the indexers attached them.
+
+Every member kind that exists today:
+
+| Member | Produced by | Only for | Label | From bytecode? |
+|---|---|---|---|---|
+| Request mapping (also supplies the method-node route label) | `RequestMappingIndexer` | controllers, `@BasePathAwareController`, Feign clients (meta-aware) | `@/path -- GET - Version: v - Accept: ... - Content-Type: ...` (`RouteUtils.createRouteLabel`) | yes |
+| `@Bean` method (a child `Bean`) | `BeansIndexer` | `@Configuration` beans (meta-aware, so `@SpringBootApplication` too) | `@+ 'name' (@Bean <other annotations>) ReturnType` - other annotations rendered as *source text* | yes, except the annotation text |
+| `@EventListener` method | `EventListenerIndexer` | components | `listens on: EventType` - the single parameter's type (the `classes` attribute is ignored) | yes |
+| `ApplicationListener` implementation | `ComponentIndexer` | beans | `listens on: EventType` | yes (skip the bridge method) |
+| Event publisher | `ComponentIndexer`, visiting method *bodies* for `publishEvent(...)` | components injecting `ApplicationEventPublisher` | `publishes: EventType` - the argument expression's static type | **no** - body analysis |
+| Config property | `ConfigurationPropertiesIndexer` | `@ConfigurationProperties` classes | `name (Type)` | yes - done (4.7) |
+| Repository query method | `DataRepositoryIndexer` | repositories | `name(Param) : Return` | yes - done (4.7) |
+| Spring AI / MCP method (`@Tool`, `@McpTool`, `@McpPrompt`, ...) | `SpringAiIndexer` | beans; exact annotation FQN, not meta | `@Tool name` - `name` attribute, else method name | yes |
+| Bean registered by a `BeanRegistrar` | `ComponentIndexer`, visiting the `register` method *body* | registrar components | component label | **no** - body analysis |
+
+Not members, so nothing to do: web config elements (not a `SymbolElement`), functional web routes
+(children of a `@Bean` member, not of the type), and `@Bean` methods / listeners / AI methods on a
+class that is *not* a bean (the source side attaches those to a non-`Bean` container, which
+`membersOf` never reads).
+
+### 5.2 Approach: build the same index elements, share the interpretation, duplicate only extraction
+
+4.6 showed the two failure modes of parallel implementations: a rule applied on one side only, and a
+label assembled differently. With this many member kinds - several with non-trivial fallback rules
+(request mapping paths from class level and supertypes) - hand-building label strings on the JAR
+side per kind (as 4.7 did) would multiply exactly that. Instead:
+
+1. **The JAR side builds the same element objects the AST side builds** - a `Bean` per bean-backed
+   type with `SymbolElement` children (`RequestMappingIndexElement`, `EventListenerIndexElement`,
+   child `Bean`s, `SpringAiAnnotationIndexElement`, ...) - and turns them into `StructureMember`s
+   with the same code `IndexStructureElements.membersOf` uses. Labels then come from the element
+   classes' own `getDocumentSymbol()`: one implementation, not two.
+2. **Pure interpretation is shared as functions both sides call**: several already are static and
+   value-based (`WebEndpointIndexer.combinePath`, `RouteUtils.createRouteLabel`,
+   `BeansIndexer.beanLabel`, `ConfigurationPropertiesIndexer.resolvePrefix`); others get extracted
+   (the `@GetMapping` → `GET` table, the "which class gets which members" gating).
+3. **Only extraction is written twice** - reading annotation attribute values, parameter/return
+   types, generic type arguments and fields, from JDT bindings on one side and from Jandex on the
+   other. Each extraction step stays small and returns plain values.
+4. **A parity harness** (5.4) runs both pipelines over the same source and compares the results. 4.7
+   decided against it for two small cases; with seven more kinds, several with fallback rules, it
+   is now worth building once, and fixture projects for most kinds already exist.
+
+Decompiling JARs and running the existing AST indexers unchanged was reconsidered. It would also
+cover the two body-derived kinds (5.6), which nothing else here can. But it still means a new
+dependency, uncertain decompiler fidelity on real-world bytecode, and running the indexing pipeline
+against documents that aren't files. It stays the fallback if 5.6 turns out to matter.
+
+### 5.3 Foundation (no visible change)
+
+- **A JAR bean model.** Per scanned class, decide whether it is bean-backed the way
+  `ComponentIndexer.index` does: component (meta-annotated `@Component`/`@Named`), repository,
+  `@ConfigurationProperties`, Feign client. Parity trap: decide this from the class's *own*
+  annotations plus their meta-annotations - **not** from the stereotype `annotationTypes` set, which
+  also contains the direct annotations of every supertype. A class extending a `@Component`
+  superclass is not a component to `AnnotationHierarchies.isAnnotatedWith`, but would be to that
+  set. Then attach children per kind (5.5), in the same order `ComponentIndexer.postProcessComponent`
+  uses: publishers, `@Bean` methods, event listeners, `ApplicationListener`, request mappings,
+  config properties, registrar beans, Spring AI.
+- **Shared `SymbolElement` → `StructureMember` conversion**, extracted from
+  `IndexStructureElements.membersOf`.
+- **Placeholder locations.** Element constructors and `getDocumentSymbol()` need non-null
+  ranges; JAR elements get the class entry's URI inside the JAR with a zero range. That placeholder
+  is never sent to a client: JAR nodes navigate through a Java element reference instead (5.8).
+- **Java element references.** Every JAR type, method node and member records the binding key of
+  the class, method or field it came from, for navigation (5.8).
+- **Method-signature parity.** Jandex's `methodSignatureOf` currently lacks ` : ReturnType` and has
+  to match `ASTUtils.getMethodSignature(method, true)` exactly (binary names), because it is the key
+  the request-mapping label lookup joins on.
+- **Declaration order.** Use `methodsInDeclarationOrder()`: `JarDataRepositoryScanner` uses
+  `methods()`, whose order can differ from source.
+- **Rework 4.7's scanners** to emit `ConfigPropertyIndexElement` / `QueryMethodIndexElement` instead
+  of hand-built label strings.
+- **Generalize the request-mapping label lookup** (`StructureViewUtil.getMethodLabel`) to work over a
+  given set of `RequestMappingIndexElement`s - the live index's for a workspace project, the JAR bean
+  model's for a JAR.
+- Caching is unchanged in principle: the bean model is catalog-independent, so it is cached with the
+  scan, like the members already are.
+
+### 5.4 Parity harness (before adding member kinds)
+
+- For each existing fixture project that covers a member kind (`test-spring-data-symbols`,
+  `test-configuration-properties-indexing`, plus the request mapping, event, `@Bean` and Spring AI
+  fixtures still to be identified), compile its sources with `JarFixtureBuilder` against that
+  project's own resolved classpath (`JarFixtureBuilder` needs a compile-classpath parameter for
+  this), package them as a JAR, and scan it with that same project as `including`.
+- For every type both sides know, compare `membersOf` labels (in order) and method labels.
+- Known divergences live in an explicit, commented allow-list (the `@Bean` annotation text, the
+  body-derived kinds); anything else fails.
+
+### 5.5 Member kinds, in order of value
+
+1. **Request mappings** - the member and the "Request Mappings" route label. Extraction: `path`/`value`
+   on the method and on the class (falling back to a supertype's class-level `@RequestMapping`, as
+   `WebEndpointIndexer.getParentPath` does); HTTP method from the annotation's own FQN (`@GetMapping`
+   → `GET`, exact name, not meta, as in `getRequestMethod`), otherwise the `method` attribute (Jandex
+   `asEnum()` gives `GET`, the same as the AST side's `RequestMethod.GET` → `GET`);
+   `produces`/`consumes`/`version` with the same class-level fallback. One element per combined path.
+   Gate: controller, `@BasePathAwareController` or Feign client (meta-aware).
+2. **Event listeners** - `@EventListener` methods (meta-aware, so `@TransactionalEventListener` too;
+   event type = the single parameter's type) and `ApplicationListener` implementations (event type
+   from the non-bridge `onApplicationEvent`). Gate: component / bean.
+3. **`@Bean` methods** - gate `@Configuration` (meta-aware). Bean name(s) from `@Bean`'s
+   `name`/`value` (one member per name) or the method name; the return type's simple name. The
+   other annotations in the label are **approximated** from bytecode (decided, 5.7), and the parity
+   harness allow-lists that difference.
+4. **Spring AI / MCP methods** - exact annotation FQN; `name` attribute or method name.
+5. **Event publishers** and 6. **registrar beans** - from method bodies, via ASM, only for the
+   classes that need it (5.6).
+7. Optional: the `@Query` string of a repository method (bytecode-visible) - not rendered in the
+   tree even for workspace projects today, so low value.
+
+### 5.6 Members derived from method bodies: ASM, only where needed (decided)
+
+Event publishers and beans registered by a `BeanRegistrar` come from method bodies, which Jandex
+does not index. They are read with ASM - but **only for classes whose declarative facts already
+say the source side would look into a body**. Every other class stays Jandex-only.
+
+**Gates - decided from Jandex facts, before any bytecode is read:**
+- **Event publishers:** a component (5.3's bean model) with an injection point of type
+  `org.springframework.context.ApplicationEventPublisher`. The injection points mirror
+  `ASTUtils.findInjectionPoints`: the single constructor's parameters (or the `@Autowired`
+  constructor's), parameters of `@Autowired`/`@Inject` methods, and `@Autowired`/`@Inject` fields.
+  The exact rules get re-checked against `findInjectionPoints` during implementation.
+  Known divergence: a Lombok-generated constructor exists in bytecode but not in the source AST, so
+  the JAR side can find publishers the source side misses. That is more correct, and the parity
+  harness allow-lists it if it shows up.
+- **Registrar beans:** a class implementing `org.springframework.beans.factory.BeanRegistrar` (via
+  the shared `supertypes`) that is *also* a component. Only then does the source side attach the
+  registered beans to a `Bean` and show them as members. Most registrars are brought in with
+  `@Import` rather than being components, and then neither side shows them - so this case has
+  limited value, but it is cheap once publishers exist.
+
+**Which bytecode is read.** Only the gated class's own `.class` entries, re-read from the JAR during
+the same scan (the Jandex index keeps no bytecode) and cached with it:
+- *Publishers:* all methods of the class, including synthetic `lambda$...` methods - the source
+  visitor walks lambda bodies inline, bytecode puts them into separate methods of the same class. It
+  also covers the class's anonymous/local classes (`Outer$1`, separate class files in bytecode,
+  visited inline by the source visitor).
+- *Registrars:* only the `register(BeanRegistry, Environment)` method - the source side scans only
+  that method's body.
+
+**Matching the calls:**
+- `publishEvent`: the source checks that the called method is *declared* in
+  `ApplicationEventPublisher`. In bytecode, the invoke instruction's owner is the receiver's
+  *static* type, which may be a subtype such as `ApplicationContext`. So the owner is resolved up
+  its hierarchy (from the combined Jandex index) to the type declaring `publishEvent`.
+- `registerBean`: owner `org.springframework.beans.factory.BeanRegistry` (or a subtype, resolved
+  the same way), with one of the four descriptors `ComponentIndexer.scanBeanRegistryInvocations`
+  handles: `(Class)`, `(String, Class)`, `(Class, Consumer)`, `(String, Class, Consumer)`.
+
+**Recovering argument types.** ASM's `Analyzer` with a `SimpleVerifier` (`asm-analysis`) computes the
+reference type of every stack slot at every instruction; the argument slot at the call gives:
+- *the event type* for a publisher - the source uses the argument expression's static type and its
+  supertypes;
+- *the bean type* for a registrar - a class literal is an `ldc` of that type, the name an `ldc` of
+  the string.
+
+`SimpleVerifier`'s hierarchy callbacks (`getSuperClass`, `isInterface`, `isAssignableFrom`) are
+answered from the combined Jandex index, never by loading classes, which its default
+implementation would do.
+
+**Fidelity limits, documented and allow-listed where they show up:**
+- The verifier's type is the flow type, which can be more specific than the source's declared type:
+  `Object e = new OrderCreated(); publishEvent(e)` gives `OrderCreated` from bytecode but `Object`
+  from source. After a branch merge it is the common supertype.
+- For registrars, a `Class<T>` argument that is not a class literal (a variable, a method result)
+  has its type argument erased in bytecode. That call is skipped, as is a bean name that is not a
+  constant. What the source side does for a non-constant name gets checked during implementation,
+  for parity.
+
+**Navigation (5.8):**
+- A publisher member points at the method containing the call. When the call sits in a lambda,
+  the synthetic `lambda$...` method is not something JDT can resolve, so it points at the class
+  instead.
+- A registrar bean member points at `register`.
+
+**Dependency.** `org.ow2.asm:asm`, `asm-tree` and `asm-analysis` 9.9.1 are already on the language
+server's classpath transitively. Declare them explicitly in `spring-boot-language-server`'s pom
+once they are used directly.
+
+**Tests.**
+- Publishers:
+  - injected by field, by constructor, and via an `ApplicationContext`-typed receiver;
+  - publishing inside a lambda and inside an anonymous class;
+  - a component *without* a publisher injection point is not body-scanned at all.
+- Registrars: all four `registerBean` overloads, and a non-constant name.
+- "Only where needed" is itself a requirement, so a test asserts that no bytecode is read for
+  ungated classes - via a small counter or test hook in the reader.
+
+### 5.7 Decisions (resolved)
+
+- **`@Bean` annotation text - decided: (a), approximate from bytecode.** Source renders the method's other annotations with JDT's
+  `Annotation.toString()`, i.e. as source text. Bytecode has resolved values instead: constants
+  already inlined (`@Profile(Profiles.DEV)` becomes `"dev"`), no `SOURCE`-retention annotations,
+  different formatting of arrays, enums and class literals. Options:
+  - (a) Approximate it from bytecode on the JAR side, with the difference allow-listed in the parity
+    harness. **Chosen.**
+  - (b) Leave the extra annotations out of JAR `@Bean` labels.
+  - (c) Render from resolved values on *both* sides. This changes today's labels for workspace
+    projects, and every existing baseline would report all `@Bean` members as modified once.
+- **Body-derived members - decided:** read method bodies with ASM, but only for classes whose
+  declarative facts require it (5.6).
+- **Navigation - decided:** JAR nodes open the class in the IDE (5.8).
+
+### 5.8 Navigation: JAR nodes open the class in the IDE (decided)
+
+Clicking a JAR type, method node or member opens the corresponding class - at that method or field
+where possible - in the IDE's own editor for classes in JARs (with attached sources where the IDE
+has them).
+
+**The mechanism already exists.** `STS4LanguageClient.javaLocation(JavaDataParams(projectUri,
+bindingKey))` asks the IDE's Java tooling for an LSP `Location` of a Java element by its JDT
+binding key. `JavaServerElementLocationProvider` already uses it.
+- **VSCode:** forwards to JDT-LS (`sts.java.location`), which answers with a `jdt://` URI into the
+  class file. The tree already opens nodes with `vscode.open`, which the Java extension serves for
+  `jdt://`.
+- **Eclipse:** `STS4LanguageClientImpl.javaLocation` answers with an Eclipse intro URI that
+  `LogicalStructureView`'s `LSPEclipseUtils.openInEditor` already opens.
+
+The one thing not to reuse is the mechanism for catalog files inside JARs
+(`sourceLinkForJarEntry`), which serves raw resources, not classes.
+
+**Binding keys come from Jandex.** `commons.jandex.BindingKeyUtils` already computes JDT-compatible
+keys for `ClassInfo`, `MethodInfo` and `FieldInfo` (it exists for the standalone language server's
+Jandex-backed types). It is package-private today, so it would need to become public. What each node
+refers to:
+- type node → the class;
+- method node → the method;
+- request mapping, `@Bean`, `@EventListener`, Spring AI and query method members → their method;
+- `ApplicationListener` member → the non-bridge `onApplicationEvent`;
+- config property member → the field (the record component's backing field for a record).
+
+**Resolve on click, not while building the tree.** Each `javaLocation` call is a round trip through
+the client, twice over in VSCode (language server → extension host → JDT-LS). Existing callers
+allow 500 ms each. A composed tree can contain hundreds of JAR nodes and is rebuilt on every
+refresh, so resolving eagerly is not an option. Instead:
+- **Server:** a JAR node carries a Java element reference attribute (`projectUri` + `bindingKey`)
+  instead of a location. `projectUri` is the *including* project's: that is the classpath the JAR
+  is on, so that is where the IDE can resolve the key.
+- **New server command** `sts/spring-boot/structure/resolveLocation` takes that reference, calls
+  `javaLocation`, and returns the `Location`.
+- **VSCode** (`nodes.ts`): a node with a reference and no location gets a command that calls the
+  resolve command, then `vscode.open` on the result.
+- **Eclipse** (`LogicalStructureView`): the double-click handler does the same with
+  `LSPEclipseUtils.openInEditor`.
+- Cost: one round trip per click, none per tree.
+
+**Side effects to handle:**
+- **Node ids.** `JsonNodeHandler.assignNodeId` builds ids from the label plus the location, so JAR
+  nodes (no location) get label-only ids. Two same-labelled JAR nodes under one parent would then
+  merge. The binding key goes into the id instead of the location.
+- **MCP.** `StructureNode` can expose the reference too, so an agent can at least identify the
+  element. Resolving it for an agent is not needed now.
+- **Unresolvable keys.** If the key doesn't resolve (sources or JAR not visible to the IDE's Java
+  tooling, standalone language server without a Java-aware client), the click does nothing, with a
+  status-bar or log message, rather than an error dialog.
+
+**Tests:**
+- Server command round trip against the harness's `javaLocation` stub.
+- Binding keys: compare `BindingKeyUtils` output with the keys JDT computes for the same elements.
+  Its existing tests may cover part of this; to be checked.
+- Node-id uniqueness for same-labelled JAR nodes.
+- Client-side behaviour in both IDEs.
 
 ---
 

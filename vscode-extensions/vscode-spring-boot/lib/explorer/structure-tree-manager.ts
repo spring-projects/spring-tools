@@ -376,8 +376,12 @@ export class StructureManager {
         }
     }
 
-    get rootElements(): Thenable<StereotypedNode[]> {
-        return this._rootElementsRequest;
+    get rootElements(): Thenable<StereotypedNode[]> | undefined {
+        // the elements as merged by now, not as they were when the latest request completed: an
+        // earlier request completing after it merges its result in later, and tells the view to
+        // read again - which has to see that result too
+        // (none before the first request, which the tree provider checks for)
+        return this._rootElementsRequest?.then(() => this._rootElements);
     }
 
     // Serves 2 purposes: non UI triggered refresh as a result of the index update and a UI triggered refresh

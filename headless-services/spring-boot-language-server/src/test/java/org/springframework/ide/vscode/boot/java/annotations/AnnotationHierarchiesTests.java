@@ -29,8 +29,6 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaParserUtils;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
@@ -66,8 +64,6 @@ public class AnnotationHierarchiesTests {
 	}
 	
 	@Test
-    //TODO: Enable when JDT Core 3.41 or higher is adopted. See: https://github.com/eclipse-jdt/eclipse.jdt.core/pull/3416
-	@DisabledOnOs(OS.WINDOWS)
 	void circularAnnotations() throws Exception {
 		String projectName = "test-spring-validations";
 		IJavaProject project = ProjectsHarness.INSTANCE.mavenProject(projectName);

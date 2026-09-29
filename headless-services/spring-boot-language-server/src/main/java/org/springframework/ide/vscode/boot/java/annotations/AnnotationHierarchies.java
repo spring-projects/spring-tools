@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2024 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -134,14 +134,14 @@ public class AnnotationHierarchies {
 
 			{
 				if (binding instanceof IAnnotationBinding ab) {
-					seen.add(ab.getAnnotationType().getKey());
+					seen.add(keyOf(ab.getAnnotationType()));
 					queue.add(ab);
 				} else {
 					if (binding instanceof ITypeBinding tb && tb.isAnnotation()) {
-						seen.add(tb.getKey());
+						seen.add(keyOf(tb));
 					}
 					for (IAnnotationBinding ab :  getDirectSuperAnnotationBindings(binding)) {
-						seen.add(ab.getAnnotationType().getKey());
+						seen.add(keyOf(ab.getAnnotationType()));
 						queue.add(ab);
 					}
 				}
@@ -156,7 +156,7 @@ public class AnnotationHierarchies {
 			public IAnnotationBinding next() {
 				IAnnotationBinding next = queue.poll();
 				for (IAnnotationBinding a : getDirectSuperAnnotationBindings(next.getAnnotationType())) {
-					String key = a.getAnnotationType().getKey();
+					String key = keyOf(a.getAnnotationType());
 					if (seen.add(key)) {
 						queue.add(a);
 					}
@@ -187,7 +187,7 @@ public class AnnotationHierarchies {
 	
 	private Optional<AnnotationTypeInformation> annotationInfo(ITypeBinding typeBinding) {
 		if (accept(typeBinding)) {
-			return Optional.of(cache.computeIfAbsent(typeBinding.getKey(), s -> compute(typeBinding)));
+			return Optional.of(cache.computeIfAbsent(keyOf(typeBinding), s -> compute(typeBinding)));
 		}
 		return Optional.empty();
 	}
@@ -199,7 +199,7 @@ public class AnnotationHierarchies {
 			// nothing to do
 		} 
 		// remove itself from `inherited` set as we'd like to leave only inherited annotations binding keys in the set 
-		String key = typeBinding.getKey();
+		String key = keyOf(typeBinding);
 		inherited.remove(key);
 		return new AnnotationTypeInformation(key, inherited);
 	}
@@ -232,6 +232,18 @@ public class AnnotationHierarchies {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * The key of an annotation type, as {@link JavaUtils#typeFqNameToBindingKey(String)} builds it
+	 * from the type's name. JDT's own key for a type read from source cannot be compared against
+	 * that on Windows: it carries the source file's path ({@code Lp/C:\...\p\A~A;}), as JDT
+	 * looks for the file's main type name after the last '/' while the batch compiler hands it a
+	 * '\'-separated path.
+	 */
+	public static String keyOf(ITypeBinding type) {
+		String binaryName = type.getErasure().getBinaryName();
+		return binaryName != null ? JavaUtils.typeFqNameToBindingKey(binaryName) : type.getKey();
 	}
 
 	public boolean isAnnotatedWith(IBinding binding, String annotationTypeFqn) {

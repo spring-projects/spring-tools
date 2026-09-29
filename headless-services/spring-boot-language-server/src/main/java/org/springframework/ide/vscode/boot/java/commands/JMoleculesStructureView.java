@@ -63,7 +63,6 @@ public class JMoleculesStructureView {
 		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labelProvider, consumer, elements, sourceLinks, definitionLocator, catalog, project);
 
 		// create the project tree and apply all the groupers from the project
-		// TODO: in the future, we need to trim this grouper arrays down to what is selected on the UI
 		var jsonTree = new ProjectTree<>(elements.stereotypeFactory(), catalog, jsonHandler)
 				.withStructureProvider(structureProvider);
 

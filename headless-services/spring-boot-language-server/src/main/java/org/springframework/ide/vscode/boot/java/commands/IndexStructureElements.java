@@ -12,8 +12,6 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.List;
 
-import org.eclipse.lsp4j.DocumentSymbol;
-import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.springframework.ide.vscode.boot.java.stereotypes.IndexBasedStereotypeFactory;
@@ -92,10 +90,7 @@ public class IndexStructureElements implements StructureElements {
 		String docUri = type.getLocation().getUri();
 
 		return StructureViewUtil.membersOf(springIndex, type).stream()
-				.map(symbolElement -> {
-					DocumentSymbol symbol = symbolElement.getDocumentSymbol();
-					return new StructureMember(symbol.getName(), new Location(docUri, symbol.getRange()), symbolElement.getContentHash());
-				})
+				.map(symbolElement -> StructureMember.of(symbolElement, docUri))
 				.toList();
 	}
 

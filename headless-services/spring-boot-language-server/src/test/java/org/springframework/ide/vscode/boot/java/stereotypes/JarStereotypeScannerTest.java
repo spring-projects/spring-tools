@@ -180,4 +180,40 @@ public class JarStereotypeScannerTest {
 		assertTrue(method.isAnnotatedWith("f.Mapping"), "resolved through @GetMapping's own meta-annotation");
 	}
 
+
+	/**
+	 * What {@code StereotypesIndexer} sees in source: no anonymous classes (no
+	 * {@code TypeDeclaration}), no bridge methods, constructors named after their class (as
+	 * {@code ASTUtils.getMethodSignature} names them), and methods in declaration order.
+	 */
+	@Test
+	void onlyWhatSourceHasIsScanned() throws Exception {
+		File jar = JarFixtureBuilder.buildJar(tempDir, "source-level", Map.of(
+				"g.Marker", "package g; import java.lang.annotation.*; @Retention(RetentionPolicy.RUNTIME) public @interface Marker {}",
+				"g.Handler", """
+						package g;
+						public class Handler implements Comparable<Handler> {
+							@Marker public Handler(String name) {}
+							@Marker public String zeta() { return ""; }
+							@Marker public void alpha(java.util.List<String> names) {}
+							@Marker public int compareTo(Handler other) { return 0; }
+							Runnable anonymous = new Runnable() { public void run() {} };
+						}
+						"""), Map.of());
+
+		Indexer indexer = new Indexer();
+		Set<DotName> ownClasses = JarStereotypeScanner.indexInto(indexer, jar);
+		Index index = indexer.complete();
+
+		List<StereotypeClassElement> elements = JarStereotypeScanner.ownClassesOf(ownClasses, index);
+		StereotypeClassElement handler = elements.stream().filter(e -> e.getType().equals("g.Handler")).findFirst().orElseThrow();
+
+		assertTrue(elements.stream().noneMatch(e -> e.getType().startsWith("g.Handler$")), "no anonymous class");
+		assertEquals(List.of("Handler.Handler(String) : void", "Handler.zeta() : String", "Handler.alpha(List<String>) : void",
+				"Handler.compareTo(Handler) : int"),
+				handler.getMethods().stream().map(StereotypeMethodElement::getMethodLabel).toList(),
+				"declaration order, constructor named after its class, no bridge compareTo(Object)");
+		assertEquals("Handler", handler.getMethods().get(0).getMethodName(), "a constructor's name, as StereotypesIndexer takes it from source");
+	}
+
 }

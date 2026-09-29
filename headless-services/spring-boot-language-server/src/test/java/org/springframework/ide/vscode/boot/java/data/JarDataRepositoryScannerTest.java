@@ -14,31 +14,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.Index;
-import org.jboss.jandex.Indexer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.ide.vscode.boot.java.commands.StructureMember;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarFixtureBuilder;
-import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
-import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarTypes;
 
 /**
  * {@code spring-data-commons} is not a dependency of this module, so
  * {@code org.springframework.data.repository.Repository}/{@code NoRepositoryBean} are compiled
- * here from a throwaway copy of their source (same {@code Repository<T, ID>} shape, no method of
- * their own) - purely so the fixture interfaces type-check - and left out of the packaged JAR, the
- * same technique {@code StructureDependenciesJarTreeTest} already uses for
- * {@code DescribedStereotype}. Jandex reads a supertype's name straight off the bytecode either
- * way, so this is exactly as faithful a test as compiling against the real JAR would be for what
- * this class actually checks - see {@code JarStereotypeScannerTest}'s
- * "a supertype outside the indexed jar still counts by name".
+ * here from a throwaway copy of their source - purely so the fixture interfaces type-check - and
+ * left out of the packaged JAR. Jandex reads a supertype's name straight off the bytecode either
+ * way (see {@code JarStereotypeScannerTest}).
+ *
+ * <p>The labels asserted here come from {@link QueryMethodIndexElement} itself - the element the
+ * AST side creates too.
  *
  * @author Martin Lippert
  */
@@ -60,42 +53,52 @@ public class JarDataRepositoryScannerTest {
 	Path tempDir;
 
 	@Test
-	void nonDefaultMethodsOfARepositoryInterfaceBecomeMembers() throws Exception {
-		ScannedElement element = scanSingle("com.example.CustomerRepository", """
+	void nonDefaultMethodsOfARepositoryInterfaceBecomeMembersInDeclarationOrder() throws Exception {
+		assertEquals(List.of("findByEmail(String) : Customer", "countByName(String) : long"), members("com.example.CustomerRepository", """
 				package com.example;
 				import org.springframework.data.repository.Repository;
 				class Customer {}
 				public interface CustomerRepository extends Repository<Customer, Long> {
 					Customer findByEmail(String email);
 					default Customer findAnyDefault() { return null; }
+					long countByName(String name);
 				}
-				""");
-
-		List<StructureMember> members = element.members;
-
-		assertEquals(List.of(new StructureMember("findByEmail(String) : Customer", null, null)), members);
+				"""));
 	}
 
 	/**
-	 * Matches {@code DataRepositoryIndexer.identifyMethodSignature}'s exact label shape - no
-	 * declaring class prefix, unlike a stereotype-grouped method's label.
+	 * {@code DataRepositoryIndexer.identifyMethodSignature} renders types with JDT's
+	 * {@code getName()}, which keeps type arguments.
 	 */
 	@Test
-	void theMemberLabelHasNoDeclaringClassPrefixUnlikeAStereotypeGroupedMethod() throws Exception {
-		ScannedElement element = scanSingle("com.example.Repo", """
+	void theLabelKeepsTypeArgumentsLikeJdtDoes() throws Exception {
+		assertEquals(List.of("findAll(String) : List<Object>"), members("com.example.Repo", """
 				package com.example;
 				import org.springframework.data.repository.Repository;
 				public interface Repo extends Repository<Object, Long> {
 					java.util.List<Object> findAll(String query);
 				}
-				""");
+				"""));
+	}
 
-		assertEquals("findAll(String) : List", element.members.get(0).label());
+	/**
+	 * {@code DataRepositoryIndexer.identifyMethodSignature} renders a parameter's declared type,
+	 * which for varargs is the element type, not the array.
+	 */
+	@Test
+	void aVarargsParameterIsLabelledWithItsElementType() throws Exception {
+		assertEquals(List.of("findByNameIn(String) : List<Object>"), members("com.example.Repo", """
+				package com.example;
+				import org.springframework.data.repository.Repository;
+				public interface Repo extends Repository<Object, Long> {
+					java.util.List<Object> findByNameIn(String... names);
+				}
+				"""));
 	}
 
 	@Test
 	void aNoRepositoryBeanInterfaceContributesNoMembers() throws Exception {
-		ScannedElement element = scanSingle("com.example.BaseRepository", """
+		assertEquals(List.of(), members("com.example.BaseRepository", """
 				package com.example;
 				import org.springframework.data.repository.NoRepositoryBean;
 				import org.springframework.data.repository.Repository;
@@ -103,47 +106,59 @@ public class JarDataRepositoryScannerTest {
 				public interface BaseRepository extends Repository<Object, Long> {
 					Object findSomething();
 				}
-				""");
+				"""));
+	}
 
-		assertEquals(List.of(), element.members);
+	/**
+	 * The common "shared base repository" pattern: {@code @NoRepositoryBean} on the base interface
+	 * does not exclude the repositories extending it - decided from the class's own annotations, as
+	 * {@code DataRepositoryIndexer.findRepositoryDomainType} does.
+	 */
+	@Test
+	void aRepositoryExtendingANoRepositoryBeanBaseInterfaceStillContributesItsMembers() throws Exception {
+		File jar = jar(Map.of(
+				"com.example.BaseRepository", """
+						package com.example;
+						import org.springframework.data.repository.NoRepositoryBean;
+						import org.springframework.data.repository.Repository;
+						@NoRepositoryBean
+						public interface BaseRepository<T> extends Repository<T, Long> {}
+						""",
+				"com.example.OrderRepository", """
+						package com.example;
+						public interface OrderRepository extends BaseRepository<Object> {
+							Object findByNumber(String number);
+						}
+						"""), List.of("com.example.BaseRepository", "com.example.OrderRepository"));
+
+		assertEquals(List.of("findByNumber(String) : Object"), JarTypes.memberLabels(JarTypes.scan(jar).get("com.example.OrderRepository")));
 	}
 
 	@Test
 	void aPlainInterfaceThatIsNotARepositoryContributesNoMembers() throws Exception {
-		ScannedElement element = scanSingle("com.example.PlainInterface", """
+		assertEquals(List.of(), members("com.example.PlainInterface", """
 				package com.example;
 				public interface PlainInterface {
 					Object findSomething();
 				}
-				""");
-
-		assertEquals(List.of(), element.members);
+				"""));
 	}
 
-	private ScannedElement scanSingle(String fqn, String source) throws Exception {
-		Path classesDir = JarFixtureBuilder.compileAll(tempDir, Map.of(
-				fqn, source,
-				"org.springframework.data.repository.Repository", REPOSITORY_STUB,
-				"org.springframework.data.repository.NoRepositoryBean", NO_REPOSITORY_BEAN_STUB));
-
-		// only the fixture interface goes into the JAR - the stubs stay out, exactly like
-		// DescribedStereotype in StructureDependenciesJarTreeTest
-		File jar = JarFixtureBuilder.packageJar(classesDir, tempDir, "fixture", List.of(fqn), Map.of());
-
-		Indexer indexer = new Indexer();
-		Set<DotName> ownClasses = JarStereotypeScanner.indexInto(indexer, jar);
-		Index index = indexer.complete();
-
-		ClassInfo classInfo = index.getClassByName(DotName.createSimple(fqn));
-		StereotypeClassElement element = JarStereotypeScanner.ownClassesOf(ownClasses, index).get(0);
-
-		return new ScannedElement(element, JarDataRepositoryScanner.membersOf(classInfo, element));
+	private List<String> members(String fqn, String source) throws Exception {
+		File jar = jar(Map.of(fqn, source), List.of(fqn));
+		return JarTypes.memberLabels(JarTypes.scan(jar).get(fqn));
 	}
 
 	/**
-	 * Just a convenience so each test can read {@code element.members} directly.
+	 * Compiles the given sources together with the stubs, and packages only the given types.
 	 */
-	private record ScannedElement(StereotypeClassElement delegate, List<StructureMember> members) {
+	private File jar(Map<String, String> sources, List<String> packaged) throws Exception {
+		Map<String, String> all = new HashMap<>(sources);
+		all.put("org.springframework.data.repository.Repository", REPOSITORY_STUB);
+		all.put("org.springframework.data.repository.NoRepositoryBean", NO_REPOSITORY_BEAN_STUB);
+
+		Path classesDir = JarFixtureBuilder.compileAll(tempDir, all);
+		return JarFixtureBuilder.packageJar(classesDir, tempDir, "fixture", packaged, Map.of());
 	}
 
 }

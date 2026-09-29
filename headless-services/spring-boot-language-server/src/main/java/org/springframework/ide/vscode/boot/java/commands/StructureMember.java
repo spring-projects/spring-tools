@@ -10,7 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.Location;
+import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 /**
  * One member a type contributes to the structure view beyond its own {@code StereotypeMethodElement}s
@@ -30,4 +32,18 @@ import org.eclipse.lsp4j.Location;
  * @author Martin Lippert
  */
 public record StructureMember(String label, Location location, String contentHash) {
+
+	/**
+	 * The member an index element stands for - label and content hash from the element itself, so
+	 * a member reads the same whether the element came from the live index or from a JAR scan.
+	 *
+	 * @param documentUri the document the element is in, or {@code null} for one without a real
+	 *        location (a JAR-scanned element, whose range is only a placeholder)
+	 */
+	public static StructureMember of(SymbolElement element, String documentUri) {
+		DocumentSymbol symbol = element.getDocumentSymbol();
+		return new StructureMember(symbol.getName(), documentUri == null ? null : new Location(documentUri, symbol.getRange()),
+				element.getContentHash());
+	}
+
 }

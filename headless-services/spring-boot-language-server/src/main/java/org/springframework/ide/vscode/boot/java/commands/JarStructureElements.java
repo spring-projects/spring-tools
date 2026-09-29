@@ -10,16 +10,20 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
+import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeFactory;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
+import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.protocol.spring.SymbolElement;
 
 /**
  * {@link StructureElements} for a selected JAR dependency, backed by {@link JarStereotypeScanner}.
@@ -33,34 +37,39 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageEle
  * JAR's classes into raw elements is cached - by {@link JarDependencySource}, keyed by the JAR's own
  * identity - never the filtered result.
  *
- * <p>{@code membersOf} is not catalog-dependent the same way: a type's "properties" or "query
- * methods" (see {@code JarConfigurationPropertiesScanner}, {@code JarDataRepositoryScanner}) are a
- * fact of its own bytecode, not of what stereotypes are currently defined, so that map is computed
- * once alongside the scan and simply looked up here.
+ * <p>Members and method labels come from the beans {@code JarBeanIndexer} built for the scanned
+ * types - the same index elements the AST side builds, turned into members and labels by the same
+ * code ({@link StructureMember#of}, {@link StructureViewUtil#getMethodLabel(StereotypeMethodElement,
+ * java.util.Collection)}). Unlike stereotype matching, those beans are not catalog-dependent - a
+ * fact of the classes' own bytecode - so they are computed once with the scan and only looked up
+ * here.
  *
  * @author Martin Lippert
  */
 public class JarStructureElements implements StructureElements {
 
 	private final List<StereotypeClassElement> scannedTypes;
-	private final Map<StereotypeClassElement, List<StructureMember>> members;
+	private final Map<StereotypeClassElement, List<Bean>> beans;
+	private final Map<StereotypeMethodElement, StereotypeClassElement> declaringTypes;
 	private final JarStereotypeFactory factory;
 
 	/**
 	 * @param scannedTypes every class {@link JarStereotypeScanner} found in the JAR, unfiltered -
 	 *        see {@link JarDependencySource} for where this comes from and how it is cached
-	 * @param members the "properties"/"query methods" some of those classes contribute beyond
-	 *        their own stereotype-matched methods (see {@code JarConfigurationPropertiesScanner},
-	 *        {@code JarDataRepositoryScanner}) - by identity of the exact {@code scannedTypes}
-	 *        instances, computed alongside them and, unlike stereotype matching, not catalog
-	 *        dependent, so this needs no live re-filtering the way {@link #types()} does
+	 * @param beans the beans {@code JarBeanIndexer} built for those classes, by identity of the exact
+	 *        {@code scannedTypes} instances - a class without any has no entry
 	 * @param catalog the catalog of the tree this JAR is being included in
 	 */
-	public JarStructureElements(List<StereotypeClassElement> scannedTypes, Map<StereotypeClassElement, List<StructureMember>> members,
+	public JarStructureElements(List<StereotypeClassElement> scannedTypes, Map<StereotypeClassElement, List<Bean>> beans,
 			AbstractStereotypeCatalog catalog) {
 		this.scannedTypes = scannedTypes;
-		this.members = members;
+		this.beans = beans;
 		this.factory = new JarStereotypeFactory(catalog);
+
+		// a method label is looked up by the method's own type, not the contextual one - in a group of
+		// methods across types, the contextual type is not the declaring one
+		this.declaringTypes = new IdentityHashMap<>();
+		scannedTypes.forEach(type -> type.getMethods().forEach(method -> declaringTypes.put(method, type)));
 	}
 
 	@Override
@@ -83,14 +92,30 @@ public class JarStructureElements implements StructureElements {
 
 	@Override
 	public String methodLabel(StereotypeMethodElement method, StereotypeClassElement type) {
-		// no live index to consult a request-mapping element from - the label computed at scan
-		// time is all there is, matching SnapshotStructureElements' own reasoning
-		return method.getMethodLabel();
+		StereotypeClassElement declaringType = declaringTypes.getOrDefault(method, type);
+		List<RequestMappingIndexElement> requestMappings = childrenOf(declaringType).stream()
+				.filter(RequestMappingIndexElement.class::isInstance)
+				.map(RequestMappingIndexElement.class::cast)
+				.toList();
+
+		return StructureViewUtil.getMethodLabel(method, requestMappings);
 	}
 
 	@Override
 	public List<StructureMember> membersOf(StereotypeClassElement type) {
-		return members.getOrDefault(type, List.of());
+		return childrenOf(type).stream().map(child -> StructureMember.of(child, null)).toList();
+	}
+
+	/**
+	 * The children of the type's beans that are rendered as members - {@code StructureViewUtil.membersOf}'s
+	 * rule for the live index.
+	 */
+	private List<SymbolElement> childrenOf(StereotypeClassElement type) {
+		return beans.getOrDefault(type, List.of()).stream()
+				.flatMap(bean -> bean.getChildren().stream())
+				.filter(SymbolElement.class::isInstance)
+				.map(SymbolElement.class::cast)
+				.toList();
 	}
 
 	@Override

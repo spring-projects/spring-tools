@@ -10,30 +10,25 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.beans;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
-import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.RecordComponentInfo;
 import org.springframework.ide.vscode.boot.java.Annotations;
-import org.springframework.ide.vscode.boot.java.commands.StructureMember;
+import org.springframework.ide.vscode.boot.java.stereotypes.JdtStyleTypeNames;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
+import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 
 /**
- * The JAR/bytecode counterpart of {@link ConfigurationPropertiesIndexer}: reads the "properties" a
- * {@code @ConfigurationProperties} class contributes - its fields, or its record components if it
- * is a record - directly from a Jandex {@link ClassInfo}, into the same
- * {@link StructureMember} shape {@code IndexStructureElements.membersOf} builds from the live
- * index. See {@code docs/structure-view-dependencies.md}.
+ * The JAR/bytecode counterpart of {@link ConfigurationPropertiesIndexer}: adds a
+ * {@code @ConfigurationProperties} class's properties - its fields, or its record components if it
+ * is a record - to its bean, as the same {@link ConfigPropertyIndexElement}s the AST side adds, so
+ * their label comes from the same code. See {@code docs/structure-view-dependencies.md}.
  *
- * <p>Only the field/record-component enumeration is duplicated here - the one piece of real
- * decision logic, resolving the {@code prefix}/{@code value} attribute into the prefix each
- * property name is joined to, is shared with {@link ConfigurationPropertiesIndexer} via
- * {@link ConfigurationPropertiesIndexer#resolvePrefix}, so that rule cannot drift between the two.
+ * <p>What is shared with {@link ConfigurationPropertiesIndexer} rather than rewritten: the element
+ * (and with it the label), and {@link ConfigurationPropertiesIndexer#resolvePrefix}. What is written
+ * again, against Jandex instead of JDT: reading the fields and the annotation's attribute values.
  *
  * @author Martin Lippert
  */
@@ -42,42 +37,38 @@ public class JarConfigurationPropertiesScanner {
 	private static final DotName CONFIGURATION_PROPERTIES = DotName.createSimple(Annotations.CONFIGURATION_PROPERTIES);
 
 	/**
-	 * @param annotationTypes the class's already-computed, meta-annotation-expanded annotation
-	 *        types ({@code JarStereotypeScanner.annotationTypesOf}) - consulted first, so a class
-	 *        that carries {@code @ConfigurationProperties} only via a meta-annotation is still
-	 *        recognized, consistent with how the class itself gets grouped as a stereotype
-	 * @return empty when the class is not a {@code @ConfigurationProperties} class
+	 * Whether the class is a {@code @ConfigurationProperties} class - decided from its own
+	 * (meta-expanded) annotations, as {@code ComponentIndexer.indexConfigurationProperties} does.
 	 */
-	public static List<StructureMember> membersOf(ClassInfo classInfo, Set<String> annotationTypes) {
-		if (!annotationTypes.contains(Annotations.CONFIGURATION_PROPERTIES)) {
-			return List.of();
-		}
+	public static boolean isConfigurationProperties(JarType type) {
+		return type.ownAnnotationTypes().contains(Annotations.CONFIGURATION_PROPERTIES);
+	}
 
+	/**
+	 * Adds one {@link ConfigPropertyIndexElement} per field (or record component) to the bean - in
+	 * declaration order, as the AST side walks them.
+	 */
+	public static void addConfigurationProperties(Bean bean, JarType type) {
 		// the prefix/value attribute values are only available from a *direct* annotation instance -
 		// a class that only ever picks up @ConfigurationProperties via a meta-annotation (unusual)
-		// degrades to an empty prefix rather than failing outright
-		AnnotationInstance annotation = classInfo.annotation(CONFIGURATION_PROPERTIES);
+		// degrades to an empty prefix, as it does on the AST side, which reads the direct one too
+		AnnotationInstance annotation = type.classInfo().declaredAnnotation(CONFIGURATION_PROPERTIES);
 		String prefix = ConfigurationPropertiesIndexer.resolvePrefix(stringAttribute(annotation, "prefix"), stringAttribute(annotation, "value"));
 
-		List<StructureMember> result = new ArrayList<>();
-
-		if (classInfo.isRecord()) {
-			for (RecordComponentInfo component : classInfo.recordComponentsInDeclarationOrder()) {
-				result.add(member(prefix + component.name(), component.type().name()));
+		if (type.classInfo().isRecord()) {
+			for (RecordComponentInfo component : type.classInfo().recordComponentsInDeclarationOrder()) {
+				bean.addChild(new ConfigPropertyIndexElement(prefix + component.name(), JdtStyleTypeNames.qualifiedName(component.type()),
+						type.placeholderLocation().getRange(), null));
 			}
-		} else {
-			for (FieldInfo field : classInfo.fieldsInDeclarationOrder()) {
-				if (!field.isSynthetic() && !field.isEnumConstant()) {
-					result.add(member(prefix + field.name(), field.type().name()));
+		}
+		else {
+			for (FieldInfo field : type.classInfo().fieldsInDeclarationOrder()) {
+				if (!field.isSynthetic()) {
+					bean.addChild(new ConfigPropertyIndexElement(prefix + field.name(), JdtStyleTypeNames.qualifiedName(field.type()),
+							type.placeholderLocation().getRange(), null));
 				}
 			}
 		}
-
-		return result;
-	}
-
-	private static StructureMember member(String name, DotName type) {
-		return new StructureMember(name + " (" + type.local() + ")", null, null);
 	}
 
 	private static String stringAttribute(AnnotationInstance annotation, String attributeName) {

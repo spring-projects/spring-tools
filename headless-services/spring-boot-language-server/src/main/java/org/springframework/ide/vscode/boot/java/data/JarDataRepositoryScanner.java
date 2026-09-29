@@ -13,81 +13,67 @@ package org.springframework.ide.vscode.boot.java.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
 import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.Type;
 import org.springframework.ide.vscode.boot.java.Annotations;
-import org.springframework.ide.vscode.boot.java.commands.StructureMember;
-import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
+import org.springframework.ide.vscode.boot.java.stereotypes.JdtStyleTypeNames;
+import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 
 /**
- * The JAR/bytecode counterpart of {@link DataRepositoryIndexer}: reads the "query methods" a
- * Spring Data repository interface contributes directly from a Jandex {@link ClassInfo}, into the
- * same {@link StructureMember} shape {@code IndexStructureElements.membersOf} builds from the live
- * index. See {@code docs/structure-view-dependencies.md}.
+ * The JAR/bytecode counterpart of {@link DataRepositoryIndexer}: recognizes a Spring Data
+ * repository interface and adds its query methods to its bean, as the same
+ * {@link QueryMethodIndexElement}s the AST side adds, so their label comes from the same code. See
+ * {@code docs/structure-view-dependencies.md}.
  *
- * <p>Deliberately does not re-walk the interface hierarchy to decide whether a class is a
- * repository - that is already exactly what {@code doesImplement} answers, from the same
- * {@code supertypes} set the class's own stereotype grouping already uses
- * ({@code JarStereotypeScanner.supertypesOf}), so there is only one place that walk happens either
- * way. What is genuinely specific to this case, and so unavoidably duplicated across the AST-based
- * and JAR-based sides, is a one-line rule with essentially no room to drift: a query method is any
- * non-{@code default} method of the interface ({@code DataRepositoryIndexer.identifyQueryMethods}'
- * {@code Modifier.DEFAULT} check, {@link MethodInfo#isDefault()} here).
+ * <p>Whether a class is a repository is answered from the shared {@code supertypes} walk
+ * ({@code doesImplement}), not by walking the interface hierarchy a second time; whether it is
+ * excluded is answered from the class's <em>own</em> annotations, as
+ * {@code DataRepositoryIndexer.findRepositoryDomainType} does - a repository extending a
+ * {@code @NoRepositoryBean} base interface is still a repository.
  *
- * <p>The resolved SQL/JPQL query string a method's {@code @Query} annotation or Spring Data's
- * AOT-generated metadata provides is not reconstructed here - the AOT metadata in particular is a
- * build output that does not generally ship inside a plain dependency JAR, and (per investigation)
- * is not actually wired into the Logical Structure tree even for a workspace project today, so
- * there is nothing this is regressing.
+ * <p>Not reconstructed: the resolved query string ({@code @Query}'s value or Spring Data's AOT
+ * metadata), which the tree does not render for workspace projects either.
  *
  * @author Martin Lippert
  */
 public class JarDataRepositoryScanner {
 
-	/**
-	 * @param element the same class's already-built element, whose {@code doesImplement} answers
-	 *        from the one {@code supertypes} walk shared with class-level stereotype grouping
-	 * @return empty when the class is not a Spring Data repository, or is marked
-	 *         {@code @NoRepositoryBean}
-	 */
-	public static List<StructureMember> membersOf(ClassInfo classInfo, StereotypeClassElement element) {
-		if (!element.doesImplement(Constants.REPOSITORY_TYPE) || element.isAnnotatedWith(Annotations.NO_REPO_BEAN)) {
-			return List.of();
-		}
+	// the class file access flag for a varargs method (JVMS 4.6) - Jandex has no accessor for it
+	private static final int ACC_VARARGS = 0x0080;
 
-		List<StructureMember> result = new ArrayList<>();
-
-		for (MethodInfo method : classInfo.methods()) {
-			if (!method.isDefault()) {
-				result.add(new StructureMember(methodSignatureLabel(method), null, null));
-			}
-		}
-
-		return result;
+	public static boolean isRepository(JarType type) {
+		return type.element().doesImplement(Constants.REPOSITORY_TYPE) && !type.ownAnnotationTypes().contains(Annotations.NO_REPO_BEAN);
 	}
 
 	/**
-	 * Mirrors {@code DataRepositoryIndexer.identifyMethodSignature}'s label shape exactly - no
-	 * declaring class prefix, unlike a stereotype-grouped method's label
-	 * ({@code JarStereotypeScanner}'s own method label, which does have one, matching
-	 * {@code ASTUtils.getMethodSignature(method, false)}). The two are already independently
-	 * shaped this way on the AST side too - a query method's label is not the same kind of label a
-	 * stereotype-grouped one is.
+	 * Adds one {@link QueryMethodIndexElement} per non-{@code default} method, in declaration
+	 * order - {@code DataRepositoryIndexer.identifyQueryMethods}.
 	 */
-	private static String methodSignatureLabel(MethodInfo method) {
-		StringBuilder label = new StringBuilder(method.name()).append('(');
-		for (int i = 0; i < method.parametersCount(); i++) {
-			if (i > 0) {
-				label.append(", ");
+	public static void addQueryMethods(Bean bean, JarType type) {
+		for (MethodInfo method : JarStereotypeScanner.sourceLevelMethodsOf(type.classInfo())) {
+			if (!method.isDefault() && !method.isConstructor()) {
+				bean.addChild(new QueryMethodIndexElement(methodSignature(method), null, type.placeholderLocation().getRange(), null));
 			}
-			label.append(simpleName(method.parameterType(i).name()));
 		}
-		return label.append(") : ").append(simpleName(method.returnType().name())).toString();
 	}
 
-	private static String simpleName(DotName name) {
-		return name.local();
+	/**
+	 * {@code DataRepositoryIndexer.identifyMethodSignature}: the method name, then JDT-style simple
+	 * type names - no declaring class, unlike a stereotype-grouped method's label. It renders each
+	 * parameter's <em>declared</em> type, which for a varargs parameter is the element type
+	 * ({@code String... names} is {@code String}), not the array bytecode has.
+	 */
+	private static String methodSignature(MethodInfo method) {
+		List<Type> parameters = method.parameterTypes();
+		List<String> names = new ArrayList<>();
+		for (int i = 0; i < parameters.size(); i++) {
+			Type parameter = parameters.get(i);
+			boolean varargs = (method.flags() & ACC_VARARGS) != 0 && i == parameters.size() - 1 && parameter.kind() == Type.Kind.ARRAY;
+			names.add(JdtStyleTypeNames.name(varargs ? parameter.asArrayType().componentType() : parameter));
+		}
+		return method.name() + "(" + String.join(", ", names) + ") : " + JdtStyleTypeNames.name(method.returnType());
 	}
 
 }

@@ -20,16 +20,19 @@ import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 
-import org.eclipse.lsp4j.Location;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
 import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.Type;
+import org.jboss.jandex.VoidType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,32 +109,73 @@ public class JarStereotypeScanner {
 	 * filtering happens later, live, against whichever catalog is current when a tree is built (see
 	 * {@code docs/structure-view-dependencies.md}'s discussion of why this is not cached here).
 	 *
-	 * <p>Annotation types and annotated interfaces themselves are left out, matching what
-	 * {@code StereotypesIndexer} does for source: an annotation type is a stereotype *definition*
-	 * candidate, never a tree node of its own.
+	 * <p>Left out, matching what {@code StereotypesIndexer} sees in source: annotation types (a
+	 * stereotype *definition* candidate, never a tree node of its own), and anonymous and synthetic
+	 * classes (an anonymous class is no {@code TypeDeclaration}; synthetic classes have no source
+	 * at all).
 	 */
 	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, Index index) {
 		List<StereotypeClassElement> result = new ArrayList<>();
 
 		for (DotName name : ownClasses) {
 			ClassInfo classInfo = index.getClassByName(name);
-			if (classInfo == null || classInfo.isAnnotation() || classInfo.isModule()) {
+			if (!isSourceLevelType(classInfo)) {
 				continue;
 			}
 
 			StereotypeClassElement element = new StereotypeClassElement(name.toString(), null,
 					supertypesOf(classInfo, index), annotationTypesOf(classInfo, index), null);
 
-			for (MethodInfo method : classInfo.methods()) {
+			for (MethodInfo method : sourceLevelMethodsOf(classInfo)) {
 				Set<String> methodAnnotations = annotationTypesOf(method, index);
 
 				if (!methodAnnotations.isEmpty()) {
-					element.addChild(new StereotypeMethodElement(method.name(), methodLabelOf(method), methodSignatureOf(method),
+					element.addChild(new StereotypeMethodElement(sourceName(method), methodLabelOf(method), methodSignatureOf(method),
 							null, methodAnnotations, null));
 				}
 			}
 
 			result.add(element);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Whether the class corresponds to a type declaration in source the way
+	 * {@code StereotypesIndexer} sees it.
+	 */
+	public static boolean isSourceLevelType(ClassInfo classInfo) {
+		return classInfo != null && !classInfo.isAnnotation() && !classInfo.isModule() && !classInfo.isSynthetic()
+				&& classInfo.nestingType() != ClassInfo.NestingType.ANONYMOUS;
+	}
+
+	/**
+	 * The class's methods as they appear in source, in declaration order: constructors included
+	 * (JDT's {@code TypeDeclaration.getMethods()} includes them), but not the static initializer
+	 * and not the synthetic and bridge methods javac adds.
+	 */
+	public static List<MethodInfo> sourceLevelMethodsOf(ClassInfo classInfo) {
+		return classInfo.methodsInDeclarationOrder().stream()
+				.filter(method -> !method.isStaticInitializer() && !method.isSynthetic() && !method.isBridge())
+				.toList();
+	}
+
+	/**
+	 * The class's own direct annotations expanded through their meta-annotation chain - but,
+	 * unlike {@link #annotationTypesOf(ClassInfo, Index)}, <em>without</em> the annotations of its
+	 * supertypes. This is what {@code AnnotationHierarchies.isAnnotatedWith} answers from on the
+	 * AST side, which every "is this a component / a {@code @Configuration} class /
+	 * {@code @NoRepositoryBean}" decision there uses - a class extending a {@code @Component}
+	 * superclass is not a component to it, while {@code annotationTypesOf} (built for stereotype
+	 * matching) would say otherwise.
+	 */
+	public static Set<String> ownAnnotationTypesOf(ClassInfo classInfo, Index index) {
+		Set<String> result = new LinkedHashSet<>();
+		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
+
+		for (AnnotationInstance annotation : classInfo.classAnnotations()) {
+			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations);
 		}
 
 		return result;
@@ -175,7 +219,7 @@ public class JarStereotypeScanner {
 	 * annotations too). Unlike a class, a method does <em>not</em> also pick up a superclass or
 	 * interface method's annotations - matching source there as well.
 	 */
-	static Set<String> annotationTypesOf(MethodInfo method, Index index) {
+	public static Set<String> annotationTypesOf(MethodInfo method, Index index) {
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
 
@@ -213,7 +257,7 @@ public class JarStereotypeScanner {
 	 * that type is itself present in {@code index} (a supertype outside of what got indexed, most
 	 * commonly a JDK type, still has to count for a stereotype assignment that matches on it).
 	 */
-	static Set<String> supertypesOf(ClassInfo classInfo, Index index) {
+	public static Set<String> supertypesOf(ClassInfo classInfo, Index index) {
 		Set<String> result = new LinkedHashSet<>();
 		Deque<DotName> toVisit = new ArrayDeque<>();
 
@@ -244,38 +288,38 @@ public class JarStereotypeScanner {
 	}
 
 	/**
-	 * Mirrors {@code ASTUtils.getMethodSignature(method, false)}'s label shape closely enough for
-	 * display - the declaring class's simple name, then simple type names throughout, not the fully
-	 * qualified ones a signature (used for identity, not display) would need.
+	 * Mirrors {@code ASTUtils.getMethodSignature(method, false)} exactly: the declaring class's
+	 * simple name, the method name (a constructor is named after its class, as JDT names it), and
+	 * JDT-style simple type names - {@code ClassWithMethods.methodWithAnnotations(String) : void}.
 	 */
-	private static String methodLabelOf(MethodInfo method) {
-		StringBuilder label = new StringBuilder(simpleName(method.declaringClass().name())).append('.').append(method.name()).append('(');
-		for (int i = 0; i < method.parametersCount(); i++) {
-			if (i > 0) {
-				label.append(", ");
-			}
-			label.append(simpleName(method.parameterType(i).name()));
-		}
-		return label.append(") : ").append(simpleName(method.returnType().name())).toString();
+	public static String methodLabelOf(MethodInfo method) {
+		return signature(method, JdtStyleTypeNames.simpleName(method.declaringClass().name()), JdtStyleTypeNames::name);
 	}
 
 	/**
-	 * A signature stable enough for identity - unlike {@link #methodLabelOf}, uses fully qualified
-	 * parameter type names so two overloads are never confused with one another.
+	 * Mirrors {@code ASTUtils.getMethodSignature(method, true)}: binary names throughout. Used as
+	 * the key a method is matched by - e.g. to the request mapping it declares - so it only has to
+	 * be unambiguous among JAR-scanned elements, which it is, even where JDT's own rendering (of a
+	 * type variable, say) differs.
 	 */
-	private static String methodSignatureOf(MethodInfo method) {
-		StringBuilder signature = new StringBuilder(method.declaringClass().name().toString()).append('.').append(method.name()).append('(');
-		for (int i = 0; i < method.parametersCount(); i++) {
-			if (i > 0) {
-				signature.append(", ");
-			}
-			signature.append(method.parameterType(i).name().toString());
-		}
-		return signature.append(')').toString();
+	public static String methodSignatureOf(MethodInfo method) {
+		return signature(method, method.declaringClass().name().toString(), JdtStyleTypeNames::binaryName);
 	}
 
-	private static String simpleName(DotName name) {
-		return name.local();
+	/**
+	 * The method's name as source (and JDT) has it - a constructor is named after its class, not
+	 * {@code <init>}.
+	 */
+	public static String sourceName(MethodInfo method) {
+		return method.isConstructor() ? JdtStyleTypeNames.simpleName(method.declaringClass().name()) : method.name();
 	}
+
+	private static String signature(MethodInfo method, String className, Function<Type, String> typeName) {
+		String name = sourceName(method);
+		String parameters = method.parameterTypes().stream().map(typeName).collect(Collectors.joining(", "));
+		String returnType = method.isConstructor() ? typeName.apply(VoidType.VOID) : typeName.apply(method.returnType());
+		return className + "." + name + "(" + parameters + ") : " + returnType;
+	}
+
 
 }

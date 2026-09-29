@@ -97,9 +97,17 @@ public class StructureViewUtil {
 	}
 	
 	public static String getMethodLabel(IJavaProject project, CachedSpringMetamodelIndex springIndex, StereotypeMethodElement method, StereotypeClassElement clazz) {
-		// TODO: special treatment for methods that have specific index elements with specific labels (e.g. mapping methods)
-		
-		Optional<RequestMappingIndexElement> mapping = springIndex.getNodesOfType(project.getElementName(), RequestMappingIndexElement.class).stream()
+		return getMethodLabel(method, springIndex.getNodesOfType(project.getElementName(), RequestMappingIndexElement.class));
+	}
+
+	/**
+	 * A method's label: the route label of the request mapping it declares, if any, matched by
+	 * method signature, otherwise its plain method label. Shared between the live index's request
+	 * mappings ({@code IndexStructureElements}) and a JAR's ({@code JarStructureElements}), so the
+	 * two can't label the same kind of method differently.
+	 */
+	public static String getMethodLabel(StereotypeMethodElement method, Collection<RequestMappingIndexElement> requestMappings) {
+		Optional<RequestMappingIndexElement> mapping = requestMappings.stream()
 			.filter(mappingElement -> mappingElement.getMethodSignature() != null && mappingElement.getMethodSignature().equals(method.getMethodSignature()))
 			.findAny();
 		

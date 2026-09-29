@@ -82,8 +82,6 @@ public class StructureParityTest {
 		harness.intialize(null);
 	}
 
-	private static final String PUBLISHERS_PENDING = "event publishers are not read from JARs yet (step 5.6)";
-
 	@Test
 	void stereotypesSupport() throws Exception {
 		assertParity("test-stereotypes-support", Map.of());
@@ -116,13 +114,10 @@ public class StructureParityTest {
 
 	@Test
 	void eventListeners() throws Exception {
-		Map<String, TypeView> fromJar = assertParity("test-events-indexing", Map.of(
-				"com.example.events.demo.CustomApplicationEventPublisher: members source=[publishes: CustomApplicationEvent] jar=[]", PUBLISHERS_PENDING,
-				"com.example.events.demo.CustomEventPublisher: members source=[publishes: CustomEvent] jar=[]", PUBLISHERS_PENDING,
-				"com.example.events.demo.CustomEventPublisherWithAdditionalElements: members source=[publishes: CustomEvent] jar=[]", PUBLISHERS_PENDING,
-				"com.example.events.demo.SpecializedCustomEventPublisher: members source=[publishes: SpecializedCustomEvent] jar=[]", PUBLISHERS_PENDING));
+		Map<String, TypeView> fromJar = assertParity("test-events-indexing", Map.of());
 
 		assertTrue(membersStartingWith(fromJar, "listens on: ") > 0);
+		assertTrue(membersStartingWith(fromJar, "publishes: ") > 0);
 	}
 
 	@Test
@@ -137,6 +132,15 @@ public class StructureParityTest {
 		Map<String, TypeView> fromJar = assertParity("test-spring-ai-indexing", Map.of());
 
 		assertTrue(membersStartingWith(fromJar, "@Tool ") + membersStartingWith(fromJar, "@Mcp") > 0);
+	}
+
+	/**
+	 * The fixture's registrars are no components, so neither side has members for them - that
+	 * registrar components get theirs is JarBytecodeScannersTest's.
+	 */
+	@Test
+	void beanRegistrars() throws Exception {
+		assertParity("test-framework-7-indexing", Map.of());
 	}
 
 	private static long membersStartingWith(Map<String, TypeView> views, String prefix) {

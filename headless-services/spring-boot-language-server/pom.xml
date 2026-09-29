@@ -83,6 +83,20 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 		</dependency>
+
+		<!-- reads method bodies of JAR dependencies for the structure view (event publishers, bean registrars) -->
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-tree</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm-analysis</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.ide.vscode</groupId>
 			<artifactId>commons-util</artifactId>

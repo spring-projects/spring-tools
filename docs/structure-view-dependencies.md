@@ -1109,6 +1109,61 @@ once they are used directly.
   declarative facts require it (5.6).
 - **Navigation - decided:** JAR nodes open the class in the IDE (5.8).
 
+### 5.4 - 5.7 as implemented
+
+Every member kind of 5.1 is read from JAR dependencies now:
+
+| Member kind | Scanner |
+|---|---|
+| request mappings, incl. Feign clients | `JarRequestMappingScanner` |
+| `@EventListener` / `ApplicationListener` | `JarEventListenerScanner` |
+| `@Bean` methods | `JarBeanMethodScanner` |
+| Spring AI / MCP methods | `JarSpringAiScanner` |
+| event publishers (ASM) | `JarEventPublisherScanner` |
+| registrar beans (ASM) | `JarBeanRegistrarScanner` |
+| config properties | `JarConfigurationPropertiesScanner` |
+| query methods | `JarDataRepositoryScanner` |
+
+- **Bean model:** `JarBeanIndexer` decides which beans a class gets, in `ComponentIndexer`'s
+  order. It skips enums and records the way `ComponentIndexer` does.
+- **Shared tables:** request method mappings (`RequestMappingIndexer.METHOD_MAPPING`) and Spring AI
+  annotation kinds (`SpringAiIndexer.ANNOTATION_TYPES`) are shared with the source side, not
+  copied.
+- **Parity harness:** `StructureParityTest` covers 8 fixture projects. It has no allow-listed
+  divergence left, and checks per kind that the JAR side is not trivially empty.
+- **ASM:** `JarBytecode` reads bytecode only for gated classes (a test counts the class files
+  read):
+  - a gated class is read with its nest members;
+  - calls are resolved to their declaring type through the Jandex index, superclass first;
+  - types are tracked by a `SimpleVerifier` that answers hierarchy questions from the index and
+    is lenient about unknown types;
+  - results are ordered by source line;
+  - a class file ASM cannot read costs only the bytecode-derived members.
+  - The ASM versions are managed in `commons/pom.xml`, and have to follow OpenRewrite's.
+
+**Known differences**, all rare, and documented in the scanners' javadoc:
+
+*Order:*
+- Several matching annotations on one method come in Jandex's order, sorted by name, not as
+  written.
+
+*`@Bean` labels (approximated, 5.7):*
+- The other annotations are rebuilt from their values.
+- They come in name order.
+- Source-retention and `TYPE_USE` annotations are missing.
+
+*Event publishers:* the event type is the verifier's flow type. It differs from JDT's static type
+for:
+- a variable assigned a more specific value;
+- a parameterized or anonymous event class;
+- a boxed primitive;
+- `publishEvent(null)`.
+
+*Registrars:*
+- Only class literals and constant names are read.
+- `registerBean` calls in anonymous classes inside `register` are not read. Its lambdas are,
+  found through `invokedynamic`.
+
 ### 5.8 Navigation: JAR nodes open the class in the IDE (decided)
 
 Clicking a JAR type, method node or member opens the corresponding class - at that method or field

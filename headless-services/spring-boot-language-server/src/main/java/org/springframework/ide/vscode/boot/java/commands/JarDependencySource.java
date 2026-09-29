@@ -206,7 +206,7 @@ public class JarDependencySource implements StructureDependencySource {
 			}
 
 			JarType type = new JarType(classInfo, element, JarStereotypeScanner.ownAnnotationTypesOf(classInfo, index), index,
-					placeholderLocation(jarFile, classInfo), bindingKeys);
+					placeholderLocation(jarFile, classInfo), jarFile, bindingKeys);
 
 			try {
 				List<Bean> beans = JarBeanIndexer.beansOf(type);

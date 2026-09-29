@@ -58,7 +58,7 @@ public class JarTypes {
 			Location placeholder = new Location("jar:" + jar.toURI() + "!/" + element.getType().replace('.', '/') + ".class",
 					new Range(new Position(0, 0), new Position(0, 0)));
 			result.put(element.getType(), new JarType(classInfo, element, JarStereotypeScanner.ownAnnotationTypesOf(classInfo, index), index,
-					placeholder, new IdentityHashMap<>()));
+					placeholder, jar, new IdentityHashMap<>()));
 		}
 		return result;
 	}

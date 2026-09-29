@@ -109,6 +109,8 @@
 		<java.version>21</java.version>
 		<!-- Property because it is also read by generate-parser(s).sh scripts -->
 		<antlr.version>4.13.2</antlr.version>
+		<!-- has to follow the version OpenRewrite brings in: managed here, it wins over that one -->
+		<asm.version>9.9.1</asm.version>
 	</properties>
 
     <dependencyManagement>
@@ -179,6 +181,26 @@
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex</artifactId>
                 <version>3.6.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-analysis</artifactId>
+                <version>${asm.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-util</artifactId>
+                <version>${asm.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.javolution</groupId>

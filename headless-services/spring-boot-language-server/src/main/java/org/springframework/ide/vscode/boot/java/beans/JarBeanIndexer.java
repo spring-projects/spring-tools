@@ -14,9 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jboss.jandex.DotName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.data.JarDataRepositoryScanner;
 import org.springframework.ide.vscode.boot.java.events.JarEventListenerScanner;
+import org.springframework.ide.vscode.boot.java.events.JarEventPublisherScanner;
 import org.springframework.ide.vscode.boot.java.requestmapping.JarRequestMappingScanner;
 import org.springframework.ide.vscode.boot.java.springai.JarSpringAiScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
@@ -43,6 +46,8 @@ import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
  * @author Martin Lippert
  */
 public class JarBeanIndexer {
+
+	private static final Logger log = LoggerFactory.getLogger(JarBeanIndexer.class);
 
 	private static final DotName FEIGN_CLIENT = DotName.createSimple(Annotations.FEIGN_CLIENT);
 
@@ -101,6 +106,7 @@ public class JarBeanIndexer {
 	 * {@code ComponentIndexer.postProcessComponent}'s children, in its order.
 	 */
 	private static void postProcessComponent(Bean bean, JarType type) {
+		fromBytecode(() -> JarEventPublisherScanner.addEventPublishers(bean, type), type);
 		JarBeanMethodScanner.addBeanMethods(bean, type);
 		JarEventListenerScanner.addEventListeners(bean, type);
 		JarEventListenerScanner.addApplicationListener(bean, type);
@@ -108,7 +114,21 @@ public class JarBeanIndexer {
 		if (JarConfigurationPropertiesScanner.isConfigurationProperties(type)) {
 			JarConfigurationPropertiesScanner.addConfigurationProperties(bean, type);
 		}
+		fromBytecode(() -> JarBeanRegistrarScanner.addRegisteredBeans(bean, type), type);
 		JarSpringAiScanner.addSpringAiMethods(bean, type);
+	}
+
+	/**
+	 * A member kind read from method bodies - which, failing on unusual bytecode, must not cost the
+	 * class its other members.
+	 */
+	private static void fromBytecode(Runnable scanner, JarType type) {
+		try {
+			scanner.run();
+		}
+		catch (RuntimeException e) {
+			log.warn("cannot read the method bodies of '{}' in '{}'", type.classInfo().name(), type.jarFile(), e);
+		}
 	}
 
 	public static boolean isComponent(JarType type) {

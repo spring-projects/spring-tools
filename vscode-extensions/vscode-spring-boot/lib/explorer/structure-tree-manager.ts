@@ -283,15 +283,22 @@ export class StructureManager {
             dependency: d
         } as DependencyQuickPickItem);
 
-        // the server sends workspace projects first, then jars - both sorted by name
-        const projects = offered.filter(d => d.kind === 'WORKSPACE_PROJECT');
-        const jars = offered.filter(d => d.kind === 'JAR');
+        // the selected dependencies first, so they are seen without scrolling through a long list of
+        // libraries - and within the selected and the other ones alike, workspace projects before
+        // libraries, each under its category. The server sends workspace projects first, then jars,
+        // both sorted by name, and filtering keeps that order.
+        const isSelected = (d: DependencyDescriptor) => selected.includes(d.id);
+        const groups: [string, DependencyDescriptor[]][] = [
+            ['Selected workspace projects', offered.filter(d => d.kind === 'WORKSPACE_PROJECT' && isSelected(d))],
+            ['Selected libraries', offered.filter(d => d.kind === 'JAR' && isSelected(d))],
+            ['Workspace projects', offered.filter(d => d.kind === 'WORKSPACE_PROJECT' && !isSelected(d))],
+            ['Libraries', offered.filter(d => d.kind === 'JAR' && !isSelected(d))]
+        ];
         const items: (DependencyQuickPickItem | QuickPickItem)[] = [];
-        if (projects.length > 0) {
-            items.push({ label: 'Workspace projects', kind: QuickPickItemKind.Separator }, ...projects.map(toItem));
-        }
-        if (jars.length > 0) {
-            items.push({ label: 'Libraries', kind: QuickPickItemKind.Separator }, ...jars.map(toItem));
+        for (const [label, dependenciesOfGroup] of groups) {
+            if (dependenciesOfGroup.length > 0) {
+                items.push({ label, kind: QuickPickItemKind.Separator }, ...dependenciesOfGroup.map(toItem));
+            }
         }
 
         const picked = await window.showQuickPick(items, {

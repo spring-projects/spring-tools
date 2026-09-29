@@ -8,6 +8,7 @@
 * _(Spring Boot)_ [structure view] new diff feature shows changed nodes for new projects when there is nothing new [#1987](https://github.com/spring-projects/spring-tools/issues/1987)
 * _(Spring Boot)_ Can't jump to the code via the URL [#1985](https://github.com/spring-projects/spring-tools/issues/1985)
 * _(Spring Boot)_ reduce logging for document changes [#1982](https://github.com/spring-projects/spring-tools/issues/1982)
+* _(Spring Boot)_ Allow overriding the SQL dialect used to validate native @Query statements [#1975](https://github.com/spring-projects/spring-tools/issues/1975)
 * _(Spring Boot)_ visualize changes in the logical structure view [#1974](https://github.com/spring-projects/spring-tools/issues/1974)
 
 ## 2026-09-09 (5.4.0.RELEASE, incl. language servers version 2.4.0)

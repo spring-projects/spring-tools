@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.Repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -567,6 +569,70 @@ public class GitBaselineTrackerTest {
 		assertThat(baselines.captureCount(project)).isEqualTo(1);
 	}
 
+	/**
+	 * GH-2012: many projects in one repository share one open repository and one working tree
+	 * status per check, rather than one of each per project - which ran a language server with a
+	 * hundred projects in one repository out of memory.
+	 */
+	@SuppressWarnings("unchecked")
+	@Test
+	void projectsOfOneRepositoryShareTheRepositoryAndOneStatus(@TempDir Path dir) throws Exception {
+		for (String name : List.of("app", "app-two", "lib")) {
+			Files.createDirectories(dir.resolve(name + "/src"));
+			Files.writeString(dir.resolve(name + "/src/" + name.replace("-", "") + "Type.java"), "class X {}");
+		}
+		commitEverything(dir, "initial");
+
+		// pending in app-two only - which must not count for app, although its path starts the same
+		writeWithoutCommitting(dir, "app-two/src/apptwoType.java", "class X { void added() {} }");
+
+		IJavaProject app = projectAt(dir.resolve("app"), "app");
+		IJavaProject appTwo = projectAt(dir.resolve("app-two"), "app-two");
+		IJavaProject lib = projectAt(dir.resolve("lib"), "lib");
+
+		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
+		doReturn(List.of(app, appTwo, lib)).when(projectFinder).all();
+		BootJavaConfig config = mock(BootJavaConfig.class);
+		when(config.isStructureGitBaselineEnabled()).thenReturn(true);
+		SpringSymbolIndex symbolIndex = settledIndex();
+		ArgumentCaptor<Consumer<Set<String>>> listenerCaptor = ArgumentCaptor.forClass(Consumer.class);
+
+		AtomicInteger statusCalls = new AtomicInteger();
+		WorkingTreeStatus real = new WorkingTreeStatus.IndexRelevant(indexWithRealJavaIndexerPredicate());
+		WorkingTreeStatus counting = new WorkingTreeStatus() {
+			@Override
+			public boolean isStructureClean(Repository repository, File projectDirectory) {
+				statusCalls.incrementAndGet();
+				return real.isStructureClean(repository, projectDirectory);
+			}
+
+			@Override
+			public Set<File> structureCleanProjects(Repository repository, Collection<File> projectDirectories) {
+				statusCalls.incrementAndGet();
+				return real.structureCleanProjects(repository, projectDirectories);
+			}
+		};
+
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = new GitBaselineTracker(projectFinder, symbolIndex, config, baselines, counting);
+		verify(symbolIndex).onUpdate(listenerCaptor.capture());
+
+		listenerCaptor.getValue().accept(Set.of("app", "app-two", "lib"));
+
+		assertThat(statusCalls.get()).isEqualTo(1);
+		assertThat(tracker.openRepositoryCount()).isEqualTo(1);
+		assertThat(baselines.captureCount(app)).isEqualTo(1);
+		assertThat(baselines.captureCount(appTwo)).isZero();
+		assertThat(baselines.captureCount(lib)).isEqualTo(1);
+
+		// a check where every project is at HEAD already needs no status at all
+		baselines.captureBaseline(appTwo, baselines.capturedCommitShaOf(app).get(), null);
+		tracker.pollForCommits();
+		assertThat(statusCalls.get()).isEqualTo(1);
+
+		tracker.close();
+	}
+
 	private static GitBaselineTracker tracker(IJavaProject project, GitBaselineTracker.BaselineAccess baselines, boolean gitBaselineEnabled) {
 		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
 		doReturn(List.of(project)).when(projectFinder).all();
@@ -606,8 +672,12 @@ public class GitBaselineTrackerTest {
 	}
 
 	private static IJavaProject projectAt(Path dir) {
+		return projectAt(dir, "test-project");
+	}
+
+	private static IJavaProject projectAt(Path dir, String name) {
 		IJavaProject project = mock(IJavaProject.class);
-		when(project.getElementName()).thenReturn("test-project");
+		when(project.getElementName()).thenReturn(name);
 		when(project.getLocationUri()).thenReturn(dir.toUri());
 		return project;
 	}

@@ -11,8 +11,11 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.jgit.api.Git;
@@ -49,6 +52,21 @@ public interface WorkingTreeStatus {
 	boolean isStructureClean(Repository repository, File projectDirectory);
 
 	/**
+	 * {@link #isStructureClean} for several projects of the same repository at once.
+	 *
+	 * @return those of the given project directories whose projects are clean
+	 */
+	default Set<File> structureCleanProjects(Repository repository, Collection<File> projectDirectories) {
+		Set<File> result = new LinkedHashSet<>();
+		for (File projectDirectory : projectDirectories) {
+			if (isStructureClean(repository, projectDirectory)) {
+				result.add(projectDirectory);
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Judges cleanliness over the source files of that one project that can actually contribute to
 	 * its logical structure, and ignores everything else: an edited README, a new scratch file, a
 	 * changed CI config, or any pending change outside the project's own directory cannot move a
@@ -66,21 +84,39 @@ public interface WorkingTreeStatus {
 
 		@Override
 		public boolean isStructureClean(Repository repository, File projectDirectory) {
+			return structureCleanProjects(repository, List.of(projectDirectory)).contains(projectDirectory);
+		}
+
+		/**
+		 * One status over the whole set of projects, narrowed to their directories: every status
+		 * reads the repository's whole git index, which for a big repository is expensive - and
+		 * would otherwise be paid once per project (GH-2012). The pending paths are then attributed
+		 * to the projects by their directories.
+		 */
+		@Override
+		public Set<File> structureCleanProjects(Repository repository, Collection<File> projectDirectories) {
 			SpringIndexerJava javaIndexer = symbolIndex.getJavaIndexer();
-			if (javaIndexer == null) {
+			if (javaIndexer == null || projectDirectories.isEmpty()) {
 				// no way to tell yet which files matter, so don't risk a baseline that claims to be
 				// a commit without being one
-				return false;
+				return Set.of();
 			}
 
 			try (Git git = new Git(repository)) {
 				StatusCommand statusCommand = git.status();
 
-				// a repository can hold far more than this one project (a monorepo, a multi-module
-				// build, sibling projects); only this project's own subtree can affect its structure
-				String projectPath = repositoryRelativePathOf(repository, projectDirectory);
-				if (projectPath != null && !projectPath.isEmpty()) {
-					statusCommand.addPath(projectPath);
+				// a repository can hold far more than these projects (a monorepo, a multi-module
+				// build, sibling projects); only their own subtrees can affect their structure. A
+				// project that is the work tree itself, or outside of it, needs the whole repository.
+				Map<File, String> projectPaths = new LinkedHashMap<>();
+				boolean wholeRepository = false;
+				for (File projectDirectory : projectDirectories) {
+					String projectPath = repositoryRelativePathOf(repository, projectDirectory);
+					projectPaths.put(projectDirectory, projectPath);
+					wholeRepository |= projectPath == null || projectPath.isEmpty();
+				}
+				if (!wholeRepository) {
+					projectPaths.values().stream().distinct().forEach(statusCommand::addPath);
 				}
 
 				Status status = statusCommand.call();
@@ -103,17 +139,31 @@ public interface WorkingTreeStatus {
 				// as a URI and throws on the repository-relative paths git status reports.)
 				List<String> relevant = pending.stream().filter(javaIndexer::isInterestedIn).toList();
 
-				if (!relevant.isEmpty()) {
-					// logged at info, not debug: "why is there no baseline?" is otherwise invisible
-					log.info("pending source changes in '{}' keep a logical structure baseline from being captured: {}",
-							projectDirectory, relevant);
+				Set<File> clean = new LinkedHashSet<>();
+				for (Map.Entry<File, String> project : projectPaths.entrySet()) {
+					List<String> relevantForProject = relevant.stream().filter(path -> isWithin(path, project.getValue())).toList();
+					if (relevantForProject.isEmpty()) {
+						clean.add(project.getKey());
+					}
+					else {
+						// logged at info, not debug: "why is there no baseline?" is otherwise invisible
+						log.info("pending source changes in '{}' keep a logical structure baseline from being captured: {}",
+								project.getKey(), relevantForProject);
+					}
 				}
-
-				return relevant.isEmpty();
+				return clean;
 			} catch (Exception e) {
 				log.warn("failed to read the git status of: " + repository.getDirectory(), e);
-				return false;
+				return Set.of();
 			}
+		}
+
+		/**
+		 * Whether a repository-relative path is in the project at the given repository-relative
+		 * path - every path is, for a project that is the whole work tree or outside of it.
+		 */
+		private static boolean isWithin(String path, String projectPath) {
+			return projectPath == null || projectPath.isEmpty() || path.equals(projectPath) || path.startsWith(projectPath + "/");
 		}
 
 		/**

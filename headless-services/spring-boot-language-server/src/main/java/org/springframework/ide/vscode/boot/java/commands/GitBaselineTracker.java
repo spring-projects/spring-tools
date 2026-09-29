@@ -11,6 +11,10 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,9 +75,17 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
  * <p>{@link #syncBaselineWithGit} can run concurrently for the same project: the poll runs on its
  * own timer thread, while the index-update listener runs on {@code SpringSymbolIndex}'s own worker
  * thread, and both can decide to check a project around the same moment. Its "have I already
- * captured this commit?" check and the capture itself are therefore serialized per project (see
- * {@link #projectLocks}) - without that, two concurrent calls could both read "not captured yet"
+ * captured this commit?" check and the capture itself are therefore serialized per repository (see
+ * {@link #repositoryLocks}) - without that, two concurrent calls could both read "not captured yet"
  * before either one's capture lands, and both go on to capture the very same commit.
+ *
+ * <p>Many projects often share one repository (a monorepo, a multi-module build), so everything
+ * git-related is done per repository rather than per project: one open {@link Repository} per git
+ * directory, one {@code HEAD} lookup per repository and check, and one working tree status over all
+ * of its projects that need one. Per project, the cost would be one copy of the repository's pack
+ * indexes, refs and config per project, and one read of the whole git index per project and check
+ * - enough to run a language server out of memory on a repository with a hundred projects
+ * (GH-2012).
  *
  * <p>Depends on {@link BaselineAccess} and {@link WorkingTreeStatus} rather than on
  * {@link StructureSnapshotStore} and JGit status directly, so the policy in this class can be
@@ -114,11 +126,17 @@ public class GitBaselineTracker implements AutoCloseable {
 	private final WorkingTreeStatus workingTreeStatus;
 
 	/**
-	 * Discovered repository per project, cached for the lifetime of the language server. A project
+	 * Discovered git directory per project, cached for the lifetime of the language server. A project
 	 * without a repo is cached as {@link Optional#empty()} too, so a repo added to an already-open
 	 * project only takes effect after a restart - a deliberately simple tradeoff for now.
 	 */
-	private final Map<String, Optional<Repository>> repositoriesByProject = new ConcurrentHashMap<>();
+	private final Map<String, Optional<File>> gitDirectoriesByProject = new ConcurrentHashMap<>();
+
+	/**
+	 * One open repository per git directory, however many projects live in it - see this class'
+	 * description.
+	 */
+	private final Map<File, Repository> repositoriesByGitDirectory = new ConcurrentHashMap<>();
 
 	/**
 	 * Names of projects for which at least one index update has been observed since this tracker was
@@ -129,12 +147,10 @@ public class GitBaselineTracker implements AutoCloseable {
 	private final Set<String> indexedProjects = ConcurrentHashMap.newKeySet();
 
 	/**
-	 * One lock object per project, created on first use and never removed - see this class'
-	 * description for why {@link #syncBaselineWithGit} needs one at all. Cheap to keep around
-	 * indefinitely: a handful of bytes per project name, the same simple tradeoff already made for
-	 * {@link #repositoriesByProject}.
+	 * One lock object per git directory, created on first use and never removed - see this class'
+	 * description for why {@link #syncBaselineWithGit} needs one at all.
 	 */
-	private final Map<String, Object> projectLocks = new ConcurrentHashMap<>();
+	private final Map<File, Object> repositoryLocks = new ConcurrentHashMap<>();
 
 	/**
 	 * The background poll, if one was started - {@code null} otherwise. Stopped by {@link #close()}.
@@ -236,7 +252,7 @@ public class GitBaselineTracker implements AutoCloseable {
 				return;
 			}
 
-			eligible.forEach(this::syncBaselineWithGit);
+			syncBaselinesWithGit(eligible);
 		} catch (Exception e) {
 			// never let a failing tick kill the poll
 			log.warn("failed to check the open projects for new commits", e);
@@ -271,57 +287,106 @@ public class GitBaselineTracker implements AutoCloseable {
 	 * commit its current baseline (if any) was captured at, and the working tree holds no pending
 	 * source changes - see this class' description for why all three are required. Safe and cheap
 	 * to call redundantly: the common "nothing moved" case costs one small file read.
-	 *
-	 * <p>Serialized per project (see this class' description) so two calls racing for the same
-	 * project - typically the poll and the index-update listener, right as a project's initial
-	 * indexing completes - cannot both capture the same commit.
 	 */
 	public void syncBaselineWithGit(IJavaProject project) {
+		syncBaselinesWithGit(List.of(project));
+	}
+
+	/**
+	 * {@link #syncBaselineWithGit(IJavaProject)} for several projects at once, doing the git work
+	 * once per repository rather than once per project - see this class' description.
+	 */
+	void syncBaselinesWithGit(Collection<? extends IJavaProject> projects) {
 		if (!isEnabled()) {
 			return;
 		}
 
-		try {
-			synchronized (projectLocks.computeIfAbsent(project.getElementName(), name -> new Object())) {
-				Optional<Repository> repository = repositoryOf(project);
-				if (repository.isEmpty()) {
-					log.trace("project '{}' is not git-backed - nothing to synchronize", project.getElementName());
-					return;
-				}
+		Map<File, List<IJavaProject>> projectsByGitDirectory = new LinkedHashMap<>();
+		for (IJavaProject project : projects) {
+			Optional<File> gitDirectory = gitDirectoryOf(project);
+			if (gitDirectory.isEmpty()) {
+				log.trace("project '{}' is not git-backed - nothing to synchronize", project.getElementName());
+				continue;
+			}
+			projectsByGitDirectory.computeIfAbsent(gitDirectory.get(), dir -> new ArrayList<>()).add(project);
+		}
 
-				ObjectId head = repository.get().resolve("HEAD");
+		projectsByGitDirectory.forEach(this::syncRepositoryWithGit);
+	}
+
+	/**
+	 * Serialized per repository (see this class' description) so two calls racing for the same
+	 * project - typically the poll and the index-update listener, right as a project's initial
+	 * indexing completes - cannot both capture the same commit.
+	 */
+	private void syncRepositoryWithGit(File gitDirectory, List<IJavaProject> projects) {
+		try {
+			synchronized (repositoryLocks.computeIfAbsent(gitDirectory, dir -> new Object())) {
+				Repository repository = repositoryOf(gitDirectory);
+
+				ObjectId head = repository.resolve("HEAD");
 				if (head == null) {
 					// an "unborn" branch - a repository without any commit to snapshot yet
-					log.debug("project '{}' has a git repository but no commit yet (unborn branch) - nothing to synchronize",
-							project.getElementName());
+					log.debug("the git repository at {} has no commit yet (unborn branch) - nothing to synchronize for {}",
+							gitDirectory, names(projects));
 					return;
 				}
 
 				String headSha = head.getName();
-				String capturedSha = baselines.capturedCommitShaOf(project).orElse(null);
-				if (headSha.equals(capturedSha)) {
-					log.trace("project '{}' already has a baseline for HEAD ({}) - nothing to do",
-							project.getElementName(), headSha);
+				List<IJavaProject> behindHead = new ArrayList<>();
+				for (IJavaProject project : projects) {
+					if (headSha.equals(baselines.capturedCommitShaOf(project).orElse(null))) {
+						log.trace("project '{}' already has a baseline for HEAD ({}) - nothing to do", project.getElementName(), headSha);
+					}
+					else {
+						behindHead.add(project);
+					}
+				}
+
+				if (behindHead.isEmpty()) {
 					return;
 				}
 
-				if (!workingTreeStatus.isStructureClean(repository.get(), new File(project.getLocationUri()))) {
-					// snapshotting now would bake the pending changes into the baseline and hide them
-					// from every later diff, so leave any existing baseline alone and wait for the
-					// next commit
-					log.debug("not capturing a logical structure baseline for project '{}' at commit {} - source changes are pending",
-							project.getElementName(), headSha);
-					return;
-				}
+				Map<IJavaProject, File> directories = new LinkedHashMap<>();
+				behindHead.forEach(project -> directories.put(project, new File(project.getLocationUri())));
+				Set<File> clean = workingTreeStatus.structureCleanProjects(repository, directories.values());
 
-				String commitMessage = resolveCommitMessage(repository.get(), head);
-				log.debug("HEAD for project '{}' moved to {} ({}) with a clean working tree - capturing a new logical structure baseline",
-						project.getElementName(), headSha, commitMessage);
-				baselines.captureBaseline(project, headSha, commitMessage);
+				String commitMessage = null;
+				for (IJavaProject project : behindHead) {
+					if (!clean.contains(directories.get(project))) {
+						// snapshotting now would bake the pending changes into the baseline and hide them
+						// from every later diff, so leave any existing baseline alone and wait for the
+						// next commit
+						log.debug("not capturing a logical structure baseline for project '{}' at commit {} - source changes are pending",
+								project.getElementName(), headSha);
+						continue;
+					}
+
+					if (commitMessage == null) {
+						commitMessage = resolveCommitMessage(repository, head);
+					}
+					capture(project, headSha, commitMessage);
+				}
 			}
 		} catch (Exception e) {
+			log.warn("failed to synchronize logical structure baselines with the git repository at " + gitDirectory + " for projects: "
+					+ names(projects), e);
+		}
+	}
+
+	private void capture(IJavaProject project, String headSha, String commitMessage) {
+		try {
+			log.debug("HEAD for project '{}' moved to {} ({}) with a clean working tree - capturing a new logical structure baseline",
+					project.getElementName(), headSha, commitMessage);
+			baselines.captureBaseline(project, headSha, commitMessage);
+		} catch (Exception e) {
+			// one project's failing capture must not keep the other projects of its repository from theirs
 			log.warn("failed to synchronize logical structure baseline with git for project: " + project.getElementName(), e);
 		}
+	}
+
+	private static List<String> names(List<IJavaProject> projects) {
+		return projects.stream().map(IJavaProject::getElementName).toList();
 	}
 
 	private void onIndexUpdate(Set<String> affectedProjects) {
@@ -346,7 +411,7 @@ public class GitBaselineTracker implements AutoCloseable {
 					affectedProjects, matched.size());
 		}
 
-		matched.forEach(this::syncBaselineWithGit);
+		syncBaselinesWithGit(matched);
 	}
 
 	/**
@@ -379,16 +444,38 @@ public class GitBaselineTracker implements AutoCloseable {
 	 * it is open, and they are cached for the lifetime of the server.
 	 */
 	private void closeRepositories() {
-		log.debug("closing {} cached git repository handle(s)", repositoriesByProject.size());
-		repositoriesByProject.values().forEach(repository -> repository.ifPresent(Repository::close));
-		repositoriesByProject.clear();
+		log.debug("closing {} cached git repository handle(s)", repositoriesByGitDirectory.size());
+		repositoriesByGitDirectory.values().forEach(Repository::close);
+		repositoriesByGitDirectory.clear();
+		gitDirectoriesByProject.clear();
 	}
 
-	private Optional<Repository> repositoryOf(IJavaProject project) {
-		return repositoriesByProject.computeIfAbsent(project.getElementName(), name -> discoverRepository(project));
+	/**
+	 * How many repositories are open - one per git directory, for tests to tell.
+	 */
+	int openRepositoryCount() {
+		return repositoriesByGitDirectory.size();
 	}
 
-	private Optional<Repository> discoverRepository(IJavaProject project) {
+	private Repository repositoryOf(File gitDirectory) throws IOException {
+		Repository repository = repositoriesByGitDirectory.get(gitDirectory);
+		if (repository == null) {
+			// only ever built under the repository's lock, see syncRepositoryWithGit - so at most once
+			repository = new FileRepositoryBuilder().setGitDir(gitDirectory).build();
+			repositoriesByGitDirectory.put(gitDirectory, repository);
+		}
+		return repository;
+	}
+
+	private Optional<File> gitDirectoryOf(IJavaProject project) {
+		return gitDirectoriesByProject.computeIfAbsent(project.getElementName(), name -> discoverGitDirectory(project));
+	}
+
+	/**
+	 * Finds the project's git directory without opening the repository - a walk up the file system
+	 * - normalized, so that every project of one repository ends up with the very same key.
+	 */
+	private Optional<File> discoverGitDirectory(IJavaProject project) {
 		try {
 			File projectDir = new File(project.getLocationUri());
 			File gitDir = new FileRepositoryBuilder().findGitDir(projectDir).getGitDir();
@@ -398,8 +485,9 @@ public class GitBaselineTracker implements AutoCloseable {
 				return Optional.empty();
 			}
 
-			log.debug("discovered git repository for project '{}' at {}", project.getElementName(), gitDir);
-			return Optional.of(new FileRepositoryBuilder().setGitDir(gitDir).build());
+			File normalized = gitDir.toPath().toAbsolutePath().normalize().toFile();
+			log.debug("discovered git repository for project '{}' at {}", project.getElementName(), normalized);
+			return Optional.of(normalized);
 		} catch (Exception e) {
 			log.warn("failed to discover a git repository for project: " + project.getElementName(), e);
 			return Optional.empty();

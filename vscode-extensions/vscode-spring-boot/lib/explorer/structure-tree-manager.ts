@@ -66,6 +66,9 @@ export class StructureManager {
 
     private _rootElementsRequest: Thenable<StereotypedNode[]>
     private _rootElements: StereotypedNode[] = [];
+    private _requestCounter = 0;
+    // per project, the number of the request its current node came from - see refresh
+    private readonly _projectVersions = new Map<string, number>();
     private _onDidChange = new EventEmitter<undefined | StereotypedNode | StereotypedNode[]>();
     private workspaceState: Memento;
     private hideUnchangedToggle: PersistedToggle;
@@ -391,45 +394,56 @@ export class StructureManager {
             compareAgainst: this.includeDependencies ? undefined : this.getCompareAgainstMap(),
             dependencies: this.includeDependencies ? this.getDependenciesMap() : undefined,
         } as StructureCommandParams;
-        this._rootElementsRequest = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
+        // requests can overlap - an index update's partial refresh while a full load is still
+        // being computed, say - and complete in any order. Each project's node is only ever
+        // replaced by the result of a request started after the one it came from, so a slow older
+        // request can neither roll a project back nor drop one a newer request brought in.
+        const requestNumber = ++this._requestCounter;
+        const request: Thenable<StereotypedNode[]> = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
             const nodes = this.parseArray(json);
-            if (isPartialLoad) {
-                const newNodes = [] as StereotypedNode[];
-                const nodesMap = {} as Record<string, StereotypedNode>;
-                affectedProjects.forEach(projectName => nodesMap[projectName] = nodes.find(n => n.projectId === projectName));
-                // in dependency mode, the server also rebuilds the projects that include an affected one
-                nodes.forEach(n => nodesMap[n.projectId] = n);
-                // merge old and newly fetched stereotype root nodes
-                let _onlyMutations = true;
-                this._rootElements.forEach(n => {
-                    if (nodesMap.hasOwnProperty(n.projectId)) {
-                        const newN = nodesMap[n.projectId];
-                        delete nodesMap[n.projectId];
-                        if (newN) {
-                            newNodes.push(newN);
-                        } else {
-                            // element removed
-                            _onlyMutations = false;
-                        }
+            const answered = new Map<string, StereotypedNode>();
+            nodes.forEach(n => answered.set(n.projectId, n));
+            // the projects this request speaks for: in dependency mode, a partial one also rebuilds
+            // the projects that include an affected one
+            const covered = isPartialLoad ? new Set<string>([...affectedProjects, ...answered.keys()]) : undefined;
+            const isNewer = (projectId: string) => (this._projectVersions.get(projectId) ?? 0) < requestNumber;
+
+            const newNodes = [] as StereotypedNode[];
+            this._rootElements.forEach(n => {
+                const speaksFor = !covered || covered.has(n.projectId);
+                if (speaksFor && isNewer(n.projectId)) {
+                    const newN = answered.get(n.projectId);
+                    if (newN) {
+                        newNodes.push(newN);
+                        this._projectVersions.set(n.projectId, requestNumber);
                     } else {
-                        newNodes.push(n);
+                        // element removed
+                        this._projectVersions.delete(n.projectId);
                     }
-                });
-                if (Object.values(nodesMap).length) {
-                    // elements added
-                    _onlyMutations = false;
-                    Object.values(nodesMap).filter(n => !!n).forEach(n => newNodes.push(n));                       
+                } else {
+                    newNodes.push(n);
                 }
-                this._rootElements = newNodes;
+                answered.delete(n.projectId);
+            });
+            // elements added
+            answered.forEach((n, projectId) => {
+                if (isNewer(projectId)) {
+                    newNodes.push(n);
+                    this._projectVersions.set(projectId, requestNumber);
+                }
+            });
+            this._rootElements = newNodes;
+
+            // the view waits for the latest full load itself; for every other result it has to be
+            // told - a full load finishing after a later partial refresh included
+            if (isPartialLoad || this._rootElementsRequest !== request) {
                 // TODO: Partial tree refresh didn't work for restbucks it remains either without children or without the full text label
                 // (test with `spring-restbucks` project in a workspace with other boot projects, i.e. demo, spring-petclinic)
-                this._onDidChange.fire(/*onlyMutations ? nodes : */undefined);
-            } else {
-                this._rootElements = nodes;
-                // No need to fire another event to update the UI since there is an event fired before refresh is triggered to reference the new promise
+                this._onDidChange.fire(undefined);
             }
             return this._rootElements;
         });
+        this._rootElementsRequest = request;
         if (!isPartialLoad) {
             // Fire an event for full reload to have a progress bar while the promise above is resolved
             this._onDidChange.fire(undefined);

@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.springai;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -51,6 +52,18 @@ public class SpringAiIndexer {
 
 	private static final Logger log = LoggerFactory.getLogger(SpringAiIndexer.class);
 
+	/**
+	 * The annotations indexed, by exact type - shared with {@link JarSpringAiScanner}.
+	 */
+	static final Map<String, AnnotationType> ANNOTATION_TYPES = Map.of(
+			Annotations.SPRING_AI_TOOL, AnnotationType.TOOL,
+			Annotations.SPRING_AI_MCP_TOOL, AnnotationType.MCP_TOOL,
+			Annotations.SPRING_AI_MCP_PROMPT, AnnotationType.MCP_PROMPT,
+			Annotations.SPRING_AI_MCP_RESOURCE, AnnotationType.MCP_RESOURCE,
+			Annotations.SPRING_AI_MCP_COMPLETE, AnnotationType.MCP_COMPLETE,
+			Annotations.SPRING_AI_MCP_ELICITATION, AnnotationType.MCP_ELICITATION,
+			Annotations.SPRING_AI_MCP_SAMPLING, AnnotationType.MCP_SAMPLING);
+
 	public static void indexSpringAiMethods(SpringIndexElement parent, TypeDeclaration type,
 			SpringIndexerJavaContext context, TextDocument doc) {
 
@@ -74,26 +87,9 @@ public class SpringAiIndexer {
 				String fqn = annotationTypeBinding.getQualifiedName();
 
 				try {
-					if (Annotations.SPRING_AI_TOOL.equals(fqn)) {
-						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.TOOL);
-					}
-					else if (Annotations.SPRING_AI_MCP_TOOL.equals(fqn)) {
-						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_TOOL);
-					}
-				else if (Annotations.SPRING_AI_MCP_PROMPT.equals(fqn)) {
-					indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_PROMPT);
-				}
-				else if (Annotations.SPRING_AI_MCP_RESOURCE.equals(fqn)) {
-					indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_RESOURCE);
-				}
-				else if (Annotations.SPRING_AI_MCP_COMPLETE.equals(fqn)) {
-						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_COMPLETE);
-					}
-					else if (Annotations.SPRING_AI_MCP_ELICITATION.equals(fqn)) {
-						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_ELICITATION);
-					}
-					else if (Annotations.SPRING_AI_MCP_SAMPLING.equals(fqn)) {
-						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, AnnotationType.MCP_SAMPLING);
+					AnnotationType annotationType = ANNOTATION_TYPES.get(fqn);
+					if (annotationType != null) {
+						indexSpringAiAnnotation(parent, annotation, method, context, doc, containerBeanType, annotationType);
 					}
 				}
 				catch (BadLocationException e) {

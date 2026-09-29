@@ -82,7 +82,7 @@ public class StructureParityTest {
 		harness.intialize(null);
 	}
 
-	private static final String BEAN_METHODS_PENDING = "@Bean methods are not read from JARs yet (step 5.5, item 3)";
+	private static final String PUBLISHERS_PENDING = "event publishers are not read from JARs yet (step 5.6)";
 
 	@Test
 	void stereotypesSupport() throws Exception {
@@ -96,8 +96,7 @@ public class StructureParityTest {
 
 	@Test
 	void dataRepositories() throws Exception {
-		assertParity("test-spring-data-symbols", Map.of(
-				"org.test.Application: members source=[@+ 'demo' (@Bean) CommandLineRunner] jar=[]", BEAN_METHODS_PENDING));
+		assertParity("test-spring-data-symbols", Map.of());
 	}
 
 	@Test
@@ -113,6 +112,35 @@ public class StructureParityTest {
 		Map<String, TypeView> fromJar = assertParity("test-feign-indexing", Map.of());
 
 		assertTrue(routes(fromJar) > 0, "request mappings read from the JAR: " + routes(fromJar));
+	}
+
+	@Test
+	void eventListeners() throws Exception {
+		Map<String, TypeView> fromJar = assertParity("test-events-indexing", Map.of(
+				"com.example.events.demo.CustomApplicationEventPublisher: members source=[publishes: CustomApplicationEvent] jar=[]", PUBLISHERS_PENDING,
+				"com.example.events.demo.CustomEventPublisher: members source=[publishes: CustomEvent] jar=[]", PUBLISHERS_PENDING,
+				"com.example.events.demo.CustomEventPublisherWithAdditionalElements: members source=[publishes: CustomEvent] jar=[]", PUBLISHERS_PENDING,
+				"com.example.events.demo.SpecializedCustomEventPublisher: members source=[publishes: SpecializedCustomEvent] jar=[]", PUBLISHERS_PENDING));
+
+		assertTrue(membersStartingWith(fromJar, "listens on: ") > 0);
+	}
+
+	@Test
+	void beanMethods() throws Exception {
+		Map<String, TypeView> fromJar = assertParity("test-annotation-indexing-beans", Map.of());
+
+		assertTrue(membersStartingWith(fromJar, "@+ '") > 0);
+	}
+
+	@Test
+	void springAiMethods() throws Exception {
+		Map<String, TypeView> fromJar = assertParity("test-spring-ai-indexing", Map.of());
+
+		assertTrue(membersStartingWith(fromJar, "@Tool ") + membersStartingWith(fromJar, "@Mcp") > 0);
+	}
+
+	private static long membersStartingWith(Map<String, TypeView> views, String prefix) {
+		return views.values().stream().flatMap(view -> view.members().stream()).filter(member -> member.startsWith(prefix)).count();
 	}
 
 	private static long routes(Map<String, TypeView> views) {

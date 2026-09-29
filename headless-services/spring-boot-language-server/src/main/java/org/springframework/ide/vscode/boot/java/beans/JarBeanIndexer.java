@@ -16,7 +16,9 @@ import java.util.List;
 import org.jboss.jandex.DotName;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.data.JarDataRepositoryScanner;
+import org.springframework.ide.vscode.boot.java.events.JarEventListenerScanner;
 import org.springframework.ide.vscode.boot.java.requestmapping.JarRequestMappingScanner;
+import org.springframework.ide.vscode.boot.java.springai.JarSpringAiScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
 import org.springframework.ide.vscode.boot.java.stereotypes.JdtStyleTypeNames;
@@ -99,10 +101,14 @@ public class JarBeanIndexer {
 	 * {@code ComponentIndexer.postProcessComponent}'s children, in its order.
 	 */
 	private static void postProcessComponent(Bean bean, JarType type) {
+		JarBeanMethodScanner.addBeanMethods(bean, type);
+		JarEventListenerScanner.addEventListeners(bean, type);
+		JarEventListenerScanner.addApplicationListener(bean, type);
 		JarRequestMappingScanner.addRequestMappings(bean, type);
 		if (JarConfigurationPropertiesScanner.isConfigurationProperties(type)) {
 			JarConfigurationPropertiesScanner.addConfigurationProperties(bean, type);
 		}
+		JarSpringAiScanner.addSpringAiMethods(bean, type);
 	}
 
 	public static boolean isComponent(JarType type) {

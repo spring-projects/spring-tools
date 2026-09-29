@@ -25,7 +25,6 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FieldDeclaration;
-import org.eclipse.jdt.core.dom.FileASTRequestor;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
@@ -148,51 +147,51 @@ public class JarBindingKeysTest {
 	 */
 	private Set<String> jdtKeys() throws Exception {
 		Path src = tempDir.resolve("src");
-		String[] files = new String[SOURCES.size()];
-		int i = 0;
 		for (var source : SOURCES.entrySet()) {
 			Path file = src.resolve(source.getKey().replace('.', '/') + ".java");
 			Files.createDirectories(file.getParent());
 			Files.writeString(file, source.getValue());
-			files[i++] = file.toString();
 		}
 
-		ASTParser parser = ASTParser.newParser(AST.JLS25);
-		Map<String, String> options = JavaCore.getOptions();
-		JavaCore.setComplianceOptions(JavaCore.VERSION_21, options);
-		parser.setCompilerOptions(options);
-		parser.setKind(ASTParser.K_COMPILATION_UNIT);
-		parser.setResolveBindings(true);
-		parser.setEnvironment(new String[0], new String[] { src.toString() }, null, true);
-
 		Set<String> keys = new TreeSet<>();
-		parser.createASTs(files, null, new String[0], new FileASTRequestor() {
-			@Override
-			public void acceptAST(String sourceFilePath, CompilationUnit ast) {
-				ast.accept(new ASTVisitor() {
-					@Override
-					public boolean visit(TypeDeclaration node) {
-						// the raw type's key, as a class is looked up (JavaData.toBindingKey)
-						keys.add("L" + node.resolveBinding().getBinaryName().replace('.', '/') + ";");
-						return true;
-					}
+		for (var source : SOURCES.entrySet()) {
+			// parsed from source with a '/'-separated unit name, not from the file: JDT finds a
+			// type's main type name by the last '/', and on Windows its file based parsing turns
+			// the path into '\' - every key would then carry the file path as its main type name
+			ASTParser parser = ASTParser.newParser(AST.JLS25);
+			Map<String, String> options = JavaCore.getOptions();
+			JavaCore.setComplianceOptions(JavaCore.VERSION_21, options);
+			parser.setCompilerOptions(options);
+			parser.setKind(ASTParser.K_COMPILATION_UNIT);
+			parser.setResolveBindings(true);
+			parser.setEnvironment(new String[0], new String[] { src.toString() }, null, true);
+			parser.setUnitName("/" + source.getKey().replace('.', '/') + ".java");
+			parser.setSource(source.getValue().toCharArray());
 
-					@Override
-					public boolean visit(MethodDeclaration node) {
-						keys.add(node.resolveBinding().getKey());
-						return true;
-					}
+			CompilationUnit ast = (CompilationUnit) parser.createAST(null);
+			ast.accept(new ASTVisitor() {
+				@Override
+				public boolean visit(TypeDeclaration node) {
+					// the raw type's key, as a class is looked up (JavaData.toBindingKey)
+					keys.add("L" + node.resolveBinding().getBinaryName().replace('.', '/') + ";");
+					return true;
+				}
 
-					@Override
-					public boolean visit(FieldDeclaration node) {
-						for (Object fragment : node.fragments()) {
-							keys.add(((VariableDeclarationFragment) fragment).resolveBinding().getKey());
-						}
-						return true;
+				@Override
+				public boolean visit(MethodDeclaration node) {
+					keys.add(node.resolveBinding().getKey());
+					return true;
+				}
+
+				@Override
+				public boolean visit(FieldDeclaration node) {
+					for (Object fragment : node.fragments()) {
+						keys.add(((VariableDeclarationFragment) fragment).resolveBinding().getKey());
 					}
-				});
-			}
-		}, null);
+					return true;
+				}
+			});
+		}
 		return keys;
 	}
 

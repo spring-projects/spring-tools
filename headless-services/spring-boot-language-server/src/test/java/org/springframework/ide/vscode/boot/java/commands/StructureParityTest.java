@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -81,40 +82,49 @@ public class StructureParityTest {
 		harness.intialize(null);
 	}
 
-	private static final String REQUEST_MAPPINGS_PENDING = "request mappings are not read from JARs yet (step 5.5, item 1)";
 	private static final String BEAN_METHODS_PENDING = "@Bean methods are not read from JARs yet (step 5.5, item 3)";
 
 	@Test
 	void stereotypesSupport() throws Exception {
-		assertParity("test-stereotypes-support", Map.of(
-				"example.application.SampleController: members source=[@/greeting -- GET] jar=[]", REQUEST_MAPPINGS_PENDING,
-				"example.application.SampleController: methods source=[@/greeting -- GET] jar=[SampleController.sayHello() : String]", REQUEST_MAPPINGS_PENDING));
+		assertParity("test-stereotypes-support", Map.of());
 	}
 
 	@Test
 	void configurationProperties() throws Exception {
-		assertParity("test-configuration-properties-indexing", Map.of(
-				"com.example.configproperties.MyController: members source=[@/configs -- GET, @/bundleconfigs -- GET, @/recordconfigs -- GET] jar=[]",
-				REQUEST_MAPPINGS_PENDING,
-				"com.example.configproperties.MyController: methods source=[@/configs -- GET, @/bundleconfigs -- GET, @/recordconfigs -- GET] "
-						+ "jar=[MyController.getExampleConfig() : String, MyController.getBundleConfig() : String, MyController.getRecordConfig() : String]",
-				REQUEST_MAPPINGS_PENDING));
+		assertParity("test-configuration-properties-indexing", Map.of());
 	}
 
 	@Test
 	void dataRepositories() throws Exception {
 		assertParity("test-spring-data-symbols", Map.of(
-				"org.test.Application: members source=[@+ 'demo' (@Bean) CommandLineRunner] jar=[]", BEAN_METHODS_PENDING,
-				"org.test.web.DataRestController: members source=[@/something -- GET] jar=[]", REQUEST_MAPPINGS_PENDING,
-				"org.test.web.DataRestController: methods source=[@/something -- GET] jar=[DataRestController.saySomething() : String]",
-				REQUEST_MAPPINGS_PENDING));
+				"org.test.Application: members source=[@+ 'demo' (@Bean) CommandLineRunner] jar=[]", BEAN_METHODS_PENDING));
+	}
+
+	@Test
+	void requestMappings() throws Exception {
+		Map<String, TypeView> fromJar = assertParity("test-request-mapping-symbols", Map.of());
+
+		// not vacuous: the JAR side did read the mappings, with a class-level and a supertype's path
+		assertTrue(routes(fromJar) > 20, "request mappings read from the JAR: " + routes(fromJar));
+	}
+
+	@Test
+	void feignClients() throws Exception {
+		Map<String, TypeView> fromJar = assertParity("test-feign-indexing", Map.of());
+
+		assertTrue(routes(fromJar) > 0, "request mappings read from the JAR: " + routes(fromJar));
+	}
+
+	private static long routes(Map<String, TypeView> views) {
+		return views.values().stream().flatMap(view -> view.members().stream()).filter(member -> member.startsWith("@/")).count();
 	}
 
 	/**
 	 * @param knownDivergences the differences that are accepted, keyed as the failure message
 	 *        reports them, with the reason as value
+	 * @return the JAR side's views, for a test to check they are not trivially empty
 	 */
-	private void assertParity(String fixture, Map<String, String> knownDivergences) throws Exception {
+	private Map<String, TypeView> assertParity(String fixture, Map<String, String> knownDivergences) throws Exception {
 		File directory = new File(ProjectsHarness.class.getResource("/test-projects/" + fixture + "/").toURI());
 		IJavaProject project = projectFinder.find(new TextDocumentIdentifier(directory.toURI().toString())).get();
 		indexer.waitOperation().get(30, TimeUnit.SECONDS);
@@ -138,6 +148,8 @@ public class StructureParityTest {
 
 		assertEquals(Set.of(), unexpected, fixture + ": source and JAR differ");
 		assertEquals(Set.of(), stale, fixture + ": listed as known divergences, but no longer differ");
+
+		return fromJar;
 	}
 
 	private record TypeView(List<String> methods, List<String> members) {

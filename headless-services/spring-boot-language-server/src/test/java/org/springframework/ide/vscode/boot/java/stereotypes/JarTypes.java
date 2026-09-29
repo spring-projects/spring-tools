@@ -39,7 +39,16 @@ public class JarTypes {
 	 * @return the scanned source-level types, by fully qualified (binary) name
 	 */
 	public static Map<String, JarType> scan(File jar) {
+		return scan(jar, List.of());
+	}
+
+	/**
+	 * As {@link #scan(File)}, resolving meta-annotations and supertypes against the given classpath
+	 * JARs too, as {@code JarDependencySource} does against the including project's.
+	 */
+	public static Map<String, JarType> scan(File jar, List<File> classpath) {
 		Indexer indexer = new Indexer();
+		classpath.forEach(entry -> JarStereotypeScanner.indexInto(indexer, entry));
 		Set<DotName> ownClasses = JarStereotypeScanner.indexInto(indexer, jar);
 		Index index = indexer.complete();
 

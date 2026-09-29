@@ -208,9 +208,15 @@ public class JarDependencySource implements StructureDependencySource {
 			JarType type = new JarType(classInfo, element, JarStereotypeScanner.ownAnnotationTypesOf(classInfo, index), index,
 					placeholderLocation(jarFile, classInfo), bindingKeys);
 
-			List<Bean> beans = JarBeanIndexer.beansOf(type);
-			if (!beans.isEmpty()) {
-				result.put(element, beans);
+			try {
+				List<Bean> beans = JarBeanIndexer.beansOf(type);
+				if (!beans.isEmpty()) {
+					result.put(element, beans);
+				}
+			}
+			catch (RuntimeException e) {
+				// one class's unexpected bytecode must not cost the whole JAR its members
+				log.warn("skipping the members of '{}' in structure dependency JAR '{}'", element.getType(), jarFile, e);
 			}
 		}
 

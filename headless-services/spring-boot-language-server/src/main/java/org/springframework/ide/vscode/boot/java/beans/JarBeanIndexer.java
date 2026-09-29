@@ -13,8 +13,10 @@ package org.springframework.ide.vscode.boot.java.beans;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.jandex.DotName;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.data.JarDataRepositoryScanner;
+import org.springframework.ide.vscode.boot.java.requestmapping.JarRequestMappingScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
 import org.springframework.ide.vscode.boot.java.stereotypes.JdtStyleTypeNames;
@@ -40,8 +42,15 @@ import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
  */
 public class JarBeanIndexer {
 
+	private static final DotName FEIGN_CLIENT = DotName.createSimple(Annotations.FEIGN_CLIENT);
+
 	public static List<Bean> beansOf(JarType type) {
 		List<Bean> result = new ArrayList<>();
+
+		// SpringIndexerJava never hands an enum declaration to the bean indexers
+		if (type.classInfo().isEnum()) {
+			return result;
+		}
 
 		if (type.classInfo().isRecord()) {
 			if (isComponent(type) || JarConfigurationPropertiesScanner.isConfigurationProperties(type)) {
@@ -75,6 +84,14 @@ public class JarBeanIndexer {
 			result.add(propertiesBean);
 		}
 
+		// FeignClientIndexer: a bean of its own for a directly annotated Feign client, with its
+		// request mappings, next to whatever else the class is
+		if (type.classInfo().declaredAnnotation(FEIGN_CLIENT) != null) {
+			Bean feignClient = bean(type);
+			JarRequestMappingScanner.addRequestMappings(feignClient, type);
+			result.add(feignClient);
+		}
+
 		return result;
 	}
 
@@ -82,6 +99,7 @@ public class JarBeanIndexer {
 	 * {@code ComponentIndexer.postProcessComponent}'s children, in its order.
 	 */
 	private static void postProcessComponent(Bean bean, JarType type) {
+		JarRequestMappingScanner.addRequestMappings(bean, type);
 		if (JarConfigurationPropertiesScanner.isConfigurationProperties(type)) {
 			JarConfigurationPropertiesScanner.addConfigurationProperties(bean, type);
 		}

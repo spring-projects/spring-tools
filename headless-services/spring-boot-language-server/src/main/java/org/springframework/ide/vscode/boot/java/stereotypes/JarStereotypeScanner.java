@@ -221,8 +221,9 @@ public class JarStereotypeScanner {
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
 
+		// unfiltered, unlike the stereotype matching sets: javax.inject.Named has to be seen
 		for (AnnotationInstance annotation : classInfo.classAnnotations()) {
-			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations);
+			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations, false);
 		}
 
 		return result;
@@ -277,17 +278,42 @@ public class JarStereotypeScanner {
 		return result;
 	}
 
+	/**
+	 * The annotation type itself and its meta-annotations, recursively -
+	 * {@code AnnotationHierarchies.isAnnotatedWith}'s answer for an annotation, which counts the
+	 * annotation itself.
+	 */
+	public static Set<String> metaAnnotationTypesOf(DotName annotationName, Index index) {
+		Set<String> result = new LinkedHashSet<>();
+		addWithMetaAnnotations(annotationName, index, result, new LinkedHashSet<>(), false);
+		return result;
+	}
+
 	private static void addWithMetaAnnotations(DotName annotationName, Index index, Set<String> result, Set<DotName> visited) {
+		addWithMetaAnnotations(annotationName, index, result, visited, true);
+	}
+
+	/**
+	 * @param withoutJava whether to leave out the {@code java*} names, as stereotype matching does
+	 *        ({@link #addIfNotJavaLang}) - a gate that looks for {@code javax.inject.Named} must not
+	 */
+	private static void addWithMetaAnnotations(DotName annotationName, Index index, Set<String> result, Set<DotName> visited,
+			boolean withoutJava) {
 		if (!visited.add(annotationName)) {
 			return; // a meta-annotation cycle - nothing further to add
 		}
 
-		addIfNotJavaLang(annotationName, result);
+		if (withoutJava) {
+			addIfNotJavaLang(annotationName, result);
+		}
+		else {
+			result.add(JdtStyleTypeNames.qualifiedName(annotationName));
+		}
 
 		ClassInfo annotationClass = index.getClassByName(annotationName);
 		if (annotationClass != null) {
 			for (AnnotationInstance metaAnnotation : annotationClass.classAnnotations()) {
-				addWithMetaAnnotations(metaAnnotation.name(), index, result, visited);
+				addWithMetaAnnotations(metaAnnotation.name(), index, result, visited, withoutJava);
 			}
 		}
 	}

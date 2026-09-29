@@ -45,7 +45,8 @@ public class RequestMappingIndexer {
 	private static final Set<String> ATTRIBUTE_NAME_PRODUCES = Set.of("produces");
 	private static final Set<String> ATTRIBUTE_NAME_VERSION = Set.of("version");
 	
-	private static final Map<String, String[]> METHOD_MAPPING = Map.of(
+	// shared with JarRequestMappingScanner
+	static final Map<String, String[]> METHOD_MAPPING = Map.of(
 			Annotations.SPRING_GET_MAPPING, new String[] { "GET" },
 			Annotations.SPRING_POST_MAPPING, new String[] { "POST" },
 			Annotations.SPRING_DELETE_MAPPING, new String[] { "DELETE" },

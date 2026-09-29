@@ -12,8 +12,10 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -61,7 +63,9 @@ public class JarDependencySourceTest {
 		StructureElements elements = source.elementsOf(DependencyDescriptor.jar("fixture", jar.getAbsolutePath()), including,
 				null, catalogWithMarker());
 
-		assertEquals(List.of("com.example.Marked"), elements.types().stream().map(StereotypeClassElement::getType).toList());
+		// every scanned type is offered - the composite keeps the stereotyped ones, see CompositeStructureElementsTest
+		assertEquals(List.of("com.example.Marked", "com.example.NotMarked"), elements.types().stream().map(StereotypeClassElement::getType).sorted().toList());
+		assertEquals(1, ((JarStructureElements) elements).typesWithOwnStereotypeCount());
 	}
 
 	@Test
@@ -124,6 +128,43 @@ public class JarDependencySourceTest {
 
 		assertNotNull(elements);
 		assertEquals(List.of("com.example.Marked"), elements.types().stream().map(StereotypeClassElement::getType).toList());
+	}
+
+	/**
+	 * A scan that could not resolve against the including project's classpath - here: the JAR is not
+	 * on it - may lack meta-annotations; it is used, but not kept for later requests.
+	 */
+	@Test
+	void anIncompleteScanIsNotCached() throws Exception {
+		File jar = markedJar("fixture");
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)));
+		DependencyDescriptor dependency = DependencyDescriptor.jar("fixture", jar.getAbsolutePath());
+
+		StructureElements first = source.elementsOf(dependency, project(), null, catalogWithMarker());
+		StructureElements second = source.elementsOf(dependency, project(), null, catalogWithMarker());
+
+		assertNotSame(first.types().get(0), second.types().get(0));
+	}
+
+	@Test
+	void aChangedJarIsScannedAgain() throws Exception {
+		File jar = markedJar("fixture");
+		IJavaProject including = project(jar);
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)));
+		DependencyDescriptor dependency = DependencyDescriptor.jar("fixture", jar.getAbsolutePath());
+
+		StructureElements before = source.elementsOf(dependency, including, null, catalogWithMarker());
+		assertTrue(jar.setLastModified(jar.lastModified() + 60_000));
+		StructureElements after = source.elementsOf(dependency, including, null, catalogWithMarker());
+
+		assertNotSame(before.types().get(0), after.types().get(0));
+	}
+
+	private File markedJar(String name) throws Exception {
+		return JarFixtureBuilder.buildJar(tempDir, name, Map.of(
+				"com.example.Marked", "package com.example; @Marker public class Marked {}",
+				"com.example.Marker", "package com.example; import java.lang.annotation.*; @Retention(RetentionPolicy.RUNTIME) public @interface Marker {}"
+		), Map.of());
 	}
 
 	private static IJavaProject project(File... jars) throws Exception {

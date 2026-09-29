@@ -92,7 +92,11 @@ public class JdtStyleTypeNames {
 		return withoutPackage.substring(withoutPackage.lastIndexOf('$') + 1);
 	}
 
-	private static String qualifiedName(DotName name) {
+	/**
+	 * A class's name as JDT's {@code getQualifiedName()} gives it for a class binding: dots, also
+	 * between a nested class and its enclosing one.
+	 */
+	public static String qualifiedName(DotName name) {
 		return name.toString().replace('$', '.');
 	}
 

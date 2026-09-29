@@ -113,6 +113,17 @@ public class ClasspathDependencyResolverTest {
 				new JarDependency(null, "local-helper", "/libs/local-helper-1.2.jar")), jars);
 	}
 
+	/**
+	 * A binary classpath entry can be a class folder - not a JAR, and nothing to offer as one.
+	 */
+	@Test
+	void aClassFolderIsNotOfferedAsAJar() throws Exception {
+		IJavaProject app = project("app", APP, List.of(CPE.binary("/ws/other/build/classes/java/main"), CPE.binary("/repo/lib-1.0.jar")));
+
+		assertEquals(List.of("/repo/lib-1.0.jar"), new ClasspathDependencyResolver(finder(app)).jarDependenciesOf(app).stream()
+				.map(JarDependency::path).toList());
+	}
+
 	@Test
 	void listsAJarOnlyOncePerGroupAndArtifact() throws Exception {
 		IJavaProject app = project("app", APP, List.of(

@@ -59,16 +59,34 @@ public class CompositeStructureElements implements StructureElements {
 		parts.add(host);
 		parts.addAll(dependencies);
 
+		List<StereotypeClassElement> candidates = new ArrayList<>();
 		for (StructureElements part : parts) {
 			for (StereotypeClassElement type : part.types()) {
 				if (owners.putIfAbsent(type, part) == null) {
-					types.add(type);
+					candidates.add(type);
 					type.getMethods().forEach(method -> owners.putIfAbsent(method, part));
 				}
 			}
 		}
 
 		this.factory = new CompositeStereotypeFactory();
+
+		// only now, with every part's types routed to their part, can the composite factory tell
+		// which types get a stereotype - including from the host's package of the same name
+		for (StereotypeClassElement type : candidates) {
+			if (!ownerOf(type).showsOnlyStereotypedTypes() || isStereotyped(type)) {
+				types.add(type);
+			}
+		}
+	}
+
+	/**
+	 * A type ends up with a stereotype if it has one - its own, or its package's - or if one of its
+	 * methods has one: then the method is shown in a stereotype group, and with it its type.
+	 */
+	private boolean isStereotyped(StereotypeClassElement type) {
+		return factory.fromType(type).stream().findAny().isPresent()
+				|| type.getMethods().stream().anyMatch(method -> factory.fromMethod(method).stream().findAny().isPresent());
 	}
 
 	@Override

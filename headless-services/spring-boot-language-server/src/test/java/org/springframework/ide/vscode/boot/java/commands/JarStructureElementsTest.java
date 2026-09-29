@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -44,30 +45,33 @@ public class JarStructureElementsTest {
 	@TempDir
 	Path tempDir;
 
+	/**
+	 * A JAR's types are all handed to the composite, which decides what to show
+	 * ({@link CompositeStructureElementsTest}) - a type's stereotype can come from outside the JAR.
+	 */
 	@Test
-	void typesFiltersToWhatCurrentlyMatchesTheGivenCatalog() throws Exception {
+	void typesAreEveryScannedTypeAndTheCompositeFiltersThem() throws Exception {
 		StereotypeClassElement matching = new StereotypeClassElement("com.example.Matching", null, Set.of(),
 				Set.of("com.example.Marker"), null);
 		StereotypeClassElement notMatching = new StereotypeClassElement("com.example.NotMatching", null, Set.of(), Set.of(), null);
 
 		JarStructureElements elements = new JarStructureElements(List.of(matching, notMatching), Map.of(), catalogWithMarker());
 
-		assertEquals(List.of(matching), elements.types());
+		assertEquals(List.of(matching, notMatching), elements.types());
+		assertTrue(elements.showsOnlyStereotypedTypes());
 	}
 
 	/**
-	 * The scanned list handed to the constructor is never re-filtered and cached: two different
-	 * {@link JarStructureElements} built from the very same scanned list answer differently once
-	 * the catalog differs - exactly what lets a stereotype definition change take effect without
-	 * rescanning the JAR (see {@code docs/structure-view-dependencies.md}).
+	 * Matching is live against whatever catalog the elements are built with - no rescanning needed
+	 * when the stereotype definitions change.
 	 */
 	@Test
-	void theSameScannedListAnswersDifferentlyForADifferentCatalog() throws Exception {
+	void theSameScannedListMatchesDifferentlyForADifferentCatalog() throws Exception {
 		StereotypeClassElement element = new StereotypeClassElement("com.example.Marked", null, Set.of(), Set.of("com.example.Marker"), null);
 		List<StereotypeClassElement> scanned = List.of(element);
 
-		assertEquals(List.of(element), new JarStructureElements(scanned, Map.of(), catalogWithMarker()).types());
-		assertEquals(List.of(), new JarStructureElements(scanned, Map.of(), catalogWithoutMarker()).types());
+		assertEquals(1, new JarStructureElements(scanned, Map.of(), catalogWithMarker()).typesWithOwnStereotypeCount());
+		assertEquals(0, new JarStructureElements(scanned, Map.of(), catalogWithoutMarker()).typesWithOwnStereotypeCount());
 	}
 
 	@Test

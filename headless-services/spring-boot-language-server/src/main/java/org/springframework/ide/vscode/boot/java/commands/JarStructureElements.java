@@ -72,9 +72,26 @@ public class JarStructureElements implements StructureElements {
 		scannedTypes.forEach(type -> type.getMethods().forEach(method -> declaringTypes.put(method, type)));
 	}
 
+	/**
+	 * Every scanned type - which of them are shown is decided by the composite, see
+	 * {@link #showsOnlyStereotypedTypes()}.
+	 */
 	@Override
 	public List<StereotypeClassElement> types() {
-		return scannedTypes.stream().filter(factory::matchesAnyStereotype).toList();
+		return scannedTypes;
+	}
+
+	@Override
+	public boolean showsOnlyStereotypedTypes() {
+		return true;
+	}
+
+	/**
+	 * How many of the scanned types have a stereotype of their own - for logging only; the composite
+	 * also takes the host's package stereotypes and the types' methods into account.
+	 */
+	public long typesWithOwnStereotypeCount() {
+		return scannedTypes.stream().filter(factory::matchesAnyStereotype).count();
 	}
 
 	@Override

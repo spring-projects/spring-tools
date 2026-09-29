@@ -12,13 +12,16 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Set;
 
+import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.api.Stereotypes;
 import org.junit.jupiter.api.Test;
@@ -97,6 +100,42 @@ public class CompositeStructureElementsTest {
 
 		assertSame(typeStereotypes, composite.stereotypeFactory().fromType(dependencyType));
 		assertSame(methodStereotypes, composite.stereotypeFactory().fromMethod(dependencyMethod));
+	}
+
+	/**
+	 * A part that shows only stereotyped types - a JAR dependency - has its types filtered by the
+	 * composite, with the composite's own stereotype resolution: a stereotype of the type's own, one
+	 * of the host's package of the same name, or one of its methods all count.
+	 */
+	@Test
+	void aPartShowingOnlyStereotypedTypesIsFilteredWithTheCompositesStereotypes() {
+		StereotypeMethodElement listenerMethod = mock(StereotypeMethodElement.class);
+		StereotypeClassElement plain = type("com.example.app.Plain");
+		StereotypeClassElement ownStereotype = type("com.example.app.Own");
+		StereotypeClassElement hostPackageStereotype = type("com.example.app.stereotyped.ByPackage");
+		StereotypeClassElement methodStereotype = type("com.example.app.WithListener", listenerMethod);
+
+		Stereotypes some = stereotypes();
+
+		StructureElements jar = part(plain, ownStereotype, hostPackageStereotype, methodStereotype);
+		when(jar.showsOnlyStereotypedTypes()).thenReturn(true);
+		when(jar.stereotypeFactory().fromType(any())).thenReturn(Stereotypes.NONE);
+		when(jar.stereotypeFactory().fromType(ownStereotype)).thenReturn(some);
+		when(jar.stereotypeFactory().fromMethod(any())).thenReturn(Stereotypes.NONE);
+		when(jar.stereotypeFactory().fromMethod(listenerMethod)).thenReturn(some);
+
+		StereotypePackageElement stereotypedPackage = new StereotypePackageElement("com.example.app.stereotyped", Set.of("com.example.Marker"));
+		when(host.packageNode("com.example.app.stereotyped")).thenReturn(stereotypedPackage);
+		when(host.packageNode("com.example.app")).thenReturn(new StereotypePackageElement("com.example.app", null));
+		when(host.stereotypeFactory().fromPackage(stereotypedPackage)).thenReturn(some);
+
+		CompositeStructureElements composite = new CompositeStructureElements(host, List.of(jar));
+
+		assertEquals(List.of(hostType, ownStereotype, hostPackageStereotype, methodStereotype), composite.types());
+	}
+
+	private static Stereotypes stereotypes() {
+		return new Stereotypes(List.of(mock(Stereotype.class)));
 	}
 
 	private static StereotypeClassElement type(String name, StereotypeMethodElement... methods) {

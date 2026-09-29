@@ -166,7 +166,8 @@ public class StereotypeInformation {
 	@Tool(description = """
 			Lists the dependencies of the given project that can be included in its logical structure (see getLogicalStructure):
 			other projects of the workspace it depends on, and its libraries, identified by group and artifact id where known.
-			The components of included libraries are not part of the logical structure yet - only workspace projects contribute.
+			The components of an included library show up in the logical structure if they sit within the project's main
+			application package, as for an included workspace project.
 			Use getProjectList to obtain valid project names.
 			""")
 	public List<DependencyDescriptor> getStructureDependencies(

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Collectors;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -53,6 +54,15 @@ public class JarFixtureBuilder {
 	 * @param sourcesByFqn Java source, keyed by the fully qualified type name it declares
 	 */
 	public static Path compileAll(Path tempDir, Map<String, String> sourcesByFqn) throws IOException {
+		return compileAll(tempDir, sourcesByFqn, null);
+	}
+
+	/**
+	 * Same, against the given classpath instead of the test's own - to compile a fixture project's
+	 * sources against that project's resolved dependencies. Annotation processing is off: the AST
+	 * side of the structure view doesn't run processors either.
+	 */
+	public static Path compileAll(Path tempDir, Map<String, String> sourcesByFqn, List<File> classpath) throws IOException {
 		Path classesDir = Files.createDirectories(tempDir.resolve("classes"));
 
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -67,8 +77,13 @@ public class JarFixtureBuilder {
 
 		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, StandardCharsets.UTF_8);
 		ByteArrayOutputStream diagnostics = new ByteArrayOutputStream();
-		boolean success = compiler.getTask(new PrintWriter(diagnostics), fileManager, null,
-				List.of("-d", classesDir.toString()), null, sources).call();
+		List<String> options = new ArrayList<>(List.of("-d", classesDir.toString(), "-proc:none"));
+		if (classpath != null) {
+			options.add("-classpath");
+			options.add(classpath.stream().map(File::getAbsolutePath).collect(Collectors.joining(File.pathSeparator)));
+		}
+
+		boolean success = compiler.getTask(new PrintWriter(diagnostics), fileManager, null, options, null, sources).call();
 
 		if (!success) {
 			throw new IllegalStateException("failed to compile jar fixture sources:\n" + diagnostics);

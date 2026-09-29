@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,7 +93,7 @@ public class ClasspathDependencyResolver {
 
 		try {
 			for (CPE cpe : project.getClasspath().getClasspathEntries()) {
-				if (Classpath.isBinary(cpe) && !cpe.isSystem() && !cpe.isTest() && !"test".equals(cpe.getScope())) {
+				if (Classpath.isBinary(cpe) && isJar(cpe) && !cpe.isSystem() && !cpe.isTest() && !"test".equals(cpe.getScope())) {
 					Gav gav = cpe.getGav() != null ? cpe.getGav() : gavFromGradleCachePath(cpe.getPath());
 					JarDependency jar = new JarDependency(gav, cpe.getName(), cpe.getPath());
 					result.putIfAbsent(gav != null ? gav.groupId() + ":" + gav.artifactId() : cpe.getPath(), jar);
@@ -103,6 +104,14 @@ public class ClasspathDependencyResolver {
 		}
 
 		return new ArrayList<>(result.values());
+	}
+
+	/**
+	 * A binary classpath entry can also be a class folder (a Gradle build directory, a library
+	 * folder) - not a JAR, and nothing to offer as one.
+	 */
+	private static boolean isJar(CPE cpe) {
+		return cpe.getPath() != null && cpe.getPath().toLowerCase(Locale.ROOT).endsWith(".jar");
 	}
 
 	/**

@@ -60,7 +60,9 @@ public class JarDependencySource implements StructureDependencySource {
 	private static final Logger log = LoggerFactory.getLogger(JarDependencySource.class);
 
 	private final ClasspathDependencyResolver resolver;
-	private final ConcurrentHashMap<String, ScanResult> scannedJars = new ConcurrentHashMap<>();
+	// by the JAR's absolute path - one entry per JAR, replaced when the JAR changes, rather than one
+	// per version of it that happened to be scanned
+	private final ConcurrentHashMap<String, CachedScan> scannedJars = new ConcurrentHashMap<>();
 
 	public JarDependencySource(ClasspathDependencyResolver resolver) {
 		this.resolver = resolver;
@@ -89,17 +91,40 @@ public class JarDependencySource implements StructureDependencySource {
 			return null;
 		}
 
-		ScanResult scanned = scannedJars.computeIfAbsent(cacheKey(jarFile), key -> scan(including, jarFile));
+		ScanResult scanned = scanned(including, jarFile);
 		JarStructureElements elements = new JarStructureElements(scanned.types(), scanned.beans(), catalog);
 
 		// worth an INFO on every request, not just on failure: this is the only place that shows
 		// whether a JAR selection is actually doing something - scanned classes found none matching
 		// the current catalog looks identical to "elementsOf was never even called" otherwise
-		int matching = elements.types().size();
-		log.info("structure dependency '{}': {} of {} scanned class(es) in '{}' match the current catalog", dependency.id(), matching,
-				scanned.types().size(), jarFile.getName());
+		log.info("structure dependency '{}': {} of {} scanned class(es) in '{}' have a stereotype of their own", dependency.id(),
+				elements.typesWithOwnStereotypeCount(), scanned.types().size(), jarFile.getName());
 
 		return elements;
+	}
+
+	/**
+	 * The cached scan of the JAR, or a fresh one if there is none or the JAR has changed since. A
+	 * scan that could not resolve against the including project's classpath - the classpath could
+	 * not be read, or the JAR is not on it - is used, but not cached: it may lack meta-annotations
+	 * a complete one would resolve, and that must not stick for every later request.
+	 */
+	private ScanResult scanned(IJavaProject including, File jarFile) {
+		ScanResult[] uncached = new ScanResult[1];
+
+		CachedScan cached = scannedJars.compute(jarFile.getAbsolutePath(), (key, existing) -> {
+			if (existing != null && existing.isFor(jarFile)) {
+				return existing;
+			}
+			ScanResult fresh = scan(including, jarFile);
+			if (fresh.complete()) {
+				return new CachedScan(jarFile.lastModified(), jarFile.length(), fresh);
+			}
+			uncached[0] = fresh;
+			return null;
+		});
+
+		return cached != null ? cached.result() : uncached[0];
 	}
 
 	/**
@@ -123,10 +148,11 @@ public class JarDependencySource implements StructureDependencySource {
 			classpathEntries = including.getClasspath().getClasspathEntries();
 		} catch (Exception e) {
 			log.error("cannot read the classpath of '{}' to scan structure dependency JAR '{}'", including.getElementName(), jarFile, e);
-			classpathEntries = List.of();
+			classpathEntries = null;
 		}
+		boolean complete = classpathEntries != null;
 
-		for (CPE cpe : classpathEntries) {
+		for (CPE cpe : complete ? classpathEntries : List.<CPE>of()) {
 			if (!Classpath.isBinary(cpe) || cpe.isSystem()) {
 				continue;
 			}
@@ -149,6 +175,7 @@ public class JarDependencySource implements StructureDependencySource {
 			log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
 					including.getElementName());
 			ownClasses = JarStereotypeScanner.indexInto(indexer, jarFile);
+			complete = false;
 		}
 
 		Index index = indexer.complete();
@@ -156,7 +183,7 @@ public class JarDependencySource implements StructureDependencySource {
 		log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
 				jarFile.getName(), scanned.size(), ownClasses.size());
 
-		return new ScanResult(scanned, beansOf(scanned, index, jarFile));
+		return new ScanResult(scanned, beansOf(scanned, index, jarFile), complete);
 	}
 
 	/**
@@ -196,11 +223,17 @@ public class JarDependencySource implements StructureDependencySource {
 		return new Location("jar:" + jarFile.toURI() + "!/" + entry, new Range(new Position(0, 0), new Position(0, 0)));
 	}
 
-	private static String cacheKey(File jarFile) {
-		return jarFile.getAbsolutePath() + "@" + jarFile.lastModified() + ":" + jarFile.length();
+	/**
+	 * @param complete whether the scan resolved against the including project's whole classpath
+	 */
+	record ScanResult(List<StereotypeClassElement> types, Map<StereotypeClassElement, List<Bean>> beans, boolean complete) {
 	}
 
-	record ScanResult(List<StereotypeClassElement> types, Map<StereotypeClassElement, List<Bean>> beans) {
+	private record CachedScan(long lastModified, long length, ScanResult result) {
+
+		boolean isFor(File jarFile) {
+			return lastModified == jarFile.lastModified() && length == jarFile.length();
+		}
 	}
 
 }

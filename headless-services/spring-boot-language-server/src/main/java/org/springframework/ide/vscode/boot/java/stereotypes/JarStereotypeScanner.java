@@ -119,6 +119,12 @@ public class JarStereotypeScanner {
 
 		for (DotName name : ownClasses) {
 			ClassInfo classInfo = index.getClassByName(name);
+
+			if (isPackageInfo(classInfo)) {
+				result.add(packageInfoElementOf(classInfo));
+				continue;
+			}
+
 			if (!isSourceLevelType(classInfo)) {
 				continue;
 			}
@@ -139,6 +145,31 @@ public class JarStereotypeScanner {
 		}
 
 		return result;
+	}
+
+	/**
+	 * {@code package-info.class} - synthetic in bytecode, but a type element of its own on the AST
+	 * side, carrying the package's annotations.
+	 */
+	private static boolean isPackageInfo(ClassInfo classInfo) {
+		if (classInfo == null) {
+			return false;
+		}
+		String name = classInfo.name().toString();
+		return name.equals("package-info") || name.endsWith(".package-info");
+	}
+
+	/**
+	 * {@code StereotypesIndexer.createStereotypeElementForPackage}'s type element: named
+	 * {@code <package>.package-info}, no supertypes, the package's direct annotations - not
+	 * meta-expanded and not filtered, exactly as that method takes them.
+	 */
+	private static StereotypeClassElement packageInfoElementOf(ClassInfo classInfo) {
+		Set<String> annotationTypes = new LinkedHashSet<>();
+		for (AnnotationInstance annotation : classInfo.declaredAnnotations()) {
+			annotationTypes.add(JdtStyleTypeNames.qualifiedName(annotation.name()));
+		}
+		return new StereotypeClassElement(classInfo.name().toString(), null, Set.of(), annotationTypes, null);
 	}
 
 	/**
@@ -198,8 +229,8 @@ public class JarStereotypeScanner {
 			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations);
 		}
 
-		for (String supertype : supertypesOf(classInfo, index)) {
-			ClassInfo supertypeInfo = index.getClassByName(DotName.createSimple(supertype));
+		for (Type supertype : hierarchyOf(classInfo, index)) {
+			ClassInfo supertypeInfo = index.getClassByName(supertype.name());
 			if (supertypeInfo != null) {
 				for (AnnotationInstance annotation : supertypeInfo.classAnnotations()) {
 					addIfNotJavaLang(annotation.name(), result);
@@ -246,7 +277,8 @@ public class JarStereotypeScanner {
 	}
 
 	private static void addIfNotJavaLang(DotName name, Set<String> result) {
-		String fqn = name.toString();
+		// StereotypesIndexer takes annotation types' getQualifiedName() - dots for a nested one
+		String fqn = JdtStyleTypeNames.qualifiedName(name);
 		if (!fqn.startsWith("java")) { // matches StereotypesIndexer.getAnnotationTypes's own filter
 			result.add(fqn);
 		}
@@ -259,33 +291,53 @@ public class JarStereotypeScanner {
 	 */
 	public static Set<String> supertypesOf(ClassInfo classInfo, Index index) {
 		Set<String> result = new LinkedHashSet<>();
-		Deque<DotName> toVisit = new ArrayDeque<>();
-
-		if (classInfo.superName() != null) {
-			toVisit.add(classInfo.superName());
+		for (Type supertype : hierarchyOf(classInfo, index)) {
+			// ASTUtils.getHierarchyTypesFqNamesBreadthFirstIterator: the binary name for a
+			// supertype referenced with type arguments, the qualified name otherwise
+			result.add(supertype.kind() == Type.Kind.PARAMETERIZED_TYPE ? supertype.name().toString() : JdtStyleTypeNames.qualifiedName(supertype.name()));
 		}
-		toVisit.addAll(List.of(classInfo.interfaces()));
+		return result;
+	}
+
+	/**
+	 * Every supertype, breadth first, each once, as it is first referenced.
+	 */
+	private static List<Type> hierarchyOf(ClassInfo classInfo, Index index) {
+		List<Type> result = new ArrayList<>();
+		Deque<Type> toVisit = new ArrayDeque<>(directSupertypesOf(classInfo));
 
 		Set<DotName> visited = new LinkedHashSet<>();
 		while (!toVisit.isEmpty()) {
-			DotName name = toVisit.poll();
-			if (name == null || !visited.add(name)) {
+			Type supertype = toVisit.poll();
+			if (!visited.add(supertype.name())) {
 				continue;
 			}
+			result.add(supertype);
 
-			result.add(name.toString());
-
-			ClassInfo superInfo = index.getClassByName(name);
+			ClassInfo superInfo = index.getClassByName(supertype.name());
 			if (superInfo != null) {
-				if (superInfo.superName() != null) {
-					toVisit.add(superInfo.superName());
-				}
-				toVisit.addAll(List.of(superInfo.interfaces()));
+				toVisit.addAll(directSupertypesOf(superInfo));
 			}
 		}
 
 		return result;
 	}
+
+	/**
+	 * The superclass and interfaces as they are referenced - with their type arguments, which
+	 * decide how the name is rendered. An interface's {@code java.lang.Object} superclass is left
+	 * out: it only exists in bytecode, JDT has no superclass for an interface.
+	 */
+	private static List<Type> directSupertypesOf(ClassInfo classInfo) {
+		List<Type> result = new ArrayList<>();
+		if (classInfo.superClassType() != null && !classInfo.isInterface()) {
+			result.add(classInfo.superClassType());
+		}
+		result.addAll(classInfo.interfaceTypes());
+		return result;
+	}
+
+
 
 	/**
 	 * Mirrors {@code ASTUtils.getMethodSignature(method, false)} exactly: the declaring class's

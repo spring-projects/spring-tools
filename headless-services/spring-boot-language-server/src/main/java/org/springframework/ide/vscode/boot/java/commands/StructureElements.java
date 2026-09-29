@@ -67,4 +67,15 @@ public interface StructureElements {
 	 */
 	StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> stereotypeFactory();
 
+	/**
+	 * Whether only those of {@link #types()} that end up with a stereotype are to be shown - true
+	 * for a JAR dependency, so a library's many plain classes don't flood the tree's "Others", where
+	 * a project's own unmatched types go. Decided by whoever composes the tree
+	 * ({@link CompositeStructureElements}), since a type's stereotypes can come from outside the
+	 * part it belongs to (the host's package of the same name).
+	 */
+	default boolean showsOnlyStereotypedTypes() {
+		return false;
+	}
+
 }

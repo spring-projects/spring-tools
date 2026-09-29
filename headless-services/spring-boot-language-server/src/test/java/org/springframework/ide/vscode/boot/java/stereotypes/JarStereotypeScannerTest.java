@@ -216,4 +216,33 @@ public class JarStereotypeScannerTest {
 		assertEquals("Handler", handler.getMethods().get(0).getMethodName(), "a constructor's name, as StereotypesIndexer takes it from source");
 	}
 
+
+	/**
+	 * {@code ASTUtils.findSupertypes}: the binary name of a supertype referenced with type
+	 * arguments, the qualified name (dots for a nested type) otherwise - and no {@code Object} for an
+	 * interface, whose bytecode superclass JDT does not know of.
+	 */
+	@Test
+	void supertypeNamesAreRenderedAsJdtRendersThem() throws Exception {
+		File jar = JarFixtureBuilder.buildJar(tempDir, "names", Map.of(
+				"h.Outer", """
+						package h;
+						public class Outer {
+							public interface Plain {}
+							public interface Generic<T> {}
+						}
+						""",
+				"h.Impl", "package h; public class Impl implements Outer.Plain, Outer.Generic<String> {}",
+				"h.SubInterface", "package h; public interface SubInterface extends Outer.Plain {}"), Map.of());
+
+		Indexer indexer = new Indexer();
+		Set<DotName> ownClasses = JarStereotypeScanner.indexInto(indexer, jar);
+		Index index = indexer.complete();
+
+		assertEquals(Set.of("java.lang.Object", "h.Outer.Plain", "h.Outer$Generic"),
+				JarStereotypeScanner.supertypesOf(index.getClassByName(DotName.createSimple("h.Impl")), index));
+		assertEquals(Set.of("h.Outer.Plain"), JarStereotypeScanner.supertypesOf(index.getClassByName(DotName.createSimple("h.SubInterface")), index));
+		assertTrue(ownClasses.contains(DotName.createSimple("h.Impl")));
+	}
+
 }

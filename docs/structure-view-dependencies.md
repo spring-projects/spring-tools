@@ -1164,6 +1164,24 @@ for:
 - `registerBean` calls in anonymous classes inside `register` are not read. Its lambdas are,
   found through `invokedynamic`.
 
+### Scanning in the background (as implemented)
+
+A structure request never waits for a JAR scan:
+- **Scanning:** JARs not scanned yet are left out of the project's tree and scanned in the
+  background, on one thread, one project at a time.
+  - Each project's selected JARs are scanned together, indexing its classpath once.
+  - Each project gets one percentage progress, which names the JAR being worked on.
+- **Refresh:** once a project's scan is done, the server sends `spring/index/updated` for that
+  project, and the client rebuilds that one tree.
+- **Other projects:** projects with nothing to scan are there right away.
+- **MCP tools** and other callers of `StructureViewProvider.createTree` still wait for the scan.
+- **Incomplete scans:** a scan that couldn't resolve against the project's classpath is kept too,
+  so the background path doesn't loop on it.
+
+On the client, overlapping structure requests are merged by request order. A slow full load
+finishing after a newer partial refresh can then neither drop projects from the view nor roll them
+back.
+
 ### 5.8 Navigation: JAR nodes open the class in the IDE (decided)
 
 Clicking a JAR type, method node or member opens the corresponding class - at that method or field

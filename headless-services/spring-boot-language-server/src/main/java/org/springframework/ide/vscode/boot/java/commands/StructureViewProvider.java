@@ -97,6 +97,17 @@ public class StructureViewProvider {
 	 */
 	public Node createTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, boolean updateMetadata,
 			Collection<String> selectedGroups, List<DependencyDescriptor> selectedDependencies) {
+		return createTree(project, cachedIndex, updateMetadata, selectedGroups, selectedDependencies, false);
+	}
+
+	/**
+	 * @param dependenciesInBackground whether dependencies that are not ready yet - JARs still to be
+	 *        scanned - are left out of this tree and prepared in the background rather than waited
+	 *        for (see {@link StructureDependencySources}), so the tree is there right away - for the
+	 *        IDE's view, which then gets to rebuild it once they are ready
+	 */
+	public Node createTree(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, boolean updateMetadata,
+			Collection<String> selectedGroups, List<DependencyDescriptor> selectedDependencies, boolean dependenciesInBackground) {
 
 		log.info("create structural view tree information for project: " + project.getElementName());
 
@@ -114,7 +125,8 @@ public class StructureViewProvider {
 
 		StructureElements elements = new CompositeStructureElements(
 				IndexStructureElements.of(project, cachedIndex, catalog),
-				dependencySources.elementsOf(project, withoutProject(selectedDependencies, project), cachedIndex, catalog));
+				dependencySources.elementsOf(project, withoutProject(selectedDependencies, project), cachedIndex, catalog,
+						dependenciesInBackground));
 
 		return createTree(project, elements, catalog, selectedGroups, updateMetadata);
 	}

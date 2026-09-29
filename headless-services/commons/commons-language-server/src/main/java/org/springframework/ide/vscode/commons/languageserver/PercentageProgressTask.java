@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -78,6 +78,23 @@ public class PercentageProgressTask extends AbstractProgressTask {
 		}
 		current++;
 		reportCurrent();
+	}
+
+	/**
+	 * Increments, and reports what is being worked on next - with the percentage, which may not
+	 * have changed.
+	 */
+	public void increment(String message) {
+		if (current >= total) {
+			throw new IllegalStateException();
+		}
+		current++;
+		currentPercentage = Math.max(currentPercentage, current * 100 / total);
+
+		WorkDoneProgressReport r = new WorkDoneProgressReport();
+		r.setPercentage(currentPercentage);
+		r.setMessage(message);
+		client.report(taskId, r);
 	}
 
 	

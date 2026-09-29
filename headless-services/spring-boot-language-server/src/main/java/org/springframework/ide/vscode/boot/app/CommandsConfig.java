@@ -37,6 +37,7 @@ import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.spring.IndexUpdatedParams;
 
 @Configuration(proxyBeanMethods = false)
 public class CommandsConfig {
@@ -67,8 +68,15 @@ public class CommandsConfig {
 	}
 
 	@Bean
-	StructureDependencySources structureDependencySources(List<StructureDependencySource> sources) {
-		return new StructureDependencySources(sources);
+	StructureDependencySources structureDependencySources(List<StructureDependencySource> sources, SimpleLanguageServer server) {
+		// dependencies prepared in the background (JARs being scanned) are left out of the tree
+		// until they are ready - the client then gets to rebuild that one project's tree, the same
+		// way it does for any other update of the index the tree is built from
+		return new StructureDependencySources(sources, project -> {
+			if (server.getClient() != null) {
+				server.getClient().indexUpdated(IndexUpdatedParams.of(project.getElementName()));
+			}
+		});
 	}
 
 	@Bean

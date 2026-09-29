@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.slf4j.Logger;
@@ -35,9 +36,21 @@ public class StructureDependencySources {
 			.thenComparing(DependencyDescriptor::displayName, String.CASE_INSENSITIVE_ORDER);
 
 	private final List<StructureDependencySource> sources;
+	private final Consumer<IJavaProject> onDependenciesReady;
 
 	public StructureDependencySources(List<StructureDependencySource> sources) {
+		this(sources, project -> {});
+	}
+
+	/**
+	 * @param onDependenciesReady told when dependencies left out of a project's tree for being
+	 *        prepared in the background (see {@link #elementsOf(IJavaProject, List,
+	 *        CachedSpringMetamodelIndex, AbstractStereotypeCatalog, boolean)}) are ready - so that
+	 *        the project's tree can be built again, with them
+	 */
+	public StructureDependencySources(List<StructureDependencySource> sources, Consumer<IJavaProject> onDependenciesReady) {
 		this.sources = sources;
+		this.onDependenciesReady = onDependenciesReady;
 	}
 
 	/**
@@ -96,12 +109,47 @@ public class StructureDependencySources {
 	 */
 	public List<StructureElements> elementsOf(IJavaProject including, List<DependencyDescriptor> dependencies,
 			CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog) {
+		return elementsOf(including, dependencies, cachedIndex, catalog, false);
+	}
+
+	/**
+	 * @param inBackground whether a dependency that is not ready yet - a JAR still to be scanned -
+	 *        is to be left out and prepared in the background rather than waited for, so that the
+	 *        tree is there right away; {@code onDependenciesReady} is told once they are
+	 */
+	public List<StructureElements> elementsOf(IJavaProject including, List<DependencyDescriptor> dependencies,
+			CachedSpringMetamodelIndex cachedIndex, AbstractStereotypeCatalog catalog, boolean inBackground) {
+
+		// the dependencies not ready yet, per source - prepared together, for one progress per project
+		Map<StructureDependencySource, List<DependencyDescriptor>> notReady = new LinkedHashMap<>();
+		for (DependencyDescriptor dependency : dependencies) {
+			for (StructureDependencySource source : sources) {
+				if (!source.isReady(dependency, including)) {
+					notReady.computeIfAbsent(source, s -> new ArrayList<>()).add(dependency);
+				}
+			}
+		}
+
+		if (!inBackground) {
+			notReady.forEach((source, toPrepare) -> {
+				try {
+					source.prepare(including, toPrepare);
+				} catch (Exception e) {
+					log.error("cannot prepare the structure dependencies " + toPrepare.stream().map(DependencyDescriptor::id).toList()
+							+ " of project " + including.getElementName() + " via " + source, e);
+				}
+			});
+			notReady.clear();
+		}
 
 		List<StructureElements> result = new ArrayList<>();
 
 		for (DependencyDescriptor dependency : dependencies) {
 			for (StructureDependencySource source : sources) {
 				try {
+					if (notReady.getOrDefault(source, List.of()).contains(dependency)) {
+						break; // left out for now - being prepared in the background
+					}
 					StructureElements elements = source.elementsOf(dependency, including, cachedIndex, catalog);
 					if (elements != null) {
 						result.add(elements);
@@ -112,6 +160,12 @@ public class StructureDependencySources {
 				}
 			}
 		}
+
+		notReady.forEach((source, toPrepare) -> {
+			log.info("project '{}': preparing structure dependencies {} in the background", including.getElementName(),
+					toPrepare.stream().map(DependencyDescriptor::id).toList());
+			source.prepareInBackground(including, toPrepare, () -> onDependenciesReady.accept(including));
+		});
 
 		return result;
 	}

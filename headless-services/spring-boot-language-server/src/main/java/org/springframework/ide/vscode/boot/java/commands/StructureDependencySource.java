@@ -44,4 +44,28 @@ public interface StructureDependencySource {
 	StructureElements elementsOf(DependencyDescriptor dependency, IJavaProject including, CachedSpringMetamodelIndex cachedIndex,
 			AbstractStereotypeCatalog catalog);
 
+	/**
+	 * Whether {@link #elementsOf} can answer for the dependency right away, rather than having to
+	 * do expensive work first - scanning a JAR, say.
+	 */
+	default boolean isReady(DependencyDescriptor dependency, IJavaProject including) {
+		return true;
+	}
+
+	/**
+	 * Does the work that makes the given dependencies - all of them not {@link #isReady} - ready,
+	 * together, and returns once done.
+	 */
+	default void prepare(IJavaProject including, List<DependencyDescriptor> dependencies) {
+	}
+
+	/**
+	 * Does, in the background, the work that makes the given dependencies - all of them not
+	 * {@link #isReady} - ready, and calls {@code onReady} once done, so the including project's
+	 * tree can be built again with them.
+	 */
+	default void prepareInBackground(IJavaProject including, List<DependencyDescriptor> dependencies, Runnable onReady) {
+		onReady.run();
+	}
+
 }

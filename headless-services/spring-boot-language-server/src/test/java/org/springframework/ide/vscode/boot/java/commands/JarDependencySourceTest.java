@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -32,10 +33,12 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.eclipse.lsp4j.WorkDoneProgressBegin;
 import org.eclipse.lsp4j.WorkDoneProgressEnd;
+import org.eclipse.lsp4j.WorkDoneProgressReport;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.catalog.support.CatalogSource;
 import org.jmolecules.stereotype.catalog.support.JsonPathStereotypeCatalog;
@@ -189,30 +192,56 @@ public class JarDependencySourceTest {
 	}
 
 	/**
-	 * Scanning a JAR indexes the including project's whole classpath, which can take a while - so it
-	 * is reported to the client as progress, the way indexing a project's sources is. A cached scan
-	 * has nothing to report.
+	 * Scanning JARs indexes the including project's whole classpath, which can take a while - so the
+	 * JARs selected for a project are scanned together, indexing that classpath once, and reported
+	 * as one progress for the project that names each JAR as it gets to it, the way indexing a
+	 * project's sources is reported. What is scanned already has nothing to report.
 	 */
 	@Test
-	void scanningAJarIsReportedAsProgressButReusingTheScanIsNot() throws Exception {
-		File jar = markedJar("fixture");
+	void theJarsOfAProjectAreScannedTogetherAsOneProgressNamingEachJar() throws Exception {
+		File first = markedJar("first");
+		File second = markedJar("second");
 		STS4LanguageClient client = mock(STS4LanguageClient.class);
 		when(client.createProgress(any())).thenReturn(CompletableFuture.completedFuture(null));
 		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)),
 				ProgressService.create(() -> client));
-		DependencyDescriptor dependency = DependencyDescriptor.jar("fixture", jar.getAbsolutePath());
-		IJavaProject including = project(jar);
+		List<DependencyDescriptor> dependencies = List.of(DependencyDescriptor.jar("first", first.getAbsolutePath()),
+				DependencyDescriptor.jar("second", second.getAbsolutePath()));
+		IJavaProject including = project(first, second);
 
-		source.elementsOf(dependency, including, null, catalogWithMarker());
+		source.prepare(including, dependencies);
 
 		// the begin is sent once the client has created the progress - asynchronously, so not
 		// necessarily before the reports
 		verify(client, timeout(5000)).notifyProgress(argThat(params -> params.getValue().getLeft() instanceof WorkDoneProgressBegin begin
-				&& begin.getTitle().contains(jar.getName()) && begin.getTitle().contains("including")));
+				&& begin.getTitle().contains("including")));
+		for (File jar : List.of(first, second)) {
+			verify(client, timeout(5000).atLeastOnce()).notifyProgress(argThat(params -> params.getValue().getLeft() instanceof WorkDoneProgressReport report
+					&& jar.getName().equals(report.getMessage())));
+		}
 		verify(client, timeout(5000)).notifyProgress(argThat(params -> params.getValue().getLeft() instanceof WorkDoneProgressEnd));
-
-		source.elementsOf(dependency, including, null, catalogWithMarker());
 		verify(client, times(1)).createProgress(any());
+
+		dependencies.forEach(dependency -> assertTrue(source.isReady(dependency, including)));
+
+		source.prepare(including, dependencies);
+		source.elementsOf(dependencies.get(0), including, null, catalogWithMarker());
+		verify(client, times(1)).createProgress(any());
+	}
+
+	@Test
+	void inTheBackgroundTheJarsAreScannedAndTheProjectIsToldOnceTheyAreReady() throws Exception {
+		File jar = markedJar("fixture");
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)));
+		DependencyDescriptor dependency = DependencyDescriptor.jar("fixture", jar.getAbsolutePath());
+		IJavaProject including = project(jar);
+		assertFalse(source.isReady(dependency, including));
+
+		CompletableFuture<Void> ready = new CompletableFuture<>();
+		source.prepareInBackground(including, List.of(dependency), () -> ready.complete(null));
+
+		ready.get(30, TimeUnit.SECONDS);
+		assertTrue(source.isReady(dependency, including));
 	}
 
 	private File markedJar(String name) throws Exception {

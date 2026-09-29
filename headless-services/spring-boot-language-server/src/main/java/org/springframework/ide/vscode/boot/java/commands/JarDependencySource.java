@@ -14,10 +14,15 @@ import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
@@ -62,13 +67,21 @@ public class JarDependencySource implements StructureDependencySource {
 
 	private static final Logger log = LoggerFactory.getLogger(JarDependencySource.class);
 
-	private static final String SCAN_JAR_TASK_ID = "scan-structure-dependency-jar-task-";
+	private static final String SCAN_JARS_TASK_ID = "scan-structure-dependency-jars-task-";
 
 	private final ClasspathDependencyResolver resolver;
 	private final ProgressService progressService;
 	// by the JAR's absolute path - one entry per JAR, replaced when the JAR changes, rather than one
 	// per version of it that happened to be scanned
 	private final ConcurrentHashMap<String, CachedScan> scannedJars = new ConcurrentHashMap<>();
+
+	// see prepareInBackground
+	private final ExecutorService backgroundScans = Executors.newSingleThreadExecutor(runnable -> {
+		Thread thread = new Thread(runnable, "structure-dependency-scan");
+		thread.setDaemon(true);
+		return thread;
+	});
+	private final Set<String> scheduledProjects = ConcurrentHashMap.newKeySet();
 
 	public JarDependencySource(ClasspathDependencyResolver resolver) {
 		this(resolver, ProgressService.NO_PROGRESS);
@@ -77,7 +90,7 @@ public class JarDependencySource implements StructureDependencySource {
 	/**
 	 * @param progressService reports the scan of a JAR to the client while it runs - the part of
 	 *        including a JAR the user may have to wait for, since it indexes the including project's
-	 *        whole classpath (see {@link #scan}); a cached scan reports nothing
+	 *        whole classpath (see {@link #scanAll}); a cached scan reports nothing
 	 */
 	public JarDependencySource(ClasspathDependencyResolver resolver, ProgressService progressService) {
 		this.resolver = resolver;
@@ -97,13 +110,8 @@ public class JarDependencySource implements StructureDependencySource {
 	public StructureElements elementsOf(DependencyDescriptor dependency, IJavaProject including, CachedSpringMetamodelIndex cachedIndex,
 			AbstractStereotypeCatalog catalog) {
 
-		if (dependency.kind() != DependencyDescriptor.Kind.JAR) {
-			return null;
-		}
-
-		File jarFile = new File(dependency.location());
-		if (!jarFile.isFile()) {
-			log.warn("cannot scan structure dependency '{}': '{}' is not a file", dependency.id(), jarFile);
+		File jarFile = jarFileOf(dependency);
+		if (jarFile == null) {
 			return null;
 		}
 
@@ -120,42 +128,118 @@ public class JarDependencySource implements StructureDependencySource {
 	}
 
 	/**
-	 * The cached scan of the JAR, or a fresh one if there is none or the JAR has changed since. A
-	 * scan that could not resolve against the including project's classpath - the classpath could
-	 * not be read, or the JAR is not on it - is used, but not cached: it may lack meta-annotations
-	 * a complete one would resolve, and that must not stick for every later request.
+	 * Ready once the JAR is scanned - also by an incomplete scan (see {@link #scanned}), which
+	 * scanning again in the background would only repeat, and repeat for every refresh it triggers.
 	 */
-	private ScanResult scanned(IJavaProject including, File jarFile) {
-		ScanResult[] uncached = new ScanResult[1];
-
-		CachedScan cached = scannedJars.compute(jarFile.getAbsolutePath(), (key, existing) -> {
-			if (existing != null && existing.isFor(jarFile)) {
-				return existing;
-			}
-			ScanResult fresh = scan(including, jarFile);
-			if (fresh.complete()) {
-				return new CachedScan(jarFile.lastModified(), jarFile.length(), fresh);
-			}
-			uncached[0] = fresh;
-			return null;
-		});
-
-		return cached != null ? cached.result() : uncached[0];
+	@Override
+	public boolean isReady(DependencyDescriptor dependency, IJavaProject including) {
+		File jarFile = jarFileOf(dependency);
+		if (jarFile == null) {
+			return true; // nothing to scan - elementsOf answers right away
+		}
+		CachedScan cached = scannedJars.get(jarFile.getAbsolutePath());
+		return cached != null && cached.isFor(jarFile);
 	}
 
 	/**
-	 * Scans {@code jarFile}'s own classes, resolving their annotations and supertypes against a
-	 * combined index built over every JAR on {@code including}'s classpath - not just
-	 * {@code jarFile} in isolation, since an annotation's own meta-annotations are often declared
-	 * several JARs away from where the annotation itself is used (Spring's own annotations are the
-	 * textbook example: {@code @RestController} is meta-annotated with {@code @Controller}, which
-	 * lives in a different JAR). Every JAR {@code including} depends on is guaranteed to be
-	 * resolvable on its own classpath, so this is always sufficient.
+	 * Scans the JARs on a thread of its own, one project after the other - each scan indexes the
+	 * project's whole classpath, which is not something to do for several projects at once - with a
+	 * single progress for the project. A project whose scan is still to come or running is not
+	 * scheduled a second time; JARs selected for it meanwhile are scanned with the refresh that
+	 * {@code onReady} triggers.
 	 */
+	@Override
+	public void prepareInBackground(IJavaProject including, List<DependencyDescriptor> dependencies, Runnable onReady) {
+		if (!scheduledProjects.add(including.getElementName())) {
+			return;
+		}
+
+		backgroundScans.execute(() -> {
+			try {
+				prepare(including, dependencies);
+			}
+			catch (Exception e) {
+				log.error("cannot scan the structure dependencies of project '{}'", including.getElementName(), e);
+			}
+			finally {
+				scheduledProjects.remove(including.getElementName());
+				onReady.run();
+			}
+		});
+	}
+
+	/**
+	 * Scans all of the given JARs not scanned yet together - indexing the including project's
+	 * classpath once for all of them - and caches the results.
+	 */
+	@Override
+	public void prepare(IJavaProject including, List<DependencyDescriptor> dependencies) {
+		List<File> toScan = dependencies.stream()
+				.filter(dependency -> !isReady(dependency, including))
+				.map(JarDependencySource::jarFileOf)
+				.filter(Objects::nonNull)
+				.distinct()
+				.toList();
+
+		if (!toScan.isEmpty()) {
+			scanAll(including, toScan).forEach(this::cache);
+		}
+	}
+
+	private static File jarFileOf(DependencyDescriptor dependency) {
+		if (dependency.kind() != DependencyDescriptor.Kind.JAR) {
+			return null;
+		}
+
+		File jarFile = new File(dependency.location());
+		if (!jarFile.isFile()) {
+			log.warn("cannot scan structure dependency '{}': '{}' is not a file", dependency.id(), jarFile);
+			return null;
+		}
+		return jarFile;
+	}
+
+	/**
+	 * The cached scan of the JAR, or a fresh one if there is none, the JAR has changed since, or the
+	 * cached one is incomplete. A scan that could not resolve against the including project's
+	 * classpath - the classpath could not be read, or the JAR is not on it - may lack
+	 * meta-annotations a complete one would resolve: asked for directly, it is tried again.
+	 */
+	private ScanResult scanned(IJavaProject including, File jarFile) {
+		CachedScan cached = scannedJars.get(jarFile.getAbsolutePath());
+		if (cached != null && cached.isFor(jarFile) && cached.result().complete()) {
+			return cached.result();
+		}
+
+		ScanResult fresh = scan(including, jarFile);
+		cache(jarFile, fresh);
+		return fresh;
+	}
+
+	private void cache(File jarFile, ScanResult result) {
+		scannedJars.put(jarFile.getAbsolutePath(), new CachedScan(jarFile.lastModified(), jarFile.length(), result));
+	}
+
 	ScanResult scan(IJavaProject including, File jarFile) {
+		return scanAll(including, List.of(jarFile)).get(jarFile);
+	}
+
+	/**
+	 * Scans the given JARs' own classes, resolving their annotations and supertypes against a
+	 * combined index built over every JAR on {@code including}'s classpath - not just the JARs in
+	 * isolation, since an annotation's own meta-annotations are often declared several JARs away
+	 * from where the annotation itself is used (Spring's own annotations are the textbook example:
+	 * {@code @RestController} is meta-annotated with {@code @Controller}, which lives in a different
+	 * JAR). Every JAR {@code including} depends on is guaranteed to be resolvable on its own
+	 * classpath, so this is always sufficient. The index is built once, for all of them.
+	 *
+	 * <p>Reported as one progress for the project, naming the JAR being indexed.
+	 */
+	private Map<File, ScanResult> scanAll(IJavaProject including, List<File> jarFiles) {
 		Indexer indexer = new Indexer();
-		Set<DotName> ownClasses = null;
+		Map<File, Set<DotName>> ownClasses = new LinkedHashMap<>();
 		Set<File> indexed = new HashSet<>();
+		Set<File> wanted = jarFiles.stream().map(File::getAbsoluteFile).collect(Collectors.toSet());
 
 		Collection<CPE> classpathEntries;
 		try {
@@ -163,50 +247,60 @@ public class JarDependencySource implements StructureDependencySource {
 			// this codebase catches locally rather than propagating - matching that here too
 			classpathEntries = including.getClasspath().getClasspathEntries();
 		} catch (Exception e) {
-			log.error("cannot read the classpath of '{}' to scan structure dependency JAR '{}'", including.getElementName(), jarFile, e);
+			log.error("cannot read the classpath of '{}' to scan structure dependency JARs {}", including.getElementName(), jarFiles, e);
 			classpathEntries = null;
 		}
-		boolean complete = classpathEntries != null;
-		List<CPE> binaryEntries = complete
+		boolean classpathRead = classpathEntries != null;
+		List<CPE> binaryEntries = classpathRead
 				? classpathEntries.stream().filter(cpe -> Classpath.isBinary(cpe) && !cpe.isSystem()).toList()
 				: List.of();
 
-		// one step per classpath entry to index, and a last one for reading the JAR's own classes
-		PercentageProgressTask progress = progressService.createPercentageProgressTask(SCAN_JAR_TASK_ID + jarFile.getAbsolutePath(),
-				binaryEntries.size() + 1, "Spring Tools: Indexing Library '" + jarFile.getName() + "' for the Logical Structure of '"
+		// one step per classpath entry to index, and one per JAR to read its own classes from
+		PercentageProgressTask progress = progressService.createPercentageProgressTask(SCAN_JARS_TASK_ID + including.getElementName(),
+				binaryEntries.size() + jarFiles.size(), "Spring Tools: Indexing Libraries for the Logical Structure of '"
 						+ including.getElementName() + "'");
 		try {
 			for (CPE cpe : binaryEntries) {
 				File file = IClasspathUtil.binaryLocation(cpe).getAbsoluteFile();
+				progress.increment(file.getName());
 				if (file.isFile() && indexed.add(file)) {
 					Set<DotName> classesOfThisFile = JarStereotypeScanner.indexInto(indexer, file);
-					if (file.equals(jarFile.getAbsoluteFile())) {
-						ownClasses = classesOfThisFile;
+					if (wanted.contains(file)) {
+						ownClasses.put(file, classesOfThisFile);
 					}
 				}
-				progress.increment();
 			}
 
-			if (ownClasses == null) {
-				// the JAR wasn't found among including's own classpath entries at all - a stale
-				// selection, or a discovery/classpath mismatch; index it directly so something is
-				// still shown, even though cross-JAR meta-annotations may not all resolve
-				log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
-						including.getElementName());
-				ownClasses = JarStereotypeScanner.indexInto(indexer, jarFile);
-				complete = false;
+			Set<File> isolated = new HashSet<>();
+			for (File jarFile : wanted) {
+				if (!ownClasses.containsKey(jarFile)) {
+					// the JAR wasn't found among including's own classpath entries at all - a stale
+					// selection, or a discovery/classpath mismatch; index it directly so something is
+					// still shown, even though cross-JAR meta-annotations may not all resolve
+					log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
+							including.getElementName());
+					ownClasses.put(jarFile, JarStereotypeScanner.indexInto(indexer, jarFile));
+					isolated.add(jarFile);
+				}
 			}
 
 			Index index = indexer.complete();
-			Map<Object, String> bindingKeys = new IdentityHashMap<>();
-			List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index, bindingKeys);
-			Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, index, jarFile, bindingKeys);
-			progress.increment();
 
-			log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
-					jarFile.getName(), scanned.size(), ownClasses.size());
+			Map<File, ScanResult> result = new LinkedHashMap<>();
+			for (File jarFile : jarFiles) {
+				File key = jarFile.getAbsoluteFile();
+				progress.increment(jarFile.getName());
 
-			return new ScanResult(scanned, beans, bindingKeys, complete);
+				Map<Object, String> bindingKeys = new IdentityHashMap<>();
+				List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses.get(key), index, bindingKeys);
+				Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, index, jarFile, bindingKeys);
+
+				log.info("scanned structure dependency JAR '{}': {} of its {} class(es) found (annotation types, module-info excluded)",
+						jarFile.getName(), scanned.size(), ownClasses.get(key).size());
+
+				result.put(jarFile, new ScanResult(scanned, beans, bindingKeys, classpathRead && !isolated.contains(key)));
+			}
+			return result;
 		}
 		finally {
 			progress.done();

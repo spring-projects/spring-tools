@@ -56,6 +56,8 @@ public class StructureDependenciesCommandTest {
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
+	@Autowired private StructureDependencySources dependencySources;
+	@Autowired private JarDependencySource jarDependencySource;
 
 	private IJavaProject project;
 	private StructureTreeTestFixture tree;
@@ -133,6 +135,36 @@ public class StructureDependenciesCommandTest {
 				Map.of(project.getElementName(), List.of("project:some-dependency", "gav:com.example:lib")));
 
 		assertEquals(comparable(without), comparable(with));
+	}
+
+	/**
+	 * A JAR still to be scanned keeps no tree waiting: the request answers right away, the JAR is
+	 * scanned in the background, and the client is told once the project's tree can be built with
+	 * it - the same way it is told about any other index update.
+	 */
+	@Test
+	void aJarStillToBeScannedIsScannedInTheBackgroundAndTheClientToldOnceItIsReady() throws Exception {
+		String projectName = project.getElementName();
+		DependencyDescriptor springWeb = dependencySources.resolve(project, List.of("gav:org.springframework:spring-web")).get(0);
+		int updatesBefore = harness.getIndexUpdatedCount();
+
+		List<Node> trees = tree.structureTrees(null, null, Map.of(projectName, List.of(springWeb.id())));
+		assertTrue(trees.stream().anyMatch(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID))));
+
+		long deadline = System.currentTimeMillis() + 60_000;
+		while (!jarDependencySource.isReady(springWeb, project) || !indexUpdatedSince(updatesBefore, projectName)) {
+			assertTrue(System.currentTimeMillis() < deadline, "the JAR was not scanned in the background, or the client not told");
+			Thread.sleep(100);
+		}
+	}
+
+	private boolean indexUpdatedSince(int updatesBefore, String projectName) {
+		for (int i = updatesBefore; i < harness.getIndexUpdatedCount(); i++) {
+			if (harness.getIndexUpdatedDetails(i).getAffectedProjects().contains(projectName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private List<StructureViewProvider.StructureNode> comparable(List<Node> roots) {

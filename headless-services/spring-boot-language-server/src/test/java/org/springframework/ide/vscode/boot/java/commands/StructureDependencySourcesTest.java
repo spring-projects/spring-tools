@@ -12,10 +12,15 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -96,6 +101,50 @@ public class StructureDependencySourcesTest {
 				offering(shared)));
 
 		assertEquals(List.of(shared), sources.discoverAll(app));
+	}
+
+	/**
+	 * For the IDE's view, a dependency not ready yet - a JAR still to be scanned - is left out of
+	 * the tree and prepared in the background, and the project is reported once it is ready, to have
+	 * its tree built again.
+	 */
+	@Test
+	void inTheBackgroundADependencyNotReadyIsLeftOutPreparedAndReportedOnceReady() {
+		IJavaProject app = mock(IJavaProject.class);
+		DependencyDescriptor jar = DependencyDescriptor.jar("lib", "/repo/lib.jar");
+		StructureDependencySource source = mock(StructureDependencySource.class);
+		when(source.isReady(jar, app)).thenReturn(false);
+		doAnswer(invocation -> {
+			invocation.<Runnable>getArgument(2).run();
+			return null;
+		}).when(source).prepareInBackground(eq(app), eq(List.of(jar)), any());
+
+		List<IJavaProject> reported = new ArrayList<>();
+		StructureDependencySources sources = new StructureDependencySources(List.of(source), reported::add);
+
+		assertEquals(List.of(), sources.elementsOf(app, List.of(jar), null, null, true));
+		verify(source, never()).elementsOf(any(), any(), any(), any());
+		assertEquals(List.of(app), reported);
+	}
+
+	/**
+	 * Otherwise - for an MCP tool, say - the dependencies not ready yet are prepared first, together,
+	 * and then included.
+	 */
+	@Test
+	void withoutTheBackgroundTheDependenciesNotReadyArePreparedTogetherFirst() {
+		IJavaProject app = mock(IJavaProject.class);
+		DependencyDescriptor first = DependencyDescriptor.jar("first", "/repo/first.jar");
+		DependencyDescriptor second = DependencyDescriptor.jar("second", "/repo/second.jar");
+		StructureDependencySource source = mock(StructureDependencySource.class);
+		when(source.isReady(any(), any())).thenReturn(false);
+		when(source.elementsOf(any(), any(), any(), any())).thenReturn(mock(StructureElements.class));
+
+		StructureDependencySources sources = new StructureDependencySources(List.of(source));
+
+		assertEquals(2, sources.elementsOf(app, List.of(first, second), null, null).size());
+		verify(source).prepare(app, List.of(first, second));
+		verify(source, never()).prepareInBackground(any(), any(), any());
 	}
 
 	private static StructureDependencySource offering(DependencyDescriptor... dependencies) {

@@ -211,7 +211,8 @@ public class SpringIndexCommands {
 		List<DependencyDescriptor> selectedDependencies = dependencySources.resolve(project,
 				args.selectedDependencies == null ? null : args.selectedDependencies.get(project.getElementName()));
 
-		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups, selectedDependencies);
+		// JARs still to be scanned are scanned in the background, so that no project's tree waits for them
+		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups, selectedDependencies, true);
 
 		// no baseline attributes at all rather than a baseline with nothing marked: those two look
 		// the same to a client, and the latter reads as "nothing changed" - which would hide the

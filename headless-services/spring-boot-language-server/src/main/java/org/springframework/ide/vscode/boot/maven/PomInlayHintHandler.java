@@ -155,8 +155,7 @@ public class PomInlayHintHandler implements InlayHintHandler {
 				}
 
 				if (versions != null) {
-					// type is "oss"/"enterprise" when sourced from a generation's latestPatch map,
-					// or "" for the generic Maven-metadata/single-candidate case.
+					// type is "oss"/"enterprise", or "" for the generic single-candidate case.
 					Optional<Generation> currentGeneration = usedMavenMetadata || genProject == null
 							? Optional.empty()
 							: genProject.findGeneration(currentVersion);
@@ -165,8 +164,6 @@ public class PomInlayHintHandler implements InlayHintHandler {
 					if (currentGeneration.isPresent()) {
 						patchCandidatesByType = currentGeneration.get().getLatestPatchByType();
 					} else {
-						// Maven metadata and "generation not found" both have no oss/enterprise
-						// concept - just the single, generic candidate from the sorted version list.
 						patchCandidatesByType = versions.getNewerLatestPatchRelease(currentVersion)
 								.map(latest -> Map.of("", latest))
 								.orElse(Map.of());

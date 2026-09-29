@@ -87,8 +87,6 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 			if (currentGeneration.isPresent()) {
 				patchCandidatesByType = currentGeneration.get().getLatestPatchByType();
 			} else {
-				// Maven metadata and "generation not found" both have no oss/enterprise concept -
-				// just the single, generic candidate from the sorted version list.
 				patchCandidatesByType = versions.getNewerLatestPatchRelease(javaProjectVersion)
 						.map(latest -> Map.of("", latest))
 						.orElse(Map.of());
@@ -134,12 +132,7 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 	}
 
 	/**
-	 * A patch upgrade can have more than one candidate at once - e.g. a publicly available
-	 * {@code oss} one and a commercial-only {@code enterprise} one when sourced from a
-	 * generation's {@code latestPatch}, or a single untyped ({@code ""}) one when sourced
-	 * from the project's resolvable Maven repository. Offers a separate quickfix per
-	 * candidate that is newer than the project's current version, so the user can pick
-	 * whichever they actually have access to.
+	 * One quickfix per candidate newer than the current version (e.g. oss + enterprise).
 	 */
 	private Optional<Diagnostic> validatePatchVersions(IJavaProject javaProject, Version javaProjectVersion, Map<String, Version> candidatesByType) {
 		List<Map.Entry<String, Version>> newerCandidates = candidatesByType.entrySet().stream()

@@ -52,10 +52,7 @@ public class ResolvedSpringProject extends SpringProject {
 	}
 
 	/**
-	 * Latest patch version of each generation, e.g. one entry per major.minor line
-	 * (including generations that are no longer within their support window).
-	 * Unlike {@link #getReleases()}, this covers every known generation, not just
-	 * the currently supported ones.
+	 * OSS latest patch per generation, including generations no longer in support.
 	 */
 	public List<Version> getLatestPatchVersions() throws Exception {
 		return getGenerations().stream()

@@ -73,12 +73,7 @@ public class Generation extends JsonHalLinks {
 	}
 
 	/**
-	 * The latest publicly-available (OSS) patch release for this generation, i.e.
-	 * the {@code oss} value of the {@code latestPatch} object. Returns {@code null}
-	 * if the generation's OSS support window has ended - at that point {@code latestPatch}
-	 * only carries an {@code enterprise} version, which is published to Broadcom's
-	 * commercial repository rather than public Maven Central, so it isn't a valid
-	 * upgrade suggestion for the general public.
+	 * OSS-only latest patch; {@code null} once OSS support has ended (enterprise-only from then on).
 	 */
 	public Version getLatestPatchVersion() {
 		if (latestPatch == null) {
@@ -88,11 +83,7 @@ public class Generation extends JsonHalLinks {
 	}
 
 	/**
-	 * The {@code latestPatch} entries parsed into {@link Version}s, keyed by
-	 * support type ({@code oss} or {@code enterprise}). Unlike
-	 * {@link #getLatestPatchVersion()}, this exposes every known patch (including
-	 * commercial-only ones) so callers can decide whether/how to offer each as an
-	 * upgrade option.
+	 * All {@code latestPatch} entries, keyed by type ({@code oss}/{@code enterprise}).
 	 */
 	public Map<String, Version> getLatestPatchByType() {
 		Map<String, Version> result = new LinkedHashMap<>();

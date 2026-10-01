@@ -2,6 +2,8 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ [structure view] don't show root package in the tree if there is only one [#2016](https://github.com/spring-projects/spring-tools/issues/2016)
+* _(Spring Boot)_ [structure view] show multiple root packages for regular non-modulith projects [#2015](https://github.com/spring-projects/spring-tools/issues/2015)
 * _(Spring Boot)_ [structure view] current diff view implementation broken when changing grouping [#2007](https://github.com/spring-projects/spring-tools/issues/2007)
 * _(Spring Boot)_ [structure view] index JAR files for logical structure view [#2005](https://github.com/spring-projects/spring-tools/issues/2005)
 * _(Spring Boot)_ [structure view] include elements from dependencies into the structure view elements of a project [#2004](https://github.com/spring-projects/spring-tools/issues/2004)

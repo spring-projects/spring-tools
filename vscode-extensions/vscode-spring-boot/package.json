@@ -1728,7 +1728,7 @@
                 "postgresql"
               ]
             },
-            "description": "Overrides the SQL dialect used to validate native @Query SQL statements, per Java package. A JSON object mapping a package name to \"mysql\" or \"postgresql\"; a subpackage inherits its nearest configured ancestor package's dialect. Packages with no applicable entry (and any entry with an unrecognized value) fall back to auto-detecting from JDBC driver dependencies on the classpath (MySQL/MariaDB take precedence over PostgreSQL when both are present)."
+            "description": "Overrides the SQL dialect used to validate native @Query SQL, per Java package, as { \"<package name>\": \"<mysql|postgresql|auto>\" }. Subpackages inherit the nearest ancestor's dialect; otherwise it is auto-detected from JDBC drivers on the classpath."
           }
         }
       },

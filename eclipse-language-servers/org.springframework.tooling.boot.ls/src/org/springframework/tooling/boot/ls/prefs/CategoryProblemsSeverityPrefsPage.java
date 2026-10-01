@@ -15,12 +15,15 @@ import java.util.List;
 
 import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.ComboFieldEditor;
 import org.eclipse.jface.preference.IntegerFieldEditor;
 import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.jface.preference.PreferenceNode;
 import org.eclipse.jface.preference.StringFieldEditor;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
 import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferencesUtil;
 import org.springframework.ide.eclipse.editor.support.preferences.ProblemSeverityPreferityPageFromMetadata;
@@ -85,6 +88,11 @@ public class CategoryProblemsSeverityPrefsPage extends ProblemSeverityPreferityP
 			for (ProblemParameterData param : category.getParameters()) {
 				String prefKey = getProblemParametersPreferencePrefix() + param.getKey();
 				if ("object".equals(param.getType())) {
+					if (param.getDescription() != null) {
+						Label description = new Label(getFieldEditorParent(), SWT.WRAP);
+						description.setText(param.getDescription());
+						GridDataFactory.fillDefaults().span(2, 1).grab(true, false).hint(400, SWT.DEFAULT).applyTo(description);
+					}
 					addField(new StringFieldEditor(prefKey, param.getLabel(), StringFieldEditor.UNLIMITED, 8,
 							StringFieldEditor.VALIDATE_ON_KEY_STROKE, getFieldEditorParent()));
 				} else if (param.getEnumValues() != null) {

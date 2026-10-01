@@ -11,15 +11,18 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.Collection;
-import java.util.List;
 
 import org.jmolecules.stereotype.tooling.StructureProvider.SimpleStructureProvider;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 
+/**
+ * The structure of the tree built from stereotypes: the application delivers its root packages,
+ * and each root package the types in or below it.
+ */
 public class ToolsStructureProvider implements
-		SimpleStructureProvider<StereotypePackageElement, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
+		SimpleStructureProvider<StructureApplication, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
 	private final StructureElements elements;
 
@@ -28,8 +31,8 @@ public class ToolsStructureProvider implements
 	}
 
 	@Override
-	public Collection<StereotypePackageElement> extractPackages(StereotypePackageElement pkg) {
-		return List.of(pkg);
+	public Collection<StereotypePackageElement> extractPackages(StructureApplication application) {
+		return application.rootPackages();
 	}
 
 	@Override
@@ -39,8 +42,9 @@ public class ToolsStructureProvider implements
 
 	@Override
 	public Collection<StereotypeClassElement> extractTypes(StereotypePackageElement pkg) {
+		// root packages are never below one another, so every type ends up under exactly one
 		return elements.types().stream()
-			.filter(element -> element.getType().startsWith(pkg.getPackageName()))
+			.filter(element -> StructureViewUtil.isInPackage(element.getType(), pkg.getPackageName()))
 			.toList();
 	}
 }

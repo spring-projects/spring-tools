@@ -41,15 +41,17 @@ public class JMoleculesStructureView {
 
 	public Node createTree(IJavaProject project, StructureElements elements, Collection<String> selectedGroups) {
 
-		StereotypePackageElement mainApplicationPackage = elements.mainApplicationPackage();
+		// the first level: the application, delivering the root packages of the next one
+		StructureApplication application = new StructureApplication(project.getElementName(), elements.rootPackages());
 
-		var labelProvider = new SimpleLabelProvider<>(StereotypePackageElement::getPackageName, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
+		var labelProvider = new SimpleLabelProvider<>(StructureApplication::name, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
 				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString)
-				.withTypeLabel(it -> StructureViewUtil.abbreviate(mainApplicationPackage, it))
+				// abbreviated against the root package the type is in or below
+				.withTypeLabel(it -> StructureViewUtil.abbreviate(application.rootPackageOf(it), it))
 				.withMethodLabel((m, c) -> elements.methodLabel(m, c))
 				.withPackageLabel((p) -> StructureViewUtil.getPackageLabel(p))
 				.withStereotypeLabel((s) -> StructureViewUtil.getStereotypeLabeler(catalog).apply(s))
-				.withApplicationLabel((p) -> project.getElementName());
+				.withApplicationLabel(StructureApplication::name);
 
 		var structureProvider = new ToolsStructureProvider(elements);
 
@@ -60,7 +62,7 @@ public class JMoleculesStructureView {
 		};
 
 		// create json nodes to display the structure in a nice way
-		var jsonHandler = new JsonNodeHandler<StereotypePackageElement, Object>(labelProvider, consumer, elements, sourceLinks, definitionLocator, catalog, project);
+		var jsonHandler = new JsonNodeHandler<StructureApplication, Object>(labelProvider, consumer, elements, sourceLinks, definitionLocator, catalog, project);
 
 		// create the project tree and apply all the groupers from the project
 		var jsonTree = new ProjectTree<>(elements.stereotypeFactory(), catalog, jsonHandler)
@@ -71,7 +73,7 @@ public class JMoleculesStructureView {
 			jsonTree = jsonTree.withGrouper(grouper);
 		}
 
-		jsonTree.process(mainApplicationPackage);
+		jsonTree.process(application);
 
 		return jsonHandler.getRoot();
 	}

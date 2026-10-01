@@ -237,13 +237,13 @@ public class SpringIndexCommandsCaptureBaselineTest {
 			// the golden-master this refactoring is checked against, see StructureTreeTestFixture#describeChanges
 			assertEquals("""
 					application:test-stereotypes-support=containsChanges
-					member:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.a.NewController > @/new -- GET=added
-					method:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Request Mappings (Spring Web) > @/new -- GET=added
-					package:test-stereotypes-support > example.application=containsChanges
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web)=containsChanges
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Request Mappings (Spring Web)=containsChanges
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture)=containsChanges
-					type:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.a.NewController=added""",
+					member:test-stereotypes-support > example > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.application.NewController > @/new -- GET=added
+					method:test-stereotypes-support > example > Application (Hexagonal Architecture) > Request Mappings (Spring Web) > @/new -- GET=added
+					package:test-stereotypes-support > example=containsChanges
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture) > Controllers (Spring Web)=containsChanges
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture) > Request Mappings (Spring Web)=containsChanges
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture)=containsChanges
+					type:test-stereotypes-support > example > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.application.NewController=added""",
 					StructureTreeTestFixture.describeChanges(roots.get(0)));
 		} finally {
 			tree.removeType(newController);
@@ -288,9 +288,9 @@ public class SpringIndexCommandsCaptureBaselineTest {
 			// the golden-master this refactoring is checked against, see StructureTreeTestFixture#describeChanges
 			assertEquals("""
 					application:test-stereotypes-support=containsChanges
-					package:test-stereotypes-support > example.application=containsChanges
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Others=modified
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture)=containsChanges""",
+					package:test-stereotypes-support > example=containsChanges
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture) > Others=modified
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture)=containsChanges""",
 					StructureTreeTestFixture.describeChanges(roots.get(0)));
 		} finally {
 			tree.addType(markedClass, MY_STEREOTYPE_MARKED_CLASS_ORIGINAL);
@@ -323,11 +323,11 @@ public class SpringIndexCommandsCaptureBaselineTest {
 			// the golden-master this refactoring is checked against, see StructureTreeTestFixture#describeChanges
 			assertEquals("""
 					application:test-stereotypes-support=containsChanges
-					package:test-stereotypes-support > example.application=containsChanges
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web)=containsChanges
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Others=modified
-					stereotype:test-stereotypes-support > example.application > Application (Hexagonal Architecture)=containsChanges
-					type:test-stereotypes-support > example.application > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.a.MyStereotypeMarkedClass=added""",
+					package:test-stereotypes-support > example=containsChanges
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture) > Controllers (Spring Web)=containsChanges
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture) > Others=modified
+					stereotype:test-stereotypes-support > example > Application (Hexagonal Architecture)=containsChanges
+					type:test-stereotypes-support > example > Application (Hexagonal Architecture) > Controllers (Spring Web) > e.application.MyStereotypeMarkedClass=added""",
 					StructureTreeTestFixture.describeChanges(roots.get(0)));
 		} finally {
 			// leaves the file re-annotated with @RestController otherwise - across separate mvn

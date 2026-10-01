@@ -39,10 +39,22 @@ public interface StructureElements {
 	List<StereotypeClassElement> types();
 
 	/**
-	 * The project's main application package - the tree's root label and the base that type labels
-	 * are abbreviated against ({@code StructureViewUtil.abbreviate}).
+	 * The project's main application package - the package of its {@code @SpringBootApplication}
+	 * class. What the Spring Modulith tree abbreviates type labels against, and what a baseline
+	 * snapshot records; the tree built from stereotypes is rooted in {@link #rootPackages()} instead.
 	 */
 	StereotypePackageElement mainApplicationPackage();
+
+	/**
+	 * The packages the tree built from stereotypes has below its application node - the top-most
+	 * packages that are not empty among {@link #types()} (see
+	 * {@link StructureViewUtil#identifyRootPackages}), ordered by name. Every type is in or below
+	 * exactly one of them.
+	 */
+	default List<StereotypePackageElement> rootPackages() {
+		List<String> typeNames = types().stream().map(StereotypeClassElement::getType).toList();
+		return StructureViewUtil.identifyRootPackages(typeNames).stream().map(this::packageNode).toList();
+	}
 
 	/**
 	 * The package node for the given package name - used to render package nodes, and to resolve an

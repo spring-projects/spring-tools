@@ -96,7 +96,7 @@ public class StructureDependenciesTreeTest {
 
 		// the dependency's SampleController gets the stereotype the host's package-info assigns to
 		// example.application - the package is split across both projects
-		List<Node> sampleControllers = nodesLabeled(controllers, "e.a.SampleController");
+		List<Node> sampleControllers = nodesLabeled(controllers, "e.application.SampleController");
 		assertEquals(2, sampleControllers.size());
 		assertNotEquals(sampleControllers.get(0).getAttribute(JsonNodeHandler.NODE_ID), sampleControllers.get(1).getAttribute(JsonNodeHandler.NODE_ID));
 
@@ -104,16 +104,39 @@ public class StructureDependenciesTreeTest {
 		Node requestMappings = single(nodesLabeled(application, "Request Mappings (Spring Web)"));
 		assertEquals(1, nodesLabeled(requestMappings, "@/dependency-greeting -- GET").size());
 
-		assertEquals(1, nodesLabeled(tree, "e.a.shared.SharedController").size());
+		assertEquals(1, nodesLabeled(tree, "e.application.shared.SharedController").size());
 		assertEquals(2, nodesLabeled(tree, "@/shared-greeting -- GET").size());
-		assertEquals(1, nodesLabeled(tree, "e.a.shared.SharedStereotypeMarkedClass").size());
+		assertEquals(1, nodesLabeled(tree, "e.application.shared.SharedStereotypeMarkedClass").size());
+	}
+
+	/**
+	 * The tree's root packages are the top-most packages with types of their own, across the project
+	 * and its included dependencies - so a dependency's types outside of the project's packages get
+	 * a root package of their own, and the ones inside sit in the project's.
+	 */
+	@Test
+	void typesOutsideOfTheProjectsPackagesGetARootPackageOfTheirOwn() throws Exception {
+		Node tree = tree(host, List.of(workspaceProject(dependency)));
+
+		assertEquals(List.of("com.acme.outside", "example"), rootPackageLabels(tree));
+
+		Node outside = tree.getChildren().get(0);
+		assertEquals(1, nodesLabeled(outside, "c.a.o.OutsideController").size());
+		assertEquals(0, nodesLabeled(outside, "e.application.shared.SharedController").size());
 	}
 
 	@Test
-	void typesOutsideOfTheProjectsMainPackageAreNotIncludedYet() throws Exception {
-		Node tree = tree(host, List.of(workspaceProject(dependency)));
+	void withoutDependenciesTheRootPackagesAreTheProjectsOwn() throws Exception {
+		// example.MyController makes example the top-most package with types of its own - not
+		// example.application, where the application class is
+		assertEquals(List.of("example"), rootPackageLabels(tree(host, List.of())));
+	}
 
-		assertTrue(render(tree).lines().noneMatch(line -> line.contains("OutsideController")));
+	private static List<String> rootPackageLabels(Node tree) {
+		return tree.getChildren().stream()
+				.filter(child -> JsonNodeHandler.KIND_PACKAGE.equals(child.getAttribute(JsonNodeHandler.KIND)))
+				.map(child -> (String) child.getAttribute(JsonNodeHandler.TEXT))
+				.toList();
 	}
 
 	@Test
@@ -144,9 +167,9 @@ public class StructureDependenciesTreeTest {
 
 		assertNotNull(hostTree);
 		assertNotNull(dependencyTree);
-		// the dependency has no application class, so its tree is rooted in the default package and
-		// its labels are not abbreviated
-		assertTrue(render(dependencyTree).contains("example.application.MainClass"));
+		// the dependency has no application class - its tree is rooted in the top-most packages with
+		// types of their own, with the host's included: com.acme.outside and example
+		assertTrue(render(dependencyTree).contains("e.application.MainClass"));
 	}
 
 	@Test

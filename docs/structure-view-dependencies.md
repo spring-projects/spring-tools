@@ -5,8 +5,8 @@ in that project's tree in the Logical Structure view.
 
 Issue: `GH-2004`.
 
-Status: **steps 1, 2, 1b and 4 implemented**; step 3 (root packages) deliberately deferred - see its
-section below; step 5 (method-level nodes and members for JAR dependencies) planned, not started. Companion document to
+Status: **steps 1, 2, 1b, 3, 4 and 5 implemented**; step 3 (root packages) differently from its
+original plan - see its section below. Companion document to
 [`structure-diff-view.md`](structure-diff-view.md), which describes the existing diff feature on the
 same tree and is a good model for how this area is built and documented.
 
@@ -587,11 +587,42 @@ the dependency projects.
 
 ## Step 3 — Root packages
 
+**As implemented** (after step 4, and differently from the plan further below):
+
+- **Not one main package any more.** The tree built from stereotypes has a number of root packages.
+  They are identified from the tree's own types: the top-most packages that are not empty, i.e.
+  those that hold a type of their own and are not below another one that does
+  (`StructureViewUtil.identifyRootPackages`).
+- **Across all parts.** The types are those of the project and of its included dependencies,
+  after the composite's stereotype filter for JARs (`StructureElements.rootPackages()`). For most
+  projects and JARs that is one package each. A dependency's types inside the project's packages
+  sit in the project's root. Types outside get a root package of their own, a sibling of the
+  project's.
+- **Application element.** `ProjectTree`'s first level is a new application element
+  (`StructureApplication`), which delivers the root packages for the second level
+  (`ToolsStructureProvider.extractPackages`). Before, the main package was used as both.
+- **Package boundaries.** Types are assigned to a root package on package boundaries
+  (`StructureViewUtil.isInPackage`). The former `startsWith` check also put `com.examplefoo`
+  types into `com.example`.
+- **Labels.** Type labels are abbreviated against the root package the type is in.
+- **Default package.** Types in the default package make that the one root, labelled
+  `(default package)`.
+- **The project's own tree changes too.** Its root is no longer the `@SpringBootApplication`
+  package but the top-most package with a type of its own. In most projects that is the same
+  package. In `test-stereotypes-support`, `example.MyController` makes it `example` instead of
+  `example.application`, and that class now shows up.
+- **Not changed:**
+  - `mainApplicationPackage()` stays: the Spring Modulith view abbreviates against it, and baseline
+    snapshots record it.
+  - The Modulith view itself is unchanged.
+  - A baseline tree is rebuilt from its snapshot's types, so it gets the same root packages.
+
+The original plan, kept for reference:
+
 **Deferred.** Picked up out of order: step 4 (JAR scanning) was done first, on request, keeping JAR
 elements subject to the same "nests under the host's main package or is left out" rule step 2
 already applies to workspace-project dependencies - deliberately, so this section's own design work
-stays separate from where elements come from. The text below is therefore still a plan, not a
-report of what exists.
+stays separate from where elements come from.
 
 Makes a dependency whose packages do not nest under the host's appear at all.
 

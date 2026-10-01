@@ -82,9 +82,64 @@ public class StructureViewUtil {
 		if (p.isMainPackage() && (packageName == null || packageName.isEmpty())) {
 			return "(no main application package identified)";
 		}
+		else if (packageName == null || packageName.isEmpty()) {
+			// a root package of types in the default package
+			return "(default package)";
+		}
 		else {
 			return packageName;
 		}
+	}
+
+	/**
+	 * The root packages of a structure tree with the given types: the top-most packages that are not
+	 * empty - those that hold a type of their own, and are not below another one that does. For the
+	 * types of one project or one JAR that is mostly a single package, but it can be several (types
+	 * in {@code com.acme.a} and {@code com.acme.b}, but none in {@code com.acme}), and including
+	 * dependencies in a tree adds theirs - unless they are below one of the project's.
+	 *
+	 * <p>A type in the default package makes that the one root package: every package is below it.
+	 *
+	 * @param typeNames binary type names - {@code com.example.Outer$Inner}, as the tree's types have
+	 * @return the root packages' names, ordered by name, without one being below another
+	 */
+	public static List<String> identifyRootPackages(Collection<String> typeNames) {
+		List<String> packages = typeNames.stream()
+				.map(StructureViewUtil::packageOf)
+				.distinct()
+				.sorted(Comparator.comparingInt(String::length).thenComparing(Comparator.naturalOrder()))
+				.toList();
+
+		// shortest first: a package's ancestors among them are known when it is looked at
+		List<String> roots = new ArrayList<>();
+		for (String pkg : packages) {
+			if (roots.stream().noneMatch(root -> isSubPackage(pkg, root))) {
+				roots.add(pkg);
+			}
+		}
+
+		return roots.stream().sorted().toList();
+	}
+
+	/**
+	 * Whether the given binary type name is in the given package or below it - on package name
+	 * boundaries, so {@code com.examplefoo.Type} is not in {@code com.example}.
+	 */
+	public static boolean isInPackage(String typeName, String packageName) {
+		return isSubPackage(packageOf(typeName), packageName);
+	}
+
+	/**
+	 * The package of a binary type name: everything before the last dot - {@code com.example} for
+	 * {@code com.example.Outer$Inner}, empty for a type in the default package.
+	 */
+	static String packageOf(String typeName) {
+		int lastDot = typeName.lastIndexOf('.');
+		return lastDot < 0 ? "" : typeName.substring(0, lastDot);
+	}
+
+	private static boolean isSubPackage(String pkg, String ancestor) {
+		return ancestor.isEmpty() || pkg.equals(ancestor) || pkg.startsWith(ancestor + ".");
 	}
 
 	public static String abbreviate(StereotypePackageElement mainApplicationPackage, StereotypeClassElement it) {

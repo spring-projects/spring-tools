@@ -43,8 +43,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Step 4 of {@code docs/structure-view-dependencies.md}: the stereotype elements a selected JAR
- * dependency contributes appear in the including project's tree, scoped by the project's main
- * package exactly like a workspace project dependency's ({@link StructureDependenciesTreeTest}).
+ * dependency contributes appear in the including project's tree, in the root packages of that tree
+ * exactly like a workspace project dependency's ({@link StructureDependenciesTreeTest}).
  *
  * <p>The fixture JAR's class implements {@code example.application.DescribedStereotype} - the
  * fixture project's own, real, already-catalog-assigned marker interface - so the match happens
@@ -85,21 +85,30 @@ public class StructureDependenciesJarTreeTest {
 	}
 
 	@Test
-	void aTypeFromTheJarMatchingTheHostsRealCatalogAppearsInTheHostsMainPackage() throws Exception {
+	void aTypeFromTheJarMatchingTheHostsRealCatalogAppearsInTheHostsPackage() throws Exception {
 		File jar = fixtureJar("example.application.FromJar");
 
 		Node tree = tree(List.of(jarDependency(jar)));
 
-		assertEquals(1, nodesLabeled(tree, "e.a.FromJar").size());
+		assertEquals(1, nodesLabeled(tree, "e.application.FromJar").size());
 	}
 
+	/**
+	 * A type from the JAR outside of the host's packages gets a root package of its own - the tree's
+	 * root packages are the top-most packages with types of their own, whatever part of the tree
+	 * the types come from.
+	 */
 	@Test
-	void aTypeFromTheJarOutsideTheHostsMainPackageDoesNotAppearYet() throws Exception {
+	void aTypeFromTheJarOutsideTheHostsPackagesGetsARootPackageOfItsOwn() throws Exception {
 		File jar = fixtureJar("com.acme.outside.FromJarOutside");
 
 		Node tree = tree(List.of(jarDependency(jar)));
 
-		assertFalse(render(tree).contains("FromJarOutside"));
+		List<Node> outside = tree.getChildren().stream()
+				.filter(child -> "com.acme.outside".equals(child.getAttribute(JsonNodeHandler.TEXT)))
+				.toList();
+		assertEquals(1, outside.size());
+		assertEquals(1, nodesLabeled(outside.get(0), "c.a.o.FromJarOutside").size());
 	}
 
 	@Test
@@ -153,7 +162,7 @@ public class StructureDependenciesJarTreeTest {
 		Node tree = tree(List.of(jarDependency(jar)));
 		String projectUri = host.getLocationUri().toASCIIString();
 
-		Node type = nodesLabeled(tree, "e.a.JarSettings").get(0);
+		Node type = nodesLabeled(tree, "e.application.JarSettings").get(0);
 		assertNull(type.getAttribute(JsonNodeHandler.LOCATION));
 		assertEquals(new JavaElementReference(projectUri, "Lexample/application/JarSettings;"), type.getAttribute(JsonNodeHandler.JAVA_ELEMENT));
 
@@ -165,7 +174,7 @@ public class StructureDependenciesJarTreeTest {
 
 		// the MCP tools' view of the same node
 		assertEquals(new JavaElementReference(projectUri, "Lexample/application/JarSettings;"),
-				findStructureNode(StructureViewProvider.toStructureNode(tree), "e.a.JarSettings").javaElement());
+				findStructureNode(StructureViewProvider.toStructureNode(tree), "e.application.JarSettings").javaElement());
 	}
 
 	@Test

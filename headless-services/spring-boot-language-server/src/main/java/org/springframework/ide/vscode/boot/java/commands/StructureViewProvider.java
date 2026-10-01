@@ -11,7 +11,10 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 
 import org.eclipse.lsp4j.Location;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
@@ -21,7 +24,10 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
+import org.springframework.ide.vscode.boot.modulith.AppModule;
+import org.springframework.ide.vscode.boot.modulith.AppModules;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
@@ -116,19 +122,81 @@ public class StructureViewProvider {
 			log.info("stereotype registry reset for project: " + project.getElementName());
 		}
 
-		if (selectedDependencies == null || selectedDependencies.isEmpty()) {
+		AppModules modules = modulesOf(project);
+		List<DependencyDescriptor> dependencies = withModuleDependencies(project, cachedIndex, modules,
+				selectedDependencies == null ? List.of() : selectedDependencies);
+
+		if (dependencies.isEmpty()) {
 			var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 			return createTree(project, IndexStructureElements.of(project, cachedIndex, catalog), catalog, selectedGroups, updateMetadata);
 		}
 
-		var catalog = stereotypeCatalogRegistry.getCatalogOf(project, selectedDependencies.stream().map(DependencyDescriptor::id).toList());
+		var catalog = stereotypeCatalogRegistry.getCatalogOf(project, dependencies.stream().map(DependencyDescriptor::id).toList());
 
 		StructureElements elements = new CompositeStructureElements(
 				IndexStructureElements.of(project, cachedIndex, catalog),
-				dependencySources.elementsOf(project, withoutProject(selectedDependencies, project), cachedIndex, catalog,
-						dependenciesInBackground));
+				dependencySources.elementsOf(project, withoutProject(dependencies, project), cachedIndex, catalog,
+						dependenciesInBackground),
+				moduleTypesOf(modules));
 
 		return createTree(project, elements, catalog, selectedGroups, updateMetadata);
+	}
+
+	/**
+	 * Whether every dependency of the project's tree is ready - selected or providing a Spring
+	 * Modulith module - so that a tree built now with them in the background (see
+	 * {@link #createTree(IJavaProject, CachedSpringMetamodelIndex, boolean, Collection, List, boolean)})
+	 * is complete. A tree that is not must not be compared against a baseline that has them all.
+	 */
+	public boolean dependenciesReady(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, List<DependencyDescriptor> selectedDependencies) {
+		List<DependencyDescriptor> dependencies = withModuleDependencies(project, cachedIndex, modulesOf(project),
+				selectedDependencies == null ? List.of() : selectedDependencies);
+		return dependencySources.allReady(project, withoutProject(dependencies, project));
+	}
+
+	/**
+	 * The Spring Modulith modules of the project, when its tree is the Modulith one - {@code null}
+	 * otherwise, or while there is no metadata yet.
+	 */
+	private AppModules modulesOf(IJavaProject project) {
+		return isModulithTree(project) ? modulithService.getModulesData(project) : null;
+	}
+
+	private static boolean isModulithTree(IJavaProject project) {
+		return ModulithService.isModulithDependentProject(project) && StructureViewUtil.hasModulithStructureViewEnabled();
+	}
+
+	/**
+	 * The given dependencies, plus those that provide a Spring Modulith module of the project: a
+	 * dependency with classes in a module's package. Spring Modulith takes a module's classes from
+	 * the whole classpath, so the module is there in the project's metadata whether or not the
+	 * dependency is selected - and its types have to be there in the project's tree too, or the
+	 * module node stays empty.
+	 */
+	private List<DependencyDescriptor> withModuleDependencies(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, AppModules modules,
+			List<DependencyDescriptor> dependencies) {
+		if (modules == null) {
+			return dependencies;
+		}
+
+		List<String> basePackages = modules.stream().map(AppModule::basePackage).toList();
+		List<DependencyDescriptor> providingModules = dependencySources.containing(project, basePackages, cachedIndex);
+
+		Map<String, DependencyDescriptor> result = new LinkedHashMap<>();
+		dependencies.forEach(dependency -> result.put(dependency.id(), dependency));
+		providingModules.forEach(dependency -> result.putIfAbsent(dependency.id(), dependency));
+		return List.copyOf(result.values());
+	}
+
+	/**
+	 * The types of a Spring Modulith module - shown from a JAR whatever their stereotypes, since they
+	 * belong to the module (see {@link CompositeStructureElements}).
+	 */
+	private static Predicate<StereotypeClassElement> moduleTypesOf(AppModules modules) {
+		if (modules == null) {
+			return type -> false;
+		}
+		return type -> modules.getModuleForPackage(StructureViewUtil.packageOf(type.getType())).isPresent();
 	}
 
 	/**
@@ -192,8 +260,21 @@ public class StructureViewProvider {
 	 * across projects.
 	 */
 	public StructureElementSnapshot captureSnapshot(IJavaProject project, CachedSpringMetamodelIndex cachedIndex) {
-		var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
-		StructureElements elements = IndexStructureElements.of(project, cachedIndex, catalog);
+		// the dependencies providing a Spring Modulith module are part of the project's tree, so they
+		// are part of its baseline too - waited for here, never left out
+		AppModules modules = modulesOf(project);
+		List<DependencyDescriptor> dependencies = withModuleDependencies(project, cachedIndex, modules, List.of());
+
+		if (dependencies.isEmpty()) {
+			var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
+			return StructureSnapshotBuilder.capture(IndexStructureElements.of(project, cachedIndex, catalog));
+		}
+
+		var catalog = stereotypeCatalogRegistry.getCatalogOf(project, dependencies.stream().map(DependencyDescriptor::id).toList());
+		StructureElements elements = new CompositeStructureElements(
+				IndexStructureElements.of(project, cachedIndex, catalog),
+				dependencySources.elementsOf(project, withoutProject(dependencies, project), cachedIndex, catalog),
+				moduleTypesOf(modules));
 
 		return StructureSnapshotBuilder.capture(elements);
 	}

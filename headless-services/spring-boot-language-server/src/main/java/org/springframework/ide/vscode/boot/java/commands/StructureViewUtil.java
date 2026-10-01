@@ -138,7 +138,10 @@ public class StructureViewUtil {
 		return lastDot < 0 ? "" : typeName.substring(0, lastDot);
 	}
 
-	private static boolean isSubPackage(String pkg, String ancestor) {
+	/**
+	 * Whether the package is the given ancestor package or below it - on package name boundaries.
+	 */
+	static boolean isSubPackage(String pkg, String ancestor) {
 		return ancestor.isEmpty() || pkg.equals(ancestor) || pkg.startsWith(ancestor + ".");
 	}
 

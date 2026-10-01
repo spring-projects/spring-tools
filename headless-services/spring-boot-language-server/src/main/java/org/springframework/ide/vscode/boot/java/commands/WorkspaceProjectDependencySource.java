@@ -49,6 +49,13 @@ public class WorkspaceProjectDependencySource implements StructureDependencySour
 	}
 
 	@Override
+	public boolean containsPackage(DependencyDescriptor dependency, String packageName, CachedSpringMetamodelIndex cachedIndex) {
+		return dependency.kind() == DependencyDescriptor.Kind.WORKSPACE_PROJECT
+				&& cachedIndex.getClassesForProject(dependency.projectName()).stream()
+						.anyMatch(type -> StructureViewUtil.isInPackage(type.getType(), packageName));
+	}
+
+	@Override
 	public StructureElements elementsOf(DependencyDescriptor dependency, IJavaProject including, CachedSpringMetamodelIndex cachedIndex,
 			AbstractStereotypeCatalog catalog) {
 		if (dependency.kind() != DependencyDescriptor.Kind.WORKSPACE_PROJECT) {

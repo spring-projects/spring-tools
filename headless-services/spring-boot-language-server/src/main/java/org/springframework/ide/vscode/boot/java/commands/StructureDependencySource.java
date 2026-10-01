@@ -45,6 +45,15 @@ public interface StructureDependencySource {
 			AbstractStereotypeCatalog catalog);
 
 	/**
+	 * Whether the dependency has classes in the given package or below it - which, for a package
+	 * Spring Modulith knows as an application module's, makes the dependency part of the
+	 * application's structure whether it is selected or not.
+	 */
+	default boolean containsPackage(DependencyDescriptor dependency, String packageName, CachedSpringMetamodelIndex cachedIndex) {
+		return false;
+	}
+
+	/**
 	 * Whether {@link #elementsOf} can answer for the dependency right away, rather than having to
 	 * do expensive work first - scanning a JAR, say.
 	 */

@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.api.Stereotypes;
@@ -51,6 +52,16 @@ public class CompositeStructureElements implements StructureElements {
 	private final StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> factory;
 
 	public CompositeStructureElements(StructureElements host, List<StructureElements> dependencies) {
+		this(host, dependencies, type -> false);
+	}
+
+	/**
+	 * @param alwaysShown the types to show from a part that otherwise shows only stereotyped ones
+	 *        ({@link StructureElements#showsOnlyStereotypedTypes()}) - a Spring Modulith module's
+	 *        types, which belong to the module whatever their stereotypes
+	 */
+	public CompositeStructureElements(StructureElements host, List<StructureElements> dependencies,
+			Predicate<StereotypeClassElement> alwaysShown) {
 		this.host = host;
 		this.types = new ArrayList<>();
 		this.owners = new IdentityHashMap<>();
@@ -74,7 +85,7 @@ public class CompositeStructureElements implements StructureElements {
 		// only now, with every part's types routed to their part, can the composite factory tell
 		// which types get a stereotype - including from the host's package of the same name
 		for (StereotypeClassElement type : candidates) {
-			if (!ownerOf(type).showsOnlyStereotypedTypes() || isStereotyped(type)) {
+			if (!ownerOf(type).showsOnlyStereotypedTypes() || alwaysShown.test(type) || isStereotyped(type)) {
 				types.add(type);
 			}
 		}

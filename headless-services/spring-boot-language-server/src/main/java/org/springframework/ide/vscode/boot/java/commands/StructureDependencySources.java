@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -76,6 +77,36 @@ public class StructureDependencySources {
 	 * dependency can disappear (project closed, dependency removed from the build), and its id then
 	 * simply stops resolving rather than being an error.
 	 */
+	/**
+	 * The dependencies of the project that have classes in one of the given packages or below them -
+	 * see {@link StructureDependencySource#containsPackage}.
+	 */
+	public List<DependencyDescriptor> containing(IJavaProject project, Collection<String> packageNames, CachedSpringMetamodelIndex cachedIndex) {
+		if (packageNames.isEmpty()) {
+			return List.of();
+		}
+
+		return discoverAll(project).stream()
+				.filter(dependency -> !project.getElementName().equals(dependency.projectName()))
+				.filter(dependency -> sources.stream().anyMatch(source -> packageNames.stream().anyMatch(packageName -> {
+					try {
+						return source.containsPackage(dependency, packageName, cachedIndex);
+					} catch (Exception e) {
+						log.error("cannot tell whether structure dependency " + dependency.id() + " has classes in " + packageName, e);
+						return false;
+					}
+				})))
+				.toList();
+	}
+
+	/**
+	 * Whether every source can answer for each of the dependencies right away - see
+	 * {@link StructureDependencySource#isReady}.
+	 */
+	public boolean allReady(IJavaProject including, List<DependencyDescriptor> dependencies) {
+		return dependencies.stream().allMatch(dependency -> sources.stream().allMatch(source -> source.isReady(dependency, including)));
+	}
+
 	public List<DependencyDescriptor> resolve(IJavaProject project, List<String> selectedIds) {
 		if (selectedIds == null || selectedIds.isEmpty()) {
 			return List.of();

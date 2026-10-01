@@ -2,6 +2,9 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ [structure view] current diff view implementation broken when changing grouping [#2007](https://github.com/spring-projects/spring-tools/issues/2007)
+* _(Spring Boot)_ [structure view] index JAR files for logical structure view [#2005](https://github.com/spring-projects/spring-tools/issues/2005)
+* _(Spring Boot)_ [structure view] include elements from dependencies into the structure view elements of a project [#2004](https://github.com/spring-projects/spring-tools/issues/2004)
 * _(Spring Boot)_ adjust parent process watcher to latest changes in JDT LS [#2000](https://github.com/spring-projects/spring-tools/issues/2000)
 * _(Spring Boot)_ [structure view] showing diff viewer for new files causes error [#1990](https://github.com/spring-projects/spring-tools/issues/1990)
 * _(Spring Boot)_ [structure view] make name of stored baseline snapshots file more specific [#1989](https://github.com/spring-projects/spring-tools/issues/1989)

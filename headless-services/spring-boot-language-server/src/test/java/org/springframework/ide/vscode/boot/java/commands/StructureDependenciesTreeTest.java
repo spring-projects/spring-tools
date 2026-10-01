@@ -125,11 +125,19 @@ public class StructureDependenciesTreeTest {
 		assertEquals(0, nodesLabeled(outside, "e.application.shared.SharedController").size());
 	}
 
+	/**
+	 * A single root package gets no node of its own: its types sit right below the application node.
+	 */
 	@Test
-	void withoutDependenciesTheRootPackagesAreTheProjectsOwn() throws Exception {
-		// example.MyController makes example the top-most package with types of its own - not
+	void withoutDependenciesTheProjectsSingleRootPackageHasNoNodeOfItsOwn() throws Exception {
+		Node tree = tree(host, List.of());
+
+		assertEquals(List.of(), rootPackageLabels(tree));
+		assertTrue(tree.getChildren().stream()
+				.anyMatch(child -> "Application (Hexagonal Architecture)".equals(child.getAttribute(JsonNodeHandler.TEXT))));
+		// still abbreviated against that root package: example.MyController makes it example - not
 		// example.application, where the application class is
-		assertEquals(List.of("example"), rootPackageLabels(tree(host, List.of())));
+		assertEquals(1, nodesLabeled(tree, "e.application.SampleController").size());
 	}
 
 	private static List<String> rootPackageLabels(Node tree) {

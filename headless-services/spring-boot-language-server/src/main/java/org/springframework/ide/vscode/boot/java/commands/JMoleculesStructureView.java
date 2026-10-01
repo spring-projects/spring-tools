@@ -17,6 +17,7 @@ import java.util.function.BiConsumer;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.jmolecules.stereotype.tooling.HierarchicalNodeHandler;
 import org.jmolecules.stereotype.tooling.ProjectTree;
+import org.jmolecules.stereotype.tooling.ProjectTree.TreeConfig;
 import org.jmolecules.stereotype.tooling.SimpleLabelProvider;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
@@ -27,6 +28,23 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageEle
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
 public class JMoleculesStructureView {
+
+	/**
+	 * {@link TreeConfig#defaults()}, except that a single root package gets no node of its own: its
+	 * types sit right below the application node then, rather than below a package node that is the
+	 * application node's only child. With several root packages - types in packages beside each
+	 * other, or dependencies outside of the project's packages - each keeps its node.
+	 *
+	 * <p>Every flag set explicitly: the builder's own defaults are all {@code false}, unlike
+	 * {@code defaults()}.
+	 */
+	private static final TreeConfig TREE_CONFIG = TreeConfig.builder()
+			.omitSingleGroupingNodes(false)
+			.showNonStereotypedTypes(true)
+			.elevateMethodLevelStereotypes(true)
+			.skipSinglePackageNode(true)
+			.skipApplicationNode(false)
+			.build();
 
 	private final AbstractStereotypeCatalog catalog;
 	private final SourceLinks sourceLinks;
@@ -66,7 +84,8 @@ public class JMoleculesStructureView {
 
 		// create the project tree and apply all the groupers from the project
 		var jsonTree = new ProjectTree<>(elements.stereotypeFactory(), catalog, jsonHandler)
-				.withStructureProvider(structureProvider);
+				.withStructureProvider(structureProvider)
+				.withConfig(TREE_CONFIG);
 
 		List<String[]> groupers = StructureViewUtil.identifyGroupers(catalog, selectedGroups);
 		for (String[] grouper : groupers) {

@@ -605,6 +605,9 @@ the dependency projects.
   (`StructureViewUtil.isInPackage`). The former `startsWith` check also put `com.examplefoo`
   types into `com.example`.
 - **Labels.** Type labels are abbreviated against the root package the type is in.
+- **A single root package has no node** (GH-2016). Its types sit right below the application node,
+  using jMolecules' `TreeConfig.skipSinglePackageNode`. With several root packages, each keeps its
+  node.
 - **Default package.** Types in the default package make that the one root, labelled
   `(default package)`.
 - **The project's own tree changes too.** Its root is no longer the `@SpringBootApplication`

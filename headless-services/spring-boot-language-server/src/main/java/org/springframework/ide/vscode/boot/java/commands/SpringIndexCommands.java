@@ -211,20 +211,13 @@ public class SpringIndexCommands {
 		List<DependencyDescriptor> selectedDependencies = dependencySources.resolve(project,
 				args.selectedDependencies == null ? null : args.selectedDependencies.get(project.getElementName()));
 
-		// asked before the tree is built: a scan finishing in between must not make an incomplete
-		// tree look complete - see the baseline comparison below
-		boolean dependenciesReady = structureViewProvider.dependenciesReady(project, cachedIndex, selectedDependencies);
-
 		// JARs still to be scanned are scanned in the background, so that no project's tree waits for them
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups, selectedDependencies, true);
 
 		// no baseline attributes at all rather than a baseline with nothing marked: those two look
 		// the same to a client, and the latter reads as "nothing changed" - which would hide the
 		// entire tree while "hide unchanged nodes" is on
-		// nor while a dependency of the tree is still left out - one providing a Spring Modulith module
-		// is part of the tree, and of the baseline, outside of dependency mode too - since it would
-		// show its types as removed until the refresh that its scan triggers
-		if (tree != null && indexSettled && !args.isDependencyMode() && dependenciesReady) {
+		if (tree != null && indexSettled && !args.isDependencyMode()) {
 			String snapshotKey = args.compareAgainst == null ? null : args.compareAgainst.get(project.getElementName());
 
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));

@@ -143,18 +143,6 @@ public class StructureViewProvider {
 	}
 
 	/**
-	 * Whether every dependency of the project's tree is ready - selected or providing a Spring
-	 * Modulith module - so that a tree built now with them in the background (see
-	 * {@link #createTree(IJavaProject, CachedSpringMetamodelIndex, boolean, Collection, List, boolean)})
-	 * is complete. A tree that is not must not be compared against a baseline that has them all.
-	 */
-	public boolean dependenciesReady(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, List<DependencyDescriptor> selectedDependencies) {
-		List<DependencyDescriptor> dependencies = withModuleDependencies(project, cachedIndex, modulesOf(project),
-				selectedDependencies == null ? List.of() : selectedDependencies);
-		return dependencySources.allReady(project, withoutProject(dependencies, project));
-	}
-
-	/**
 	 * The Spring Modulith modules of the project, when its tree is the Modulith one - {@code null}
 	 * otherwise, or while there is no metadata yet.
 	 */
@@ -167,11 +155,14 @@ public class StructureViewProvider {
 	}
 
 	/**
-	 * The given dependencies, plus those that provide a Spring Modulith module of the project: a
-	 * dependency with classes in a module's package. Spring Modulith takes a module's classes from
-	 * the whole classpath, so the module is there in the project's metadata whether or not the
-	 * dependency is selected - and its types have to be there in the project's tree too, or the
-	 * module node stays empty.
+	 * The given dependencies, plus the workspace projects that provide a Spring Modulith module of
+	 * the project: a project with classes in a module's package. Spring Modulith takes a module's
+	 * classes from the whole classpath, so the module is there in the project's metadata whether or
+	 * not that project is selected - and its types have to be there in the project's tree too, or
+	 * the module node stays empty.
+	 *
+	 * <p>Never a JAR: those are only read once the user selected them (a scan indexes the whole
+	 * classpath), so the module node of a JAR's module stays empty until then.
 	 */
 	private List<DependencyDescriptor> withModuleDependencies(IJavaProject project, CachedSpringMetamodelIndex cachedIndex, AppModules modules,
 			List<DependencyDescriptor> dependencies) {
@@ -184,7 +175,14 @@ public class StructureViewProvider {
 
 		Map<String, DependencyDescriptor> result = new LinkedHashMap<>();
 		dependencies.forEach(dependency -> result.put(dependency.id(), dependency));
-		providingModules.forEach(dependency -> result.putIfAbsent(dependency.id(), dependency));
+		for (DependencyDescriptor dependency : providingModules) {
+			if (result.putIfAbsent(dependency.id(), dependency) == null) {
+				// not selected, yet part of the tree - and of the baseline, scanned along with it: worth
+				// saying why, since nothing else in the log explains a JAR being scanned unselected
+				log.info("project '{}': including workspace project '{}' ({}) in its structure tree - it has classes in the package of a Spring Modulith module {}",
+						project.getElementName(), dependency.id(), dependency.location(), basePackages);
+			}
+		}
 		return List.copyOf(result.values());
 	}
 

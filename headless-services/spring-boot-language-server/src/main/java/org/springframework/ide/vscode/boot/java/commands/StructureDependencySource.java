@@ -48,6 +48,10 @@ public interface StructureDependencySource {
 	 * Whether the dependency has classes in the given package or below it - which, for a package
 	 * Spring Modulith knows as an application module's, makes the dependency part of the
 	 * application's structure whether it is selected or not.
+	 *
+	 * <p>Only for a source that can tell without doing expensive work - a workspace project, from
+	 * the index. A JAR never answers {@code true}: it is only ever read once the user selected it,
+	 * so a module whose classes are in a JAR stays empty until then.
 	 */
 	default boolean containsPackage(DependencyDescriptor dependency, String packageName, CachedSpringMetamodelIndex cachedIndex) {
 		return false;

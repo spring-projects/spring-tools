@@ -11,9 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -24,8 +22,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Location;
@@ -79,10 +75,6 @@ public class JarDependencySource implements StructureDependencySource {
 	// per version of it that happened to be scanned
 	private final ConcurrentHashMap<String, CachedScan> scannedJars = new ConcurrentHashMap<>();
 
-	// the packages of each JAR's classes, by the JAR's absolute path - read from its entries alone,
-	// for containsPackage, which every tree of a Spring Modulith project asks for every JAR
-	private final ConcurrentHashMap<String, CachedPackages> packagesOfJars = new ConcurrentHashMap<>();
-
 	// see prepareInBackground
 	private final ExecutorService backgroundScans = Executors.newSingleThreadExecutor(runnable -> {
 		Thread thread = new Thread(runnable, "structure-dependency-scan");
@@ -133,48 +125,6 @@ public class JarDependencySource implements StructureDependencySource {
 				elements.typesWithOwnStereotypeCount(), scanned.types().size(), jarFile.getName());
 
 		return elements;
-	}
-
-	/**
-	 * Answered from the JAR's entries alone - no class is read - cached by the JAR's identity like a
-	 * scan.
-	 */
-	@Override
-	public boolean containsPackage(DependencyDescriptor dependency, String packageName, CachedSpringMetamodelIndex cachedIndex) {
-		File jarFile = jarFileOf(dependency);
-		if (jarFile == null) {
-			return false;
-		}
-
-		CachedPackages cached = packagesOfJars.compute(jarFile.getAbsolutePath(),
-				(path, existing) -> existing != null && existing.isFor(jarFile) ? existing
-						: new CachedPackages(jarFile.lastModified(), jarFile.length(), packagesOf(jarFile)));
-
-		return cached.packages().stream().anyMatch(pkg -> StructureViewUtil.isSubPackage(pkg, packageName));
-	}
-
-	private static Set<String> packagesOf(File jarFile) {
-		Set<String> packages = new HashSet<>();
-		try (JarFile jar = new JarFile(jarFile)) {
-			Enumeration<JarEntry> entries = jar.entries();
-			while (entries.hasMoreElements()) {
-				String name = entries.nextElement().getName();
-				int lastSlash = name.lastIndexOf('/');
-				if (name.endsWith(".class") && lastSlash > 0 && !name.startsWith("META-INF/")) {
-					packages.add(name.substring(0, lastSlash).replace('/', '.'));
-				}
-			}
-		} catch (IOException e) {
-			log.warn("cannot read the entries of '{}'", jarFile, e);
-		}
-		return packages;
-	}
-
-	private record CachedPackages(long lastModified, long length, Set<String> packages) {
-
-		boolean isFor(File jarFile) {
-			return lastModified == jarFile.lastModified() && length == jarFile.length();
-		}
 	}
 
 	/**

@@ -1216,6 +1216,19 @@ On the client, overlapping structure requests are merged by request order. A slo
 finishing after a newer partial refresh can then neither drop projects from the view nor roll them
 back.
 
+### Spring Modulith modules from dependencies (GH-2018)
+
+Spring Modulith takes a module's classes from the whole classpath, so the metadata can name a module
+whose classes are in a dependency, whether or not that dependency is included in the tree.
+- **Workspace project:** one with classes in a module's package is part of the project's tree (and
+  baseline) without being selected. Reading it costs nothing, and the module node would stay empty
+  otherwise.
+- **JAR:** never included on its own. A JAR is only scanned once the user selected it, since a scan
+  indexes the project's whole classpath. Until then its module node is there and has no types.
+  Selected, the module shows all its types, stereotyped or not; the JAR's other plain classes stay
+  out as before.
+- **Log:** a workspace project included this way is logged at info level, with the module packages.
+
 ### 5.8 Navigation: JAR nodes open the class in the IDE (decided)
 
 Clicking a JAR type, method node or member opens the corresponding class - at that method or field

@@ -82,13 +82,15 @@ public class StructureDependencySources {
 	 * see {@link StructureDependencySource#containsPackage}.
 	 */
 	public List<DependencyDescriptor> containing(IJavaProject project, Collection<String> packageNames, CachedSpringMetamodelIndex cachedIndex) {
-		if (packageNames.isEmpty()) {
+		// an empty package name is everything: no module has one, and none must match every dependency
+		List<String> modulePackages = packageNames.stream().filter(name -> name != null && !name.isBlank()).toList();
+		if (modulePackages.isEmpty()) {
 			return List.of();
 		}
 
 		return discoverAll(project).stream()
 				.filter(dependency -> !project.getElementName().equals(dependency.projectName()))
-				.filter(dependency -> sources.stream().anyMatch(source -> packageNames.stream().anyMatch(packageName -> {
+				.filter(dependency -> sources.stream().anyMatch(source -> modulePackages.stream().anyMatch(packageName -> {
 					try {
 						return source.containsPackage(dependency, packageName, cachedIndex);
 					} catch (Exception e) {
@@ -97,14 +99,6 @@ public class StructureDependencySources {
 					}
 				})))
 				.toList();
-	}
-
-	/**
-	 * Whether every source can answer for each of the dependencies right away - see
-	 * {@link StructureDependencySource#isReady}.
-	 */
-	public boolean allReady(IJavaProject including, List<DependencyDescriptor> dependencies) {
-		return dependencies.stream().allMatch(dependency -> sources.stream().allMatch(source -> source.isReady(dependency, including)));
 	}
 
 	public List<DependencyDescriptor> resolve(IJavaProject project, List<String> selectedIds) {

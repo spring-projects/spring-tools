@@ -147,7 +147,7 @@ public interface WorkingTreeStatus {
 					}
 					else {
 						// logged at info, not debug: "why is there no baseline?" is otherwise invisible
-						log.info("pending source changes in '{}' keep a logical structure baseline from being captured: {}",
+						log.debug("pending source changes in '{}' keep a logical structure baseline from being captured: {}",
 								project.getKey(), relevantForProject);
 					}
 				}

@@ -140,6 +140,8 @@ public class StructureViewProvider {
 		List<DependencyDescriptor> dependencies = withModuleDependencies(project, cachedIndex, modules,
 				selectedDependencies == null ? List.of() : selectedDependencies);
 
+		dependencySources.retainOnly(project, dependencies);
+
 		if (dependencies.isEmpty()) {
 			var catalog = stereotypeCatalogRegistry.getCatalogOf(project);
 			return createTree(project, IndexStructureElements.of(project, cachedIndex, catalog), catalog, selectedGroups, updateMetadata);

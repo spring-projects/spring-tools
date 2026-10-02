@@ -174,6 +174,33 @@ public class JarDependencySourceTest {
 	}
 
 	/**
+	 * A scan is dropped once no project's latest tree includes the JAR any more - but not while
+	 * another project still does.
+	 */
+	@Test
+	void aScanIsDroppedOnceNoProjectIncludesTheJarAnyMore() throws Exception {
+		File jar = markedJar("fixture");
+		IJavaProject projectA = project(jar);
+		IJavaProject projectB = project(jar);
+		when(projectA.getElementName()).thenReturn("a");
+		when(projectB.getElementName()).thenReturn("b");
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)));
+		DependencyDescriptor dependency = DependencyDescriptor.jar("fixture", jar.getAbsolutePath());
+
+		StructureElements scanned = source.elementsOf(dependency, projectA, null, catalogWithMarker());
+		source.retainOnly(projectA, List.of(dependency));
+		source.retainOnly(projectB, List.of(dependency));
+
+		source.retainOnly(projectA, List.of());
+		assertTrue(source.isReady(dependency, projectA), "project b still includes it");
+		assertSame(scanned.types().get(0), source.elementsOf(dependency, projectA, null, catalogWithMarker()).types().get(0));
+
+		source.retainOnly(projectB, List.of());
+		assertFalse(source.isReady(dependency, projectA), "no project includes it any more");
+		assertNotSame(scanned.types().get(0), source.elementsOf(dependency, projectA, null, catalogWithMarker()).types().get(0));
+	}
+
+	/**
 	 * Every type and method element of the scan has the binding key its node opens it by.
 	 */
 	@Test

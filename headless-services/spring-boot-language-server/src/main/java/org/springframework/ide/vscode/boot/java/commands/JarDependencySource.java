@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -75,6 +76,9 @@ public class JarDependencySource implements StructureDependencySource {
 	// per version of it that happened to be scanned
 	private final ConcurrentHashMap<String, CachedScan> scannedJars = new ConcurrentHashMap<>();
 
+	// the absolute paths of the JARs the latest tree of each project (by name) includes
+	private final Map<String, Set<String>> includedJars = new HashMap<>();
+
 	// see prepareInBackground
 	private final ExecutorService backgroundScans = Executors.newSingleThreadExecutor(runnable -> {
 		Thread thread = new Thread(runnable, "structure-dependency-scan");
@@ -125,6 +129,29 @@ public class JarDependencySource implements StructureDependencySource {
 				elements.typesWithOwnStereotypeCount(), scanned.types().size(), jarFile.getName());
 
 		return elements;
+	}
+
+	/**
+	 * Drops the cached scan of every JAR that the latest tree of no project includes. A scan can be
+	 * large, and one for a JAR nobody includes any more would otherwise stay until the server is
+	 * restarted. Including the JAR again scans it again.
+	 */
+	@Override
+	public synchronized void retainOnly(IJavaProject including, List<DependencyDescriptor> dependencies) {
+		Set<String> jars = dependencies.stream()
+				.filter(dependency -> dependency.kind() == DependencyDescriptor.Kind.JAR)
+				.map(dependency -> new File(dependency.location()).getAbsolutePath())
+				.collect(Collectors.toSet());
+		includedJars.put(including.getElementName(), jars);
+
+		Set<String> included = includedJars.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+		scannedJars.keySet().removeIf(jarPath -> {
+			boolean evict = !included.contains(jarPath);
+			if (evict) {
+				log.info("structure dependency JAR '{}' is not included in any project's tree any more - dropping its scan", jarPath);
+			}
+			return evict;
+		});
 	}
 
 	/**

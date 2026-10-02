@@ -127,6 +127,20 @@ public class StructureDependencySources {
 	}
 
 	/**
+	 * Tells all sources which dependencies the tree of the given project includes now, see
+	 * {@link StructureDependencySource#retainOnly}.
+	 */
+	public void retainOnly(IJavaProject including, List<DependencyDescriptor> dependencies) {
+		for (StructureDependencySource source : sources) {
+			try {
+				source.retainOnly(including, dependencies);
+			} catch (Exception e) {
+				log.error("cannot release the structure dependencies no longer included in project " + including.getElementName() + " via " + source, e);
+			}
+		}
+	}
+
+	/**
 	 * The elements of each of the given dependencies that some source can supply, in the given
 	 * order - a dependency no source supplies elements for (yet) is left out.
 	 *

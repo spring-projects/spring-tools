@@ -66,6 +66,14 @@ public interface StructureDependencySource {
 	}
 
 	/**
+	 * Tells the source which dependencies the tree of the given project includes now - all of them,
+	 * every time a tree is built - so that it can let go of what no project's tree includes any more
+	 * and holds on to only for a later request, a cached scan of a JAR say.
+	 */
+	default void retainOnly(IJavaProject including, List<DependencyDescriptor> dependencies) {
+	}
+
+	/**
 	 * Does the work that makes the given dependencies - all of them not {@link #isReady} - ready,
 	 * together, and returns once done.
 	 */

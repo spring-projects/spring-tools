@@ -272,5 +272,6 @@
 </extension>
   <extension point="org.eclipse.ui.startup">
      <startup class="org.springframework.ide.eclipse.boot.ui.preferences.MavenAptPreferenceInitializer"/>
+     <startup class="org.springframework.ide.eclipse.boot.ui.preferences.JSpecifyNullAnalysisStartup"/>
    </extension>
 </plugin>

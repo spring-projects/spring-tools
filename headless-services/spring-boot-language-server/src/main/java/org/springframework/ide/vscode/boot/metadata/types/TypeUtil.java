@@ -44,6 +44,7 @@ import org.springframework.ide.vscode.boot.java.value.PropertyExtractor;
 import org.springframework.ide.vscode.boot.metadata.ResourceHintProvider;
 import org.springframework.ide.vscode.boot.metadata.ValueProviderRegistry.ValueProviderStrategy;
 import org.springframework.ide.vscode.boot.metadata.hints.StsValueHint;
+import org.springframework.ide.vscode.boot.properties.cron.CronValueParser;
 import org.springframework.ide.vscode.boot.metadata.util.DeprecationUtil;
 import org.springframework.ide.vscode.boot.metadata.util.PropertyDocUtils;
 import org.springframework.ide.vscode.boot.properties.reconcile.BootEnumValueParser;
@@ -108,6 +109,11 @@ public class TypeUtil {
 	private static final String INET_ADDRESS_TYPE_NAME = InetAddress.class.getName();
 	private static final String DURATION_TYPE_NAME = Duration.class.getName();
 	private static final String CLASS_TYPE_NAME = Class.class.getName();
+
+	/**
+	 * Pseudo type of properties that hold a CRON expression, i.e. {@link String} values validated as CRON expressions
+	 */
+	public static final String CRON_TYPE_NAME = "CRON";
 
 	public enum BeanPropertyNameMode {
 		HYPHENATED(true,false), //bean property name in hyphenated form. E.g 'some-property-name'
@@ -187,6 +193,7 @@ public class TypeUtil {
 			INET_ADDRESS_TYPE_NAME,
 			DURATION_TYPE_NAME,
 			CLASS_TYPE_NAME,
+			CRON_TYPE_NAME,
 			"java.lang.String[]"
 	));
 
@@ -196,6 +203,7 @@ public class TypeUtil {
 		ATOMIC_TYPES.add(DURATION_TYPE_NAME);
 		ATOMIC_TYPES.add(STRING_TYPE_NAME);
 		ATOMIC_TYPES.add(CLASS_TYPE_NAME);
+		ATOMIC_TYPES.add(CRON_TYPE_NAME);
 	}
 
 	private static final Map<String, String[]> TYPE_VALUES = new HashMap<>();
@@ -255,6 +263,7 @@ public class TypeUtil {
 				throw new IllegalArgumentException("Value should be 'true' or 'false'");
 			}
 		});
+		VALUE_PARSERS.put(CRON_TYPE_NAME, new CronValueParser());
 		VALUE_PARSERS.put(DURATION_TYPE_NAME, (s) -> {
 			try {
 				return DurationStyle.detectAndParse(s);

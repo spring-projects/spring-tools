@@ -28,6 +28,7 @@ import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.java.BootJavaLanguageServerComponents;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.HqlSemanticTokens;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpaQueryPropertiesLanguageServerComponents;
+import org.springframework.ide.vscode.boot.java.cron.CronSemanticTokens;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSemanticTokens;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSupportState;
 import org.springframework.ide.vscode.boot.java.handlers.Reconciler;
@@ -128,7 +129,8 @@ public class BootLanguageServerInitializer implements InitializingBean {
 		// some server intialization code. Migrate that code and get rid of the ComposableLanguageServer class
 		CompositeLanguageServerComponents.Builder builder = new CompositeLanguageServerComponents.Builder();
 		List<LanguageServerComponents> componentsList = List.of(
-			new BootPropertiesLanguageServerComponents(server, params, javaElementLocationProvider, parser, yamlStructureProvider, yamlAssistContextProvider, sourceLinks),
+			new BootPropertiesLanguageServerComponents(server, params, javaElementLocationProvider, parser, yamlStructureProvider, yamlAssistContextProvider, sourceLinks,
+					appContext.getBean(CronSemanticTokens.class), config),
 			new BootJavaLanguageServerComponents(appContext),
 			new SpringXMLLanguageServerComponents(server, springIndexer, params, config, appContext.getBean(SpelReconciler.class)),
 			new SpringFactoriesLanguageServerComponents(projectFinder, springIndexer, config),

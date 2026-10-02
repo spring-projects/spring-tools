@@ -2392,4 +2392,35 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
 		return harness.newEditor(LanguageId.BOOT_PROPERTIES, contents);
 	}
 
+    @Test
+    void testReconcileCronProperties() throws Exception {
+        data("spring.integration.poller.cron", "java.lang.String", null, "Cron expression for polling");
+        data("spring.session.jdbc.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+        data("spring.session.data.redis.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+        data("some.other.cron", "java.lang.String", null, "Not a known CRON property");
+        Editor editor = newEditor(
+                "spring.integration.poller.cron=0 */30 * ? * *\n" +
+                "spring.session.jdbc.cleanup-cron  =   0 0 25 * * *\n" +
+                "spring.session.data.redis.cleanup-cron=@daily\n" +
+                "spring.session.jdbc.cleanupCron=${my.cron}\n" +
+                "some.other.cron=not a cron\n"
+        );
+        editor.assertProblems(
+                "25|CRON"
+        );
+    }
+
+    @Test
+    void testReconcileCronPropertyBlankAndSyntaxError() throws Exception {
+        data("spring.integration.poller.cron", "java.lang.String", null, "Cron expression for polling");
+        data("spring.session.jdbc.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+        Editor editor = newEditor(
+                "spring.integration.poller.cron=\n" +
+                "spring.session.jdbc.cleanup-cron=0 0 * * *\n"
+        );
+        editor.assertProblems(
+                "*|CRON: mismatched input '<EOF>'"
+        );
+    }
+
 }

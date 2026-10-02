@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +38,7 @@ import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeCatalogRegistry;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.ClasspathDependencyResolver;
+import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.spring.IndexUpdatedParams;
@@ -48,8 +52,26 @@ public class CommandsConfig {
 
 	@Bean
 	StructureViewProvider structureViewProvider(SpringMetamodelIndex symbolIndex, ModulithService modulithService,
-			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks, StructureDependencySources structureDependencySources) {
-		return new StructureViewProvider(symbolIndex, modulithService, stereotypeCatalogRegistry, sourceLinks, structureDependencySources);
+			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks, StructureDependencySources structureDependencySources,
+			BootJavaConfig config, SimpleLanguageServer server, JavaProjectFinder projectFinder) {
+
+		// every tree changes when the package-nodes setting does - so the client gets to build all of
+		// them again, the same way it does after an index update. Told by the server, which has the
+		// new value by then: asked by the client right away, it could still get trees built with the
+		// old one
+		AtomicBoolean packageNodes = new AtomicBoolean(config.isStructurePackageNodesEnabled());
+		config.addListener(v -> {
+			boolean now = config.isStructurePackageNodesEnabled();
+			if (packageNodes.getAndSet(now) != now && server.getClient() != null) {
+				Set<String> projects = projectFinder.all().stream().map(IJavaProject::getElementName).collect(Collectors.toSet());
+				if (!projects.isEmpty()) {
+					server.getClient().indexUpdated(IndexUpdatedParams.of(projects));
+				}
+			}
+		});
+
+		return new StructureViewProvider(symbolIndex, modulithService, stereotypeCatalogRegistry, sourceLinks, structureDependencySources,
+				config::isStructurePackageNodesEnabled);
 	}
 
 	@Bean

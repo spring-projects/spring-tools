@@ -18,8 +18,9 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeMethodElem
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypePackageElement;
 
 /**
- * The structure of the tree built from stereotypes: the application delivers its root packages,
- * and each root package the types in or below it.
+ * The structure of the tree built from stereotypes: the application delivers its packages - its
+ * root packages, or itself when the tree has no package nodes - and each package the types in or
+ * below it.
  */
 public class ToolsStructureProvider implements
 		SimpleStructureProvider<StructureApplication, StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
@@ -32,7 +33,7 @@ public class ToolsStructureProvider implements
 
 	@Override
 	public Collection<StereotypePackageElement> extractPackages(StructureApplication application) {
-		return application.rootPackages();
+		return application.packages();
 	}
 
 	@Override

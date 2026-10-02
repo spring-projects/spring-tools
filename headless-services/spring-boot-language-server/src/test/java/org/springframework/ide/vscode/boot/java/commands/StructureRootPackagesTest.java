@@ -84,6 +84,23 @@ public class StructureRootPackagesTest {
 		assertNull(application.rootPackageOf(type("org.other.Type")));
 	}
 
+	@Test
+	void withoutPackageNodesTheApplicationDeliversItselfAsItsOnlyPackage() {
+		StereotypePackageElement acme = new StereotypePackageElement("com.acme", null);
+		StereotypePackageElement example = new StereotypePackageElement("com.example", null);
+
+		assertEquals(List.of(acme, example), new StructureApplication("app", List.of(acme, example)).packages());
+
+		StructureApplication withoutPackageNodes = new StructureApplication("app", List.of(acme, example), false);
+		List<StereotypePackageElement> packages = withoutPackageNodes.packages();
+		assertEquals(1, packages.size());
+		// the one package every type is in
+		assertTrue(StructureViewUtil.isInPackage("com.acme.Lib", packages.get(0).getPackageName()));
+		assertTrue(StructureViewUtil.isInPackage("com.example.web.Controller", packages.get(0).getPackageName()));
+		// type labels are still abbreviated against the root package each type is in
+		assertSame(example, withoutPackageNodes.rootPackageOf(type("com.example.web.Controller")));
+	}
+
 	private static StereotypeClassElement type(String name) {
 		StereotypeClassElement type = mock(StereotypeClassElement.class);
 		when(type.getType()).thenReturn(name);

@@ -608,6 +608,13 @@ the dependency projects.
 - **A single root package has no node** (GH-2016). Its types sit right below the application node,
   using jMolecules' `TreeConfig.skipSinglePackageNode`. With several root packages, each keeps its
   node.
+- **No package nodes at all, as a preference** (GH-2020). With `boot-java.structure.package-nodes`
+  turned off (default: on), a tree has no package nodes even with several root packages. The
+  application delivers itself as the one package of the next level (`StructureApplication.packages()`),
+  so the stereotype groups and types sit right below the application node. Type labels are still
+  abbreviated against their root package. Spring Modulith trees are not affected. When the setting
+  changes, the server sends `spring/index/updated` for all projects, so the client rebuilds every
+  tree with the new value.
 - **Default package.** Types in the default package make that the one root, labelled
   `(default package)`.
 - **The project's own tree changes too.** Its root is no longer the `@SpringBootApplication`

@@ -561,6 +561,11 @@
             "default": true,
             "description": "Logical Structure view: automatically capture a diff baseline on every git commit, so changes are always highlighted against the last commit without manually capturing a baseline. A project opened with uncommitted changes gets its first baseline at its next commit, so that those changes stay visible. Turn off to rely on manual baseline capture only."
           },
+          "boot-java.structure.package-nodes": {
+            "type": "boolean",
+            "default": true,
+            "description": "Logical Structure view: show a node for each top-level package of a project when its types are in more than one. Turn off to show the stereotype groups and types right below the project node, whatever their packages. Does not apply to Spring Modulith projects, which are structured by their application modules."
+          },
           "boot-java.structure.baseline-history-size": {
             "type": "integer",
             "default": 10,

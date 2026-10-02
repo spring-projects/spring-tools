@@ -266,6 +266,17 @@ public class BootJavaConfig implements InitializingBean {
 	}
 
 	/**
+	 * Whether the logical structure view shows package nodes for a project that is not a Spring
+	 * Modulith one - one per root package, when its types are in more than one. Defaults to on;
+	 * turned off, the stereotype groups and types sit right below the project node, whatever the
+	 * packages.
+	 */
+	public boolean isStructurePackageNodesEnabled() {
+		Boolean b = settings.getBoolean("boot-java", "structure", "package-nodes");
+		return b == null || b.booleanValue();
+	}
+
+	/**
 	 * How many past commit snapshots to retain per project for the logical structure baseline
 	 * history. Defaults to 10 and falls back to it for any non-positive value, since at least the
 	 * current baseline itself must always be kept.

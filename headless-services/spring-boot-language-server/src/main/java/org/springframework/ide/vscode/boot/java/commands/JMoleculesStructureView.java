@@ -49,18 +49,30 @@ public class JMoleculesStructureView {
 	private final AbstractStereotypeCatalog catalog;
 	private final SourceLinks sourceLinks;
 	private final StereotypeDefinitionLocator definitionLocator;
+	private final boolean packageNodes;
 
 	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, SourceLinks sourceLinks,
 			StereotypeDefinitionLocator definitionLocator) {
+		this(catalog, sourceLinks, definitionLocator, true);
+	}
+
+	/**
+	 * @param packageNodes whether to show a node per root package when there is more than one -
+	 *        turned off, the stereotype groups and types sit right below the application node
+	 *        (the {@code boot-java.structure.package-nodes} setting)
+	 */
+	public JMoleculesStructureView(AbstractStereotypeCatalog catalog, SourceLinks sourceLinks,
+			StereotypeDefinitionLocator definitionLocator, boolean packageNodes) {
 		this.catalog = catalog;
 		this.sourceLinks = sourceLinks;
 		this.definitionLocator = definitionLocator;
+		this.packageNodes = packageNodes;
 	}
 
 	public Node createTree(IJavaProject project, StructureElements elements, Collection<String> selectedGroups) {
 
 		// the first level: the application, delivering the root packages of the next one
-		StructureApplication application = new StructureApplication(project.getElementName(), elements.rootPackages());
+		StructureApplication application = new StructureApplication(project.getElementName(), elements.rootPackages(), packageNodes);
 
 		var labelProvider = new SimpleLabelProvider<>(StructureApplication::name, StereotypePackageElement::getPackageName, StereotypeClassElement::getType,
 				(StereotypeMethodElement m, StereotypeClassElement __) -> m.getMethodName(), Object::toString)

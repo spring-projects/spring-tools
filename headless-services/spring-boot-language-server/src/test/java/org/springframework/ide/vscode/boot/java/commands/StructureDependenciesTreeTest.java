@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -138,6 +139,43 @@ public class StructureDependenciesTreeTest {
 		// still abbreviated against that root package: example.MyController makes it example - not
 		// example.application, where the application class is
 		assertEquals(1, nodesLabeled(tree, "e.application.SampleController").size());
+	}
+
+	/**
+	 * GH-2020: with the {@code boot-java.structure.package-nodes} setting turned off, a tree has no
+	 * package nodes at all - not even with several root packages: the application delivers itself as
+	 * the one package of the next level, so the stereotype groups and types sit right below it. The
+	 * client is told to rebuild every tree when the setting changes.
+	 */
+	@Test
+	void withoutPackageNodesTheTypesOfSeveralRootPackagesSitRightBelowTheProject() throws Exception {
+		int updatesBefore = harness.getIndexUpdatedCount();
+		harness.changeConfiguration(Map.of("boot-java", Map.of("structure", Map.of("package-nodes", false))));
+		// a changed setting has the projects indexed again - the tree is built from the finished index
+		indexer.waitOperation().get(15, TimeUnit.SECONDS);
+		try {
+			Node tree = tree(host, List.of(workspaceProject(dependency)));
+
+			assertEquals(List.of(), rootPackageLabels(tree));
+			// still abbreviated against the root package each type is in
+			assertEquals(1, nodesLabeled(tree, "c.a.o.OutsideController").size());
+			assertEquals(1, nodesLabeled(tree, "e.application.shared.SharedController").size());
+
+			// one notification for all projects - the re-indexing that a changed setting triggers sends its own as well
+			Set<String> all = Set.of(host.getElementName(), dependency.getElementName());
+			boolean toldForAll = false;
+			for (int i = updatesBefore; i < harness.getIndexUpdatedCount(); i++) {
+				toldForAll |= harness.getIndexUpdatedDetails(i).getAffectedProjects().containsAll(all);
+			}
+			assertTrue(toldForAll, "the client was not told to rebuild all trees");
+		}
+		finally {
+			harness.changeConfiguration(Map.of("boot-java", Map.of("structure", Map.of("package-nodes", true))));
+			indexer.waitOperation().get(15, TimeUnit.SECONDS);
+		}
+
+		// and back: a node per root package again
+		assertEquals(List.of("com.acme.outside", "example"), rootPackageLabels(tree(host, List.of(workspaceProject(dependency)))));
 	}
 
 	private static List<String> rootPackageLabels(Node tree) {

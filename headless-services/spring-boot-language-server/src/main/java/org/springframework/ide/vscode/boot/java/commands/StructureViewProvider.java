@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 import org.eclipse.lsp4j.Location;
@@ -51,15 +52,28 @@ public class StructureViewProvider {
 	private final SourceLinks sourceLinks;
 	private final StereotypeDefinitionLocator definitionLocator;
 	private final StructureDependencySources dependencySources;
+	private final BooleanSupplier packageNodes;
 
 	public StructureViewProvider(SpringMetamodelIndex springIndex, ModulithService modulithService,
 			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks, StructureDependencySources dependencySources) {
+		this(springIndex, modulithService, stereotypeCatalogRegistry, sourceLinks, dependencySources, () -> true);
+	}
+
+	/**
+	 * @param packageNodes whether a tree that is not a Spring Modulith one shows a node per root
+	 *        package - asked for every tree, so a changed {@code boot-java.structure.package-nodes}
+	 *        setting applies to the next one
+	 */
+	public StructureViewProvider(SpringMetamodelIndex springIndex, ModulithService modulithService,
+			StereotypeCatalogRegistry stereotypeCatalogRegistry, SourceLinks sourceLinks, StructureDependencySources dependencySources,
+			BooleanSupplier packageNodes) {
 
 		this.springIndex = springIndex;
 		this.modulithService = modulithService;
 		this.stereotypeCatalogRegistry = stereotypeCatalogRegistry;
 		this.sourceLinks = sourceLinks;
 		this.dependencySources = dependencySources;
+		this.packageNodes = packageNodes;
 		this.definitionLocator = new StereotypeDefinitionLocator();
 	}
 
@@ -238,7 +252,7 @@ public class StructureViewProvider {
 			return new ModulithStructureView(catalog, sourceLinks, definitionLocator, modulithService).createTree(project, elements, selectedGroups, updateMetadata);
 		}
 		else {
-			return new JMoleculesStructureView(catalog, sourceLinks, definitionLocator).createTree(project, elements, selectedGroups);
+			return new JMoleculesStructureView(catalog, sourceLinks, definitionLocator, packageNodes.getAsBoolean()).createTree(project, elements, selectedGroups);
 		}
 	}
 

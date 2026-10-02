@@ -13,15 +13,16 @@ package org.springframework.ide.vscode.boot.java.stereotypes;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -60,6 +61,8 @@ import org.slf4j.LoggerFactory;
 public class JarStereotypeScanner {
 
 	private static final Logger log = LoggerFactory.getLogger(JarStereotypeScanner.class);
+
+	private static final DotName OBJECT = DotName.createSimple(Object.class.getName());
 
 	/**
 	 * Feeds every {@code .class} entry of the given JAR into the indexer, and returns the
@@ -138,12 +141,13 @@ public class JarStereotypeScanner {
 	 */
 	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, Index index, Map<Object, String> bindingKeys) {
 		List<StereotypeClassElement> result = new ArrayList<>();
+		ScanCache cache = new ScanCache();
 
 		for (DotName name : ownClasses) {
 			ClassInfo classInfo = index.getClassByName(name);
 
 			if (isPackageInfo(classInfo)) {
-				StereotypeClassElement element = packageInfoElementOf(classInfo);
+				StereotypeClassElement element = packageInfoElementOf(classInfo, cache);
 				bindingKeys.put(element, JarBindingKeys.of(classInfo));
 				result.add(element);
 				continue;
@@ -154,15 +158,15 @@ public class JarStereotypeScanner {
 			}
 
 			StereotypeClassElement element = new StereotypeClassElement(name.toString(), null,
-					supertypesOf(classInfo, index), annotationTypesOf(classInfo, index), null);
+					supertypesWithoutObjectOf(classInfo, index, cache), cache.of(annotationTypesOf(classInfo, index, cache)), null);
 			bindingKeys.put(element, JarBindingKeys.of(classInfo));
 
 			for (MethodInfo method : sourceLevelMethodsOf(classInfo)) {
-				Set<String> methodAnnotations = annotationTypesOf(method, index);
+				Set<String> methodAnnotations = annotationTypesOf(method, index, cache);
 
 				if (!methodAnnotations.isEmpty()) {
 					StereotypeMethodElement methodElement = new StereotypeMethodElement(sourceName(method), methodLabelOf(method),
-							methodSignatureOf(method), null, methodAnnotations, null);
+							methodSignatureOf(method), null, cache.of(methodAnnotations), null);
 					bindingKeys.put(methodElement, JarBindingKeys.of(method));
 					element.addChild(methodElement);
 				}
@@ -191,12 +195,12 @@ public class JarStereotypeScanner {
 	 * {@code <package>.package-info}, no supertypes, the package's direct annotations - not
 	 * meta-expanded and not filtered, exactly as that method takes them.
 	 */
-	private static StereotypeClassElement packageInfoElementOf(ClassInfo classInfo) {
+	private static StereotypeClassElement packageInfoElementOf(ClassInfo classInfo, ScanCache cache) {
 		Set<String> annotationTypes = new LinkedHashSet<>();
 		for (AnnotationInstance annotation : classInfo.declaredAnnotations()) {
-			annotationTypes.add(JdtStyleTypeNames.qualifiedName(annotation.name()));
+			annotationTypes.add(cache.qualifiedName(annotation.name()));
 		}
-		return new StereotypeClassElement(classInfo.name().toString(), null, Set.of(), annotationTypes, null);
+		return new StereotypeClassElement(classInfo.name().toString(), null, Set.of(), cache.of(annotationTypes), null);
 	}
 
 	/**
@@ -221,7 +225,7 @@ public class JarStereotypeScanner {
 
 	/**
 	 * The class's own direct annotations expanded through their meta-annotation chain - but,
-	 * unlike {@link #annotationTypesOf(ClassInfo, Index)}, <em>without</em> the annotations of its
+	 * unlike {@link #annotationTypesOf(ClassInfo, Index, ScanCache)}, <em>without</em> the annotations of its
 	 * supertypes. This is what {@code AnnotationHierarchies.isAnnotatedWith} answers from on the
 	 * AST side, which every "is this a component / a {@code @Configuration} class /
 	 * {@code @NoRepositoryBean}" decision there uses - a class extending a {@code @Component}
@@ -229,12 +233,13 @@ public class JarStereotypeScanner {
 	 * matching) would say otherwise.
 	 */
 	public static Set<String> ownAnnotationTypesOf(ClassInfo classInfo, Index index) {
+		ScanCache cache = new ScanCache();
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
 
 		// unfiltered, unlike the stereotype matching sets: javax.inject.Named has to be seen
 		for (AnnotationInstance annotation : classInfo.classAnnotations()) {
-			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations, false);
+			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations, false, cache);
 		}
 
 		return result;
@@ -249,29 +254,22 @@ public class JarStereotypeScanner {
 	 * source-indexed types, so a class does not get attributed differently depending on whether it
 	 * came from a workspace project or a JAR.
 	 */
-	static Set<String> annotationTypesOf(ClassInfo classInfo, Index index) {
+	private static Set<String> annotationTypesOf(ClassInfo classInfo, Index index, ScanCache cache) {
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
 
 		for (AnnotationInstance annotation : classInfo.classAnnotations()) {
-			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations);
+			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations, true, cache);
 		}
 
-		for (Type supertype : hierarchyOf(classInfo, index)) {
-			ClassInfo supertypeInfo = index.getClassByName(supertype.name());
-			if (supertypeInfo != null) {
-				for (AnnotationInstance annotation : supertypeInfo.classAnnotations()) {
-					addIfNotJavaLang(annotation.name(), result);
-				}
-			}
-		}
+		result.addAll(supertypeAnnotationsOf(classInfo, index, cache));
 
 		return result;
 	}
 
 	/**
 	 * A method's own direct annotations, expanded through their meta-annotation chain - the same
-	 * expansion {@link #annotationTypesOf(ClassInfo, Index)} does for a class's own annotations, so
+	 * expansion {@link #annotationTypesOf(ClassInfo, Index, ScanCache)} does for a class's own annotations, so
 	 * a convenience annotation like {@code @GetMapping} (meta-annotated with
 	 * {@code @RequestMapping}) matches a stereotype assigned to the base annotation, exactly as it
 	 * would from source ({@code StereotypesIndexer.getAnnotationTypes} meta-expands a method's own
@@ -279,11 +277,15 @@ public class JarStereotypeScanner {
 	 * interface method's annotations - matching source there as well.
 	 */
 	public static Set<String> annotationTypesOf(MethodInfo method, Index index) {
+		return annotationTypesOf(method, index, new ScanCache());
+	}
+
+	private static Set<String> annotationTypesOf(MethodInfo method, Index index, ScanCache cache) {
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
 
 		for (AnnotationInstance annotation : method.declaredAnnotations()) {
-			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations);
+			addWithMetaAnnotations(annotation.name(), index, result, visitedMetaAnnotations, true, cache);
 		}
 
 		return result;
@@ -296,12 +298,8 @@ public class JarStereotypeScanner {
 	 */
 	public static Set<String> metaAnnotationTypesOf(DotName annotationName, Index index) {
 		Set<String> result = new LinkedHashSet<>();
-		addWithMetaAnnotations(annotationName, index, result, new LinkedHashSet<>(), false);
+		addWithMetaAnnotations(annotationName, index, result, new LinkedHashSet<>(), false, new ScanCache());
 		return result;
-	}
-
-	private static void addWithMetaAnnotations(DotName annotationName, Index index, Set<String> result, Set<DotName> visited) {
-		addWithMetaAnnotations(annotationName, index, result, visited, true);
 	}
 
 	/**
@@ -309,29 +307,29 @@ public class JarStereotypeScanner {
 	 *        ({@link #addIfNotJavaLang}) - a gate that looks for {@code javax.inject.Named} must not
 	 */
 	private static void addWithMetaAnnotations(DotName annotationName, Index index, Set<String> result, Set<DotName> visited,
-			boolean withoutJava) {
+			boolean withoutJava, ScanCache cache) {
 		if (!visited.add(annotationName)) {
 			return; // a meta-annotation cycle - nothing further to add
 		}
 
 		if (withoutJava) {
-			addIfNotJavaLang(annotationName, result);
+			addIfNotJavaLang(annotationName, result, cache);
 		}
 		else {
-			result.add(JdtStyleTypeNames.qualifiedName(annotationName));
+			result.add(cache.qualifiedName(annotationName));
 		}
 
 		ClassInfo annotationClass = index.getClassByName(annotationName);
 		if (annotationClass != null) {
 			for (AnnotationInstance metaAnnotation : annotationClass.classAnnotations()) {
-				addWithMetaAnnotations(metaAnnotation.name(), index, result, visited, withoutJava);
+				addWithMetaAnnotations(metaAnnotation.name(), index, result, visited, withoutJava, cache);
 			}
 		}
 	}
 
-	private static void addIfNotJavaLang(DotName name, Set<String> result) {
+	private static void addIfNotJavaLang(DotName name, Set<String> result, ScanCache cache) {
 		// StereotypesIndexer takes annotation types' getQualifiedName() - dots for a nested one
-		String fqn = JdtStyleTypeNames.qualifiedName(name);
+		String fqn = cache.qualifiedName(name);
 		if (!fqn.startsWith("java")) { // matches StereotypesIndexer.getAnnotationTypes's own filter
 			result.add(fqn);
 		}
@@ -343,36 +341,71 @@ public class JarStereotypeScanner {
 	 * commonly a JDK type, still has to count for a stereotype assignment that matches on it).
 	 */
 	public static Set<String> supertypesOf(ClassInfo classInfo, Index index) {
-		Set<String> result = new LinkedHashSet<>();
-		for (Type supertype : hierarchyOf(classInfo, index)) {
-			// ASTUtils.getHierarchyTypesFqNamesBreadthFirstIterator: the binary name for a
-			// supertype referenced with type arguments, the qualified name otherwise
-			result.add(supertype.kind() == Type.Kind.PARAMETERIZED_TYPE ? supertype.name().toString() : JdtStyleTypeNames.qualifiedName(supertype.name()));
+		Set<String> result = new LinkedHashSet<>(supertypesWithoutObjectOf(classInfo, index, new ScanCache()));
+		if (!classInfo.isInterface() && !OBJECT.equals(classInfo.name())) {
+			result.add(Object.class.getName());
 		}
 		return result;
 	}
 
 	/**
-	 * Every supertype, breadth first, each once, as it is first referenced.
+	 * What a {@link StereotypeClassElement} keeps as its supertypes: without {@code java.lang.Object},
+	 * which every class has and no stereotype is assigned by - same as {@code StereotypesIndexer}.
 	 */
-	private static List<Type> hierarchyOf(ClassInfo classInfo, Index index) {
-		List<Type> result = new ArrayList<>();
-		Deque<Type> toVisit = new ArrayDeque<>(directSupertypesOf(classInfo));
-
-		Set<DotName> visited = new LinkedHashSet<>();
-		while (!toVisit.isEmpty()) {
-			Type supertype = toVisit.poll();
-			if (!visited.add(supertype.name())) {
-				continue;
+	private static Set<String> supertypesWithoutObjectOf(ClassInfo classInfo, Index index, ScanCache cache) {
+		return hierarchyContributionOf(classInfo, index, cache.supertypes, cache, (supertype, result) -> {
+			if (!OBJECT.equals(supertype.name())) {
+				// ASTUtils.getHierarchyTypesFqNamesBreadthFirstIterator: the binary name for a
+				// supertype referenced with type arguments, the qualified name otherwise
+				result.add(supertype.kind() == Type.Kind.PARAMETERIZED_TYPE ? cache.name(supertype.name().toString()) : cache.qualifiedName(supertype.name()));
 			}
-			result.add(supertype);
+		});
+	}
+
+	/**
+	 * The direct annotations of every type in the class's hierarchy, not meta-expanded - see
+	 * {@link #annotationTypesOf(ClassInfo, Index, ScanCache)}.
+	 */
+	private static Set<String> supertypeAnnotationsOf(ClassInfo classInfo, Index index, ScanCache cache) {
+		return hierarchyContributionOf(classInfo, index, cache.supertypeAnnotations, cache, (supertype, result) -> {
+			ClassInfo supertypeInfo = index.getClassByName(supertype.name());
+			if (supertypeInfo != null) {
+				for (AnnotationInstance annotation : supertypeInfo.classAnnotations()) {
+					addIfNotJavaLang(annotation.name(), result, cache);
+				}
+			}
+		});
+	}
+
+	/**
+	 * What the class's whole hierarchy contributes, each class working it out once per scan: a
+	 * class's result is what its direct supertypes contribute ({@code contribution}) together with
+	 * what theirs do, which is already known by then for all but the first class of a hierarchy.
+	 * Classes of a JAR mostly share most of their hierarchy, so this is far less work than walking
+	 * it again for each of them.
+	 *
+	 * @param known the results worked out so far, by class
+	 */
+	private static Set<String> hierarchyContributionOf(ClassInfo classInfo, Index index, Map<DotName, Set<String>> known,
+			ScanCache cache, BiConsumer<Type, Set<String>> contribution) {
+		Set<String> result = known.get(classInfo.name());
+		if (result != null) {
+			return result;
+		}
+
+		known.put(classInfo.name(), Set.of()); // what a (corrupt) hierarchy that includes itself comes upon
+		Set<String> collected = new HashSet<>();
+		for (Type supertype : directSupertypesOf(classInfo)) {
+			contribution.accept(supertype, collected);
 
 			ClassInfo superInfo = index.getClassByName(supertype.name());
 			if (superInfo != null) {
-				toVisit.addAll(directSupertypesOf(superInfo));
+				collected.addAll(hierarchyContributionOf(superInfo, index, known, cache, contribution));
 			}
 		}
 
+		result = cache.of(collected);
+		known.put(classInfo.name(), result);
 		return result;
 	}
 
@@ -426,5 +459,45 @@ public class JarStereotypeScanner {
 		return className + "." + name + "(" + parameters + ") : " + returnType;
 	}
 
+	/**
+	 * What one scan works out once and then shares: a string per distinct name, an immutable set per
+	 * distinct set of names, and the results for a class's hierarchy. A JAR has thousands of classes
+	 * with the same few names, in the same few sets - without this, each of them holds copies of its
+	 * own for as long as the scan is cached, and builds them over and over. The names are shared from
+	 * the start, so looking a set up compares strings by identity.
+	 */
+	private static final class ScanCache {
+
+		private final Map<DotName, String> qualifiedNames = new HashMap<>();
+		private final Map<String, String> names = new HashMap<>();
+		private final Map<Set<String>, Set<String>> sets = new HashMap<>();
+		private final Map<DotName, Set<String>> supertypes = new HashMap<>();
+		private final Map<DotName, Set<String>> supertypeAnnotations = new HashMap<>();
+
+		String qualifiedName(DotName name) {
+			String known = qualifiedNames.get(name);
+			if (known == null) {
+				known = name(JdtStyleTypeNames.qualifiedName(name));
+				qualifiedNames.put(name, known);
+			}
+			return known;
+		}
+
+		String name(String name) {
+			return names.computeIfAbsent(name, key -> key);
+		}
+
+		Set<String> of(Set<String> values) {
+			// looked up as it is: only a set not seen yet is copied - most are repeats
+			Set<String> known = sets.get(values);
+			if (known != null) {
+				return known;
+			}
+
+			Set<String> copy = values.stream().map(this::name).collect(Collectors.toUnmodifiableSet());
+			sets.put(copy, copy);
+			return copy;
+		}
+	}
 
 }

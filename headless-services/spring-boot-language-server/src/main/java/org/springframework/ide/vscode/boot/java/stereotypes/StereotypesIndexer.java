@@ -175,6 +175,7 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		
 		String qualifiedName = typeBinding.getBinaryName();
 		Set<String> supertypes = ASTUtils.findSupertypes(typeBinding);
+		supertypes.remove(Object.class.getName()); // every class has it, and no stereotype is assigned by it
 		
 		List<IAnnotationBinding> superTypeAnnotations = new ArrayList<>();
 		

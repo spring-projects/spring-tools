@@ -12,6 +12,8 @@ package org.springframework.ide.vscode.boot.java.stereotypes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -62,6 +64,34 @@ public class JarStereotypeScannerTest {
 
 		assertTrue(annotated.isAnnotatedWith("b.Direct"), "the class's own direct annotation");
 		assertTrue(annotated.isAnnotatedWith("a.Meta"), "resolved across the two jars via b.Direct's own meta-annotation");
+	}
+
+	/**
+	 * Classes of a scan with the same supertypes or annotation types share one immutable set, rather
+	 * than holding a copy each.
+	 */
+	@Test
+	void classesWithTheSameSupertypesAndAnnotationsShareTheirSets() throws Exception {
+		File jar = JarFixtureBuilder.buildJar(tempDir, "own", Map.of(
+				"b.Marker", "package b; import java.lang.annotation.*; @Retention(RetentionPolicy.RUNTIME) public @interface Marker {}",
+				"b.One", "package b; @Marker public class One implements java.io.Serializable { @Marker void run() {} }",
+				"b.Two", "package b; @Marker public class Two implements java.io.Serializable { @Marker void run() {} }",
+				"b.Three", "package b; public class Three {}"
+		), Map.of());
+
+		Indexer indexer = new Indexer();
+		Set<DotName> ownClasses = JarStereotypeScanner.indexInto(indexer, jar);
+		List<StereotypeClassElement> elements = JarStereotypeScanner.ownClassesOf(ownClasses, indexer.complete());
+
+		StereotypeClassElement one = elements.stream().filter(e -> e.getType().equals("b.One")).findFirst().orElseThrow();
+		StereotypeClassElement two = elements.stream().filter(e -> e.getType().equals("b.Two")).findFirst().orElseThrow();
+		StereotypeClassElement three = elements.stream().filter(e -> e.getType().equals("b.Three")).findFirst().orElseThrow();
+
+		assertSame(one.getAnnotationTypes(), two.getAnnotationTypes());
+		assertSame(one.getMethods().get(0).getAnnotationTypes(), two.getMethods().get(0).getAnnotationTypes());
+		assertTrue(one.doesImplement("java.io.Serializable"));
+		assertFalse(three.doesImplement("java.lang.Object"), "kept out of the supertypes, which every class has");
+		assertThrows(UnsupportedOperationException.class, () -> one.getAnnotationTypes().add("x"));
 	}
 
 	@Test

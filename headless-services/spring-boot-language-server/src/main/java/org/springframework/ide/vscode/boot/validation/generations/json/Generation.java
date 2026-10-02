@@ -10,7 +10,10 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.validation.generations.json;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.springframework.ide.vscode.commons.Version;
 
 public class Generation extends JsonHalLinks {
 
@@ -19,6 +22,7 @@ public class Generation extends JsonHalLinks {
 	private String commercialSupportEndDate;
 	private String initialReleaseDate;
 	private Map<String, String[]> linkedGenerations;
+	private Map<String, String> latestPatch;
 
 	public String getName() {
 		return name;
@@ -58,6 +62,40 @@ public class Generation extends JsonHalLinks {
 
 	public void setLinkedGenerations(Map<String, String[]> linkedGenerations) {
 		this.linkedGenerations = linkedGenerations;
+	}
+
+	public Map<String, String> getLatestPatch() {
+		return latestPatch;
+	}
+
+	public void setLatestPatch(Map<String, String> latestPatch) {
+		this.latestPatch = latestPatch;
+	}
+
+	/**
+	 * OSS-only latest patch; {@code null} once OSS support has ended (enterprise-only from then on).
+	 */
+	public Version getLatestPatchVersion() {
+		if (latestPatch == null) {
+			return null;
+		}
+		return Version.parse(latestPatch.get("oss"));
+	}
+
+	/**
+	 * All {@code latestPatch} entries, keyed by type ({@code oss}/{@code enterprise}).
+	 */
+	public Map<String, Version> getLatestPatchByType() {
+		Map<String, Version> result = new LinkedHashMap<>();
+		if (latestPatch != null) {
+			for (Map.Entry<String, String> e : latestPatch.entrySet()) {
+				Version v = Version.parse(e.getValue());
+				if (v != null) {
+					result.put(e.getKey(), v);
+				}
+			}
+		}
+		return result;
 	}
 
 }

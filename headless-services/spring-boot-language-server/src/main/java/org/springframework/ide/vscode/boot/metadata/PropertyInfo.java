@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2023 Pivotal, Inc.
+ * Copyright (c) 2014, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -27,6 +27,7 @@ import org.springframework.ide.vscode.boot.metadata.hints.HintProviders;
 import org.springframework.ide.vscode.boot.metadata.types.Type;
 import org.springframework.ide.vscode.boot.metadata.types.TypeParser;
 import org.springframework.ide.vscode.boot.metadata.types.TypeUtil;
+import org.springframework.ide.vscode.boot.properties.cron.CronProperties;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -158,6 +159,10 @@ public class PropertyInfo {
 			if (h.getName().equals("handle-as")) {
 				handleKeyAs(h.getParameters().get("target"));
 			}
+		}
+		if (CronProperties.isCronProperty(id) && String.class.getName().equals(this.type)) {
+			// Boot metadata declares these as plain strings, nothing there marks them as CRON expressions
+			this.type = TypeUtil.CRON_TYPE_NAME;
 		}
 		if (prop instanceof ConfigurationMetadataItem) {
 			ConfigurationMetadataItem item = (ConfigurationMetadataItem) prop;

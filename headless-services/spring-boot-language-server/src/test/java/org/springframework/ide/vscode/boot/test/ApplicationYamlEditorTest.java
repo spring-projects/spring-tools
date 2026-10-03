@@ -5233,4 +5233,70 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
 		return harness.newEditor(LanguageId.BOOT_PROPERTIES_YAML, contents);
 	}
 
+    @Test
+    void testReconcileCronProperties() throws Exception {
+        data("spring.integration.poller.cron", "java.lang.String", null, "Cron expression for polling");
+        data("spring.session.jdbc.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+        data("spring.session.data.redis.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+        data("some.other.cron", "java.lang.String", null, "Not a known CRON property");
+        Editor editor = newEditor(
+                "spring:\n" +
+                "  integration:\n" +
+                "    poller:\n" +
+                "      cron: 0 */30 * ? * *\n" +
+                "  session:\n" +
+                "    jdbc:\n" +
+                "      cleanupCron: \"0 0 25 * * *\"\n" +
+                "    data:\n" +
+                "      redis:\n" +
+                "        cleanup-cron: '@daily'\n" +
+                "some:\n" +
+                "  other:\n" +
+                "    cron: not a cron\n"
+        );
+        editor.assertProblems(
+                "25|CRON"
+        );
+    }
+
+    @Test
+    void testReconcileCronPropertyBlankAndSyntaxError() throws Exception {
+        data("spring.integration.poller.cron", "java.lang.String", null, "Cron expression for polling");
+        data("spring.session.jdbc.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+        Editor editor = newEditor(
+                "spring:\n" +
+                "  integration:\n" +
+                "    poller:\n" +
+                "      cron: \"\"\n" +
+                "  session:\n" +
+                "    jdbc:\n" +
+                "      cleanup-cron: '0 0 * * *'\n"
+        );
+        editor.assertProblems(
+                "*|CRON: mismatched input '<EOF>'"
+        );
+    }
+
+    @Test
+    void testCronValueCompletions() throws Exception {
+        data("spring.session.jdbc.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+
+        String prefix = "spring:\n  session:\n    jdbc:\n      cleanup-cron:";
+
+        // Empty value, same examples as for CRON in Java code
+        assertCompletionWithLabel(prefix + " <*>", "0 */5 * * * *", prefix + " 0 */5 * * * *<*>");
+
+        // The whole value typed so far is the prefix, not just the last word
+        assertCompletionWithLabel(prefix + " 0 0 <*>", "0 0 * * * SUN", prefix + " 0 0 * * * SUN<*>");
+
+        // Quoted values stay quoted
+        assertCompletionWithLabel(prefix + " \"0 0 <*>\"", "0 0 * * * SUN", prefix + " \"0 0 * * * SUN<*>\"");
+        assertCompletionWithLabel(prefix + " '0 */5<*>'", "0 */5 * * * *", prefix + " '0 */5 * * * *<*>'");
+
+        // A trailing comment is left alone
+        assertCompletionWithLabel(prefix + " 0 0<*> # comment", "0 0 * * * *", prefix + " 0 0 * * * *<*> # comment");
+
+        assertNoCompletions(prefix + " zzz<*>");
+    }
+
 }

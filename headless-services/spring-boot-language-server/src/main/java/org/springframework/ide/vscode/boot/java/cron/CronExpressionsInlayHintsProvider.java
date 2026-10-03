@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.cron;
 
 import java.util.Locale;
+import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
@@ -21,6 +22,7 @@ import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.lsp4j.InlayHint;
 import org.eclipse.lsp4j.InlayHintKind;
+import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,27 +91,45 @@ public class CronExpressionsInlayHintsProvider implements JdtInlayHintsProvider 
 
 	private void processCron(IJavaProject project, TextDocument doc, Collector<InlayHint> collector,
 			EmbeddedCronExpression cronExp, Annotation node) {
-		boolean isValidExpression = CronExpression.isValidExpression(cronExp.text());
+		describe(cronExp.text()).ifPresent(cronDescription -> {
+			try {
+				collector.accept(createHint(cronDescription, doc.toPosition(node.getStartPosition() + node.getLength())));
+			} catch (Exception e) {
+				// ignore
+			}
+		});
+	}
 
+	/**
+	 * Creates the inlay hint that explains a CRON expression
+	 */
+	public static InlayHint createHint(String cronDescription, Position position) {
+		InlayHint hint = new InlayHint();
+		hint.setKind(InlayHintKind.Type);
+		hint.setLabel(Either.forLeft(cronDescription));
+		hint.setTooltip(cronDescription);
+		hint.setPaddingLeft(true);
+		hint.setPaddingRight(true);
+		hint.setPosition(position);
+		return hint;
+	}
+
+	/**
+	 * @return human readable description of the CRON expression, empty if the expression is invalid or
+	 * can't be described
+	 */
+	public static Optional<String> describe(String cron) {
 		try {
-			if (isValidExpression) {
+			if (CronExpression.isValidExpression(cron)) {
 				CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(SPRING);
-			    CronParser parser = new CronParser(cronDefinition);
-			    CronDescriptor descriptor = CronDescriptor.instance(Locale.US);
-			    String cronDescription = descriptor.describe(parser.parse(cronExp.text().toUpperCase()));
-			    
-				InlayHint hint = new InlayHint();
-				hint.setKind(InlayHintKind.Type);
-				hint.setLabel(Either.forLeft(cronDescription));
-				hint.setTooltip(cronDescription);
-				hint.setPaddingLeft(true);
-				hint.setPaddingRight(true);
-				hint.setPosition(doc.toPosition(node.getStartPosition() + node.getLength()));
-				collector.accept(hint);
+				CronParser parser = new CronParser(cronDefinition);
+				CronDescriptor descriptor = CronDescriptor.instance(Locale.US);
+				return Optional.of(descriptor.describe(parser.parse(cron.toUpperCase())));
 			}
 		} catch (Exception e) {
 			// ignore
 		}
+		return Optional.empty();
 	}
 
 	public static EmbeddedCronExpression extractCronExpression(SingleMemberAnnotation a) {

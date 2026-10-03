@@ -46,23 +46,19 @@ public final class CronProperties {
 	).stream().map(CronProperties::normalize).collect(Collectors.toSet());
 
 	/**
-	 * A CRON expression found in a document
-	 *
-	 * @param offset offset of the expression text in the document
-	 * @param text the expression text
-	 * @param end offset right after the value in the document, i.e. after the closing quote for a quoted YAML value
+	 * A CRON expression in a document, <code>end</code> is after the closing quote of a quoted YAML value
 	 */
-	public record CronValue(int offset, String text, int end) {
+	record CronValue(int offset, String text, int end) {
 	}
 
 	private CronProperties() {
 	}
 
 	/**
-	 * Finds CRON expressions that can be reliably mapped back to the document text in a Spring Boot
-	 * properties or YAML document. Values with placeholders are not included.
+	 * Finds CRON expressions in a properties or YAML document. Values with placeholders, escapes or
+	 * multiple lines are not included, they cannot be mapped back to the document text.
 	 */
-	public static List<CronValue> findValues(TextDocument doc, YamlASTProvider yamlParser) throws Exception {
+	static List<CronValue> findValues(TextDocument doc, YamlASTProvider yamlParser) throws Exception {
 		List<CronValue> values = new ArrayList<>();
 		LanguageId language = doc.getLanguageId();
 		if (LanguageId.BOOT_PROPERTIES.equals(language)) {
@@ -143,13 +139,9 @@ public final class CronProperties {
 	}
 
 	/**
-	 * Finds the offset of the value text in a <code>.properties</code> document. The value text
-	 * is {@link Value#decode()} without trailing whitespace.
-	 *
-	 * @return offset of the value in the document or <code>-1</code> if the value text isn't found
-	 * verbatim in the document, i.e. the value is multi-line or uses escapes
+	 * @return offset of the value text in a <code>.properties</code> document or <code>-1</code> if it isn't found verbatim
 	 */
-	public static int findValueOffset(String docText, Value value) {
+	private static int findValueOffset(String docText, Value value) {
 		// Value node offset points at the whitespace following the separator
 		int offset = Math.max(0, value.getOffset());
 		int end = offset;
@@ -164,12 +156,9 @@ public final class CronProperties {
 	}
 
 	/**
-	 * Finds the offset of the scalar's value text in the document.
-	 *
-	 * @return offset of the value in the document or <code>-1</code> if the value text isn't found
-	 * verbatim in the document, i.e. the scalar is multi-line or uses escapes
+	 * @return offset of the scalar's value text in a YAML document or <code>-1</code> if it isn't found verbatim
 	 */
-	public static int findValueOffset(String docText, ScalarNode scalar) {
+	private static int findValueOffset(String docText, ScalarNode scalar) {
 		String value = scalar.getValue();
 		int start = scalar.getStartMark().getIndex();
 		int end = scalar.getEndMark().getIndex();

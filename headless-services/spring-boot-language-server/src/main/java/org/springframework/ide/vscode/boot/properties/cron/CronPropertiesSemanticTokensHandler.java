@@ -49,15 +49,14 @@ public class CronPropertiesSemanticTokensHandler implements SemanticTokensHandle
 		this(cronTokens, yamlParser, LspClient.currentClient());
 	}
 
-	public CronPropertiesSemanticTokensHandler(CronSemanticTokens cronTokens, YamlASTProvider yamlParser, Client client) {
+	CronPropertiesSemanticTokensHandler(CronSemanticTokens cronTokens, YamlASTProvider yamlParser, Client client) {
 		this.cronTokens = cronTokens;
 		this.yamlParser = yamlParser;
 		this.client = client;
 	}
 
 	/**
-	 * LSP4E uses the token type as a TextMate scope when looking up the color in the TM4E theme, hence the standard
-	 * LSP types are translated to TextMate scopes for Eclipse, see {@link TextMateScopes}.
+	 * LSP4E looks up the color of a token type as a TextMate scope, hence Eclipse needs scopes, see {@link TextMateScopes}.
 	 */
 	private String tokenType(String type) {
 		return client == Client.ECLIPSE ? TextMateScopes.scopeFor(type) : type;

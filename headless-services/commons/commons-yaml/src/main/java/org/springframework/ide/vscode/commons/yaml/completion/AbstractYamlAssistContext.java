@@ -76,11 +76,7 @@ public abstract class AbstractYamlAssistContext implements YamlAssistContext {
 	};
 
 	/**
-	 * Determines the prefix of the value for completions. By default the prefix is the last word of the value.
-	 *
-	 * @param doc the document
-	 * @param offset the cursor offset
-	 * @param valueStart offset where the value starts
+	 * @return the prefix of the value at the offset for completions, by default the last word
 	 */
 	protected String getValuePrefix(IDocument doc, int offset, int valueStart) {
 		return prefixfinder.getPrefix(doc, offset, valueStart);

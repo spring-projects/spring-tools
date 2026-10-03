@@ -195,7 +195,6 @@ public class TypeUtil {
 			INET_ADDRESS_TYPE_NAME,
 			DURATION_TYPE_NAME,
 			CLASS_TYPE_NAME,
-			CRON_TYPE_NAME,
 			"java.lang.String[]"
 	));
 
@@ -205,7 +204,6 @@ public class TypeUtil {
 		ATOMIC_TYPES.add(DURATION_TYPE_NAME);
 		ATOMIC_TYPES.add(STRING_TYPE_NAME);
 		ATOMIC_TYPES.add(CLASS_TYPE_NAME);
-		ATOMIC_TYPES.add(CRON_TYPE_NAME);
 	}
 
 	private static final Map<String, String[]> TYPE_VALUES = new HashMap<>();

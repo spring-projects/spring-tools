@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author Alex Boyko
  */
-public class CronExpressionExamples {
+public final class CronExpressionExamples {
 
 	public record Example(String expression, String description) {
 	}

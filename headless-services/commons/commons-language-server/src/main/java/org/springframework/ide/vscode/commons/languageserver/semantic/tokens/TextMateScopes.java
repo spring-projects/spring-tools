@@ -12,25 +12,14 @@ package org.springframework.ide.vscode.commons.languageserver.semantic.tokens;
 
 import java.util.Map;
 
-
 /**
- * Translates the standard LSP semantic token types into TextMate scopes.
- * <p>
- * LSP4E in Eclipse hands the token type from the legend to the TM4E theme as is, i.e. as a TextMate scope. Themes
- * only define TextMate scopes (<code>keyword.operator</code>, <code>constant.numeric</code>...) and so
- * standard types such as <code>operator</code> or <code>number</code> are not colored. Only the few types that
- * happen to be top level TextMate scopes (<code>keyword</code>, <code>string</code>, <code>comment</code>,
- * <code>variable</code>) are. VS Code maps standard types to TextMate scopes itself.
- * <p>
- * This class is only the mapping. It is up to the calling code to decide when to use it, i.e. when the client is Eclipse
- * and the token types are shown by LSP4E and TM4E.
- * <p>
- * The mapping is VS Code's default mapping (the first scope VS Code probes for a type). Types without
- * a mapping, i.e. non standard ones, are left as is.
+ * Maps the standard LSP semantic token types to TextMate scopes, using VS Code's defaults. For clients, such as
+ * LSP4E in Eclipse, that look up the color of a token type in a TextMate theme and don't map the types themselves.
+ * Types without a mapping are left as is. The caller decides when to use it.
  *
  * @author Alex Boyko
  */
-public class TextMateScopes {
+public final class TextMateScopes {
 
 	private static final Map<String, String> SCOPES = Map.ofEntries(
 			Map.entry("comment", "comment"),

@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.cron.CronExpressionsInlayHintsProvider;
 import org.springframework.ide.vscode.boot.properties.cron.CronProperties.CronValue;
 import org.springframework.ide.vscode.commons.languageserver.util.InlayHintHandler;
+import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.commons.yaml.ast.YamlASTProvider;
 
@@ -57,7 +58,7 @@ public class CronPropertiesInlayHintsHandler implements InlayHintHandler {
 							if (isInRange(range, position)) {
 								hints.add(CronExpressionsInlayHintsProvider.createHint(description, position));
 							}
-						} catch (Exception e) {
+						} catch (BadLocationException e) {
 							log.error("", e);
 						}
 					});

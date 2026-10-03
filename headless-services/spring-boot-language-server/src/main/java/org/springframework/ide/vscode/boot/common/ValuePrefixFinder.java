@@ -16,17 +16,13 @@ import org.springframework.ide.vscode.commons.languageserver.util.PrefixFinder;
 import org.springframework.ide.vscode.commons.util.text.IDocument;
 
 /**
- * Finds the prefix of a property value for completions. This is the last word of the value, i.e. it does not
- * go beyond whitespace and comma, unless the type of the value says otherwise. A CRON expression is made of
- * multiple parts and is completed as a whole, the same way it is done in Java code.
+ * Finds the prefix of a property value for completions: the last word, except for the whole value of a CRON expression.
  *
  * @author Alex Boyko
  */
 public class ValuePrefixFinder extends PrefixFinder {
 
-	/**
-	 * Takes the whole value up to the cursor as the prefix. Only the quote of a quoted YAML value ends the prefix.
-	 */
+	/** The whole value up to the cursor, only the quote of a quoted YAML value ends it */
 	private static final PrefixFinder WHOLE_VALUE = new PrefixFinder() {
 		@Override
 		protected boolean isPrefixChar(char c) {
@@ -40,7 +36,7 @@ public class ValuePrefixFinder extends PrefixFinder {
 	}
 
 	/**
-	 * @param type type of the value, may be <code>null</code> if not known. In that case the prefix is the last word.
+	 * @param type type of the value, may be <code>null</code> if not known
 	 */
 	public String getPrefix(IDocument doc, int offset, int lowerBound, Type type) {
 		if (TypeUtil.isCron(type)) {

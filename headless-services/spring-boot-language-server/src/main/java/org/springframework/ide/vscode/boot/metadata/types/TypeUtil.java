@@ -43,7 +43,9 @@ import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.value.PropertyExtractor;
 import org.springframework.ide.vscode.boot.metadata.ResourceHintProvider;
 import org.springframework.ide.vscode.boot.metadata.ValueProviderRegistry.ValueProviderStrategy;
+import org.springframework.ide.vscode.boot.configurationmetadata.ValueHint;
 import org.springframework.ide.vscode.boot.metadata.hints.StsValueHint;
+import org.springframework.ide.vscode.boot.java.cron.CronExpressionExamples;
 import org.springframework.ide.vscode.boot.properties.cron.CronValueParser;
 import org.springframework.ide.vscode.boot.metadata.util.DeprecationUtil;
 import org.springframework.ide.vscode.boot.metadata.util.PropertyDocUtils;
@@ -443,6 +445,10 @@ public class TypeUtil {
 		return type != null && OBJECT_TYPE_NAME.equals(type.getErasure());
 	}
 
+	public static boolean isCron(Type type) {
+		return type != null && CRON_TYPE_NAME.equals(type.getErasure());
+	}
+
 	public static boolean isString(Type type) {
 		return type != null && STRING_TYPE_NAME.equals(type.getErasure());
 	}
@@ -692,6 +698,16 @@ public class TypeUtil {
 	private static final String CONSTRUCTOR_BINDING = "org.springframework.boot.context.properties.ConstructorBinding";
 
 	static {
+		valueHints(CRON_TYPE_NAME, new ValueProviderStrategy() {
+			@Override
+			public Flux<StsValueHint> getValues(IJavaProject javaProject, String query) {
+				return Flux.fromIterable(CronExpressionExamples.EXAMPLES).map(e -> {
+					ValueHint hint = ValueHint.withValue(e.expression());
+					hint.setDescription(e.description());
+					return StsValueHint.create(hint);
+				});
+			}
+		});
 		valueHints("java.nio.charset.Charset", new LazyProvider<String[]>() {
 			@Override
 			protected String[] compute() {

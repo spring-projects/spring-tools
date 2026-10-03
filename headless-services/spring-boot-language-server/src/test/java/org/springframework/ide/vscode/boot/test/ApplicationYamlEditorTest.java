@@ -5277,4 +5277,26 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         );
     }
 
+    @Test
+    void testCronValueCompletions() throws Exception {
+        data("spring.session.jdbc.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+
+        String prefix = "spring:\n  session:\n    jdbc:\n      cleanup-cron:";
+
+        // Empty value, same examples as for CRON in Java code
+        assertCompletionWithLabel(prefix + " <*>", "0 */5 * * * *", prefix + " 0 */5 * * * *<*>");
+
+        // The whole value typed so far is the prefix, not just the last word
+        assertCompletionWithLabel(prefix + " 0 0 <*>", "0 0 * * * SUN", prefix + " 0 0 * * * SUN<*>");
+
+        // Quoted values stay quoted
+        assertCompletionWithLabel(prefix + " \"0 0 <*>\"", "0 0 * * * SUN", prefix + " \"0 0 * * * SUN<*>\"");
+        assertCompletionWithLabel(prefix + " '0 */5<*>'", "0 */5 * * * *", prefix + " '0 */5 * * * *<*>'");
+
+        // A trailing comment is left alone
+        assertCompletionWithLabel(prefix + " 0 0<*> # comment", "0 0 * * * *", prefix + " 0 0 * * * *<*> # comment");
+
+        assertNoCompletions(prefix + " zzz<*>");
+    }
+
 }

@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.common.InformationTemplates;
 import org.springframework.ide.vscode.boot.common.PropertyCompletionFactory;
+import org.springframework.ide.vscode.boot.common.ValuePrefixFinder;
 import org.springframework.ide.vscode.boot.common.RelaxedNameConfig;
 import org.springframework.ide.vscode.boot.configurationmetadata.Deprecation;
 import org.springframework.ide.vscode.boot.java.links.JavaElementLocationProvider;
@@ -60,6 +61,7 @@ import org.springframework.ide.vscode.commons.util.Renderable;
 import org.springframework.ide.vscode.commons.util.Renderables;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
+import org.springframework.ide.vscode.commons.util.text.IDocument;
 import org.springframework.ide.vscode.commons.yaml.completion.AbstractYamlAssistContext;
 import org.springframework.ide.vscode.commons.yaml.completion.TopLevelAssistContext;
 import org.springframework.ide.vscode.commons.yaml.completion.YamlAssistContext;
@@ -81,6 +83,8 @@ import com.google.common.collect.ImmutableList;
  * content assistance.
  */
 public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistContext {
+
+	private static final ValuePrefixFinder VALUE_PREFIX_FINDER = new ValuePrefixFinder();
 
 	private static Logger log = LoggerFactory.getLogger(ApplicationYamlAssistContext.class);
 
@@ -263,6 +267,11 @@ public abstract class ApplicationYamlAssistContext extends AbstractYamlAssistCon
 				log.error("", e);
 			}
 			return Collections.emptySet();
+		}
+
+		@Override
+		protected String getValuePrefix(IDocument doc, int offset, int valueStart) {
+			return VALUE_PREFIX_FINDER.getPrefix(doc, offset, valueStart, type);
 		}
 
 		private List<ICompletionProposal> getValueCompletions(YamlDocument doc, int offset, String query, EnumCaseMode enumCaseMode) {

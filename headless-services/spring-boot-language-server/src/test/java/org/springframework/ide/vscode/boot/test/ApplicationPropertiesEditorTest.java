@@ -2423,4 +2423,24 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         );
     }
 
+    @Test
+    void testCronValueCompletions() throws Exception {
+        data("spring.session.jdbc.cleanup-cron", "java.lang.String", "0 * * * * *", "Cron expression for cleanup");
+        data("some.other.cron", "java.lang.String", null, "Not a known CRON property");
+
+        // Empty value, same examples as for CRON in Java code
+        assertCompletionWithLabel("spring.session.jdbc.cleanup-cron=<*>", "0 */5 * * * *",
+                "spring.session.jdbc.cleanup-cron=0 */5 * * * *<*>");
+
+        // The whole value typed so far is the prefix, not just the last word
+        assertCompletionWithLabel("spring.session.jdbc.cleanup-cron=0 0 <*>", "0 0 * * * SUN",
+                "spring.session.jdbc.cleanup-cron=0 0 * * * SUN<*>");
+        assertCompletionWithLabel("spring.session.jdbc.cleanupCron = 0 */5<*>", "0 */5 * * * *",
+                "spring.session.jdbc.cleanupCron = 0 */5 * * * *<*>");
+
+        assertNoCompletions("spring.session.jdbc.cleanup-cron=zzz<*>");
+        // Not a known CRON property
+        assertNoCompletions("some.other.cron=0 0 <*>");
+    }
+
 }

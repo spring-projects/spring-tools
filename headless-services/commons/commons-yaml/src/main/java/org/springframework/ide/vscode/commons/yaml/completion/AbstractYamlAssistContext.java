@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ import org.springframework.ide.vscode.commons.languageserver.util.PrefixFinder;
 import org.springframework.ide.vscode.commons.util.Renderable;
 import org.springframework.ide.vscode.commons.util.text.DocumentRegion;
 import org.springframework.ide.vscode.commons.yaml.path.YamlPath;
+import org.springframework.ide.vscode.commons.util.text.IDocument;
 import org.springframework.ide.vscode.commons.yaml.structure.YamlDocument;
 import org.springframework.ide.vscode.commons.yaml.structure.YamlStructureParser.SDocNode;
 import org.springframework.ide.vscode.commons.yaml.structure.YamlStructureParser.SKeyNode;
@@ -74,6 +75,17 @@ public abstract class AbstractYamlAssistContext implements YamlAssistContext {
 		}
 	};
 
+	/**
+	 * Determines the prefix of the value for completions. By default the prefix is the last word of the value.
+	 *
+	 * @param doc the document
+	 * @param offset the cursor offset
+	 * @param valueStart offset where the value starts
+	 */
+	protected String getValuePrefix(IDocument doc, int offset, int valueStart) {
+		return prefixfinder.getPrefix(doc, offset, valueStart);
+	}
+
 	protected String getPrefix(YamlDocument doc, SNode node, int offset) {
 		//For value completions... in general we would like to determine the whole text
 		// corresponding to the value, so a simplistic backwards scan isn't good enough.
@@ -87,7 +99,7 @@ public abstract class AbstractYamlAssistContext implements YamlAssistContext {
 					valueStart++;
 				}
 				if (offset >= valueStart) {
-					return prefixfinder.getPrefix(doc.getDocument(), offset, valueStart);
+					return getValuePrefix(doc.getDocument(), offset, valueStart);
 				} else {
 					//only whitespace, or nothing found upto the cursor
 					return "";

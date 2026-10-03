@@ -17,6 +17,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.java.cron.CronSemanticTokens;
 import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.SemanticTokenData;
+import org.springframework.ide.vscode.commons.languageserver.util.LspClient.Client;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.commons.yaml.ast.YamlParser;
@@ -73,6 +74,24 @@ public class CronPropertiesSemanticTokensHandlerTest {
 				""";
 		assertThat(covered(text, tokens(LanguageId.BOOT_PROPERTIES_YAML, text)))
 			.containsExactly("0", "*", "/", "30", "*", "?", "*", "*", "@daily", "0", "0", "0", "*", "*", "*");
+	}
+
+	@Test
+	void eclipseClientGetsTextMateScopes() {
+		CronPropertiesSemanticTokensHandler eclipse = new CronPropertiesSemanticTokensHandler(new CronSemanticTokens(), new YamlParser(), Client.ECLIPSE);
+		String text = "spring.session.jdbc.cleanup-cron=0 */5 * * * MON";
+
+		List<SemanticTokenData> tokens = eclipse.semanticTokensFull(new TextDocument("file:///test", LanguageId.BOOT_PROPERTIES, 0, text), null);
+		assertThat(tokens).extracting(SemanticTokenData::type).containsOnly("constant.numeric", "keyword.operator", "entity.name.type.enum");
+
+		// Every type used by a token is in the legend, otherwise the tokens cannot be encoded
+		assertThat(eclipse.getCapability().getLegend().getTokenTypes()).containsAll(tokens.stream().map(SemanticTokenData::type).toList());
+		assertThat(eclipse.getCapability().getLegend().getTokenTypes()).doesNotContain("operator", "number", "enum");
+
+		// Other clients keep the standard types
+		assertThat(handler.getCapability().getLegend().getTokenTypes()).contains("operator", "number", "enum");
+		assertThat(handler.semanticTokensFull(new TextDocument("file:///test", LanguageId.BOOT_PROPERTIES, 0, text), null))
+				.extracting(SemanticTokenData::type).containsOnly("number", "operator", "enum");
 	}
 
 }

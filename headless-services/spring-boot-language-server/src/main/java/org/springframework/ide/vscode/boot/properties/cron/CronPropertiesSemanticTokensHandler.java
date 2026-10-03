@@ -23,6 +23,9 @@ import org.springframework.ide.vscode.boot.java.cron.CronSemanticTokens;
 import org.springframework.ide.vscode.boot.properties.cron.CronProperties.CronValue;
 import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.SemanticTokenData;
 import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.SemanticTokensHandler;
+import org.springframework.ide.vscode.commons.languageserver.semantic.tokens.TextMateScopes;
+import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
+import org.springframework.ide.vscode.commons.languageserver.util.LspClient.Client;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.commons.util.text.Region;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
@@ -40,10 +43,24 @@ public class CronPropertiesSemanticTokensHandler implements SemanticTokensHandle
 
 	private final CronSemanticTokens cronTokens;
 	private final YamlASTProvider yamlParser;
+	private final Client client;
 
 	public CronPropertiesSemanticTokensHandler(CronSemanticTokens cronTokens, YamlASTProvider yamlParser) {
+		this(cronTokens, yamlParser, LspClient.currentClient());
+	}
+
+	public CronPropertiesSemanticTokensHandler(CronSemanticTokens cronTokens, YamlASTProvider yamlParser, Client client) {
 		this.cronTokens = cronTokens;
 		this.yamlParser = yamlParser;
+		this.client = client;
+	}
+
+	/**
+	 * LSP4E uses the token type as a TextMate scope when looking up the color in the TM4E theme, hence the standard
+	 * LSP types are translated to TextMate scopes for Eclipse, see {@link TextMateScopes}.
+	 */
+	private String tokenType(String type) {
+		return client == Client.ECLIPSE ? TextMateScopes.scopeFor(type) : type;
 	}
 
 	@Override
@@ -53,7 +70,7 @@ public class CronPropertiesSemanticTokensHandler implements SemanticTokensHandle
 				new DocumentFilter(LanguageId.BOOT_PROPERTIES.getId(), null, null),
 				new DocumentFilter(LanguageId.BOOT_PROPERTIES_YAML.getId(), null, null)));
 		capabilities.setFull(true);
-		capabilities.setLegend(new SemanticTokensLegend(cronTokens.getTokenTypes(), cronTokens.getTypeModifiers()));
+		capabilities.setLegend(new SemanticTokensLegend(cronTokens.getTokenTypes().stream().map(this::tokenType).toList(), cronTokens.getTypeModifiers()));
 		return capabilities;
 	}
 
@@ -65,7 +82,7 @@ public class CronPropertiesSemanticTokensHandler implements SemanticTokensHandle
 				for (CronValue cron : CronProperties.findValues(doc, yamlParser)) {
 					for (SemanticTokenData td : cronTokens.computeTokens(cron.text())) {
 						data.add(new SemanticTokenData(new Region(td.range().getOffset() + cron.offset(), td.range().getLength()),
-								td.type(), td.modifiers()));
+								tokenType(td.type()), td.modifiers()));
 					}
 				}
 				return data;

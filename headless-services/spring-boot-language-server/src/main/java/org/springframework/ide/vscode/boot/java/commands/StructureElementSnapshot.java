@@ -11,6 +11,10 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A project's logical structure, captured as the elements it is built from rather than as a
@@ -41,6 +45,31 @@ public record StructureElementSnapshot(
 		String mainApplicationPackage,
 		List<SnapshotType> types,
 		List<SnapshotStereotype> stereotypeDefinitions) {
+
+	/**
+	 * Whether the other snapshot captures the very same structure - every type with its content
+	 * hash, stereotypes, methods and members, and every stereotype definition - so that a diff
+	 * against either one shows exactly the same.
+	 *
+	 * <p>Independent of the order the types and definitions were captured in: types come in index
+	 * order and definitions in the order they were first referenced, and re-indexing can change
+	 * either without changing anything about the structure.
+	 */
+	public boolean hasSameStructureAs(StructureElementSnapshot other) {
+		return other != null
+				&& Objects.equals(mainApplicationPackage, other.mainApplicationPackage)
+				&& typesByName(types).equals(typesByName(other.types))
+				&& Set.copyOf(nullToEmpty(stereotypeDefinitions)).equals(Set.copyOf(nullToEmpty(other.stereotypeDefinitions)));
+	}
+
+	private static Map<String, List<SnapshotType>> typesByName(List<SnapshotType> types) {
+		// a list per name rather than a single type, so two types of the same name could not hide one another
+		return nullToEmpty(types).stream().collect(Collectors.groupingBy(SnapshotType::fqn));
+	}
+
+	private static <T> List<T> nullToEmpty(List<T> list) {
+		return list == null ? List.of() : list;
+	}
 
 	/**
 	 * @param fqn the type's fully qualified name - unabbreviated; abbreviation happens at render

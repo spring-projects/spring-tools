@@ -63,6 +63,12 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 */
 	private final Map<String, List<StructureSnapshot>> history = new ConcurrentHashMap<>();
 
+	/**
+	 * The commit each project's baseline was last checked against, loaded along with its history -
+	 * see {@link #capturedCommitShaOf}. Empty when none was recorded.
+	 */
+	private final Map<String, Optional<String>> checkedCommits = new ConcurrentHashMap<>();
+
 	public StructureSnapshotStore(StructureViewProvider structureViewProvider, StructureBaselineStorage storage,
 			BootJavaConfig config) {
 		this.structureViewProvider = structureViewProvider;
@@ -103,7 +109,23 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 
 		List<StructureSnapshot> updated;
 		synchronized (this) {
-			updated = new ArrayList<>(historyOf(project));
+			List<StructureSnapshot> current = historyOf(project);
+
+			// GH-2021: a commit that changes nothing about the project's structure -
+			// one that touches other projects of the same repository, a checkout, a pull - gets no
+			// snapshot of its own. The current baseline stands for that commit just as well, and keeps
+			// its own commit: the one that brought the structure in. Only the check is recorded, so the
+			// commit is not looked at again. A manual capture is always kept: it was asked for.
+			if (commitSha != null && !current.isEmpty() && current.get(0).elements().hasSameStructureAs(snapshot.elements())) {
+				checkedCommits.put(projectName, Optional.of(commitSha));
+				storage.saveCheckedCommit(project, commitSha);
+
+				log.info("logical structure of project '{}' at commit {} is unchanged since its baseline{} - keeping the retained history as it is",
+						projectName, commitSha, current.get(0).commitSha() == null ? " (manual)" : " at commit " + current.get(0).commitSha());
+				return current.get(0);
+			}
+
+			updated = new ArrayList<>(current);
 			updated.add(0, snapshot);
 
 			int maxSize = config.getStructureBaselineHistorySize();
@@ -112,9 +134,15 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 			}
 
 			history.put(projectName, List.copyOf(updated));
+			if (commitSha != null) {
+				checkedCommits.put(projectName, Optional.of(commitSha));
+			}
 		}
 
 		storage.save(project, updated);
+		if (commitSha != null) {
+			storage.saveCheckedCommit(project, commitSha);
+		}
 
 		log.info("captured logical structure baseline for project '{}'{}, {} element(s), retaining {} of up to {} snapshot(s)",
 				projectName, commitSha == null ? " (manual, no commit)" : " at commit " + commitSha,
@@ -124,17 +152,27 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	}
 
 	/**
-	 * The git commit SHA of the most recent snapshot that represents a commit, which is what
-	 * answers "have I already captured a baseline for this commit?".
+	 * The git commit SHA the project's baseline was last checked against, which is what answers
+	 * "have I already captured a baseline for this commit?". That is the most recent snapshot's
+	 * commit - or a later one that changed nothing about the project's structure, and so got no
+	 * snapshot of its own (see {@link #captureBaseline(IJavaProject, String, String)}).
 	 *
-	 * <p>Deliberately skips manual snapshots rather than just looking at the newest one: a manual
-	 * snapshot carries no commit, so treating it as "no commit captured yet" would have the tracker
-	 * immediately capture a duplicate of a commit it already has - and push the user's manual
-	 * snapshot out of the way seconds after they took it.
+	 * <p>Without a recorded check - a history written before checks were recorded - the most recent
+	 * snapshot that represents a commit. Deliberately skipping manual snapshots rather than just
+	 * looking at the newest one: a manual snapshot carries no commit, so treating it as "no commit
+	 * captured yet" would have the tracker immediately capture a duplicate of a commit it already
+	 * has - and push the user's manual snapshot out of the way seconds after they took it.
 	 */
 	@Override
 	public Optional<String> capturedCommitShaOf(IJavaProject project) {
-		return historyOf(project).stream()
+		List<StructureSnapshot> snapshots = historyOf(project);
+
+		Optional<String> checked = checkedCommits.getOrDefault(project.getElementName(), Optional.empty());
+		if (checked.isPresent()) {
+			return checked;
+		}
+
+		return snapshots.stream()
 				.map(StructureSnapshot::commitSha)
 				.filter(sha -> sha != null)
 				.findFirst();
@@ -157,6 +195,9 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		// cached and handed out to callers
 		return history.computeIfAbsent(project.getElementName(), name -> {
 			List<StructureSnapshot> loaded = List.copyOf(storage.load(project));
+			// loaded together with the history - and only with a history: there is nothing to have
+			// checked against without one
+			checkedCommits.put(name, loaded.isEmpty() ? Optional.empty() : Optional.ofNullable(storage.loadCheckedCommit(project)));
 			log.debug("loaded {} retained logical structure baseline snapshot(s) from disk for project '{}'",
 					loaded.size(), name);
 			return loaded;
@@ -189,6 +230,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 		boolean hadBaseline = baselineOf(project) != null;
 
 		history.remove(projectName);
+		checkedCommits.remove(projectName);
 		storage.delete(project);
 
 		log.info("cleared logical structure baseline history for project '{}' (had a baseline: {})",

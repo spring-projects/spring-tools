@@ -118,6 +118,18 @@ at `boot-java.structure.baseline-history-size`, default 10). Diffing is always o
 current tree - nothing but that history is kept in memory, and it's persisted to disk
 (`StructureBaselineStorage`, one JSON file per project under `~/.sts4`) so it survives a restart.
 
+**One entry per change of the structure, not per commit** (GH-2021). A commit capture whose
+structure equals the newest retained snapshot is not kept: the history and its file stay as they
+are, and the newest snapshot keeps its own commit, the one that brought that structure in. Only the
+check is recorded, in a small `.checked` file next to the history file, and `capturedCommitShaOf`
+answers with that commit, so the tracker doesn't look at it again. This matters most when many
+projects share one git repository, where most commits change nothing about a given project.
+- **Equal** means every type with its content hash, stereotypes, methods and members, plus the
+  stereotype definitions, compared regardless of order: a re-index can change the order without
+  changing the structure.
+- **Manual captures** are always kept.
+- **Histories written before this** keep their copies.
+
 Two ways a snapshot gets created:
 
 - **Manual** (`captureBaseline(project)`, no commit info): explicit user action, normally over

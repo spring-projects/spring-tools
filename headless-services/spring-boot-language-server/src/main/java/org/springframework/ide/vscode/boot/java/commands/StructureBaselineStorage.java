@@ -149,13 +149,46 @@ public class StructureBaselineStorage {
 	}
 
 	/**
-	 * Removes the persisted baseline for the project, if any. A no-op (not an error) if there is
-	 * none.
+	 * Persists the commit the project's baseline was last checked against - see
+	 * {@code StructureSnapshotStore.capturedCommitShaOf}. Kept in a small file of its own, next to
+	 * the history, so recording a check never rewrites the history itself: that is what a check
+	 * that finds the structure unchanged is meant to avoid.
+	 */
+	public void saveCheckedCommit(IJavaProject project, String commitSha) {
+		try {
+			Files.writeString(checkedCommitFileFor(project).toPath(), commitSha, StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			log.warn("failed to persist the checked commit of the structure baseline for project: " + project.getElementName(), e);
+		}
+	}
+
+	/**
+	 * @return the commit the project's baseline was last checked against, or {@code null} if none
+	 *         was recorded - by a version that did not record one, say
+	 */
+	public String loadCheckedCommit(IJavaProject project) {
+		File file = checkedCommitFileFor(project);
+		if (!file.isFile()) {
+			return null;
+		}
+		try {
+			String sha = Files.readString(file.toPath(), StandardCharsets.UTF_8).trim();
+			return sha.isEmpty() ? null : sha;
+		} catch (IOException e) {
+			log.warn("failed to read the checked commit of the structure baseline for project: " + project.getElementName(), e);
+			return null;
+		}
+	}
+
+	/**
+	 * Removes the persisted baseline for the project, if any - its history and its checked commit.
+	 * A no-op (not an error) if there is none.
 	 */
 	public void delete(IJavaProject project) {
-		File file = fileFor(project);
-		if (file.isFile() && !file.delete()) {
-			log.warn("failed to delete persisted structure baseline for project: " + project.getElementName());
+		for (File file : List.of(fileFor(project), checkedCommitFileFor(project))) {
+			if (file.isFile() && !file.delete()) {
+				log.warn("failed to delete persisted structure baseline file for project '{}': {}", project.getElementName(), file);
+			}
 		}
 	}
 
@@ -172,6 +205,12 @@ public class StructureBaselineStorage {
 		}
 		String locationHash = DigestUtils.md5Hex(project.getLocationUri().normalize().toString()).substring(0, 12);
 		return new File(directory, projectName + "-" + locationHash + ".json");
+	}
+
+	private File checkedCommitFileFor(IJavaProject project) {
+		File historyFile = fileFor(project);
+		String name = historyFile.getName();
+		return new File(directory, name.substring(0, name.length() - ".json".length()) + ".checked");
 	}
 
 	private static record PersistedBaseline(int schemaVersion, List<StructureSnapshot> history) {}

@@ -402,6 +402,8 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	@Test
 	void rootNodeReportsWhichBaselineItIsComparedAgainst() throws Exception {
 		String olderKey = structureSnapshotStore.captureBaseline(project, "sha1", "first message").capturedAt().toString();
+		// a commit that changes the structure - one that does not gets no snapshot of its own
+		tree.edit(CONTROLLER, "return \"hello!!!\";", "return \"hello, world!!!\";");
 		String newestKey = structureSnapshotStore.captureBaseline(project, "sha2", "second message").capturedAt().toString();
 
 		Node defaultRoot = rootOf(project.getElementName(), null);
@@ -435,6 +437,8 @@ public class SpringIndexCommandsCaptureBaselineTest {
 	@Test
 	void baselineHistoryCommandReturnsTheRetainedSnapshotsNewestFirst() throws Exception {
 		structureSnapshotStore.captureBaseline(project, "sha1", "first message");
+		// a commit that changes the structure - one that does not gets no snapshot of its own
+		tree.edit(CONTROLLER, "return \"hello!!!\";", "return \"hello, world!!!\";");
 		structureSnapshotStore.captureBaseline(project, "sha2", "second message");
 
 		List<StructureSnapshotStore.BaselineHistoryEntry> history = baselineHistory(project.getElementName());

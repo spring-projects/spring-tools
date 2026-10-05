@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2024 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,7 +14,6 @@ import static org.springframework.ide.vscode.boot.common.CommonLanguageTools.SPA
 import static org.springframework.ide.vscode.boot.common.CommonLanguageTools.findLongestValidProperty;
 import static org.springframework.ide.vscode.boot.common.CommonLanguageTools.getValueHints;
 import static org.springframework.ide.vscode.boot.common.CommonLanguageTools.getValueType;
-import static org.springframework.ide.vscode.boot.common.CommonLanguageTools.isValuePrefixChar;
 import static org.springframework.ide.vscode.commons.util.StringUtil.camelCaseToHyphens;
 
 import java.util.ArrayList;
@@ -26,6 +25,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.common.PropertyCompletionFactory;
+import org.springframework.ide.vscode.boot.common.ValuePrefixFinder;
 import org.springframework.ide.vscode.boot.metadata.PropertyInfo;
 import org.springframework.ide.vscode.boot.metadata.hints.HintProvider;
 import org.springframework.ide.vscode.boot.metadata.hints.HintProviders;
@@ -63,13 +63,7 @@ public class PropertiesCompletionProposalsCalculator {
 
 	private static final Logger log = LoggerFactory.getLogger(PropertiesCompletionProposalsCalculator.class);
 
-	private static final PrefixFinder valuePrefixFinder = new PrefixFinder() {
-		@Override
-		protected boolean isPrefixChar(char c) {
-			return isValuePrefixChar(c);
-		}
-
-	};
+	private static final ValuePrefixFinder valuePrefixFinder = new ValuePrefixFinder();
 
 	private static final PrefixFinder fuzzySearchPrefix = new PrefixFinder() {
 		@Override
@@ -277,12 +271,13 @@ public class PropertiesCompletionProposalsCalculator {
 
 	private Collection<ICompletionProposal> getValueCompletions(Value value) {
 		DocumentRegion valueRegion = createRegion(doc, value).trimStart(SPACES).trimEnd(SPACES);
-		String query = valuePrefixFinder.getPrefix(doc, offset, valueRegion.getStart());
+		// note: no need to skip whitespace backwards.
+		String propertyName = /*fuzzySearchPrefix.getPrefix(doc, pair.getOffset())*/value.getParent().getKey().decode();
+		Type valueType = propertyName == null ? null : getValueType(index, typeUtil, propertyName);
+		String query = valuePrefixFinder.getPrefix(doc, offset, valueRegion.getStart(), valueType);
 		int startOfValue = offset - query.length();
 		EnumCaseMode caseMode = caseMode(query);
 
-		// note: no need to skip whitespace backwards.
-		String propertyName = /*fuzzySearchPrefix.getPrefix(doc, pair.getOffset())*/value.getParent().getKey().decode();
 		// because value partition includes whitespace around the assignment
 		if (propertyName != null) {
 			Collection<StsValueHint> valueCompletions = getValueHints(index, typeUtil, query, propertyName, caseMode);

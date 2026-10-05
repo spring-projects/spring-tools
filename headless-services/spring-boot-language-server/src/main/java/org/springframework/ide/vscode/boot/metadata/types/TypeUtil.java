@@ -43,7 +43,10 @@ import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.java.value.PropertyExtractor;
 import org.springframework.ide.vscode.boot.metadata.ResourceHintProvider;
 import org.springframework.ide.vscode.boot.metadata.ValueProviderRegistry.ValueProviderStrategy;
+import org.springframework.ide.vscode.boot.configurationmetadata.ValueHint;
 import org.springframework.ide.vscode.boot.metadata.hints.StsValueHint;
+import org.springframework.ide.vscode.boot.java.cron.CronExpressionExamples;
+import org.springframework.ide.vscode.boot.properties.cron.CronValueParser;
 import org.springframework.ide.vscode.boot.metadata.util.DeprecationUtil;
 import org.springframework.ide.vscode.boot.metadata.util.PropertyDocUtils;
 import org.springframework.ide.vscode.boot.properties.reconcile.BootEnumValueParser;
@@ -108,6 +111,11 @@ public class TypeUtil {
 	private static final String INET_ADDRESS_TYPE_NAME = InetAddress.class.getName();
 	private static final String DURATION_TYPE_NAME = Duration.class.getName();
 	private static final String CLASS_TYPE_NAME = Class.class.getName();
+
+	/**
+	 * Pseudo type of properties that hold a CRON expression, i.e. {@link String} values validated as CRON expressions
+	 */
+	public static final String CRON_TYPE_NAME = "CRON";
 
 	public enum BeanPropertyNameMode {
 		HYPHENATED(true,false), //bean property name in hyphenated form. E.g 'some-property-name'
@@ -255,6 +263,7 @@ public class TypeUtil {
 				throw new IllegalArgumentException("Value should be 'true' or 'false'");
 			}
 		});
+		VALUE_PARSERS.put(CRON_TYPE_NAME, new CronValueParser());
 		VALUE_PARSERS.put(DURATION_TYPE_NAME, (s) -> {
 			try {
 				return DurationStyle.detectAndParse(s);
@@ -432,6 +441,10 @@ public class TypeUtil {
 
 	public static boolean isObject(Type type) {
 		return type != null && OBJECT_TYPE_NAME.equals(type.getErasure());
+	}
+
+	public static boolean isCron(Type type) {
+		return type != null && CRON_TYPE_NAME.equals(type.getErasure());
 	}
 
 	public static boolean isString(Type type) {
@@ -683,6 +696,16 @@ public class TypeUtil {
 	private static final String CONSTRUCTOR_BINDING = "org.springframework.boot.context.properties.ConstructorBinding";
 
 	static {
+		valueHints(CRON_TYPE_NAME, new ValueProviderStrategy() {
+			@Override
+			public Flux<StsValueHint> getValues(IJavaProject javaProject, String query) {
+				return Flux.fromIterable(CronExpressionExamples.EXAMPLES).map(e -> {
+					ValueHint hint = ValueHint.withValue(e.expression());
+					hint.setDescription(e.description());
+					return StsValueHint.create(hint);
+				});
+			}
+		});
 		valueHints("java.nio.charset.Charset", new LazyProvider<String[]>() {
 			@Override
 			protected String[] compute() {

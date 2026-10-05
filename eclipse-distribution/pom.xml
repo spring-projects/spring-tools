@@ -386,7 +386,7 @@
 					</configuration>
 				</plugin>
 
-				<plugin>
+			<plugin>
 					<groupId>org.eclipse.tycho</groupId>
 					<artifactId>target-platform-configuration</artifactId>
 					<version>${tycho-version}</version>
@@ -419,6 +419,7 @@
 								<arch>aarch64</arch>
 							</environment>
 						</environments>
+						<executionEnvironment>JavaSE-25</executionEnvironment>
 					</configuration>
 				</plugin>
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2011, 2016 IBM Corporation and others.
+ * Copyright (c) 2007, 2011, 2016, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,8 @@
  *******************************************************************************/
 package org.springframework.ide.eclipse.boot.templates;
 
+import java.util.function.Function;
+
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.jdt.core.CompletionContext;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -21,7 +23,6 @@ import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.text.java.AbstractTemplateCompletionProposalComputer;
 import org.eclipse.jdt.internal.ui.text.template.contentassist.TemplateEngine;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
-import org.eclipse.jface.text.templates.ContextTypeRegistry;
 import org.eclipse.jface.text.templates.TemplateContextType;
 import org.springsource.ide.eclipse.commons.frameworks.core.workspace.ClasspathListenerManager;
 
@@ -58,7 +59,8 @@ public class BootTemplateCompletionProposalComputer extends AbstractTemplateComp
 	private boolean fIsContextTypeOnClasspath;
 
 	public BootTemplateCompletionProposalComputer() {
-		ContextTypeRegistry templateContextRegistry= JavaPlugin.getDefault().getTemplateContextRegistry();
+		// the registry type differs between Eclipse versions (jface.text.templates vs. text.templates), so don't name it
+		Function<String, TemplateContextType> templateContextRegistry= JavaPlugin.getDefault().getTemplateContextRegistry()::getContextType;
 		fAllTemplateEngine= createTemplateEngine(templateContextRegistry, BootContextType.ID_ALL);
 		fMembersTemplateEngine= createTemplateEngine(templateContextRegistry, BootContextType.ID_MEMBERS);
 		fStatementsTemplateEngine= createTemplateEngine(templateContextRegistry, BootContextType.ID_STATEMENTS);
@@ -67,8 +69,8 @@ public class BootTemplateCompletionProposalComputer extends AbstractTemplateComp
 		});
 	}
 
-	private static TemplateEngine createTemplateEngine(ContextTypeRegistry templateContextRegistry, String contextTypeId) {
-		TemplateContextType contextType= templateContextRegistry.getContextType(contextTypeId);
+	private static TemplateEngine createTemplateEngine(Function<String, TemplateContextType> templateContextRegistry, String contextTypeId) {
+		TemplateContextType contextType= templateContextRegistry.apply(contextTypeId);
 		Assert.isNotNull(contextType);
 		return new TemplateEngine(contextType);
 	}

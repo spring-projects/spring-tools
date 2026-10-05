@@ -9,7 +9,7 @@
       <programArgs>-product org.springframework.boot.ide.branding.springtools
 --launcher.defaultAction openFile
       </programArgs>
-      <vmArgs>-Dosgi.requiredJavaVersion=21
+      <vmArgs>-Dosgi.requiredJavaVersion=25
 -Dosgi.dataAreaRequiresExplicitInit=true
 -Declipse.e4.inject.javax.warning=false
 -Dorg.slf4j.simpleLogger.defaultLogLevel=off

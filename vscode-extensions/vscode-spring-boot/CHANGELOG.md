@@ -2,6 +2,7 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ Structure view baseline history fills with identical snapshots when many projects share one git repository [#2021](https://github.com/spring-projects/spring-tools/issues/2021)
 * _(Spring Boot)_ [structure view] add option to disable package nodes for regular projects [#2020](https://github.com/spring-projects/spring-tools/issues/2020)
 * _(Spring Boot)_ [structure view] allow elements from dependencies to show up for modulith projects [#2018](https://github.com/spring-projects/spring-tools/issues/2018)
 * _(Spring Boot)_ [structure view] don't show root package in the tree if there is only one [#2016](https://github.com/spring-projects/spring-tools/issues/2016)
@@ -17,6 +18,7 @@
 * _(Spring Boot)_ reduce logging for document changes [#1982](https://github.com/spring-projects/spring-tools/issues/1982)
 * _(Spring Boot)_ Allow overriding the SQL dialect used to validate native @Query statements [#1975](https://github.com/spring-projects/spring-tools/issues/1975)
 * _(Spring Boot)_ visualize changes in the logical structure view [#1974](https://github.com/spring-projects/spring-tools/issues/1974)
+* _(Spring Boot)_ Support CRON expression value in Spring Boot property files (`application.properties` and `application.yml`) [#1329](https://github.com/spring-projects/spring-tools/issues/1329)
 
 ## 2026-09-09 (5.4.0.RELEASE, incl. language servers version 2.4.0)
 

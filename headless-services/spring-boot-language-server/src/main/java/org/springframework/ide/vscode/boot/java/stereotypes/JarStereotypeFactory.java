@@ -17,8 +17,6 @@ import org.jmolecules.stereotype.api.Stereotype;
 import org.jmolecules.stereotype.api.StereotypeFactory;
 import org.jmolecules.stereotype.api.Stereotypes;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
-import org.jmolecules.stereotype.catalog.support.StereotypeDetector.AnalysisLevel;
-import org.jmolecules.stereotype.catalog.support.StereotypeMatcher;
 
 /**
  * A {@link StereotypeFactory} that matches {@link JarStereotypeScanner}-derived elements against a
@@ -35,16 +33,12 @@ import org.jmolecules.stereotype.catalog.support.StereotypeMatcher;
  */
 public class JarStereotypeFactory implements StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> {
 
-	// mirrors IndexBasedStereotypeFactory.STEREOTYPE_MATCHER exactly - kept separate rather than
-	// shared, since these two factories otherwise have nothing else in common (no live index)
-	private static final StereotypeMatcher<StereotypeClassElement, StereotypeAnnotatedElement> STEREOTYPE_MATCHER = StereotypeMatcher
-			.<StereotypeClassElement, StereotypeAnnotatedElement> isAnnotatedWith((element, fqn) -> element.isAnnotatedWith(fqn))
-			.orImplements((type, fqn) -> type.doesImplement(fqn));
-
-	private final AbstractStereotypeCatalog catalog;
+	// matches exactly what IndexBasedStereotypeFactory matches - kept separate rather than shared,
+	// since these two factories otherwise have nothing else in common (no live index)
+	private final StereotypeAssignmentIndex assignments;
 
 	public JarStereotypeFactory(AbstractStereotypeCatalog catalog) {
-		this.catalog = catalog;
+		this.assignments = new StereotypeAssignmentIndex(catalog);
 	}
 
 	@Override
@@ -59,7 +53,7 @@ public class JarStereotypeFactory implements StereotypeFactory<StereotypePackage
 
 	@Override
 	public Stereotypes fromMethod(StereotypeMethodElement method) {
-		return new Stereotypes(catalog.getAnnotationBasedStereotypes(method, AnalysisLevel.DIRECT, STEREOTYPE_MATCHER));
+		return new Stereotypes(assignments.annotationBased(method));
 	}
 
 	/**
@@ -70,8 +64,8 @@ public class JarStereotypeFactory implements StereotypeFactory<StereotypePackage
 	 */
 	private Collection<Stereotype> stereotypesOfType(StereotypeClassElement type) {
 		Collection<Stereotype> result = new TreeSet<>();
-		result.addAll(catalog.getTypeBasedStereotypes(type, AnalysisLevel.DIRECT, STEREOTYPE_MATCHER));
-		result.addAll(catalog.getAnnotationBasedStereotypes(type, AnalysisLevel.DIRECT, STEREOTYPE_MATCHER));
+		result.addAll(assignments.typeBased(type));
+		result.addAll(assignments.annotationBased(type));
 		return result;
 	}
 

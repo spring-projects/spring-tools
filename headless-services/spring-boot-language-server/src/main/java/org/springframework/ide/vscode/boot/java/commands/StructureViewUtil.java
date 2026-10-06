@@ -155,7 +155,8 @@ public class StructureViewUtil {
 	}
 	
 	public static String getMethodLabel(IJavaProject project, CachedSpringMetamodelIndex springIndex, StereotypeMethodElement method, StereotypeClassElement clazz) {
-		return getMethodLabel(method, springIndex.getNodesOfType(project.getElementName(), RequestMappingIndexElement.class));
+		String mappingLabel = springIndex.getRequestMappingLabel(project.getElementName(), method.getMethodSignature());
+		return mappingLabel != null ? mappingLabel : method.getMethodLabel();
 	}
 
 	/**

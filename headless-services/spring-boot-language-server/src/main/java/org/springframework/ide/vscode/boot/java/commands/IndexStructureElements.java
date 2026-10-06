@@ -30,7 +30,9 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
  * source-defined stereotype definitions registered - by whoever constructs this class
  * (usually via {@link #of}), so that decision (and the
  * {@code disable-source-defined-stereotypes} toggle behind it) stays in one place rather than
- * being duplicated here.
+ * being duplicated here. It only gets wrapped into one that remembers what it resolved: building a
+ * tree asks for the stereotypes of the same type once per grouping level, and once more for a
+ * snapshot.
  *
  * @author Martin Lippert
  */
@@ -44,7 +46,7 @@ public class IndexStructureElements implements StructureElements {
 			StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> factory) {
 		this.project = project;
 		this.springIndex = springIndex;
-		this.factory = factory;
+		this.factory = StereotypeFactory.caching(factory);
 	}
 
 	/**

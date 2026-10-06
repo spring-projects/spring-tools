@@ -59,6 +59,13 @@ public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 		this.contentHash = contentHash;
 	}
 
+	/**
+	 * The fully qualified names of all of the type's supertypes - those {@link #doesImplement} checks.
+	 */
+	public Set<String> getSupertypes() {
+		return supertypes;
+	}
+
 	public boolean doesImplement(String fqn) {
 		if (type.equals(fqn)) {
 			return true;

@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -347,15 +348,24 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		// an element read from a JAR has no location to tell it apart from a same-labelled sibling,
 		// but its binding key does just as well
 		String locationId = location != null
-				? "%s:%d:%d".formatted(location.getUri(), location.getRange().getStart().getLine(), location.getRange().getStart().getCharacter())
+				? location.getUri() + ":" + location.getRange().getStart().getLine() + ":" + location.getRange().getStart().getCharacter()
 				: javaElement != null ? javaElement.bindingKey() : "";
 		
 		Location reference = (Location) n.attributes.get(REFERENCE);
 		String referenceId = reference == null ? "" : reference.getUri();
 		
-		String nodeSpecificId = "%s|%s|%s".formatted(textId, locationId, referenceId).replaceAll("\\|+$", "");
+		// assigned to every node of a tree, so plain concatenation rather than formatting and a regex
+		String nodeSpecificId = withoutTrailingSeparators(textId + "|" + locationId + "|" + referenceId);
 		
-		n.attributes.put(NODE_ID, p != null && p.attributes.containsKey(NODE_ID) ? "%s/%s".formatted(p.attributes.get(NODE_ID), nodeSpecificId) : nodeSpecificId);
+		n.attributes.put(NODE_ID, p != null && p.attributes.containsKey(NODE_ID) ? p.attributes.get(NODE_ID) + "/" + nodeSpecificId : nodeSpecificId);
+	}
+
+	private static String withoutTrailingSeparators(String id) {
+		int end = id.length();
+		while (end > 0 && id.charAt(end - 1) == '|') {
+			end--;
+		}
+		return id.substring(0, end);
 	}
 	
 	private Node addChildFoo(Consumer<Node> consumer) {
@@ -367,28 +377,16 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		// check whether a node with the same ID already exists
 		// (this can happen if there are methods as well as types found for the same stereotype, for example)
 		// in this case, do not add the new node, but use the existing one
-		Node alreadyExistingNode = getNodeById(this.current.children, node);
+		Node alreadyExistingNode = this.current.getChildById(node.attributes.get(NODE_ID));
 
 		if (alreadyExistingNode != null) {
 			return alreadyExistingNode;
 		}
 		else {
-			this.current.children.add(node);
+			this.current.addChild(node);
 			return node;
 		}
 
-	}
-
-	private Node getNodeById(List<Node> children, Node node) {
-		Object id = node.attributes.get(NODE_ID);
-		if (id == null) return null;
-		
-		for (Node child : children) {
-			if (child.attributes.containsKey(NODE_ID) && child.attributes.get(NODE_ID).equals(id)) {
-				return child;
-			}
-		}
-		return null;
 	}
 
 	@Override
@@ -407,6 +405,13 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		final Map<String, Object> attributes;
 		final List<Node> children;
 
+		/**
+		 * The children by their {@link JsonNodeHandler#NODE_ID} - the first one, should several have
+		 * the same - so that adding a child doesn't take a look at every sibling it already has.
+		 * Created along with the first child, never serialized.
+		 */
+		private transient Map<Object, Node> childrenById;
+
 		Node(Node parent) {
 			this.parent = parent;
 			this.attributes = new LinkedHashMap<>();
@@ -419,8 +424,24 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		}
 		
 		public Node withChildren(List<Node> children) {
-			this.children.addAll(children);
+			children.forEach(this::addChild);
 			return this;
+		}
+
+		private void addChild(Node child) {
+			this.children.add(child);
+
+			Object id = child.attributes.get(NODE_ID);
+			if (id != null) {
+				if (childrenById == null) {
+					childrenById = new HashMap<>();
+				}
+				childrenById.putIfAbsent(id, child);
+			}
+		}
+
+		private Node getChildById(Object id) {
+			return id == null || childrenById == null ? null : childrenById.get(id);
 		}
 
 		/**

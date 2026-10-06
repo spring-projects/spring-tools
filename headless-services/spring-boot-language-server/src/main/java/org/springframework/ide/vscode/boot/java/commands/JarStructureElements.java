@@ -53,6 +53,7 @@ public class JarStructureElements implements StructureElements {
 	private final Map<Object, String> bindingKeys;
 	private final Map<StereotypeMethodElement, StereotypeClassElement> declaringTypes;
 	private final JarStereotypeFactory factory;
+	private final StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> cachingFactory;
 
 	/**
 	 * @param scannedTypes every class {@link JarStereotypeScanner} found in the JAR, unfiltered -
@@ -69,6 +70,7 @@ public class JarStructureElements implements StructureElements {
 		this.beans = beans;
 		this.bindingKeys = bindingKeys;
 		this.factory = new JarStereotypeFactory(catalog);
+		this.cachingFactory = StereotypeFactory.caching(factory);
 
 		// a method label is looked up by the method's own type, not the contextual one - in a group of
 		// methods across types, the contextual type is not the declaring one
@@ -151,7 +153,8 @@ public class JarStructureElements implements StructureElements {
 
 	@Override
 	public StereotypeFactory<StereotypePackageElement, StereotypeClassElement, StereotypeMethodElement> stereotypeFactory() {
-		return factory;
+		// a tree asks for the stereotypes of the same type once per grouping level
+		return cachingFactory;
 	}
 
 }

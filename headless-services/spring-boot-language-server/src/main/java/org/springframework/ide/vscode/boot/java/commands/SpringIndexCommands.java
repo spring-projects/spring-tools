@@ -211,6 +211,12 @@ public class SpringIndexCommands {
 		List<DependencyDescriptor> selectedDependencies = dependencySources.resolve(project,
 				args.selectedDependencies == null ? null : args.selectedDependencies.get(project.getElementName()));
 
+		// what the view includes for the project now: the scan of a JAR that no project's view includes
+		// is dropped. Told here, by the view's own request, and not by whatever builds a tree - an MCP
+		// tool or a baseline diff builds one without the view's selection, and must not have the scans
+		// the view relies on dropped
+		dependencySources.retainOnly(project, selectedDependencies);
+
 		// JARs still to be scanned are scanned in the background, so that no project's tree waits for them
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups, selectedDependencies, true);
 

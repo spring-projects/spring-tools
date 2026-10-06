@@ -127,8 +127,8 @@ public class StructureDependencySources {
 	}
 
 	/**
-	 * Tells all sources which dependencies the tree of the given project includes now, see
-	 * {@link StructureDependencySource#retainOnly}.
+	 * Tells all sources which dependencies the structure view includes in the tree of the given
+	 * project now, see {@link StructureDependencySource#retainOnly}.
 	 */
 	public void retainOnly(IJavaProject including, List<DependencyDescriptor> dependencies) {
 		for (StructureDependencySource source : sources) {

@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -58,6 +59,7 @@ public class StructureDependenciesCommandTest {
 	@Autowired private SpringSymbolIndex indexer;
 	@Autowired private StructureDependencySources dependencySources;
 	@Autowired private JarDependencySource jarDependencySource;
+	@Autowired private StructureViewProvider structureViewProvider;
 
 	private IJavaProject project;
 	private StructureTreeTestFixture tree;
@@ -154,6 +156,41 @@ public class StructureDependenciesCommandTest {
 		long deadline = System.currentTimeMillis() + 60_000;
 		while (!jarDependencySource.isReady(springWeb, project) || !indexUpdatedSince(updatesBefore, projectName)) {
 			assertTrue(System.currentTimeMillis() < deadline, "the JAR was not scanned in the background, or the client not told");
+			Thread.sleep(100);
+		}
+	}
+
+	/**
+	 * What the view includes decides which scans are kept, and only the view's own request tells:
+	 * a tree built without the view's selection - an MCP tool's, a baseline diff's - leaves the scans
+	 * the view relies on alone, while the view's own request without the JAR drops it.
+	 */
+	@Test
+	void onlyTheViewsOwnRequestDecidesWhichScansAreKept() throws Exception {
+		String projectName = project.getElementName();
+		DependencyDescriptor springWeb = dependencySources.resolve(project, List.of("gav:org.springframework:spring-web")).get(0);
+
+		tree.structureTrees(null, null, Map.of(projectName, List.of(springWeb.id())));
+		waitUntilScanned(springWeb);
+
+		// no selection of the view in sight: neither the project's own tree nor the one with some JAR selected
+		structureViewProvider.createCompleteTree(project);
+		structureViewProvider.createCompleteTree(project, List.of());
+		assertTrue(jarDependencySource.isReady(springWeb, project), "a tree built outside of the view dropped the scan the view relies on");
+
+		// the view's request still selecting it keeps it ...
+		tree.structureTrees(null, null, Map.of(projectName, List.of(springWeb.id())));
+		assertTrue(jarDependencySource.isReady(springWeb, project));
+
+		// ... and the view's request without it drops it
+		tree.structureTrees(null, null, null);
+		assertFalse(jarDependencySource.isReady(springWeb, project), "the scan of a JAR the view does not include any more was kept");
+	}
+
+	private void waitUntilScanned(DependencyDescriptor jar) throws Exception {
+		long deadline = System.currentTimeMillis() + 60_000;
+		while (!jarDependencySource.isReady(jar, project)) {
+			assertTrue(System.currentTimeMillis() < deadline, "the JAR was not scanned in the background");
 			Thread.sleep(100);
 		}
 	}

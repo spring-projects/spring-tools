@@ -66,9 +66,11 @@ public interface StructureDependencySource {
 	}
 
 	/**
-	 * Tells the source which dependencies the tree of the given project includes now - all of them,
-	 * every time a tree is built - so that it can let go of what no project's tree includes any more
-	 * and holds on to only for a later request, a cached scan of a JAR say.
+	 * Tells the source which dependencies the structure view includes in the tree of the given
+	 * project now - all of them, with every request of the view for that project - so that it can
+	 * let go of what no project's view includes any more and holds on to only for a later request, a
+	 * cached scan of a JAR say. Not told by a tree built for anything else (an MCP tool, a baseline
+	 * diff): that one has no say in what the view includes.
 	 */
 	default void retainOnly(IJavaProject including, List<DependencyDescriptor> dependencies) {
 	}

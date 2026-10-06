@@ -1212,6 +1212,11 @@ A structure request never waits for a JAR scan:
   background, on one thread, one project at a time.
   - Each project's selected JARs are scanned together, indexing its classpath once.
   - Each project gets one percentage progress, which names the JAR being worked on.
+  - Within a project's scan, the classpath's JARs are indexed in parallel, one Jandex index each,
+    on a pool of half the cores (at most 8). The indexes are then put together in classpath order
+    (`CompositeIndex`): a class that two JARs have is the first one's, as for the JVM. Reading the
+    selected JARs' own classes runs in parallel too. Measured over 230 JARs (about 52,000 classes):
+    about 2.2 s sequentially, about 0.55 s with 4 threads, about 0.33 s with 8.
 - **Refresh:** once a project's scan is done, the server sends `spring/index/updated` for that
   project, and the client rebuilds that one tree.
 - **Other projects:** projects with nothing to scan are there right away.

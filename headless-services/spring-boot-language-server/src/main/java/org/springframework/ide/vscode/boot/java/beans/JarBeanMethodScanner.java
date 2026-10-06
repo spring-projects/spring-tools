@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -85,7 +85,7 @@ public class JarBeanMethodScanner {
 	 * {@code ASTUtils.findSupertypes} of the bean's type - as far as it is on the classpath index;
 	 * not rendered in the tree, but part of the bean.
 	 */
-	private static Set<String> supertypesOf(Type type, Index index) {
+	private static Set<String> supertypesOf(Type type, IndexView index) {
 		ClassInfo classInfo = index.getClassByName(type.name());
 		return classInfo != null ? JarStereotypeScanner.supertypesOf(classInfo, index) : Set.of();
 	}

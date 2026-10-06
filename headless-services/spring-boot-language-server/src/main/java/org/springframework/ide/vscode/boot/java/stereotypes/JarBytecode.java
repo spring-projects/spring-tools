@@ -22,7 +22,7 @@ import java.util.jar.JarFile;
 
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
@@ -157,7 +157,7 @@ public class JarBytecode {
 	 * the call's owner, or the first of its supertypes that declares a method of that name and
 	 * descriptor. {@code null} if that is not on the index.
 	 */
-	public static String declaringTypeOf(String owner, String name, String descriptor, Index index) {
+	public static String declaringTypeOf(String owner, String name, String descriptor, IndexView index) {
 		ClassInfo classInfo = index.getClassByName(DotName.createSimple(owner.replace('/', '.')));
 		if (classInfo == null) {
 			return null;
@@ -204,7 +204,7 @@ public class JarBytecode {
 	 * not on the index is treated leniently: assignable to anything, so an incomplete classpath does
 	 * not fail the analysis of a method.
 	 */
-	public static SimpleVerifier verifier(ClassNode classNode, Index index) {
+	public static SimpleVerifier verifier(ClassNode classNode, IndexView index) {
 		Type currentClass = Type.getObjectType(classNode.name);
 		Type superClass = classNode.superName == null ? null : Type.getObjectType(classNode.superName);
 		List<Type> interfaces = classNode.interfaces.stream().map(Type::getObjectType).toList();
@@ -289,7 +289,7 @@ public class JarBytecode {
 	 * itself where it is one of the class's own, or else - in a lambda body or a nested class the
 	 * index does not know - the class it is in.
 	 */
-	public static String bindingKeyOf(ClassNode classNode, MethodNode method, Index index) {
+	public static String bindingKeyOf(ClassNode classNode, MethodNode method, IndexView index) {
 		ClassInfo classInfo = index.getClassByName(DotName.createSimple(classNode.name.replace('/', '.')));
 		if (classInfo != null && (method.access & Opcodes.ACC_SYNTHETIC) == 0) {
 			for (MethodInfo candidate : classInfo.methods()) {

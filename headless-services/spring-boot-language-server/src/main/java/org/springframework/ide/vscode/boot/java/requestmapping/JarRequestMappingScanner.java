@@ -21,7 +21,7 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -151,7 +151,7 @@ public class JarRequestMappingScanner {
 	 * has none when this is asked): interfaces first, depth first, then the superclass. A supertype
 	 * that is not on the classpath index is skipped.
 	 */
-	private static AnnotationInstance firstOnSupertypes(ClassInfo classInfo, Index index) {
+	private static AnnotationInstance firstOnSupertypes(ClassInfo classInfo, IndexView index) {
 		for (Type supertype : supertypesToSearch(classInfo)) {
 			AnnotationInstance found = firstOn(index.getClassByName(supertype.name()), index);
 			if (found != null) {
@@ -161,7 +161,7 @@ public class JarRequestMappingScanner {
 		return null;
 	}
 
-	private static AnnotationInstance firstOn(ClassInfo classInfo, Index index) {
+	private static AnnotationInstance firstOn(ClassInfo classInfo, IndexView index) {
 		if (classInfo == null) {
 			return null;
 		}

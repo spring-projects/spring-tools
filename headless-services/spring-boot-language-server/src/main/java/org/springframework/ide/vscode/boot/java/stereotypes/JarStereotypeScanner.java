@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * <p>An annotation's own meta-annotations often live in a different JAR than the annotated class
  * (Spring's own annotations are the textbook example: {@code @RestController} in {@code spring-web}
  * is meta-annotated with {@code @Controller} in {@code spring-context}). So a class's annotations
- * and supertypes are resolved against a combined {@link Index} the caller builds over more than
+ * and supertypes are resolved against a combined {@link IndexView} the caller builds over more than
  * just the one JAR being scanned - see {@link #ownClassesOf}.
  *
  * @author Martin Lippert
@@ -68,7 +68,7 @@ public class JarStereotypeScanner {
 	 * Feeds every {@code .class} entry of the given JAR into the indexer, and returns the
 	 * {@link DotName}s of the classes that came from this JAR specifically - the indexer itself may
 	 * go on to receive classes from other JARs too, so that annotations and supertypes declared
-	 * elsewhere on the classpath can still be resolved once the combined {@link Index} is built.
+	 * elsewhere on the classpath can still be resolved once the combined {@link IndexView} is built.
 	 */
 	public static Set<DotName> indexInto(Indexer indexer, File jarFile) {
 		Set<DotName> ownClasses = new LinkedHashSet<>();
@@ -130,16 +130,16 @@ public class JarStereotypeScanner {
 	 * classes (an anonymous class is no {@code TypeDeclaration}; synthetic classes have no source
 	 * at all).
 	 */
-	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, Index index) {
+	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, IndexView index) {
 		return ownClassesOf(ownClasses, index, new IdentityHashMap<>());
 	}
 
 	/**
-	 * As {@link #ownClassesOf(Set, Index)}, recording the JDT binding key ({@link JarBindingKeys}) of
+	 * As {@link #ownClassesOf(Set, IndexView)}, recording the JDT binding key ({@link JarBindingKeys}) of
 	 * every type and method element built - by the element's identity - so that the tree can have
 	 * the IDE open it.
 	 */
-	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, Index index, Map<Object, String> bindingKeys) {
+	public static List<StereotypeClassElement> ownClassesOf(Set<DotName> ownClasses, IndexView index, Map<Object, String> bindingKeys) {
 		List<StereotypeClassElement> result = new ArrayList<>();
 		ScanCache cache = new ScanCache();
 
@@ -225,14 +225,14 @@ public class JarStereotypeScanner {
 
 	/**
 	 * The class's own direct annotations expanded through their meta-annotation chain - but,
-	 * unlike {@link #annotationTypesOf(ClassInfo, Index, ScanCache)}, <em>without</em> the annotations of its
+	 * unlike {@link #annotationTypesOf(ClassInfo, IndexView, ScanCache)}, <em>without</em> the annotations of its
 	 * supertypes. This is what {@code AnnotationHierarchies.isAnnotatedWith} answers from on the
 	 * AST side, which every "is this a component / a {@code @Configuration} class /
 	 * {@code @NoRepositoryBean}" decision there uses - a class extending a {@code @Component}
 	 * superclass is not a component to it, while {@code annotationTypesOf} (built for stereotype
 	 * matching) would say otherwise.
 	 */
-	public static Set<String> ownAnnotationTypesOf(ClassInfo classInfo, Index index) {
+	public static Set<String> ownAnnotationTypesOf(ClassInfo classInfo, IndexView index) {
 		ScanCache cache = new ScanCache();
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
@@ -254,7 +254,7 @@ public class JarStereotypeScanner {
 	 * source-indexed types, so a class does not get attributed differently depending on whether it
 	 * came from a workspace project or a JAR.
 	 */
-	private static Set<String> annotationTypesOf(ClassInfo classInfo, Index index, ScanCache cache) {
+	private static Set<String> annotationTypesOf(ClassInfo classInfo, IndexView index, ScanCache cache) {
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
 
@@ -269,18 +269,18 @@ public class JarStereotypeScanner {
 
 	/**
 	 * A method's own direct annotations, expanded through their meta-annotation chain - the same
-	 * expansion {@link #annotationTypesOf(ClassInfo, Index, ScanCache)} does for a class's own annotations, so
+	 * expansion {@link #annotationTypesOf(ClassInfo, IndexView, ScanCache)} does for a class's own annotations, so
 	 * a convenience annotation like {@code @GetMapping} (meta-annotated with
 	 * {@code @RequestMapping}) matches a stereotype assigned to the base annotation, exactly as it
 	 * would from source ({@code StereotypesIndexer.getAnnotationTypes} meta-expands a method's own
 	 * annotations too). Unlike a class, a method does <em>not</em> also pick up a superclass or
 	 * interface method's annotations - matching source there as well.
 	 */
-	public static Set<String> annotationTypesOf(MethodInfo method, Index index) {
+	public static Set<String> annotationTypesOf(MethodInfo method, IndexView index) {
 		return annotationTypesOf(method, index, new ScanCache());
 	}
 
-	private static Set<String> annotationTypesOf(MethodInfo method, Index index, ScanCache cache) {
+	private static Set<String> annotationTypesOf(MethodInfo method, IndexView index, ScanCache cache) {
 		Set<String> result = new LinkedHashSet<>();
 		Set<DotName> visitedMetaAnnotations = new LinkedHashSet<>();
 
@@ -296,7 +296,7 @@ public class JarStereotypeScanner {
 	 * {@code AnnotationHierarchies.isAnnotatedWith}'s answer for an annotation, which counts the
 	 * annotation itself.
 	 */
-	public static Set<String> metaAnnotationTypesOf(DotName annotationName, Index index) {
+	public static Set<String> metaAnnotationTypesOf(DotName annotationName, IndexView index) {
 		Set<String> result = new LinkedHashSet<>();
 		addWithMetaAnnotations(annotationName, index, result, new LinkedHashSet<>(), false, new ScanCache());
 		return result;
@@ -306,7 +306,7 @@ public class JarStereotypeScanner {
 	 * @param withoutJava whether to leave out the {@code java*} names, as stereotype matching does
 	 *        ({@link #addIfNotJavaLang}) - a gate that looks for {@code javax.inject.Named} must not
 	 */
-	private static void addWithMetaAnnotations(DotName annotationName, Index index, Set<String> result, Set<DotName> visited,
+	private static void addWithMetaAnnotations(DotName annotationName, IndexView index, Set<String> result, Set<DotName> visited,
 			boolean withoutJava, ScanCache cache) {
 		if (!visited.add(annotationName)) {
 			return; // a meta-annotation cycle - nothing further to add
@@ -340,7 +340,7 @@ public class JarStereotypeScanner {
 	 * that type is itself present in {@code index} (a supertype outside of what got indexed, most
 	 * commonly a JDK type, still has to count for a stereotype assignment that matches on it).
 	 */
-	public static Set<String> supertypesOf(ClassInfo classInfo, Index index) {
+	public static Set<String> supertypesOf(ClassInfo classInfo, IndexView index) {
 		Set<String> result = new LinkedHashSet<>(supertypesWithoutObjectOf(classInfo, index, new ScanCache()));
 		if (!classInfo.isInterface() && !OBJECT.equals(classInfo.name())) {
 			result.add(Object.class.getName());
@@ -352,7 +352,7 @@ public class JarStereotypeScanner {
 	 * What a {@link StereotypeClassElement} keeps as its supertypes: without {@code java.lang.Object},
 	 * which every class has and no stereotype is assigned by - same as {@code StereotypesIndexer}.
 	 */
-	private static Set<String> supertypesWithoutObjectOf(ClassInfo classInfo, Index index, ScanCache cache) {
+	private static Set<String> supertypesWithoutObjectOf(ClassInfo classInfo, IndexView index, ScanCache cache) {
 		return hierarchyContributionOf(classInfo, index, cache.supertypes, cache, (supertype, result) -> {
 			if (!OBJECT.equals(supertype.name())) {
 				// ASTUtils.getHierarchyTypesFqNamesBreadthFirstIterator: the binary name for a
@@ -364,9 +364,9 @@ public class JarStereotypeScanner {
 
 	/**
 	 * The direct annotations of every type in the class's hierarchy, not meta-expanded - see
-	 * {@link #annotationTypesOf(ClassInfo, Index, ScanCache)}.
+	 * {@link #annotationTypesOf(ClassInfo, IndexView, ScanCache)}.
 	 */
-	private static Set<String> supertypeAnnotationsOf(ClassInfo classInfo, Index index, ScanCache cache) {
+	private static Set<String> supertypeAnnotationsOf(ClassInfo classInfo, IndexView index, ScanCache cache) {
 		return hierarchyContributionOf(classInfo, index, cache.supertypeAnnotations, cache, (supertype, result) -> {
 			ClassInfo supertypeInfo = index.getClassByName(supertype.name());
 			if (supertypeInfo != null) {
@@ -386,7 +386,7 @@ public class JarStereotypeScanner {
 	 *
 	 * @param known the results worked out so far, by class
 	 */
-	private static Set<String> hierarchyContributionOf(ClassInfo classInfo, Index index, Map<DotName, Set<String>> known,
+	private static Set<String> hierarchyContributionOf(ClassInfo classInfo, IndexView index, Map<DotName, Set<String>> known,
 			ScanCache cache, BiConsumer<Type, Set<String>> contribution) {
 		Set<String> result = known.get(classInfo.name());
 		if (result != null) {

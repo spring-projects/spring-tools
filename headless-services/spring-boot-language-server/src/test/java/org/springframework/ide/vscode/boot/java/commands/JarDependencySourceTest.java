@@ -271,6 +271,38 @@ public class JarDependencySourceTest {
 		assertTrue(source.isReady(dependency, including));
 	}
 
+	/**
+	 * The classpath's JARs are indexed in parallel and then put together in classpath order: a
+	 * class that two JARs have is the first one's, as for the JVM. Here the selected JAR's class
+	 * gets the stereotype of its supertype from whichever JAR comes first.
+	 */
+	@Test
+	void aClassThatTwoJarsHaveIsTheFirstOnesOnTheClasspath() throws Exception {
+		String marker = "package com.example; import java.lang.annotation.*; @Retention(RetentionPolicy.RUNTIME) public @interface Marker {}";
+
+		File markedBase = jarOf("marked-base", Map.of("com.example.Marker", marker,
+				"com.example.Base", "package com.example; @Marker public class Base {}"), List.of("com.example.Marker", "com.example.Base"));
+		File plainBase = jarOf("plain-base", Map.of("com.example.Base", "package com.example; public class Base {}"), List.of("com.example.Base"));
+		File sub = jarOf("sub", Map.of("com.example.Marker", marker,
+				"com.example.Base", "package com.example; public class Base {}",
+				"com.example.Sub", "package com.example; public class Sub extends Base {}"), List.of("com.example.Sub"));
+		DependencyDescriptor dependency = DependencyDescriptor.jar("sub", sub.getAbsolutePath());
+
+		JarDependencySource source = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)));
+		JarStructureElements markedFirst = (JarStructureElements) source.elementsOf(dependency, project(markedBase, plainBase, sub), null, catalogWithMarker());
+		assertEquals(1, markedFirst.typesWithOwnStereotypeCount());
+
+		JarDependencySource other = new JarDependencySource(new ClasspathDependencyResolver(mock(JavaProjectFinder.class)));
+		JarStructureElements plainFirst = (JarStructureElements) other.elementsOf(dependency, project(plainBase, markedBase, sub), null, catalogWithMarker());
+		assertEquals(0, plainFirst.typesWithOwnStereotypeCount());
+	}
+
+	private File jarOf(String name, Map<String, String> sources, List<String> packaged) throws Exception {
+		Path directory = Files.createDirectories(tempDir.resolve(name));
+		Path classes = JarFixtureBuilder.compileAll(directory, sources);
+		return JarFixtureBuilder.packageJar(classes, directory, name, packaged, Map.of());
+	}
+
 	private File markedJar(String name) throws Exception {
 		return JarFixtureBuilder.buildJar(tempDir, name, Map.of(
 				"com.example.Marked", "package com.example; @Marker public class Marked {}",

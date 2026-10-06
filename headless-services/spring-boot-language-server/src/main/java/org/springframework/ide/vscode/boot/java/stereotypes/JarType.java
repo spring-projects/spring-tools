@@ -16,7 +16,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Location;
 import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexView;
 
 /**
  * Everything the JAR-side scanners know about one scanned class, handed to each of them the way
@@ -38,6 +38,6 @@ import org.jboss.jandex.Index;
  *
  * @author Martin Lippert
  */
-public record JarType(ClassInfo classInfo, StereotypeClassElement element, Set<String> ownAnnotationTypes, Index index,
+public record JarType(ClassInfo classInfo, StereotypeClassElement element, Set<String> ownAnnotationTypes, IndexView index,
 		Location placeholderLocation, File jarFile, Map<Object, String> bindingKeys) {
 }

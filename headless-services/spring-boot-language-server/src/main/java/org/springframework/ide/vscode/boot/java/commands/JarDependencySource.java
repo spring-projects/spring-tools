@@ -11,26 +11,33 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.CompositeIndex;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Indexer;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.slf4j.Logger;
@@ -78,6 +85,24 @@ public class JarDependencySource implements StructureDependencySource {
 
 	// the absolute paths of the JARs the latest tree of each project (by name) includes
 	private final Map<String, Set<String>> includedJars = new HashMap<>();
+
+	/**
+	 * How many JARs are indexed at once - half the cores, at most 8: a scan reads and parses every
+	 * class of the classpath, which scales with cores, while the language server has other work to
+	 * do too. See {@link #scanAll}.
+	 */
+	private static final int INDEXING_THREADS = Math.max(1, Math.min(8, Runtime.getRuntime().availableProcessors() / 2));
+
+	private final ExecutorService indexing = Executors.newFixedThreadPool(INDEXING_THREADS, new ThreadFactory() {
+		private final AtomicInteger count = new AtomicInteger();
+
+		@Override
+		public Thread newThread(Runnable runnable) {
+			Thread thread = new Thread(runnable, "structure-dependency-indexing-" + count.incrementAndGet());
+			thread.setDaemon(true);
+			return thread;
+		}
+	});
 
 	// see prepareInBackground
 	private final ExecutorService backgroundScans = Executors.newSingleThreadExecutor(runnable -> {
@@ -260,12 +285,14 @@ public class JarDependencySource implements StructureDependencySource {
 	 * JAR). Every JAR {@code including} depends on is guaranteed to be resolvable on its own
 	 * classpath, so this is always sufficient. The index is built once, for all of them.
 	 *
-	 * <p>Reported as one progress for the project, naming the JAR being indexed.
+	 * <p>The classpath's JARs are indexed in parallel, one index each on {@link #indexing}, and then
+	 * put together in classpath order: a class that more than one JAR has is the first one's, as for
+	 * the JVM. Reading the given JARs' own classes from that index runs in parallel too, one JAR
+	 * each.
+	 *
+	 * <p>Reported as one progress for the project, naming the JAR last done.
 	 */
 	private Map<File, ScanResult> scanAll(IJavaProject including, List<File> jarFiles) {
-		Indexer indexer = new Indexer();
-		Map<File, Set<DotName>> ownClasses = new LinkedHashMap<>();
-		Set<File> indexed = new HashSet<>();
 		Set<File> wanted = jarFiles.stream().map(File::getAbsoluteFile).collect(Collectors.toSet());
 
 		Collection<CPE> classpathEntries;
@@ -278,68 +305,133 @@ public class JarDependencySource implements StructureDependencySource {
 			classpathEntries = null;
 		}
 		boolean classpathRead = classpathEntries != null;
-		List<CPE> binaryEntries = classpathRead
-				? classpathEntries.stream().filter(cpe -> Classpath.isBinary(cpe) && !cpe.isSystem()).toList()
-				: List.of();
 
-		// one step per classpath entry to index, and one per JAR to read its own classes from
+		// each JAR once, in classpath order
+		Set<File> toIndex = new LinkedHashSet<>();
+		if (classpathRead) {
+			classpathEntries.stream()
+					.filter(cpe -> Classpath.isBinary(cpe) && !cpe.isSystem())
+					.map(cpe -> IClasspathUtil.binaryLocation(cpe).getAbsoluteFile())
+					.filter(File::isFile)
+					.forEach(toIndex::add);
+		}
+
+		// the JARs not found among including's own classpath entries at all - a stale selection, or a
+		// discovery/classpath mismatch: indexed along with it, so something is still shown, even
+		// though cross-JAR meta-annotations may not all resolve
+		Set<File> isolated = new LinkedHashSet<>();
+		for (File jarFile : wanted) {
+			if (toIndex.add(jarFile)) {
+				log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
+						including.getElementName());
+				isolated.add(jarFile);
+			}
+		}
+
+		// one step per JAR to index, and one per JAR to read its own classes from
 		PercentageProgressTask progress = progressService.createPercentageProgressTask(SCAN_JARS_TASK_ID + including.getElementName(),
-				binaryEntries.size() + jarFiles.size(), "Spring Tools: Indexing Libraries for the Logical Structure of '"
+				toIndex.size() + jarFiles.size(), "Spring Tools: Indexing Libraries for the Logical Structure of '"
 						+ including.getElementName() + "'");
 		long scanStart = System.currentTimeMillis();
 		try {
-			for (CPE cpe : binaryEntries) {
-				File file = IClasspathUtil.binaryLocation(cpe).getAbsoluteFile();
-				progress.increment(file.getName());
-				if (file.isFile() && indexed.add(file)) {
-					long start = System.currentTimeMillis();
-					Set<DotName> classesOfThisFile = JarStereotypeScanner.indexInto(indexer, file);
-					log.info("indexed '{}' for the logical structure of '{}': {} class file(s) in {} ms", file.getName(),
-							including.getElementName(), classesOfThisFile.size(), System.currentTimeMillis() - start);
-					if (wanted.contains(file)) {
-						ownClasses.put(file, classesOfThisFile);
-					}
+			Map<File, Future<IndexedJar>> indexing = new LinkedHashMap<>();
+			for (File file : toIndex) {
+				indexing.put(file, this.indexing.submit(() -> {
+					IndexedJar indexed = indexedJar(file, including);
+					stepDone(progress, file);
+					return indexed;
+				}));
+			}
+
+			List<IndexView> indexes = new ArrayList<>();
+			Map<File, Set<DotName>> ownClasses = new LinkedHashMap<>();
+			for (Map.Entry<File, Future<IndexedJar>> entry : indexing.entrySet()) {
+				IndexedJar indexed = await(entry.getValue(), entry.getKey(), new IndexedJar(new Indexer().complete(), Set.of()));
+				indexes.add(indexed.index());
+				if (wanted.contains(entry.getKey())) {
+					ownClasses.put(entry.getKey(), indexed.ownClasses());
 				}
 			}
 
-			Set<File> isolated = new HashSet<>();
-			for (File jarFile : wanted) {
-				if (!ownClasses.containsKey(jarFile)) {
-					// the JAR wasn't found among including's own classpath entries at all - a stale
-					// selection, or a discovery/classpath mismatch; index it directly so something is
-					// still shown, even though cross-JAR meta-annotations may not all resolve
-					log.warn("structure dependency JAR '{}' is not on the classpath of '{}' - scanning it in isolation", jarFile,
-							including.getElementName());
-					ownClasses.put(jarFile, JarStereotypeScanner.indexInto(indexer, jarFile));
-					isolated.add(jarFile);
-				}
-			}
+			IndexView index = CompositeIndex.create(indexes);
 
-			Index index = indexer.complete();
-
-			Map<File, ScanResult> result = new LinkedHashMap<>();
+			Map<File, Future<ScanResult>> reading = new LinkedHashMap<>();
 			for (File jarFile : jarFiles) {
 				File key = jarFile.getAbsoluteFile();
-				progress.increment(jarFile.getName());
-				long start = System.currentTimeMillis();
-
-				Map<Object, String> bindingKeys = new IdentityHashMap<>();
-				List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses.get(key), index, bindingKeys);
-				Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, index, jarFile, bindingKeys);
-
-				log.info("scanned structure dependency JAR '{}' for '{}': {} of its {} class(es) found (annotation types, module-info excluded) in {} ms",
-						jarFile.getName(), including.getElementName(), scanned.size(), ownClasses.get(key).size(),
-						System.currentTimeMillis() - start);
-
-				result.put(jarFile, new ScanResult(scanned, beans, bindingKeys, classpathRead && !isolated.contains(key)));
+				boolean complete = classpathRead && !isolated.contains(key);
+				reading.put(jarFile, this.indexing.submit(() -> {
+					ScanResult scanned = scannedJar(jarFile, ownClasses.getOrDefault(key, Set.of()), index, complete, including);
+					stepDone(progress, jarFile);
+					return scanned;
+				}));
 			}
 
-			log.info("scanned {} structure dependency JAR(s) for '{}', indexing {} classpath entries, in {} ms", jarFiles.size(),
-					including.getElementName(), indexed.size(), System.currentTimeMillis() - scanStart);
+			Map<File, ScanResult> result = new LinkedHashMap<>();
+			for (Map.Entry<File, Future<ScanResult>> entry : reading.entrySet()) {
+				result.put(entry.getKey(), await(entry.getValue(), entry.getKey(), new ScanResult(List.of(), Map.of(), Map.of(), false)));
+			}
+
+			log.info("scanned {} structure dependency JAR(s) for '{}', indexing {} classpath entries on up to {} threads, in {} ms",
+					jarFiles.size(), including.getElementName(), toIndex.size(), INDEXING_THREADS, System.currentTimeMillis() - scanStart);
 			return result;
 		}
 		finally {
 			progress.done();
+		}
+	}
+
+	private record IndexedJar(Index index, Set<DotName> ownClasses) {
+	}
+
+	/**
+	 * One JAR's own index - an {@link Indexer} is not to be shared between threads, a finished
+	 * {@link Index} is safe to read from any number of them.
+	 */
+	private static IndexedJar indexedJar(File file, IJavaProject including) {
+		long start = System.currentTimeMillis();
+		Indexer indexer = new Indexer();
+		Set<DotName> classes = JarStereotypeScanner.indexInto(indexer, file);
+		Index index = indexer.complete();
+		log.info("indexed '{}' for the logical structure of '{}': {} class file(s) in {} ms", file.getName(),
+				including.getElementName(), classes.size(), System.currentTimeMillis() - start);
+		return new IndexedJar(index, classes);
+	}
+
+	private static ScanResult scannedJar(File jarFile, Set<DotName> ownClasses, IndexView index, boolean complete, IJavaProject including) {
+		long start = System.currentTimeMillis();
+
+		Map<Object, String> bindingKeys = new IdentityHashMap<>();
+		List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index, bindingKeys);
+		Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, index, jarFile, bindingKeys);
+
+		log.info("scanned structure dependency JAR '{}' for '{}': {} of its {} class(es) found (annotation types, module-info excluded) in {} ms",
+				jarFile.getName(), including.getElementName(), scanned.size(), ownClasses.size(), System.currentTimeMillis() - start);
+
+		return new ScanResult(scanned, beans, bindingKeys, complete);
+	}
+
+	/**
+	 * The progress is not made to be told from several threads at once.
+	 */
+	private static void stepDone(PercentageProgressTask progress, File jarFile) {
+		synchronized (progress) {
+			progress.increment(jarFile.getName());
+		}
+	}
+
+	/**
+	 * The result of one JAR's task - or, when that failed on something unexpected, the given
+	 * stand-in, so that one JAR does not cost all the others theirs.
+	 */
+	private static <T> T await(Future<T> task, File jarFile, T failed) {
+		try {
+			return task.get();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("interrupted while scanning structure dependency JAR " + jarFile, e);
+		} catch (ExecutionException e) {
+			log.warn("failed to scan structure dependency JAR '{}'", jarFile, e.getCause());
+			return failed;
 		}
 	}
 
@@ -350,7 +442,7 @@ public class JarDependencySource implements StructureDependencySource {
 	 * {@code @ConfigurationProperties} class is a fact of its own bytecode, not of what stereotypes
 	 * happen to be defined right now.
 	 */
-	private static Map<StereotypeClassElement, List<Bean>> beansOf(List<StereotypeClassElement> scanned, Index index, File jarFile,
+	private static Map<StereotypeClassElement, List<Bean>> beansOf(List<StereotypeClassElement> scanned, IndexView index, File jarFile,
 			Map<Object, String> bindingKeys) {
 		Map<StereotypeClassElement, List<Bean>> result = new IdentityHashMap<>();
 

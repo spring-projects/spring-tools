@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.commands.GitBaselinePrompt;
 import org.springframework.ide.vscode.boot.java.commands.GitBaselineTracker;
 import org.springframework.ide.vscode.boot.java.commands.JarDependencySource;
 import org.springframework.ide.vscode.boot.java.commands.Misc;
@@ -144,6 +145,11 @@ public class CommandsConfig {
 	StructureSnapshotStore structureSnapshotStore(StructureViewProvider structureViewProvider, StructureBaselineStorage structureBaselineStorage,
 			BootJavaConfig config) {
 		return new StructureSnapshotStore(structureViewProvider, structureBaselineStorage, config);
+	}
+
+	@Bean
+	GitBaselinePrompt gitBaselinePrompt(SimpleLanguageServer server, BootJavaConfig config) {
+		return new GitBaselinePrompt(server, config);
 	}
 
 	@Bean

@@ -343,8 +343,19 @@ given the retention cap, not something worth surfacing as a hard failure.
 
 ## Preferences
 
-- `boot-java.structure.git-baseline-enabled` (default **on**) - turns off all git-driven automatic
-  capture/polling (`GitBaselineTracker.isEnabled`) for users who want manual-only baselines. There's
+- `boot-java.structure.git-baseline-enabled` (default **off**) - turns on all git-driven automatic
+  capture/polling (`GitBaselineTracker.isEnabled`); without it, baselines are captured by hand only.
+  It used to be on by default, but polling git and writing snapshots in the background is not
+  something to start for users who never look at the diff. So instead the user is *asked*, the
+  first time they turn on "highlight changes" (or "hide unchanged") while it is off - see
+  `GitBaselinePrompt`. The question is asked by the language server (`window/showMessageRequest`)
+  so that every client gets the same one; the client only tells the server that a diff toggle went
+  on (`sts/spring-boot/structure/diffEnabled`, also sent once at startup when a toggle is on
+  already), and the server writes the answer back into the client's settings via the custom
+  `sts/setConfiguration` request (a no-op default in `STS4LanguageClient`, implemented by VSCode in
+  `set-configuration.ts`). Asked at most once per language server run: "Not Now" asks again with
+  the next run, "Don't Ask Again" sets `boot-java.structure.git-baseline-prompt` (default on) to
+  false. There's
   also an internal `-Ddisable-structure-git-baseline` system property purely for the test suite: test
   project fixtures live inside this very repository's own git working tree, so without disabling it,
   every test that builds a structure tree would auto-capture a baseline against *this repository's*

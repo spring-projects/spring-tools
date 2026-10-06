@@ -12,6 +12,7 @@ import {
     IndexUpdateDetails,
 } from "./notification";
 import {RequestType} from "vscode-languageclient";
+import { registerSetConfigurationRequest } from "./set-configuration";
 
 export class ApiManager {
     public api: ExtensionAPI;
@@ -63,6 +64,7 @@ export class ApiManager {
         client.onNotification(LiveProcessMemoryMetricsUpdatedNotification, (process: LiveProcess) => this.onDidLiveProcessMemoryMetricsUpdateEmitter.fire(process));
 
         client.onNotification(SpringIndexUpdatedNotification, (details: IndexUpdateDetails) => this.onSpringIndexUpdateEmitter.fire(details));
+        registerSetConfigurationRequest(client);
 
         const beansRequestType = new RequestType<BeansParams, Bean[], void>('spring/index/beans');
         const beans = (params: BeansParams) => {

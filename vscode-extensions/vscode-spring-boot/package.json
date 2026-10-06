@@ -558,8 +558,13 @@
           },
           "boot-java.structure.git-baseline-enabled": {
             "type": "boolean",
+            "default": false,
+            "description": "Logical Structure view: automatically capture a diff baseline on every git commit, so changes are always highlighted against the last commit without manually capturing a baseline. A project opened with uncommitted changes gets its first baseline at its next commit, so that those changes stay visible. When off, baselines are captured manually only - and you are asked whether to turn this on when you turn on highlighting changes."
+          },
+          "boot-java.structure.git-baseline-prompt": {
+            "type": "boolean",
             "default": true,
-            "description": "Logical Structure view: automatically capture a diff baseline on every git commit, so changes are always highlighted against the last commit without manually capturing a baseline. A project opened with uncommitted changes gets its first baseline at its next commit, so that those changes stay visible. Turn off to rely on manual baseline capture only."
+            "description": "Logical Structure view: ask whether to turn on the automatic git baseline (`boot-java.structure.git-baseline-enabled`) when you turn on highlighting changes while it is off."
           },
           "boot-java.structure.package-nodes": {
             "type": "boolean",

@@ -40,6 +40,9 @@ import com.google.gson.JsonObject;
  */
 @Component
 public class BootJavaConfig implements InitializingBean {
+
+	public static final String STRUCTURE_GIT_BASELINE_ENABLED = "boot-java.structure.git-baseline-enabled";
+	public static final String STRUCTURE_GIT_BASELINE_PROMPT = "boot-java.structure.git-baseline-prompt";
 	
 	private static final String SPRING_IO_API_URL = "https://api.spring.io/projects";
 
@@ -257,11 +260,21 @@ public class BootJavaConfig implements InitializingBean {
 
 	/**
 	 * Whether the logical structure view automatically captures and refreshes a diff baseline from
-	 * git activity (see {@code GitBaselineTracker}). Defaults to on, unlike most flags in this
-	 * class, so it needs to be explicitly turned off rather than explicitly turned on.
+	 * git activity (see {@code GitBaselineTracker}). Defaults to off: the user is asked whether to
+	 * turn it on when they turn on highlighting changes (see {@code GitBaselinePrompt}).
 	 */
 	public boolean isStructureGitBaselineEnabled() {
 		Boolean b = settings.getBoolean("boot-java", "structure", "git-baseline-enabled");
+		return Boolean.TRUE.equals(b);
+	}
+
+	/**
+	 * Whether the user is asked to turn on {@link #isStructureGitBaselineEnabled()} when they turn on
+	 * highlighting changes in the logical structure view and it is off. Defaults to on; turned off by
+	 * answering "Don't Ask Again".
+	 */
+	public boolean isStructureGitBaselinePromptEnabled() {
+		Boolean b = settings.getBoolean("boot-java", "structure", "git-baseline-prompt");
 		return b == null || b.booleanValue();
 	}
 

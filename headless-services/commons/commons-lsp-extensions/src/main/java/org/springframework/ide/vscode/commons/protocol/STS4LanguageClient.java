@@ -100,5 +100,16 @@ public interface STS4LanguageClient extends SpringIndexLanguageClient {
 	
 	@JsonRequest("sts/project/gav")
 	CompletableFuture<List<Gav>> projectGAV(ProjectGavParams params);
+
+	/**
+	 * Asks the client to set one of its settings - for when the server asked the user about one (a
+	 * {@code window/showMessageRequest}) and the user decided. A default method, answering nothing,
+	 * so a client that does not support it yet still implements this interface; such a client
+	 * leaves the setting as it is.
+	 */
+	@JsonRequest("sts/setConfiguration")
+	default CompletableFuture<Object> setConfiguration(SetConfigurationParams params) {
+		return CompletableFuture.completedFuture(null);
+	}
 	
 }

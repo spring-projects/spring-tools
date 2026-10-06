@@ -11,6 +11,9 @@ const SPRING_STRUCTURE_CLEAR_BASELINE_CMD = "sts/spring-boot/structure/clearBase
 const SPRING_STRUCTURE_BASELINE_HISTORY_CMD = "sts/spring-boot/structure/baselineHistory";
 const SPRING_STRUCTURE_DEPENDENCIES_CMD = "sts/spring-boot/structure/dependencies";
 const SPRING_STRUCTURE_RESOLVE_LOCATION_CMD = "sts/spring-boot/structure/resolveLocation";
+// tells the language server the user turned highlighting changes on - it may ask whether to turn the
+// automatic git baseline on, see GitBaselinePrompt
+const SPRING_STRUCTURE_DIFF_ENABLED_CMD = "sts/spring-boot/structure/diffEnabled";
 
 const HIDE_UNCHANGED_KEY = "vscode-spring-boot.structure.hideUnchanged";
 const HIGHLIGHT_CHANGES_KEY = "vscode-spring-boot.structure.highlightChanges";
@@ -67,6 +70,7 @@ export class StructureManager {
     private _rootElementsRequest: Thenable<StereotypedNode[]>
     private _rootElements: StereotypedNode[] = [];
     private _requestCounter = 0;
+    private _diffEnabledTold = false;
     // per project, the number of the request its current node came from - see refresh
     private readonly _projectVersions = new Map<string, number>();
     private _onDidChange = new EventEmitter<undefined | StereotypedNode | StereotypedNode[]>();
@@ -218,6 +222,17 @@ export class StructureManager {
         } else {
             await toggle.set(true);
         }
+        this.tellDiffEnabled();
+    }
+
+    /**
+     * Tells the language server that changes are shown - when the user turns that on, and once per
+     * session when it was on already at startup, as soon as the language server answered a request.
+     * The server decides whether to ask anything.
+     */
+    private tellDiffEnabled(): void {
+        this._diffEnabledTold = true;
+        Promise.resolve(commands.executeCommand(SPRING_STRUCTURE_DIFF_ENABLED_CMD)).then(undefined, () => {});
     }
 
     private async captureBaseline(node: StereotypedNode): Promise<void> {
@@ -405,6 +420,9 @@ export class StructureManager {
         const requestNumber = ++this._requestCounter;
         const request: Thenable<StereotypedNode[]> = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
             const nodes = this.parseArray(json);
+            if (!this._diffEnabledTold && !this.includeDependencies && (this.highlightChanges || this.hideUnchanged)) {
+                this.tellDiffEnabled();
+            }
             const answered = new Map<string, StereotypedNode>();
             nodes.forEach(n => answered.set(n.projectId, n));
             // the projects this request speaks for: in dependency mode, a partial one also rebuilds

@@ -101,8 +101,7 @@ public class SpringIndexerJavaReconcileService {
 
 			problemCollector.beginCollecting();
 
-			List<SpringIndexElement> createdElements = context.getGeneratedIndexElements().stream()
-					.filter(cachedIndexElement -> cachedIndexElement.getDocURI().equals(context.getDocURI()))
+			List<SpringIndexElement> createdElements = context.getOwnGeneratedIndexElements().stream()
 					.map(cachedIndexElement -> cachedIndexElement.getIndexElement())
 					.toList();
 

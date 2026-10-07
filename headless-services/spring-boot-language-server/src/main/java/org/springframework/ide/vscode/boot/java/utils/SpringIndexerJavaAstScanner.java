@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.java.utils;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
@@ -65,13 +66,13 @@ public class SpringIndexerJavaAstScanner {
 
 				@Override
 				public boolean visit(PackageDeclaration node) {
-					extractSafely(context, node.toString(), () -> extractSymbolInformation(node, context));
+					extractSafely(context, node::toString, () -> extractSymbolInformation(node, context));
 					return super.visit(node);
 				}
 
 				@Override
 				public boolean visit(TypeDeclaration node) {
-					extractSafely(context, node.toString(), () -> {
+					extractSafely(context, node::toString, () -> {
 						context.addScannedType(node.resolveBinding());
 						extractSymbolInformation(node, context);
 					});
@@ -80,7 +81,7 @@ public class SpringIndexerJavaAstScanner {
 
 				@Override
 				public boolean visit(RecordDeclaration node) {
-					extractSafely(context, node.toString(), () -> {
+					extractSafely(context, node::toString, () -> {
 						context.addScannedType(node.resolveBinding());
 						extractSymbolInformation(node, context);
 					});
@@ -89,7 +90,7 @@ public class SpringIndexerJavaAstScanner {
 
 				@Override
 				public boolean visit(AnnotationTypeDeclaration node) {
-					extractSafely(context, node.toString(), () -> {
+					extractSafely(context, node::toString, () -> {
 						context.addScannedType(node.resolveBinding());
 						extractSymbolInformation(node, context);
 					});
@@ -98,7 +99,7 @@ public class SpringIndexerJavaAstScanner {
 
 				@Override
 				public boolean visit(MethodDeclaration node) {
-					extractSafely(context, node.toString(), () -> extractSymbolInformation(node, context));
+					extractSafely(context, node::toString, () -> extractSymbolInformation(node, context));
 					return super.visit(node);
 				}
 			});
@@ -148,7 +149,11 @@ public class SpringIndexerJavaAstScanner {
 		}
 	}
 
-	private void extractSafely(SpringIndexerJavaContext context, String nodeDescription, SymbolExtraction extraction)
+	/**
+	 * @param nodeDescription the source of the node, for the log - only asked for when logging an
+	 *        error, since printing a type declaration prints the entire type
+	 */
+	private void extractSafely(SpringIndexerJavaContext context, Supplier<String> nodeDescription, SymbolExtraction extraction)
 			throws RequiredCompleteAstException {
 		try {
 			extraction.run();
@@ -158,7 +163,7 @@ public class SpringIndexerJavaAstScanner {
 		}
 		catch (Exception e) {
 			log.error("error extracting symbol information in project '{}' - for docURI '{}' - on node: {}",
-					context.getProject().getElementName(), context.getDocURI(), nodeDescription, e);
+					context.getProject().getElementName(), context.getDocURI(), nodeDescription.get(), e);
 		}
 	}
 

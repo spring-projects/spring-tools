@@ -46,6 +46,13 @@ public class SpringIndexerJavaContext {
 	private final boolean isIndexComplete;
 	private final SpringIndexerJavaScanResult scanResult;
 	
+	/**
+	 * Where the elements generated for this document start in the scan result's list - which is
+	 * shared by all the documents of a scan, and so holds the elements of every document scanned
+	 * before this one, too.
+	 */
+	private final int firstOwnElement;
+
 	private final Set<QualifiedTypeName> dependencies = new HashSet<>();
 	private final Set<QualifiedTypeName> scannedTypes = new HashSet<>();
 
@@ -84,6 +91,7 @@ public class SpringIndexerJavaContext {
 		this.fullAst = fullAst;
 		this.isIndexComplete = isIndexComplete;
 		this.scanResult = scanResult;
+		this.firstOwnElement = scanResult.getGeneratedIndexElements().size();
 	}
 
 	public IJavaProject getProject() {
@@ -122,6 +130,17 @@ public class SpringIndexerJavaContext {
 		return getResult().getGeneratedIndexElements();
 	}
 	
+	/**
+	 * The elements generated for this document so far - looked for among those generated since
+	 * scanning it began only, rather than among the elements of every document of the scan.
+	 */
+	public List<CachedIndexElement> getOwnGeneratedIndexElements() {
+		List<CachedIndexElement> all = getGeneratedIndexElements();
+		return all.subList(firstOwnElement, all.size()).stream()
+				.filter(element -> element.getDocURI().equals(docURI))
+				.toList();
+	}
+
 	public List<String> getNextPassFiles() {
 		return nextPassFiles;
 	}
@@ -219,7 +238,9 @@ public class SpringIndexerJavaContext {
 		nodesWithOwnIndexElement.clear();
 		typesToHash.clear();
 
-		Iterator<CachedIndexElement> beansIterator = getGeneratedIndexElements().iterator();
+		// only those generated since scanning this document began can be this document's
+		List<CachedIndexElement> all = getGeneratedIndexElements();
+		Iterator<CachedIndexElement> beansIterator = all.subList(firstOwnElement, all.size()).iterator();
 		while (beansIterator.hasNext()) {
 			if (beansIterator.next().getDocURI().equals(docURI)) {
 				beansIterator.remove();

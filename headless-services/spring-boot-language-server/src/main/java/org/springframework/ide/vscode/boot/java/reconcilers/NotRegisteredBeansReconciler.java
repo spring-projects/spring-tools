@@ -120,15 +120,17 @@ public class NotRegisteredBeansReconciler implements JdtAstReconciler {
 						// check if new beans have been defined that refer to any AOP processor element
 						//
 						
-						List<AotProcessorElement> aotProcessors = springIndex.getNodesOfType(AotProcessorElement.class);
-						if (aotProcessors != null && aotProcessors.size() > 0) {
+						List<SpringIndexElement> createdIndexElements = context.getCreatedIndexElements();
+						List<Bean> createdBeanElements = SpringIndexElementUtils.getNodesOfType(Bean.class, createdIndexElements);
+						Set<String> beanTypes = createdBeanElements.stream()
+								.filter(bean -> bean.getLocation() != null && context.getDocURI().equals(bean.getLocation().getUri()))
+								.map(bean -> bean.getType())
+								.collect(Collectors.toSet());
 
-							List<SpringIndexElement> createdIndexElements = context.getCreatedIndexElements();
-							List<Bean> createdBeanElements = SpringIndexElementUtils.getNodesOfType(Bean.class, createdIndexElements);
-							Set<String> beanTypes = createdBeanElements.stream()
-									.filter(bean -> context.getDocURI().equals(bean.getLocation().getUri()))
-									.map(bean -> bean.getType())
-									.collect(Collectors.toSet());
+						// only then the AOT processors: looking for them walks the whole index, for every
+						// type of every file being indexed - most of which define no bean at all
+						List<AotProcessorElement> aotProcessors = beanTypes.isEmpty() ? null : springIndex.getNodesOfType(AotProcessorElement.class);
+						if (aotProcessors != null && aotProcessors.size() > 0) {
 
 							aotProcessors.stream()
 									.filter(aotProcessor -> beanTypes.contains(aotProcessor.getType()))

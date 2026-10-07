@@ -93,6 +93,11 @@ public class ClientRefersToConfigReconciler implements JdtAstReconciler {
 					.flatMap(attributes -> Arrays.stream(attributes.get("configuration")))
 					.map(attribute -> attribute.getName())
 					.toList();
+
+				// looking for the bean method containers walks the whole index
+				if (configurationTypes.isEmpty()) {
+					return true;
+				}
 				
 				List<BeanMethodContainerElement> beanMethodContainers = springIndex.getNodesOfType(BeanMethodContainerElement.class);
 

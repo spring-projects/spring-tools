@@ -197,6 +197,12 @@ public class BeanRegistrarDeclarationReconciler implements JdtAstReconciler {
 				springIndex.getDocument(context.getDocURI()).getChildren() : Collections.emptyList();
 		
 		Set<String> importedTypesDelta = getImportAnnotationTypesDelta(createdIndexElements, previuosIndexElements);
+
+		// what is imported hardly ever changes - and looking for the registrars walks the whole index,
+		// for every type of every file being indexed
+		if (importedTypesDelta.isEmpty()) {
+			return;
+		}
 		
 		List<BeanRegistrarElement> registrarElements = springIndex.getNodesOfType(BeanRegistrarElement.class);
 		

@@ -16,6 +16,10 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+  id-token: write
+
 env:
   DOWNLOAD_URL_ROOT: https://cdn.spring.io
   VSIX_FILE: ${{ inputs.extension-name }}-${{ inputs.version }}-${{ inputs.postfix }}.vsix
@@ -44,7 +48,7 @@ jobs:
         id: publish-ovsx
         run: |
           npm install --global ovsx
-          ovsx publish -p ${{ secrets.OVSX_PUBLISH_TOKEN }} $VSIX_FILE
+          ovsx publish --trusted-publishing $VSIX_FILE
       - name: Upload to GCP
         run: |
           echo '${{ secrets.CDN_SPRING_IO_BACKUP_GCP_BUCKET_JSON }}' > ./gcp.json

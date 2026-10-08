@@ -26,6 +26,11 @@ public interface ProjectObserver {
 		void created(IJavaProject project);
 		void changed(IJavaProject project, boolean clean);
 		void deleted(IJavaProject project);
+		/**
+		 * The build of the project changed, e.g. the tasks of a Gradle build, while its classpath did not. If the
+		 * classpath changed as well {@link #changed(IJavaProject, boolean)} is called too.
+		 */
+		default void buildChanged(IJavaProject project) { }
 		default void supported() { }
 	}
 	default boolean isSupported() { return true; };
@@ -69,6 +74,31 @@ public interface ProjectObserver {
 				doit.accept(project);
 			}
 
+		};
+	}
+
+	/**
+	 * Convenience method to create a listener that only reacts to a change of the build of a project, see
+	 * {@link Listener#buildChanged(IJavaProject)}.
+	 */
+	static Listener onBuildChanged(Consumer<IJavaProject> doit) {
+		return new Listener() {
+			@Override
+			public void created(IJavaProject project) {
+			}
+
+			@Override
+			public void changed(IJavaProject project, boolean clean) {
+			}
+
+			@Override
+			public void deleted(IJavaProject project) {
+			}
+
+			@Override
+			public void buildChanged(IJavaProject project) {
+				doit.accept(project);
+			}
 		};
 	}
 

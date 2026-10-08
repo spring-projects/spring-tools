@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.buildship.core.projectconfigurators">
+      <configurator
+            class="org.springframework.tooling.jdt.ls.commons.classpath.GradleTasksProjectConfigurator"
+            id="org.springframework.tooling.jdt.ls.commons.gradle.tasks">
+      </configurator>
+   </extension>
+</plugin>

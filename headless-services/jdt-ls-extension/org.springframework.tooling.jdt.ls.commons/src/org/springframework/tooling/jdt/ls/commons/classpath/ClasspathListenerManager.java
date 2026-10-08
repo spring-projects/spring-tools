@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2023 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,8 +12,10 @@ package org.springframework.tooling.jdt.ls.commons.classpath;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -167,15 +169,26 @@ public class ClasspathListenerManager {
 	private ClasspathListener listener;
 	private MyListener myListener;
 	private final Logger logger;
+
+	// The tasks of a Gradle project are part of its build info, which is sent with the classpath
+	private final Consumer<String> gradleTasksListener = projectName -> {
+		IJavaProject jp = JavaCore.create(ResourcesPlugin.getWorkspace().getRoot().getProject(projectName));
+		if (jp != null && jp.exists()) {
+			workQueue.add(() -> listener.classpathChanged(jp));
+			worker.schedule();
+		}
+	};
 	
 	public ClasspathListenerManager(Logger logger, ClasspathListener listener) {
 		this.logger = logger;
 		this.logger.debug("Setting up ClasspathListenerManager");
 		this.listener = listener;
 		JavaCore.addElementChangedListener(myListener=new MyListener(), ElementChangedEvent.POST_CHANGE);
+		GradleTasksStore.INSTANCE.addListener(gradleTasksListener);
 	}
 	
 	public void dispose() {
+		GradleTasksStore.INSTANCE.removeListener(gradleTasksListener);
 		if (myListener != null) {
 			JavaCore.removeElementChangedListener(myListener);
 			myListener = null;

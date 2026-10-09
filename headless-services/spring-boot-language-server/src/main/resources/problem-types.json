@@ -598,15 +598,15 @@
     "order": 10,
     "problemTypes": [
       {
-        "code": "SYNTAX",
-        "label": "Cron Expression Syntax",
-        "description": "Syntax",
+        "code": "CRON_SYNTAX",
+        "label": "Cron expression syntax",
+        "description": "Cron expression syntax",
         "defaultSeverity": "ERROR"
       },
       {
-        "code": "FIELD",
-        "label": "Cron Expression field",
-        "description": "Field",
+        "code": "CRON_FIELD",
+        "label": "Cron expression field",
+        "description": "Cron expression field",
         "defaultSeverity": "ERROR"
       }
     ]

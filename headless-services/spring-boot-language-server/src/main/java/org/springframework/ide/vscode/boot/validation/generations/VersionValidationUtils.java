@@ -11,11 +11,8 @@
 package org.springframework.ide.vscode.boot.validation.generations;
 
 import java.sql.Date;
-import java.util.List;
 
 import org.springframework.ide.vscode.boot.validation.generations.json.Generation;
-import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
-import org.springframework.ide.vscode.commons.Version;
 
 public class VersionValidationUtils {
 	
@@ -37,10 +34,16 @@ public class VersionValidationUtils {
 		return false;
 	}
 
-	public static Version getLatestSupportedRelease(ResolvedSpringProject springProject)
-			throws Exception {
-		List<Version> rls = springProject.getReleases();
-		return rls.isEmpty() ? null : rls.get(rls.size() - 1);
+	/**
+	 * Human-readable label for a {@code Generation.latestPatch} entry key
+	 * ({@code oss} or {@code enterprise}).
+	 */
+	public static String patchTypeLabel(String type) {
+		return switch (type) {
+			case "oss" -> "OSS";
+			case "enterprise" -> "Enterprise";
+			default -> type;
+		};
 	}
-	
+
 }

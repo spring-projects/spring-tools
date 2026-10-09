@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.validation.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -32,6 +33,7 @@ import org.springframework.ide.vscode.boot.validation.generations.json.Generatio
 import org.springframework.ide.vscode.boot.validation.generations.json.Link;
 import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
 import org.springframework.ide.vscode.boot.validation.generations.json.SpringProject;
+import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -121,6 +123,12 @@ public class ProjectGenerationsValidationTest {
         assertEquals("2019-01-01", generation.getInitialReleaseDate());
         assertEquals("2020-01-01", generation.getOssSupportEndDate());
         assertEquals("2021-01-01", generation.getCommercialSupportEndDate());
+        // enterprise-only patch (OSS support window ended) - not a public upgrade suggestion
+        assertNull(generation.getLatestPatchVersion());
+
+        List<Version> latestPatchVersions = project.getLatestPatchVersions();
+        assertEquals(1, latestPatchVersions.size());
+        assertEquals("2.2.13", latestPatchVersions.get(0).toString());
     }
     
 }

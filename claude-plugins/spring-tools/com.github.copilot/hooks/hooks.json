@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "bash": "node \"$PLUGIN_ROOT/install.js\" --if-missing",
+        "powershell": "node \"$env:PLUGIN_ROOT/install.js\" --if-missing",
+        "timeoutSec": 900
+      }
+    ]
+  }
+}

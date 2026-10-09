@@ -54,8 +54,8 @@ jobs:
           node-version: 22
       - name: Check explanation playbooks (coverage, structure, cross-references, coverage table)
         run: node claude-plugins/tools/check-explanations.mjs --require-all --todo
-      - name: Check plugin configuration (hooks, skills, agents against the MCP tool inventory)
-        run: node claude-plugins/tools/check-plugin-config.mjs
+      - name: Check plugin configuration and cross-host adapters
+        run: node claude-plugins/tools/check-plugin-config.mjs --cross-host
       - name: Run plugin tooling tests
         run: node --test --test-reporter=spec 'claude-plugins/tools/test/*.test.mjs'
 

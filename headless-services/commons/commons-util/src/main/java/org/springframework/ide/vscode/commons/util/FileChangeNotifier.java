@@ -23,4 +23,25 @@ public interface FileChangeNotifier {
 	
 	void notifyFileDeleted(String uri);
 
+	/** Batch variant of {@link #notifyFileCreated(String)}; one call per URI unless overridden. */
+	default void notifyFilesCreated(String[] uris) {
+		for (String uri : uris) {
+			notifyFileCreated(uri);
+		}
+	}
+
+	/** Batch variant of {@link #notifyFileChanged(String)}; one call per URI unless overridden. */
+	default void notifyFilesChanged(String[] uris) {
+		for (String uri : uris) {
+			notifyFileChanged(uri);
+		}
+	}
+
+	/** Batch variant of {@link #notifyFileDeleted(String)}; one call per URI unless overridden. */
+	default void notifyFilesDeleted(String[] uris) {
+		for (String uri : uris) {
+			notifyFileDeleted(uri);
+		}
+	}
+
 }

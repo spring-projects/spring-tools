@@ -50,7 +50,10 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 
 	private static final Logger log = LoggerFactory.getLogger(LegacyJavaProjectsService.class);
 
-	private static final java.util.Set<String> IGNORED_DIRECTORIES = java.util.Set.of(
+	/** System property naming the directory below which Maven/Gradle build files are discovered. */
+	static final String PROPERTY_PROJECT_DIR = "spring.boot.ls.project.dir";
+
+	static final java.util.Set<String> IGNORED_DIRECTORIES = java.util.Set.of(
 			"target", "node_modules", "build", ".git", "bin"
 	);
 
@@ -76,10 +79,7 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 	}
 	
 	public void onApplicationEvent(ContextRefreshedEvent event) {
-		String projectDir = System.getProperty("spring.boot.ls.project.dir");
-		if (projectDir != null && !projectDir.isEmpty()) {
-			initializeProject(new java.io.File(projectDir));
-		}
+		discoverProjects();
 	}
 
 	@Override
@@ -105,6 +105,18 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 	@Override
 	public void notifyProjectsChanged(boolean clean) {
 		this.projectObserver.notifyProjectsChanged(clean);
+		// Pick up build files that appeared after startup (new modules, generated projects, git
+		// checkouts). project(file) only fires "created" for keys that are not cached yet, so the
+		// projects notified above are not indexed a second time.
+		discoverProjects();
+	}
+
+	/** Scans the configured project directory for build files that are not cached yet; a no-op without the property. */
+	public void discoverProjects() {
+		String projectDir = System.getProperty(PROPERTY_PROJECT_DIR);
+		if (projectDir != null && !projectDir.isEmpty()) {
+			initializeProject(new java.io.File(projectDir));
+		}
 	}
 
 	@Override

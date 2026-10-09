@@ -14,6 +14,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_DUPLICATE_KEY;
+import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_EXPECTED_DOT_OR_LBRACK;
+import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_INVALID_INDEXED_NAVIGATION;
+import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_NON_INTEGER_IN_BRACKETS;
+import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_NO_MATCHING_RBRACK;
 import static org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts.field;
 import static org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts.method;
 import static org.springframework.ide.vscode.languageserver.testharness.ClasspathTestUtil.getOutputFolder;
@@ -730,13 +734,17 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
                         "server.port[0]=8888\n" +
                         "spring.thymeleaf.view-names[1]=hello" //This is okay now. Boot handles this notation for arrays
         );
-        editor.assertProblems(
+        List<Diagnostic> problems = editor.assertProblems(
                 "bork|'int'",
                 "[|matching ']'",
                 "crap|'.' or '['",
                 "[0]|Can't use '[..]'"
         //no other problems
         );
+        assertEquals(PROP_NON_INTEGER_IN_BRACKETS.getCode(), problems.get(0).getCode().getLeft());
+        assertEquals(PROP_NO_MATCHING_RBRACK.getCode(), problems.get(1).getCode().getLeft());
+        assertEquals(PROP_EXPECTED_DOT_OR_LBRACK.getCode(), problems.get(2).getCode().getLeft());
+        assertEquals(PROP_INVALID_INDEXED_NAVIGATION.getCode(), problems.get(3).getCode().getLeft());
     }
 
     @Test

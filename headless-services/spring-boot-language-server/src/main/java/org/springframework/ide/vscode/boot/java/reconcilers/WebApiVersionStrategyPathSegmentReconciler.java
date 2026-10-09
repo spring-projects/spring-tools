@@ -31,7 +31,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Reconcile
 
 public class WebApiVersionStrategyPathSegmentReconciler implements JdtAstReconciler {
 
-	private static final String PROBLEM_LABEL = "API versioninig path segment strategy should not be mixed with other strategies";
+	private static final String PROBLEM_LABEL = "API versioning path segment strategy should not be mixed with other strategies";
 
 	public WebApiVersionStrategyPathSegmentReconciler() {
 	}

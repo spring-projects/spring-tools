@@ -1130,7 +1130,7 @@
           "spring-boot.ls.problem.boot4.API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION": {
             "type": "string",
             "default": "WARNING",
-            "description": "API versioninig path segment strategy should not be mixed with other strategies",
+            "description": "API versioning path segment strategy should not be mixed with other strategies",
             "enum": [
               "IGNORE",
               "INFO",
@@ -1142,7 +1142,7 @@
           "spring-boot.ls.problem.boot4.API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED": {
             "type": "string",
             "default": "WARNING",
-            "description": "API versioninig strategy is configured multiple times with the same strategy",
+            "description": "API versioning strategy is configured multiple times with the same strategy",
             "enum": [
               "IGNORE",
               "INFO",

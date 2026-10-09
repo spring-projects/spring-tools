@@ -24,7 +24,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
 public class HttpSecurityLambdaDslReconciler extends AbstractSecurityLambdaDslReconciler {
 	
     private static final Collection<String> APPLICABLE_METHOD_NAMES = Arrays.asList(
-            "anonymous", "authorizeRequests", "cors", "csrf", "exceptionHandling", "formLogin",
+            "anonymous", "authorizeHttpRequests", "authorizeRequests", "cors", "csrf", "exceptionHandling", "formLogin",
             "headers", "httpBasic", "jee", "logout", "oauth2Client", "oauth2Login", "oauth2ResourceServer",
             "openidLogin", "portMapper", "rememberMe", "requestCache", "requestMatchers", "requiresChannel",
             "saml2Login", "securityContext", "servletApi", "sessionManagement", "x509");

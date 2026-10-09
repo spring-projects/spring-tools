@@ -1,0 +1,153 @@
+name: Claude Plugin Check
+
+# Keeps the Claude Code plugin under claude-plugins/spring-tools consistent with the
+# language server: every diagnostic code has an explanation playbook, playbooks are
+# well-formed, hooks, skills and agents only reference MCP tools that exist (and every
+# tool is reachable through one of them), the plugin manifest validates, and the
+# launcher/language server (including its file watcher) work end to end over MCP stdio.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'claude-plugins/**'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/**/*ProblemType.java'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/validation/generations/AbstractDiagnosticValidator.java'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/yaml/reconcile/ApplicationYamlASTReconciler.java'
+      - 'headless-services/commons/commons-yaml/src/main/java/org/springframework/ide/vscode/commons/yaml/reconcile/YamlSchemaProblems.java'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/mcp/**'
+      - 'headless-services/spring-boot-language-server-standalone/src/main/java/**'
+      - '.github/workflows/claude-plugin-check.yml'
+  pull_request:
+    paths:
+      - 'claude-plugins/**'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/**/*ProblemType.java'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/validation/generations/AbstractDiagnosticValidator.java'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/yaml/reconcile/ApplicationYamlASTReconciler.java'
+      - 'headless-services/commons/commons-yaml/src/main/java/org/springframework/ide/vscode/commons/yaml/reconcile/YamlSchemaProblems.java'
+      - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/mcp/**'
+      - 'headless-services/spring-boot-language-server-standalone/src/main/java/**'
+      - '.github/workflows/claude-plugin-check.yml'
+  workflow_dispatch:
+    inputs:
+      run-evals:
+        description: 'Also run the behavioral eval suite (claude plugin eval; needs the ANTHROPIC_API_KEY secret and costs model calls)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claude-plugin-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  explanations-and-config:
+    name: Explanation playbooks and plugin configuration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Check explanation playbooks (coverage, structure, cross-references, coverage table)
+        run: node claude-plugins/tools/check-explanations.mjs --require-all --todo
+      - name: Check plugin configuration (hooks, skills, agents against the MCP tool inventory)
+        run: node claude-plugins/tools/check-plugin-config.mjs
+      - name: Run plugin tooling tests
+        run: node --test --test-reporter=spec 'claude-plugins/tools/test/*.test.mjs'
+
+  documentation-links:
+    name: Documentation links resolve
+    runs-on: ubuntu-latest
+    # Only on the main branch: external link checks depend on docs.spring.io availability.
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Check that every documentation link in the playbooks returns HTTP 200
+        run: node claude-plugins/tools/check-explanations.mjs --require-all --links
+
+  plugin-manifest:
+    name: Plugin manifest validates with the Claude Code CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install the Claude Code CLI into a temporary prefix
+        run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/claude-code" @anthropic-ai/claude-code@latest
+      - name: Validate the plugin manifest (no login required)
+        run: |
+          "$RUNNER_TEMP/claude-code/node_modules/.bin/claude" --version
+          "$RUNNER_TEMP/claude-code/node_modules/.bin/claude" plugin validate ./claude-plugins/spring-tools --strict
+
+  mcp-smoke:
+    name: End-to-end MCP smoke test against a freshly built language server
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # 5.6.0
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+          cache-dependency-path: 'headless-services/**/pom.xml'
+      - name: Build the standalone language server and copy the JAR into the plugin
+        run: ./claude-plugins/update-local-jars.sh
+      - name: Start launcher.js over MCP stdio, index a sample project and exercise the tools the hooks and skills rely on
+        run: node claude-plugins/tools/smoke/mcp-smoke.mjs --keep
+      - name: Upload the language server log on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+        with:
+          name: boot-ls-log
+          path: /tmp/spring-tools-smoke-*/data/boot-ls.log
+          if-no-files-found: ignore
+
+  plugin-evals:
+    name: Behavioral evals (claude plugin eval, on demand)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run-evals
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install the Claude Code CLI into a temporary prefix
+        run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/claude-code" @anthropic-ai/claude-code@latest
+      - name: Run the eval suite against the recorded MCP mocks (the language server is not started)
+        working-directory: claude-plugins/spring-tools
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo '::error::the ANTHROPIC_API_KEY secret is not set; the eval suite needs model access'
+            exit 1
+          fi
+          "$RUNNER_TEMP/claude-code/node_modules/.bin/claude" plugin eval . \
+            --trust-plugin \
+            --json "$RUNNER_TEMP/eval-results.json" \
+            --threshold 0.8 \
+            --judge-model claude-haiku-4-5 \
+            --no-publish \
+            --max-cost-usd 15
+      - name: Upload the eval results and report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+        with:
+          name: plugin-eval-results
+          path: |
+            ${{ runner.temp }}/eval-results.json
+            claude-plugins/spring-tools/evals/results/**/report.html
+          if-no-files-found: ignore

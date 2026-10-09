@@ -208,24 +208,51 @@ public class Annotations {
 	/**
 	 * '@SpringBootTest' and the Spring Boot test slice annotations. Each of these is
 	 * meta-annotated with '@ExtendWith(SpringExtension.class)' as of Spring Boot 2.1.0.
+	 * Spring Boot 4.0 moved the slices out of 'spring-boot-test-autoconfigure' into
+	 * per-technology '*-test' modules, so both the 2.x/3.x and the 4.x locations are listed.
 	 */
 	public static final List<String> SPRING_BOOT_TEST_ANNOTATIONS = List.of(
 			SPRING_BOOT_TEST,
+			// Spring Boot 2.x / 3.x (spring-boot-test-autoconfigure)
 			"org.springframework.boot.test.autoconfigure.jdbc.JdbcTest",
 			"org.springframework.boot.test.autoconfigure.web.client.RestClientTest",
 			"org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
 			"org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest",
+			"org.springframework.boot.test.autoconfigure.graphql.GraphQlTest",
 			"org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest",
 			"org.springframework.boot.test.autoconfigure.webservices.client.WebServiceClientTest",
+			"org.springframework.boot.test.autoconfigure.webservices.server.WebServiceServerTest",
 			"org.springframework.boot.test.autoconfigure.jooq.JooqTest",
 			"org.springframework.boot.test.autoconfigure.json.JsonTest",
 			"org.springframework.boot.test.autoconfigure.data.cassandra.DataCassandraTest",
+			"org.springframework.boot.test.autoconfigure.data.couchbase.DataCouchbaseTest",
+			"org.springframework.boot.test.autoconfigure.data.elasticsearch.DataElasticsearchTest",
 			"org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest",
 			"org.springframework.boot.test.autoconfigure.data.ldap.DataLdapTest",
 			"org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest",
 			"org.springframework.boot.test.autoconfigure.data.neo4j.DataNeo4jTest",
 			"org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest",
-			"org.springframework.boot.test.autoconfigure.data.redis.DataRedisTest"
+			"org.springframework.boot.test.autoconfigure.data.redis.DataRedisTest",
+			// Spring Boot 4.x (per-technology test modules; '@JsonTest' keeps its 3.x location)
+			"org.springframework.boot.jdbc.test.autoconfigure.JdbcTest",
+			"org.springframework.boot.restclient.test.autoconfigure.RestClientTest",
+			"org.springframework.boot.webclient.test.autoconfigure.WebClientTest",
+			"org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest",
+			"org.springframework.boot.webflux.test.autoconfigure.WebFluxTest",
+			"org.springframework.boot.graphql.test.autoconfigure.GraphQlTest",
+			"org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest",
+			"org.springframework.boot.webservices.test.autoconfigure.client.WebServiceClientTest",
+			"org.springframework.boot.webservices.test.autoconfigure.server.WebServiceServerTest",
+			"org.springframework.boot.jooq.test.autoconfigure.JooqTest",
+			"org.springframework.boot.data.cassandra.test.autoconfigure.DataCassandraTest",
+			"org.springframework.boot.data.couchbase.test.autoconfigure.DataCouchbaseTest",
+			"org.springframework.boot.data.elasticsearch.test.autoconfigure.DataElasticsearchTest",
+			"org.springframework.boot.data.jdbc.test.autoconfigure.DataJdbcTest",
+			"org.springframework.boot.data.ldap.test.autoconfigure.DataLdapTest",
+			"org.springframework.boot.data.mongodb.test.autoconfigure.DataMongoTest",
+			"org.springframework.boot.data.neo4j.test.autoconfigure.DataNeo4jTest",
+			"org.springframework.boot.data.r2dbc.test.autoconfigure.DataR2dbcTest",
+			"org.springframework.boot.data.redis.test.autoconfigure.DataRedisTest"
 	);
 
 	// Data

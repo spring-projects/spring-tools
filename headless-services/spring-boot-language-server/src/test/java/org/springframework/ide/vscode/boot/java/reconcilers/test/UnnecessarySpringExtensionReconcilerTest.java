@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -116,5 +116,47 @@ public class UnnecessarySpringExtensionReconcilerTest extends BaseReconcilerTest
 		
 		assertEquals(0, problems.size());
 		
+	}
+
+	@Test
+	void graphQlTestSlice() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.junit.jupiter.api.extension.ExtendWith;
+				import org.springframework.boot.test.autoconfigure.graphql.GraphQlTest;
+				import org.springframework.test.context.junit.jupiter.SpringExtension;
+				
+				@ExtendWith(SpringExtension.class)
+				@GraphQlTest
+				class A {
+				
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, true);
+		
+		assertEquals(1, problems.size());
+		assertEquals(Boot2JavaProblemType.JAVA_TEST_SPRING_EXTENSION, problems.get(0).getType());
+	}
+
+	@Test
+	void webServiceServerTestSlice() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.junit.jupiter.api.extension.ExtendWith;
+				import org.springframework.boot.test.autoconfigure.webservices.server.WebServiceServerTest;
+				import org.springframework.test.context.junit.jupiter.SpringExtension;
+				
+				@ExtendWith(SpringExtension.class)
+				@WebServiceServerTest
+				class A {
+				
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, true);
+		
+		assertEquals(1, problems.size());
+		assertEquals(Boot2JavaProblemType.JAVA_TEST_SPRING_EXTENSION, problems.get(0).getType());
 	}
 }

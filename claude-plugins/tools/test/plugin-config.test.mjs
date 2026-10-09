@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
 import {
+    checkEvals,
     HOOK_SERVER,
     PLUGIN_DIR,
     SCOPED_TOOL_PREFIX,
@@ -32,7 +33,6 @@ const pluginDir = join(repoRoot, PLUGIN_DIR);
 const tools = collectMcpTools(repoRoot);
 const skillsDir = join(pluginDir, 'skills');
 const skillNames = readdirSync(skillsDir);
-const skillText = (name) => readFileSync(join(skillsDir, name, 'SKILL.md'), 'utf8');
 
 test('the language server exposes the MCP tools the plugin relies on', () => {
     for (const name of ['getProjectList', 'getProjectDiagnostics', 'fileChanged', 'fileDeleted', 'refreshWorkspace', 'getSpringBootVersion']) {
@@ -68,8 +68,15 @@ test('every skill has a SKILL.md whose name matches its directory and whose tool
     }
 });
 
+test('every MCP tool has positive behavioral eval coverage', () => {
+    const agentNames = readdirSync(join(pluginDir, 'agents'))
+        .filter((file) => file.endsWith('.md'))
+        .map((file) => file.replace(/\.md$/, ''));
+    assert.deepEqual(checkEvals(join(pluginDir, 'evals'), tools, skillNames, agentNames), []);
+});
+
 test('the quickfix skill reads explanations by diagnostic code and may look up the Spring Boot version', () => {
-    const text = readFileSync(join(skillsDir, 'quickfix', 'SKILL.md'), 'utf8');
+    const text = readFileSync(join(pluginDir, 'skills', 'quickfix', 'SKILL.md'), 'utf8');
     const front = parseFrontMatter(text);
     assert.deepEqual(front.arguments, ['code', 'file', 'range']);
     assert.ok(text.includes('${CLAUDE_PLUGIN_ROOT}/explanations/<CODE>.md'));
@@ -79,13 +86,13 @@ test('the quickfix skill reads explanations by diagnostic code and may look up t
 });
 
 test('the validate skill pre-approves quickfix invocations that carry arguments', () => {
-    const front = parseFrontMatter(readFileSync(join(skillsDir, 'validate', 'SKILL.md'), 'utf8'));
+    const front = parseFrontMatter(readFileSync(join(pluginDir, 'skills', 'validate', 'SKILL.md'), 'utf8'));
     assert.ok(front['allowed-tools'].includes('Skill(spring-tools:quickfix *)'));
     assert.ok(!front['allowed-tools'].includes('Skill(spring-tools:quickfix)'), 'the exact-match form only covers an argument-less call');
 });
 
 test('the create-spring-boot-project skill only grants the start.spring.io lookup and registers the new project', () => {
-    const text = readFileSync(join(skillsDir, 'create-spring-boot-project', 'SKILL.md'), 'utf8');
+    const text = readFileSync(join(pluginDir, 'skills', 'create-spring-boot-project', 'SKILL.md'), 'utf8');
     const allowed = parseFrontMatter(text)['allowed-tools'];
     assert.ok(allowed.includes('Bash(curl -sS https://start.spring.io)'));
     assert.ok(!allowed.some((rule) => /^Bash\(curl -sS \*\)$/.test(rule)), 'no blanket curl grant');

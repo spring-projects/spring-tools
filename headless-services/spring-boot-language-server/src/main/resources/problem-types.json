@@ -224,14 +224,14 @@
       },
       {
         "code": "API_VERSIONING_VIA_PATH_SEGMENT_CONFIGURED_IN_COMBINATION",
-        "label": "API versioninig path segment strategy should not be mixed with other strategies",
-        "description": "API versioninig path segment strategy should not be mixed with other strategies",
+        "label": "API versioning path segment strategy should not be mixed with other strategies",
+        "description": "API versioning path segment strategy should not be mixed with other strategies",
         "defaultSeverity": "WARNING"
       },
       {
         "code": "API_VERSIONING_STRATEGY_CONFIGURATION_DUPLICATED",
-        "label": "API versioninig strategy is configured multiple times with the same strategy",
-        "description": "API versioninig strategy is configured multiple times with the same strategy",
+        "label": "API versioning strategy is configured multiple times with the same strategy",
+        "description": "API versioning strategy is configured multiple times with the same strategy",
         "defaultSeverity": "WARNING"
       },
       {

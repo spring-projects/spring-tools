@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -144,6 +144,36 @@ public class HttpSecurityLambdaDslReconcilerTest extends BaseReconcilerTest {
 		
 		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
 		assertEquals("security.authorizeRequests().mvcMatchers()", markedStr);
+
+		assertEquals(3, problem.getQuickfixes().size());
+		
+	}
+	
+	@Test
+	void authorizeHttpRequestsWithoutLambda() throws Exception {
+		String source = """
+				package example.demo;
+				
+				import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+				
+				class A {
+				
+					void something(HttpSecurity security) {
+						security.authorizeHttpRequests().anyRequest().authenticated();
+					};
+					
+				}
+				""";
+		List<ReconcileProblem> problems = reconcile("A.java", source, true);
+		
+		assertEquals(1, problems.size());
+		
+		ReconcileProblem problem = problems.get(0);
+		
+		assertEquals(Boot2JavaProblemType.JAVA_LAMBDA_DSL, problem.getType());
+		
+		String markedStr = source.substring(problem.getOffset(), problem.getOffset() + problem.getLength());
+		assertEquals("security.authorizeHttpRequests().anyRequest().authenticated()", markedStr);
 
 		assertEquals(3, problem.getQuickfixes().size());
 		

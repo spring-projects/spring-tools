@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -150,7 +150,11 @@ public class PropertyNavigator {
 					try {
 						parser.parse(indexStr);
 					} catch (Exception e) {
-						problemCollector.accept(problem(ApplicationPropertiesProblemType.PROP_VALUE_TYPE_MISMATCH,
+						// list/array/set indexes must be integers; map keys are checked against the declared key type
+						ApplicationPropertiesProblemType problemType = typeUtil.isMap(type)
+								? ApplicationPropertiesProblemType.PROP_VALUE_TYPE_MISMATCH
+								: ApplicationPropertiesProblemType.PROP_NON_INTEGER_IN_BRACKETS;
+						problemCollector.accept(problem(problemType,
 							"Expecting '"+typeUtil.niceTypeName(keytype)+"' for '[...]' notation '"+textBetween(region.getStart(), lbrack)+"'",
 							lbrack+1, rbrack-lbrack-1
 						));

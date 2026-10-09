@@ -41,7 +41,7 @@ jobs:
           echo "S3 path: ${s3_path}"
           aws s3 cp ./standalone-ls-dist/$jar_file s3://$AWS_S3_BUCKET/$s3_path/$jar_file --no-progress --checksum-algorithm CRC32
           aws s3 cp ./standalone-ls-dist/$sha_file s3://$AWS_S3_BUCKET/$s3_path/$sha_file --no-progress --checksum-algorithm CRC32
-      - name: Update plugin.json for Snapshot
+      - name: Update plugin manifest versions for Snapshot
         id: update-plugin
         run: |
           git config --global user.name "@spring-projects/spring-ide-admin"
@@ -52,12 +52,16 @@ jobs:
           # Create or reset a local branch to the current commit (which is what triggered the action)
           git checkout -B claude-snapshot
           
-          # Update the version in plugin.json
+          # Keep both the Claude Code manifest and the portable Agent Plugins manifest in sync.
           tmp=$(mktemp)
           jq --arg v "$version" '.version = $v' claude-plugins/spring-tools/.claude-plugin/plugin.json > "$tmp" && mv "$tmp" claude-plugins/spring-tools/.claude-plugin/plugin.json
+          tmp=$(mktemp)
+          jq --arg v "$version" '.version = $v' claude-plugins/spring-tools/plugin.json > "$tmp" && mv "$tmp" claude-plugins/spring-tools/plugin.json
           
-          git add claude-plugins/spring-tools/.claude-plugin/plugin.json
-          git commit -m "Update Claude plugin version to $version"
+          git add claude-plugins/spring-tools/.claude-plugin/plugin.json claude-plugins/spring-tools/plugin.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update agent plugin versions to $version"
+          fi
           
           # Push to the remote claude-snapshot branch forcefully.
           # If it doesn't exist, this creates it. If it does exist, it completely overwrites it

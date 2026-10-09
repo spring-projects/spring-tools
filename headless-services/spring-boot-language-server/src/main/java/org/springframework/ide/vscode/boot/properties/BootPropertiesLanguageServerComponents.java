@@ -23,11 +23,6 @@ import org.springframework.ide.vscode.boot.metadata.types.TypeUtilProvider;
 import org.springframework.ide.vscode.boot.properties.cron.CronPropertiesInlayHintsHandler;
 import org.springframework.ide.vscode.boot.properties.cron.CronPropertiesSemanticTokensHandler;
 import org.springframework.ide.vscode.boot.properties.hover.PropertiesHoverInfoProvider;
-import org.springframework.ide.vscode.boot.properties.quickfix.AppPropertiesQuickFixes;
-import org.springframework.ide.vscode.boot.properties.quickfix.CommonQuickfixes;
-import org.springframework.ide.vscode.boot.properties.reconcile.SpringPropertiesReconcileEngine;
-import org.springframework.ide.vscode.boot.yaml.quickfix.AppYamlQuickfixes;
-import org.springframework.ide.vscode.boot.yaml.reconcile.ApplicationYamlReconcileEngine;
 import org.springframework.ide.vscode.commons.languageserver.composable.LanguageServerComponents;
 import org.springframework.ide.vscode.commons.languageserver.hover.HoverInfoProvider;
 import org.springframework.ide.vscode.commons.languageserver.hover.VscodeHoverEngineAdapter;
@@ -54,8 +49,8 @@ import com.google.common.collect.ImmutableSet;
  */
 public class BootPropertiesLanguageServerComponents implements LanguageServerComponents {
 
-	public static final String[] YML = {".yml", ".yaml" } ;
-	public static final String PROPERTIES = ".properties";
+	public static final String[] YML = BootPropertiesReconcileEngine.YML;
+	public static final String PROPERTIES = BootPropertiesReconcileEngine.PROPERTIES;
 
 	private static final Set<LanguageId> LANGUAGES = ImmutableSet.of(
 			LanguageId.BOOT_PROPERTIES,
@@ -73,8 +68,7 @@ public class BootPropertiesLanguageServerComponents implements LanguageServerCom
 	private final SimpleLanguageServer server;
 	private YamlASTProvider parser;
 
-	private SpringPropertiesReconcileEngine propertiesReconciler;
-	private ApplicationYamlReconcileEngine ymlReconciler;
+	private final BootPropertiesReconcileEngine reconcileEngine;
 	private SourceLinks sourceLinks;
 	private final CronPropertiesSemanticTokensHandler cronSemanticTokensHandler;
 	private final CronPropertiesInlayHintsHandler cronInlayHintsHandler;
@@ -88,7 +82,8 @@ public class BootPropertiesLanguageServerComponents implements LanguageServerCom
 			YamlAssistContextProvider yamlAssistContextProvider,
 			SourceLinks sourceLinks,
 			CronSemanticTokens cronSemanticTokens,
-			BootJavaConfig config) {
+			BootJavaConfig config,
+			BootPropertiesReconcileEngine reconcileEngine) {
 		this.server = server;
 		this.parser = parser;
 		this.indexProvider = serverParams.indexProvider;
@@ -97,18 +92,9 @@ public class BootPropertiesLanguageServerComponents implements LanguageServerCom
 		this.yamlStructureProvider = yamlStructureProvider;
 		this.yamlAssistContextProvider = yamlAssistContextProvider;
 		this.sourceLinks = sourceLinks;
+		this.reconcileEngine = reconcileEngine;
 		this.cronSemanticTokensHandler = new CronPropertiesSemanticTokensHandler(cronSemanticTokens, parser);
 		this.cronInlayHintsHandler = new CronPropertiesInlayHintsHandler(config::isCronInlayHintsEnabled, parser);
-
-		server.getClientCapabilities().thenAccept(clientCapabilities -> {
-			CommonQuickfixes commonQuickfixes = new CommonQuickfixes(server.getQuickfixRegistry(), javaProjectFinder,
-					clientCapabilities);
-			this.propertiesReconciler = new SpringPropertiesReconcileEngine(indexProvider,
-					typeUtilProvider, new AppPropertiesQuickFixes(server.getQuickfixRegistry(), commonQuickfixes), sourceLinks);
-			this.ymlReconciler = new ApplicationYamlReconcileEngine(parser, indexProvider, typeUtilProvider,
-					new AppYamlQuickfixes(server.getQuickfixRegistry(), server.getTextDocumentService(),
-							yamlStructureProvider, commonQuickfixes), sourceLinks);
-		});
 
 		indexProvider.onChange(() -> {
 			getReconcileEngine().ifPresent(reconciler -> {
@@ -155,25 +141,7 @@ public class BootPropertiesLanguageServerComponents implements LanguageServerCom
 
 	@Override
 	public Optional<IReconcileEngine> getReconcileEngine() {
-		return Optional.of((doc, problemCollector) -> {
-			String uri = doc.getUri();
-			if (uri != null) {
-				if (uri.endsWith(PROPERTIES)) {
-					propertiesReconciler.reconcile(doc, problemCollector);
-					return;
-				} else {
-					for (String yml : YML) {
-						if (uri.endsWith(yml)) {
-							ymlReconciler.reconcile(doc, problemCollector);
-							return;
-						}
-					}
-				}
-			}
-			//No real reconciler is applicable. So tell the problemCollector there are no problems.
-			problemCollector.beginCollecting();
-			problemCollector.endCollecting();
-		});
+		return Optional.of(reconcileEngine);
 	}
 
 	@Override

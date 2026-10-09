@@ -1,0 +1,6 @@
+server:
+  port: 8080
+  prt: 1
+logging:
+  level:
+    org.test: DEBUG

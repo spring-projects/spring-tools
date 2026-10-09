@@ -76,7 +76,8 @@ public class DiagnosticsMcpTools {
 
 	@Tool(description = """
 			Returns all current Spring Tools diagnostics or problems or validations (errors, warnings, infos, hints) for a specific project.
-			Diagnostics are produced by the Spring Tools language server during indexing and validation.
+			Diagnostics are produced by the Spring Tools language server during indexing and validation and cover Java sources,
+			Spring Boot configuration files (application*.properties, application*.yml, META-INF/spring.factories) and the Spring Boot version in the build file.
 			Each entry identifies the source file, the exact source location, the severity, and the message.
 			Only diagnostics known to Spring Tools are included; general Java compiler errors are not.
 			Use getProjectList to obtain valid project names.
@@ -93,6 +94,7 @@ public class DiagnosticsMcpTools {
 
 		List<ProjectDiagnostic> result = new ArrayList<>();
 		addIndexerDiagnostics(project, result);
+		addConfigFileDiagnostics(project, result);
 		addVersionValidationDiagnostics(project, result);
 
 		logger.info("found {} diagnostics for project: {}", result.size(), projectName);
@@ -104,18 +106,30 @@ public class DiagnosticsMcpTools {
 				.getCacheHelper()
 				.getAllCachedDiagnostics(project)
 				.stream()
-				.map(cd -> new ProjectDiagnostic(
-						cd.getDocURI(),
-						cd.getDiagnostic().getRange().getStart().getLine(),
-						cd.getDiagnostic().getRange().getStart().getCharacter(),
-						cd.getDiagnostic().getRange().getEnd().getLine(),
-						cd.getDiagnostic().getRange().getEnd().getCharacter(),
-						severityToString(cd.getDiagnostic().getSeverity()),
-						extractMessage(cd),
-						extractCode(cd),
-						cd.getDiagnostic().getSource()
-				))
+				.map(this::toProjectDiagnostic)
 				.forEach(result::add);
+	}
+
+	private void addConfigFileDiagnostics(IJavaProject project, List<ProjectDiagnostic> result) {
+		symbolIndex.getConfigFilesIndexer()
+				.getDiagnostics(project)
+				.stream()
+				.map(this::toProjectDiagnostic)
+				.forEach(result::add);
+	}
+
+	private ProjectDiagnostic toProjectDiagnostic(CachedDiagnostic cd) {
+		return new ProjectDiagnostic(
+				cd.getDocURI(),
+				cd.getDiagnostic().getRange().getStart().getLine(),
+				cd.getDiagnostic().getRange().getStart().getCharacter(),
+				cd.getDiagnostic().getRange().getEnd().getLine(),
+				cd.getDiagnostic().getRange().getEnd().getCharacter(),
+				severityToString(cd.getDiagnostic().getSeverity()),
+				extractMessage(cd),
+				extractCode(cd),
+				cd.getDiagnostic().getSource()
+		);
 	}
 
 	private void addVersionValidationDiagnostics(IJavaProject project, List<ProjectDiagnostic> result) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2021 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -51,7 +51,7 @@ public class AppYamlQuickfixes {
 	private static final Logger log = LoggerFactory.getLogger(AppYamlQuickfixes.class);
 
 	public final QuickfixType DEPRECATED_PROPERTY;
-	public final QuickfixType MISSING_PROPERTY;
+	private final CommonQuickfixes commonQuickfixes;
 
 	private static final QuickfixEdit NULL_FIX = new QuickfixEdit(
 			new WorkspaceEdit(ImmutableMap.of()),
@@ -61,7 +61,7 @@ public class AppYamlQuickfixes {
 	private final Gson gson = new Gson();
 
 	public AppYamlQuickfixes(QuickfixRegistry r, SimpleTextDocumentService textDocumentService, YamlStructureProvider structureProvider, CommonQuickfixes commonQuickfixes) {
-		MISSING_PROPERTY = commonQuickfixes.MISSING_PROPERTY;
+		this.commonQuickfixes = commonQuickfixes;
 		DEPRECATED_PROPERTY = r.register("DEPRECATED_YAML_PROPERTY", (Object _params) -> Mono.fromSupplier(() -> {
 			DeprecatedPropertyData params = gson.fromJson((JsonElement)_params, DeprecatedPropertyData.class);
 			try {
@@ -115,6 +115,11 @@ public class AppYamlQuickfixes {
 			}
 			return NULL_FIX;
 		}));
+	}
+
+	/** The "create metadata" fix, or {@code null} while the client cannot create files. */
+	public QuickfixType getMissingPropertyFix() {
+		return commonQuickfixes.getMissingPropertyFix();
 	}
 
 }

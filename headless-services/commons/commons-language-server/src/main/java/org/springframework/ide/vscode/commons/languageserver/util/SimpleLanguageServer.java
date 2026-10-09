@@ -778,6 +778,14 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 	}
 	
 	public IProblemCollector createProblemCollector(TextDocument doc, BiConsumer<String, Diagnostic> diagnosticsCollector) {
+		return createProblemCollector(doc, diagnosticsCollector, true);
+	}
+
+	/**
+	 * @param publish whether collected diagnostics (and quick fixes) are sent to the client; pass
+	 * {@code false} to only feed {@code diagnosticsCollector}, e.g. when indexing files the client has not opened
+	 */
+	public IProblemCollector createProblemCollector(TextDocument doc, BiConsumer<String, Diagnostic> diagnosticsCollector, boolean publish) {
 
 		SimpleTextDocumentService documentsService = getTextDocumentService();
 		
@@ -788,8 +796,10 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 
 			@Override
 			public void endCollecting() {
-				documentsService.setQuickfixes(doc.getId(), quickfixes);
-				documentsService.publishDiagnostics(doc.getId(), diagnostics);
+				if (publish) {
+					documentsService.setQuickfixes(doc.getId(), quickfixes);
+					documentsService.publishDiagnostics(doc.getId(), diagnostics);
+				}
 				log.debug("Reconcile done sent {} diagnostics", diagnostics.size());
 			}
 
@@ -801,8 +811,10 @@ public final class SimpleLanguageServer implements Sts4LanguageServer, SpringInd
 			@Override
 			public void checkPointCollecting() {
 				// publish what has been collected so far
-				documentsService.setQuickfixes(doc.getId(), quickfixes);
-				documentsService.publishDiagnostics(doc.getId(), diagnostics);
+				if (publish) {
+					documentsService.setQuickfixes(doc.getId(), quickfixes);
+					documentsService.publishDiagnostics(doc.getId(), diagnostics);
+				}
 				log.debug("Reconcile checkpoint sent {} diagnostics", diagnostics.size());
 			}
 

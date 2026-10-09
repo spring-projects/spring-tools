@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -220,7 +220,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 				//both are null, this means there's no valid property with the current prefix
 				//whether exact or extending it with further navigation
 				if (!NodeUtil.isAnchored(entry)) { //See https://github.com/spring-projects/sts4/issues/420
-					unkownProperty(root.getDocument().getUri(), keyNode, subNav.getPrefix(), entry, quickFixes.MISSING_PROPERTY);
+					unkownProperty(root.getDocument().getUri(), keyNode, subNav.getPrefix(), entry, quickFixes.getMissingPropertyFix());
 				}
 			}
 		}

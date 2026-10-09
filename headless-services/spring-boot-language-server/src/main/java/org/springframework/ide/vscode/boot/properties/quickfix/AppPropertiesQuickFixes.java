@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -43,12 +43,12 @@ public class AppPropertiesQuickFixes {
 	);
 
 	public final QuickfixType DEPRECATED_PROPERTY;
-	public final QuickfixType MISSING_PROPERTY;
+	private final CommonQuickfixes commonFixes;
 
 	private final Gson gson = new Gson();
 
 	public AppPropertiesQuickFixes(QuickfixRegistry r, CommonQuickfixes commonFixes) {
-		MISSING_PROPERTY = commonFixes.MISSING_PROPERTY;
+		this.commonFixes = commonFixes;
 		DEPRECATED_PROPERTY = r.register("DEPRECATED_PROPERTY", (Object _params) -> Mono.fromSupplier(() -> {
 			DeprecatedPropertyData params = gson.fromJson((JsonElement)_params, DeprecatedPropertyData.class);
 			try {
@@ -67,6 +67,11 @@ public class AppPropertiesQuickFixes {
 			}
 			return NULL_FIX;
 		}));
+	}
+
+	/** The "create metadata" fix, or {@code null} while the client cannot create files. */
+	public QuickfixType getMissingPropertyFix() {
+		return commonFixes.getMissingPropertyFix();
 	}
 
 }

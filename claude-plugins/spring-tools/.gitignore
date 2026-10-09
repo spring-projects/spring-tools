@@ -1,2 +1,4 @@
 language-server/
 node_modules/
+boot-ls.log
+evals/results/

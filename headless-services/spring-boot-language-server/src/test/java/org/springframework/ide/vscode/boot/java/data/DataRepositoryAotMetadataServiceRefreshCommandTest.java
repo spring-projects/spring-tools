@@ -160,4 +160,19 @@ public class DataRepositoryAotMetadataServiceRefreshCommandTest {
 		assertFalse(service.regenerateMetadataCommand(project).isPresent());
 	}
 
+	@Test
+	void gradleProjectsAreNotValidInVSCodeUntilVSCodeGradleSupportsTheCommand() throws Exception {
+		String client = System.getProperty("sts.lsp.client");
+		System.setProperty("sts.lsp.client", "vscode");
+		try {
+			assertFalse(QueryMethodCodeActionProvider.isValidProject(gradleProject("spring-boot-4.0.0.jar", projectDir.toFile())));
+		} finally {
+			if (client == null) {
+				System.clearProperty("sts.lsp.client");
+			} else {
+				System.setProperty("sts.lsp.client", client);
+			}
+		}
+	}
+
 }

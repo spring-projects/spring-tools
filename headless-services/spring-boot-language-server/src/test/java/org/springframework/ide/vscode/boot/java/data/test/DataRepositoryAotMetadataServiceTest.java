@@ -219,11 +219,11 @@ public class DataRepositoryAotMetadataServiceTest {
 
 		@Test
 		void processAotAvailability() {
-			assertTrue(service.isAotGenerationAvailable(gradleProject(Set.of("build", "processAot", "aotClasses"))));
-			assertFalse(service.isAotGenerationAvailable(gradleProject(Set.of("build", "classes", "bootJar"))));
-			assertFalse(service.isAotGenerationAvailable(gradleProject(Set.of())));
+			assertTrue(DataRepositoryAotMetadataService.isAotGenerationAvailable(gradleProject(Set.of("build", "processAot", "aotClasses"))));
+			assertFalse(DataRepositoryAotMetadataService.isAotGenerationAvailable(gradleProject(Set.of("build", "classes", "bootJar"))));
+			assertFalse(DataRepositoryAotMetadataService.isAotGenerationAvailable(gradleProject(Set.of())));
 			// unknown tasks get the benefit of the doubt
-			assertTrue(service.isAotGenerationAvailable(gradleProject(null)));
+			assertTrue(DataRepositoryAotMetadataService.isAotGenerationAvailable(gradleProject(null)));
 		}
 
 		@Test
@@ -233,9 +233,9 @@ public class DataRepositoryAotMetadataServiceTest {
 			IJavaProject untyped = mock(IJavaProject.class);
 			when(untyped.getProjectBuild()).thenReturn(IProjectBuild.create(null, null));
 
-			assertTrue(service.isAotGenerationAvailable(maven));
-			assertTrue(service.isAotGenerationAvailable(untyped));
-			assertTrue(service.isAotGenerationAvailable(mock(IJavaProject.class)));
+			assertTrue(DataRepositoryAotMetadataService.isAotGenerationAvailable(maven));
+			assertTrue(DataRepositoryAotMetadataService.isAotGenerationAvailable(untyped));
+			assertTrue(DataRepositoryAotMetadataService.isAotGenerationAvailable(mock(IJavaProject.class)));
 		}
 
 		@Test

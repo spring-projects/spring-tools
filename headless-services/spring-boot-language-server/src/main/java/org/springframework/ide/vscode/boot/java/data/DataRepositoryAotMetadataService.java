@@ -234,7 +234,7 @@ public class DataRepositoryAotMetadataService {
 	 * GraalVM native build tools plugin is applied. The IDE reports the tasks of the build without running Gradle.
 	 * If it does not know them (yet) the project is given the benefit of the doubt.
 	 */
-	public boolean isAotGenerationAvailable(IJavaProject project) {
+	public static boolean isAotGenerationAvailable(IJavaProject project) {
 		IProjectBuild build = project.getProjectBuild();
 		if (build != null && ProjectBuild.GRADLE_PROJECT_TYPE.equals(build.getType())) {
 			Set<String> tasks = build.getTasks();

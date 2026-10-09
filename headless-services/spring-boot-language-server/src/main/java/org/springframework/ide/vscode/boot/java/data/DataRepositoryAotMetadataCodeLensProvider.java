@@ -130,10 +130,6 @@ public class DataRepositoryAotMetadataCodeLensProvider implements CodeLensProvid
 		if (project == null || !QueryMethodCodeActionProvider.isValidProject(project)) {
 			return;
 		}
-		if (!repositoryMetadataService.isAotGenerationAvailable(project)) {
-			// The build cannot generate the AOT metadata, e.g. the Gradle project has no `processAot` task
-			return;
-		}
 
 		IMethodBinding methodBinding = node.resolveBinding();
 		

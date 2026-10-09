@@ -8,7 +8,7 @@
       "name": "spring-tools",
       "source": {
         "source": "local",
-        "path": "./claude-plugins/spring-tools"
+        "path": "./agent-plugins/spring-tools"
       },
       "policy": {
         "installation": "AVAILABLE",

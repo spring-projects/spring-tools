@@ -10,7 +10,7 @@ Depending on your development environment, you can choose between:
 
 - __Visual Studio Code:__ We provide extensions for Visual Studio Code if you prefer this lightweight editor for your development.
 - __Cursor:__ We provide extensions for Cursor if you prefer this lightweight editor for agentic development.
-- __AI coding agents:__ The Spring Tools Language Server agent plugin provides Spring-aware MCP tools and skills for Claude Code, GitHub Copilot CLI and Codex; OpenCode can connect to the same server over MCP.
+- __AI coding agents:__ The [Spring Tools Language Server agent plugin](agent-plugins/spring-tools/README.md) provides Spring-aware MCP tools and skills for Claude Code, GitHub Copilot CLI and Codex; OpenCode can connect to the same server over MCP.
 - __Spring Tools for Eclipse distribution:__ a ready-to-use distribution of the latest Eclipse Desktop IDE, prepackaged with Spring Tools and a few additional third-party extensions. Download, unpack, and start.
 - __Spring Tools for Eclipse extensions:__ you can install the Spring Tools for Eclipse into an existing Eclipse Desktop IDE installation and use it from there.
 - __Eclipse Theia:__ You can install the same extensions into Theia-based environments like gitpod.

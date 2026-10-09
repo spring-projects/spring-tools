@@ -1,5 +1,57 @@
 # Spring Tools - Dev Environment Setup
 
+## Build commands
+
+Run each block from the repository root. Java sources target Java 21; CI uses JDK 25.
+
+### Java language servers
+
+```bash
+cd headless-services
+./mvnw clean install
+# Build a server and its dependencies:
+./mvnw clean install -pl spring-boot-language-server -am
+# Run one test after dependencies have been installed:
+./mvnw test -pl spring-boot-language-server -Dtest=BootLanguageServerTest
+```
+
+### Eclipse integrations and distribution
+
+Select a target-platform profile supported by the module's parent POM.
+
+```bash
+cd eclipse-language-servers
+./mvnw -Pe440 clean install
+```
+
+```bash
+cd eclipse-distribution
+./mvnw -Pe440 -Psnapshot clean package
+```
+
+### VS Code extension
+
+```bash
+cd vscode-extensions/vscode-spring-boot
+./scripts/preinstall.sh
+npm install
+npm run check-types
+npm run lint
+npm run compile
+npm run watch
+```
+
+The preinstall script builds shared dependencies and the language server JAR.
+Use `npm run vsce-package` to package the extension.
+
+### Agent plugin
+
+The IDE language server integrates with JDT LS. The agent plugin instead uses
+the standalone server with Maven/Gradle classpath resolution and Jandex indexing;
+its file watcher keeps MCP diagnostics current without open editor documents.
+See the [plugin guide](agent-plugins/spring-tools/README.md) for building a local
+JAR, smoke tests, playbook checks, and behavioral evals.
+
 ## Running the Spring Tools Java Language Server locally
 
 Import the headless-services modules into your workspace as existing Maven projects.

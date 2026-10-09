@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "spring-tools",
+  "description": "Spring Tools Language Server as an MCP server — Spring Boot diagnostics with fix playbooks, bean/endpoint/architecture insight, version and release information, plus a Spring review agent. Operates standalone without requiring JDT Language Server and watches the workspace for changes. On first run, downloads the language server JAR (checksum-verified) from cdn.spring.io and launches it as a local Java process; requires Java 21+ on PATH.",
+  "version": "2.5.0",
+  "author": {
+    "name": "Spring Tools",
+    "url": "https://spring.io/tools"
+  },
+  "homepage": "https://spring.io/tools",
+  "repository": "https://github.com/spring-projects/spring-tools",
+  "license": "EPL-1.0",
+  "keywords": [
+    "spring",
+    "spring-boot",
+    "java",
+    "language-server",
+    "diagnostics",
+    "mcp",
+    "code-review"
+  ]
+}

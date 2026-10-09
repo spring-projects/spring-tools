@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 the original author or authors.
+ * Copyright 2023-2026 the original author or authors.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ public class AuthorizeHttpRequests extends Recipe {
                 commentText.append(m.getSimpleName());
                 commentText.append('(');
                 commentText.append(String.join(", ", m.getArguments().stream().map(a -> a.print(getCursor())).toArray(String[]::new)));
-                commentText.append(");' with appropriate call to 'access(AuthorizationManager)' after antMatcher(...) call etc.");
+                commentText.append(");' with appropriate call to 'access(AuthorizationManager)' after requestMatchers(...) call etc.");
 
                 List<Comment> newComments = new ArrayList<>(m.getComments());
                 newComments.addAll(m.getSelect().getComments());

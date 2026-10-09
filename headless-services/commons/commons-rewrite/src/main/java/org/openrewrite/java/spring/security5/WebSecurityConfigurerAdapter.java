@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 the original author or authors.
+ * Copyright 2022-2026 the original author or authors.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class WebSecurityConfigurerAdapter extends Recipe {
             @Override
             public J.@Nullable ClassDeclaration visitClassDeclaration(J.ClassDeclaration classDecl, ExecutionContext ctx) {
                 boolean isWebSecurityConfigurerAdapterClass = TypeUtils.isAssignableTo(FQN_WEB_SECURITY_CONFIGURER_ADAPTER, classDecl.getType()) &&
-                        isAnnotatedWith(classDecl.getLeadingAnnotations(), FQN_CONFIGURATION);
+                        isConfigurationClass(classDecl);
                 boolean hasConflict = false;
                 if (isWebSecurityConfigurerAdapterClass) {
                     for (Statement s : classDecl.getBody().getStatements()) {
@@ -497,6 +497,12 @@ public class WebSecurityConfigurerAdapter extends Recipe {
             }
         }
         return false;
+    }
+
+    /** {@code @Configuration} declared directly or through a meta-annotation such as {@code @SpringBootApplication}. */
+    private static boolean isConfigurationClass(J.ClassDeclaration classDecl) {
+        return isAnnotatedWith(classDecl.getLeadingAnnotations(), FQN_CONFIGURATION)
+                || (classDecl.getType() != null && isMetaAnnotated(classDecl.getType(), FQN_CONFIGURATION, new HashSet<>()));
     }
 
     private static boolean isAnnotatedWith(Collection<J.Annotation> annotations, String annotationType) {

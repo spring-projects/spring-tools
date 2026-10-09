@@ -1,7 +1,11 @@
 ## Explanations
 This warning appears on test classes that combine `@org.junit.jupiter.api.extension.ExtendWith(SpringExtension.class)` and `@org.springframework.test.context.ContextConfiguration`.
 
-Spring Test provides `@org.springframework.test.context.junit.jupiter.SpringJUnitConfig` as a single, meta-annotated replacement for this common combination (`@SpringJUnitConfig` is itself annotated with `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration`). Using it instead removes the boilerplate of wiring up the JUnit Jupiter extension by hand and is the idiomatic way to declare a Spring TestContext Framework test on JUnit Jupiter.
+Spring Test provides `@org.springframework.test.context.junit.jupiter.SpringJUnitConfig` as a single, meta-annotated replacement for this common combination (`@SpringJUnitConfig` is itself annotated with `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration`). Using it instead removes the boilerplate of wiring up the JUnit Jupiter extension by hand and is the idiomatic way to declare a Spring TestContext Framework test on JUnit Jupiter. The reference documentation describes it as "a composed annotation that combines `@ExtendWith(SpringExtension.class)` from JUnit Jupiter with `@ContextConfiguration` from the Spring TestContext Framework. It can be used at the class level as a drop-in replacement for `@ContextConfiguration`. With regard to configuration options, the only difference between `@ContextConfiguration` and `@SpringJUnitConfig` is that component classes may be declared with the `value` attribute in `@SpringJUnitConfig`." (For web tests that additionally use `@WebAppConfiguration`, the equivalent is `@SpringJUnitWebConfig`.)
+
+For more details, see:
+- [Spring Framework: Spring JUnit Jupiter Testing Annotations - @SpringJUnitConfig](https://docs.spring.io/spring-framework/reference/testing/annotations/integration-junit-jupiter.html)
+- [`@SpringJUnitConfig` API documentation](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/test/context/junit/jupiter/SpringJUnitConfig.html)
 
 ## Fixes
 **Fix 1: Combine into `@SpringJUnitConfig`**

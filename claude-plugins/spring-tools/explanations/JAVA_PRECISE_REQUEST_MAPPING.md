@@ -5,6 +5,12 @@ Since Spring 4.3, composed annotations like `@GetMapping` have been introduced t
 
 For example, instead of writing `@RequestMapping(value = "/path", method = RequestMethod.GET)`, it is considered a best practice to simply write `@GetMapping("/path")`.
 
+The reference documentation describes the shortcuts as composed annotations "provided because, arguably, most controller methods should be mapped to a specific HTTP method versus using `@RequestMapping`, which, by default, matches to all HTTP methods", and states that "controller methods should always declare the supported HTTP methods" (a `@RequestMapping` without a method also answers `OPTIONS` with `Allow: GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS`). Note that the shortcuts are method-level only: "A `@RequestMapping` is still needed at the class level to express shared mappings."
+
+For more details, see:
+- [Spring MVC: Mapping Requests - @RequestMapping](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html#mvc-ann-requestmapping-annotation)
+- [Spring MVC: Mapping Requests - HTTP HEAD, OPTIONS](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html#mvc-ann-requestmapping-head-options)
+
 ## Fixes
 **Fix 1: Replace `@RequestMapping` with a precise mapping annotation**
 Change the `@RequestMapping` annotation to the corresponding specific annotation based on the HTTP method it handles (`@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`, or `@PatchMapping`).

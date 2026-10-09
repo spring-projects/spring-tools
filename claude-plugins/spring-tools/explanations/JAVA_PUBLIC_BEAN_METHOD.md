@@ -1,9 +1,9 @@
 ## Explanations
 This warning indicates that a `@Bean` method in a Spring `@Configuration` class is declared with the `public` visibility modifier. 
 
-Since Spring Framework 5.0 (and Spring Boot 2.0), `@Bean` methods no longer need to be `public` to be usable by the Spring container. They can safely use package-private (default) visibility. 
+`@Bean` methods do not need to be `public` to be usable by the Spring container; they can safely use package-private (default) visibility. The only visibility constraint documented for `@Bean` methods inside `@Configuration` classes is that neither the class nor its factory methods may be `private` or `final`, because Spring subclasses `@Configuration` classes with CGLIB to intercept the bean method calls (see the [`@Bean` API documentation](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/context/annotation/Bean.html), section "@Bean Methods in @Configuration Classes"). Package-private is therefore the least visibility that still works everywhere.
 
-Removing the unnecessary `public` modifier reduces boilerplate code and is considered a modern Spring best practice.
+Removing the unnecessary `public` modifier reduces boilerplate code and keeps the configuration class from exposing its factory methods as regular API.
 
 ## Fixes
 **Fix 1: Remove the `public` modifier**

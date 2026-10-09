@@ -24,6 +24,7 @@ When a new problem type is added to the language server, add a row to the matchi
 | `WEB_SECURITY_CONFIGURER_ADAPTER` | `WebSecurityConfigurerAdapter` is removed | OpenRewrite: `org.openrewrite.java.spring.security5.WebSecurityConfigurerAdapter` | ✅ |
 | `DOMAIN_ID_FOR_REPOSITORY` | Invalid Domain ID type for Spring Data Repository | *None* | ✅ |
 | `WEB_ANNOTATION_NAMES` | Implicit web annotations names | OpenRewrite: `org.openrewrite.java.spring.ImplicitWebAnnotationNames` | ✅ |
+| `MODEL_ATTRIBUTE_NAMES` | Redundant explicit `@ModelAttribute` name matching the type-derived default | *None* | ✅ |
 | `VALUE_CLASSPATH_RESOURCE_TYPE` | Invalid type for classpath resource in `@Value` | *None* | ✅ |
 | `WEB_CONFIGURER_CONFIGURATION` | Missing `@Configuration` on web configurer | OpenRewrite: `org.openrewrite.java.spring.boot2.AddConfigurationAnnotation` | ✅ |
 | `MISSING_VALIDATED_ANNOTATION` | Missing `@Validated` on component | OpenRewrite: `org.openrewrite.java.spring.boot2.AddValidatedAnnotation` | ✅ |

@@ -154,6 +154,24 @@ public class SpringIndexCommandsCaptureBaselineTest {
 
 
 	@Test
+	void structureTreeCarriesNoChangeMarkersWhenTheClientShowsNoChanges() throws Exception {
+		captureBaseline(project.getElementName());
+		tree.edit(CONTROLLER, "return \"hello!!!\";", "return \"hello, world!!!\";");
+
+		// the very same edit, which the client that does show changes gets marked
+		assertFalse(changedNodesOf(tree.structureTrees()).isEmpty());
+
+		List<Node> roots = tree.structureTreesWithoutChanges();
+
+		assertTrue(changedNodesOf(roots).isEmpty(), "expected the diff to be left out, but got: " + changedNodesOf(roots));
+
+		// what the project node tells about the baseline stays: its tooltip does not depend on the diff
+		Node root = findRoot(roots, project.getElementName());
+		assertEquals(Boolean.TRUE, root.getAttribute(JsonNodeHandler.HAS_BASELINE));
+		assertNotNull(root.getAttribute(JsonNodeHandler.COMPARED_AGAINST_CAPTURED_AT));
+	}
+
+	@Test
 	void changingAMethodMarksThatMethodButNotItsEnclosingClass() throws Exception {
 		captureBaseline(project.getElementName());
 
@@ -511,6 +529,13 @@ public class SpringIndexCommandsCaptureBaselineTest {
 
 		assertTrue(changes.contains("captureLogicalStructureBaseline"),
 				"expected the MCP tool to see the baseline cleared via the LSP command, but got: " + changes);
+	}
+
+	private static Node findRoot(List<Node> roots, String projectName) {
+		return roots.stream()
+				.filter(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID)))
+				.findFirst()
+				.orElseThrow();
 	}
 
 	private Node rootOf(String projectName) throws Exception {

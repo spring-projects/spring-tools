@@ -229,8 +229,12 @@ public class SpringIndexCommands {
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));
 
 			// the same group selection the tree above was just built with, so the baseline is
-			// rebuilt into the same shape - see StructureSnapshotStore.annotateWithChangesSinceBaseline
-			StructureSnapshot comparedAgainst = structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree, snapshotKey, selectedGroups);
+			// rebuilt into the same shape - see StructureSnapshotStore.annotateWithChangesSinceBaseline.
+			// Not when the client shows no changes: rebuilding the baseline and diffing it is about as
+			// much work as building the tree itself, and nobody would see the result
+			StructureSnapshot comparedAgainst = args.changes
+					? structureSnapshotStore.annotateWithChangesSinceBaseline(project, tree, snapshotKey, selectedGroups)
+					: structureSnapshotStore.baselineOf(project, snapshotKey);
 			if (comparedAgainst != null) {
 				// sha and message stay null for a manually captured snapshot - the capture time is
 				// all there is to identify it by
@@ -365,13 +369,17 @@ public class SpringIndexCommands {
 	/**
 	 * @param selectedGroups per project, the groups to structure its tree by - a project that is
 	 *        missing (or the whole map being null) means <em>all</em> groups
+	 * @param changes whether to mark the nodes that changed since the baseline - true unless a client
+	 *        says otherwise. A client that shows no changes (neither highlighting nor hiding unchanged
+	 *        nodes) says so, and is spared rebuilding the baseline and diffing it; the trees still say
+	 *        whether there is a baseline, and which one they would be compared against.
 	 * @param selectedDependencies per project, the ids of the dependencies to include in its tree -
 	 *        a project that is missing (or the whole map being null) means <em>no</em> dependencies.
 	 *        Deliberately the opposite default of {@code selectedGroups}: including dependencies is
 	 *        something the user opts into.
 	 */
 	private static record StructureCommandArgs(boolean updateMetadata, List<String> affectedProjects, Map<String, Set<String>> selectedGroups,
-			Map<String, String> compareAgainst, Map<String, List<String>> selectedDependencies) {
+			Map<String, String> compareAgainst, Map<String, List<String>> selectedDependencies, boolean changes) {
 
 		/**
 		 * Whether this is a dependency-mode request: one that asks to include dependencies in any
@@ -402,6 +410,7 @@ public class SpringIndexCommands {
 			List<String> affectedProjects = null;
 			Map<String, String> compareAgainst = null;
 			Map<String, List<String>> selectedDependencies = null;
+			boolean changes = true;
 
 			List<Object> arguments = params.getArguments();
 			if (arguments != null && arguments.size() == 1) {
@@ -427,6 +436,11 @@ public class SpringIndexCommands {
 						compareAgainst = new Gson().fromJson(compareAgainstElement, new TypeToken<Map<String, String>>() {});
 					}
 
+					JsonElement changesElement = paramObject.get("changes");
+					if (changesElement instanceof JsonPrimitive) {
+						changes = changesElement.getAsBoolean();
+					}
+
 					JsonElement dependenciesElement = paramObject.get("dependencies");
 					if (dependenciesElement != null) {
 						selectedDependencies = new Gson().fromJson(dependenciesElement, new TypeToken<Map<String, List<String>>>() {});
@@ -434,7 +448,7 @@ public class SpringIndexCommands {
 				}
 			}
 
-			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups, compareAgainst, selectedDependencies);
+			return new StructureCommandArgs(updateMetadata, affectedProjects, selectedGroups, compareAgainst, selectedDependencies, changes);
 		}
 	}
 

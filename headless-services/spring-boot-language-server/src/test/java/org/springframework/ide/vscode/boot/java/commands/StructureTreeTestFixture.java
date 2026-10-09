@@ -77,11 +77,32 @@ class StructureTreeTestFixture {
 	 * @param dependencies the ids of the dependencies to include in each project's tree, keyed by
 	 *        project name - null to send no selection at all
 	 */
-	@SuppressWarnings("unchecked")
 	List<Node> structureTrees(Map<String, String> compareAgainst, Map<String, Set<String>> groups,
 			Map<String, List<String>> dependencies) throws Exception {
+		return structureTrees(compareAgainst, groups, dependencies, null);
+	}
+
+	/**
+	 * The trees of a client that shows no changes - it tells the server so, which then leaves out the
+	 * diff against the baseline.
+	 */
+	List<Node> structureTreesWithoutChanges() throws Exception {
+		return structureTrees(null, null, null, false);
+	}
+
+	/**
+	 * @param changes whether the client shows changes - null to send nothing about it, which is the
+	 *        same as true
+	 */
+	@SuppressWarnings("unchecked")
+	private List<Node> structureTrees(Map<String, String> compareAgainst, Map<String, Set<String>> groups,
+			Map<String, List<String>> dependencies, Boolean changes) throws Exception {
 		JsonObject params = new JsonObject();
 		params.addProperty("updateMetadata", false);
+
+		if (changes != null) {
+			params.addProperty("changes", changes);
+		}
 
 		if (compareAgainst != null) {
 			JsonObject compareAgainstJson = new JsonObject();

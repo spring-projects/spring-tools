@@ -26,6 +26,9 @@ interface StructureCommandParams {
     groups?: Record<string, string[]>;
     affectedProjects?: string[];
     compareAgainst?: Record<string, string>;
+    // false when no change is shown (neither highlighted nor hidden unchanged nodes): the server then
+    // spares itself the diff against the baseline - true if absent
+    changes?: boolean;
     // per project, the ids of the dependencies to include in its tree - sent in dependency mode
     // only, and a non-empty one is what puts the server into that mode: no change information on
     // any tree then (see docs/structure-view-dependencies.md)
@@ -200,6 +203,14 @@ export class StructureManager {
         return this.includeDependenciesToggle.get();
     }
 
+    /**
+     * Whether any change is shown - highlighted, or by hiding what did not change. Without, the
+     * language server does not have to work out what changed.
+     */
+    private get showsChanges(): boolean {
+        return this.highlightChanges || this.hideUnchanged;
+    }
+
     private async setIncludeDependencies(include: boolean): Promise<void> {
         if (include === this.includeDependencies) {
             return;
@@ -220,7 +231,12 @@ export class StructureManager {
             // the trees at hand carry no change information to show
             this.refresh(false);
         } else {
+            const showedChanges = this.showsChanges;
             await toggle.set(true);
+            if (!showedChanges) {
+                // the trees at hand were built without the changes
+                this.refresh(false);
+            }
         }
         this.tellDiffEnabled();
     }
@@ -411,6 +427,7 @@ export class StructureManager {
             affectedProjects,
             groups: this.getGroupings(),
             compareAgainst: this.includeDependencies ? undefined : this.getCompareAgainstMap(),
+            changes: this.showsChanges,
             dependencies: this.includeDependencies ? this.getDependenciesMap() : undefined,
         } as StructureCommandParams;
         // requests can overlap - an index update's partial refresh while a full load is still
@@ -420,7 +437,7 @@ export class StructureManager {
         const requestNumber = ++this._requestCounter;
         const request: Thenable<StereotypedNode[]> = commands.executeCommand(SPRING_STRUCTURE_CMD, params).then(json => {
             const nodes = this.parseArray(json);
-            if (!this._diffEnabledTold && !this.includeDependencies && (this.highlightChanges || this.hideUnchanged)) {
+            if (!this._diffEnabledTold && !this.includeDependencies && this.showsChanges) {
                 this.tellDiffEnabled();
             }
             const answered = new Map<string, StereotypedNode>();

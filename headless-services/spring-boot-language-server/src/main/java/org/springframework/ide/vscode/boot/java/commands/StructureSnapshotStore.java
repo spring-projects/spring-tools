@@ -330,7 +330,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	 * snapshots have no commit and still need to be selectable - and because two snapshots can share
 	 * a commit while the capture time identifies exactly one.
 	 */
-	private StructureSnapshot baselineOf(IJavaProject project, String snapshotKey) {
+	public StructureSnapshot baselineOf(IJavaProject project, String snapshotKey) {
 		List<StructureSnapshot> snapshots = historyOf(project);
 		if (snapshots.isEmpty()) {
 			return null;

@@ -1,5 +1,6 @@
 {
   "name": "spring-tools-local",
+  "description": "Local source-tree marketplace for testing the Spring Tools Claude Code plugin.",
   "owner": {
     "name": "Spring Tools"
   },

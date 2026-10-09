@@ -294,7 +294,7 @@ public class ClasspathUtil {
 				if (!g.exists()) {
 					g = jp.getProject().getFile("build.gradle.kts");
 				}
-				return ProjectBuild.createGradleBuild(g.exists() ? fromIFile(g).toASCIIString() : null);
+				return ProjectBuild.createGradleBuild(g.exists() ? fromIFile(g).toASCIIString() : null, GradleTasksProjectConfigurator.getGradleTasks(jp.getProject(), logger));
 			} else {
 				try {
 					for (IClasspathEntry e : jp.getRawClasspath()) {

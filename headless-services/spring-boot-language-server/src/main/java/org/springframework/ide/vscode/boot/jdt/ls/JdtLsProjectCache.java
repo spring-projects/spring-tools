@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -161,6 +162,19 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 		}
 	}
 	
+	private void notifyBuildChanged(IJavaProject newProject) {
+		logEvent("Build changed", newProject);
+		synchronized (listeners) {
+			for (Listener listener : listeners) {
+				try {
+					listener.buildChanged(newProject);
+				} catch (Exception e) {
+					log.error("", e);
+				}
+			}
+		}
+	}
+
 	private void notifyProjectObserverSupported() {
 		log.info("Project Observer is " + (classpathListenerEnabled ? "" : "not ") + "supported");
 		synchronized (listeners) {
@@ -375,14 +389,19 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 						ClasspathData classpath = new ClasspathData(event.name, event.classpath.getEntries(), event.classpath.getJre());
 						IJavaProject oldProject;
 						AbstractJavaProject newProject;
+						boolean classpathChanged;
+						boolean buildChanged;
 
+						IProjectBuild projectBuild = from(event.projectBuild);
 						synchronized(table) {
 							oldProject = table.get(uri);
-							if (oldProject != null && classpath.equals(oldProject.getClasspath())) {
-								// nothing has changed
+							classpathChanged = oldProject == null || !classpath.equals(oldProject.getClasspath());
+							// The build counts: the tasks of a Gradle build change with the build scripts, which
+							// does not need to change the classpath.
+							buildChanged = oldProject != null && !Objects.equals(projectBuild, oldProject.getProjectBuild());
+							if (!classpathChanged && !buildChanged) {
 								return;
 							}
-							IProjectBuild projectBuild = from(event.projectBuild);
 							newProject = IS_JANDEX_INDEX
 									? new JavaProject(getFileObserver(), projectUri, classpath,
 											JdtLsProjectCache.this, projectBuild)
@@ -392,10 +411,15 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 						}
 
 						// Notify outside of the lock 
-						if (oldProject != null) {
-							notifyChanged(newProject, false);
-						} else {
+						if (oldProject == null) {
 							notifyCreated(newProject);
+						} else {
+							if (classpathChanged) {
+								notifyChanged(newProject, false);
+							}
+							if (buildChanged) {
+								notifyBuildChanged(newProject);
+							}
 						}
 					}
 				} catch (Exception e) {
@@ -406,7 +430,7 @@ public class JdtLsProjectCache implements InitializableJavaProjectsService, Serv
 	}
 	
 	private static IProjectBuild from(ProjectBuild projectBuild) {
-		return projectBuild == null ? null : IProjectBuild.create(projectBuild.type(), projectBuild.buildFile() == null ? null : URI.create(projectBuild.buildFile()));
+		return projectBuild == null ? null : IProjectBuild.create(projectBuild.type(), projectBuild.buildFile() == null ? null : URI.create(projectBuild.buildFile()), projectBuild.tasks());
 	}
 
 }

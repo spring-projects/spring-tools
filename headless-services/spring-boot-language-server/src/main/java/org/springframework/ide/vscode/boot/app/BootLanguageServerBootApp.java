@@ -470,8 +470,8 @@ public class BootLanguageServerBootApp {
 	}
 	
 	@Bean
-	DataRepositoryAotMetadataService dataAotMetadataService(FileObserver fileObserver, JavaProjectFinder projectFinder, BuildCommandProvider buildCmds) {
-		return new DataRepositoryAotMetadataService(fileObserver, projectFinder, buildCmds);
+	DataRepositoryAotMetadataService dataAotMetadataService(FileObserver fileObserver, JavaProjectFinder projectFinder, BuildCommandProvider buildCmds, ProjectObserver projectObserver) {
+		return new DataRepositoryAotMetadataService(fileObserver, projectFinder, buildCmds, projectObserver);
 	}
 	
 	@Bean

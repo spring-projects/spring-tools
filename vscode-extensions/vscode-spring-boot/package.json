@@ -1756,10 +1756,10 @@
               "ON"
             ]
           },
-          "spring-boot.ls.problem.cron.SYNTAX": {
+          "spring-boot.ls.problem.cron.CRON_SYNTAX": {
             "type": "string",
             "default": "ERROR",
-            "description": "Syntax",
+            "description": "Cron expression syntax",
             "enum": [
               "IGNORE",
               "INFO",
@@ -1768,10 +1768,10 @@
               "ERROR"
             ]
           },
-          "spring-boot.ls.problem.cron.FIELD": {
+          "spring-boot.ls.problem.cron.CRON_FIELD": {
             "type": "string",
             "default": "ERROR",
-            "description": "Field",
+            "description": "Cron expression field",
             "enum": [
               "IGNORE",
               "INFO",

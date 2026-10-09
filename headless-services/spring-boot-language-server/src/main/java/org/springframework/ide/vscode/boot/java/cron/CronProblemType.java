@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -22,8 +22,8 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
 
 public enum CronProblemType implements ProblemType {
 
-	SYNTAX(ERROR, "Syntax", "Cron Expression Syntax"),
-	FIELD(ERROR, "Field", "Cron Expression field");
+	CRON_SYNTAX(ERROR, "Cron expression syntax", "Cron expression syntax"),
+	CRON_FIELD(ERROR, "Cron expression field", "Cron expression field");
 
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -121,7 +121,7 @@ public class CronReconciler implements Reconciler {
 							markProblemsForNumberFormatException(ctx, message);
 						} else {
 							IRegion r = mapping.apply(new Region(ctx.getStart().getStartIndex(), ctx.getText().length()));
-							problemCollector.accept(new ReconcileProblemImpl(CronProblemType.FIELD, "CRON: %s".formatted(message), r.getOffset(), r.getLength()));
+							problemCollector.accept(new ReconcileProblemImpl(CronProblemType.CRON_FIELD, "CRON: %s".formatted(message), r.getOffset(), r.getLength()));
 						}
 					}	
 				}
@@ -137,13 +137,13 @@ public class CronReconciler implements Reconciler {
 						int offset = text.indexOf(problemText);
 						if (offset >= 0) {
 							IRegion r = mapping.apply(new Region(ctx.getStart().getStartIndex() + offset, problemText.length()));
-							problemCollector.accept(new ReconcileProblemImpl(CronProblemType.FIELD, "CRON: Number expected", r.getOffset(), r.getLength()));
+							problemCollector.accept(new ReconcileProblemImpl(CronProblemType.CRON_FIELD, "CRON: Number expected", r.getOffset(), r.getLength()));
 							return;
 						}
 					}
 				}
 				IRegion r = mapping.apply(new Region(ctx.getStart().getStartIndex(), ctx.getText().length()));
-				problemCollector.accept(new ReconcileProblemImpl(CronProblemType.FIELD, "CRON: %s".formatted(message), r.getOffset(), r.getLength()));
+				problemCollector.accept(new ReconcileProblemImpl(CronProblemType.CRON_FIELD, "CRON: %s".formatted(message), r.getOffset(), r.getLength()));
 			}
 
 			
@@ -176,7 +176,7 @@ public class CronReconciler implements Reconciler {
 					}
 				}
 				IRegion r = mapping.apply(new Region(offset, length));
-				problemCollector.accept(new ReconcileProblemImpl(CronProblemType.SYNTAX, "CRON: " + msg, r.getOffset(), r.getLength()));
+				problemCollector.accept(new ReconcileProblemImpl(CronProblemType.CRON_SYNTAX, "CRON: " + msg, r.getOffset(), r.getLength()));
 			}
 			
 			@Override

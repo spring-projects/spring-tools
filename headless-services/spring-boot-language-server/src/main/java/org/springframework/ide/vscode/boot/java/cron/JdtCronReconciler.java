@@ -38,7 +38,7 @@ public class JdtCronReconciler implements JdtAstReconciler {
 
 	@Override
 	public ProblemType getProblemType() {
-		return CronProblemType.SYNTAX;
+		return CronProblemType.CRON_SYNTAX;
 	}
 
 	@Override

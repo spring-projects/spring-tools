@@ -1,7 +1,11 @@
 ## Explanations
 This warning appears on classes that combine `@org.springframework.stereotype.Controller` and `@org.springframework.web.bind.annotation.ResponseBody`.
 
-Spring Web provides `@org.springframework.web.bind.annotation.RestController` as a single, meta-annotated replacement for this common combination (`@RestController` is itself annotated with `@Controller` and `@ResponseBody`). Using it instead makes the intent of the class clearer (a controller whose handler methods write directly to the response body rather than resolving a view), and is the idiomatic way to declare REST endpoints in Spring MVC/WebFlux applications.
+Spring Web provides `@org.springframework.web.bind.annotation.RestController` as a single, meta-annotated replacement for this common combination (`@RestController` is itself annotated with `@Controller` and `@ResponseBody`). Using it instead makes the intent of the class clearer (a controller whose handler methods write directly to the response body rather than resolving a view), and is the idiomatic way to declare REST endpoints in Spring MVC/WebFlux applications. The reference documentation puts it this way: "`@RestController` is a composed annotation that is itself meta-annotated with `@Controller` and `@ResponseBody` to indicate a controller whose every method inherits the type-level `@ResponseBody` annotation and, therefore, writes directly to the response body versus view resolution and rendering with an HTML template."
+
+For more details, see:
+- [Spring MVC: Annotated Controllers - Declaration](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann.html)
+- [`@RestController` API documentation](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/bind/annotation/RestController.html)
 
 ## Fixes
 **Fix 1: Combine into `@RestController`**

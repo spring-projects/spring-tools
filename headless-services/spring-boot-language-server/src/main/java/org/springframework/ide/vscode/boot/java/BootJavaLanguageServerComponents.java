@@ -160,7 +160,7 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 		// central live data components (to coordinate live data flow)
 
 		// connect the live data provider with the hovers (for data extraction and live updates)
-		hoverProvider = createHoverHandler(projectFinder, sourceLinks, liveDataProvider);
+		hoverProvider = createHoverHandler(projectFinder, springIndex, sourceLinks, liveDataProvider);
 		new SpringProcessLiveHoverUpdater(server, hoverProvider, projectFinder, liveDataProvider);
 
 		// deal with locally running processes and their connections
@@ -242,13 +242,13 @@ public class BootJavaLanguageServerComponents implements LanguageServerComponent
 	}
 
 
-	protected BootJavaHoverProvider createHoverHandler(JavaProjectFinder javaProjectFinder, SourceLinks sourceLinks,
+	protected BootJavaHoverProvider createHoverHandler(JavaProjectFinder javaProjectFinder, SpringMetamodelIndex springIndex, SourceLinks sourceLinks,
 			SpringProcessLiveDataProvider liveDataProvider) {
 
 		AnnotationHierarchyAwareLookup<HoverProvider> providers = new AnnotationHierarchyAwareLookup<>();
 
 		ValueHoverProvider valueHoverProvider = new ValueHoverProvider();
-		RequestMappingHoverProvider requestMappingHoverProvider = new RequestMappingHoverProvider();
+		RequestMappingHoverProvider requestMappingHoverProvider = new RequestMappingHoverProvider(springIndex);
 		AutowiredHoverProvider autowiredHoverProvider = new AutowiredHoverProvider(sourceLinks);
 		ComponentInjectionsHoverProvider componentInjectionsHoverProvider = new ComponentInjectionsHoverProvider(sourceLinks);
 		BeanInjectedIntoHoverProvider beanInjectedIntoHoverProvider = new BeanInjectedIntoHoverProvider(sourceLinks);

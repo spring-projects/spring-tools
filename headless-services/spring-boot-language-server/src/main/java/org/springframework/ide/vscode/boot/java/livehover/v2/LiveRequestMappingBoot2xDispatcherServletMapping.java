@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2019 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,10 +15,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.asm.Type;
+
+import com.google.common.base.Suppliers;
 
 public class LiveRequestMappingBoot2xDispatcherServletMapping implements LiveRequestMapping {
 
@@ -53,9 +56,24 @@ Example entry:
 */
 
 	private JSONObject data;
+	private final Supplier<LiveFunctionalRoute> functionalRoute;
 
 	public LiveRequestMappingBoot2xDispatcherServletMapping(JSONObject data) {
 		this.data = data;
+		this.functionalRoute = Suppliers.memoize(() -> parseFunctionalRoute());
+	}
+
+	private LiveFunctionalRoute parseFunctionalRoute() {
+		JSONObject handlerFunction = getHandlerFunction();
+		if (handlerFunction != null) {
+			return LiveFunctionalRoute.parse(handlerFunction.optString("className", null), getPredicate());
+		}
+		return null;
+	}
+
+	@Override
+	public LiveFunctionalRoute getFunctionalRoute() {
+		return functionalRoute.get();
 	}
 
 	private JSONObject getDetails() {
@@ -71,8 +89,6 @@ Example entry:
 		if (details != null) {
 			if (details.has("handlerMethod")) {
 				return details.getJSONObject("handlerMethod");
-			} else if (details.has("handlerFunction")) {
-				//TODO: handler function for the Router bean
 			}
 		}
 		return null;
@@ -134,6 +150,11 @@ Example entry:
 
 	@Override
 	public String[] getSplitPath() {
+		LiveFunctionalRoute route = getFunctionalRoute();
+		if (route != null) {
+			return route.path().isEmpty() ? new String[0] : new String[] { route.path() };
+		}
+
 		JSONObject rmConditions = getRequestMappingConditions();
 		if (rmConditions == null) {
 			String predicate = getPredicate();
@@ -171,6 +192,11 @@ Example entry:
 
 	@Override
 	public Set<String> getRequestMethods() {
+		LiveFunctionalRoute route = getFunctionalRoute();
+		if (route != null) {
+			return route.httpMethods();
+		}
+
 		JSONObject rmConditions = getRequestMappingConditions();
 		if (rmConditions == null) {
 			return Collections.emptySet();

@@ -31,7 +31,9 @@ sts4/
 │   └── boot-dev-pack/          # Extension pack bundling Spring Boot extensions
 ├── nodejs-packages/            # Shared Node.js utilities
 └── claude-plugins/             # Claude Code plugin (standalone LS + MCP server)
-    ├── spring-tools/           # Plugin source
+    ├── spring-tools/           # Plugin source (skills, hooks, explanations/<CODE>.md playbooks)
+    ├── tools/                  # Node.js checker + tests keeping the playbooks in sync with the LS
+    ├── research-notes/         # TODO_quickfixes.md: problem code → quick fix → playbook coverage table
     └── update-local-jars.sh    # Rebuilds the standalone LS JAR for the plugin
 ```
 
@@ -92,6 +94,13 @@ cd claude-plugins
 ./update-local-jars.sh    # Rebuild and copy the standalone LS JAR into the plugin
 ```
 
+Every diagnostic code needs a playbook `claude-plugins/spring-tools/explanations/<CODE>.md` and a row in `claude-plugins/research-notes/TODO_quickfixes.md`. When adding or renaming a problem type, run from the repository root (details in `claude-plugins/spring-tools/README.md`):
+
+```bash
+node claude-plugins/tools/check-explanations.mjs --require-all --todo --links
+npm --prefix claude-plugins/tools test
+```
+
 ## Running Tests
 
 ```bash
@@ -139,6 +148,7 @@ IDE Client (VSCode/Eclipse) ←—LSP over stdio/socket—→ Java Language Serv
 
 - The full Spring Boot LS (`spring-boot-language-server`) requires JDT Language Server in the same process for Java type resolution
 - The standalone variant (`spring-boot-language-server-standalone`) resolves types via Maven/Gradle classpath + Jandex indexing — used by the Claude Code plugin
+- In the plugin the LSP transport is disabled (`-Dlanguageserver.enabled=false`), so no document is ever "open": the `getProjectDiagnostics` MCP tool only sees what the indexers produce — Java diagnostics from `SpringIndexerJava`, config-file diagnostics (`application*`, `bootstrap*`, `*.factories`) from `SpringIndexerConfigFiles`, plus the build-file version validation
 
 ### Key Commons Modules
 

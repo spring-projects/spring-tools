@@ -81,7 +81,7 @@ jobs:
              --arg ref "$ref" \
              '
              .plugins |= if map(.name == $name) | any then
-                 map(if .name == $name then .version=$version | .source.ref=$ref else . end)
+                 map(if .name == $name then .version=$version | .source.ref=$ref | .source.path="agent-plugins/spring-tools" else . end)
              else
                  . + [{
                     "name": $name, 
@@ -89,7 +89,7 @@ jobs:
                     "source": {
                       "source": "git-subdir",
                     "url": "https://github.com/spring-projects/spring-tools.git",
-                    "path": "claude-plugins/spring-tools",
+                    "path": "agent-plugins/spring-tools",
                       "ref": $ref
                     }, 
                     "description": "Spring Boot Language Server", 

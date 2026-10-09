@@ -6,12 +6,12 @@ schedules:
 
 - **Eclipse track** — Eclipse LS Extensions → Eclipse Distribution → Test → Publish
 - **VSCode track** — VSCode Extensions RC → Test → Publish
-- **Claude Code plugin track** — Test locally → Release (build + publish)
+- **agent plugin track** — Test locally → Release (build + publish)
 
 The Eclipse and VSCode tracks each have their own release-candidate loop: if
 testing turns up a problem in one track, only that track's release step is
 re-spun. The other track keeps whatever candidate it already has and does
-not need to be rebuilt. The Claude Code plugin track has no candidate/staging
+not need to be rebuilt. The agent plugin track has no candidate/staging
 step at all — see below.
 
 Every step below except "Test" is a GitHub Actions workflow, triggered via
@@ -94,18 +94,19 @@ stateDiagram-v2
     PublishVSCode --> [*]
 ```
 
-## Claude Code Plugin Track
+## Agent Plugin Track
 
-The `spring-tools` Claude Code plugin (`claude-plugins/spring-tools`) bundles
-the standalone Spring Boot language server (Jandex-based, no JDT LS) as an
-MCP server for Claude Code. Its release process is different from the other
+The `spring-tools` [agent plugin](agent-plugins/spring-tools/README.md) downloads
+and launches the standalone Spring Boot language server (Jandex-based, no JDT LS)
+as an MCP server for Claude Code, GitHub Copilot CLI, Codex, and OpenCode.
+Its release process is different from the other
 two tracks: there is no RC/staging step — the release workflow builds *and*
 publishes atomically in one shot, so verification has to happen locally
 *before* that workflow is dispatched.
 
 | # | Step | Workflow | Key inputs |
 |---|------|----------|------------|
-| 1 | Test locally | — manual | Run [`claude-plugins/update-local-jars.sh`](claude-plugins/update-local-jars.sh) to build the standalone LS jar from the current `headless-services` snapshot and drop it into `spring-tools/language-server/`, then run the automated checks from the repository root — `node claude-plugins/tools/check-explanations.mjs --require-all --todo --links`, `node claude-plugins/tools/check-plugin-config.mjs`, `node --test 'claude-plugins/tools/test/*.test.mjs'` and the end-to-end `node claude-plugins/tools/smoke/mcp-smoke.mjs` (the same checks CI runs in [`claude-plugin-check.yml`](.github/workflows/claude-plugin-check.yml)), run the behavioral eval suite with a logged-in Claude Code (`cd claude-plugins/spring-tools && claude plugin eval . --no-publish`, or dispatch the `plugin-evals` job of that workflow) — and exercise the plugin through the local `spring-tools-local` marketplace ([`claude-plugins/.claude-plugin/marketplace.json`](claude-plugins/.claude-plugin/marketplace.json)) |
+| 1 | Test locally | — manual | Run [`agent-plugins/update-local-jars.sh`](agent-plugins/update-local-jars.sh) to build the standalone LS jar from the current `headless-services` snapshot and drop it into `spring-tools/language-server/`, then run the automated checks from the repository root — `node agent-plugins/tools/check-explanations.mjs --require-all --todo --links`, `node agent-plugins/tools/check-plugin-config.mjs`, `node --test 'agent-plugins/tools/test/*.test.mjs'` and the end-to-end `node agent-plugins/tools/smoke/mcp-smoke.mjs` (the same checks CI runs in [`agent-plugin-check.yml`](.github/workflows/agent-plugin-check.yml)), run the behavioral eval suite with a logged-in Claude Code (`cd agent-plugins/spring-tools && claude plugin eval . --no-publish`, or dispatch the `plugin-evals` job of that workflow) — and exercise the plugin through the local `spring-tools-local` marketplace ([`agent-plugins/.claude-plugin/marketplace.json`](agent-plugins/.claude-plugin/marketplace.json)) |
 | 2 | Release (build + publish) | [`release-standalone-ls.yml`](.github/workflows/release-standalone-ls.yml) | `dist: release` — builds the standalone LS jar, uploads it to the CDN, tags the repo `v<version>`, and updates the release marketplace's `marketplace.json` to point at that tag |
 
 (Nightly/on-demand snapshot builds of the plugin are handled separately by
@@ -143,7 +144,7 @@ stateDiagram-v2
         TestVSCode --> PublishVSCode : pass
         PublishVSCode --> [*]
     }
-    state "Claude Code Plugin Track" as ClaudePlugin {
+    state "Agent Plugin Track" as ClaudePlugin {
         [*] --> TestLocally
         TestLocally --> TestLocally : issues found
         TestLocally --> ReleaseAndPublish : pass
@@ -189,10 +190,11 @@ next **minor**:
   [`vscode-extensions/vscode-spring-boot/package.json`](vscode-extensions/vscode-spring-boot/package.json).
   Extensions that weren't released (`vscode-concourse`,
   `vscode-manifest-yaml`, `vscode-bosh`, `boot-dev-pack`) are left alone.
-- **Claude Code plugin** — bump `version` in
-  [`claude-plugins/spring-tools/.claude-plugin/plugin.json`](claude-plugins/spring-tools/.claude-plugin/plugin.json)
+- **agent plugin** — bump `version` in
+  [`agent-plugins/spring-tools/.claude-plugin/plugin.json`](agent-plugins/spring-tools/.claude-plugin/plugin.json)
+  and [`agent-plugins/spring-tools/plugin.json`](agent-plugins/spring-tools/plugin.json)
   to match the new `headless-services` version. This is exactly what makes
-  the [Claude Code Plugin Track](#claude-code-plugin-track) work: it leaves
+  the [Agent Plugin Track](#agent-plugin-track) work: it leaves
   `main` on a version that has never been tagged, ready for the next
   `release-standalone-ls.yml` run.
 
@@ -213,7 +215,7 @@ cycle** — adopt the new target platform:
   `snapshot-all.yml`. `gh-hosted-eclipse-distro-build.yml` and
   `eclipse-ls-extensions-build.yml` themselves don't need changes — they're
   reusable workflows that just take `eclipse_profile` as an input.
-- Also worth checking: `CLAUDE.md`'s "Eclipse profile options" line is
+- Also worth checking: `AGENTS.md`'s "Eclipse profile options" line is
   currently stale (`e439`/`e440`) relative to what the poms and release
   workflows actually build (`e440`/`e441`) — keep it in sync when adopting
   a new train.

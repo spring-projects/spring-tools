@@ -54,11 +54,11 @@ jobs:
           
           # Keep both the Claude Code manifest and the portable Agent Plugins manifest in sync.
           tmp=$(mktemp)
-          jq --arg v "$version" '.version = $v' claude-plugins/spring-tools/.claude-plugin/plugin.json > "$tmp" && mv "$tmp" claude-plugins/spring-tools/.claude-plugin/plugin.json
+          jq --arg v "$version" '.version = $v' agent-plugins/spring-tools/.claude-plugin/plugin.json > "$tmp" && mv "$tmp" agent-plugins/spring-tools/.claude-plugin/plugin.json
           tmp=$(mktemp)
-          jq --arg v "$version" '.version = $v' claude-plugins/spring-tools/plugin.json > "$tmp" && mv "$tmp" claude-plugins/spring-tools/plugin.json
+          jq --arg v "$version" '.version = $v' agent-plugins/spring-tools/plugin.json > "$tmp" && mv "$tmp" agent-plugins/spring-tools/plugin.json
           
-          git add claude-plugins/spring-tools/.claude-plugin/plugin.json claude-plugins/spring-tools/plugin.json
+          git add agent-plugins/spring-tools/.claude-plugin/plugin.json agent-plugins/spring-tools/plugin.json
           if ! git diff --cached --quiet; then
             git commit -m "Update agent plugin versions to $version"
           fi
@@ -82,7 +82,7 @@ jobs:
              --arg sha "$sha" \
              '
              .plugins |= if map(.name == $name) | any then
-                 map(if .name == $name then .version=$version | .source.sha=$sha | .source.ref="claude-snapshot" else . end)
+                 map(if .name == $name then .version=$version | .source.sha=$sha | .source.ref="claude-snapshot" | .source.path="agent-plugins/spring-tools" else . end)
              else
                  . + [{
                     "name": $name, 
@@ -90,7 +90,7 @@ jobs:
                     "source": {
                       "source": "git-subdir",
                       "url": "https://github.com/spring-projects/spring-tools.git",
-                      "path": "claude-plugins/spring-tools",
+                      "path": "agent-plugins/spring-tools",
                       "ref": "claude-snapshot",
                       "sha": $sha
                     }, 

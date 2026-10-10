@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2025 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -14,6 +14,7 @@ import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.jface.preference.FileFieldEditor;
+import org.eclipse.jface.preference.IntegerFieldEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbench;
@@ -68,6 +69,17 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		// Experimental Beans tree 
 		addField(new BooleanFieldEditor(Constants.PREF_BEANS_STRUCTURE_TREE, "Beans structure tree in the outline view (experimental)", fieldEditorParent));
 		
+		// Logical Structure view
+		addField(new BooleanFieldEditor(Constants.PREF_STRUCTURE_PACKAGE_NODES, "Logical Structure view: show package nodes in projects with types in more than one top-level package", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_STRUCTURE_GIT_BASELINE_ENABLED, "Logical Structure view: automatically capture a baseline at every git commit to highlight changes against", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_STRUCTURE_GIT_BASELINE_PROMPT, "Logical Structure view: ask whether to turn on the automatic git baseline when changes are shown", fieldEditorParent));
+		// in a composite of its own, as the editor takes two columns, which would turn the whole page into two columns
+		Composite historySizeParent = new Composite(fieldEditorParent, SWT.NONE);
+		GridDataFactory.fillDefaults().grab(true, false).applyTo(historySizeParent);
+		IntegerFieldEditor baselineHistorySize = new IntegerFieldEditor(Constants.PREF_STRUCTURE_BASELINE_HISTORY_SIZE, "Logical Structure view: past commit snapshots to retain per project", historySizeParent, 3);
+		baselineHistorySize.setValidRange(1, 100);
+		addField(baselineHistorySize);
+
 		Composite c = new Composite(fieldEditorParent, SWT.NONE);
 		GridDataFactory.fillDefaults().grab(true, false).applyTo(c);
 		FileFieldEditor propMetadataFileEditor = new FileFieldEditor(Constants.PREF_COMMON_PROPS_METADATA, "Shared Properties", true, c);

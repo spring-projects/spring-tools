@@ -341,6 +341,9 @@ given the retention cap, not something worth surfacing as a hard failure.
   (`shortSha`, `formatCapturedAt`, `describeBaseline`), and having one import the other at runtime for
   just that created a value-level circular import.
 
+The Eclipse view has the same toggles, baseline commands and "Show Changes" - see "Eclipse client" in
+[`structure-view-dependencies.md`](structure-view-dependencies.md), which covers both features of that client.
+
 ## Preferences
 
 - `boot-java.structure.git-baseline-enabled` (default **off**) - turns on all git-driven automatic

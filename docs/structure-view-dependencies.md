@@ -345,8 +345,7 @@ Modeled on the existing `structure.grouping` command:
   step 2 on it is sent only in dependency mode, because its presence is what switches the server
   into that mode (2.1).
 
-Eclipse gets the same via a `DependenciesDialogModel` alongside `GroupingDialogModel` — a later
-increment, as with the diff feature, which proved its protocol in VSCode first.
+Eclipse got the same later, see [Eclipse client](#eclipse-client-gh-1991).
 
 ### 1.7 Tests for step 1
 
@@ -1253,8 +1252,10 @@ binding key. `JavaServerElementLocationProvider` already uses it.
 - **VSCode:** forwards to JDT-LS (`sts.java.location`), which answers with a `jdt://` URI into the
   class file. The tree already opens nodes with `vscode.open`, which the Java extension serves for
   `jdt://`.
-- **Eclipse:** `STS4LanguageClientImpl.javaLocation` answers with an Eclipse intro URI that
-  `LogicalStructureView`'s `LSPEclipseUtils.openInEditor` already opens.
+- **Eclipse:** `STS4LanguageClientImpl.javaLocation` answers with an Eclipse intro URI. The
+  Logical Structure view does not go through the server for this: it runs in the same process as the
+  Java tooling, so it resolves the node's reference itself (see
+  [Eclipse client](#eclipse-client-gh-1991)).
 
 The one thing not to reuse is the mechanism for catalog files inside JARs
 (`sourceLinkForJarEntry`), which serves raw resources, not classes.
@@ -1328,6 +1329,43 @@ refresh, so resolving eagerly is not an option. Instead:
   belongs with adding that mode there.
 
 ---
+
+## Eclipse client (GH-1991)
+
+The Eclipse "Logical Structure" view (`eclipse-language-servers/org.springframework.tooling.boot.ls`,
+package `org.springframework.tooling.boot.ls.views`) has the same features as the VSCode one - showing
+changes (highlighting, hiding unchanged nodes, baselines, "Show Changes") and including
+dependencies - on the same protocol. The language server was not touched.
+
+| VSCode | Eclipse |
+|---|---|
+| `structure-tree-manager.ts`: the per-project request versions of `refresh` | `StructureTreeMerger`: the same merge, as a class of its own. A partial response also speaks for the projects it answers with that were not asked for - in dependency mode, the ones that include an affected project. |
+| the persisted toggles, selections and pinned baselines | `StructureViewState`, in a preference node of its own in the **instance scope** (so per workspace). The node is not the plugin's preference store on purpose: the changes of that one are sent to the language server as configuration. It holds the mutual exclusion of dependencies and changes. |
+| `nodes.ts` | `StereotypeNode`: a class (it was a record) with a parent link, as `hasBaseline` and `comparedAgainst*` are only on the root of a project's tree, and typed accessors for the change and the Java element reference. |
+| `visibleChildren` | `StructureTreeContentProvider.getChildren` - not a `ViewerFilter`, which would leave an expander on a node whose children are all filtered out. |
+| file decorations | `StructureTreeLabelProvider`: a color per kind of change (theme colors, `org.eclipse.ui.themes`, category "Spring") plus a `+` `~` `-` marker behind the label, and the tooltip with the baseline compared against. |
+| the quick pick | `DependencySelectionDialog`: a checkbox table with a filter field and select all / deselect all for what is shown. Not grouped by category as the quick pick is, but ordered the same way (`DependencyChoices`): selected workspace projects, selected libraries, workspace projects, libraries. |
+| the baseline quick pick | `BaselineCommands`, with a `ListDialog` |
+| `structure.showChanges` | `ShowChangesAction`: opens the file in its editor and runs the "Compare With HEAD" command of EGit (`org.eclipse.egit.ui.team.CompareWithHead`) on it, like the Team menu does. EGit is not a dependency of the bundle; the action says so if it is not installed. Unlike VSCode, the compare editor does not scroll to the node. |
+| `OPEN_JAVA_ELEMENT_CMD` (`resolveLocation`) | `JavaElementOpener`: no round trip to the server - the view finds the element with `JavaData.findElement` and opens it with `JavaUI.openInEditor`, falling back to the class like the server does. |
+| `sts/setConfiguration` (`set-configuration.ts`) | `BootLanguageClientImpl`, the client class of the Boot language server only (the shared `STS4LanguageClientImpl` serves all the language servers): it writes `boot-java.structure.git-baseline-enabled` / `-prompt` into the preferences, and the usual change listener sends them on. |
+| `boot-java.structure.*` settings | `Constants`, `PrefsInitializer`, `BootJavaPreferencesPage` and `DelegatingStreamConnectionProvider.sendConfiguration` |
+
+Where things are in the UI: the three toggles ("Include Dependencies", "Highlight Changes", "Hide
+Unchanged Nodes") are check items of the view menu; "Select Dependencies...", the baseline commands
+(only outside dependency mode) are in the context menu of a project node, and "Show Changes" in that
+of a changed node.
+
+A change of the toggles fetches the trees again only when the ones at hand do not carry what is
+shown now - a different mode, or the changes asked for for the first time (`changes` is sent as
+false while none are shown, which spares the server the diff). Otherwise the tree is just
+refreshed.
+
+Tests are in the fragment `org.springframework.tooling.boot.ls.test`, which sees the package-private
+classes of the view. Note that the test modules of this repository list only `macosx/x86_64` among
+their Tycho environments, so on an Apple Silicon Mac the test runtime does not start (also not for
+`gotosymbol.test`); the tests of this fragment only need the classes of the bundle, JUnit, Gson,
+Guava, LSP4J and JFace, and can be run with plain JUnit against `target/classes` there.
 
 ## Decisions taken, and their alternatives
 

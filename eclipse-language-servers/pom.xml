@@ -62,6 +62,7 @@
 		<module>org.springframework.tooling.ls.eclipse.gotosymbol</module>
 		<module>org.springframework.tooling.ls.eclipse.gotosymbol.test</module>
 		<module>org.springframework.tooling.boot.ls</module>
+		<module>org.springframework.tooling.boot.ls.test</module>
 		<module>org.springframework.tooling.boot.ls.feature</module>
 
 		<module>org.springframework.tooling.bosh.ls</module>

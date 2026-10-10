@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Spring Boot Language Server Tests
+Bundle-SymbolicName: org.springframework.tooling.boot.ls.test
+Bundle-Version: 5.5.0.qualifier
+Fragment-Host: org.springframework.tooling.boot.ls
+Automatic-Module-Name: org.springframework.tooling.boot.ls.test
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Require-Bundle: org.junit
+Bundle-Vendor: Broadcom

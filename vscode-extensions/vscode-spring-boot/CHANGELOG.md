@@ -18,6 +18,7 @@
 * _(Spring Boot)_ reduce logging for document changes [#1982](https://github.com/spring-projects/spring-tools/issues/1982)
 * _(Spring Boot)_ Allow overriding the SQL dialect used to validate native @Query statements [#1975](https://github.com/spring-projects/spring-tools/issues/1975)
 * _(Spring Boot)_ visualize changes in the logical structure view [#1974](https://github.com/spring-projects/spring-tools/issues/1974)
+* _(Spring Boot)_ use new actuator mapping data for WebMvc.fn  router functions for live hovers [#1576](https://github.com/spring-projects/spring-tools/issues/1576)
 * _(Spring Boot)_ Support CRON expression value in Spring Boot property files (`application.properties` and `application.yml`) [#1329](https://github.com/spring-projects/spring-tools/issues/1329)
 
 ## 2026-09-09 (5.4.0.RELEASE, incl. language servers version 2.4.0)

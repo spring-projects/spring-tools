@@ -16,7 +16,8 @@ on:
 
 permissions:
   contents: write
-  
+  id-token: write
+
 jobs:
   build-vscode-extension:
     runs-on: ubuntu-latest
@@ -70,7 +71,7 @@ jobs:
           npm install --global ovsx
           vsix_file=`ls ./vsix | head -n 1`
           echo "Open-VSX VSIX pre-release file to publish ${vsix_file}"
-          ovsx publish --pre-release -p ${{ secrets.OVSX_PUBLISH_TOKEN }} --packagePath ./vsix/$vsix_file
+          ovsx publish --pre-release --trusted-publishing --packagePath ./vsix/$vsix_file
           
       - name: Commit and Push Changelog
         env:

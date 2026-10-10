@@ -28,7 +28,19 @@ class StructureClient {
 	
 	record Groups (String projectName, List<Group> groups) {}
 	record Group (String identifier, String displayName) {}
-	record StructureParameter(boolean updateMetadata, Collection<String> affectedProjects, Map<String, List<String>>  groups) {}
+	/**
+	 * The parameter of the structure command.
+	 * 
+	 * @param groups per project, the groups to structure its tree by
+	 * @param compareAgainst per project, the snapshot to compare against - the most recent one if missing
+	 * @param changes whether to mark the nodes that changed since the baseline - the language server
+	 *        is spared working out what changed when that is not shown
+	 * @param dependencies per project, the ids of the dependencies to include in its tree - sent in
+	 *        dependency mode only, and a non-empty one is what puts the language server into that
+	 *        mode: no change information on any tree then
+	 */
+	record StructureParameter(boolean updateMetadata, Collection<String> affectedProjects, Map<String, List<String>> groups,
+			Map<String, String> compareAgainst, boolean changes, Map<String, List<String>> dependencies) {}
 
 	private static final String FETCH_SPRING_BOOT_STRUCTURE = "sts/spring-boot/structure";
 	private static final String FETCH_STRUCTURE_GROUPS = "sts/spring-boot/structure/groups";

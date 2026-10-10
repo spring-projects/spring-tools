@@ -10,7 +10,10 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.app;
 
+import java.io.File;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
@@ -131,7 +134,11 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 					if (pomFile.exists() && pomFile.isFile()) {
 						log.info("Found Maven project: {}", pomFile.getAbsolutePath());
 						mavenProjectCache.project(pomFile);
-						return java.nio.file.FileVisitResult.SKIP_SUBTREE;
+						// Multi-module reactor: keep walking so that module poms are imported as
+						// projects as well; the subtree of a leaf pom holds no further projects.
+						return pomDeclaresModules(pomFile)
+								? java.nio.file.FileVisitResult.CONTINUE
+								: java.nio.file.FileVisitResult.SKIP_SUBTREE;
 					}
 
 					java.io.File gradleFile = new java.io.File(dirFile, GradleCore.GRADLE_BUILD_FILE);
@@ -157,6 +164,24 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 			});
 		} catch (Exception e) {
 			// ignore
+		}
+	}
+
+	/**
+	 * Best-effort check whether the given pom declares a {@code <modules>} section, i.e. is the
+	 * root of a multi-module Maven reactor. A false positive only makes the walk descend into a
+	 * subtree that holds no further poms; a false negative falls back to skipping the subtree.
+	 *
+	 * @param pomFile the pom file to check
+	 * @return {@code true} if the pom declares modules
+	 */
+	private static boolean pomDeclaresModules(File pomFile) {
+		try {
+			String pom = Files.readString(pomFile.toPath(), StandardCharsets.UTF_8);
+			return pom.contains("<modules>") && pom.contains("</modules>");
+		}
+		catch (Exception e) {
+			return false;
 		}
 	}
 

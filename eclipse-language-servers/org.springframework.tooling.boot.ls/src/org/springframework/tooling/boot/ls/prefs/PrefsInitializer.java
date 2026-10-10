@@ -55,6 +55,11 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		preferenceStore.setDefault(Constants.PREF_CODELENS_WEB_CONFIGS_ON_CONTROLLER_CLASSES, true);
 		preferenceStore.setDefault(Constants.PREF_DATA_QUERY_MULTILINE, false);
 
+		preferenceStore.setDefault(Constants.PREF_STRUCTURE_GIT_BASELINE_ENABLED, false);
+		preferenceStore.setDefault(Constants.PREF_STRUCTURE_GIT_BASELINE_PROMPT, true);
+		preferenceStore.setDefault(Constants.PREF_STRUCTURE_PACKAGE_NODES, true);
+		preferenceStore.setDefault(Constants.PREF_STRUCTURE_BASELINE_HISTORY_SIZE, 10);
+
 		preferenceStore.setDefault(Constants.PREF_AI_MCP_ENABLED, false);
 		preferenceStore.setDefault(Constants.PREF_AI_MCP_PORT, 50627);
 	}

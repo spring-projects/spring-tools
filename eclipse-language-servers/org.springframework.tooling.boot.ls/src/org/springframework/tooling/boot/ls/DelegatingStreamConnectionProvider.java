@@ -260,6 +260,14 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 			)
 		);
 		
+		bootJavaObj.put("structure", Map.of(
+				"git-baseline-enabled", preferenceStore.getBoolean(Constants.PREF_STRUCTURE_GIT_BASELINE_ENABLED),
+				"git-baseline-prompt", preferenceStore.getBoolean(Constants.PREF_STRUCTURE_GIT_BASELINE_PROMPT),
+				"package-nodes", preferenceStore.getBoolean(Constants.PREF_STRUCTURE_PACKAGE_NODES),
+				"baseline-history-size", preferenceStore.getInt(Constants.PREF_STRUCTURE_BASELINE_HISTORY_SIZE)
+			)
+		);
+		
 		bootJavaObj.put("ai", Map.of(
 				"mcp-server-enabled", preferenceStore.getBoolean(Constants.PREF_AI_MCP_ENABLED),
 				"mcp-server-port", preferenceStore.getBoolean(Constants.PREF_AI_MCP_PORT) 

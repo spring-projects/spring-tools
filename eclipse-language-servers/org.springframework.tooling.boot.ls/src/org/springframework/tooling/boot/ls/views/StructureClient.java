@@ -39,11 +39,23 @@ class StructureClient {
 	 *        dependency mode only, and a non-empty one is what puts the language server into that
 	 *        mode: no change information on any tree then
 	 */
+	record CaptureBaselineResult(String projectName, int elementCount, String capturedAt) {}
+	record ClearBaselineResult(String projectName, boolean hadBaseline) {}
+	/**
+	 * @param capturedAt identifies the snapshot, a manually captured one has no commit
+	 */
+	record BaselineHistoryEntry(String commitSha, String commitMessage, String capturedAt, int elementCount) {}
 	record StructureParameter(boolean updateMetadata, Collection<String> affectedProjects, Map<String, List<String>> groups,
 			Map<String, String> compareAgainst, boolean changes, Map<String, List<String>> dependencies) {}
 
 	private static final String FETCH_SPRING_BOOT_STRUCTURE = "sts/spring-boot/structure";
 	private static final String FETCH_STRUCTURE_GROUPS = "sts/spring-boot/structure/groups";
+	private static final String CAPTURE_BASELINE = "sts/spring-boot/structure/captureBaseline";
+	private static final String CLEAR_BASELINE = "sts/spring-boot/structure/clearBaseline";
+	private static final String BASELINE_HISTORY = "sts/spring-boot/structure/baselineHistory";
+	// tells the language server the user turned showing changes on - it may ask whether to turn the
+	// automatic git baseline on
+	private static final String DIFF_ENABLED = "sts/spring-boot/structure/diffEnabled";
 	
 	private static final Predicate<ServerCapabilities> WS_STRUCTURE_CMD_CAP = capabilities -> capabilities.getExecuteCommandProvider().getCommands().contains(FETCH_SPRING_BOOT_STRUCTURE);
 	private static final Predicate<ServerCapabilities> WS_GROUPS_CMD_CAP = capabilities -> capabilities.getExecuteCommandProvider().getCommands().contains(FETCH_STRUCTURE_GROUPS);
@@ -98,6 +110,61 @@ class StructureClient {
 		}).orElse(CompletableFuture.completedFuture(List.of()));
 	}
 	
+	CompletableFuture<CaptureBaselineResult> captureBaseline(String projectName) {
+		return executeForProject(CAPTURE_BASELINE, projectName, CaptureBaselineResult.class);
+	}
+
+	CompletableFuture<ClearBaselineResult> clearBaseline(String projectName) {
+		return executeForProject(CLEAR_BASELINE, projectName, ClearBaselineResult.class);
+	}
+
+	CompletableFuture<List<BaselineHistoryEntry>> baselineHistory(String projectName) {
+		return executeForProject(BASELINE_HISTORY, projectName, BaselineHistoryEntry[].class)
+				.thenApply(entries -> entries == null ? List.<BaselineHistoryEntry>of() : Arrays.asList(entries));
+	}
+
+	/**
+	 * Tells the language server that changes are shown. It decides whether to ask the user anything,
+	 * so there is nothing to wait for or to fail over.
+	 */
+	void diffEnabled() {
+		getExecutor(capabilityOf(DIFF_ENABLED)).ifPresent(lss ->
+			lss.computeAll(ls -> ls.getWorkspaceService().executeCommand(new ExecuteCommandParams(DIFF_ENABLED, List.of()))));
+	}
+
+	/**
+	 * Executes a command that takes the name of a project, and answers one result.
+	 * 
+	 * @return the result, completing exceptionally if the language server is not there or fails
+	 */
+	private <T> CompletableFuture<T> executeForProject(String command, String projectName, Class<T> resultType) {
+		Optional<LanguageServerProjectExecutor> executor = getExecutor(capabilityOf(command));
+		if (executor.isEmpty()) {
+			return CompletableFuture.failedFuture(new IllegalStateException("The Spring Boot language server is not available"));
+		}
+
+		List<CompletableFuture<@Nullable Object>> results = executor.get()
+				.computeAll(ls -> ls.getWorkspaceService().executeCommand(new ExecuteCommandParams(command, List.of(projectName))));
+		if (results.isEmpty()) {
+			return CompletableFuture.failedFuture(new IllegalStateException("The Spring Boot language server is not available"));
+		}
+
+		final Gson gson = new Gson();
+		return results.get(0).thenApply(o -> {
+			if (o instanceof JsonElement json) {
+				return gson.fromJson(json, resultType);
+			} else if (o != null) {
+				return gson.fromJson(gson.toJsonTree(o), resultType);
+			}
+			return null;
+		});
+	}
+
+	private static Predicate<ServerCapabilities> capabilityOf(String command) {
+		return capabilities -> capabilities.getExecuteCommandProvider() != null
+				&& capabilities.getExecuteCommandProvider().getCommands().contains(command);
+	}
+
 	private Optional<LanguageServerProjectExecutor> getExecutor(Predicate<ServerCapabilities> capabilityFilter) {
 		List<IJavaProject> allSpringProjects = BootProjectTracker.streamSpringProjects().toList();
 		if (!allSpringProjects.isEmpty()) {

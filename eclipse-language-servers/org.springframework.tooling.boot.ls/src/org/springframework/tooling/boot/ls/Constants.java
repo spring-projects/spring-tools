@@ -60,6 +60,11 @@ public class Constants {
 
 	public static final String PREF_DATA_QUERY_MULTILINE = "boot-java.code-action.data-query-multiline";
 
+	public static final String PREF_STRUCTURE_GIT_BASELINE_ENABLED = "boot-java.structure.git-baseline-enabled";
+	public static final String PREF_STRUCTURE_GIT_BASELINE_PROMPT = "boot-java.structure.git-baseline-prompt";
+	public static final String PREF_STRUCTURE_PACKAGE_NODES = "boot-java.structure.package-nodes";
+	public static final String PREF_STRUCTURE_BASELINE_HISTORY_SIZE = "boot-java.structure.baseline-history-size";
+
 	public static final String PREF_AI_MCP_ENABLED = "boot-java.ai.mcp-server-enabled";
 	public static final String PREF_AI_MCP_PORT = "boot-java.ai.mcp-server-port";
 	

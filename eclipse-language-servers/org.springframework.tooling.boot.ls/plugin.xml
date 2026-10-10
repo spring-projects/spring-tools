@@ -6,7 +6,7 @@
          point="org.eclipse.lsp4e.languageServer">
       <server
             class="org.springframework.tooling.boot.ls.DelegatingStreamConnectionProvider"
-            clientImpl="org.springframework.tooling.ls.eclipse.commons.STS4LanguageClientImpl"
+            clientImpl="org.springframework.tooling.boot.ls.BootLanguageClientImpl"
             id="org.eclipse.languageserver.languages.springboot"
             label="Spring Boot Language Server"
             lastDocumentDisconnectedTimeout="2147483647"
@@ -773,6 +773,40 @@
             id="org.springframework.ide.eclipse.ui.views"
             name="Spring">
       </category>
+   </extension>
+   
+   <extension
+         point="org.eclipse.ui.themes">
+      <colorDefinition
+            categoryId="org.springsource.ide.eclipse.commons.ui"
+            id="org.springframework.tooling.boot.ls.views.structure.addedColor"
+            isEditable="true"
+            label="Logical Structure: added"
+            value="76,175,80">
+         <description>
+            Color of the nodes in the Logical Structure view that were added since the baseline
+         </description>
+      </colorDefinition>
+      <colorDefinition
+            categoryId="org.springsource.ide.eclipse.commons.ui"
+            id="org.springframework.tooling.boot.ls.views.structure.modifiedColor"
+            isEditable="true"
+            label="Logical Structure: changed"
+            value="255,152,0">
+         <description>
+            Color of the nodes in the Logical Structure view that changed since the baseline
+         </description>
+      </colorDefinition>
+      <colorDefinition
+            categoryId="org.springsource.ide.eclipse.commons.ui"
+            id="org.springframework.tooling.boot.ls.views.structure.removedColor"
+            isEditable="true"
+            label="Logical Structure: removed"
+            value="229,57,53">
+         <description>
+            Color of the nodes in the Logical Structure view that were removed since the baseline
+         </description>
+      </colorDefinition>
    </extension>
    
    <extension

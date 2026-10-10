@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.springframework.tooling.boot.ls.views;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.lsp4j.Location;
@@ -214,6 +217,32 @@ final class StereotypeNode {
 
 	String hover() {
 		return attributes.get(HOVER) instanceof String s ? s : null;
+	}
+
+	/**
+	 * The deepest changed nodes of the given trees, i.e. the changed nodes that have no changed child
+	 * of their own.
+	 * 
+	 * Revealing exactly these is enough to make every changed node visible, since revealing a node
+	 * expands all of its ancestors. Nodes in branches without any change are left alone.
+	 */
+	static List<StereotypeNode> deepestChangedNodes(Collection<StereotypeNode> roots) {
+		List<StereotypeNode> deepest = new ArrayList<>();
+		roots.forEach(root -> collectDeepestChangedNodes(root, deepest));
+		return deepest;
+	}
+
+	private static void collectDeepestChangedNodes(StereotypeNode node, List<StereotypeNode> deepest) {
+		boolean hasChangedChild = false;
+		for (StereotypeNode child : node.children) {
+			if (child.change() != null) {
+				hasChangedChild = true;
+			}
+			collectDeepestChangedNodes(child, deepest);
+		}
+		if (node.change() != null && !hasChangedChild) {
+			deepest.add(node);
+		}
 	}
 
 	private StereotypeNode root() {

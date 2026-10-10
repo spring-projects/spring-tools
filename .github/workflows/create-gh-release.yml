@@ -35,7 +35,7 @@ jobs:
           echo $version
           echo $qualifier
           sed "/${version} ${qualifier}/,/^## .*/!d;//d;s/^* /- /" Changelog.md > ${{ github.workspace }}/gen-changelog.md
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # 7.0.2
         with:
           name: changelog-${{ inputs.version }}-${{ github.run_id }}.md
           path: ${{ github.workspace }}/gen-changelog.md

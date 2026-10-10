@@ -39,6 +39,25 @@ class StructureClient {
 	 *        dependency mode only, and a non-empty one is what puts the language server into that
 	 *        mode: no change information on any tree then
 	 */
+	/**
+	 * A dependency of a project that can be included in its tree.
+	 * 
+	 * @param id identifies the dependency in the selection
+	 * @param kind WORKSPACE_PROJECT for a dependency that resolves to a project of the workspace, JAR
+	 *        for a library
+	 * @param groupId the Maven coordinates of a library, if they are known
+	 */
+	record DependencyDescriptor(String id, String kind, String displayName, String groupId, String artifactId, String version,
+			String projectName, String location) {
+
+		static final String WORKSPACE_PROJECT = "WORKSPACE_PROJECT";
+		static final String JAR = "JAR";
+
+		boolean isWorkspaceProject() {
+			return WORKSPACE_PROJECT.equals(kind);
+		}
+	}
+	record Dependencies(String projectName, List<DependencyDescriptor> dependencies) {}
 	record CaptureBaselineResult(String projectName, int elementCount, String capturedAt) {}
 	record ClearBaselineResult(String projectName, boolean hadBaseline) {}
 	/**
@@ -50,6 +69,7 @@ class StructureClient {
 
 	private static final String FETCH_SPRING_BOOT_STRUCTURE = "sts/spring-boot/structure";
 	private static final String FETCH_STRUCTURE_GROUPS = "sts/spring-boot/structure/groups";
+	private static final String FETCH_DEPENDENCIES = "sts/spring-boot/structure/dependencies";
 	private static final String CAPTURE_BASELINE = "sts/spring-boot/structure/captureBaseline";
 	private static final String CLEAR_BASELINE = "sts/spring-boot/structure/clearBaseline";
 	private static final String BASELINE_HISTORY = "sts/spring-boot/structure/baselineHistory";
@@ -110,6 +130,15 @@ class StructureClient {
 		}).orElse(CompletableFuture.completedFuture(List.of()));
 	}
 	
+	/**
+	 * The dependencies of a project that can be included in its tree: the ones that resolve to
+	 * projects of the workspace first, then the libraries, both sorted by name.
+	 */
+	CompletableFuture<List<DependencyDescriptor>> dependencies(String projectName) {
+		return executeForProject(FETCH_DEPENDENCIES, projectName, Dependencies.class)
+				.thenApply(result -> result == null || result.dependencies() == null ? List.<DependencyDescriptor>of() : result.dependencies());
+	}
+
 	CompletableFuture<CaptureBaselineResult> captureBaseline(String projectName) {
 		return executeForProject(CAPTURE_BASELINE, projectName, CaptureBaselineResult.class);
 	}

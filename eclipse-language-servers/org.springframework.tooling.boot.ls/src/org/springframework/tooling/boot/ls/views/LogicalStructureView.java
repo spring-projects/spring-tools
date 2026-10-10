@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.DelegatingStyledCellLabelProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -65,6 +66,8 @@ public class LogicalStructureView extends ViewPart {
 	final private StructureViewState viewState = new StructureViewState();
 	
 	final private BaselineCommands baselineCommands = new BaselineCommands(this, structureClient, viewState);
+	
+	final private DependencyCommands dependencyCommands = new DependencyCommands(this, structureClient, viewState);
 	
 	private final List<StateToggleAction> toggleActions = new ArrayList<>();
 	
@@ -153,6 +156,9 @@ public class LogicalStructureView extends ViewPart {
 				}
 				if (l != null) {
 					LSPEclipseUtils.openInEditor(l);
+				} else if (n.javaElement() != null) {
+					// a node read from a JAR dependency
+					JavaElementOpener.open(getSite().getShell(), n.text(), n.javaElement());
 				}
 			}
 		});
@@ -181,43 +187,58 @@ public class LogicalStructureView extends ViewPart {
 		StateToggleAction hideUnchanged = new StateToggleAction("Hide Unchanged Nodes",
 				"Show only the nodes that changed since the baseline captured for their project, and the path leading to them",
 				viewState::isHideUnchanged, this::setHideUnchanged);
+		StateToggleAction includeDependencies = new StateToggleAction("Include Dependencies",
+				"Include the elements of the dependencies selected for a project in its tree. Showing changes is off then.",
+				viewState::isIncludeDependencies, viewState::setIncludeDependencies);
 		toggleActions.add(highlightChanges);
 		toggleActions.add(hideUnchanged);
+		toggleActions.add(includeDependencies);
+		actionBars.getMenuManager().add(includeDependencies);
 		actionBars.getMenuManager().add(highlightChanges);
 		actionBars.getMenuManager().add(hideUnchanged);
 	}
 
 	private void fillContextMenu(IMenuManager menu) {
 		Object selected = ((IStructuredSelection) treeViewer.getSelection()).getFirstElement();
-		if (!(selected instanceof StereotypeNode node) || viewState.isIncludeDependencies()) {
+		if (!(selected instanceof StereotypeNode node)) {
 			return;
 		}
 
-		// no baselines, and no changes to show, for a tree with dependencies included
 		if (node.isProject()) {
 			String projectName = node.getProjectId();
-			menu.add(new Action("Capture Logical Structure Baseline") {
+			menu.add(new Action("Select Dependencies...") {
 				@Override
 				public void run() {
-					baselineCommands.capture(projectName);
+					dependencyCommands.select(projectName);
 				}
 			});
-			menu.add(new Action("Clear Logical Structure Baseline") {
-				@Override
-				public void run() {
-					baselineCommands.clear(projectName);
-				}
-			});
-			menu.add(new Action("Select Baseline to Compare Against...") {
-				@Override
-				public void run() {
-					baselineCommands.select(projectName);
-				}
-			});
+
+			// no baselines, and no changes to show, for a tree with dependencies included
+			if (!viewState.isIncludeDependencies()) {
+				menu.add(new Separator());
+				menu.add(new Action("Capture Logical Structure Baseline") {
+					@Override
+					public void run() {
+						baselineCommands.capture(projectName);
+					}
+				});
+				menu.add(new Action("Clear Logical Structure Baseline") {
+					@Override
+					public void run() {
+						baselineCommands.clear(projectName);
+					}
+				});
+				menu.add(new Action("Select Baseline to Compare Against...") {
+					@Override
+					public void run() {
+						baselineCommands.select(projectName);
+					}
+				});
+			}
 		}
 		// deliberately keyed off the actual change state rather than the highlighting toggle: the
 		// changes are there to look at either way
-		if (node.change() != null && node.location() != null) {
+		if (!viewState.isIncludeDependencies() && node.change() != null && node.location() != null) {
 			menu.add(new ShowChangesAction(getSite().getShell(), node.location()));
 		}
 	}

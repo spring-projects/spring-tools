@@ -28,12 +28,8 @@ import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvi
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
-import org.springframework.ide.vscode.commons.java.IProjectBuild;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ICollector;
-import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
-import org.springframework.ide.vscode.commons.languageserver.util.LspClient.Client;
-import org.springframework.ide.vscode.commons.protocol.java.ProjectBuild;
 import org.springframework.ide.vscode.commons.util.text.IRegion;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -57,11 +53,6 @@ public class QueryMethodCodeActionProvider implements JdtAstCodeActionProvider {
 	}
 	
 	static boolean isValidProject(IJavaProject project) {
-		IProjectBuild build = project.getProjectBuild();
-		if (LspClient.currentClient() == Client.VSCODE && build != null && ProjectBuild.GRADLE_PROJECT_TYPE.equals(build.getType())) {
-			// TODO: remove once `gradle.runBuild` of vscode-gradle takes the arguments of the AOT refresh command (GH-1722)
-			return false;
-		}
 		Version springDataJpaVersion = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-data-jpa");
 		Version springDataMongoDbVersion = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-data-mongodb");
 		Version springDataJddbcVersion = SpringProjectUtil.getDependencyVersionByPrefix(project, "spring-data-jdbc");

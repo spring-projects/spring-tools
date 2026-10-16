@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -84,13 +84,15 @@ public class SampleProjectsProvider implements SpringProjectsProvider {
 	public static final String SPRING_BOOT_PROJECT_GENERATIONS = "{\n" + "  \"_embedded\" : {\n"
 			+ "    \"generations\" : [ {\n" + "      \"name\" : \"1.3.x\",\n"
 			+ "      \"initialReleaseDate\" : \"2019-01-01\",\n" + "      \"ossSupportEndDate\" : \"2020-01-01\",\n"
-			+ "      \"commercialSupportEndDate\" : \"2021-01-01\",\n" + "      \"_links\" : {\n"
+			+ "      \"commercialSupportEndDate\" : \"2021-01-01\",\n"
+			+ "      \"latestPatch\" : { \"enterprise\" : \"1.3.8\" },\n" + "      \"_links\" : {\n"
 			+ "        \"self\" : {\n"
 			+ "          \"href\" : \"https://spring.io/api/projects/spring-boot/generations/1.3.x\"\n" + "        },\n"
 			+ "        \"project\" : {\n" + "          \"href\" : \"https://spring.io/api/projects/spring-boot\"\n"
 			+ "        }\n" + "      }\n" + "    }, {\n" + "      \"name\" : \"2.2.x\",\n"
 			+ "      \"initialReleaseDate\" : \"2020-01-01\",\n" + "      \"ossSupportEndDate\" : \"2021-01-01\",\n"
-			+ "      \"commercialSupportEndDate\" : \"2022-01-01\",\n" + "      \"_links\" : {\n"
+			+ "      \"commercialSupportEndDate\" : \"2022-01-01\",\n"
+			+ "      \"latestPatch\" : { \"oss\" : \"2.2.13\" },\n" + "      \"_links\" : {\n"
 			+ "        \"self\" : {\n"
 			+ "          \"href\" : \"https://spring.io/api/projects/spring-boot/generations/2.2.x\"\n" + "        },\n"
 			+ "        \"project\" : {\n" + "          \"href\" : \"https://spring.io/api/projects/spring-boot\"\n"

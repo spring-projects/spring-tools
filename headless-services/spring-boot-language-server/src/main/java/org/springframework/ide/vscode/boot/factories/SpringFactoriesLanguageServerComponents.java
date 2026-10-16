@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,10 +13,8 @@ package org.springframework.ide.vscode.boot.factories;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.commons.languageserver.composable.LanguageServerComponents;
-import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IReconcileEngine;
 import org.springframework.ide.vscode.commons.languageserver.util.DocumentSymbolHandler;
 import org.springframework.ide.vscode.commons.languageserver.util.HoverHandler;
@@ -27,9 +25,9 @@ public class SpringFactoriesLanguageServerComponents implements LanguageServerCo
 	private SpringFactoriesReconcileEngine reconciler;
 	private SpringSymbolIndex springIndex;
 	
-	public SpringFactoriesLanguageServerComponents(JavaProjectFinder projectFinder, SpringSymbolIndex springIndex, BootJavaConfig config) {
+	public SpringFactoriesLanguageServerComponents(SpringFactoriesReconcileEngine reconciler, SpringSymbolIndex springIndex) {
 		this.springIndex = springIndex;
-		reconciler = new SpringFactoriesReconcileEngine(projectFinder, config);
+		this.reconciler = reconciler;
 	}
 
 	@Override

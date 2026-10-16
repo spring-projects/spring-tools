@@ -45,6 +45,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.ide.vscode.boot.common.PropertyCompletionFactory;
 import org.springframework.ide.vscode.boot.common.RelaxedNameConfig;
 import org.springframework.ide.vscode.boot.factories.SpringFactoriesDefinitionHandler;
+import org.springframework.ide.vscode.boot.factories.SpringFactoriesReconcileEngine;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheOnDiscDeltaBased;
@@ -92,6 +93,7 @@ import org.springframework.ide.vscode.boot.metadata.ProjectBasedPropertyIndexPro
 import org.springframework.ide.vscode.boot.metadata.SpringPropertyIndex;
 import org.springframework.ide.vscode.boot.metadata.ValueProviderRegistry;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
+import org.springframework.ide.vscode.boot.properties.BootPropertiesReconcileEngine;
 import org.springframework.ide.vscode.boot.properties.completions.SpringPropertiesCompletionEngine;
 import org.springframework.ide.vscode.boot.xml.SpringXMLCompletionEngine;
 import org.springframework.ide.vscode.boot.yaml.completions.ApplicationYamlAssistContext;
@@ -369,6 +371,14 @@ public class BootLanguageServerBootApp {
 
 	@Bean YamlStructureProvider yamlStructureProvider() {
 		return YamlStructureProvider.DEFAULT;
+	}
+
+	@Bean BootPropertiesReconcileEngine bootPropertiesReconcileEngine(SimpleLanguageServer server, BootLanguageServerParams params, YamlASTProvider parser, YamlStructureProvider yamlStructureProvider, SourceLinks sourceLinks) {
+		return new BootPropertiesReconcileEngine(server, params, parser, yamlStructureProvider, sourceLinks);
+	}
+
+	@Bean SpringFactoriesReconcileEngine springFactoriesReconcileEngine(BootLanguageServerParams params, BootJavaConfig config) {
+		return new SpringFactoriesReconcileEngine(params.projectFinder, config);
 	}
 
 	@Bean YamlAssistContextProvider yamlAssistContextProvider(BootLanguageServerParams params, JavaElementLocationProvider javaElementLocationProvider, SourceLinks sourceLinks) {

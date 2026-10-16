@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.eclipse.lsp4j.ClientCapabilities;
@@ -27,6 +28,7 @@ import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
+import org.eclipse.lsp4j.WorkspaceEditCapabilities;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +70,11 @@ public class CommonQuickfixes {
 			null
 	);
 
-	public final QuickfixType MISSING_PROPERTY;
+	private final QuickfixType missingPropertyFix;
+
+	// Set once the client has declared support for creating files through workspace edits; stays
+	// false when no LSP client ever connects (MCP-only mode), so the fix is never offered there.
+	private volatile boolean createFileSupported = false;
 
 	private final Gson gson = new Gson();
 
@@ -92,58 +98,68 @@ public class CommonQuickfixes {
 
 	}
 
-	public CommonQuickfixes(QuickfixRegistry r, JavaProjectFinder projectFinder, ClientCapabilities clientCapabilities) {
-		if (clientCapabilities == null) {
-			throw new IllegalStateException("Client Capabilities have not been received!");
-		}
-		if (clientCapabilities.getWorkspace().getWorkspaceEdit() != null && clientCapabilities.getWorkspace().getWorkspaceEdit().getResourceOperations() != null && clientCapabilities.getWorkspace().getWorkspaceEdit().getResourceOperations().contains(ResourceOperationKind.Create)
-				&& Boolean.TRUE.equals(clientCapabilities.getWorkspace().getWorkspaceEdit().getDocumentChanges())) {
-			MISSING_PROPERTY = r.register(MISSING_PROPERTY_APP_QF_ID, (Object _params) -> Mono.fromSupplier(() -> {
-				MissingPropertyData params = gson.fromJson((JsonElement)_params, MissingPropertyData.class);
-				try {
-					Optional<IJavaProject> p = projectFinder.find(params.getDoc());
-					if (p.isPresent()) {
-						IJavaProject project = p.get();
-						List<File> sourceFolders = IClasspathUtil.getSourceFolders(project.getClasspath()).collect(Collectors.toList());
-						if (!sourceFolders.isEmpty()) {
-							File preferredSourceFolder = getPreferredMetadataSourceFolder(sourceFolders);
-							WorkspaceEdit we = new WorkspaceEdit(new ArrayList<Either<TextDocumentEdit, ResourceOperation>>());
-							Path metadataFilePath = sourceFolders.stream().map(f -> f.toPath()).map(path -> path.resolve(METADATA_PATH)).filter(path -> Files.exists(path)).findFirst().orElse(null);
-							if (metadataFilePath == null) {
-								metadataFilePath = preferredSourceFolder.toPath().resolve(METADATA_PATH);
-								we.getDocumentChanges().add(Either.forRight(new CreateFile(metadataFilePath.toUri().toASCIIString())));
-							}
-							if (metadataFilePath != null) {
-								String content = Files.exists(metadataFilePath) ? IOUtil.toString(Files.newInputStream(metadataFilePath)) : "";
-								MetadataManipulator metadata = new MetadataManipulator(new SimpleContentStore(content));
-								if (!metadata.isReliable()) {
-									log.error("Failed to add metadata!",
-											"'" + metadataFilePath + "' does not appear to contain valid JSON!\n");
-								} else {
-									metadata.addDefaultInfo(params.getProperty());
-									TextDocumentEdit edit = new TextDocumentEdit();
-									edit.setTextDocument(new VersionedTextDocumentIdentifier(metadataFilePath.toUri().toASCIIString(), null));
-									TextEdit textEdit = new TextEdit();
-									textEdit.setNewText(metadata.getTextContent());
-									TextDocument doc = new TextDocument(metadataFilePath.toUri().toASCIIString(), null);
-									doc.setText(content);
-									textEdit.setRange(doc.toRange(new Region(0, content.length())));
-									edit.setEdits(ImmutableList.of(Either.forLeft(textEdit)));
-									we.getDocumentChanges().add(Either.forLeft(edit));
-								}
-
-							}
-							return new QuickfixEdit(we, null);
+	public CommonQuickfixes(QuickfixRegistry r, JavaProjectFinder projectFinder, CompletableFuture<ClientCapabilities> clientCapabilities) {
+		clientCapabilities.thenAccept(capabilities -> createFileSupported = supportsCreateFile(capabilities));
+		missingPropertyFix = r.register(MISSING_PROPERTY_APP_QF_ID, (Object _params) -> Mono.fromSupplier(() -> {
+			MissingPropertyData params = gson.fromJson((JsonElement)_params, MissingPropertyData.class);
+			try {
+				Optional<IJavaProject> p = projectFinder.find(params.getDoc());
+				if (p.isPresent()) {
+					IJavaProject project = p.get();
+					List<File> sourceFolders = IClasspathUtil.getSourceFolders(project.getClasspath()).collect(Collectors.toList());
+					if (!sourceFolders.isEmpty()) {
+						File preferredSourceFolder = getPreferredMetadataSourceFolder(sourceFolders);
+						WorkspaceEdit we = new WorkspaceEdit(new ArrayList<Either<TextDocumentEdit, ResourceOperation>>());
+						Path metadataFilePath = sourceFolders.stream().map(f -> f.toPath()).map(path -> path.resolve(METADATA_PATH)).filter(path -> Files.exists(path)).findFirst().orElse(null);
+						if (metadataFilePath == null) {
+							metadataFilePath = preferredSourceFolder.toPath().resolve(METADATA_PATH);
+							we.getDocumentChanges().add(Either.forRight(new CreateFile(metadataFilePath.toUri().toASCIIString())));
 						}
+						if (metadataFilePath != null) {
+							String content = Files.exists(metadataFilePath) ? IOUtil.toString(Files.newInputStream(metadataFilePath)) : "";
+							MetadataManipulator metadata = new MetadataManipulator(new SimpleContentStore(content));
+							if (!metadata.isReliable()) {
+								log.error("Failed to add metadata!",
+										"'" + metadataFilePath + "' does not appear to contain valid JSON!\n");
+							} else {
+								metadata.addDefaultInfo(params.getProperty());
+								TextDocumentEdit edit = new TextDocumentEdit();
+								edit.setTextDocument(new VersionedTextDocumentIdentifier(metadataFilePath.toUri().toASCIIString(), null));
+								TextEdit textEdit = new TextEdit();
+								textEdit.setNewText(metadata.getTextContent());
+								TextDocument doc = new TextDocument(metadataFilePath.toUri().toASCIIString(), null);
+								doc.setText(content);
+								textEdit.setRange(doc.toRange(new Region(0, content.length())));
+								edit.setEdits(ImmutableList.of(Either.forLeft(textEdit)));
+								we.getDocumentChanges().add(Either.forLeft(edit));
+							}
+
+						}
+						return new QuickfixEdit(we, null);
 					}
-				} catch (Exception e) {
-					log.error("", e);
 				}
-				return NULL_FIX;
-			}));
-		} else {
-			MISSING_PROPERTY = null;
+			} catch (Exception e) {
+				log.error("", e);
+			}
+			return NULL_FIX;
+		}));
+	}
+
+	/**
+	 * The "create metadata" fix for unknown properties, or {@code null} while the client has not
+	 * declared support for creating files via workspace edits.
+	 */
+	public QuickfixType getMissingPropertyFix() {
+		return createFileSupported ? missingPropertyFix : null;
+	}
+
+	private static boolean supportsCreateFile(ClientCapabilities capabilities) {
+		if (capabilities == null || capabilities.getWorkspace() == null || capabilities.getWorkspace().getWorkspaceEdit() == null) {
+			return false;
 		}
+		WorkspaceEditCapabilities workspaceEdit = capabilities.getWorkspace().getWorkspaceEdit();
+		return workspaceEdit.getResourceOperations() != null && workspaceEdit.getResourceOperations().contains(ResourceOperationKind.Create)
+				&& Boolean.TRUE.equals(workspaceEdit.getDocumentChanges());
 	}
 
 	private File getPreferredMetadataSourceFolder(List<File> sourceFolders) {

@@ -1,0 +1,2 @@
+# legacy auto-configuration registration, no longer supported as of Spring Boot 3
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=org.test.LegacyAutoConfiguration

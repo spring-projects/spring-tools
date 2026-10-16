@@ -90,7 +90,6 @@ public class ExecuteGradleTaskHandler extends AbstractHandler {
 			String buildGradlePath = (String) cmd.getArguments().get(0);
 			GradleCommandLine commandLine = GradleCommandLine.parse((String) cmd.getArguments().get(1));
 			String javaHome = cmd.getArguments().size() > 2 ? javaHome(cmd.getArguments().get(2)) : null;
-			boolean refreshProject = cmd.getArguments().size() > 3 && refreshProject(cmd.getArguments().get(3));
 
 			IResource buildGradle = LSPEclipseUtils.findResourceFor(Paths.get(buildGradlePath).toUri());
 			IProject project = buildGradle.getProject();
@@ -117,11 +116,9 @@ public class ExecuteGradleTaskHandler extends AbstractHandler {
 				// Buildship's launch delegate only returns once the build has finished
 				launchConfig.launch(ILaunchManager.RUN_MODE, new NullProgressMonitor());
 			} finally {
-				if (refreshProject) {
-					// The build writes files (e.g. the AOT metadata) the workspace does not know about yet.
-					// Synchronize the project, which refreshes the workspace and updates the source folders.
-					synchronize(project);
-				}
+				// The build writes files (e.g. the AOT metadata) the workspace does not know about yet.
+				// Synchronize the project, which refreshes the workspace and updates the source folders.
+				synchronize(project);
 				if (!existed) {
 					// Created for this build only, the build can use files that are gone after it (an init
 					// script). Do not leave it around, but never delete a configuration of the user.
@@ -176,11 +173,6 @@ public class ExecuteGradleTaskHandler extends AbstractHandler {
 			}
 			return new GradleCommandLine(tasks, options);
 		}
-	}
-
-	// Same options as the `gradle.runBuild` command of vscode-gradle: { "refreshJavaProject": true }
-	private static boolean refreshProject(Object options) {
-		return options instanceof Map<?, ?> map && Boolean.TRUE.equals(map.get("refreshJavaProject"));
 	}
 
 	private static String javaHome(Object env) {

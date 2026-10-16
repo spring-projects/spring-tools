@@ -33,7 +33,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Reconcile
 
 public class WebApiVersionStrategyDuplicatedReconciler implements JdtAstReconciler {
 
-	private static final String PROBLEM_LABEL = "API versioninig strategy is configured multiple times with the same strategy";
+	private static final String PROBLEM_LABEL = "API versioning strategy is configured multiple times with the same strategy";
 
 	public WebApiVersionStrategyDuplicatedReconciler() {
 	}

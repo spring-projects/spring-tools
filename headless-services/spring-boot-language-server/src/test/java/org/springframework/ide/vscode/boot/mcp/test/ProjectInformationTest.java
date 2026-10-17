@@ -92,6 +92,8 @@ public class ProjectInformationTest {
 		assertNotNull(testProject);
 		assertTrue(testProject.isSpringBootProject());
 		assertNotNull(testProject.javaVersion());
+		assertNotNull(testProject.location());
+		assertTrue(new java.io.File(testProject.location(), "pom.xml").isFile(), "location must be the directory holding the build file: " + testProject.location());
 	}
 
 	@Test

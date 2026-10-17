@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.app;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.ide.vscode.boot.jdt.ls.JavaProjectsService;
 import org.springframework.ide.vscode.boot.mcp.FileChangesMcpTools;
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectChangeNotifier;
@@ -20,7 +21,8 @@ import org.springframework.ide.vscode.commons.util.FileChangeNotifier;
 
 /**
  * Spring configuration that provides a {@link JavaProjectsService} backed by Maven and
- * Gradle project caches, requiring no JDT Language Server.
+ * Gradle project caches, requiring no JDT Language Server, plus the MCP file-change tools and
+ * the {@link StandaloneFileWatcher} that keeps the index in sync with the disk in MCP-only mode.
  *
  * <p>Registered explicitly as a second Spring source in {@link StandaloneBootApp#main},
  * so it is discovered regardless of classpath scanning boundaries. The presence of
@@ -32,13 +34,18 @@ import org.springframework.ide.vscode.commons.util.FileChangeNotifier;
 public class StandaloneProjectServiceConfig {
 	
 	@Bean
-	JavaProjectsService javaProjectsService(SimpleLanguageServer server) {
+	LegacyJavaProjectsService javaProjectsService(SimpleLanguageServer server) {
 		return new LegacyJavaProjectsService(server);
 	}
 	
 	@Bean
 	FileChangesMcpTools fileChangesMcpTools(FileChangeNotifier fileChangeNotifier, ProjectChangeNotifier projectChangeNotifier, SimpleLanguageServer server) {
 		return new FileChangesMcpTools(fileChangeNotifier, projectChangeNotifier, server);
+	}
+
+	@Bean
+	StandaloneFileWatcher standaloneFileWatcher(Environment environment, FileChangeNotifier fileChangeNotifier, LegacyJavaProjectsService projectsService) {
+		return new StandaloneFileWatcher(environment, fileChangeNotifier, projectsService);
 	}
 
 }

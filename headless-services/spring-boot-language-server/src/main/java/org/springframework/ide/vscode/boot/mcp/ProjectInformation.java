@@ -10,6 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
@@ -37,17 +39,33 @@ public class ProjectInformation {
 
 
 	@Tool(description = """
-			Lists all Java projects in the workspace with Boot flag and JRE level.
+			Lists all Java projects in the workspace with Boot flag, JRE level and root directory.
 			Use each Project.projectName when calling other tools; those tools match this name case-insensitively.
+			Project.location is the absolute path of the project root (the directory holding pom.xml or build.gradle),
+			so a source file belongs to the project whose location is the longest prefix of the file's path.
 			""")
 	public List<Project> getProjectList() throws Exception {
 		return projects.all()
 				.stream()
-				.map(project -> new Project(project.getElementName(), SpringProjectUtil.isBootProject(project), project.getClasspath().getJre() == null ? null : project.getClasspath().getJre().version()))
+				.map(project -> new Project(project.getElementName(), SpringProjectUtil.isBootProject(project),
+						project.getClasspath().getJre() == null ? null : project.getClasspath().getJre().version(),
+						locationOf(project)))
 				.toList();
 	}
+
+	private static String locationOf(IJavaProject project) {
+		URI uri = project.getLocationUri();
+		if (uri == null) {
+			return null;
+		}
+		try {
+			return Paths.get(uri).toString();
+		} catch (RuntimeException e) {
+			return uri.toString();
+		}
+	}
 	
-	public static record Project(String projectName, boolean isSpringBootProject, String javaVersion) {}
+	public static record Project(String projectName, boolean isSpringBootProject, String javaVersion, String location) {}
 
 
 	@Tool(description = """

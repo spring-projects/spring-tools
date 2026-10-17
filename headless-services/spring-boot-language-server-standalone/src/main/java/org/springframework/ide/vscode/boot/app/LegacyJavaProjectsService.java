@@ -10,11 +10,16 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.app;
 
+import java.io.File;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
+import org.apache.maven.project.MavenProject;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +38,7 @@ import org.springframework.ide.vscode.commons.languageserver.java.ProjectChangeN
 import org.springframework.ide.vscode.commons.languageserver.java.ProjectObserver;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.maven.MavenCore;
+import org.springframework.ide.vscode.commons.maven.MavenException;
 import org.springframework.ide.vscode.commons.maven.java.MavenProjectCache;
 import org.springframework.ide.vscode.commons.maven.java.MavenProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
@@ -131,6 +137,7 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 					if (pomFile.exists() && pomFile.isFile()) {
 						log.info("Found Maven project: {}", pomFile.getAbsolutePath());
 						mavenProjectCache.project(pomFile);
+						registerMavenModulePoms(pomFile, new HashSet<>());
 						return java.nio.file.FileVisitResult.SKIP_SUBTREE;
 					}
 
@@ -157,6 +164,47 @@ public class LegacyJavaProjectsService implements JavaProjectsService, Applicati
 			});
 		} catch (Exception e) {
 			// ignore
+		}
+	}
+
+	/**
+	 * Recursively registers the POMs of the modules of the given Maven project.
+	 * The visited set prevents cycles and duplicate processing.
+	 */
+	private void registerMavenModulePoms(File pomFile, Set<Path> visited) {
+		Path pomPath = pomFile.toPath().toAbsolutePath().normalize();
+		if (!visited.add(pomPath)) {
+			return;
+		}
+
+		MavenProject project;
+		try {
+			project = MavenCore.getDefault().readProject(pomFile, false);
+		}
+		catch (MavenException e) {
+			log.debug("Cannot read Maven project model, module discovery may be incomplete: {}", pomPath, e);
+			return;
+		}
+
+		File parentDir = pomFile.getAbsoluteFile().getParentFile();
+		if (parentDir == null) {
+			return;
+		}
+
+		for (String module : project.getModules()) {
+			File modulePom = new File(new File(parentDir, module), MavenCore.POM_XML);
+			if (!modulePom.isFile()) {
+				continue;
+			}
+
+			Path modulePath = modulePom.toPath().toAbsolutePath().normalize();
+			if (visited.contains(modulePath)) {
+				continue;
+			}
+
+			log.debug("Found Maven module: {}", modulePath);
+			mavenProjectCache.project(modulePom);
+			registerMavenModulePoms(modulePom, visited);
 		}
 	}
 

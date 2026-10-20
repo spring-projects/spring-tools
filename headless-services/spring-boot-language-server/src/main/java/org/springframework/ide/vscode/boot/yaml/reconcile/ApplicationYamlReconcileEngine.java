@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2019 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,10 +12,13 @@ package org.springframework.ide.vscode.boot.yaml.reconcile;
 
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
 import org.springframework.ide.vscode.boot.metadata.IndexNavigator;
+import org.springframework.ide.vscode.boot.metadata.ProjectBasedPropertyIndexProvider;
 import org.springframework.ide.vscode.boot.metadata.PropertyInfo;
 import org.springframework.ide.vscode.boot.metadata.SpringPropertyIndexProvider;
 import org.springframework.ide.vscode.boot.metadata.types.TypeUtilProvider;
+import org.springframework.ide.vscode.boot.properties.reconcile.PropertyPlaceholderChecker;
 import org.springframework.ide.vscode.boot.yaml.quickfix.AppYamlQuickfixes;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
 import org.springframework.ide.vscode.commons.util.FuzzyMap;
@@ -30,13 +33,17 @@ public class ApplicationYamlReconcileEngine extends YamlReconcileEngine {
 	private TypeUtilProvider typeUtilProvider;
 	private AppYamlQuickfixes quickFixes;
 	private SourceLinks sourceLinks;
+	private PropertyPlaceholderChecker placeholderChecker;
 
-	public ApplicationYamlReconcileEngine(YamlASTProvider astProvider, SpringPropertyIndexProvider indexProvider, TypeUtilProvider typeUtilProvider, AppYamlQuickfixes quickFixes, SourceLinks sourceLinks) {
+	public ApplicationYamlReconcileEngine(YamlASTProvider astProvider, SpringPropertyIndexProvider indexProvider, TypeUtilProvider typeUtilProvider, AppYamlQuickfixes quickFixes, SourceLinks sourceLinks,
+			ProjectBasedPropertyIndexProvider adHocIndexProvider, JavaProjectFinder projectFinder) {
 		super(astProvider);
 		this.indexProvider = indexProvider;
 		this.typeUtilProvider = typeUtilProvider;
 		this.quickFixes = quickFixes;
 		this.sourceLinks = sourceLinks;
+		this.placeholderChecker = new PropertyPlaceholderChecker(ApplicationYamlProblemType.YAML_PLACEHOLDER_SYNTAX,
+				ApplicationYamlProblemType.YAML_UNRESOLVED_PLACEHOLDER, indexProvider, adHocIndexProvider, projectFinder);
 	}
 
 	@Override
@@ -44,7 +51,7 @@ public class ApplicationYamlReconcileEngine extends YamlReconcileEngine {
 		FuzzyMap<PropertyInfo> index = indexProvider.getIndex(doc).getProperties();
 		if (index != null && !index.isEmpty()) {
 			IndexNavigator nav = IndexNavigator.with(index);
-			return new ApplicationYamlASTReconciler(problemCollector, nav, typeUtilProvider.getTypeUtil(sourceLinks, doc), quickFixes);
+			return new ApplicationYamlASTReconciler(problemCollector, nav, typeUtilProvider.getTypeUtil(sourceLinks, doc), quickFixes, placeholderChecker);
 		}
 		return null;
 	}

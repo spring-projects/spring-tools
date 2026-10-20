@@ -352,6 +352,18 @@
         "label": "Syntax error",
         "description": "Syntax Error",
         "defaultSeverity": "ERROR"
+      },
+      {
+        "code": "PROP_PLACEHOLDER_SYNTAX",
+        "label": "Placeholder syntax",
+        "description": "Syntax error in a ${...} placeholder",
+        "defaultSeverity": "ERROR"
+      },
+      {
+        "code": "PROP_UNRESOLVED_PLACEHOLDER",
+        "label": "Unresolved placeholder",
+        "description": "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime",
+        "defaultSeverity": "IGNORE"
       }
     ]
   },
@@ -437,6 +449,18 @@
         "label": "Should escape",
         "description": "This key contains special characters and should probably be escaped by surrounding it with '[]'",
         "defaultSeverity": "WARNING"
+      },
+      {
+        "code": "YAML_PLACEHOLDER_SYNTAX",
+        "label": "Placeholder syntax",
+        "description": "Syntax error in a ${...} placeholder",
+        "defaultSeverity": "ERROR"
+      },
+      {
+        "code": "YAML_UNRESOLVED_PLACEHOLDER",
+        "label": "Unresolved placeholder",
+        "description": "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime",
+        "defaultSeverity": "IGNORE"
       }
     ]
   },

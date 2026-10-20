@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.boot.properties;
 import org.springframework.ide.vscode.boot.app.BootLanguageServerParams;
 import org.springframework.ide.vscode.boot.common.SpringProblemCategories;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
+import org.springframework.ide.vscode.boot.metadata.ProjectBasedPropertyIndexProvider;
 import org.springframework.ide.vscode.boot.properties.quickfix.AppPropertiesQuickFixes;
 import org.springframework.ide.vscode.boot.properties.quickfix.CommonQuickfixes;
 import org.springframework.ide.vscode.boot.properties.reconcile.SpringPropertiesReconcileEngine;
@@ -46,14 +47,16 @@ public class BootPropertiesReconcileEngine implements IReconcileEngine {
 	private final ApplicationYamlReconcileEngine ymlReconciler;
 
 	public BootPropertiesReconcileEngine(SimpleLanguageServer server, BootLanguageServerParams params,
-			YamlASTProvider parser, YamlStructureProvider yamlStructureProvider, SourceLinks sourceLinks) {
+			YamlASTProvider parser, YamlStructureProvider yamlStructureProvider, SourceLinks sourceLinks,
+			ProjectBasedPropertyIndexProvider adHocIndexProvider) {
 		CommonQuickfixes commonQuickfixes = new CommonQuickfixes(server.getQuickfixRegistry(), params.projectFinder,
 				server.getClientCapabilities());
 		this.propertiesReconciler = new SpringPropertiesReconcileEngine(params.indexProvider, params.typeUtilProvider,
-				new AppPropertiesQuickFixes(server.getQuickfixRegistry(), commonQuickfixes), sourceLinks);
+				new AppPropertiesQuickFixes(server.getQuickfixRegistry(), commonQuickfixes), sourceLinks,
+				adHocIndexProvider, params.projectFinder);
 		this.ymlReconciler = new ApplicationYamlReconcileEngine(parser, params.indexProvider, params.typeUtilProvider,
 				new AppYamlQuickfixes(server.getQuickfixRegistry(), server.getTextDocumentService(), yamlStructureProvider,
-						commonQuickfixes), sourceLinks);
+						commonQuickfixes), sourceLinks, adHocIndexProvider, params.projectFinder);
 	}
 
 	/** Whether the URI or file path has one of the config-file extensions this engine handles. */

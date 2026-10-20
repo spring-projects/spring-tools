@@ -18,6 +18,7 @@ import static org.springframework.ide.vscode.boot.properties.reconcile.Applicati
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_INVALID_INDEXED_NAVIGATION;
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_NON_INTEGER_IN_BRACKETS;
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_NO_MATCHING_RBRACK;
+import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_UNKNOWN_PROPERTY;
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_VALUE_TYPE_MISMATCH;
 import static org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts.field;
 import static org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts.method;
@@ -2485,6 +2486,36 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         assertNoCompletions("spring.session.jdbc.cleanup-cron=zzz<*>");
         // Not a known CRON property
         assertNoCompletions("some.other.cron=0 0 <*>");
+    }
+
+    @Test
+    void placeholderChecks() throws Exception {
+        defaultTestData();
+        adHocProperties.add("my.adhoc.key");
+        // the unresolved check is off by default
+        harness.changeConfiguration("{\"spring-boot\": {\"ls\": {\"problem\": {\"application-properties\": {\"PROP_UNRESOLVED_PLACEHOLDER\": \"WARNING\"}}}}}");
+
+        Editor editor = newEditor(
+                "spring.datasource.url=${DB_URL\n" +
+                "spring.datasource.username=${DB USER}\n" +
+                "spring.datasource.password=${DB_PASS}\n" +
+                "spring.datasource.name=${DB_NAME:demo}\n" +
+                "spring.application.name=${server.port}\n" +
+                "my.local.key=hello\n" +
+                "banner.location=${my.local.key}\n" +
+                "banner.charset=${my.adhoc.key}\n" +
+                "debug=${random.int}\n" +
+                "my.escaped=\\\\${NOT_A_PLACEHOLDER}\n" +
+                "my.nested=${outer:${INNER}}\n" +
+                "my.pattern=%d ${PID} ${LOG_LEVEL_PATTERN}\n"
+        );
+        editor.ignoreProblem(PROP_UNKNOWN_PROPERTY); // my.* keys are deliberately unknown
+        editor.assertProblems(
+                "${DB_URL|Placeholder is not closed",
+                "USER|Placeholder:",
+                "DB_PASS|has no default value and is not defined in this project",
+                "INNER|has no default value"
+        );
     }
 
 }

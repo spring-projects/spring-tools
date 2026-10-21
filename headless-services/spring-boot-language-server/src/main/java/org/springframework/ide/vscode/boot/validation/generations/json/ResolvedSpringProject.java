@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2022, 2025 VMware, Inc.
+ * Copyright (c) 2022, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,8 @@
 package org.springframework.ide.vscode.boot.validation.generations.json;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.ide.vscode.boot.validation.generations.SpringProjectsClient;
@@ -47,6 +49,27 @@ public class ResolvedSpringProject extends SpringProject {
 			}
 		}
 		return this.generations != null ? this.generations.getGenerations() : ImmutableList.of();
+	}
+
+	/**
+	 * OSS latest patch per generation, including generations no longer in support.
+	 */
+	public List<Version> getLatestPatchVersions() throws Exception {
+		return getGenerations().stream()
+				.map(Generation::getLatestPatchVersion)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * The generation whose name matches {@code <major>.<minor>.x} for the given version,
+	 * e.g. {@code 3.4.7} -> generation {@code 3.4.x}.
+	 */
+	public Optional<Generation> findGeneration(Version version) throws Exception {
+		String generationName = version.getMajor() + "." + version.getMinor() + ".x";
+		return getGenerations().stream()
+				.filter(g -> generationName.equals(g.getName()))
+				.findFirst();
 	}
 
 	/**

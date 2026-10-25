@@ -44,3 +44,6 @@ public String preview(@ModelAttribute(binding = false) User user) {
 *Note: only parameters with a plain, non-generic class type are flagged. Arrays, collections and reactive types like `Mono` or `CompletableFuture` get different default names (e.g. `orderList` for `List<Order>` or `Order[]`), and other generic types such as `Optional<User>` are not checked either, so leave their names alone. `@ModelAttribute` on methods (e.g. `@ModelAttribute("types")` on a method that provides reference data) is not flagged either.*
 
 *Note: for other web annotations like `@RequestParam` or `@PathVariable`, the default name is the parameter name instead - see `WEB_ANNOTATION_NAMES`.*
+
+## References
+- [`@ModelAttribute` API documentation](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/bind/annotation/ModelAttribute.html)

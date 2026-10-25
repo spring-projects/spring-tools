@@ -13,6 +13,7 @@ package org.springframework.ide.eclipse.boot.test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
+import org.springframework.ide.eclipse.boot.ui.preferences.JSpecifyNullAnalysisStartupTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({
@@ -30,7 +31,8 @@ import org.junit.runners.Suite.SuiteClasses;
 		DependencyTooltipContentTest.class,
 		BootPropertyTesterTest.class,
 		AddStartersModelTest.class,
-		NameGeneratorTest.class
+		NameGeneratorTest.class,
+		JSpecifyNullAnalysisStartupTest.class
 })
 public class AllSpringBootTests {
 

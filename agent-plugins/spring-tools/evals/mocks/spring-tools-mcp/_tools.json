@@ -1,0 +1,500 @@
+{
+  "tools": [
+    {
+      "name": "getLogicalStructure",
+      "description": "Returns the logical structure of the given project as a tree, the same structure that the Spring Tools\nlogical structure view renders in VSCode and Eclipse.\nThe tree groups the components of the project by their stereotypes (and by application modules for Spring Modulith projects),\nso it shows how the application is organized logically instead of by files and folders.\nEach node carries a display label, an icon identifier, a stable node id, the source location of the element it\nrepresents, and its child nodes, which is everything a client needs to render the tree itself.\nOptionally, dependencies of the project (ids from getStructureDependencies) can be included: their components\nthen appear in the tree as if they were the project's own.\nUse getProjectList to obtain valid project names. Use getStereotypesList or getListOfComponentsAndTheirStereotypes\nif you need the flat stereotype information instead of the tree.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "ids of dependencies to include, from getStructureDependencies().id - none when omitted"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getStereotypesList",
+      "description": "This function provides information about all the stereotype definitions that are defined and available in the given project\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getJavaVersion",
+      "description": "Returns the Java/JRE version configured for the project's classpath.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "findBeansByType",
+      "description": "Find all beans that match a specific type.\nThis is useful for finding all implementations of an interface or all beans of a certain class.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          },
+          "typeName": {
+            "type": "string",
+            "description": "the fully qualified type name to search for"
+          }
+        },
+        "required": [
+          "projectName",
+          "typeName"
+        ]
+      }
+    },
+    {
+      "name": "getResolvedProjectClasspath",
+      "description": "Returns non-system binary classpath entries for the project (resolved JARs) with versions from build tooling.\nEach Library.name is the classpath entry path (often a local .m2 or Gradle cache path), not necessarily a Maven coordinate; use it to see exact resolved artifacts.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getBeanUsageInfo",
+      "description": "Get detailed information about a specific bean, including where it's defined and all places where it's injected.\nThis helps understand bean usage and dependencies across the application.\nReturns information for all beans with the given name (there may be multiple beans with the same name in different contexts).\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          },
+          "beanName": {
+            "type": "string",
+            "description": "the name of the bean to analyze"
+          }
+        },
+        "required": [
+          "projectName",
+          "beanName"
+        ]
+      }
+    },
+    {
+      "name": "getRequestMappings",
+      "description": "Get all REST endpoints/request mappings defined in the project.\nThis includes endpoints from @RequestMapping, @GetMapping, @PostMapping, @PutMapping, @DeleteMapping, @PatchMapping annotations,\nas well as HttpExchange interfaces.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "refreshWorkspace",
+      "description": "Notifies the MCP Server to refresh the entire workspace (e.g., after a git checkout or pull).",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "getGenerations",
+      "description": "Get support generation windows (OSS and commercial end dates) for a Spring project from the live Spring IO API.\nFor the current GA line's support dates tied to the latest release only, prefer getLatestReleaseInformation instead.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "Spring IO API project slug, e.g. \"spring-boot\", \"spring-framework\". Same semantics as getReleases project parameter.\n"
+          }
+        },
+        "required": [
+          "project"
+        ]
+      }
+    },
+    {
+      "name": "getStructureDependencies",
+      "description": "Lists the dependencies of the given project that can be included in its logical structure (see getLogicalStructure):\nother projects of the workspace it depends on, and its libraries, identified by group and artifact id where known.\nThe components of an included library show up in the logical structure if they sit within the project's main\napplication package, as for an included workspace project.\nUse getProjectList to obtain valid project names.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "findComponentsByStereotype",
+      "description": "Find all Spring components by stereotype (Controller, Service, Repository, Component, Entity, etc.).\nReturns all components that have the specified stereotype.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          },
+          "stereotypeName": {
+            "type": "string",
+            "description": "the stereotype name to filter by (e.g., 'Controller', 'Service', 'Repository', 'Entity')"
+          }
+        },
+        "required": [
+          "projectName",
+          "stereotypeName"
+        ]
+      }
+    },
+    {
+      "name": "getListOfComponentsAndTheirStereotypes",
+      "description": "This function returns a list of classes or components from the given project and lists the stereotypes that each class or component has.\nThis way you can identify, for example, all components from a specific stereotype (e.g. all data repositories, all services, all entities, and so on)\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "fileChanged",
+      "description": "Notifies the MCP Server that a file has been created or modified on disk so it can update its internal index and diagnostics.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "type": "string",
+            "description": "Absolute path to the file"
+          }
+        },
+        "required": [
+          "filePath"
+        ]
+      }
+    },
+    {
+      "name": "getBeanDetails",
+      "description": "Returns indexed Spring beans for one workspace Java project, including injection points where the index exposes them.\nUse getProjectList to obtain valid project names. For a single named bean or type-scoped queries, prefer getBeanUsageInfo or findBeansByType.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getUpcomingReleases",
+      "description": "Get upcoming Spring ecosystem releases from the Spring release calendar API (date range from today for calendar.window.days).\nNeither getReleases nor getLatestReleaseInformation provide this calendar view; use this for forward-looking dates.\nCalendar base URL is workspace setting boot-java.io.calendar-api.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "findRequestMappingsByMethod",
+      "description": "Find request mappings by HTTP method (GET, POST, PUT, DELETE, PATCH, etc.).\nReturns all endpoints that handle the specified HTTP method.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          },
+          "httpMethod": {
+            "type": "string",
+            "description": "the HTTP method to filter by (e.g., 'GET', 'POST', 'PUT', 'DELETE', 'PATCH')"
+          }
+        },
+        "required": [
+          "projectName",
+          "httpMethod"
+        ]
+      }
+    },
+    {
+      "name": "getProjectDiagnostics",
+      "description": "Returns all current Spring Tools diagnostics or problems or validations (errors, warnings, infos, hints) for a specific project.\nDiagnostics are produced by the Spring Tools language server during indexing and validation and cover Java sources,\nSpring Boot configuration files (application*.properties, application*.yml, META-INF/spring.factories) and the Spring Boot version in the build file.\nEach entry identifies the source file, the exact source location, the severity, and the message.\nOnly diagnostics known to Spring Tools are included; general Java compiler errors are not.\nUse getProjectList to obtain valid project names.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getLatestBootVersionsFromMavenRepo",
+      "description": "Returns the latest available Spring Boot versions from the Maven repositories configured in the project's build file (pom.xml).\nUnlike getLatestReleaseInformation (which queries the Spring IO API), this reflects what is actually resolvable from the project's own configured Maven repositories, including private or enterprise repos.\nlatestPatchVersion, latestMinorVersion, and latestMajorVersion are the newest available versions newer than currentVersion for each respective level (null means already up-to-date at that level).\nOnly works for Maven (pom.xml) projects; returns null for Gradle projects or when Maven metadata cannot be fetched.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getLogicalStructureBaselineHistory",
+      "description": "Lists the retained logical structure baseline snapshots for the given project, most recent first, each\nwith the git commit it was captured at (sha and message) and when it was captured. The most recent entry\nis always the one getLogicalStructureChanges compares against; how many are retained is controlled by\nthe boot-java.structure.baseline-history-size setting (10 by default). Useful to see recent history or\nto recognize which commit a highlighted diff is being compared against.\nUse getProjectList to obtain valid project names.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "fileDeleted",
+      "description": "Notifies the MCP Server that a file has been deleted on disk so it can update its internal index and diagnostics.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "type": "string",
+            "description": "Absolute path to the file"
+          }
+        },
+        "required": [
+          "filePath"
+        ]
+      }
+    },
+    {
+      "name": "captureLogicalStructureBaseline",
+      "description": "Captures the current logical structure of the given project as a baseline snapshot, so that a later\ncall to getLogicalStructureChanges can show what changed in the logical structure of the project since\nthis point in time (e.g. after a refactoring or a series of edits).\nCapturing a new baseline replaces any previously captured baseline for the same project. Usually not\nneeded for git-backed projects: those get a baseline automatically on every commit, so that changes\nare always shown against the last commit - call this only to pin a baseline mid-branch, on top of\nuncommitted changes. Note such a manual baseline is replaced automatically by the next commit's.\nUse getProjectList to obtain valid project names.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getProjectList",
+      "description": "Lists all Java projects in the workspace with Boot flag, JRE level and root directory.\nUse each Project.projectName when calling other tools; those tools match this name case-insensitively.\nProject.location is the absolute path of the project root (the directory holding pom.xml or build.gradle),\nso a source file belongs to the project whose location is the longest prefix of the file's path.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "getLatestReleaseInformation",
+      "description": "Returns the latest general-availability (current) release for a Spring portfolio project plus OSS and commercial support end dates for that generation.\nData is resolved from the language server's Spring projects metadata (same source used for validations), not a live per-call HAL dump.\nUse getReleases when you need every release record; use getGenerations when you need all generation windows from the live Spring IO API; use getUpcomingReleases for scheduled upcoming releases from the calendar API.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "Spring project technical id, e.g. \"spring-boot\", \"spring-framework\", \"spring-data-jpa\" (not the IDE workspace project name).\n"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getSpringBootVersion",
+      "description": "Returns the Spring Boot version for a workspace Java project (from the resolved classpath / BOM).\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "clearLogicalStructureBaseline",
+      "description": "Removes the captured logical structure baseline for the given project, if any, so getLogicalStructureChanges\nreports \"no baseline\" again until a new one is captured. Purely a manual undo: for a git-backed project\nwith automatic baseline capture enabled, a fresh baseline is captured again as soon as no source changes\nare pending, and otherwise at its next commit.\nUse getProjectList to obtain valid project names.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    },
+    {
+      "name": "getReleases",
+      "description": "Get the full list of releases for a Spring project from the live Spring IO API (HAL).\nFor only the current GA release plus OSS/commercial support end dates for that line, prefer getLatestReleaseInformation instead.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "project": {
+            "type": "string",
+            "description": "Spring IO API project slug (path segment under /projects), e.g. \"spring-boot\", \"spring-framework\", \"spring-data-jpa\".\nThis is not the IDE workspace project name from getProjectList; it is the Spring portfolio project id from Spring IO.\nBase URL is configured as workspace setting boot-java.io.api (projects list URL; API base is derived from it).\n"
+          }
+        },
+        "required": [
+          "project"
+        ]
+      }
+    },
+    {
+      "name": "getLogicalStructureChanges",
+      "description": "Shows what changed in the logical structure of the given project since the baseline captured via\ncaptureLogicalStructureBaseline (or automatically from the project's git history, if it's git-backed -\nsee the note on captureLogicalStructureBaseline), rendered as an ascii-art tree with +/-/~ markers for\nadded, removed and modified nodes.\nReturns a plain message instead of a tree when no baseline exists yet for the project, or when nothing\nchanged since it.\nUse getProjectList to obtain valid project names.\n",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "type": "object",
+        "properties": {
+          "projectName": {
+            "type": "string",
+            "description": "IDE project name from getProjectList().projectName (case-insensitive match)"
+          },
+          "includeUnchanged": {
+            "type": "boolean",
+            "description": "whether to also show the unchanged parts of the tree instead of collapsing them, defaults to false"
+          }
+        },
+        "required": [
+          "projectName"
+        ]
+      }
+    }
+  ]
+}

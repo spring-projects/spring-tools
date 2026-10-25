@@ -1,0 +1,15 @@
+{
+  "name": "spring-tools-agent-plugin-tools",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Development checks for the Spring Tools agent plugin (explanation playbooks, plugin configuration). Not part of the published plugin.",
+  "license": "EPL-1.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node check-explanations.mjs --require-all --todo && node check-plugin-config.mjs",
+    "check:links": "node check-explanations.mjs --require-all --links",
+    "test": "node --test --test-reporter=tap \"test/*.test.mjs\""
+  }
+}

@@ -33,6 +33,7 @@ hs_err_pid*
 
 servers/
 target/
+build/
 bin/
 *.log
 *.log.*.gz

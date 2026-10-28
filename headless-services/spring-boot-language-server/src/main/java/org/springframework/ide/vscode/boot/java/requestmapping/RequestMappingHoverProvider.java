@@ -76,7 +76,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 	@Override
 	public Hover provideHover(ASTNode node, Annotation annotation,
 			ITypeBinding type, int offset, TextDocument doc, IJavaProject project, SpringProcessLiveData[] processLiveData) {
-		return provideHover(annotation, doc, processLiveData);
+		return provideHover(annotation, doc, project, processLiveData);
 	}
 
 	@Override
@@ -86,7 +86,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 				List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> val = getRequestMappingMethodFromRunningApp(annotation, processLiveData);
 				if (!val.isEmpty()) {
 					Range hoverRange = doc.toRange(annotation.getStartPosition(), annotation.getLength());
-					return assembleCodeLenses(hoverRange, val);
+					return assembleCodeLenses(hoverRange, val, project);
 				}
 			}
 		}
@@ -102,7 +102,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 		try {
 			List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> val = getFunctionalRoutesFromRunningApp(methodDeclaration, doc, processLiveData);
 			if (!val.isEmpty()) {
-				Hover hover = createHoverWithContent(val);
+				Hover hover = createHoverWithContent(val, project);
 				SimpleName methodName = methodDeclaration.getName();
 				hover.setRange(doc.toRange(methodName.getStartPosition(), methodName.getLength()));
 				return hover;
@@ -122,7 +122,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 			if (!val.isEmpty()) {
 				SimpleName methodName = methodDeclaration.getName();
 				Range hoverRange = doc.toRange(methodName.getStartPosition(), methodName.getLength());
-				return assembleCodeLenses(hoverRange, val);
+				return assembleCodeLenses(hoverRange, val, project);
 			}
 		}
 		catch (Exception e) {
@@ -207,7 +207,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 		return p1.getLine() != p2.getLine() ? Integer.compare(p1.getLine(), p2.getLine()) : Integer.compare(p1.getCharacter(), p2.getCharacter());
 	}
 
-	private Collection<CodeLens> assembleCodeLenses(Range range, List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> data) {
+	private Collection<CodeLens> assembleCodeLenses(Range range, List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> data, IJavaProject project) {
 
 		Collection<CodeLens> lenses = new ArrayList<>();
 
@@ -216,8 +216,10 @@ public class RequestMappingHoverProvider implements HoverProvider {
 		// multiple routes can result in the same URL (e.g. same path, but different accept headers)
 		Set<Tuple2<SpringProcessLiveData, String>> seenUrls = new HashSet<>();
 
+		Integer apiVersionPathSegment = getConfiguredApiVersionPathSegment(data, project);
+
 		for (Tuple2<LiveRequestMapping, SpringProcessLiveData> dataEntry : data) {
-			for (Tuple2<String, String> urlWithPath : getUrlsWithPath(dataEntry)) {
+			for (Tuple2<String, String> urlWithPath : getUrlsWithPath(dataEntry, apiVersionPathSegment)) {
 				if (!seenUrls.add(Tuples.of(dataEntry.getT2(), urlWithPath.getT1()))) {
 					continue;
 				}
@@ -248,13 +250,13 @@ public class RequestMappingHoverProvider implements HoverProvider {
 		return lenses;
 	}
 
-	private Hover provideHover(Annotation annotation, TextDocument doc, SpringProcessLiveData[] processLiveData) {
+	private Hover provideHover(Annotation annotation, TextDocument doc, IJavaProject project, SpringProcessLiveData[] processLiveData) {
 
 		try {
 			List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> val = getRequestMappingMethodFromRunningApp(annotation, processLiveData);
 
 			if (!val.isEmpty()) {
-				Hover hover = createHoverWithContent(val);
+				Hover hover = createHoverWithContent(val, project);
 				Range hoverRange = doc.toRange(annotation.getStartPosition(), annotation.getLength());
 				hover.setRange(hoverRange);
 				return hover;
@@ -315,7 +317,26 @@ public class RequestMappingHoverProvider implements HoverProvider {
 		return false;
 	}
 
-	private List<Tuple2<String, String>> getUrlsWithPath(Tuple2<LiveRequestMapping, SpringProcessLiveData> mappingMethod) {
+	/**
+	 * The index of the path segment that holds the API version, as configured in the project (web configs and properties).
+	 * Only looked up if any of the live mappings is versioned at all.
+	 */
+	private Integer getConfiguredApiVersionPathSegment(List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> mappings, IJavaProject project) {
+		if (project == null || mappings.stream().noneMatch(mapping -> mapping.getT1().getApiVersion() != null)) {
+			return null;
+		}
+		try {
+			List<WebConfigIndexElement> webConfigs = new ArrayList<>(springIndex.getNodesOfType(project.getElementName(), WebConfigIndexElement.class));
+			webConfigs.addAll(new WebConfigPropertiesIndexer().findWebConfigFromProperties(project));
+			return ApiVersionPathSegment.fromWebConfigs(webConfigs);
+		}
+		catch (Exception e) {
+			log.error("", e);
+			return null;
+		}
+	}
+
+	private List<Tuple2<String, String>> getUrlsWithPath(Tuple2<LiveRequestMapping, SpringProcessLiveData> mappingMethod, Integer apiVersionPathSegment) {
 		List<Tuple2<String, String>> urls = new ArrayList<>();
 		SpringProcessLiveData liveData = mappingMethod.getT2();
 		String contextPath = liveData.getContextPath();
@@ -334,7 +355,8 @@ public class RequestMappingHoverProvider implements HoverProvider {
 			paths = new String[] {""};
 		}
 		for (String path : paths) {
-			String url = UrlUtil.createUrl(urlScheme, host, port, path, contextPath);
+			String versionedPath = ApiVersionPathSegment.versionedPath(path, requestMapping, liveData, apiVersionPathSegment);
+			String url = UrlUtil.createUrl(urlScheme, host, port, versionedPath, contextPath);
 			if (url != null) {
 				urls.add(Tuples.of(url, path));
 			}
@@ -342,13 +364,15 @@ public class RequestMappingHoverProvider implements HoverProvider {
 		return urls;
 	}
 
-	private Hover createHoverWithContent(List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> mappingMethods) throws Exception {
+	private Hover createHoverWithContent(List<Tuple2<LiveRequestMapping, SpringProcessLiveData>> mappingMethods, IJavaProject project) throws Exception {
 
 		StringBuilder contentVal = new StringBuilder();
 
 		// multiple mappings of the same process (e.g. all the routes of a router bean method) are listed
 		// together with the process information shown only once, at the end of the process section
 		Set<String> seenUrlsOfProcess = new HashSet<>();
+
+		Integer apiVersionPathSegment = getConfiguredApiVersionPathSegment(mappingMethods, project);
 
 		for (int i = 0; i < mappingMethods.size(); i++) {
 			Tuple2<LiveRequestMapping, SpringProcessLiveData> mappingMethod = mappingMethods.get(i);
@@ -376,6 +400,7 @@ public class RequestMappingHoverProvider implements HoverProvider {
 			}
 			String contextPath = liveData.getContextPath();
 			List<Renderable> renderableUrls = Arrays.stream(paths)
+					.map(path -> ApiVersionPathSegment.versionedPath(path, requestMapping, liveData, apiVersionPathSegment))
 					.map(path -> UrlUtil.createUrl(urlScheme, host, port, path, contextPath))
 					.filter(url -> seenUrlsOfProcess.add(url))
 					.flatMap(url -> {

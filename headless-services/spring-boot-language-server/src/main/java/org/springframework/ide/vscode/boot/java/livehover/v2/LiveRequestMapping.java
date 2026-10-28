@@ -28,4 +28,12 @@ public interface LiveRequestMapping {
 	default LiveFunctionalRoute getFunctionalRoute() {
 		return null;
 	}
+
+	/**
+	 * @return the API version this mapping is restricted to (e.g. <code>1.1</code> for <code>version = "1.1+"</code>),
+	 * <code>null</code> if the mapping is not versioned or the version is unknown
+	 */
+	default String getApiVersion() {
+		return null;
+	}
 }

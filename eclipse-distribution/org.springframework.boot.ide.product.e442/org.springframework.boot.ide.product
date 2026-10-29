@@ -101,7 +101,7 @@
 
 <!--      <feature id="org.sonatype.m2e.buildhelper.feature" installMode="root"/> -->
 <!--      <feature id="org.sonatype.m2e.mavenarchiver.feature" installMode="root"/> -->
-      <feature id="org.sonatype.m2e.egit.feature" installMode="root"/>
+<!--      <feature id="org.sonatype.m2e.egit.feature" installMode="root"/> -->
       <feature id="org.jboss.tools.m2e.wro4j.feature" installMode="root"/>
 <!--      <feature id="com.ianbrandt.tools.m2e.mdp.feature" installMode="root"/> -->
 <!--      <feature id="m2e.chromatic.feature" installMode="root"/> -->

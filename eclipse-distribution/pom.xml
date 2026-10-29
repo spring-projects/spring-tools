@@ -211,11 +211,11 @@
                                     <layout>p2</layout>
                                     <url>https://cdn.spring.io/spring-tools/release/TOOLS/third-party/m2e-sts310-signed/</url>
                                 </repository> -->
-                <repository>
+<!--                <repository>
                     <id>maven-egit</id>
                     <layout>p2</layout>
                     <url>https://github.com/tesla/m2eclipse-egit/releases/download/0.17.0/</url>
-                </repository>
+                </repository> -->
                 <repository>
                     <id>maven-wro4j</id>
                     <layout>p2</layout>

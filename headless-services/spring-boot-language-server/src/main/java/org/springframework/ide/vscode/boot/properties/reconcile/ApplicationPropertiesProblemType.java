@@ -38,8 +38,8 @@ public enum ApplicationPropertiesProblemType implements ProblemType {
 	PROP_DEPRECATED(WARNING, "Property is marked as Deprecated", null, List.of(DiagnosticTag.Deprecated)),
 	PROP_DUPLICATE_KEY("Multiple assignments to the same property value"),
 	PROP_SYNTAX_ERROR("Syntax Error"),
-	PROP_PLACEHOLDER_SYNTAX("Syntax error in a ${...} placeholder"),
-	PROP_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime");
+	PROP_PLACEHOLDER_SYNTAX(WARNING, "Syntax error in a ${...} placeholder"),
+	PROP_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime");
 
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

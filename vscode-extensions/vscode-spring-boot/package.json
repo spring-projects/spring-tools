@@ -1376,7 +1376,7 @@
           },
           "spring-boot.ls.problem.application-properties.PROP_PLACEHOLDER_SYNTAX": {
             "type": "string",
-            "default": "ERROR",
+            "default": "WARNING",
             "description": "Syntax error in a ${...} placeholder",
             "enum": [
               "IGNORE",
@@ -1389,7 +1389,7 @@
           "spring-boot.ls.problem.application-properties.PROP_UNRESOLVED_PLACEHOLDER": {
             "type": "string",
             "default": "IGNORE",
-            "description": "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime",
+            "description": "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime",
             "enum": [
               "IGNORE",
               "INFO",
@@ -1563,7 +1563,7 @@
           },
           "spring-boot.ls.problem.application-yaml.YAML_PLACEHOLDER_SYNTAX": {
             "type": "string",
-            "default": "ERROR",
+            "default": "WARNING",
             "description": "Syntax error in a ${...} placeholder",
             "enum": [
               "IGNORE",
@@ -1576,7 +1576,7 @@
           "spring-boot.ls.problem.application-yaml.YAML_UNRESOLVED_PLACEHOLDER": {
             "type": "string",
             "default": "IGNORE",
-            "description": "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime",
+            "description": "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime",
             "enum": [
               "IGNORE",
               "INFO",

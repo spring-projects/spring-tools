@@ -357,12 +357,12 @@
         "code": "PROP_PLACEHOLDER_SYNTAX",
         "label": "Placeholder syntax",
         "description": "Syntax error in a ${...} placeholder",
-        "defaultSeverity": "ERROR"
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "PROP_UNRESOLVED_PLACEHOLDER",
         "label": "Unresolved placeholder",
-        "description": "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime",
+        "description": "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime",
         "defaultSeverity": "IGNORE"
       }
     ]
@@ -454,12 +454,12 @@
         "code": "YAML_PLACEHOLDER_SYNTAX",
         "label": "Placeholder syntax",
         "description": "Syntax error in a ${...} placeholder",
-        "defaultSeverity": "ERROR"
+        "defaultSeverity": "WARNING"
       },
       {
         "code": "YAML_UNRESOLVED_PLACEHOLDER",
         "label": "Unresolved placeholder",
-        "description": "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime",
+        "description": "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime",
         "defaultSeverity": "IGNORE"
       }
     ]

@@ -2513,7 +2513,7 @@ public class ApplicationPropertiesEditorTest extends AbstractPropsEditorTest {
         editor.assertProblems(
                 "${DB_URL|Placeholder is not closed",
                 "USER|Placeholder:",
-                "DB_PASS|has no default value and is not defined in this project",
+                "DB_PASS|has no default value and could not be found in the project's configuration. Make sure it is defined at runtime",
                 "INNER|has no default value"
         );
     }

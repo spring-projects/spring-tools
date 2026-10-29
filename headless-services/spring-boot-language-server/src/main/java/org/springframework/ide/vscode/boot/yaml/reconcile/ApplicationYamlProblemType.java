@@ -40,8 +40,8 @@ public enum ApplicationYamlProblemType implements ProblemType {
 	YAML_DEPRECATED_WARNING(WARNING, "Property is marked as Deprecated(Warning)", null, List.of(DiagnosticTag.Deprecated)),
 	YAML_DUPLICATE_KEY("A mapping node contains multiple entries for the same key"),
 	YAML_SHOULD_ESCAPE(WARNING, "This key contains special characters and should probably be escaped by surrounding it with '[]'"),
-	YAML_PLACEHOLDER_SYNTAX("Syntax error in a ${...} placeholder"),
-	YAML_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder has no default value and its key is not defined in configuration metadata or in the project's own configuration files, so the value must be provided at runtime");
+	YAML_PLACEHOLDER_SYNTAX(WARNING, "Syntax error in a ${...} placeholder"),
+	YAML_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime");
 
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

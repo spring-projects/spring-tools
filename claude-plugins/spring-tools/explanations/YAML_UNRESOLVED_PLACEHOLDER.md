@@ -11,7 +11,7 @@ Keys the JVM or Boot itself provides are skipped: `random.*`, `user.*`, `java.*`
 The language server raises this diagnostic when all of the following hold:
 - the file is recognised as a Spring Boot YAML file and the project has a non-empty configuration metadata index;
 - the placeholder has no default value, is not escaped and its key is not one of the runtime keys above;
-- none of the three lookups finds the key; the message is `Placeholder '<key>' has no default value and is not defined in this project. The value must be provided at runtime.` and the highlighted range is the key inside the braces.
+- none of the three lookups finds the key; the message is `Placeholder '<key>' has no default value and could not be found in the project's configuration. Make sure it is defined at runtime.` and the highlighted range is the key inside the braces.
 
 Keys that come from `spring.config.import`, `@PropertySource` or a config server are not in the ad-hoc index and will warn. Keys that only exist in another profile's file are found, because the ad-hoc index reads every `application*` file.
 

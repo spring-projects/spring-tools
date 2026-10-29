@@ -129,7 +129,7 @@ public class PropertyPlaceholderChecker {
 			return;
 		}
 		problems.accept(new ReconcileProblemImpl(unresolvedProblemType,
-				"Placeholder '" + key + "' has no default value and is not defined in this project. The value must be provided at runtime.",
+				"Placeholder '" + key + "' has no default value and could not be found in the project's configuration. Make sure it is defined at runtime.",
 				bodyOffset + body.indexOf(key), key.length()));
 	}
 

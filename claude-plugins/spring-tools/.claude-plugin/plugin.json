@@ -3,7 +3,7 @@
   "name": "spring-tools",
   "displayName": "Spring Tools",
   "description": "Spring Tools Language Server as an MCP server — Spring Boot diagnostics with fix playbooks, bean/endpoint/architecture insight, version and release information, plus a Spring review agent. Operates standalone without requiring JDT Language Server and watches the workspace for changes. On first run, downloads the language server JAR (checksum-verified) from cdn.spring.io and launches it as a local Java process; requires Java 21+ on PATH.",
-  "version": "2.5.0",
+  "version": "2.5.0-202610302147",
   "author": {
     "name": "Spring Tools"
   },
@@ -22,7 +22,9 @@
   "mcpServers": {
     "spring-tools-mcp": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/launcher.js"]
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/launcher.js"
+      ]
     }
   }
 }

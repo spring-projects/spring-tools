@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts.field;
 import static org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts.method;
 import static org.springframework.ide.vscode.boot.test.DefinitionLinkAsserts.type;
+import static org.springframework.ide.vscode.boot.yaml.reconcile.ApplicationYamlProblemType.YAML_UNKNOWN_PROPERTY;
 import static org.springframework.ide.vscode.languageserver.testharness.Editor.INDENTED_COMPLETION;
 
 import java.io.File;
@@ -39,6 +40,7 @@ import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.PropertyEditorTestConf;
 import org.springframework.ide.vscode.boot.configurationmetadata.Deprecation.Level;
 import org.springframework.ide.vscode.boot.editor.harness.AbstractPropsEditorTest;
+import org.springframework.ide.vscode.boot.editor.harness.AdHocPropertyHarness;
 import org.springframework.ide.vscode.boot.metadata.CachingValueProvider;
 import org.springframework.ide.vscode.boot.metadata.PropertyInfo;
 import org.springframework.ide.vscode.boot.properties.quickfix.MissingPropertyData;
@@ -69,6 +71,9 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
 
 	@Autowired
 	private DefinitionLinkAsserts definitionLinkAsserts;
+
+	@Autowired
+	private AdHocPropertyHarness adHocProperties;
 
 	@Configuration public static class TestConf {
 		@Bean LanguageId defaultLanguageId() {
@@ -5334,6 +5339,49 @@ public class ApplicationYamlEditorTest extends AbstractPropsEditorTest {
         assertCompletionWithLabel(prefix + " 0 0<*> # comment", "0 0 * * * *", prefix + " 0 0 * * * *<*> # comment");
 
         assertNoCompletions(prefix + " zzz<*>");
+    }
+
+    @Test
+    void placeholderChecks() throws Exception {
+        defaultTestData();
+        adHocProperties.add("my.adhoc.key");
+        // the unresolved check is off by default
+        harness.changeConfiguration("{\"spring-boot\": {\"ls\": {\"problem\": {\"application-yaml\": {\"YAML_UNRESOLVED_PLACEHOLDER\": \"WARNING\"}}}}}");
+
+        Editor editor = newEditor(
+                "spring:\n" +
+                "  datasource:\n" +
+                "    url: ${DB_URL\n" +
+                "    username: ${DB USER}\n" +
+                "    password: \"${DB_PASS}\"\n" +
+                "    name: ${DB_NAME:demo}\n" +
+                "  application:\n" +
+                "    name: ${server.port}\n" +
+                "my:\n" +
+                "  local:\n" +
+                "    key: hello\n" +
+                "  escaped: \\${NOT_A_PLACEHOLDER}\n" +
+                "  nested: ${outer:${INNER}}\n" +
+                "  pattern: \"%d ${PID} ${LOG_LEVEL_PATTERN}\"\n" +
+                "banner:\n" +
+                "  location: ${my.local.key}\n" +
+                "  charset: ${my.adhoc.key}\n" +
+                "debug: ${random.int}\n" +
+                "---\n" +
+                "spring:\n" +
+                "  config:\n" +
+                "    activate:\n" +
+                "      on-profile: dev\n" +
+                "my:\n" +
+                "  other: ${my.local.key}\n"
+        );
+        editor.ignoreProblem(YAML_UNKNOWN_PROPERTY); // my.* keys are deliberately unknown
+        editor.assertProblems(
+                "${DB_URL|Placeholder is not closed",
+                "USER|Placeholder:",
+                "DB_PASS|has no default value and could not be found in the project's configuration. Make sure it is defined at runtime",
+                "INNER|has no default value"
+        );
     }
 
 }

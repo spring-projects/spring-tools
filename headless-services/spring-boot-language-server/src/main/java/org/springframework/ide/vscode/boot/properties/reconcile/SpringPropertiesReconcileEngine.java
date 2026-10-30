@@ -11,18 +11,23 @@
 package org.springframework.ide.vscode.boot.properties.reconcile;
 
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_DEPRECATED;
+import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_PLACEHOLDER_SYNTAX;
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_SYNTAX_ERROR;
 import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_UNKNOWN_PROPERTY;
+import static org.springframework.ide.vscode.boot.properties.reconcile.ApplicationPropertiesProblemType.PROP_UNRESOLVED_PLACEHOLDER;
 import static org.springframework.ide.vscode.boot.properties.reconcile.SpringPropertyProblem.problem;
 import static org.springframework.ide.vscode.commons.util.StringUtil.commonPrefix;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.links.SourceLinks;
+import org.springframework.ide.vscode.boot.metadata.ProjectBasedPropertyIndexProvider;
 import org.springframework.ide.vscode.boot.metadata.PropertyInfo;
 import org.springframework.ide.vscode.boot.metadata.SpringPropertyIndex;
 import org.springframework.ide.vscode.boot.metadata.SpringPropertyIndexProvider;
@@ -35,6 +40,7 @@ import org.springframework.ide.vscode.boot.properties.quickfix.CommonQuickfixes;
 import org.springframework.ide.vscode.boot.properties.quickfix.DeprecatedPropertyData;
 import org.springframework.ide.vscode.boot.properties.quickfix.MissingPropertyData;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
+import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IReconcileEngine;
@@ -61,6 +67,7 @@ import org.springframework.ide.vscode.java.properties.parser.PropertiesFileEscap
  * on ISourceViewer which is difficult to 'mock' in testing harness.
  *
  * @author Kris De Volder
+ * @author Seema Jagadeesh
  */
 public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 
@@ -82,12 +89,15 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 	private Parser parser = new AntlrParser();
 	private AppPropertiesQuickFixes quickFixes;
 	private SourceLinks sourceLinks;
+	private PropertyPlaceholderChecker placeholderChecker;
 
-	public SpringPropertiesReconcileEngine(SpringPropertyIndexProvider provider, TypeUtilProvider typeUtilProvider, AppPropertiesQuickFixes quickFixes, SourceLinks sourceLinks) {
+	public SpringPropertiesReconcileEngine(SpringPropertyIndexProvider provider, TypeUtilProvider typeUtilProvider, AppPropertiesQuickFixes quickFixes, SourceLinks sourceLinks,
+			ProjectBasedPropertyIndexProvider adHocIndexProvider, JavaProjectFinder projectFinder) {
 		this.fIndexProvider = provider;
 		this.typeUtilProvider = typeUtilProvider;
 		this.quickFixes = quickFixes;
 		this.sourceLinks = sourceLinks;
+		this.placeholderChecker = new PropertyPlaceholderChecker(PROP_PLACEHOLDER_SYNTAX, PROP_UNRESOLVED_PLACEHOLDER, provider, adHocIndexProvider, projectFinder);
 	}
 
 	@Override
@@ -111,6 +121,12 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 			}
 			
 			List<Node> nodes = results.ast.getAllNodes();
+			Set<String> localKeys = new HashSet<>();
+			for (Node node : nodes) {
+				if (node instanceof KeyValuePair) {
+					localKeys.add(PropertiesFileEscapes.unescape(createRegion(doc, ((KeyValuePair) node).getKey()).toString()));
+				}
+			}
 			for (int i = 0; i < results.ast.getAllNodes().size(); i++) {
 				Node node = nodes.get(i);
 				try {
@@ -123,6 +139,10 @@ public class SpringPropertiesReconcileEngine implements IReconcileEngine {
 						DocumentRegion propertyNameRegion = createRegion(doc, pair.getKey());
 						String keyName = PropertiesFileEscapes.unescape(propertyNameRegion.toString());
 						duplicateNameChecker.check(propertyNameRegion);
+						if (pair.getValue() != null) {
+							DocumentRegion valueRegion = createRegion(doc, pair.getValue());
+							placeholderChecker.check(doc, valueRegion.toString(), valueRegion.getStart(), localKeys, problemCollector);
+						}
 						PropertyInfo validProperty = SpringPropertyIndex.findLongestValidProperty(index, keyName);
 						if (validProperty != null) {
 							//TODO: Remove last remnants of 'IRegion trimmedRegion' here and replace

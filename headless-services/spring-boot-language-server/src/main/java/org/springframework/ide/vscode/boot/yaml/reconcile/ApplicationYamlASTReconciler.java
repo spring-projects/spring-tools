@@ -40,10 +40,12 @@ import org.springframework.ide.vscode.boot.metadata.types.TypedProperty;
 import org.springframework.ide.vscode.boot.properties.quickfix.CommonQuickfixes;
 import org.springframework.ide.vscode.boot.properties.quickfix.DeprecatedPropertyData;
 import org.springframework.ide.vscode.boot.properties.quickfix.MissingPropertyData;
+import org.springframework.ide.vscode.boot.properties.reconcile.PropertyPlaceholderChecker;
 import org.springframework.ide.vscode.boot.yaml.quickfix.AppYamlQuickfixes;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.QuickfixType;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
+import org.springframework.ide.vscode.commons.util.BadLocationException;
 import org.springframework.ide.vscode.commons.util.ExceptionUtil;
 import org.springframework.ide.vscode.commons.util.StringUtil;
 import org.springframework.ide.vscode.commons.util.ValueParseException;
@@ -68,6 +70,7 @@ import com.google.common.collect.ImmutableSet;
 
 /**
  * @author Kris De Volder
+ * @author Seema Jagadeesh
  */
 public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 
@@ -76,6 +79,7 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	private final IndexNavigator nav;
 	private final NodeMergeSupport nodeMerger;
 	private AppYamlQuickfixes quickFixes;
+	private final PropertyPlaceholderChecker placeholderChecker;
 
 	/**
 	 * Tracks nodes (by identity) currently being visited during this reconcile pass.
@@ -84,17 +88,73 @@ public class ApplicationYamlASTReconciler implements YamlASTReconciler {
 	 */
 	private final Set<Node> onPath = NodeUtil.newIdentitySet();
 
-	public ApplicationYamlASTReconciler(IProblemCollector problems, IndexNavigator nav, TypeUtil typeUtil, AppYamlQuickfixes quickFixes) {
+	public ApplicationYamlASTReconciler(IProblemCollector problems, IndexNavigator nav, TypeUtil typeUtil, AppYamlQuickfixes quickFixes,
+			PropertyPlaceholderChecker placeholderChecker) {
 		this.problems = problems;
 		this.typeUtil = typeUtil;
 		this.nav = nav;
 		this.quickFixes = quickFixes;
 		this.nodeMerger = new NodeMergeSupport(problems);
+		this.placeholderChecker = placeholderChecker;
 	}
 
 	@Override
 	public void reconcile(YamlFileAST ast) {
+		checkPlaceholders(ast);
 		reconcile(ast, nav);
+	}
+
+	/** Checks every scalar value for placeholders, independent of the type-driven walk below. */
+	private void checkPlaceholders(YamlFileAST ast) {
+		Set<String> localKeys = new HashSet<>();
+		List<ScalarNode> values = new ArrayList<>();
+		for (Node node : ast.getNodes()) {
+			collectKeysAndValues("", node, localKeys, values, NodeUtil.newIdentitySet());
+		}
+		IDocument doc = ast.getDocument();
+		for (ScalarNode scalar : values) {
+			int start = scalar.getStartMark().getIndex();
+			int end = scalar.getEndMark().getIndex();
+			try {
+				// Raw text, so offsets stay right when the value is quoted
+				placeholderChecker.check(doc, doc.get(start, end - start), start, localKeys, problems);
+			} catch (BadLocationException e) {
+				// skip a value we cannot read
+			}
+		}
+	}
+
+	private void collectKeysAndValues(String prefix, Node node, Set<String> keys, List<ScalarNode> values, Set<Node> onPath) {
+		if (!onPath.add(node)) {
+			return;
+		}
+		try {
+			switch (node.getNodeId()) {
+			case mapping:
+				for (NodeTuple entry : ((MappingNode) node).getValue()) {
+					String key = asScalar(entry.getKeyNode());
+					if (key != null) {
+						collectKeysAndValues(prefix.isEmpty() ? key : prefix + "." + key, entry.getValueNode(), keys, values, onPath);
+					}
+				}
+				break;
+			case sequence:
+				for (Node element : ((SequenceNode) node).getValue()) {
+					collectKeysAndValues(prefix, element, keys, values, onPath);
+				}
+				break;
+			case scalar:
+				if (!prefix.isEmpty()) {
+					keys.add(prefix);
+					values.add((ScalarNode) node);
+				}
+				break;
+			default:
+				break;
+			}
+		} finally {
+			onPath.remove(node);
+		}
 	}
 
 	protected void reconcile(YamlFileAST root, IndexNavigator nav) {

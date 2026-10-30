@@ -375,8 +375,9 @@ public class BootLanguageServerBootApp {
 		return YamlStructureProvider.DEFAULT;
 	}
 
-	@Bean BootPropertiesReconcileEngine bootPropertiesReconcileEngine(SimpleLanguageServer server, BootLanguageServerParams params, YamlASTProvider parser, YamlStructureProvider yamlStructureProvider, SourceLinks sourceLinks) {
-		return new BootPropertiesReconcileEngine(server, params, parser, yamlStructureProvider, sourceLinks);
+	@Bean BootPropertiesReconcileEngine bootPropertiesReconcileEngine(SimpleLanguageServer server, BootLanguageServerParams params, YamlASTProvider parser, YamlStructureProvider yamlStructureProvider, SourceLinks sourceLinks,
+			@Qualifier("adHocProperties") ProjectBasedPropertyIndexProvider adHocProperties) {
+		return new BootPropertiesReconcileEngine(server, params, parser, yamlStructureProvider, sourceLinks, adHocProperties);
 	}
 
 	@Bean SpringFactoriesReconcileEngine springFactoriesReconcileEngine(BootLanguageServerParams params, BootJavaConfig config) {

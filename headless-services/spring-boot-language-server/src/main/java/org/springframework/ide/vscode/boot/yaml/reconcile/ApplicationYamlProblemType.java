@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2024 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.yaml.reconcile;
 
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.ERROR;
+import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.IGNORE;
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.WARNING;
 
 import java.util.List;
@@ -38,7 +39,9 @@ public enum ApplicationYamlProblemType implements ProblemType {
 	YAML_DEPRECATED_ERROR(ERROR, "Property is marked as Deprecated(Error)", null, List.of(DiagnosticTag.Deprecated)),
 	YAML_DEPRECATED_WARNING(WARNING, "Property is marked as Deprecated(Warning)", null, List.of(DiagnosticTag.Deprecated)),
 	YAML_DUPLICATE_KEY("A mapping node contains multiple entries for the same key"),
-	YAML_SHOULD_ESCAPE(WARNING, "This key contains special characters and should probably be escaped by surrounding it with '[]'");
+	YAML_SHOULD_ESCAPE(WARNING, "This key contains special characters and should probably be escaped by surrounding it with '[]'"),
+	YAML_PLACEHOLDER_SYNTAX(WARNING, "Syntax error in a ${...} placeholder"),
+	YAML_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime");
 
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

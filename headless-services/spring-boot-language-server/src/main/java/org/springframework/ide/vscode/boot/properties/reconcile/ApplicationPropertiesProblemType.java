@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2024 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.properties.reconcile;
 
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.ERROR;
+import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.IGNORE;
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.WARNING;
 
 import java.util.List;
@@ -36,7 +37,9 @@ public enum ApplicationPropertiesProblemType implements ProblemType {
 	PROP_UNKNOWN_PROPERTY(WARNING, "Property-key not found in any configuration metadata on the project's classpath"),
 	PROP_DEPRECATED(WARNING, "Property is marked as Deprecated", null, List.of(DiagnosticTag.Deprecated)),
 	PROP_DUPLICATE_KEY("Multiple assignments to the same property value"),
-	PROP_SYNTAX_ERROR("Syntax Error");
+	PROP_SYNTAX_ERROR("Syntax Error"),
+	PROP_PLACEHOLDER_SYNTAX(WARNING, "Syntax error in a ${...} placeholder"),
+	PROP_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime");
 
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

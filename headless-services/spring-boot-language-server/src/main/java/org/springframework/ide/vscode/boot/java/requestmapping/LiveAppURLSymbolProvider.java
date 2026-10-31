@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2019 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -59,7 +59,9 @@ public class LiveAppURLSymbolProvider {
 							paths = new String[] {""};
 						}
 						for (String path : paths) {
-							String url = UrlUtil.createUrl(urlScheme, host, port, path, contextPath);
+							// no project at hand here, so the version path segment can only come from the app's properties
+							String versionedPath = ApiVersionPathSegment.versionedPath(path, rm, live, null);
+							String url = UrlUtil.createUrl(urlScheme, host, port, versionedPath, contextPath);
 							result.add(new WorkspaceSymbol(url, SymbolKind.Method, Either.forLeft(new Location(url, new Range(new Position(0, 0), new Position(0, 1))))));
 						}
 					}

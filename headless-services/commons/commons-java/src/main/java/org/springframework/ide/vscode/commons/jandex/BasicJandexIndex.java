@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -97,13 +97,14 @@ public class BasicJandexIndex {
 		ImmutableSet.Builder<String> builder = ImmutableSet.builder();
 		IndexView indexView = module.getIndex().get();
 		if (indexView != null) {
-			indexView.getKnownClasses();
 			Collection<ClassInfo> knownClasses = indexView.getKnownClasses();
 			if (knownClasses != null) {
 				for (ClassInfo info : knownClasses) {
 					String name = info.name().toString();
-					String pkg = name.substring(0, name.lastIndexOf('.'));
-					builder.add(pkg);
+					int lastDot = name.lastIndexOf('.');
+					if (lastDot > 0) { // classes in the default package have no package to offer
+						builder.add(name.substring(0, lastDot));
+					}
 				}
 			}
 		}

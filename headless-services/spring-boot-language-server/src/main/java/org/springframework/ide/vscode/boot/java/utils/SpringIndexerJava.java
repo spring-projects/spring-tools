@@ -16,6 +16,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -536,16 +537,23 @@ public class SpringIndexerJava implements SpringIndexer {
 				: IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(classpath);
 	}
 
+	private Stream<Path> walkFolder(File folder) {
+		try {
+			return Files.walk(folder.toPath());
+		}
+		catch (NoSuchFileException e) {
+			log.info("skipping source folder because it does not exist: {}", folder);
+			return Stream.empty();
+		}
+		catch (IOException e) {
+			log.error("error while scanning source folder: " + folder, e);
+			return Stream.empty();
+		}
+	}
+
 	private String[] getFiles(IJavaProject project) throws Exception {
 		return foldersToScan(project)
-			.flatMap(folder -> {
-				try {
-					return Files.walk(folder.toPath());
-				} catch (IOException e) {
-					log.error("{}", e);
-					return Stream.empty();
-				}
-			})
+			.flatMap(this::walkFolder)
 			.filter(path -> isInterestedIn(path.getFileName().toString()))
 			.filter(Files::isRegularFile)
 			.map(path -> path.toAbsolutePath().toString())
@@ -565,14 +573,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	
 	private void removeTestJavaSourcesFromIndex() {
 		for (IJavaProject project : projectFinder.all()) {
-			Path[] testJavaFiles = IClasspathUtil.getProjectTestJavaSources(project.getClasspath()).flatMap(folder -> {
-				try {
-					return Files.walk(folder.toPath());
-				} catch (IOException e) {
-					log.error("{}", e);
-					return Stream.empty();
-				}
-			})
+			Path[] testJavaFiles = IClasspathUtil.getProjectTestJavaSources(project.getClasspath()).flatMap(this::walkFolder)
 			.filter(path -> path.getFileName().toString().endsWith(".java"))
 			.filter(Files::isRegularFile).toArray(Path[]::new);
 
@@ -589,14 +590,7 @@ public class SpringIndexerJava implements SpringIndexer {
 	
 	private void addTestsJavaSourcesToIndex() {
 		for (IJavaProject project : projectFinder.all()) {
-			Path[] testJavaFiles = IClasspathUtil.getProjectTestJavaSources(project.getClasspath()).flatMap(folder -> {
-				try {
-					return Files.walk(folder.toPath());
-				} catch (IOException e) {
-					log.error("{}", e);
-					return Stream.empty();
-				}
-			})
+			Path[] testJavaFiles = IClasspathUtil.getProjectTestJavaSources(project.getClasspath()).flatMap(this::walkFolder)
 			.filter(path -> path.getFileName().toString().endsWith(".java"))
 			.filter(Files::isRegularFile).toArray(Path[]::new);
 			

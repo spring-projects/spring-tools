@@ -285,7 +285,7 @@ public class SpringIndexerXML implements SpringIndexer {
 				try {
 					return Files.walk(folder);
 				} catch (IOException e) {
-					log.error("", e);
+					log.error("error scanning folder for xml files: " + folder, e);
 					return Stream.empty();
 				}
 			})

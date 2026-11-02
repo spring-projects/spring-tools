@@ -25,7 +25,7 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	private final String type;
 	private final Location location;
 	private final InjectionPoint[] injectionPoints;
-	private final String[] supertypes;
+	private final Set<String> supertypes;
 	private final AnnotationMetadata[] annotations;
 	private final boolean isConfiguration;
 	private final String symbolLabel;
@@ -55,12 +55,13 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 			this.injectionPoints = injectionPoints;
 		}
 		
-		Set<String> sanitizedSuperTypes = supertypes == null ? null : supertypes.stream().filter(t -> !t.equals(Object.class.getName())).collect(Collectors.toUnmodifiableSet());
+		Set<String> sanitizedSuperTypes = supertypes == null || isInterface ? supertypes
+				: supertypes.stream().filter(t -> !t.equals(Object.class.getName())).collect(Collectors.toSet());
 		if (sanitizedSuperTypes != null && sanitizedSuperTypes.size() == 0) {
 			this.supertypes = null;
 		}
 		else {
-			this.supertypes = sanitizedSuperTypes == null ? null : sanitizedSuperTypes.toArray(new String[sanitizedSuperTypes.size()]);
+			this.supertypes = CanonicalNameSets.of(sanitizedSuperTypes);
 		}
 
 		if (annotations != null && annotations.length == 0) {
@@ -88,7 +89,7 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 	}
 
 	public boolean isTypeCompatibleWith(String type) {
-		return type != null && ((this.type != null && this.type.equals(type)) || (supertypes != null && Set.of(supertypes).contains(type)) || (Object.class.getName().equals(type) && !isInterface));
+		return type != null && ((this.type != null && this.type.equals(type)) || (supertypes != null && supertypes.contains(type)) || (Object.class.getName().equals(type) && !isInterface));
 	}
 	
 	public AnnotationMetadata[] getAnnotations() {
@@ -104,10 +105,9 @@ public class Bean extends AbstractSpringIndexElement implements SymbolElement {
 			return isInterface ? DefaultValues.EMPTY_SUPERTYPES : DefaultValues.OBJECT_SUPERTYPE;
 		} else {
 			if (isInterface) {
-				return Set.of(supertypes);
+				return supertypes;
 			} else {
-				String[] all = new String[supertypes.length + 1];
-				System.arraycopy(supertypes, 0, all, 0, supertypes.length);
+				String[] all = supertypes.toArray(new String[supertypes.size() + 1]);
 				all[all.length - 1] = Object.class.getName();
 				return Set.of(all);
 			}

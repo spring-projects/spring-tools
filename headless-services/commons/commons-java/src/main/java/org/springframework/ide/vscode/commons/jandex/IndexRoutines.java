@@ -13,6 +13,7 @@ package org.springframework.ide.vscode.commons.jandex;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -233,7 +234,12 @@ public class IndexRoutines {
 				return indexCreator.get();
 			} else {
 				try (FileInputStream in = new FileInputStream(indexFile)) {
-					return new IndexReader(in).read();
+					IndexView index = new IndexReader(in).read();
+					IndexCacheCleanup.markUsed(indexFile);
+					return index;
+				} catch (FileNotFoundException e) {
+					// removed in the meantime, e.g. by the cache clean-up of another process
+					return indexCreator.get();
 				} catch (IOException e) {
 					log.error("Failed to read index file '" + indexFile + "'. Creating new index file.", e);
 					if (indexFile.delete()) {

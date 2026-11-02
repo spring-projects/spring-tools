@@ -79,12 +79,14 @@ public class SharedJarIndexesTest {
 		originalUserHome = System.getProperty("user.home");
 		home = Files.createDirectories(tmp.resolve("home"));
 		System.setProperty("user.home", home.toString()); // index files go to <user.home>/.sts-jandex
+		System.setProperty("jandex.cache.cleanup", "false"); // no background clean-up racing with @TempDir deletion
 	}
 
 	@AfterEach
 	void teardown() {
 		System.setProperty("user.home", originalUserHome);
 		System.clearProperty("jandex.sharedJarIndexes");
+		System.clearProperty("jandex.cache.cleanup");
 	}
 
 	@Test
@@ -190,7 +192,7 @@ public class SharedJarIndexesTest {
 		List<Path> files = indexFiles();
 		assertEquals(5, files.stream().filter(f -> f.toString().endsWith(".jdx")).count(), files.toString());
 		assertTrue(files.stream().noneMatch(f -> f.toString().endsWith(".tmp")), "temp files left over: " + files);
-		for (Path f : files) {
+		for (Path f : files.stream().filter(f -> f.toString().endsWith(".jdx")).collect(Collectors.toList())) {
 			try (InputStream in = Files.newInputStream(f)) {
 				assertEquals(20, new IndexReader(in).read().getKnownClasses().size());
 			}
@@ -260,6 +262,21 @@ public class SharedJarIndexesTest {
 		int after = fdDir.list().length;
 		assertTrue(after - before < 10, "open files grew from " + before + " to " + after);
 		assertNotNull(cp.findType("p39.A"));
+	}
+
+	@Test
+	void loadingAnIndexMarksItAsUsed() throws Exception {
+		File jar = jar("lib.jar", Map.of("a.A", "package a; public class A {}"));
+		assertNotNull(classpath(jar).findType("a.A"));
+		Path indexFile = indexFiles().get(0);
+		long longAgo = System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(90);
+		assertTrue(indexFile.toFile().setLastModified(longAgo));
+
+		System.setProperty("jandex.sharedJarIndexes", "false"); // force reading the index file again
+		assertNotNull(classpath(jar).findType("a.A"));
+
+		assertTrue(indexFile.toFile().lastModified() > longAgo + java.util.concurrent.TimeUnit.DAYS.toMillis(89),
+				"index in use must not look unused to the cache clean-up");
 	}
 
 	// -------------------------------------------------------------------------------------------------

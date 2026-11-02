@@ -57,6 +57,7 @@ public class BasicJandexIndex {
 		if (!folder.isDirectory()) {
 			folder.mkdirs();
 		}
+		IndexCacheCleanup.scheduleOnce(folder);
 		return folder;
 	}
 

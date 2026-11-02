@@ -90,6 +90,7 @@ public class JandexScalabilityTest {
 		originalUserHome = System.getProperty("user.home");
 		fakeHome = Files.createTempDirectory("jandex-perf-home");
 		System.setProperty("user.home", fakeHome.toString());
+		System.setProperty("jandex.cache.cleanup", "false");
 
 		Path repo = Path.of(System.getProperty("jandex.perf.repo", originalUserHome + "/.m2/repository"));
 		jars = sampleJars(repo, DEPS);
@@ -112,6 +113,7 @@ public class JandexScalabilityTest {
 	@AfterAll
 	static void teardown() throws IOException {
 		System.setProperty("user.home", originalUserHome);
+		System.clearProperty("jandex.cache.cleanup");
 		String out = report.toString();
 		Path reportFile = Path.of(System.getProperty("jandex.perf.report", "target/jandex-perf-report.txt"));
 		if (reportFile.getParent() != null) {

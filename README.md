@@ -44,6 +44,23 @@ https://github.com/spring-projects/spring-tools/issues
 Find details about how to contribute:
 https://github.com/spring-projects/spring-tools/blob/master/CONTRIBUTING.adoc
 
+### Running Claude Code in Docker
+
+To run [Claude Code](https://claude.com/claude-code) against this repository in an isolated container
+(works for regular checkouts and git worktrees), you need Docker with Compose. From the repository root:
+
+```bash
+./docker-claude.sh
+```
+
+The first start builds the image. Run `/login` once inside the container (the login is shared by all
+checkouts and worktrees), or set `ANTHROPIC_API_KEY` on the host beforehand. Set `GH_TOKEN` to use `gh`
+inside the container. Your host `~/.m2/repository` is available read-only; Maven writes stay in the container.
+
+The image is not updated automatically. To pick up security updates (JDK, OS packages, Node.js, Claude Code),
+rebuild it regularly with `./docker-claude.sh --rebuild` (once per checkout or worktree you use).
+Details are in [docker/README.md](docker/README.md).
+
 ### Code of Conduct
 
 Please see our https://github.com/spring-projects/.github/blob/master/CODE_OF_CONDUCT.md

@@ -1,0 +1,37 @@
+# Run via ../docker-claude.sh, which sets the project name (one per checkout/worktree) and
+# GIT_COMMON_DIR. Paths below are relative to this docker/ folder; the repository root is "..".
+name: claude-docker
+
+services:
+  claude:
+    build: .
+    stdin_open: true  # -i
+    tty: true         # -t
+    volumes:
+      - ..:/workspace
+      # Git worktrees: a worktree's .git is a file pointing at the main checkout's .git via an
+      # absolute host path. docker-claude.sh sets GIT_COMMON_DIR so that directory is mounted at the
+      # same path inside the container and the pointer resolves. Without the script (or in a regular
+      # checkout) this just re-mounts the checkout's own .git onto itself.
+      - ${GIT_COMMON_DIR:-../.git}:${GIT_COMMON_DIR:-/workspace/.git}
+      # Claude Code login, settings and history; run /login once inside the container.
+      - claude-config:/claude-config
+      # Container-local ~/.m2; the host's local repository is offered read-only as an extra
+      # repository via docker-maven-settings.xml, so Maven writes never reach the host.
+      - maven-repo:/home/claude/.m2
+      - ./docker-maven-settings.xml:/home/claude/.m2/settings.xml:ro
+      - ${HOME}/.m2/repository:/m2-host-repo:ro
+    environment:
+      - CLAUDE_CONFIG_DIR=/claude-config
+      - COLORTERM=truecolor
+      # Optional: set on the host (or in .env) to use an API key instead of /login.
+      - ANTHROPIC_API_KEY
+      # Optional: lets `gh` work inside the container.
+      - GH_TOKEN
+
+volumes:
+  # Fixed volume name (instead of one prefixed with the checkout's directory name) so that all
+  # checkouts and git worktrees share one Claude Code login, settings and history.
+  claude-config:
+    name: sts4-claude-config
+  maven-repo:

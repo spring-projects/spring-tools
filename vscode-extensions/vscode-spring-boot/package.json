@@ -1624,6 +1624,18 @@
               "HINT",
               "ERROR"
             ]
+          },
+          "spring-boot.ls.problem.spel.JAVA_UNRESOLVED_PLACEHOLDER": {
+            "type": "string",
+            "default": "IGNORE",
+            "description": "Placeholder in an annotation attribute has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime",
+            "enum": [
+              "IGNORE",
+              "INFO",
+              "WARNING",
+              "HINT",
+              "ERROR"
+            ]
           }
         }
       },

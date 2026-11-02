@@ -81,6 +81,10 @@ import org.springframework.ide.vscode.boot.java.reconcilers.WebSecurityConfigure
 import org.springframework.ide.vscode.boot.java.semantictokens.EmbeddedLanguagesSemanticTokensSupport;
 import org.springframework.ide.vscode.boot.java.semantictokens.JavaSemanticTokensProvider;
 import org.springframework.ide.vscode.boot.java.spel.JdtSpelReconciler;
+import org.springframework.ide.vscode.boot.java.placeholder.JdtPropertyPlaceholderReconciler;
+import org.springframework.ide.vscode.boot.java.SpelProblemType;
+import org.springframework.ide.vscode.boot.metadata.ProjectBasedPropertyIndexProvider;
+import org.springframework.ide.vscode.boot.properties.reconcile.PropertyPlaceholderChecker;
 import org.springframework.ide.vscode.boot.java.spel.JdtSpelSemanticTokensProvider;
 import org.springframework.ide.vscode.boot.java.spel.SpelReconciler;
 import org.springframework.ide.vscode.boot.java.spel.SpelSemanticTokens;
@@ -280,6 +284,13 @@ public class JdtConfig {
 	
 	@Bean JdtSpelReconciler jdtSpelReconciler(SpelReconciler spelReconciler) {
 		return new JdtSpelReconciler(spelReconciler);
+	}
+
+	@Bean JdtPropertyPlaceholderReconciler jdtPropertyPlaceholderReconciler(BootLanguageServerParams params,
+			@Qualifier("adHocProperties") ProjectBasedPropertyIndexProvider adHocProperties) {
+		PropertyPlaceholderChecker checker = new PropertyPlaceholderChecker(SpelProblemType.PROPERTY_PLACE_HOLDER_SYNTAX,
+				SpelProblemType.JAVA_UNRESOLVED_PLACEHOLDER, params.indexProvider, adHocProperties, params.projectFinder);
+		return new JdtPropertyPlaceholderReconciler(checker);
 	}
 	
 	@Bean ImplicitWebAnnotationNamesReconciler implicitWebAnnotationNamesReconciler(SimpleLanguageServer server) {

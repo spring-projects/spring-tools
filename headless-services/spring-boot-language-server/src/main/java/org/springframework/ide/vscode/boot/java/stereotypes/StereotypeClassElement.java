@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.lsp4j.Location;
-import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.commons.protocol.spring.CanonicalNameSets;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 

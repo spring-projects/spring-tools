@@ -41,6 +41,11 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		
 		addField(new BooleanFieldEditor(Constants.PREF_START_LS_EARLY, "Start Language Server at startup if Spring Boot is a dependency", fieldEditorParent));
 		addField(new BooleanFieldEditor(Constants.PREF_SCAN_JAVA_TEST_SOURCES, "Scan Java test sources", fieldEditorParent));
+
+		// Lombok support while indexing
+		addField(new BooleanFieldEditor(Constants.PREF_LOMBOK, "Take the constructors Lombok generates into account when indexing", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_LOMBOK_FIELD_DEFAULTS_FINAL, "Lombok: all fields final unless @NonFinal (lombok.fieldDefaults.defaultFinal)", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_LOMBOK_COPY_SPRING_ANNOTATIONS, "Lombok: copy @Qualifier and @Value onto generated constructor parameters (lombok.copyableAnnotations)", fieldEditorParent));
 		
 		// JPQL Support switch
 		addField(new BooleanFieldEditor(Constants.PREF_JPQL, "JPA Query language support", fieldEditorParent));

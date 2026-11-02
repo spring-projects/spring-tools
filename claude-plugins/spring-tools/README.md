@@ -234,6 +234,8 @@ Nested JSON matching the VSCode `boot-java` / `spring-boot` configuration struct
 
 **Per-problem parameters** (`spring-boot.ls.problem-parameters.<category>.<code>.<key>`) tune individual checks, for example `spring-boot.ls.problem-parameters.spring-ai.SPRING_AI_TOOL_DESCRIPTION_TOO_SHORT.minimum-length=40`; the version-validation category has a category-wide parameter `spring-boot.ls.problem-parameters.version-validation.use-project-build-file=false` (look up available versions on spring.io instead of the project's Maven repositories).
 
+**Lombok support** is off by default. With `boot-java.lombok.on=true` the constructors Lombok generates (`@RequiredArgsConstructor`, `@AllArgsConstructor`, `@Data`, `@Value`, ...) are taken into account when indexing, so their injection points show up. `lombok.config` files are not read; two of their keys have settings of their own instead: `boot-java.lombok.field-defaults-final=true` (as `lombok.fieldDefaults.defaultFinal = true`) and `boot-java.lombok.copy-spring-annotations=true` (copy Spring's `@Qualifier` and `@Value` onto the generated constructor parameters, as with `lombok.copyableAnnotations`).
+
 The full list of available categories, problem codes and parameters is embedded in the language server JAR as `problem-types.json` (inside the nested `spring-boot-language-server-*.jar`). They are the same keys used in the VSCode extension's settings, so the `boot-java.*` / `spring-boot.*` entries of `vscode-extensions/vscode-spring-boot/package.json` double as a reference.
 
 Settings are applied once at startup. You must restart the language server for changes to take effect: restart Claude Code, or reconnect the `spring-tools-mcp` server from the `/mcp` menu.

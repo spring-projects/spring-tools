@@ -72,6 +72,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.jdt.imports.ImportRewrite;
+import org.springframework.ide.vscode.boot.java.lombok.LombokConstructors;
+import org.springframework.ide.vscode.boot.java.lombok.LombokConstructors.GeneratedConstructor;
+import org.springframework.ide.vscode.boot.java.lombok.LombokConstructors.GeneratedParameter;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.commons.languageserver.completion.DocumentEdits;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationAttributeValue;
 import org.springframework.ide.vscode.commons.protocol.spring.AnnotationMetadata;
@@ -812,14 +816,19 @@ public class ASTUtils {
 	public static InjectionPoint[] findInjectionPointsForType(TypeDeclaration type, TextDocument doc) throws BadLocationException {
 		List<InjectionPoint> result = new ArrayList<>();
 
-		findInjectionPoints(type.getMethods(), doc, result);
+		// the constructors Lombok generates count as much as the ones written in source
+		LombokSettings lombok = LombokSettings.get(type);
+		List<GeneratedConstructor> generatedConstructors = lombok.enabled() ? LombokConstructors.of(type, lombok) : List.of();
+
+		findInjectionPoints(type.getMethods(), generatedConstructors, doc, result);
 		findInjectionPoints(type.getFields(), doc, result);
-		
+
 		return result.size() > 0 ? result.toArray(new InjectionPoint[result.size()]) : DefaultValues.EMPTY_INJECTION_POINTS;
 	}
 
-	private static void findInjectionPoints(MethodDeclaration[] methods, TextDocument doc, List<InjectionPoint> result) throws BadLocationException {
-		int constructorCount = 0;
+	private static void findInjectionPoints(MethodDeclaration[] methods, List<GeneratedConstructor> generatedConstructors, TextDocument doc,
+			List<InjectionPoint> result) throws BadLocationException {
+		int constructorCount = generatedConstructors.size();
 
 		// special rule that if there is a single constructor, it doesn't have to have an autowired or inject annotation on it
 		MethodDeclaration singleConstructor = null;
@@ -830,15 +839,58 @@ public class ASTUtils {
 				singleConstructor = method;
 			}
 		}
-		
+
 		if (constructorCount == 1) {
-			findInjectionPoints(singleConstructor, doc, result, false);
+			if (singleConstructor != null) {
+				findInjectionPoints(singleConstructor, doc, result, false);
+			}
+			else {
+				findInjectionPoints(generatedConstructors.get(0), doc, result);
+			}
 		}
 
 		// look for all methods with annotations (whether constructors or regular methods)
 		for (MethodDeclaration method : methods) {
 			findInjectionPoints(method, doc, result, true);
 		}
+		for (GeneratedConstructor constructor : generatedConstructors) {
+			if (isAutowired(constructor.annotations())) {
+				findInjectionPoints(constructor, doc, result);
+			}
+		}
+	}
+
+	/**
+	 * The parameters of a constructor Lombok generates - each located at the field it is generated
+	 * for, which is where the injected value ends up.
+	 */
+	private static void findInjectionPoints(GeneratedConstructor constructor, TextDocument doc, List<InjectionPoint> result) throws BadLocationException {
+		for (GeneratedParameter parameter : constructor.parameters()) {
+			IVariableBinding variableBinding = parameter.field().resolveBinding();
+			if (variableBinding == null || variableBinding.getType() == null) {
+				continue;
+			}
+
+			Range range = doc.toRange(ASTUtils.nodeRegion(doc, parameter.field().getName()));
+			Location location = new Location(doc.getUri(), range);
+
+			AnnotationMetadata[] annotations = getAnnotationsMetadata(parameter.annotations(), doc);
+
+			result.add(new InjectionPoint(parameter.getName(), variableBinding.getType().getQualifiedName(), location, annotations));
+		}
+	}
+
+	private static boolean isAutowired(Collection<Annotation> annotations) {
+		for (Annotation annotation : annotations) {
+			ITypeBinding binding = annotation.resolveTypeBinding();
+			String qualifiedName = binding != null ? binding.getQualifiedName() : null;
+			if (Annotations.AUTOWIRED.equals(qualifiedName)
+					|| Annotations.INJECT_JAVAX.equals(qualifiedName)
+					|| Annotations.INJECT_JAKARTA.equals(qualifiedName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public static void findInjectionPoints(MethodDeclaration method, TextDocument doc, List<InjectionPoint> result, boolean checkForAnnotation) throws BadLocationException {

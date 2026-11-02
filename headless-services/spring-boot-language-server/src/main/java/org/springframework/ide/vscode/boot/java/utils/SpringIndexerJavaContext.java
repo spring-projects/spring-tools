@@ -23,6 +23,7 @@ import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
@@ -77,7 +78,8 @@ public class SpringIndexerJavaContext {
 			List<String> nextPassFiles,
 			boolean fullAst,
 			boolean isIndexComplete,
-			SpringIndexerJavaScanResult scanResult
+			SpringIndexerJavaScanResult scanResult,
+			LombokSettings lombokSettings
 	) {
 		this.project = project;
 		this.cu = cu;
@@ -92,6 +94,8 @@ public class SpringIndexerJavaContext {
 		this.isIndexComplete = isIndexComplete;
 		this.scanResult = scanResult;
 		this.firstOwnElement = scanResult.getGeneratedIndexElements().size();
+
+		LombokSettings.set(cu, lombokSettings);
 	}
 
 	public IJavaProject getProject() {

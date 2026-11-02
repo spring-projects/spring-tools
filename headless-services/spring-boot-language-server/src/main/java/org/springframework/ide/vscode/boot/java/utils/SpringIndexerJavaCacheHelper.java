@@ -25,6 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.index.cache.IndexCacheKey;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
@@ -48,6 +49,7 @@ public class SpringIndexerJavaCacheHelper {
 	private final IndexCache cache;
 	private final String generation;
 	private JsonObject validationSeveritySettings;
+	private LombokSettings lombokSettings = LombokSettings.DISABLED;
 	private final Map<IJavaProject, Map<String, IndexCacheKey>> cachedKeys = new ConcurrentHashMap<>();
 
 	public SpringIndexerJavaCacheHelper(IndexCache cache, String generation, JsonObject validationSeveritySettings) {
@@ -58,6 +60,15 @@ public class SpringIndexerJavaCacheHelper {
 
 	public void setValidationSeveritySettings(JsonObject validationSeveritySettings) {
 		this.validationSeveritySettings = validationSeveritySettings;
+		this.cachedKeys.clear();
+	}
+
+	public LombokSettings getLombokSettings() {
+		return lombokSettings;
+	}
+
+	public void setLombokSettings(LombokSettings lombokSettings) {
+		this.lombokSettings = lombokSettings;
 		this.cachedKeys.clear();
 	}
 
@@ -77,7 +88,7 @@ public class SpringIndexerJavaCacheHelper {
 				.collect(Collectors.joining(","));
 
 		return new IndexCacheKey(project.getElementName(), "java", elementType,
-				DigestUtils.md5Hex(generation + "-" + validationSeveritySettings.toString() + "-" + classpathIdentifier).toUpperCase());
+				DigestUtils.md5Hex(generation + "-" + validationSeveritySettings.toString() + "-" + classpathIdentifier + "-" + lombokSettings).toUpperCase());
 	}
 
 	public boolean isCacheOutdated(IndexCacheKey cacheKey, String docURI, long modifiedTimestamp) {

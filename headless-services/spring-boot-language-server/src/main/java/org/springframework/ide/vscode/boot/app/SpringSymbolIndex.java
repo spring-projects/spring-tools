@@ -274,6 +274,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 					.scanXml(config.isSpringXMLSupportEnabled())
 					.xmlScanFolders(config.xmlBeansFoldersToScan())
 					.scanTestJavaSources(config.isScanJavaTestSourcesEnabled())
+					.lombokSettings(config.getLombokSettings())
 					.build());
 			
 			log.info("update settings of spring indexer - done");
@@ -331,6 +332,7 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 				}
 			}
 			springIndexerJava.setScanTestJavaSources(config.isScanTestJavaSources());
+			springIndexerJava.setLombokSettings(config.getLombokSettings());
 			springIndexerJava.setValidationSeveritySettings(this.config.getJavaValidationSettingsJson());
 		}
 	}

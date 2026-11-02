@@ -328,10 +328,18 @@ public class JarStereotypeScanner {
 		}
 	}
 
+	/**
+	 * What Lombok marks every member with that it generates - there is no such annotation in
+	 * source, where the member doesn't exist either, so it must not turn a generated getter into an
+	 * annotated method of the structure.
+	 */
+	private static final String LOMBOK_GENERATED = "lombok.Generated";
+
 	private static void addIfNotJavaLang(DotName name, Set<String> result, ScanCache cache) {
 		// StereotypesIndexer takes annotation types' getQualifiedName() - dots for a nested one
 		String fqn = cache.qualifiedName(name);
-		if (!fqn.startsWith("java")) { // matches StereotypesIndexer.getAnnotationTypes's own filter
+		if (!fqn.startsWith("java") // matches StereotypesIndexer.getAnnotationTypes's own filter
+				&& !LOMBOK_GENERATED.equals(fqn)) {
 			result.add(fqn);
 		}
 	}

@@ -143,6 +143,23 @@ public class StructureParityTest {
 		assertParity("test-framework-7-indexing", Map.of());
 	}
 
+	/**
+	 * Compiled with Lombok, so the JAR side sees the constructors Lombok generates - the source
+	 * side has to derive the same injection points, and the same annotated constructors, from the
+	 * Lombok annotations.
+	 */
+	@Test
+	void lombokConstructors() throws Exception {
+		harness.changeConfiguration("{\"boot-java\": {\"lombok\": {\"on\": true}}}");
+		Map<String, TypeView> fromJar = assertParity("test-lombok-indexing", Map.of(), true);
+
+		// not vacuous: Lombok-generated constructors do inject the publishers, and the one with
+		// @Autowired on it is a method of its own
+		assertEquals(6, membersStartingWith(fromJar, "publishes: "));
+		assertEquals(List.of("AutowiredConstructorPublisher.AutowiredConstructorPublisher(ApplicationEventPublisher) : void"),
+				fromJar.get("com.example.lombok.AutowiredConstructorPublisher").methods());
+	}
+
 	private static long membersStartingWith(Map<String, TypeView> views, String prefix) {
 		return views.values().stream().flatMap(view -> view.members().stream()).filter(member -> member.startsWith(prefix)).count();
 	}
@@ -157,6 +174,14 @@ public class StructureParityTest {
 	 * @return the JAR side's views, for a test to check they are not trivially empty
 	 */
 	private Map<String, TypeView> assertParity(String fixture, Map<String, String> knownDivergences) throws Exception {
+		return assertParity(fixture, knownDivergences, false);
+	}
+
+	/**
+	 * @param annotationProcessing whether to run the annotation processors on the fixture's classpath
+	 *        when compiling it for the JAR side
+	 */
+	private Map<String, TypeView> assertParity(String fixture, Map<String, String> knownDivergences, boolean annotationProcessing) throws Exception {
 		File directory = new File(ProjectsHarness.class.getResource("/test-projects/" + fixture + "/").toURI());
 		IJavaProject project = projectFinder.find(new TextDocumentIdentifier(directory.toURI().toString())).get();
 		indexer.waitOperation().get(30, TimeUnit.SECONDS);
@@ -166,7 +191,7 @@ public class StructureParityTest {
 		IndexStructureElements source = IndexStructureElements.of(project, new CachedSpringMetamodelIndex(springIndex), catalog);
 		Map<String, TypeView> fromSource = views(source, source.types());
 
-		JarDependencySource.ScanResult scan = jarDependencySource.scan(project, compileToJar(fixture, directory, project));
+		JarDependencySource.ScanResult scan = jarDependencySource.scan(project, compileToJar(fixture, directory, project, annotationProcessing));
 		JarStructureElements jar = new JarStructureElements(scan.types(), scan.beans(), scan.bindingKeys(), catalog);
 		Map<String, TypeView> fromJar = views(jar, scan.types());
 
@@ -226,7 +251,7 @@ public class StructureParityTest {
 	 * The fixture's main sources, compiled against the project's own resolved classpath and
 	 * packaged as the JAR a dependency on it would be.
 	 */
-	private File compileToJar(String fixture, File directory, IJavaProject project) throws Exception {
+	private File compileToJar(String fixture, File directory, IJavaProject project, boolean annotationProcessing) throws Exception {
 		Path sourceRoot = directory.toPath().resolve("src/main/java");
 		Map<String, String> sources = new LinkedHashMap<>();
 		try (Stream<Path> files = Files.walk(sourceRoot)) {
@@ -244,7 +269,7 @@ public class StructureParityTest {
 		}
 
 		Path fixtureDir = Files.createDirectories(tempDir.resolve(fixture));
-		Path classes = JarFixtureBuilder.compileAll(fixtureDir, sources, classpath);
+		Path classes = JarFixtureBuilder.compileAll(fixtureDir, sources, classpath, annotationProcessing);
 		return JarFixtureBuilder.packageJar(classes, fixtureDir, fixture, sources.keySet(), Map.of());
 	}
 

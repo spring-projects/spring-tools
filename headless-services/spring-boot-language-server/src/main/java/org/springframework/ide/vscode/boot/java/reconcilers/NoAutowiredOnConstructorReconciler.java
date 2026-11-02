@@ -16,13 +16,11 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -31,7 +29,8 @@ import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchie
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtFixDescriptor;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.RemoveAnnotationRefactoring;
-import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
+import org.springframework.ide.vscode.boot.java.lombok.LombokConstructors;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.quickfix.Quickfix.QuickfixData;
@@ -73,13 +72,8 @@ public class NoAutowiredOnConstructorReconciler implements JdtAstReconciler {
 				if (IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(project.getClasspath())
 						.anyMatch(f -> sourceFile.startsWith(f.toPath()))) {
 
-					// lombok annotation around -> don't check for constructors
-					if (ASTUtils.getAnnotations(typeDecl).stream()
-							.map(Annotation::resolveTypeBinding)
-							.filter(Objects::nonNull)
-							.map(ITypeBinding::getQualifiedName)
-							.filter(annotationType -> Annotations.LOMBOK_CONSTRUCTOR_ANNOTATIONS.contains(annotationType))
-							.findAny().isPresent()) {
+					// lombok generates a constructor -> there is more than one, or none in source to check
+					if (!LombokConstructors.of(typeDecl, LombokSettings.get(cu)).isEmpty()) {
 						return super.visit(typeDecl);
 					}
 

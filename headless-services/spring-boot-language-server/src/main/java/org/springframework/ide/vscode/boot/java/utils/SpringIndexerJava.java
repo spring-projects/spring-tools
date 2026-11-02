@@ -44,6 +44,7 @@ import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
@@ -78,7 +79,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	// whenever the implementation of the indexer changes in a way that the stored data in the cache is no longer valid,
 	// we need to change the generation - this will result in a re-indexing due to no up-to-date cache data being found
-	private static final String GENERATION = "GEN-37";
+	private static final String GENERATION = "GEN-38";
 	private static final String INDEX_FILES_TASK_ID = "index-java-source-files-task-";
 
 	private final SymbolHandler symbolHandler;
@@ -236,7 +237,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 				TextDocument doc = DocumentUtils.createTempTextDocument(docURI, content);
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-						0, doc, content, NO_OP_PROBLEM_COLLECTOR, new ArrayList<>(), true, true, result);
+						0, doc, content, NO_OP_PROBLEM_COLLECTOR, new ArrayList<>(), true, true, result, cacheHelper.getLombokSettings());
 
 				astScanner.scanAST(context, false, new ReconcilingIndex(), false);
 
@@ -308,7 +309,7 @@ public class SpringIndexerJava implements SpringIndexer {
 
 			IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
 			SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, file,
-					lastModified, doc, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
+					lastModified, doc, content, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result, cacheHelper.getLombokSettings());
 
 			astScanner.scanAST(context, true, reconcilingIndex);
 
@@ -366,7 +367,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
 
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
-						lastModified, doc, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result);
+						lastModified, doc, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, false, result, cacheHelper.getLombokSettings());
 				
 				astScanner.scanAST(context, true, reconcilingIndex);
 				
@@ -510,7 +511,7 @@ public class SpringIndexerJava implements SpringIndexer {
 				IProblemCollector problemCollector = problemCollectorCreator.apply(doc, diagnosticsAggregator);
 
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
-						lastModified, doc, null, problemCollector, nextPassFiles, !ignoreMethodBodies, false, result);
+						lastModified, doc, null, problemCollector, nextPassFiles, !ignoreMethodBodies, false, result, cacheHelper.getLombokSettings());
 
 				astScanner.scanAST(context, true, reconcilingIndex);
 				progressTask.increment();
@@ -623,6 +624,10 @@ public class SpringIndexerJava implements SpringIndexer {
 
 	public void setScanChunkSize(int chunkSize) {
 		this.scanChunkSize = chunkSize;
+	}
+
+	public void setLombokSettings(LombokSettings lombokSettings) {
+		this.cacheHelper.setLombokSettings(lombokSettings);
 	}
 
 	public void setValidationSeveritySettings(JsonObject javaValidationSettingsJson) {

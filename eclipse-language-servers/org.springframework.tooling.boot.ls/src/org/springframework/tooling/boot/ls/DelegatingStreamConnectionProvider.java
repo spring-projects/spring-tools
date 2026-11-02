@@ -234,6 +234,11 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 		bootJavaObj.put("live-information", liveInformation);
 		bootJavaObj.put("support-spring-xml-config", supportXML);
 		bootJavaObj.put("scan-java-test-sources", scanTestJavaSources);
+		bootJavaObj.put("lombok", Map.of(
+				"on", preferenceStore.getBoolean(Constants.PREF_LOMBOK),
+				"field-defaults-final", preferenceStore.getBoolean(Constants.PREF_LOMBOK_FIELD_DEFAULTS_FINAL),
+				"copy-spring-annotations", preferenceStore.getBoolean(Constants.PREF_LOMBOK_COPY_SPRING_ANNOTATIONS)
+		));
 		bootJavaObj.put("java", javaSettings);
 		bootJavaObj.put("remote-apps", getAllRemoteApps());
 		bootJavaObj.put("modulith-project-tracking", preferenceStore.getBoolean(Constants.PREF_MODULITH));

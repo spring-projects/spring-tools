@@ -23,6 +23,10 @@ public class Constants {
 
 	public static final String PREF_SCAN_JAVA_TEST_SOURCES = "boot-java.scan-java-test-sources";
 
+	public static final String PREF_LOMBOK = "boot-java.lombok.on";
+	public static final String PREF_LOMBOK_FIELD_DEFAULTS_FINAL = "boot-java.lombok.field-defaults-final";
+	public static final String PREF_LOMBOK_COPY_SPRING_ANNOTATIONS = "boot-java.lombok.copy-spring-annotations";
+
 	public static final String PREF_SUPPORT_SPRING_XML_CONFIGS = "boot-java.support-spring-xml-config.on";
 	public static final String PREF_XML_CONFIGS_SCAN_FOLDERS = "boot-java.support-spring-xml-config.scan-folders-globs";
 	public static final String PREF_XML_CONFIGS_HYPERLINKS = "boot-java.support-spring-xml-config.hyperlinks";

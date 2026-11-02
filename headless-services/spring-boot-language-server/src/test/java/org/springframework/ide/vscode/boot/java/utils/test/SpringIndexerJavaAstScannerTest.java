@@ -24,6 +24,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingIndex;
 import org.springframework.ide.vscode.boot.java.utils.DocumentUtils;
 import org.springframework.ide.vscode.boot.java.utils.QualifiedTypeName;
@@ -103,7 +104,7 @@ public class SpringIndexerJavaAstScannerTest {
 		SpringIndexerJavaScanResult result = new SpringIndexerJavaScanResult(project, new String[] { FILE });
 		return new SpringIndexerJavaContext(project, cu, DOC_URI, FILE, 0L,
 				DocumentUtils.createTempTextDocument(DOC_URI, "package p; public class A {}"), null, noopProblems,
-				new ArrayList<>(), true, true, result);
+				new ArrayList<>(), true, true, result, LombokSettings.DISABLED);
 	}
 
 	private static CompilationUnit parse(String source) {

@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
@@ -44,6 +45,10 @@ import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
+import org.springframework.ide.vscode.boot.java.lombok.LombokConstructors;
+import org.springframework.ide.vscode.boot.java.lombok.LombokConstructors.GeneratedConstructor;
+import org.springframework.ide.vscode.boot.java.lombok.LombokConstructors.GeneratedParameter;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.commons.util.BadLocationException;
@@ -203,6 +208,9 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 		context.markAsOwnIndexElement(typeDeclaration);
 
 		indexMethods(indexElement, annotatedMethods, doc, context);
+		if (typeDeclaration instanceof TypeDeclaration type) {
+			indexGeneratedConstructors(indexElement, type, typeBinding, annotationHierarchies, doc, context);
+		}
 		
 		context.getGeneratedIndexElements().add(new CachedIndexElement(context.getDocURI(), indexElement));
 	}
@@ -259,6 +267,61 @@ public class StereotypesIndexer implements SpringComponentIndexer {
 				indexElement.addChild(methodElement);
 			}
 		}
+	}
+
+	/**
+	 * The constructors Lombok generates that carry annotations - put there with
+	 * {@code onConstructor} - get an element of their own, as an annotated constructor written in
+	 * source would. They are located at, and hashed over, the Lombok annotation they come from.
+	 */
+	private void indexGeneratedConstructors(StereotypeClassElement indexElement, TypeDeclaration type, ITypeBinding typeBinding,
+			AnnotationHierarchies annotationHierarchies, TextDocument doc, SpringIndexerJavaContext context) throws BadLocationException {
+
+		LombokSettings lombok = LombokSettings.get(type);
+		if (!lombok.enabled()) {
+			return;
+		}
+
+		for (GeneratedConstructor constructor : LombokConstructors.of(type, lombok)) {
+			Set<String> annotationTypes = getAnnotationTypes(annotationHierarchies, List.of(), constructor.annotations());
+			if (annotationTypes.isEmpty()) {
+				continue;
+			}
+
+			List<ITypeBinding> parameterTypes = parameterTypesOf(constructor);
+			if (parameterTypes == null) {
+				continue;
+			}
+
+			// mirrors ASTUtils.getMethodSignature for a constructor written in source
+			String name = type.getName().getIdentifier();
+			String methodSignature = typeBinding.getBinaryName() + "." + name + "("
+					+ parameterTypes.stream().map(ITypeBinding::getBinaryName).collect(Collectors.joining(", ")) + ") : void";
+			String methodLabel = typeBinding.getName() + "." + name + "("
+					+ parameterTypes.stream().map(ITypeBinding::getName).collect(Collectors.joining(", ")) + ") : void";
+
+			Annotation declaration = constructor.declaration();
+			context.markAsOwnIndexElement(declaration);
+			Location location = new Location(doc.getUri(), doc.toRange(declaration.getStartPosition(), declaration.getLength()));
+
+			indexElement.addChild(new StereotypeMethodElement(name, methodLabel, methodSignature, location, annotationTypes,
+					ASTUtils.contentHash(doc, declaration)));
+		}
+	}
+
+	/**
+	 * @return null if the type of one of the parameters cannot be resolved
+	 */
+	private static List<ITypeBinding> parameterTypesOf(GeneratedConstructor constructor) {
+		List<ITypeBinding> result = new ArrayList<>();
+		for (GeneratedParameter parameter : constructor.parameters()) {
+			IVariableBinding binding = parameter.field().resolveBinding();
+			if (binding == null || binding.getType() == null) {
+				return null;
+			}
+			result.add(binding.getType());
+		}
+		return result;
 	}
 
 	private Set<String> getAnnotationTypes(AnnotationHierarchies annotationHierarchies,

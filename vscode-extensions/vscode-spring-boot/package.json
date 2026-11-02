@@ -499,6 +499,21 @@
             "default": false,
             "description": "Enable/Disable Java test sources files scanning"
           },
+          "boot-java.lombok.on": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable/Disable taking the constructors Lombok generates into account when indexing Java sources, e.g. for injection points"
+          },
+          "boot-java.lombok.field-defaults-final": {
+            "type": "boolean",
+            "default": false,
+            "description": "Lombok: treat all fields as final unless marked @NonFinal, as with `lombok.fieldDefaults.defaultFinal = true` in lombok.config"
+          },
+          "boot-java.lombok.copy-spring-annotations": {
+            "type": "boolean",
+            "default": false,
+            "description": "Lombok: copy Spring's @Qualifier and @Value from fields onto the generated constructor parameters, as with `lombok.copyableAnnotations` in lombok.config"
+          },
           "boot-java.support-spring-xml-config.on": {
             "type": "boolean",
             "default": false,

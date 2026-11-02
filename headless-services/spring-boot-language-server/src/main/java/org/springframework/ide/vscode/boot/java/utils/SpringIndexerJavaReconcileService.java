@@ -171,7 +171,7 @@ public class SpringIndexerJavaReconcileService {
 
 				SpringIndexerJavaContext context = new SpringIndexerJavaContext(project, cu, docURI, sourceFilePath,
 						lastModified, doc, null, problemCollector, new ArrayList<>(), !ignoreMethodBodies, true,
-						reconcilingResult);
+						reconcilingResult, cacheHelper.getLombokSettings());
 
 				try {
 					reconcileAfterScan(context, reconcilingIndex);

@@ -63,6 +63,14 @@ public class JarFixtureBuilder {
 	 * side of the structure view doesn't run processors either.
 	 */
 	public static Path compileAll(Path tempDir, Map<String, String> sourcesByFqn, List<File> classpath) throws IOException {
+		return compileAll(tempDir, sourcesByFqn, classpath, false);
+	}
+
+	/**
+	 * Same, with the annotation processors found on the classpath run - for fixtures whose
+	 * bytecode differs from their source because of one, Lombok's, which the AST side mirrors.
+	 */
+	public static Path compileAll(Path tempDir, Map<String, String> sourcesByFqn, List<File> classpath, boolean annotationProcessing) throws IOException {
 		Path classesDir = Files.createDirectories(tempDir.resolve("classes"));
 
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -77,7 +85,7 @@ public class JarFixtureBuilder {
 
 		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, StandardCharsets.UTF_8);
 		ByteArrayOutputStream diagnostics = new ByteArrayOutputStream();
-		List<String> options = new ArrayList<>(List.of("-d", classesDir.toString(), "-proc:none"));
+		List<String> options = new ArrayList<>(List.of("-d", classesDir.toString(), annotationProcessing ? "-proc:full" : "-proc:none"));
 		if (classpath != null) {
 			options.add("-classpath");
 			options.add(classpath.stream().map(File::getAbsolutePath).collect(Collectors.joining(File.pathSeparator)));

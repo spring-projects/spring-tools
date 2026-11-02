@@ -302,14 +302,6 @@ public class Annotations {
 	
 	public static final String JMOLECULES_STEREOTYPE = "org.jmolecules.stereotype.Stereotype";
 	
-	// Lombok
-	
-	public static final Set<String> LOMBOK_CONSTRUCTOR_ANNOTATIONS = Set.of(
-			"lombok.RequiredArgsConstructor",
-			"lombok.NoArgsConstructor",
-			"lombok.AllArgsConstructor"
-	);
-
 	// Modulith / Events
 
 	public static final String ASYNC = "org.springframework.scheduling.annotation.Async";

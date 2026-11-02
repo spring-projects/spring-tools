@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ide.vscode.boot.common.SpringProblemCategories;
+import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
 import org.springframework.ide.vscode.boot.properties.completions.PropertyCompletionSettings;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
@@ -88,6 +89,13 @@ public class BootJavaConfig implements InitializingBean {
 		return enabled != null && enabled.booleanValue();
 	}
 	
+	public LombokSettings getLombokSettings() {
+		return new LombokSettings(
+				Boolean.TRUE.equals(settings.getBoolean("boot-java", "lombok", "on")),
+				Boolean.TRUE.equals(settings.getBoolean("boot-java", "lombok", "field-defaults-final")),
+				Boolean.TRUE.equals(settings.getBoolean("boot-java", "lombok", "copy-spring-annotations")));
+	}
+
 	public boolean isModulithAutoProjectTrackingEnabled() {
 		Boolean enabled = settings.getBoolean("boot-java", "modulith-project-tracking");
 		return enabled != null && enabled.booleanValue();

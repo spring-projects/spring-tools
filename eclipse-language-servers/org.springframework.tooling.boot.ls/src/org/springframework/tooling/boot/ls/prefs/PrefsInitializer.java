@@ -41,6 +41,10 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		preferenceStore.setDefault(Constants.PREF_XML_CONFIGS_SCAN_FOLDERS, "src/main");
 
 		preferenceStore.setDefault(Constants.PREF_SCAN_JAVA_TEST_SOURCES, false);
+
+		preferenceStore.setDefault(Constants.PREF_LOMBOK, false);
+		preferenceStore.setDefault(Constants.PREF_LOMBOK_FIELD_DEFAULTS_FINAL, false);
+		preferenceStore.setDefault(Constants.PREF_LOMBOK_COPY_SPRING_ANNOTATIONS, false);
 		
 		preferenceStore.setDefault(Constants.PREF_JAVA_RECONCILE, true);
 		

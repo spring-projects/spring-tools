@@ -301,6 +301,10 @@ public class Annotations {
 	// JMolecules
 	
 	public static final String JMOLECULES_STEREOTYPE = "org.jmolecules.stereotype.Stereotype";
+	public static final String JMOLECULES_SERVICE = "org.jmolecules.ddd.annotation.Service";
+	public static final String JMOLECULES_REPOSITORY = "org.jmolecules.ddd.annotation.Repository";
+	public static final String JMOLECULES_FACTORY = "org.jmolecules.ddd.annotation.Factory";
+	public static final String JMOLECULES_DOMAIN_EVENT_HANDLER = "org.jmolecules.event.annotation.DomainEventHandler";
 	
 	// Modulith / Events
 

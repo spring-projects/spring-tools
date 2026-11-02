@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -29,6 +30,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.commons.java.JavaUtils;
 
 import com.google.common.collect.ImmutableList;
@@ -48,6 +50,17 @@ public class AnnotationHierarchies {
 	private static final Logger log = LoggerFactory.getLogger(AnnotationHierarchies.class);
 	
 	private static final String CU_PROPERTY_KEY = AnnotationHierarchies.class.getName();
+
+	/**
+	 * jMolecules annotations treated as the Spring annotations they stand for (as the jMolecules
+	 * ByteBuddy plugin turns them into at build time), together with the meta-annotations of those,
+	 * all as binding keys
+	 */
+	private static final Map<String, List<String>> JMOLECULES_TO_SPRING = Map.of(
+			key(Annotations.JMOLECULES_SERVICE), List.of(key(Annotations.SERVICE), key(Annotations.COMPONENT)),
+			key(Annotations.JMOLECULES_REPOSITORY), List.of(key(Annotations.REPOSITORY), key(Annotations.COMPONENT)),
+			key(Annotations.JMOLECULES_FACTORY), List.of(key(Annotations.COMPONENT)),
+			key(Annotations.JMOLECULES_DOMAIN_EVENT_HANDLER), List.of(key(Annotations.EVENT_LISTENER)));
 	
 	private final ConcurrentHashMap<String, AnnotationTypeInformation> cache;
 	private final Predicate<ITypeBinding> filter;
@@ -201,9 +214,20 @@ public class AnnotationHierarchies {
 		// remove itself from `inherited` set as we'd like to leave only inherited annotations binding keys in the set 
 		String key = keyOf(typeBinding);
 		inherited.remove(key);
+
+		// jMolecules annotations, used directly or as meta-annotations, count as their Spring counterparts
+		for (String annotationKey : List.copyOf(inherited)) {
+			inherited.addAll(JMOLECULES_TO_SPRING.getOrDefault(annotationKey, List.of()));
+		}
+		inherited.addAll(JMOLECULES_TO_SPRING.getOrDefault(key, List.of()));
+
 		return new AnnotationTypeInformation(key, inherited);
 	}
 	
+	private static String key(String annotationTypeFqn) {
+		return JavaUtils.typeFqNameToBindingKey(annotationTypeFqn);
+	}
+
 	public boolean isAnnotatedWithAnnotationByBindingKey(IBinding binding, Predicate<String> bindingKeyTest) {
 		if (binding instanceof IAnnotationBinding ab) {
 			return annotationInfo(ab.getAnnotationType()).map(info -> info.inherits(bindingKeyTest)).orElse(false);

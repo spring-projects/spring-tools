@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven settings for the Claude Code container (see docker-compose.yaml). The host's local
+  repository is mounted read-only at /m2-host-repo and offered as an extra repository, so builds
+  resolve artifacts from it and cache them in the container's own ~/.m2/repository.
+-->
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">
+  <profiles>
+    <profile>
+      <id>host-m2</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <repositories>
+        <repository>
+          <id>host-m2</id>
+          <url>file:///m2-host-repo</url>
+          <releases><updatePolicy>never</updatePolicy></releases>
+          <snapshots><updatePolicy>never</updatePolicy></snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>host-m2</id>
+          <url>file:///m2-host-repo</url>
+          <releases><updatePolicy>never</updatePolicy></releases>
+          <snapshots><updatePolicy>never</updatePolicy></snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+</settings>

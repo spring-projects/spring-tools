@@ -54,6 +54,16 @@ public abstract class AbstractJavaProject implements IJavaProject, Disposable {
 
 	@Override
 	public void dispose() {
+		invalidateIndex();
+	}
+
+	/**
+	 * Drops the type index, it gets re-created from the current classpath on next access. Projects whose classpath
+	 * changes in place have to call this after the classpath has been updated and before anyone is notified about the
+	 * change, so that every project change listener sees the new index, independent of the order listeners are called
+	 * in. Callers still working with the previous index can keep using it.
+	 */
+	protected void invalidateIndex() {
 		Disposable toDispose = null;
 		synchronized (this) {
 			toDispose = index;

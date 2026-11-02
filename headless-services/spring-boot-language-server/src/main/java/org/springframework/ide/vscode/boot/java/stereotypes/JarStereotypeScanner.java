@@ -38,6 +38,7 @@ import org.jboss.jandex.Type;
 import org.jboss.jandex.VoidType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.commons.protocol.spring.CanonicalNameSets;
 
 /**
  * Reads {@link StereotypeClassElement}s out of a JAR file's classes, mirroring what
@@ -158,7 +159,7 @@ public class JarStereotypeScanner {
 			}
 
 			StereotypeClassElement element = new StereotypeClassElement(name.toString(), null,
-					supertypesWithoutObjectOf(classInfo, index, cache), cache.of(annotationTypesOf(classInfo, index, cache)), null);
+					supertypesWithoutObjectOf(classInfo, index, cache), annotationTypesOf(classInfo, index, cache), null);
 			bindingKeys.put(element, JarBindingKeys.of(classInfo));
 
 			for (MethodInfo method : sourceLevelMethodsOf(classInfo)) {
@@ -166,7 +167,7 @@ public class JarStereotypeScanner {
 
 				if (!methodAnnotations.isEmpty()) {
 					StereotypeMethodElement methodElement = new StereotypeMethodElement(sourceName(method), methodLabelOf(method),
-							methodSignatureOf(method), null, cache.of(methodAnnotations), null);
+							methodSignatureOf(method), null, methodAnnotations, null);
 					bindingKeys.put(methodElement, JarBindingKeys.of(method));
 					element.addChild(methodElement);
 				}
@@ -200,7 +201,7 @@ public class JarStereotypeScanner {
 		for (AnnotationInstance annotation : classInfo.declaredAnnotations()) {
 			annotationTypes.add(cache.qualifiedName(annotation.name()));
 		}
-		return new StereotypeClassElement(classInfo.name().toString(), null, Set.of(), cache.of(annotationTypes), null);
+		return new StereotypeClassElement(classInfo.name().toString(), null, Set.of(), annotationTypes, null);
 	}
 
 	/**
@@ -404,7 +405,7 @@ public class JarStereotypeScanner {
 			}
 		}
 
-		result = cache.of(collected);
+		result = CanonicalNameSets.of(collected);
 		known.put(classInfo.name(), result);
 		return result;
 	}
@@ -470,7 +471,6 @@ public class JarStereotypeScanner {
 
 		private final Map<DotName, String> qualifiedNames = new HashMap<>();
 		private final Map<String, String> names = new HashMap<>();
-		private final Map<Set<String>, Set<String>> sets = new HashMap<>();
 		private final Map<DotName, Set<String>> supertypes = new HashMap<>();
 		private final Map<DotName, Set<String>> supertypeAnnotations = new HashMap<>();
 
@@ -485,18 +485,6 @@ public class JarStereotypeScanner {
 
 		String name(String name) {
 			return names.computeIfAbsent(name, key -> key);
-		}
-
-		Set<String> of(Set<String> values) {
-			// looked up as it is: only a set not seen yet is copied - most are repeats
-			Set<String> known = sets.get(values);
-			if (known != null) {
-				return known;
-			}
-
-			Set<String> copy = values.stream().map(this::name).collect(Collectors.toUnmodifiableSet());
-			sets.put(copy, copy);
-			return copy;
 		}
 	}
 

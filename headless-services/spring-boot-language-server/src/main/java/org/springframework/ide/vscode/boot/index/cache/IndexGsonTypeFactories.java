@@ -10,6 +10,9 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.index.cache;
 
+import java.io.IOException;
+import java.util.Set;
+
 import org.springframework.ide.vscode.boot.java.beans.ConfigPropertyIndexElement;
 import org.springframework.ide.vscode.boot.java.beans.SpringBootApplicationIndexElement;
 import org.springframework.ide.vscode.boot.java.data.QueryMethodIndexElement;
@@ -46,10 +49,18 @@ import org.springframework.ide.vscode.commons.protocol.spring.AotProcessorElemen
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.BeanMethodContainerElement;
 import org.springframework.ide.vscode.commons.protocol.spring.BeanRegistrarElement;
+import org.springframework.ide.vscode.commons.protocol.spring.CanonicalNameSets;
 import org.springframework.ide.vscode.commons.protocol.spring.DocumentElement;
 import org.springframework.ide.vscode.commons.protocol.spring.ProjectElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SimpleSymbolElement;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
+
+import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
+import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
 /**
  * Centralized factory for all Gson polymorphic type adapter factories used by
@@ -67,7 +78,40 @@ import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement
  */
 public final class IndexGsonTypeFactories {
 
+	private static final TypeToken<Set<String>> NAME_SET = new TypeToken<Set<String>>() {};
+
 	private IndexGsonTypeFactories() {
+	}
+
+	/**
+	 * Returns a factory that reads every {@code Set<String>} - the annotation types and supertypes
+	 * of index elements, mostly - as a shared one ({@link CanonicalNameSets}), the way the elements'
+	 * constructors keep them, which reading an element from the cache bypasses. Written and read
+	 * as a plain JSON array, as before.
+	 */
+	public static TypeAdapterFactory canonicalNameSets() {
+		return new TypeAdapterFactory() {
+			@SuppressWarnings("unchecked")
+			@Override
+			public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
+				if (!NAME_SET.equals(type)) {
+					return null;
+				}
+
+				TypeAdapter<Set<String>> delegate = gson.getDelegateAdapter(this, NAME_SET);
+				return (TypeAdapter<T>) new TypeAdapter<Set<String>>() {
+					@Override
+					public void write(JsonWriter out, Set<String> names) throws IOException {
+						delegate.write(out, names);
+					}
+
+					@Override
+					public Set<String> read(JsonReader in) throws IOException {
+						return CanonicalNameSets.of(delegate.read(in));
+					}
+				};
+			}
+		};
 	}
 
 	/**

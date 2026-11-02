@@ -611,6 +611,7 @@ public class IndexCacheOnDiscDeltaBased implements IndexCache {
 				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter(allowedElementTypes))
 				.registerTypeAdapterFactory(IndexGsonTypeFactories.springIndexElements())
 				.registerTypeAdapterFactory(IndexGsonTypeFactories.pathPrefixPredicates())
+				.registerTypeAdapterFactory(IndexGsonTypeFactories.canonicalNameSets())
 				.create();
 	}
 	

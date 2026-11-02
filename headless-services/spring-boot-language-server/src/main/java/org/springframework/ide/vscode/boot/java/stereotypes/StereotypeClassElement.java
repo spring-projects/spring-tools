@@ -15,6 +15,7 @@ import java.util.Set;
 
 import org.eclipse.lsp4j.Location;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.commons.protocol.spring.CanonicalNameSets;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 
 public class StereotypeClassElement extends AbstractStereotypeIndexElement {
@@ -33,7 +34,7 @@ public class StereotypeClassElement extends AbstractStereotypeIndexElement {
 		super(annotationTypes);
 		this.type = type;
 		this.location = location;
-		this.supertypes = supertypes;
+		this.supertypes = CanonicalNameSets.of(supertypes);
 		this.contentHash = contentHash;
 	}
 

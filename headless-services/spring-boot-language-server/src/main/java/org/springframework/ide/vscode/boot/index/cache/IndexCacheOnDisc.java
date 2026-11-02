@@ -379,6 +379,7 @@ public class IndexCacheOnDisc implements IndexCache {
 				.registerTypeAdapter(Bean.class, new BeanJsonAdapter())
 				.registerTypeAdapter(InjectionPoint.class, new InjectionPointJsonAdapter())
 				.registerTypeAdapter(IndexCacheStore.class, new IndexCacheStoreAdapter(allowedElementTypes))
+				.registerTypeAdapterFactory(IndexGsonTypeFactories.canonicalNameSets())
 				.create();
 	}
 

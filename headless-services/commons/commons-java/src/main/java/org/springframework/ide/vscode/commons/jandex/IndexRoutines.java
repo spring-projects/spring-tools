@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2019 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -207,8 +207,8 @@ public class IndexRoutines {
 			if (!indexFile.exists()) {
 				return indexCreator.get();
 			} else {
-				try {
-					return new IndexReader(new FileInputStream(indexFile)).read();
+				try (FileInputStream in = new FileInputStream(indexFile)) {
+					return new IndexReader(in).read();
 				} catch (IOException e) {
 					log.error("Failed to read index file '" + indexFile + "'. Creating new index file.", e);
 					if (indexFile.delete()) {

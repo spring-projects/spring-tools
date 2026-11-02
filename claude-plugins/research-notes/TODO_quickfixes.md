@@ -75,6 +75,7 @@ When a new problem type is added to the language server, add a row to the matchi
 | :--- | :--- | :--- | :---: |
 | `JAVA_SPEL_EXPRESSION_SYNTAX` | SpEL expression syntax error in `#{...}` (e.g. `@Value`, caching, `@EventListener`, method security annotations) | *None* | ✅ |
 | `PROPERTY_PLACE_HOLDER_SYNTAX` | Property placeholder `${...}` syntax error inside a SpEL expression | *None* | ✅ |
+| `JAVA_UNRESOLVED_PLACEHOLDER` | Property placeholder in an annotation attribute has no default and its key is not in configuration metadata or the project's `application*` files | *None* | ✅ |
 
 ## Cron Problem Types (`cron/CronProblemType`)
 

@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java;
 
 import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.ERROR;
+import static org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemSeverity.IGNORE;
 
 import java.util.List;
 
@@ -23,7 +24,8 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
 public enum SpelProblemType implements ProblemType {
 	
 	JAVA_SPEL_EXPRESSION_SYNTAX(ERROR, "SpEL parser raised a ParseException", "SpEL Expression Syntax"),
-	PROPERTY_PLACE_HOLDER_SYNTAX(ERROR, "Property place holder raised a ParseException", "Property Place Holder Syntax");
+	PROPERTY_PLACE_HOLDER_SYNTAX(ERROR, "Property place holder raised a ParseException", "Property Place Holder Syntax"),
+	JAVA_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder in an annotation attribute has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime", "Unresolved Property Placeholder");
 
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

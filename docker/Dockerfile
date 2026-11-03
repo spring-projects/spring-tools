@@ -16,7 +16,9 @@ RUN apt-get update \
 
 # Run as a regular user. Directories that back named volumes are created here so the volumes
 # inherit this ownership.
-RUN useradd --create-home --shell /bin/bash claude \
+# The uid is pinned: the shared claude-config volume stores files owned by this uid, and a uid that
+# varies between image builds (base image changes, other worktrees) would make the volume unwritable.
+RUN useradd --uid 1000 --create-home --shell /bin/bash claude \
     && mkdir -p /claude-config /home/claude/.m2 /workspace \
     && chown -R claude:claude /claude-config /home/claude /workspace
 

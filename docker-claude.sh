@@ -31,6 +31,10 @@ export COMPOSE_PROJECT_NAME
 
 compose=(docker compose -f docker/docker-compose.yaml)
 
+# The shared Claude Code config volume is external to the compose projects (see docker-compose.yaml),
+# so compose does not create it. No-op if it already exists.
+docker volume create sts4-claude-config >/dev/null
+
 if [ "${1:-}" = "--rebuild" ]; then
   shift
   "${compose[@]}" build --pull --no-cache

@@ -31,7 +31,10 @@ services:
 
 volumes:
   # Fixed volume name (instead of one prefixed with the checkout's directory name) so that all
-  # checkouts and git worktrees share one Claude Code login, settings and history.
+  # checkouts and git worktrees share one Claude Code login, settings and history. It is external
+  # because each checkout runs as its own compose project; otherwise compose warns that the volume
+  # belongs to another project. ../docker-claude.sh creates it if missing.
   claude-config:
     name: sts4-claude-config
+    external: true
   maven-repo:

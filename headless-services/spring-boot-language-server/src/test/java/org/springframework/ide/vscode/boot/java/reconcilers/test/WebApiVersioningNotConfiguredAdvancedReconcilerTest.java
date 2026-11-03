@@ -33,9 +33,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
+import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Boot4JavaProblemType;
+import org.springframework.ide.vscode.boot.java.requestmapping.WebConfigIndexElement;
 import org.springframework.ide.vscode.boot.java.utils.test.TestFileScanListener;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElementUtils;
 import org.springframework.ide.vscode.commons.util.UriUtil;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
@@ -52,6 +56,7 @@ public class WebApiVersioningNotConfiguredAdvancedReconcilerTest {
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringSymbolIndex indexer;
+	@Autowired private SpringMetamodelIndex springIndex;
 
 	private File directory;
 
@@ -250,6 +255,63 @@ public class WebApiVersioningNotConfiguredAdvancedReconcilerTest {
 		PublishDiagnosticsParams diagnosticsResult = harness.getDiagnostics(controllerUri);
 		List<Diagnostic> diagnostics = diagnosticsResult.getDiagnostics();
 		assertEquals(0, diagnostics.size());
+	}
+
+	@Test
+	void testNoErrorWhenWebConfigUsesMediaTypeParameterWithParsedMediaType() throws Exception {
+		assertNoErrorWithMediaTypeParameter("MediaType.parseMediaType(\"application/vnd.eazyapp+json\")", "Media Type Parameter: application/vnd.eazyapp+json");
+	}
+
+	@Test
+	void testNoErrorWhenWebConfigUsesMediaTypeParameterWithMediaTypeValueOf() throws Exception {
+		assertNoErrorWithMediaTypeParameter("MediaType.valueOf(\"application/vnd.eazyapp+json\")", "Media Type Parameter: application/vnd.eazyapp+json");
+	}
+
+	@Test
+	void testNoErrorWhenWebConfigUsesMediaTypeParameterWithNewMediaType() throws Exception {
+		assertNoErrorWithMediaTypeParameter("new MediaType(\"application\", \"vnd.eazyapp+json\")", "Media Type Parameter: application/vnd.eazyapp+json");
+	}
+
+	@Test
+	void testNoErrorWhenWebConfigUsesMediaTypeParameterWithMediaTypeConstant() throws Exception {
+		assertNoErrorWithMediaTypeParameter("MediaType.APPLICATION_JSON", "Media Type Parameter: application/json");
+	}
+
+	private void assertNoErrorWithMediaTypeParameter(String mediaTypeExpression, String expectedStrategy) throws Exception {
+		String webConfigUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/WebConfig.java").toUri().toString();
+		String controllerUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/TestController.java").toUri().toString();
+
+		String updatedWebConfigSource = """
+				package com.example.demo.apiversioning;
+
+				import org.springframework.context.annotation.Configuration;
+				import org.springframework.http.MediaType;
+				import org.springframework.web.servlet.config.annotation.ApiVersionConfigurer;
+				import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+				@Configuration
+				public class WebConfig implements WebMvcConfigurer {
+
+					@Override
+					public void configureApiVersioning(ApiVersionConfigurer configurer) {
+						configurer.useMediaTypeParameter(%s, "v");
+					}
+
+				}
+				""".formatted(mediaTypeExpression);
+
+		CompletableFuture<Void> updateFuture = indexer.updateDocument(webConfigUri, updatedWebConfigSource, "useMediaTypeParameter test");
+		updateFuture.get(5, TimeUnit.SECONDS);
+
+		PublishDiagnosticsParams diagnosticsResult = harness.getDiagnostics(controllerUri);
+		List<Diagnostic> diagnostics = diagnosticsResult.getDiagnostics();
+		assertEquals(0, diagnostics.size(), "unexpected diagnostics for media type expression: " + mediaTypeExpression);
+
+		Bean[] webConfigBeans = springIndex.getBeansWithName("sf7-validation", "webConfig");
+		assertEquals(1, webConfigBeans.length);
+		List<WebConfigIndexElement> webConfigElements = SpringIndexElementUtils.getNodesOfType(WebConfigIndexElement.class, List.of(webConfigBeans[0]));
+		assertEquals(1, webConfigElements.size());
+		assertEquals(List.of(expectedStrategy), webConfigElements.get(0).getVersionSupportStrategies());
 	}
 
 }

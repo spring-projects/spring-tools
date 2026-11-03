@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.dom.LambdaExpression;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Name;
+import org.eclipse.jdt.core.dom.ParenthesizedExpression;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.lsp4j.Range;
 import org.springframework.ide.vscode.boot.java.Annotations;
@@ -234,12 +235,12 @@ public class WebConfigJavaIndexer {
 
 		result.put(USE_MEDIA_TYPE_PARAMETER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			try {
-				String value = ASTUtils.getExpressionValueAsString(expression);
-				if (value != null) {
-					ASTNode parent = expression.getParent();
-					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
-					webconfigBuilder.versionStrategy("Media Type Parameter: " + value, range);
-				}
+				// the media type is usually not a constant expression (e.g. MediaType.parseMediaType("..."), new MediaType(...)),
+				// so always record the strategy, even if the media type value itself cannot be determined statically
+				String value = describeMediaType(expression);
+				ASTNode parent = expression.getParent();
+				Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
+				webconfigBuilder.versionStrategy("Media Type Parameter: " + value, range);
 			}
 			catch (BadLocationException e) {
 			}
@@ -315,6 +316,53 @@ public class WebConfigJavaIndexer {
 
 		
 		return result;
+	}
+
+	private static final String MEDIA_TYPE_CLASS = "org.springframework.http.MediaType";
+	private static final Set<String> MEDIA_TYPE_FACTORY_METHODS = Set.of("parseMediaType", "valueOf");
+
+	/**
+	 * Computes a human-readable label for the media type argument of <code>useMediaTypeParameter(...)</code>.
+	 * Falls back to the source of the expression if the media type cannot be determined statically.
+	 */
+	static String describeMediaType(Expression expression) {
+		if (expression instanceof ParenthesizedExpression parenthesized) {
+			return describeMediaType(parenthesized.getExpression());
+		}
+		if (expression instanceof CastExpression cast) {
+			return describeMediaType(cast.getExpression());
+		}
+
+		String value = null;
+
+		if (expression instanceof MethodInvocation mi && MEDIA_TYPE_FACTORY_METHODS.contains(mi.getName().getIdentifier())
+				&& mi.arguments().size() == 1) {
+			// MediaType.parseMediaType("application/vnd.example+json") or MediaType.valueOf("...")
+			value = ASTUtils.getExpressionValueAsString((Expression) mi.arguments().get(0));
+		}
+		else if (expression instanceof ClassInstanceCreation cic && cic.arguments().size() >= 2) {
+			// new MediaType("application", "vnd.example+json", ...)
+			String type = ASTUtils.getExpressionValueAsString((Expression) cic.arguments().get(0));
+			String subtype = ASTUtils.getExpressionValueAsString((Expression) cic.arguments().get(1));
+			if (type != null && subtype != null) {
+				value = type + "/" + subtype;
+			}
+		}
+		else if (expression instanceof Name name && name.resolveBinding() instanceof IVariableBinding variable && variable.isField()
+				&& variable.getDeclaringClass() != null && MEDIA_TYPE_CLASS.equals(variable.getDeclaringClass().getQualifiedName())) {
+			// MediaType.APPLICATION_JSON -> use the value of the corresponding MediaType.APPLICATION_JSON_VALUE string constant
+			for (IVariableBinding field : variable.getDeclaringClass().getDeclaredFields()) {
+				if (field.getName().equals(variable.getName() + "_VALUE") && field.getConstantValue() != null) {
+					value = field.getConstantValue().toString();
+					break;
+				}
+			}
+		}
+
+		if (value == null) {
+			value = ASTUtils.getExpressionValueAsString(expression);
+		}
+		return value != null ? value : expression.toString();
 	}
 
 	private static String describeApiVersionResolverArgument(Expression expression) {

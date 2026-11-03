@@ -239,6 +239,10 @@ public class SpringIndexCommands {
 		// JARs still to be scanned are scanned in the background, so that no project's tree waits for them
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups, selectedDependencies, true);
 
+		if (tree != null && !selectedDependencies.isEmpty()) {
+			tree.withAttribute(JsonNodeHandler.INCLUDED_DEPENDENCIES, selectedDependencies.size());
+		}
+
 		// no baseline attributes at all rather than a baseline with nothing marked: those two look
 		// the same to a client, and the latter reads as "nothing changed" - which would hide the
 		// entire tree while "hide unchanged nodes" is on

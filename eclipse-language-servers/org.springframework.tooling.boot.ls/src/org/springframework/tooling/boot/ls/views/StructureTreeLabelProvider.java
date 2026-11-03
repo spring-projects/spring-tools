@@ -51,16 +51,24 @@ public class StructureTreeLabelProvider extends LabelProvider implements IStyled
 		if (text == null) {
 			return new StyledString();
 		}
+		StyledString result = null;
 		if (element instanceof StereotypeNode node && highlightChanges.getAsBoolean()) {
 			Change change = node.change();
 			if (change != null) {
 				// the color of the label and a marker behind it: color alone is lost on some themes,
 				// and for color blind users
-				return new StyledString(text, colorStyler(colorOf(change)))
+				result = new StyledString(text, colorStyler(colorOf(change)))
 						.append(" " + markerOf(change), StyledString.DECORATIONS_STYLER);
 			}
 		}
-		return new StyledString(text);
+		if (result == null) {
+			result = new StyledString(text);
+		}
+		if (element instanceof StereotypeNode node && node.isProject() && node.includedDependencies() > 0) {
+			int count = node.includedDependencies();
+			result.append(" (" + count + (count == 1 ? " dependency)" : " dependencies)"), StyledString.DECORATIONS_STYLER);
+		}
+		return result;
 	}
 
 	/**

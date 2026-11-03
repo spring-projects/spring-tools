@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.java.commands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -137,6 +138,22 @@ public class StructureDependenciesCommandTest {
 				Map.of(project.getElementName(), List.of("project:some-dependency", "gav:com.example:lib")));
 
 		assertEquals(comparable(without), comparable(with));
+	}
+
+	@Test
+	void theNumberOfIncludedDependenciesIsSentOnTheProjectNodeOnlyWhenThereAreAny() throws Exception {
+		String projectName = project.getElementName();
+		DependencyDescriptor springWeb = dependencySources.resolve(project, List.of("gav:org.springframework:spring-web")).get(0);
+
+		Node without = projectRoot(tree.structureTrees(null, null, null), projectName);
+		assertNull(without.getAttribute(JsonNodeHandler.INCLUDED_DEPENDENCIES));
+
+		Node with = projectRoot(tree.structureTrees(null, null, Map.of(projectName, List.of(springWeb.id()))), projectName);
+		assertEquals(1, ((Number) with.getAttribute(JsonNodeHandler.INCLUDED_DEPENDENCIES)).intValue());
+	}
+
+	private static Node projectRoot(List<Node> trees, String projectName) {
+		return trees.stream().filter(root -> projectName.equals(root.getAttribute(JsonNodeHandler.PROJECT_ID))).findFirst().orElseThrow();
 	}
 
 	/**

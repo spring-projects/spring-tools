@@ -71,6 +71,12 @@ export class StereotypedNode {
         item.iconPath = new ThemeIcon(this.n.attributes.icon);
         item.id = this.nodeId;
 
+        // projects that include dependencies say how many
+        const includedDependencies = this.projectId ? Number(this.n.attributes.includedDependencies) || 0 : 0;
+        if (includedDependencies > 0) {
+            item.description = includedDependencies === 1 ? '1 dependency' : `${includedDependencies} dependencies`;
+        }
+
         // nodes that changed since the captured baseline get their icon colored, and a colored
         // label plus a badge via the file decoration provider for the synthetic resource URI -
         // unless highlighting is turned off, in which case the tree looks entirely normal

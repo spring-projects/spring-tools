@@ -57,6 +57,7 @@ final class StereotypeNode {
 
 	static final String CHANGE = "change";
 	static final String HAS_BASELINE = "hasBaseline";
+	static final String INCLUDED_DEPENDENCIES = "includedDependencies";
 	static final String COMPARED_AGAINST_SHA = "comparedAgainstSha";
 	static final String COMPARED_AGAINST_MESSAGE = "comparedAgainstMessage";
 	static final String COMPARED_AGAINST_CAPTURED_AT = "comparedAgainstCapturedAt";
@@ -182,6 +183,14 @@ final class StereotypeNode {
 	 */
 	boolean hasBaseline() {
 		return Boolean.TRUE.equals(root().attributes.get(HAS_BASELINE));
+	}
+
+	/**
+	 * How many dependencies are included in the tree of the project this node belongs to - 0 for
+	 * none.
+	 */
+	int includedDependencies() {
+		return root().attributes.get(INCLUDED_DEPENDENCIES) instanceof Number n ? n.intValue() : 0;
 	}
 
 	/**

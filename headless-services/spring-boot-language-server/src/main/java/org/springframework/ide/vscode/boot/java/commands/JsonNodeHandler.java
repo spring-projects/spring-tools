@@ -102,6 +102,13 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String HAS_BASELINE = "hasBaseline";
 
 	/**
+	 * How many dependencies the user selected to include in this project's tree, set on the root
+	 * node only and only when there are any - so clients can show which projects include
+	 * dependencies, and how many.
+	 */
+	public static final String INCLUDED_DEPENDENCIES = "includedDependencies";
+
+	/**
 	 * The git commit sha and short message of the baseline this project's tree was actually compared
 	 * against, set on the root node only alongside {@link #HAS_BASELINE}. Lets a client show the
 	 * user which snapshot the highlighted changes are relative to - the most recent one by default,

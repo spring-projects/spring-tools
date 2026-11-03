@@ -109,6 +109,9 @@ public class SpringCloudCompatibilityValidator extends AbstractDiagnosticValidat
 		
 		String springCloudGeneration = linkedCloudVersions[0];
 		ResolvedSpringProject cloudProject = provider.getProject("spring-cloud");
+		if (cloudProject == null) {
+			return null;
+		}
 		List<Generation> cloudGenerations = cloudProject.getGenerations();
 		for (Generation cloudGeneration : cloudGenerations) {
 			if (cloudGeneration.getName().equals(springCloudGeneration)) {

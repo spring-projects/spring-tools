@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2023 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -67,7 +67,7 @@ public class SpringIoProjectsProvider implements SpringProjectsProvider {
 	/**
 	 * 
 	 * @param Project slug. E.g. "spring-boot"
-	 * @return
+	 * @return the project, or <code>null</code> if no project with that slug is known
 	 * @throws Exception
 	 */
 	@Override
@@ -78,7 +78,7 @@ public class SpringIoProjectsProvider implements SpringProjectsProvider {
 
 	private Map<String, ResolvedSpringProject> cache() throws Exception {
 		if (cache == null) {
-			if (lastErrorTime + errorStateCachingTime < System.currentTimeMillis()) {
+			if (errorState.isEmpty() || lastErrorTime + errorStateCachingTime < System.currentTimeMillis()) {
 				IndefiniteProgressTask progress = progressService.createIndefiniteProgressTask("fetching-from-spring-io", "Fetching Generations from Spring IO", null);
 				try {
 					SpringProjects springProjects = client.getSpringProjects();

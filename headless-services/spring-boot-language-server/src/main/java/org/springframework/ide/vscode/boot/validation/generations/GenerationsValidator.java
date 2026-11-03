@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.validation.generations;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.lsp4j.CodeAction;
@@ -19,6 +20,8 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ShowDocumentParams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.validation.generations.json.Generation;
 import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
@@ -34,6 +37,8 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 	
 	private static final String SPRING_COMMERCIAL_URL = "https://spring.io/support";
 	
+	private static final Logger log = LoggerFactory.getLogger(GenerationsValidator.class);
+
 	private SpringProjectsProvider provider;
 
 	public GenerationsValidator(DiagnosticSeverityProvider diagnosticSeverityProvider, SpringProjectsProvider provider) {
@@ -52,7 +57,7 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 		// Find the generation belonging to the dependency
 		for (Generation gen : genList) {
 			Version genVersion = SpringProjectUtil.getVersionFromGeneration(gen.getName());
-			if (genVersion.getMajor() == javaProjectVersion.getMajor()
+			if (genVersion != null && genVersion.getMajor() == javaProjectVersion.getMajor()
 					&& genVersion.getMinor() == javaProjectVersion.getMinor()) {
 				return gen;
 			}
@@ -63,6 +68,10 @@ public class GenerationsValidator extends AbstractDiagnosticValidator {
 	@Override
 	public Collection<Diagnostic> validate(IJavaProject javaProject, Version javaProjectVersion) throws Exception {
 		ResolvedSpringProject springProject = provider.getProject(SpringProjectUtil.SPRING_BOOT);
+		if (springProject == null) {
+			log.warn("Spring Boot project information not available from Spring IO, skipping generations validation");
+			return Collections.emptyList();
+		}
 		Generation javaProjectGen = getGenerationForJavaProject(javaProject, springProject, springProject.getSlug());
 		ImmutableList.Builder<Diagnostic> b = ImmutableList.builder();
 		

@@ -12,6 +12,7 @@ package org.springframework.ide.vscode.boot.validation.generations;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.BootLanguageServerInitializer;
 import org.springframework.ide.vscode.boot.java.rewrite.SpringBootPatchUpgrade;
+import org.springframework.ide.vscode.boot.validation.generations.json.ResolvedSpringProject;
 import org.springframework.ide.vscode.boot.validation.generations.preferences.VersionValidationProblemType;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -73,8 +75,12 @@ public class UpdateBootVersion extends AbstractDiagnosticValidator {
 			}
 			
 			if (versions == null) {
-				List<Version> rawReleases = springProjectsProvider.getProject(SpringProjectUtil.SPRING_BOOT).getReleases();
-				versions = new SortedVersions(rawReleases);
+				ResolvedSpringProject bootProject = springProjectsProvider.getProject(SpringProjectUtil.SPRING_BOOT);
+				if (bootProject == null) {
+					log.warn("Spring Boot release information not available from Spring IO, skipping boot version validation");
+					return Collections.emptyList();
+				}
+				versions = new SortedVersions(bootProject.getReleases());
 			}
 			
 			ImmutableList.Builder<Diagnostic> builder = ImmutableList.builder();

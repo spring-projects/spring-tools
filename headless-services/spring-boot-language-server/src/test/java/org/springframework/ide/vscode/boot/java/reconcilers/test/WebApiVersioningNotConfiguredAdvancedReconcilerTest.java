@@ -277,7 +277,31 @@ public class WebApiVersioningNotConfiguredAdvancedReconcilerTest {
 		assertNoErrorWithMediaTypeParameter("MediaType.APPLICATION_JSON", "Media Type Parameter: application/json");
 	}
 
+	@Test
+	void testNoErrorWhenWebConfigUsesRequestHeaderFromMethodCall() throws Exception {
+		assertNoErrorWithVersioningConfig("configurer.useRequestHeader(versionName())", "Request Header: versionName()");
+	}
+
+	@Test
+	void testNoErrorWhenWebConfigUsesQueryParamFromMethodCall() throws Exception {
+		assertNoErrorWithVersioningConfig("configurer.useQueryParam(versionName())", "Query Param: versionName()");
+	}
+
+	@Test
+	void testNoErrorWhenWebConfigUsesPathSegmentFromMethodCall() throws Exception {
+		assertNoErrorWithVersioningConfig("configurer.usePathSegment(versionSegment())", "Path Segment: versionSegment()");
+	}
+
+	@Test
+	void testNoErrorWhenWebConfigUsesPathSegmentFromComputedExpression() throws Exception {
+		assertNoErrorWithVersioningConfig("configurer.usePathSegment(versionSegment() + 1)", "Path Segment: versionSegment() + 1");
+	}
+
 	private void assertNoErrorWithMediaTypeParameter(String mediaTypeExpression, String expectedStrategy) throws Exception {
+		assertNoErrorWithVersioningConfig("configurer.useMediaTypeParameter(" + mediaTypeExpression + ", \"v\")", expectedStrategy);
+	}
+
+	private void assertNoErrorWithVersioningConfig(String configurerCall, String expectedStrategy) throws Exception {
 		String webConfigUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/WebConfig.java").toUri().toString();
 		String controllerUri = directory.toPath().resolve("src/main/java/com/example/demo/apiversioning/TestController.java").toUri().toString();
 
@@ -294,18 +318,26 @@ public class WebApiVersioningNotConfiguredAdvancedReconcilerTest {
 
 					@Override
 					public void configureApiVersioning(ApiVersionConfigurer configurer) {
-						configurer.useMediaTypeParameter(%s, "v");
+						%s;
+					}
+
+					private static String versionName() {
+						return "X-API-Version";
+					}
+
+					private static int versionSegment() {
+						return 1;
 					}
 
 				}
-				""".formatted(mediaTypeExpression);
+				""".formatted(configurerCall);
 
-		CompletableFuture<Void> updateFuture = indexer.updateDocument(webConfigUri, updatedWebConfigSource, "useMediaTypeParameter test");
+		CompletableFuture<Void> updateFuture = indexer.updateDocument(webConfigUri, updatedWebConfigSource, "versioning config test");
 		updateFuture.get(5, TimeUnit.SECONDS);
 
 		PublishDiagnosticsParams diagnosticsResult = harness.getDiagnostics(controllerUri);
 		List<Diagnostic> diagnostics = diagnosticsResult.getDiagnostics();
-		assertEquals(0, diagnostics.size(), "unexpected diagnostics for media type expression: " + mediaTypeExpression);
+		assertEquals(0, diagnostics.size(), "unexpected diagnostics for: " + configurerCall);
 
 		Bean[] webConfigBeans = springIndex.getBeansWithName("sf7-validation", "webConfig");
 		assertEquals(1, webConfigBeans.length);

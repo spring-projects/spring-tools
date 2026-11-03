@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.function.TriConsumer;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -194,57 +195,15 @@ public class WebConfigJavaIndexer {
 			}
 		}));
 		
-		result.put(USE_REQUEST_HEADER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
-			try {
-				String value = ASTUtils.getExpressionValueAsString(expression);
-				if (value != null) {
-					ASTNode parent = expression.getParent();
-					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
-					webconfigBuilder.versionStrategy("Request Header: " + value, range);
-				}
-			}
-			catch (BadLocationException e) {
-			}
-		}));
+		result.put(USE_REQUEST_HEADER, versionStrategyExtractor(apiConfigurerInterfaces, "Request Header: ", WebConfigJavaIndexer::describeExpression));
 
-		result.put(USE_PATH_SEGMENT, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
-			try {
-				String value = ASTUtils.getExpressionValueAsString(expression);
-				if (value != null) {
-					ASTNode parent = expression.getParent();
-					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
-					webconfigBuilder.versionStrategy("Path Segment: " + value, range);
-				}
-			}
-			catch (BadLocationException e) {
-			}
-		}));
+		result.put(USE_PATH_SEGMENT, versionStrategyExtractor(apiConfigurerInterfaces, "Path Segment: ", WebConfigJavaIndexer::describeExpression));
 
-		result.put(USE_QUERY_PARAM, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
-			try {
-				String value = ASTUtils.getExpressionValueAsString(expression);
-				if (value != null) {
-					ASTNode parent = expression.getParent();
-					Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
-					webconfigBuilder.versionStrategy("Query Param: " + value, range);
-				}
-			}
-			catch (BadLocationException e) {
-			}
-		}));
+		result.put(USE_QUERY_PARAM, versionStrategyExtractor(apiConfigurerInterfaces, "Query Param: ", WebConfigJavaIndexer::describeExpression));
 
-		result.put(USE_MEDIA_TYPE_PARAMETER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
-			try {
-				// the media type is usually not a constant expression (e.g. MediaType.parseMediaType("..."), new MediaType(...)),
-				// so always record the strategy, even if the media type value itself cannot be determined statically
-				String value = describeMediaType(expression);
-				ASTNode parent = expression.getParent();
-				Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
-				webconfigBuilder.versionStrategy("Media Type Parameter: " + value, range);
-			}
-			catch (BadLocationException e) {
-			}
-		}));
+		// the arguments are not always constant expressions (e.g. MediaType.parseMediaType("..."), a method call returning the header name),
+		// so the strategy is always recorded, even if its value cannot be determined statically
+		result.put(USE_MEDIA_TYPE_PARAMETER, versionStrategyExtractor(apiConfigurerInterfaces, "Media Type Parameter: ", WebConfigJavaIndexer::describeMediaType));
 
 		result.put(SET_VERSION_PARSER, new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
 			ITypeBinding typeBinding = expression.resolveTypeBinding();
@@ -318,6 +277,26 @@ public class WebConfigJavaIndexer {
 		return result;
 	}
 
+	private static SingleArgumentExtractor versionStrategyExtractor(Set<String> apiConfigurerInterfaces, String labelPrefix, Function<Expression, String> describer) {
+		return new SingleArgumentExtractor(apiConfigurerInterfaces, 0, (doc, expression, webconfigBuilder) -> {
+			try {
+				ASTNode parent = expression.getParent();
+				Range range = doc.toRange(parent.getStartPosition(), parent.getLength());
+				webconfigBuilder.versionStrategy(labelPrefix + describer.apply(expression), range);
+			}
+			catch (BadLocationException e) {
+			}
+		});
+	}
+
+	/**
+	 * Returns the statically known value of the expression, or the source of the expression if it cannot be determined.
+	 */
+	static String describeExpression(Expression expression) {
+		String value = ASTUtils.getExpressionValueAsString(expression);
+		return value != null ? value : expression.toString();
+	}
+
 	private static final String MEDIA_TYPE_CLASS = "org.springframework.http.MediaType";
 	private static final Set<String> MEDIA_TYPE_FACTORY_METHODS = Set.of("parseMediaType", "valueOf");
 
@@ -359,10 +338,7 @@ public class WebConfigJavaIndexer {
 			}
 		}
 
-		if (value == null) {
-			value = ASTUtils.getExpressionValueAsString(expression);
-		}
-		return value != null ? value : expression.toString();
+		return value != null ? value : describeExpression(expression);
 	}
 
 	private static String describeApiVersionResolverArgument(Expression expression) {

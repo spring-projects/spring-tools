@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
@@ -303,6 +304,11 @@ public class GitBaselineTracker implements AutoCloseable {
 
 		Map<File, List<IJavaProject>> projectsByGitDirectory = new LinkedHashMap<>();
 		for (IJavaProject project : projects) {
+			// the structure view only shows Spring projects, so there is nothing to compare against
+			if (!SpringProjectUtil.isSpringProject(project)) {
+				log.trace("project '{}' is not a Spring project - nothing to synchronize", project.getElementName());
+				continue;
+			}
 			Optional<File> gitDirectory = gitDirectoryOf(project);
 			if (gitDirectory.isEmpty()) {
 				log.trace("project '{}' is not git-backed - nothing to synchronize", project.getElementName());

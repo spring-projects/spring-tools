@@ -46,9 +46,11 @@ import org.springframework.ide.vscode.boot.app.BootJavaConfig;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
+import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
+import org.springframework.ide.vscode.commons.protocol.java.Classpath.CPE;
 
 /**
  * @author Martin Lippert
@@ -503,6 +505,19 @@ public class GitBaselineTrackerTest {
 	}
 
 	@Test
+	void doesNothingForANonSpringProject(@TempDir Path dir) throws Exception {
+		commit(dir, "content.txt", "one");
+
+		IJavaProject project = projectAt(dir, "plain-java-project", false);
+		FakeBaselineAccess baselines = new FakeBaselineAccess();
+		GitBaselineTracker tracker = tracker(project, baselines, true);
+
+		tracker.syncBaselineWithGit(project);
+
+		assertThat(baselines.captureCount(project)).isZero();
+	}
+
+	@Test
 	void doesNothingForAnUnbornBranch(@TempDir Path dir) throws Exception {
 		Git.init().setDirectory(dir.toFile()).call().close();
 		// repository exists, but has no commits yet
@@ -676,9 +691,18 @@ public class GitBaselineTrackerTest {
 	}
 
 	private static IJavaProject projectAt(Path dir, String name) {
+		return projectAt(dir, name, true);
+	}
+
+	private static IJavaProject projectAt(Path dir, String name, boolean springProject) {
 		IJavaProject project = mock(IJavaProject.class);
 		when(project.getElementName()).thenReturn(name);
 		when(project.getLocationUri()).thenReturn(dir.toUri());
+
+		IClasspath classpath = mock(IClasspath.class);
+		when(classpath.findBinaryLibraryByPrefix("spring-core"))
+				.thenReturn(springProject ? Optional.of(mock(CPE.class)) : Optional.empty());
+		when(project.getClasspath()).thenReturn(classpath);
 		return project;
 	}
 

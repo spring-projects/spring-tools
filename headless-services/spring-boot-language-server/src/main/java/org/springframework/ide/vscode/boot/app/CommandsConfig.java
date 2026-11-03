@@ -61,9 +61,13 @@ public class CommandsConfig {
 		// new value by then: asked by the client right away, it could still get trees built with the
 		// old one
 		AtomicBoolean packageNodes = new AtomicBoolean(config.isStructurePackageNodesEnabled());
+		AtomicBoolean showNonSpringProjects = new AtomicBoolean(config.isStructureShowNonSpringProjectsEnabled());
 		config.addListener(v -> {
 			boolean now = config.isStructurePackageNodesEnabled();
-			if (packageNodes.getAndSet(now) != now && server.getClient() != null) {
+			boolean nonSpringNow = config.isStructureShowNonSpringProjectsEnabled();
+			boolean changed = packageNodes.getAndSet(now) != now;
+			changed |= showNonSpringProjects.getAndSet(nonSpringNow) != nonSpringNow;
+			if (changed && server.getClient() != null) {
 				Set<String> projects = projectFinder.all().stream().map(IJavaProject::getElementName).collect(Collectors.toSet());
 				if (!projects.isEmpty()) {
 					server.getClient().indexUpdated(IndexUpdatedParams.of(projects));
@@ -105,9 +109,10 @@ public class CommandsConfig {
 	@Bean
 	SpringIndexCommands springIndexCommands(SimpleLanguageServer server, JavaProjectFinder projectFinder,
 			SpringMetamodelIndex springIndex, SpringSymbolIndex symbolIndex, StructureViewProvider structureViewProvider,
-			StructureSnapshotStore structureSnapshotStore, StructureDependencySources structureDependencySources) {
+			StructureSnapshotStore structureSnapshotStore, StructureDependencySources structureDependencySources,
+			BootJavaConfig config) {
 		return new SpringIndexCommands(server, springIndex, symbolIndex, projectFinder, structureViewProvider,
-				structureSnapshotStore, structureDependencySources);
+				structureSnapshotStore, structureDependencySources, config::isStructureShowNonSpringProjectsEnabled);
 	}
 
 	/**

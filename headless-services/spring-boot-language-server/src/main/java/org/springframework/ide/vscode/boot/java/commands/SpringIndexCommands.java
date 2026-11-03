@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +32,7 @@ import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.boot.java.commands.StructureSnapshotStore.StructureSnapshot;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
+import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 import org.springframework.ide.vscode.commons.protocol.java.JavaDataParams;
@@ -75,11 +77,25 @@ public class SpringIndexCommands {
 
 	private final Executor messageWorkerThreadPool;
 
+	private final BooleanSupplier includeNonSpringProjects;
+
 	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
 			SpringSymbolIndex symbolIndex, JavaProjectFinder projectFinder,
 			StructureViewProvider structureViewProvider, StructureSnapshotStore structureSnapshotStore,
 			StructureDependencySources dependencySources) {
+		this(server, springIndex, symbolIndex, projectFinder, structureViewProvider, structureSnapshotStore, dependencySources, () -> true);
+	}
 
+	/**
+	 * @param includeNonSpringProjects whether the structure tree includes projects that are not
+	 *        Spring projects - asked for every request, so a changed setting applies to the next one
+	 */
+	public SpringIndexCommands(SimpleLanguageServer server, SpringMetamodelIndex springIndex,
+			SpringSymbolIndex symbolIndex, JavaProjectFinder projectFinder,
+			StructureViewProvider structureViewProvider, StructureSnapshotStore structureSnapshotStore,
+			StructureDependencySources dependencySources, BooleanSupplier includeNonSpringProjects) {
+
+		this.includeNonSpringProjects = includeNonSpringProjects;
 		this.symbolIndex = symbolIndex;
 		this.structureViewProvider = structureViewProvider;
 		this.structureSnapshotStore = structureSnapshotStore;
@@ -98,6 +114,9 @@ public class SpringIndexCommands {
 				CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
 
 				Stream<? extends IJavaProject> projects = projectFinder.all().stream();
+				if (!this.includeNonSpringProjects.getAsBoolean()) {
+					projects = projects.filter(SpringProjectUtil::isSpringProject);
+				}
 				if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
 					projects = projects.filter(project -> args.isAffected(project.getElementName()));
 				}

@@ -62,6 +62,7 @@ public class PrefsInitializer extends AbstractPreferenceInitializer {
 		preferenceStore.setDefault(Constants.PREF_STRUCTURE_GIT_BASELINE_ENABLED, false);
 		preferenceStore.setDefault(Constants.PREF_STRUCTURE_GIT_BASELINE_PROMPT, true);
 		preferenceStore.setDefault(Constants.PREF_STRUCTURE_PACKAGE_NODES, true);
+		preferenceStore.setDefault(Constants.PREF_STRUCTURE_SHOW_NON_SPRING_PROJECTS, false);
 		preferenceStore.setDefault(Constants.PREF_STRUCTURE_BASELINE_HISTORY_SIZE, 10);
 
 		preferenceStore.setDefault(Constants.PREF_AI_MCP_ENABLED, false);

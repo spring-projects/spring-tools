@@ -304,6 +304,15 @@ public class BootJavaConfig implements InitializingBean {
 	}
 
 	/**
+	 * Whether the logical structure view also shows projects that are not Spring projects (no
+	 * spring-core on the classpath). Defaults to off: only Spring projects are shown.
+	 */
+	public boolean isStructureShowNonSpringProjectsEnabled() {
+		Boolean b = settings.getBoolean("boot-java", "structure", "show-non-spring-projects");
+		return b != null && b.booleanValue();
+	}
+
+	/**
 	 * How many past commit snapshots to retain per project for the logical structure baseline
 	 * history. Defaults to 10 and falls back to it for any non-positive value, since at least the
 	 * current baseline itself must always be kept.

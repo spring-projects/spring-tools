@@ -76,6 +76,7 @@ public class BootJavaPreferencesPage extends FieldEditorPreferencePage implement
 		
 		// Logical Structure view
 		addField(new BooleanFieldEditor(Constants.PREF_STRUCTURE_PACKAGE_NODES, "Logical Structure view: show package nodes in projects with types in more than one top-level package", fieldEditorParent));
+		addField(new BooleanFieldEditor(Constants.PREF_STRUCTURE_SHOW_NON_SPRING_PROJECTS, "Logical Structure view: show non-Spring projects", fieldEditorParent));
 		addField(new BooleanFieldEditor(Constants.PREF_STRUCTURE_GIT_BASELINE_ENABLED, "Logical Structure view: automatically capture a baseline at every git commit to highlight changes against", fieldEditorParent));
 		addField(new BooleanFieldEditor(Constants.PREF_STRUCTURE_GIT_BASELINE_PROMPT, "Logical Structure view: ask whether to turn on the automatic git baseline when changes are shown", fieldEditorParent));
 		// in a composite of its own, as the editor takes two columns, which would turn the whole page into two columns

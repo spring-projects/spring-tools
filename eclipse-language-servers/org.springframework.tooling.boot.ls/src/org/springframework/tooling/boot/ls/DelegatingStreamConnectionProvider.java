@@ -269,6 +269,7 @@ public class DelegatingStreamConnectionProvider implements StreamConnectionProvi
 				"git-baseline-enabled", preferenceStore.getBoolean(Constants.PREF_STRUCTURE_GIT_BASELINE_ENABLED),
 				"git-baseline-prompt", preferenceStore.getBoolean(Constants.PREF_STRUCTURE_GIT_BASELINE_PROMPT),
 				"package-nodes", preferenceStore.getBoolean(Constants.PREF_STRUCTURE_PACKAGE_NODES),
+				"show-non-spring-projects", preferenceStore.getBoolean(Constants.PREF_STRUCTURE_SHOW_NON_SPRING_PROJECTS),
 				"baseline-history-size", preferenceStore.getInt(Constants.PREF_STRUCTURE_BASELINE_HISTORY_SIZE)
 			)
 		);

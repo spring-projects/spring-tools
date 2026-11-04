@@ -24,11 +24,15 @@ import java.net.URLClassLoader;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.stream.Stream;
 
 import org.jboss.jandex.Index;
@@ -157,24 +161,31 @@ public class IndexRoutines {
 
 	private static IndexView indexFolder(File folder) {
 		Indexer indexer = new Indexer();
-		for (Iterator<File> itr = com.google.common.io.Files.fileTraverser().breadthFirst(folder)
-				.iterator(); itr.hasNext();) {
-			File file = itr.next();
-			if (file.isFile() && file.getName().endsWith(".class")) {
-				try {
-					final InputStream stream = new FileInputStream(file);
-					try {
-						indexer.index(stream);
-					} finally {
-						try {
-							stream.close();
-						} catch (Exception ignore) {
+		try {
+			// the file visitor gets the attributes from the walk itself, so each entry is stat'ed only once
+			Files.walkFileTree(folder.toPath(), EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE, new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+					if (attrs.isRegularFile() && file.getFileName().toString().endsWith(".class")) {
+						try (InputStream stream = Files.newInputStream(file)) {
+							indexer.index(stream);
+						} catch (Exception e) {
+							log.error("Failed to index file " + file, e);
 						}
 					}
-				} catch (Exception e) {
-					log.error("Failed to index file " + file, e);
+					return FileVisitResult.CONTINUE;
 				}
-			}
+
+				@Override
+				public FileVisitResult visitFileFailed(Path file, IOException e) {
+					// skip unreadable entries and symlink cycles, continue with the rest of the folder
+					return FileVisitResult.CONTINUE;
+				}
+
+			});
+		} catch (IOException e) {
+			log.error("Failed to index folder " + folder, e);
 		}
 		return indexer.complete();
 	}

@@ -228,8 +228,8 @@ public class SpringIndexerConfigFiles implements SpringIndexer {
 		List<Path> files = new ArrayList<>();
 		for (Path folder : getFoldersToScan(project)) {
 			try (Stream<Path> walk = Files.walk(folder)) {
-				walk.filter(Files::isRegularFile)
-					.filter(path -> isInterestedIn(path.getFileName().toString()))
+				walk.filter(path -> isInterestedIn(path.getFileName().toString()))
+					.filter(Files::isRegularFile)
 					.forEach(files::add);
 			} catch (IOException e) {
 				log.error("error scanning folder for config files: " + folder, e);

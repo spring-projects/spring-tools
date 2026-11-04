@@ -294,7 +294,7 @@ public class DataRepositoryAotMetadataService {
 				} catch (IOException e) {
 					return Stream.empty();
 				}
-			}).anyMatch(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".class"))) {
+			}).anyMatch(f -> f.getFileName().toString().endsWith(".class") && Files.isRegularFile(f))) {
 				// Check if source is compiled by checking that all output folders exist
 				// If not compiled then add `compile` goal
 				goal.add("compile");
@@ -313,7 +313,7 @@ public class DataRepositoryAotMetadataService {
 				} catch (IOException e) {
 					return Stream.empty();
 				}
-			}).anyMatch(f -> Files.isRegularFile(f) && f.getFileName().toString().endsWith(".class"))) {
+			}).anyMatch(f -> f.getFileName().toString().endsWith(".class") && Files.isRegularFile(f))) {
 				// Source is not compiled yet
 				command.add("classes");
 			}

@@ -289,8 +289,8 @@ public class SpringIndexerXML implements SpringIndexer {
 					return Stream.empty();
 				}
 			})
-			.filter(Files::isRegularFile)
 			.filter(file -> file.getFileName().toString().endsWith(".xml"))
+			.filter(Files::isRegularFile)
 			.map(file -> file.toString())
 			.toArray(String[]::new);
 		

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 2023 Pivotal, Inc.
+ * Copyright (c) 2018, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -180,11 +180,11 @@ public class IClasspathUtil {
 		.flatMap(folder -> {
 			try {
 				return Files.walk(folder.toPath())
-						.filter(path -> Files.isRegularFile(path))
 						.filter(path -> {
 							String fileName = path.getFileName().toString();
 							return !fileName.endsWith(".java") && !fileName.endsWith(".class");
-						});
+						})
+						.filter(path -> Files.isRegularFile(path));
 			} catch (IOException e) {
 				return Stream.empty();
 			}

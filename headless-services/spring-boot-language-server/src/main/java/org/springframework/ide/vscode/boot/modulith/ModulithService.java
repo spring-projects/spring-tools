@@ -305,7 +305,7 @@ public class ModulithService {
 			List<Path> javaSources = IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(project.getClasspath())
 				.flatMap(sourceFolder -> {
 					try {
-						return Files.walk(sourceFolder.toPath()).filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".java"));
+						return Files.walk(sourceFolder.toPath()).filter(p -> p.toString().endsWith(".java") && Files.isRegularFile(p));
 					} catch (IOException e) {
 						log.error("", e);
 						return Stream.empty();
@@ -477,7 +477,7 @@ public class ModulithService {
 	private static boolean anyClassFilesPresent(IJavaProject p) {
 		return getNonTestClassOutputFolders(p).anyMatch(path -> {
 			try {
-				return Files.exists(path) && Files.walk(path).anyMatch(f -> Files.isRegularFile(f) && f.toFile().getName().endsWith(".class"));
+				return Files.exists(path) && Files.walk(path).anyMatch(f -> f.toFile().getName().endsWith(".class") && Files.isRegularFile(f));
 			} catch (IOException e) {
 				log.error("", e);
 				return false;

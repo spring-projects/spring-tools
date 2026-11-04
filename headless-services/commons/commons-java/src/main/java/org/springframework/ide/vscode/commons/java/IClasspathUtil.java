@@ -155,7 +155,12 @@ public class IClasspathUtil {
 		return IClasspathUtil.getSourceFolders(classpath)
 		.flatMap(folder -> {
 			try {
-				return Files.walk(folder.toPath())
+				Path folderPath = folder.toPath();
+				return Files.walk(folderPath)
+						.filter(path -> {
+							String fileName = path.getFileName().toString();
+							return !fileName.endsWith(".java") && !fileName.endsWith(".class");
+						})
 						.filter(path -> Files.isRegularFile(path))
 						.filter(path -> {
 							try {
@@ -165,9 +170,7 @@ public class IClasspathUtil {
 								return false;
 							}
 						})
-						.map(path -> folder.toPath().relativize(path))
-						.map(relativePath -> relativePath.toString())
-						.filter(pathString -> !pathString.endsWith(".java") && !pathString.endsWith(".class"));
+						.map(path -> folderPath.relativize(path).toString());
 			} catch (IOException e) {
 				return Stream.empty();
 			}

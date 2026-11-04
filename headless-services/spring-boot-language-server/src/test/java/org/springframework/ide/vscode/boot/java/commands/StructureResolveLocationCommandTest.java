@@ -72,7 +72,9 @@ public class StructureResolveLocationCommandTest {
 		// the harness's client answers every javaLocation with null - this one knows one element
 		original = server.getClient();
 		client = spy(original);
-		server.connect(client);
+		// the spy is connected to the server only while a command runs (see resolve()): the server's
+		// background threads call the connected client, and a call on a spy from another thread while
+		// it is being stubbed breaks the stubbing (UnfinishedStubbing)
 	}
 
 	@AfterEach
@@ -127,7 +129,13 @@ public class StructureResolveLocationCommandTest {
 	}
 
 	private Object resolve(Object reference) throws Exception {
-		return harness.getServer().getWorkspaceService().executeCommand(new ExecuteCommandParams(RESOLVE_LOCATION_CMD, List.of(reference))).get();
+		server.connect(client);
+		try {
+			return harness.getServer().getWorkspaceService().executeCommand(new ExecuteCommandParams(RESOLVE_LOCATION_CMD, List.of(reference))).get();
+		}
+		finally {
+			server.connect(original);
+		}
 	}
 
 	private static JsonObject reference(String projectUri, String bindingKey) {

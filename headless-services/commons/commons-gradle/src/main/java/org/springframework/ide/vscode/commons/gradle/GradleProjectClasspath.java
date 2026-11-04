@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2023 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -89,7 +89,9 @@ public class GradleProjectClasspath implements IClasspath {
 			for (EclipseSourceDirectory sf : project.getSourceDirectories()) {
 				CPE cpe = createSourceCPE(project, sf);
 				cpe.setOwn(true);
-				cpe.setJavaContent(!Files.walk(sf.getDirectory().toPath()).filter(Files::isRegularFile).anyMatch(p -> !p.startsWith(".") && !p.getFileName().toString().endsWith(".java")));
+				try (Stream<Path> walk = Files.walk(sf.getDirectory().toPath())) {
+					cpe.setJavaContent(!walk.filter(Files::isRegularFile).anyMatch(p -> !p.startsWith(".") && !p.getFileName().toString().endsWith(".java")));
+				}
 				boolean isTest = false;
 				try {
 					isTest = sf.getClasspathAttributes().stream().filter(attr -> "gradle_used_by_scope".equals(attr.getName()) && "test".equals(attr.getValue())).findFirst().isPresent();

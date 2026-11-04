@@ -510,8 +510,8 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 				result.add(docURIs[i]);
 			}
 			else if (Files.isDirectory(path)) {
-				try {
-					Files.walk(path)
+				try (Stream<Path> walk = Files.walk(path)) {
+					walk
 						.filter(Files::isRegularFile)
 						.map(filePath -> filePath.toAbsolutePath().toString())
 						.map(filePath -> UriUtil.toUri(new File(filePath)).toASCIIString())

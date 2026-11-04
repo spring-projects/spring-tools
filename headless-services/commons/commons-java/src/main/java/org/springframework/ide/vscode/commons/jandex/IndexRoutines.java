@@ -113,7 +113,9 @@ public class IndexRoutines {
 				fs = FileSystems.newFileSystem(JRT_URI, env);
 			}
 			if (fs != null) {
-				Files.list(fs.getPath("/modules")).filter(Files::isDirectory).forEach(path -> builder.add(fromModule(jrtFsJar, path, indexFolder)));
+				try (Stream<Path> modules = Files.list(fs.getPath("/modules"))) {
+					modules.filter(Files::isDirectory).forEach(path -> builder.add(fromModule(jrtFsJar, path, indexFolder)));
+				}
 //				builder.add(fromModule(jrtFsJar, fs.getPath("modules", "java.base"), indexFolder));
 			}
 		} catch (IOException e) {

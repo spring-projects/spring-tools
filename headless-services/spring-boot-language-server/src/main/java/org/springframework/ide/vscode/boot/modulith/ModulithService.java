@@ -476,8 +476,11 @@ public class ModulithService {
 	
 	private static boolean anyClassFilesPresent(IJavaProject p) {
 		return getNonTestClassOutputFolders(p).anyMatch(path -> {
-			try {
-				return Files.exists(path) && Files.walk(path).anyMatch(f -> f.toFile().getName().endsWith(".class") && Files.isRegularFile(f));
+			if (!Files.exists(path)) {
+				return false;
+			}
+			try (Stream<Path> walk = Files.walk(path)) {
+				return walk.anyMatch(f -> f.getFileName().toString().endsWith(".class") && Files.isRegularFile(f));
 			} catch (IOException e) {
 				log.error("", e);
 				return false;

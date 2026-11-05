@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2019 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -50,16 +50,10 @@ public class LiveAppURLSymbolProvider {
 					String port = live.getPort();
 					String contextPath = live.getContextPath();
 					for (LiveRequestMapping rm : live.getRequestMappings()) {
-						String[] paths = rm.getSplitPath();
-						if (paths == null || paths.length == 0) {
-							//Technically, this means the path 'predicate' is unconstrained, meaning any path matches.
-							//So this is not quite the same as the case where path=""... but...
-							//It is better for us to show one link where any path is allowed, versus showing no links where any link is allowed.
-							//So we'll pretend this is the same as path="" as that gives a working link.
-							paths = new String[] {""};
-						}
-						for (String path : paths) {
-							String url = UrlUtil.createUrl(urlScheme, host, port, path, contextPath);
+						// no project at hand here, so the version path segment can only come from the app's properties
+						VersionedPaths versionedPaths = new VersionedPaths(rm, live, List.of());
+						for (String path : versionedPaths.getSplitPath()) {
+							String url = UrlUtil.createUrl(urlScheme, host, port, versionedPaths.getVersionedPath(path), contextPath);
 							result.add(new WorkspaceSymbol(url, SymbolKind.Method, Either.forLeft(new Location(url, new Range(new Position(0, 0), new Position(0, 1))))));
 						}
 					}

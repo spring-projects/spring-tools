@@ -16,6 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -54,6 +56,9 @@ Example entry:
   }
 }
 */
+
+	// Spring Framework 7 appends the version condition to the predicate, e.g. "{GET [/{version}/greeting], version [1.1+]}"
+	private static final Pattern VERSION_CONDITION = Pattern.compile(", version \\[([^\\]]+)\\]");
 
 	private JSONObject data;
 	private final Supplier<LiveFunctionalRoute> functionalRoute;
@@ -208,6 +213,27 @@ Example entry:
 			}
 			return methods;
 		}
+	}
+
+	@Override
+	public String getApiVersion() {
+		if (getRequestMappingConditions() == null) {
+			return null;
+		}
+		String predicate = getPredicate();
+		if (predicate == null) {
+			return null;
+		}
+		Matcher matcher = VERSION_CONDITION.matcher(predicate);
+		if (!matcher.find()) {
+			return null;
+		}
+		String version = matcher.group(1).trim();
+		// baseline versions like "1.1+" match the given version and higher ones
+		if (version.endsWith("+")) {
+			version = version.substring(0, version.length() - 1);
+		}
+		return version.isEmpty() ? null : version;
 	}
 
 }

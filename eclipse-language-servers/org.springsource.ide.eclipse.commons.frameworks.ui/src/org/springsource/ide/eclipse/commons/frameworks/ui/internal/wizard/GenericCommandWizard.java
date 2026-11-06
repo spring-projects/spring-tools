@@ -162,7 +162,7 @@ public abstract class GenericCommandWizard extends Wizard implements ICommandLis
 	 * @param imageLocation
 	 * @param projects
 	 * @param orderRequiredParameters
-	 *           true if required paramters should appear grouped together and
+	 *           true if required parameters should appear grouped together and
 	 *           appear first. Default is false
 	 */
 	public GenericCommandWizard(IFrameworkCommand command, String title,

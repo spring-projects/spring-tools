@@ -25,7 +25,7 @@ import com.google.common.collect.ImmutableList;
 /**
  * Sample implementation of a 'highlighter' that can be used with {@link SimpleLanguageServer}.highlightWith.
  * <p>
- * Finds every occurence of a given word and highlights it.
+ * Finds every occurrence of a given word and highlights it.
  *
  * @author Kris De Volder
  */

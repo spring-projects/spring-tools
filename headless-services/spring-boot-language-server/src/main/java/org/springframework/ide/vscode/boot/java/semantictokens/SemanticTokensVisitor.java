@@ -231,7 +231,7 @@ public class SemanticTokensVisitor extends ASTVisitor {
 	 * Returns whether a qualified name has a package name as its qualifier,
 	 * even if the qualifier's binding cannot be resolved.
 	 * This is in order to work around an issue where package names in import statements
-	 * cannot have their bindings resolved when their corresponding package is not explicitely
+	 * cannot have their bindings resolved when their corresponding package is not explicitly
 	 * exported and is part of a module.
 	 *
 	 * @param qualifiedName A qualified name.

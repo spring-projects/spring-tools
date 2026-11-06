@@ -1,5 +1,5 @@
 *Optional*. The old name of the job. If configured, the history of old job will be inherited to the new one. Once the
-pipeline is set, this field can be removed as the builds have been transfered.
+pipeline is set, this field can be removed as the builds have been transferred.
 
 This can be used to rename a job without losing its history, like so:
 

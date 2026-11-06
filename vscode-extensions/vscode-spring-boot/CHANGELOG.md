@@ -2,6 +2,7 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ Live data not shown for Boot app launched via VSCode [#2082](https://github.com/spring-projects/spring-tools/issues/2082)
 * _(Spring Boot)_ [structure view] git baseline tracking should exclude non Spring projects [#2080](https://github.com/spring-projects/spring-tools/issues/2080)
 * _(Spring Boot)_ [structure view] show number of included dependencies [#2079](https://github.com/spring-projects/spring-tools/issues/2079)
 * _(Spring Boot)_ [structure view] add preference to show/hide non-spring projects [#2078](https://github.com/spring-projects/spring-tools/issues/2078)
@@ -31,6 +32,7 @@
 * _(Spring Boot)_ reduce logging for document changes [#1982](https://github.com/spring-projects/spring-tools/issues/1982)
 * _(Spring Boot)_ Allow overriding the SQL dialect used to validate native @Query statements [#1975](https://github.com/spring-projects/spring-tools/issues/1975)
 * _(Spring Boot)_ visualize changes in the logical structure view [#1974](https://github.com/spring-projects/spring-tools/issues/1974)
+* _(Spring Boot)_ REST API version is in the live URL [#1832](https://github.com/spring-projects/spring-tools/issues/1832)
 * _(Spring Boot)_ use new actuator mapping data for WebMvc.fn  router functions for live hovers [#1576](https://github.com/spring-projects/spring-tools/issues/1576)
 * _(Spring Boot)_ Support CRON expression value in Spring Boot property files (`application.properties` and `application.yml`) [#1329](https://github.com/spring-projects/spring-tools/issues/1329)
 * _(Spring Boot)_ SQL syntax validation [#1273](https://github.com/spring-projects/spring-tools/issues/1273)

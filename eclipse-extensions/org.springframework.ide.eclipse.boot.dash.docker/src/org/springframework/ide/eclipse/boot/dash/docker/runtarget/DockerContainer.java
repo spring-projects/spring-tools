@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2022 Pivotal Software, Inc.
+ * Copyright (c) 2020, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -59,6 +59,7 @@ import org.springframework.ide.eclipse.editor.support.yaml.path.YamlTraversal;
 import org.springsource.ide.eclipse.commons.core.util.StringUtil;
 import org.springsource.ide.eclipse.commons.frameworks.core.util.StringUtils;
 import org.springsource.ide.eclipse.commons.livexp.ui.Stylers;
+import org.springframework.ide.eclipse.boot.launch.util.JMXClient;
 import org.springsource.ide.eclipse.commons.livexp.util.ExceptionUtil;
 import org.springsource.ide.eclipse.commons.livexp.util.Log;
 
@@ -129,7 +130,10 @@ public class DockerContainer implements App, RunStateProvider, JmxConnectable, S
 		try {
 			String port = container.getLabels().get(DockerApp.JMX_PORT);
 			if (port != null) {
-				return new JmxSupport(Integer.valueOf(port)).getJmxUrl();
+				JmxSupport jmx = new JmxSupport(Integer.valueOf(port), container.getLabels().get(DockerApp.JMX_PASSWORD));
+				String url = jmx.getJmxUrl();
+				JMXClient.registerCredentials(url, jmx.getJmxUser(), jmx.getJmxPassword());
+				return url;
 			}
 		} catch (Exception e) {
 			Log.log(e);

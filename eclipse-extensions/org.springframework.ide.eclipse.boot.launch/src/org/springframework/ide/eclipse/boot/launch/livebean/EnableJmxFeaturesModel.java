@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2016 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -13,12 +13,10 @@ package org.springframework.ide.eclipse.boot.launch.livebean;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.DEFAULT_ENABLE_JMX;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.DEFAULT_ENABLE_LIFE_CYCLE;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.DEFAULT_ENABLE_LIVE_BEAN_SUPPORT;
-import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.DEFAULT_JMX_PORT;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.DEFAULT_TERMINATION_TIMEOUT;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.setEnableJMX;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.setEnableLifeCycle;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.setEnableLiveBeanSupport;
-import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.setJMXPort;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.setTerminationTimeout;
 import static org.springsource.ide.eclipse.commons.livexp.core.ValidationResult.error;
 
@@ -42,16 +40,12 @@ import org.springsource.ide.eclipse.commons.livexp.core.ValueListener;
  */
 public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 
-	private static final int MAX_PORT = 65536;
-
-	public final String portFieldName = "JMX Port";
 	public final String timeOutFieldName = "Termination timeout";
 
 	public final LiveVariable<Boolean> jmxEnabled;
 	public final LiveVariable<Boolean> liveBeanEnabled;
 	public final LiveVariable<Boolean> lifeCycleEnabled;
 
-	public final LiveVariable<String> port;
 	public final LiveVariable<String> terminationTimeout;
 
 	private final Validator validator;
@@ -66,12 +60,10 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 
 		autoDisableWhenJmxDisabled(liveBeanEnabled, lifeCycleEnabled);
 
-		this.port = new LiveVariable<>("");
 		this.terminationTimeout = new LiveVariable<>("");
 		jmxEnabled.addListener(makeDirty());
 		liveBeanEnabled.addListener(makeDirty());
 		lifeCycleEnabled.addListener(makeDirty());
-		port.addListener(makeDirty());
 		terminationTimeout.addListener(makeDirty());
 
 		this.validator = new Validator() {
@@ -80,28 +72,10 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 				dependsOn(lifeCycleEnabled);
 				dependsOn(liveBeanEnabled);
 				dependsOn(terminationTimeout);
-				dependsOn(port);
 			}
 
 			@Override
 			protected ValidationResult compute() {
-				boolean isEnabled = jmxEnabled.getValue();
-				if (isEnabled) {
-					String portStr = port.getValue();
-					if (!hasText(portStr)) {
-						return error(portFieldName+" must be specified");
-					}
-					try {
-						int portValue = Integer.parseInt(portStr.trim());
-						if (portValue < 0) {
-							return error(portFieldName + " should be a positive integer or 0");
-						} else if (portValue > MAX_PORT) {
-							return error(portFieldName + " should be smaller than "+MAX_PORT);
-						}
-					} catch (NumberFormatException e) {
-						return error(portFieldName+" can't be parsed as an Integer");
-					}
-				}
 				if (lifeCycleEnabled.getValue()) {
 					String timeoutStr = terminationTimeout.getValue();
 					if (!hasText(timeoutStr)) {
@@ -157,7 +131,6 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 		jmxEnabled.setValue(BootLaunchConfigurationDelegate.getEnableJmx(conf));
 		liveBeanEnabled.setValue(BootLaunchConfigurationDelegate.getEnableLiveBeanSupport(conf));
 		lifeCycleEnabled.setValue(BootLaunchConfigurationDelegate.getEnableLifeCycle(conf));
-		port.setValue(BootLaunchConfigurationDelegate.getJMXPort(conf));
 		terminationTimeout.setValue(""+BootLaunchConfigurationDelegate.getTerminationTimeout(conf));
 		getDirtyState().setValue(false);
 	}
@@ -167,7 +140,6 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 		setEnableJMX(conf, jmxEnabled.getValue());
 		setEnableLiveBeanSupport(conf, liveBeanEnabled.getValue());
 		setEnableLifeCycle(conf, lifeCycleEnabled.getValue());
-		setJMXPort(conf, StringUtil.trim(port.getValue()));
 		setTerminationTimeout(conf, StringUtil.trim(terminationTimeout.getValue()));
 		getDirtyState().setValue(false);
 	}
@@ -177,7 +149,6 @@ public class EnableJmxFeaturesModel implements ILaunchConfigurationTabModel {
 		setEnableLiveBeanSupport(conf, DEFAULT_ENABLE_LIVE_BEAN_SUPPORT());
 		setEnableLifeCycle(conf, DEFAULT_ENABLE_LIFE_CYCLE);
 		setEnableJMX(conf, DEFAULT_ENABLE_JMX);
-		setJMXPort(conf, ""+DEFAULT_JMX_PORT);
 		setTerminationTimeout(conf, ""+DEFAULT_TERMINATION_TIMEOUT);
 	}
 

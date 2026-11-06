@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017, 2020 Pivotal Software, Inc.
+ * Copyright (c) 2017, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -76,6 +76,11 @@ public class RemoteBootAppsDataHolder {
 		private String processId = null;
 		private String processName = null;
 
+		// Optional credentials for password protected JMX endpoints (e.g. docker containers started by the IDE).
+		// Never include them in toString() since that ends up in logs.
+		private String jmxUser = null;
+		private String jmxPassword = null;
+
 		public RemoteAppData() {
 		}
 
@@ -145,6 +150,22 @@ public class RemoteBootAppsDataHolder {
 			return processName;
 		}
 
+		public String getJmxUser() {
+			return jmxUser;
+		}
+
+		public void setJmxUser(String jmxUser) {
+			this.jmxUser = jmxUser;
+		}
+
+		public String getJmxPassword() {
+			return jmxPassword;
+		}
+
+		public void setJmxPassword(String jmxPassword) {
+			this.jmxPassword = jmxPassword;
+		}
+
 		public void setProcessName(String processName) {
 			this.processName = processName;
 		}
@@ -158,7 +179,7 @@ public class RemoteBootAppsDataHolder {
 
 		@Override
 		public int hashCode() {
-			return Objects.hash(host, jmxurl, keepChecking, manualConnect, port, processId, processName, urlScheme);
+			return Objects.hash(host, jmxurl, keepChecking, manualConnect, port, processId, processName, urlScheme, jmxUser, jmxPassword);
 		}
 
 		@Override
@@ -176,7 +197,8 @@ public class RemoteBootAppsDataHolder {
 			return Objects.equals(host, other.host) && Objects.equals(jmxurl, other.jmxurl)
 					&& keepChecking == other.keepChecking && manualConnect == other.manualConnect
 					&& Objects.equals(port, other.port) && Objects.equals(processId, other.processId)
-					&& Objects.equals(processName, other.processName) && Objects.equals(urlScheme, other.urlScheme);
+					&& Objects.equals(processName, other.processName) && Objects.equals(urlScheme, other.urlScheme)
+					&& Objects.equals(jmxUser, other.jmxUser) && Objects.equals(jmxPassword, other.jmxPassword);
 		}
 
 	}

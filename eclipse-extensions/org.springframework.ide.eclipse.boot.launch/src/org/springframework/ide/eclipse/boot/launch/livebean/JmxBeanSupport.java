@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2014, 2022 Pivotal Software, Inc.
+ * Copyright (c) 2014, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -36,15 +36,11 @@ public class JmxBeanSupport {
 	/**
 	 * VM args that enable 'live bean graph' and jmx.
 	 */
-	public static String jmxBeanVmArgs(int jmxPort, EnumSet<Feature> enabled) {
-		return jmxBeanVmArgs(""+jmxPort, enabled);
-	}
-
-	public static String jmxBeanVmArgs(String jmxPort, EnumSet<Feature> enabled) {
+	public static String jmxBeanVmArgs(EnumSet<Feature> enabled) {
 		if (!enabled.isEmpty()) {
 			//At least one feature enabled
 			StringBuilder str = new StringBuilder();
-			String[] args = "0".equals(jmxPort) ? autoJmxArgs() : enableJmxArgs(jmxPort);
+			String[] args = autoJmxArgs();
 			for (String a : args) {
 				str.append(a+"\n");
 			}
@@ -60,35 +56,10 @@ public class JmxBeanSupport {
 		}
 	}
 
-	public static String[] enableJmxArgs(String jmxPort) {
-		return new String[] {
-				"-Dcom.sun.management.jmxremote", //enable jmx to access the beans
-				"-D"+ JMX_PORT_PROP +"="+jmxPort,
-				"-Djava.rmi.server.hostname=localhost",
-				"-Dcom.sun.management.jmxremote.authenticate=false",
-				"-Dcom.sun.management.jmxremote.ssl=false",
-				"-Dcom.sun.management.jmxremote.host=127.0.0.1",
-				"-Dcom.sun.management.jmxremote.local.only=true",
-
-				//
-				// PT 164402781 - For Boot 2.2 and above, jmx is no longer enabled by default.
-				// We explicitly enable it here. Adding this doesn't seem to affect older boot versions
-				// and we get live information from JMX for those too.
-				//
-				"-Dspring.jmx.enabled=true",
-				//
-				// GH-862: Spring Boot 3 doesn't expose all actuators over JMX anymore by default
-				// therefore we need to set this for live hovers here
-				//
-				"-Dmanagement.endpoints.jmx.exposure.include=*"
-		};
-	}
-
 	/**
-	 * VM args for the auto/dynamic port case (jmxPort == 0). No
-	 * {@code com.sun.management.jmxremote*} args are emitted here: rather than picking a port
-	 * up front, the JMX agent is started on-demand later via the Attach API against the
-	 * child's real OS PID, once the child actually exists and can bind its own port.
+	 * No {@code com.sun.management.jmxremote*} args are emitted: the launched JVM never opens a
+	 * JMX port. The JMX agent is started on-demand later via the Attach API against the child's
+	 * real OS PID.
 	 */
 	public static String[] autoJmxArgs() {
 		return new String[] {
@@ -97,10 +68,6 @@ public class JmxBeanSupport {
 		};
 	}
 
-	public static final String JMX_PORT_PROP = "com.sun.management.jmxremote.port";
 	public static final String LAUNCH_CONFIG_TYPE_ID = BootLaunchConfigurationDelegate.TYPE_ID;
-	public static int randomPort() {
-		return (int) (5000 + Math.random()*60000);
-	}
 
 }

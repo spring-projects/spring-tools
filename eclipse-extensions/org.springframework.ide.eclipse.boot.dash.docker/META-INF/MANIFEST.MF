@@ -24,7 +24,9 @@ Require-Bundle: org.springframework.ide.eclipse.boot.dash,
  org.springframework.ide.eclipse.docker.client;bundle-version="3.9.14",
  org.eclipse.linuxtools.docker.ui,
  org.eclipse.linuxtools.docker.core
-Import-Package: org.eclipse.core.runtime,
+Import-Package: org.apache.commons.compress.archivers,
+ org.apache.commons.compress.archivers.tar,
+ org.eclipse.core.runtime,
  org.eclipse.core.runtime.jobs,
  org.osgi.framework,
  org.apache.commons.io

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2019, 2023 Pivotal, Inc.
+ * Copyright (c) 2019, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -37,8 +37,12 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 
 	private final String processKey;
 	private final String jmxURL;
+	// same as jmxURL, but safe to log (see redact)
+	private final String redactedURL;
 	private final String urlScheme;
 	private final String port;
+	// optional JMX credentials (user, password) for password protected JMX endpoints (e.g. docker containers)
+	private final String[] credentials;
 	private final String projectName;
 	
 	// not final, might be updated with data from JMX process, if not initially set
@@ -57,10 +61,18 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 
 	public SpringProcessConnectorOverJMX(ProcessType processType, String processKey, String jmxURL,
 			String urlScheme, String processID, String processName, String projectName, String host, String port) {
+		this(processType, processKey, jmxURL, urlScheme, processID, processName, projectName, host, port, null, null);
+	}
+
+	public SpringProcessConnectorOverJMX(ProcessType processType, String processKey, String jmxURL,
+			String urlScheme, String processID, String processName, String projectName, String host, String port,
+			String jmxUser, String jmxPassword) {
 		this.processType = processType;
+		this.credentials = jmxUser != null && jmxPassword != null ? new String[] { jmxUser, jmxPassword } : null;
 		this.processKey = processKey;
 
 		this.jmxURL = jmxURL;
+		this.redactedURL = redact(jmxURL);
 		this.urlScheme = urlScheme;
 		this.processID = processID;
 		this.processName = processName;
@@ -84,7 +96,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 						jmxConnection = null;
 					}
 					catch (Exception e) {
-						log.error("exception while reacting to connection close of: " + jmxURL, e);
+						log.error("exception while reacting to connection close of: " + redactedURL, e);
 					}
 					announceConnectionClosed();
 				}
@@ -92,6 +104,22 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 		};
 	}
 	
+	/**
+	 * A JMX URL of the form <code>service:jmx:rmi://host/stub/&lt;serialized RMI stub&gt;</code> is a
+	 * capability: the stub carries the object id of the JMX server, which is the only thing that
+	 * protects an unauthenticated local JMX connector from other users of the machine. Such URLs
+	 * must never be written to logs.
+	 */
+	static String redact(String jmxURL) {
+		if (jmxURL != null) {
+			int i = jmxURL.indexOf("/stub/");
+			if (i >= 0) {
+				return jmxURL.substring(0, i + "/stub/".length()) + "<redacted>";
+			}
+		}
+		return jmxURL;
+	}
+
 	@Override
 	public ProcessType getProcessType() {
 		return processType;
@@ -108,6 +136,9 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 		
 		Map<String, Object> environment = new HashMap<>();
 		environment.put(JMX_CLIENT_CONNECTION_CHECK_PERIOD_PROPERTY_KEY, Long.valueOf(JMX_HEARTBEAT_INTERVAL));
+		if (credentials != null) {
+			environment.put(JMXConnector.CREDENTIALS, credentials);
+		}
 		jmxConnection = JMXConnectorFactory.connect(jmxServiceURL, environment);
 		
 		jmxConnection.addConnectionNotificationListener(notificationListener, null, null);
@@ -115,7 +146,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 
 	@Override
 	public SpringProcessLiveData refresh(SpringProcessLiveData currentData) throws Exception {
-		log.info("try to open JMX connection to: " + jmxURL);
+		log.info("try to open JMX connection to: " + redactedURL);
 		
 		if (jmxConnection != null) {
 			try {
@@ -125,7 +156,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 					this.host = jmxServiceURL.getHost();
 				}
 				
-				log.info("retrieve live data from: " + jmxURL);
+				log.info("retrieve live data from: " + redactedURL);
 				SpringProcessLiveData liveData = springJMXConnector.retrieveLiveData(getProcessType(), jmxConnection, processID, processName, urlScheme, host, null, port, currentData);
 				
 				if (this.processID == null) {
@@ -141,7 +172,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 				}
 			}
 			catch (Exception e) {
-				log.error("exception while connecting to jmx: " + jmxURL, e);
+				log.error("exception while connecting to jmx: " + redactedURL, e);
 			}
 		}
 		
@@ -150,13 +181,13 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 	
 	@Override
 	public SpringProcessMemoryMetricsLiveData refreshMemoryMetrics(SpringProcessLiveData currentData, String metricName, String tags) throws Exception {
-		log.info("try to open JMX connection to: " + jmxURL);
+		log.info("try to open JMX connection to: " + redactedURL);
 		
 		if (jmxConnection != null) {
 			try {
 				SpringProcessLiveDataExtractorOverJMX springJMXConnector = new SpringProcessLiveDataExtractorOverJMX();
 	
-				log.info("retrieve live data from: " + jmxURL);
+				log.info("retrieve live data from: " + redactedURL);
 				SpringProcessMemoryMetricsLiveData liveData = springJMXConnector.retrieveLiveMemoryMetricsData(getProcessType(), jmxConnection, processID, processName, currentData, metricName, tags);
 				
 				if (liveData != null && liveData.getHeapMemoryMetrics() != null && liveData.getHeapMemoryMetrics().length > 0 &&
@@ -165,7 +196,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 				}
 			}
 			catch (Exception e) {
-				log.error("exception while connecting to jmx: " + jmxURL, e);
+				log.error("exception while connecting to jmx: " + redactedURL, e);
 			}
 		}
 		
@@ -174,13 +205,13 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 	
 	@Override
 	public SpringProcessGcPausesMetricsLiveData refreshGcPausesMetrics(SpringProcessLiveData currentData, String metricName, String tags) throws Exception {
-		log.info("try to open JMX connection to: " + jmxURL);
+		log.info("try to open JMX connection to: " + redactedURL);
 		
 		if (jmxConnection != null) {
 			try {
 				SpringProcessLiveDataExtractorOverJMX springJMXConnector = new SpringProcessLiveDataExtractorOverJMX();
 	
-				log.info("retrieve live data from: " + jmxURL);
+				log.info("retrieve live data from: " + redactedURL);
 				SpringProcessGcPausesMetricsLiveData liveData = springJMXConnector.retrieveLiveGcPausesMetricsData(getProcessType(), jmxConnection, processID, processName, currentData, metricName, tags);
 				
 				if (liveData != null /* && liveData.getGcPausesMetrics() != null && liveData.getGcPausesMetrics().length > 0*/ ) {
@@ -188,7 +219,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 				}
 			}
 			catch (Exception e) {
-				log.error("exception while connecting to jmx: " + jmxURL, e);
+				log.error("exception while connecting to jmx: " + redactedURL, e);
 			}
 		}
 		
@@ -200,26 +231,26 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 		try {
 			if (jmxConnection != null) {
 
-				log.info("close JMX connection to: " + jmxURL);
+				log.info("close JMX connection to: " + redactedURL);
 				jmxConnection.removeConnectionNotificationListener(notificationListener);
 				jmxConnection.close();
 				jmxConnection = null;
 			}
 		}
 		catch (Exception e) {
-			log.error("error closing the JMX connection for: " + jmxURL, e);
+			log.error("error closing the JMX connection for: " + redactedURL, e);
 		}
 	}
 	
 	@Override
 	public SpringProcessLoggersData getLoggers(SpringProcessLiveData currentData) throws Exception {
-		log.info("try to open JMX connection to: " + jmxURL);
+		log.info("try to open JMX connection to: " + redactedURL);
 
 		if (jmxConnection != null) {
 			try {
 				SpringProcessLiveDataExtractorOverJMX springJMXConnector = new SpringProcessLiveDataExtractorOverJMX();
 
-				log.info("retrieve live data from: " + jmxURL);
+				log.info("retrieve live data from: " + redactedURL);
 				SpringProcessLoggersData loggersData = springJMXConnector.retrieveLoggersData(getProcessType(), jmxConnection, processID, processName, currentData);
 
 				if (loggersData != null) {
@@ -227,7 +258,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 				}
 			}
 			catch (Exception e) {
-				log.error("exception while connecting to jmx: " + jmxURL, e);
+				log.error("exception while connecting to jmx: " + redactedURL, e);
 			}
 		}
 
@@ -236,19 +267,19 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 	
 	@Override
 	public SpringProcessUpdatedLogLevelData configureLogLevel(SpringProcessLiveData currentData, Map<String, String> args) throws Exception {
-		log.info("try to open JMX connection to: " + jmxURL);
+		log.info("try to open JMX connection to: " + redactedURL);
 
 		if (jmxConnection != null) {
 			try {
 				SpringProcessLiveDataExtractorOverJMX springJMXConnector = new SpringProcessLiveDataExtractorOverJMX();
 
-				log.info("retrieve live data from: " + jmxURL);
+				log.info("retrieve live data from: " + redactedURL);
 				SpringProcessUpdatedLogLevelData springProcessUpdatedLoggersData = springJMXConnector.configureLogLevel(getProcessType(), jmxConnection, processID, processName, currentData, args);
 
 				return springProcessUpdatedLoggersData;
 			}
 			catch (Exception e) {
-				log.error("exception while connecting to jmx: " + jmxURL, e);
+				log.error("exception while connecting to jmx: " + redactedURL, e);
 			}
 		}
 
@@ -288,7 +319,7 @@ public class SpringProcessConnectorOverJMX implements SpringProcessConnector {
 
 	@Override
 	public String toString() {
-		return "SpringProcessConnectorOverJMX [jmxURL=" + jmxURL + ", processID=" + processID + ", processName="
+		return "SpringProcessConnectorOverJMX [jmxURL=" + redactedURL + ", processID=" + processID + ", processName="
 				+ processName + ", listeners=" + listeners + ", jmxConnection=" + jmxConnection + ", jmxServiceURL="
 				+ jmxServiceURL + ", notificationListener=" + notificationListener + "]";
 	}

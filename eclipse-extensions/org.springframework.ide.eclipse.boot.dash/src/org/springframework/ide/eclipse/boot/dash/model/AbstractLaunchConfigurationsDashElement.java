@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2024 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -40,10 +40,8 @@ import org.springframework.ide.eclipse.boot.dash.util.LaunchConfRunStateTracker;
 import org.springframework.ide.eclipse.boot.dash.util.RunStateTracker.RunStateListener;
 import org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate;
 import org.springframework.ide.eclipse.boot.launch.BootLsCommandUtils;
-import org.springframework.ide.eclipse.boot.launch.cli.CloudCliServiceLaunchConfigurationDelegate;
 import org.springframework.ide.eclipse.boot.launch.util.BootDebugUITools;
 import org.springframework.ide.eclipse.boot.launch.util.BootLaunchUtils;
-import org.springframework.ide.eclipse.boot.launch.util.JMXClient;
 import org.springframework.ide.eclipse.boot.launch.util.SpringApplicationLifeCycleClientManager;
 import org.springframework.ide.eclipse.boot.launch.util.SpringApplicationLifecycleClient;
 import org.springframework.ide.eclipse.boot.util.RetryUtil;
@@ -523,18 +521,13 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 	}
 
 	/**
-	 * JMX URL for this element's running process: a fixed jmxurl if a JMX port was pinned,
-	 * otherwise attaches to the process id on-demand to resolve its local management agent's
-	 * URL (see ProcessUtils.getLocalManagementAgentUrl).
+	 * JMX URL for this element's running process: attaches to the process id on-demand to
+	 * resolve its local management agent's URL (see ProcessUtils.getLocalManagementAgentUrl).
 	 */
 	private String getJmxUrl() {
 		for (ILaunchConfiguration c : getLaunchConfigs()) {
 			for (ILaunch l : LaunchUtils.getLaunches(c)) {
 				if (!l.isTerminated()) {
-					int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-					if (port > 0) {
-						return JMXClient.createLocalJmxUrl(port);
-					}
 					String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
 					if (pid != null) {
 						return ProcessUtils.getLocalManagementAgentUrl(pid);
@@ -658,17 +651,13 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 
 	/**
 	 * Key identifying this element's running process to the language server's live data
-	 * connections: a jmxurl if a fixed JMX port was pinned, otherwise the process id (the
-	 * language server attaches to it on-demand; see PROCESS_ID / SpringApplicationLifeCycleClientManager).
+	 * connections: the process id (the language server attaches to it on-demand; see
+	 * PROCESS_ID / SpringApplicationLifeCycleClientManager).
 	 */
 	private String getProcessKey() {
 		for (ILaunchConfiguration c : getLaunchConfigs()) {
 			for (ILaunch l : LaunchUtils.getLaunches(c)) {
 				if (!l.isTerminated()) {
-					int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-					if (port > 0) {
-						return JMXClient.createLocalJmxUrl(port);
-					}
 					String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
 					if (pid != null) {
 						return pid;
@@ -685,15 +674,14 @@ public abstract class AbstractLaunchConfigurationsDashElement<T> extends Wrappin
 		debug("["+this.getName()+"] getLivePort("+propName+") conf = "+conf);
 		if (conf != null && READY_STATES.contains(getRunState())) {
 			debug("["+this.getName()+"] getLivePort("+propName+") runstate ok");
-			if (BootLaunchConfigurationDelegate.canUseLifeCycle(conf) || CloudCliServiceLaunchConfigurationDelegate.canUseLifeCycle(conf)) {
+			if (BootLaunchConfigurationDelegate.canUseLifeCycle(conf)) {
 				debug("["+this.getName()+"] getLivePort("+propName+") canUseLifeCycle ok");
 				//TODO: what if there are several launches? Right now we ignore all but the first
 				// non-terminated launch.
 				for (ILaunch l : BootLaunchUtils.getLaunches(conf)) {
 					if (!l.isTerminated()) {
 						debug("["+this.getName()+"] getLivePort("+propName+") found a launch");
-						// Uses a pinned JMX port directly if one was set, otherwise attaches to
-						// the launch's process id on-demand (see SpringApplicationLifeCycleClientManager).
+						// Attaches to the launch's process id on-demand (see SpringApplicationLifeCycleClientManager).
 						SpringApplicationLifeCycleClientManager cm = null;
 						try {
 							cm = new SpringApplicationLifeCycleClientManager(l);

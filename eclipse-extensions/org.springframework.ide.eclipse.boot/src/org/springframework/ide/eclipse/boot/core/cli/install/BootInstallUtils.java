@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2017, 2020 Pivotal Software, Inc.
+ *  Copyright (c) 2017, 2026 Pivotal Software, Inc.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -53,8 +53,11 @@ public class BootInstallUtils {
 	public static Version getCloudCliVersion(Version bootVersion) {
 		if (bootVersion == null) {
 			return null;
-		} else if (VersionParser.DEFAULT.parseRange("2.3.0").match(bootVersion)) {
-			return Version.parse("2.2.1.RELEASE");
+		} else if (VersionParser.DEFAULT.parseRange("2.6.0").match(bootVersion)) {
+			// Latest Spring Cloud CLI (built against Boot CLI 2.6.8). Spring Boot CLI 3.0+ has no extension support
+			return Version.parse("3.1.1");
+		} else if (VersionParser.DEFAULT.parseRange("[2.3.0,2.6.0)").match(bootVersion)) {
+			return Version.parse("2.2.4.RELEASE");
 		} else if (VersionParser.DEFAULT.parseRange("[2.2.0,2.3.0)").match(bootVersion)) {
 			return Version.parse("2.2.1.RELEASE");
 		} else if (VersionParser.DEFAULT.parseRange("[2.1.0,2.2.0)").match(bootVersion)) {

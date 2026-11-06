@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -382,55 +382,21 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 		LiveVariable<Boolean> jmx = eJmxModel.jmxEnabled;
 		LiveVariable<Boolean> liveBean = eJmxModel.liveBeanEnabled;
 		LiveVariable<Boolean> lifeCycle = eJmxModel.lifeCycleEnabled;
-		LiveVariable<String> port = eJmxModel.port;
 		LiveVariable<String> timeout = eJmxModel.terminationTimeout;
 		LiveExpression<ValidationResult> validator = eJmxModel.getValidator();
 
 		liveBean.setValue(true);
 		lifeCycle.setValue(true);
 		timeout.setValue("5000");
-		port.setValue("8888");
 		assertOk(validator);
-
-		port.setValue("Unparseable");
-		assertError("can't be parsed as an Integer", validator);
 
 		jmx.setValue(false);
 		liveBean.setValue(false);
 		lifeCycle.setValue(false);
-		assertOk(validator); //if disabled we shouldn't check the port as it doesn't matter.
+		assertOk(validator); //if disabled we shouldn't check the timeout as it doesn't matter.
 
 		jmx.setValue(true);
-		port.setValue("10000000");
-		liveBean.setValue(true);
-		assertError("should be smaller than", validator);
-
-		jmx.setValue(false);
-		liveBean.setValue(false);
-		port.setValue("-111");
-		assertOk(validator); //if disabled we shouldn't check the port as it doesn't matter.
-
-		jmx.setValue(true);
-		lifeCycle.setValue(true); //only enable lifeCycle
-		assertFalse(liveBean.getValue());
-		assertError("should be a positive", validator);
-
-		port.setValue("0");
-		assertOk(validator); // 0 is acceptable as it means 'choose dynamically'.
-
-		port.setValue("  8888   ");
-		assertOk(validator); // tolerate spaces
-
-		port.setValue(null); //
-		assertError("JMX Port must be specified", validator);
-
-		port.setValue("   "); //
-		assertError("JMX Port must be specified", validator);
-
-		port.setValue("");
-		assertError("JMX Port must be specified", validator);
-
-		port.setValue("8888");
+		lifeCycle.setValue(true);
 		assertOk(validator);
 
 		timeout.setValue(null);
@@ -459,8 +425,6 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 		eJmxModel.setDefaults(wc);
 		assertEquals(BootLaunchActivator.getInstance().isLiveBeanSupported(), BootLaunchConfigurationDelegate.getEnableLiveBeanSupport(wc));
 		assertTrue(BootLaunchConfigurationDelegate.getEnableLifeCycle(wc));
-		int jmxPort = Integer.parseInt(BootLaunchConfigurationDelegate.getJMXPort(wc));
-		assertEquals(BootLaunchConfigurationDelegate.DEFAULT_JMX_PORT, jmxPort);
 	}
 
 	public void testJmxInitializeFrom() throws Exception {
@@ -468,7 +432,6 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 		ILaunchConfigurationWorkingCopy wc = createWorkingCopy();
 		LiveVariable<Boolean> liveBean = eJmxModel.liveBeanEnabled;
 		LiveVariable<Boolean> lifeCycle = eJmxModel.lifeCycleEnabled;
-		LiveVariable<String> port = eJmxModel.port;
 		LiveVariable<Boolean> dirty = eJmxModel.getDirtyState();
 
 		boolean[] bools = {true, false};
@@ -476,13 +439,11 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 			for (boolean b2 : bools) {
 				BootLaunchConfigurationDelegate.setEnableLiveBeanSupport(wc, b1);
 				BootLaunchConfigurationDelegate.setEnableLifeCycle(wc, b2);
-				BootLaunchConfigurationDelegate.setJMXPort(wc, "3456");
 				dirty.setValue(true);
 
 				eJmxModel.initializeFrom(wc);
 
 				assertFalse(dirty.getValue());
-				assertEquals("3456", port.getValue());
 				assertEquals(b1, (boolean)liveBean.getValue());
 				assertEquals(b2, (boolean)lifeCycle.getValue());
 			}
@@ -495,10 +456,7 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 
 		LiveVariable<Boolean> liveBean = eJmxModel.liveBeanEnabled;
 		LiveVariable<Boolean> lifeCycle = eJmxModel.lifeCycleEnabled;
-		LiveVariable<String> port = eJmxModel.port;
 		LiveVariable<Boolean> dirty = eJmxModel.getDirtyState();
-
-		port.setValue("1234");
 
 		boolean[] bools = {true, false};
 		for (boolean b1 : bools) {
@@ -510,18 +468,11 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 				eJmxModel.performApply(wc);
 
 				assertFalse(dirty.getValue());
-				assertEquals("1234", BootLaunchConfigurationDelegate.getJMXPort(wc));
 				assertEquals(b1, BootLaunchConfigurationDelegate.getEnableLiveBeanSupport(wc));
 				assertEquals(b2, BootLaunchConfigurationDelegate.getEnableLifeCycle(wc));
 			}
 		}
 
-		//port
-		port.setValue("   8888   ");
-		assertTrue(dirty.getValue());
-		eJmxModel.performApply(wc);
-		assertFalse(dirty.getValue());
-		assertEquals("8888", BootLaunchConfigurationDelegate.getJMXPort(wc));
 	}
 
 	public void testLiveBeanDirtyState() throws Exception {
@@ -529,7 +480,6 @@ public class BootLaunchUIModelTest extends BootLaunchTestCase {
 
 		LiveVariable<Boolean> liveBean = eJmxModel.liveBeanEnabled;
 		LiveVariable<Boolean> lifeCycle = eJmxModel.lifeCycleEnabled;
-		LiveVariable<String> port = eJmxModel.port;
 		LiveVariable<Boolean> dirty = eJmxModel.getDirtyState();
 
 		dirty.setValue(false);

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2020 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -157,7 +157,7 @@ public class BootDashModelTest {
 		button.perform(ui());
 		assertFalse(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
 		ACondition.waitFor("Local services to appear", MAVEN_BUILD_TIMEOUT, () -> {
-			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "hystrixdashboard", "stubrunner");
+			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "stubrunner");
 		});
 		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
 
@@ -175,7 +175,7 @@ public class BootDashModelTest {
 		assertFalse(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
 
 		ACondition.waitFor("Local services to appear", MAVEN_BUILD_TIMEOUT, () -> {
-			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "hystrixdashboard", "stubrunner");
+			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "stubrunner");
 		});
 		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
 		verifyZeroInteractions(ui()); //Since cloud cli already installed we should not be prompted whether we want to install it.
@@ -202,8 +202,8 @@ public class BootDashModelTest {
 
 	@Test public void testAutoInstallSpringCloudCLICustom() throws Exception {
 		//We support installing spring-cloud CLI into a custom configured spring boot cli
-		String cliVersion = "2.1.4.RELEASE"; // consider updating once in a while to remain 'current'.
-		URL customZipUrl = new URL("https://repo.spring.io/release/org/springframework/boot/spring-boot-cli/"+cliVersion+"/spring-boot-cli-"+cliVersion+"-bin.zip");
+		String cliVersion = "2.7.18"; // consider updating once in a while to remain 'current'.
+		URL customZipUrl = new URL("https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-cli/"+cliVersion+"/spring-boot-cli-"+cliVersion+"-bin.zip");
 		IBootInstall customCliInstall = performCustomCliInstall(customZipUrl);
 
 		//Some sanity checks... to see if performCustomCliInstall works as expected.
@@ -224,7 +224,7 @@ public class BootDashModelTest {
 		assertFalse(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
 
 		ACondition.waitFor("Local services to appear", MAVEN_BUILD_TIMEOUT, () -> {
-			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "hystrixdashboard", "stubrunner");
+			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "stubrunner");
 		});
 		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
 

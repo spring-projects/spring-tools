@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2017 Pivotal Software, Inc.
+ * Copyright (c) 2015, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -156,8 +156,8 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 
 	protected final ReadyStateMonitor createReadyStateTracker(ILaunch l) {
 		try {
-			Boolean canUseLifeCycle=null, cliCanUseLifeCycle=null, isSingleProcessServiceLaunch = null;
-			if ((canUseLifeCycle = BootLaunchConfigurationDelegate.canUseLifeCycle(l)) || (cliCanUseLifeCycle = CloudCliServiceLaunchConfigurationDelegate.canUseLifeCycle(l))) {
+			Boolean canUseLifeCycle=null, isSingleProcessServiceLaunch = null;
+			if (canUseLifeCycle = BootLaunchConfigurationDelegate.canUseLifeCycle(l)) {
 				SpringApplicationReadyStateMonitor readyStateMonitor = new SpringApplicationReadyStateMonitor(l);
 				readyStateMonitor.startPolling();
 				debug("createReadyStateTracker"+"["+l+"] "+BootLaunchUtils.getProject(l)+" OK!");
@@ -171,7 +171,7 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 				}
 			}
 			debug("createReadyStateTracker"+"["+l+"] "+BootLaunchUtils.getProject(l)+" NOT APPLICABLE");
-			debug("  canUseLifeCycle="+canUseLifeCycle+"\n  cliCanUseLifeCycle="+cliCanUseLifeCycle+"\n  isSingleProcessServiceLaunch="+isSingleProcessServiceLaunch);
+			debug("  canUseLifeCycle="+canUseLifeCycle+"\n  isSingleProcessServiceLaunch="+isSingleProcessServiceLaunch);
 		} catch (Exception e) {
 			debug("createReadyStateTracker"+"["+l+"] "+BootLaunchUtils.getProject(l)+" FAILED: "+ExceptionUtil.getMessage(e));
 			Log.log(e);

@@ -11,19 +11,14 @@
 package org.springframework.ide.vscode.boot.java.placeholder;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.NormalAnnotation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.springframework.ide.vscode.boot.java.SpelProblemType;
+import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.embedded.lang.EmbeddedLanguageSnippet;
 import org.springframework.ide.vscode.boot.java.reconcilers.JdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ReconcilingContext;
@@ -31,6 +26,7 @@ import org.springframework.ide.vscode.boot.properties.reconcile.PropertyPlacehol
 import org.springframework.ide.vscode.boot.properties.reconcile.PropertyPlaceholderChecker.KeyLookup;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.SpringProjectUtil;
+import org.springframework.ide.vscode.commons.languageserver.reconcile.DiagnosticSeverityProvider;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
 
 /**
@@ -38,6 +34,10 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemTy
  * {@link AnnotationParamPlaceholderExtractor}. Reports syntax errors and
  * reminds about a placeholder without default whose key the project does not
  * define. Placeholders inside <code>#{...}</code> are left to the SpEL reconciler.
+ * <p>
+ * The reconciler keeps no state of its own. A file with placeholders is marked in the
+ * {@link ReconcilingContext} as depending on the property files, so the indexer brings
+ * it back when an <code>application*</code> file changes.
  *
  * @author Seema Jagadeesh
  */
@@ -45,12 +45,11 @@ public class JdtPropertyPlaceholderReconciler implements JdtAstReconciler {
 
 	private final AnnotationParamPlaceholderExtractor[] extractors = AnnotationParamPlaceholderExtractor.PLACEHOLDER_EXTRACTORS;
 	private final PropertyPlaceholderChecker checker;
+	private final DiagnosticSeverityProvider severityProvider;
 
-	/** Java files with placeholders, per project, reconciled again when a property file changes. */
-	private final Map<String, Set<String>> filesWithPlaceholders = new ConcurrentHashMap<>();
-
-	public JdtPropertyPlaceholderReconciler(PropertyPlaceholderChecker checker) {
+	public JdtPropertyPlaceholderReconciler(PropertyPlaceholderChecker checker, DiagnosticSeverityProvider severityProvider) {
 		this.checker = checker;
+		this.severityProvider = severityProvider;
 	}
 
 	@Override
@@ -60,32 +59,32 @@ public class JdtPropertyPlaceholderReconciler implements JdtAstReconciler {
 
 	@Override
 	public ProblemType getProblemType() {
-		return SpelProblemType.JAVA_UNRESOLVED_PLACEHOLDER;
+		return Boot2JavaProblemType.JAVA_UNRESOLVED_PLACEHOLDER;
 	}
 
 	@Override
 	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docURI, CompilationUnit cu, ReconcilingContext context) {
-		Set<String> files = filesWithPlaceholders.computeIfAbsent(project.getElementName(), p -> ConcurrentHashMap.newKeySet());
-		String file = docURI.toASCIIString();
-		files.remove(file);
-
 		// one lookup per compilation unit, the indexes are fetched on the first placeholder
 		KeyLookup lookup = checker.lookupFor(project);
 
 		return Optional.of(new ASTVisitor() {
 			@Override
 			public boolean visit(SingleMemberAnnotation node) {
-				Arrays.stream(extractors)
-					.flatMap(e -> e.getValueSnippets(node).stream())
-					.forEach(this::check);
+				if (AnnotationParamPlaceholderExtractor.isListed(node)) {
+					Arrays.stream(extractors)
+						.flatMap(e -> e.getValueSnippets(node).stream())
+						.forEach(this::check);
+				}
 				return super.visit(node);
 			}
 
 			@Override
 			public boolean visit(NormalAnnotation node) {
-				Arrays.stream(extractors)
-					.flatMap(e -> e.getValueSnippets(node).stream())
-					.forEach(this::check);
+				if (AnnotationParamPlaceholderExtractor.isListed(node)) {
+					Arrays.stream(extractors)
+						.flatMap(e -> e.getValueSnippets(node).stream())
+						.forEach(this::check);
+				}
 				return super.visit(node);
 			}
 
@@ -94,21 +93,26 @@ public class JdtPropertyPlaceholderReconciler implements JdtAstReconciler {
 				if (text == null || text.indexOf("${") < 0) {
 					return;
 				}
-				files.add(file);
+				context.markAsDependingOnPropertyFiles();
 				checker.check(maskSpelExpressions(text), snippet::toSingleJavaRange, lookup, context.getProblemCollector());
 			}
 		});
 	}
 
+	/**
+	 * Only the unresolved reminder depends on the property files, the syntax check does not.
+	 * So nothing is reconciled again while the reminder is set to IGNORE.
+	 */
 	@Override
-	public List<String> identifyFilesToReconcile(IJavaProject project, List<String> changedPropertyFiles) {
-		Set<String> files = filesWithPlaceholders.get(project.getElementName());
-		return files == null ? List.of() : new ArrayList<>(files);
+	public boolean reconcileOnPropertyFileChange(IJavaProject project) {
+		return severityProvider.getDiagnosticSeverity(getProblemType()) != null;
 	}
 
 	/**
 	 * Blanks every <code>#{...}</code> region but keeps the length, so offsets
 	 * stay valid and SpEL placeholders stay with the SpEL reconciler.
+	 * An unclosed <code>#{</code> is blanked to the end of the string on purpose,
+	 * the SpEL reconciler reports that syntax error.
 	 */
 	static String maskSpelExpressions(String text) {
 		int start = text.indexOf("#{");

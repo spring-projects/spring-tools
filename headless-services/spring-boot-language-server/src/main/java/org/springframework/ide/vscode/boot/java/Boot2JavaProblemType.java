@@ -43,7 +43,8 @@ public enum Boot2JavaProblemType implements ProblemType {
 	JAVA_FINAL_AUTOWIRED_FIELD(WARNING, "`@Autowired` field should not be `final`", "`final` `@Autowired` field"),
 	EXTRACT_REQUEST_MAPPING_PARENT_PATH(INFO, "Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping`", "Extract common parent path into class-level `@RequestMapping`"),
 	REST_CONTROLLER_COMBINATION(INFO, "Class annotated with both `@Controller` and `@ResponseBody` could use `@RestController` instead", "Combine into `@RestController`"),
-	SPRING_JUNIT_CONFIG_COMBINATION(INFO, "Test class annotated with both `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration` could use `@SpringJUnitConfig` instead", "Combine into `@SpringJUnitConfig`");
+	SPRING_JUNIT_CONFIG_COMBINATION(INFO, "Test class annotated with both `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration` could use `@SpringJUnitConfig` instead", "Combine into `@SpringJUnitConfig`"),
+	JAVA_UNRESOLVED_PLACEHOLDER(IGNORE, "Placeholder in an annotation attribute has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime", "Unresolved Property Placeholder");
 	
 	private final ProblemSeverity defaultSeverity;
 	private final String description;

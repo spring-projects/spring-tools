@@ -13,17 +13,24 @@ package org.springframework.ide.vscode.boot.java.placeholder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
+import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.editor.harness.AdHocPropertyHarness;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
+import org.springframework.ide.vscode.commons.util.UriUtil;
 import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.languageserver.testharness.Editor;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
@@ -43,6 +50,8 @@ public class JdtPropertyPlaceholderReconcilerTest {
 	private JavaProjectFinder projectFinder;
 	@Autowired
 	private AdHocPropertyHarness adHocProperties;
+	@Autowired
+	private SpringSymbolIndex indexer;
 
 	private File directory;
 
@@ -63,7 +72,7 @@ public class JdtPropertyPlaceholderReconcilerTest {
 				"spring-boot": {
 					"ls": {
 						"problem": {
-							"spel": {
+							"boot2": {
 								"JAVA_UNRESOLVED_PLACEHOLDER": "WARNING"
 							}
 						}
@@ -80,6 +89,8 @@ public class JdtPropertyPlaceholderReconcilerTest {
 				import org.springframework.beans.factory.annotation.Value;
 				import org.springframework.context.annotation.PropertySource;
 				import org.springframework.scheduling.annotation.Scheduled;
+				import org.springframework.web.bind.annotation.GetMapping;
+				import org.springframework.web.bind.annotation.RequestMapping;
 
 				public class A {
 				""" + body + """
@@ -177,12 +188,75 @@ public class JdtPropertyPlaceholderReconcilerTest {
 	}
 
 	@Test
+	void composedMappingIsCheckedOnce() throws Exception {
+		Editor editor = newEditor("""
+					@RequestMapping("${api.root}")
+					static class Api {}
+
+					@GetMapping("${api.base")
+					void unclosed() {}
+
+					@GetMapping(path = "${api.path}")
+					void path() {}
+				""");
+		editor.assertProblems(
+				"api.root|" + UNRESOLVED,
+				"${api.base|Placeholder is not closed",
+				"api.path|" + UNRESOLVED);
+	}
+
+	@Test
 	void unlistedAttributeIsNotChecked() throws Exception {
 		Editor editor = newEditor("""
 					@Deprecated(since = "${not.checked}")
 					String other;
+
+					@PropertySource(name = "${not.resolved.by.spring}", value = "classpath:fixed.properties")
+					static class Config {}
 				""");
 		editor.assertProblems();
+	}
+
+	@Test
+	void propertyFileChangeReconcilesJavaFilesWithPlaceholders() throws Exception {
+		indexer.waitOperation().get(5, TimeUnit.SECONDS);
+
+		File javaFile = new File(directory, "src/main/java/example/demo/PropertyFileChange.java");
+		File propertiesFile = new File(directory, "src/main/resources/application.properties");
+		String javaUri = UriUtil.toUri(javaFile).toASCIIString();
+		String propertiesUri = UriUtil.toUri(propertiesFile).toASCIIString();
+		String source = """
+				package example.demo;
+
+				import org.springframework.beans.factory.annotation.Value;
+
+				public class PropertyFileChange {
+					@Value("${db.url}")
+					String url;
+				}
+				""";
+
+		try {
+			FileUtils.writeStringToFile(javaFile, source, StandardCharsets.UTF_8);
+			FileUtils.writeStringToFile(propertiesFile, "", StandardCharsets.UTF_8);
+
+			// indexing the file reports the key as unresolved and marks the file
+			indexer.updateDocument(javaUri, source, "test triggered").get(5, TimeUnit.SECONDS);
+			List<Diagnostic> diagnostics = harness.getDiagnostics(javaUri).getDiagnostics();
+			assertEquals(1, diagnostics.size());
+
+			// the key is now defined, a change of application.properties brings the file back
+			adHocProperties.add("db.url");
+			FileUtils.writeStringToFile(propertiesFile, "db.url=jdbc:h2:mem:test\n", StandardCharsets.UTF_8);
+			indexer.updateDocuments(new String[] {propertiesUri}, "test triggered").get(5, TimeUnit.SECONDS);
+
+			diagnostics = harness.getDiagnostics(javaUri).getDiagnostics();
+			assertEquals(0, diagnostics.size());
+		}
+		finally {
+			FileUtils.deleteQuietly(javaFile);
+			FileUtils.deleteQuietly(propertiesFile);
+		}
 	}
 
 	@Test

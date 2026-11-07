@@ -135,6 +135,11 @@ public class JdtReconciler implements JavaReconciler {
 			.flatMap(reconciler -> reconciler.identifyFilesToReconcile(project, changedPropertyFiles).stream())
 			.toList();
 	}
+
+	public boolean reconcileOnPropertyFileChange(IJavaProject project) {
+		return getApplicableReconcilers(project).stream()
+			.anyMatch(reconciler -> reconciler.reconcileOnPropertyFileChange(project));
+	}
 	
 	private List<JdtAstReconciler> getApplicableReconcilers(IJavaProject project) {
 		return this.applicableReconcilersCache.computeIfAbsent(project.getElementName(), (name) -> {

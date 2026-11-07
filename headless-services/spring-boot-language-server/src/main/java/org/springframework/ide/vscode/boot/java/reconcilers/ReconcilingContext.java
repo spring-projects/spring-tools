@@ -22,6 +22,13 @@ import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement
  * context information for reconcilers
  */
 public class ReconcilingContext {
+
+	/**
+	 * Pseudo dependency of a file whose problems depend on the project's <code>application*</code>
+	 * files. It travels with the type dependencies, so the indexer caches it, restores it and drops
+	 * it with the file. No Java type can carry this name.
+	 */
+	public static final QualifiedTypeName PROPERTY_FILES_DEPENDENCY = QualifiedTypeName.of("<application property files>");
 	
 	private final String docURI;
 
@@ -74,6 +81,11 @@ public class ReconcilingContext {
 	
 	public Set<QualifiedTypeName> getDependencies() {
 		return dependencies;
+	}
+
+	/** Marks the file as one to reconcile again when an <code>application*</code> file changes. */
+	public void markAsDependingOnPropertyFiles() {
+		this.dependencies.add(PROPERTY_FILES_DEPENDENCY);
 	}
 	
 	public void markForAffectedFilesIndexing(String file) {

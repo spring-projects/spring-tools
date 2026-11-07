@@ -145,6 +145,12 @@
         "label": "Combine into `@SpringJUnitConfig`",
         "description": "Test class annotated with both `@ExtendWith(SpringExtension.class)` and `@ContextConfiguration` could use `@SpringJUnitConfig` instead",
         "defaultSeverity": "INFO"
+      },
+      {
+        "code": "JAVA_UNRESOLVED_PLACEHOLDER",
+        "label": "Unresolved Property Placeholder",
+        "description": "Placeholder in an annotation attribute has no default value and its key could not be found in configuration metadata or in the project's own configuration files, so make sure it is defined at runtime",
+        "defaultSeverity": "IGNORE"
       }
     ]
   },

@@ -39,4 +39,12 @@ public interface JdtAstReconciler {
 		return List.of();
 	};
 
+	/**
+	 * Whether the files marked with {@link ReconcilingContext#markAsDependingOnPropertyFiles()}
+	 * are reconciled again when an <code>application*</code> file changes.
+	 */
+	default boolean reconcileOnPropertyFileChange(IJavaProject project) {
+		return false;
+	}
+
 }

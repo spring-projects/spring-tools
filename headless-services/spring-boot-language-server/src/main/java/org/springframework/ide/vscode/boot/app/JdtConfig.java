@@ -19,8 +19,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.DefaultBuildCommandProvider;
+import org.springframework.ide.vscode.boot.java.SpelProblemType;
 import org.springframework.ide.vscode.boot.java.VSCodeBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtCodeActionHandler;
@@ -40,6 +42,7 @@ import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpqlSupportStat
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.QueryJdtAstReconciler;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.SqlDialectResolver;
 import org.springframework.ide.vscode.boot.java.handlers.Reconciler;
+import org.springframework.ide.vscode.boot.java.placeholder.JdtPropertyPlaceholderReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.AddConfigurationIfBeansPresentReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.ApplicationModuleListenerReconciler;
 import org.springframework.ide.vscode.boot.java.reconcilers.AuthorizeHttpRequestsReconciler;
@@ -85,6 +88,8 @@ import org.springframework.ide.vscode.boot.java.spel.JdtSpelSemanticTokensProvid
 import org.springframework.ide.vscode.boot.java.spel.SpelReconciler;
 import org.springframework.ide.vscode.boot.java.spel.SpelSemanticTokens;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
+import org.springframework.ide.vscode.boot.metadata.ProjectBasedPropertyIndexProvider;
+import org.springframework.ide.vscode.boot.properties.reconcile.PropertyPlaceholderChecker;
 import org.springframework.ide.vscode.commons.languageserver.util.LspClient;
 import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguageServer;
 
@@ -280,6 +285,13 @@ public class JdtConfig {
 	
 	@Bean JdtSpelReconciler jdtSpelReconciler(SpelReconciler spelReconciler) {
 		return new JdtSpelReconciler(spelReconciler);
+	}
+
+	@Bean JdtPropertyPlaceholderReconciler jdtPropertyPlaceholderReconciler(SimpleLanguageServer server, BootLanguageServerParams params,
+			@Qualifier("adHocProperties") ProjectBasedPropertyIndexProvider adHocProperties) {
+		PropertyPlaceholderChecker checker = new PropertyPlaceholderChecker(SpelProblemType.PROPERTY_PLACE_HOLDER_SYNTAX,
+				Boot2JavaProblemType.JAVA_UNRESOLVED_PLACEHOLDER, params.indexProvider, adHocProperties, params.projectFinder);
+		return new JdtPropertyPlaceholderReconciler(checker, server.getDiagnosticSeverityProvider());
 	}
 	
 	@Bean ImplicitWebAnnotationNamesReconciler implicitWebAnnotationNamesReconciler(SimpleLanguageServer server) {

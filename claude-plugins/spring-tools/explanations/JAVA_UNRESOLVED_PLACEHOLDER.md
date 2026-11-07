@@ -1,17 +1,17 @@
 ## Explanations
 This reminder appears on a `${key}` placeholder without a default value in a Java annotation attribute when the key is not defined anywhere the language server can see. Spring resolves the placeholder against the `Environment` when the bean is created. When nothing provides the key, the bean fails at startup with `Could not resolve placeholder 'key'`.
 
-The check covers the attributes listed in `AnnotationParamPlaceholderExtractor`. Edit that table to add or remove one. It lists `@Value`, the string attributes of `@Scheduled`, `@PropertySource`, `@ImportResource`, `@ComponentScan`, the request mapping annotations, `@CrossOrigin`, the `defaultValue` of `@RequestParam`, `@RequestHeader`, `@CookieValue` and `@MatrixVariable`, `@TestPropertySource`, and the string attributes of the JMS, Rabbit and Kafka listener annotations. Meta-annotations count, and each element of an array attribute is checked on its own. Values may be string literals, text blocks or concatenations of constants.
+The check covers the attributes listed in `AnnotationParamPlaceholderExtractor`. Edit that table to add or remove one. It lists `@Value`, the string attributes of `@Scheduled`, `@PropertySource`, `@ImportResource`, `@ComponentScan`, `@RequestMapping`, `@CrossOrigin`, the `defaultValue` of `@RequestParam`, `@RequestHeader`, `@CookieValue` and `@MatrixVariable`, `@TestPropertySource`, and the string attributes of the JMS, Rabbit and Kafka listener annotations. Meta-annotations count, so `@GetMapping` and the other composed mappings are covered through `@RequestMapping`, and each element of an array attribute is checked on its own. Values may be string literals, text blocks or concatenations of constants.
 
 A placeholder inside a `#{...}` expression belongs to the SpEL reconciler and is skipped here. The key is looked up in the configuration metadata on the classpath, with the same prefix matching as `PROP_UNKNOWN_PROPERTY`, and in the project's own `application*` files. The reminder appears only when both miss.
 
 Keys the JVM or Boot provide are skipped (`random.*`, `user.*`, `java.*`, `os.*`, `file.*`, `line.*`, `path.*`, `PID`, `LOG_*`, `CONSOLE_LOG_*`, `FILE_LOG_*`, `LOGGED_APPLICATION_*`). A placeholder with a default is never reported, a nested placeholder in the default is checked on its own, and an escaped placeholder (`\${key}`) is skipped. A syntax error in the placeholder is reported as `PROPERTY_PLACE_HOLDER_SYNTAX` instead.
 
-The language server raises this diagnostic when the project depends on `spring-context`, the attribute is in the table, the placeholder has no default, is not escaped, sits outside `#{...}`, its key is not a runtime key, and neither lookup finds it. The message is `Placeholder '<key>' has no default value and could not be found in the project's configuration. Make sure it is defined at runtime.` The highlighted range is the key inside the braces.
+The language server raises this diagnostic when the project depends on `spring-context`, the Boot 2 category is on, the attribute is in the table, the placeholder has no default, is not escaped, sits outside `#{...}`, its key is not a runtime key, and neither lookup finds it. The message is `Placeholder '<key>' has no default value and could not be found in the project's configuration. Make sure it is defined at runtime.` The highlighted range is the key inside the braces.
 
-Keys from `spring.config.import`, another `@PropertySource`, `@TestPropertySource` properties, a config server or the deployment environment are not in the ad-hoc index and show the reminder. The indexes are read once per Java file. When an `application*` file changes, the Java files with placeholders are checked again.
+Keys from `spring.config.import`, another `@PropertySource`, `@TestPropertySource` properties, a config server or the deployment environment are not in the ad-hoc index and show the reminder. The indexes are read once per Java file. When an `application*` file changes, the Java files with placeholders are checked again, unless the severity is `IGNORE`.
 
-The marker stays as long as the placeholder does, so the default severity is `IGNORE`. The check is off until `spring-boot.ls.problem.spel.JAVA_UNRESOLVED_PLACEHOLDER` is set to `WARNING`, `INFO`, `HINT` or `ERROR`. There is no quick fix. The same check exists for configuration files as `PROP_UNRESOLVED_PLACEHOLDER` and `YAML_UNRESOLVED_PLACEHOLDER`.
+The marker stays as long as the placeholder does, so the default severity is `IGNORE`. The check is off until `spring-boot.ls.problem.boot2.JAVA_UNRESOLVED_PLACEHOLDER` is set to `WARNING`, `INFO`, `HINT` or `ERROR`. There is no quick fix. The same check exists for configuration files as `PROP_UNRESOLVED_PLACEHOLDER` and `YAML_UNRESOLVED_PLACEHOLDER`.
 
 For more details, see:
 - [Spring Framework: Using `@Value`](https://docs.spring.io/spring-framework/reference/core/beans/annotation-config/value-annotations.html)
@@ -60,7 +60,7 @@ When the key is meant to come from outside, for example a database URL injected 
 ```json
 // VS Code settings.json
 {
-  "spring-boot.ls.problem.spel.JAVA_UNRESOLVED_PLACEHOLDER": "WARNING"
+  "spring-boot.ls.problem.boot2.JAVA_UNRESOLVED_PLACEHOLDER": "WARNING"
 }
 ```
 
@@ -68,7 +68,7 @@ When the key is meant to come from outside, for example a database URL injected 
 ```json
 // VS Code settings.json
 {
-  "spring-boot.ls.problem.spel.JAVA_UNRESOLVED_PLACEHOLDER": "IGNORE"
+  "spring-boot.ls.problem.boot2.JAVA_UNRESOLVED_PLACEHOLDER": "IGNORE"
 }
 ```
 

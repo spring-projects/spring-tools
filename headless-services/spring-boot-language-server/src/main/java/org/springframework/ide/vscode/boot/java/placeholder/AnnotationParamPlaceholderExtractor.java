@@ -11,8 +11,11 @@
 package org.springframework.ide.vscode.boot.java.placeholder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
@@ -31,6 +34,8 @@ import org.springframework.ide.vscode.commons.java.JavaUtils;
  * in, and how to read their values from the Java AST.
  * <p>
  * Edit the table in {@link #createExtractors()} to add or remove an attribute.
+ * An annotation meta-annotated with a listed one matches too, so the composed
+ * mappings such as <code>@GetMapping</code> are covered by <code>@RequestMapping</code>.
  * Attributes that hold a whole SpEL expression are not listed, the SpEL
  * reconciler checks the placeholders inside them.
  *
@@ -42,10 +47,6 @@ public final class AnnotationParamPlaceholderExtractor {
 	private static final String SPRING_IMPORT_RESOURCE = "org.springframework.context.annotation.ImportResource";
 	private static final String SPRING_COMPONENT_SCAN = "org.springframework.context.annotation.ComponentScan";
 
-	private static final String SPRING_POST_MAPPING = "org.springframework.web.bind.annotation.PostMapping";
-	private static final String SPRING_PUT_MAPPING = "org.springframework.web.bind.annotation.PutMapping";
-	private static final String SPRING_DELETE_MAPPING = "org.springframework.web.bind.annotation.DeleteMapping";
-	private static final String SPRING_PATCH_MAPPING = "org.springframework.web.bind.annotation.PatchMapping";
 	private static final String SPRING_CROSS_ORIGIN = "org.springframework.web.bind.annotation.CrossOrigin";
 	private static final String SPRING_REQUEST_PARAM = "org.springframework.web.bind.annotation.RequestParam";
 	private static final String SPRING_REQUEST_HEADER = "org.springframework.web.bind.annotation.RequestHeader";
@@ -67,6 +68,10 @@ public final class AnnotationParamPlaceholderExtractor {
 
 	public static final AnnotationParamPlaceholderExtractor[] PLACEHOLDER_EXTRACTORS = createExtractors();
 
+	private static final Set<String> ANNOTATION_BINDING_KEYS = Arrays.stream(PLACEHOLDER_EXTRACTORS)
+			.map(e -> e.annotationBindingKey)
+			.collect(Collectors.toUnmodifiableSet());
+
 	/**
 	 * The annotations and attributes that get the placeholder check.
 	 */
@@ -77,17 +82,12 @@ public final class AnnotationParamPlaceholderExtractor {
 		add(extractors, Annotations.VALUE, "value");
 		add(extractors, Annotations.SCHEDULED, "cron", "zone", "fixedDelayString", "fixedRateString",
 				"initialDelayString");
-		add(extractors, SPRING_PROPERTY_SOURCE, "value", "name");
+		add(extractors, SPRING_PROPERTY_SOURCE, "value");
 		add(extractors, SPRING_IMPORT_RESOURCE, "value", "locations");
 		add(extractors, SPRING_COMPONENT_SCAN, "value", "basePackages");
 
-		// spring-web
+		// spring-web, @GetMapping and the other composed mappings match through @RequestMapping
 		add(extractors, Annotations.SPRING_REQUEST_MAPPING, "value", "path");
-		add(extractors, Annotations.SPRING_GET_MAPPING, "value", "path");
-		add(extractors, SPRING_POST_MAPPING, "value", "path");
-		add(extractors, SPRING_PUT_MAPPING, "value", "path");
-		add(extractors, SPRING_DELETE_MAPPING, "value", "path");
-		add(extractors, SPRING_PATCH_MAPPING, "value", "path");
 		add(extractors, SPRING_CROSS_ORIGIN, "value", "origins", "originPatterns");
 		add(extractors, SPRING_REQUEST_PARAM, "defaultValue");
 		add(extractors, SPRING_REQUEST_HEADER, "defaultValue");
@@ -118,6 +118,16 @@ public final class AnnotationParamPlaceholderExtractor {
 		add(extractors, SPRING_KAFKA_PARTITION_OFFSET, "partition", "initialOffset");
 
 		return extractors.toArray(AnnotationParamPlaceholderExtractor[]::new);
+	}
+
+	/**
+	 * Whether the annotation, or one it is meta-annotated with, is in the table.
+	 * One walk of the annotation hierarchy per annotation node, instead of one per extractor.
+	 */
+	public static boolean isListed(Annotation a) {
+		AnnotationHierarchies hierarchies = AnnotationHierarchies.get(a);
+		return hierarchies != null && hierarchies.isAnnotatedWithAnnotationByBindingKey(a.resolveAnnotationBinding(),
+				ANNOTATION_BINDING_KEYS::contains);
 	}
 
 	private static void add(List<AnnotationParamPlaceholderExtractor> extractors, String annotationType,

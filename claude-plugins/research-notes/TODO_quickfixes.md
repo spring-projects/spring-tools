@@ -32,6 +32,7 @@ When a new problem type is added to the language server, add a row to the matchi
 | `EXTRACT_REQUEST_MAPPING_PARENT_PATH` | Request mappings share a common parent path that could be extracted into a class-level `@RequestMapping` | JDT Refactoring (`ExtractRequestMappingParentPathReconciler` / `ExtractRequestMappingParentPathRefactoring`) | ✅ |
 | `REST_CONTROLLER_COMBINATION` | `@Controller` + `@ResponseBody` could use `@RestController` | JDT Refactoring (`RestControllerReconciler` / `RestControllerRefactoring`) | ✅ |
 | `SPRING_JUNIT_CONFIG_COMBINATION` | `@ExtendWith(SpringExtension.class)` + `@ContextConfiguration` could use `@SpringJUnitConfig` | JDT Refactoring (`SpringJUnitConfigReconciler` / `SpringJUnitConfigRefactoring`) | ✅ |
+| `JAVA_UNRESOLVED_PLACEHOLDER` | Property placeholder in an annotation attribute has no default and its key is not in configuration metadata or the project's `application*` files | *None* | ✅ |
 
 ## Boot 3 Java Problem Types (`Boot3JavaProblemType`)
 
@@ -75,7 +76,6 @@ When a new problem type is added to the language server, add a row to the matchi
 | :--- | :--- | :--- | :---: |
 | `JAVA_SPEL_EXPRESSION_SYNTAX` | SpEL expression syntax error in `#{...}` (e.g. `@Value`, caching, `@EventListener`, method security annotations) | *None* | ✅ |
 | `PROPERTY_PLACE_HOLDER_SYNTAX` | Property placeholder `${...}` syntax error inside a SpEL expression | *None* | ✅ |
-| `JAVA_UNRESOLVED_PLACEHOLDER` | Property placeholder in an annotation attribute has no default and its key is not in configuration metadata or the project's `application*` files | *None* | ✅ |
 
 ## Cron Problem Types (`cron/CronProblemType`)
 

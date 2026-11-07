@@ -14,7 +14,9 @@ import java.io.File;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
@@ -66,7 +68,20 @@ public class SpringIndexerJavaReconcileService {
 
 	public List<String> identifyFilesToReconcileForPropertyChanges(IJavaProject project,
 			List<String> changedPropertyFiles) {
-		return reconciler.identifyFilesToReconcile(project, changedPropertyFiles);
+		Set<String> files = new LinkedHashSet<>(reconciler.identifyFilesToReconcile(project, changedPropertyFiles));
+		if (reconciler.reconcileOnPropertyFileChange(project)) {
+			files.addAll(filesDependingOnPropertyFiles(project));
+		}
+		return new ArrayList<>(files);
+	}
+
+	/** The files a reconciler marked with {@link ReconcilingContext#markAsDependingOnPropertyFiles()}, as URIs. */
+	private List<String> filesDependingOnPropertyFiles(IJavaProject project) {
+		return dependencyTracker.getAllDependencies(project).entries().stream()
+				.filter(entry -> ReconcilingContext.PROPERTY_FILES_DEPENDENCY.equals(entry.getValue()))
+				.map(entry -> UriUtil.toUri(new File(entry.getKey().absolutePath())).toASCIIString())
+				.distinct()
+				.toList();
 	}
 
 	public void logReconcilingStats() {

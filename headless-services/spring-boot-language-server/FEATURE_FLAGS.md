@@ -29,6 +29,7 @@ It is an object that maps a feature id to `true` (on) or `false` (off):
 | `profile-completion` | Profile proposals in `@Profile` |
 | `conditional-on-property-completion` | Key proposals in `@ConditionalOnProperty` |
 | `conditional-on-resource-completion` | Resource proposals in `@ConditionalOnResource` |
+| `class-name-completion` | Class name proposals in `@ConditionalOnClass(name)` |
 | `context-configuration-completion` | Resource proposals in `@ContextConfiguration` |
 | `scope-completion` | Scope proposals in `@Scope` |
 | `cron-completion` | Cron expression proposals in `@Scheduled` |

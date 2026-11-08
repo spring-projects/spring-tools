@@ -50,6 +50,9 @@ public enum FeatureFlag {
 	/** Resource proposals in {@code @ConditionalOnResource} */
 	CONDITIONAL_ON_RESOURCE_COMPLETION("conditional-on-resource-completion"),
 
+	/** Class name proposals in annotation attributes, e.g. {@code @ConditionalOnClass(name = ...)} */
+	CLASS_NAME_COMPLETION("class-name-completion"),
+
 	/** Resource proposals in {@code @ContextConfiguration} */
 	CONTEXT_CONFIGURATION_COMPLETION("context-configuration-completion"),
 

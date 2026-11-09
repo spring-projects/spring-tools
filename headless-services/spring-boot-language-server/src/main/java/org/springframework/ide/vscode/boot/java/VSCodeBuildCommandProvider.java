@@ -12,7 +12,6 @@ package org.springframework.ide.vscode.boot.java;
 
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 
 import org.eclipse.lsp4j.Command;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -40,10 +39,7 @@ public class VSCodeBuildCommandProvider implements BuildCommandProvider {
 		cmd.setArguments(List.of(
 				Paths.get(project.getProjectBuild().getBuildFile()).toFile().toString(),
 				command,
-				BuildCommandProvider.buildEnv(project),
-				// Have the client reload the project after the build. The builds are for generating sources and
-				// resources, which only become source folders of the project at a project synchronization.
-				Map.of("refreshJavaProject", true)
+				BuildCommandProvider.buildEnv(project)
 		));
 		return cmd;
 	}

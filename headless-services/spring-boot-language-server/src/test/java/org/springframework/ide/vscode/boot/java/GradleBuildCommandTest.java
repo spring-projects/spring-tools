@@ -62,9 +62,7 @@ public class GradleBuildCommandTest {
 	void vscodeAndEclipseRunTheBuildWithTheirGradleSupport() {
 		// vscode-gradle: gradle.runBuild(buildFile, command, env); Eclipse: handled by the Buildship launch of the Eclipse client
 		Command cmd = new VSCodeBuildCommandProvider().executeGradleBuild(project(), "classes aotClasses");
-		assertCommand(cmd, "gradle.runBuild", 4);
-		// the client reloads the project after the build: the generated folders become source folders
-		assertEquals(Map.of("refreshJavaProject", true), cmd.getArguments().get(3));
+		assertCommand(cmd, "gradle.runBuild", 3);
 	}
 
 	@Test

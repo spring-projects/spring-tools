@@ -84,6 +84,15 @@ public class BootJavaConfig implements InitializingBean {
 		return enabled != null && enabled.booleanValue();
 	}
 	
+	/**
+	 * Whether Kotlin source files are indexed, too. This is an early version of the Kotlin support
+	 * and therefore off unless switched on with {@code boot-java.kotlin-support.on}.
+	 */
+	public boolean isKotlinSupportEnabled() {
+		Boolean enabled = settings.getBoolean("boot-java", "kotlin-support", "on");
+		return enabled != null && enabled.booleanValue();
+	}
+
 	public boolean isScanJavaTestSourcesEnabled() {
 		Boolean enabled = settings.getBoolean("boot-java", "scan-java-test-sources", "on");
 		return enabled != null && enabled.booleanValue();

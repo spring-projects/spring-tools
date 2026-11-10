@@ -1,0 +1,7 @@
+{
+	"groups" : {
+		"my.test" : {
+			"displayName" :"Test Group"
+		}
+	}
+}

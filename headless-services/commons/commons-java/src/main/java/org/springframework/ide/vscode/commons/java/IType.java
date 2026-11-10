@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2015 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -97,6 +97,18 @@ public interface IType extends IMember {
 	String getSuperclassName();
 
 	String[] getSuperInterfaceNames();
+
+	/**
+	 * Returns the annotations of the type declaration itself. {@link #getAnnotations()} may return
+	 * more than that for some implementations (the Jandex based one includes the annotations of the
+	 * type's members, too), which is not what is wanted when walking up the annotation hierarchy
+	 * of a type. The default is {@link #getAnnotations()}.
+	 *
+	 * @return the annotations declared directly on this type
+	 */
+	default Stream<IAnnotation> getDeclaredAnnotations() {
+		return getAnnotations();
+	}
 
 //	/**
 //	 * Resolves the given type name within the context of this type (depending on the type hierarchy

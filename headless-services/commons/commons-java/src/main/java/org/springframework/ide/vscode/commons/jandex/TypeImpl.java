@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2023 Pivotal, Inc.
+ * Copyright (c) 2016, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -74,6 +74,12 @@ class TypeImpl implements IType {
 	@Override
 	public Stream<IAnnotation> getAnnotations() {
 		List<AnnotationInstance> annotations = info.annotations();
+		return annotations == null ? Stream.empty() : annotations.stream().map(a -> Wrappers.wrap(a, javadocProvider));
+	}
+
+	@Override
+	public Stream<IAnnotation> getDeclaredAnnotations() {
+		List<AnnotationInstance> annotations = info.declaredAnnotations();
 		return annotations == null ? Stream.empty() : annotations.stream().map(a -> Wrappers.wrap(a, javadocProvider));
 	}
 

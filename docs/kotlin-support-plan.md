@@ -464,3 +464,17 @@ Possible outcomes: the bridge on PSI or on tree-sitter as the main path (A and B
 - detekt Analysis API migration: https://github.com/detekt/detekt/issues/9676
 - K2 migration guide: https://kotlinlang.org/docs/k2-compiler-migration-guide.html
 - OpenRewrite licensing: https://docs.openrewrite.org/licensing/openrewrite-licensing
+
+## 9. Implementation status (GH-2085)
+
+The first steps of the plan are implemented on the branch `features/kotlin-support`, as a sequence of commits that each build and pass the tests of the language server (the only failures are the two `testClassReferenceInValueLink` tests of the properties and YAML editors, which fail the same way without these changes, in this environment). The indexing of Java files is not changed: no Java indexer, reconciler or helper is touched.
+
+### 9.1 Kotlin syntax
+
+Package `org.springframework.ide.vscode.boot.kotlin.syntax`, kept apart from the Java code:
+
+- `KotlinSyntax` is the model of the syntax of a Kotlin file: package, imports, classes (kind, name, supertypes, annotations with their arguments, functions, nested classes), constants, all with source ranges. It is what the rest of the Kotlin support works on, so the syntax provider can be exchanged (tree-sitter, 6.2).
+- `KotlinPsiReader` fills it from the Kotlin compiler's PSI parser (`kotlin-compiler-embeddable` 2.2.21). The parser environment is set up on first use. Line separators are normalized for the parser and mapped back, so ranges are offsets into the original text.
+- `pom.xml` of the language server: the `kotlin-compiler-embeddable` dependency (version 2.2.21 pinned in the pom, the Spring Boot BOM manages Kotlin 2.3). It adds the Kotlin compiler to the language server jar even for Java-only users (the executable jar grows from about 90 MB to 154 MB), which is the packaging question of 3.3 and still open. The parser classes are only loaded when the first Kotlin file is read.
+
+**Tests:** `KotlinPsiReaderTest` (syntax, ranges, CRLF, syntax errors).

@@ -16,6 +16,7 @@
 	<properties>
 		<dependencies.version>${project.version}</dependencies.version>
 		<jdt.core.version>3.46.0</jdt.core.version>
+		<kotlin.compiler.version>2.2.21</kotlin.compiler.version>
 		<lsp4xml.version>0.24.0</lsp4xml.version>
 		<spring-ai.version>2.0.1</spring-ai.version>
 		<jmolecules.version>2025.0.2</jmolecules.version>
@@ -159,6 +160,13 @@
 			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.core</artifactId>
 			<version>${jdt.core.version}</version>
+		</dependency>
+
+		<!-- the parser for Kotlin sources, see the org.springframework.ide.vscode.boot.kotlin package -->
+		<dependency>
+			<groupId>org.jetbrains.kotlin</groupId>
+			<artifactId>kotlin-compiler-embeddable</artifactId>
+			<version>${kotlin.compiler.version}</version>
 		</dependency>
 
 		<dependency>

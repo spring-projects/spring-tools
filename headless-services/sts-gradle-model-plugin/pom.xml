@@ -14,6 +14,24 @@
     <packaging>pom</packaging>
     <name>sts-gradle-model-plugin-wrapper</name>
 
+    <properties>
+        <gradlew.executable>./gradlew</gradlew.executable>
+    </properties>
+
+    <profiles>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <gradlew.executable>gradlew.bat</gradlew.executable>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>
@@ -25,7 +43,7 @@
                         <phase>test</phase>
                         <configuration>
                             <workingDirectory>${project.basedir}/sts-gradle-model-plugin/</workingDirectory>
-                            <executable>./gradlew</executable>
+                            <executable>${gradlew.executable}</executable>
                             <arguments>
                                 <argument>test</argument>
                                 <argument>-i</argument>
@@ -40,7 +58,7 @@
                         <phase>install</phase>
                         <configuration>
                             <workingDirectory>${project.basedir}/sts-gradle-model-plugin/</workingDirectory>
-                            <executable>./gradlew</executable>
+                            <executable>${gradlew.executable}</executable>
                             <arguments>
                                 <argument>clean</argument>
                                 <argument>build</argument>

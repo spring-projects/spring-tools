@@ -431,6 +431,8 @@ public class BootLanguageServerBootApp {
 					return LanguageId.JAVA;
 				case "class":
 					return LanguageId.CLASS;
+				case "kt":
+					return LanguageId.KOTLIN;
  				case "xml":
 					return LanguageId.XML;
 				case "factories":

@@ -89,6 +89,8 @@ Consequences for the design:
 
 Anything beyond this list needs a deliberate decision, because it is a change to Java behavior.
 
+**The changes made** (details in section 9): touch point 1 (as `SpringIndexerProvider`) and 2 (`LanguageId.KOTLIN`, the `.kt` mapping, and a `KotlinLanguageServerComponents` registered in `BootLanguageServerInitializer` for the outline), the `kotlin` entries in the VSCode `documentSelector` and activation events, the setting that switches the Kotlin support on, the component scan of the new package in `BootLanguageServerBootApp`, a new `kotlin-compiler-embeddable` dependency, and one additive accessor in `commons-java` (`IType.getDeclaredAnnotations()`). Touch point 7 was not needed (the JDT bridge in 9.2 replaces it): no Java indexing code is changed.
+
 
 ### 3.2 Parallel track
 
@@ -427,6 +429,8 @@ Possible outcomes: the bridge on PSI or on tree-sitter as the main path (A and B
 
 ### 6.3 Phases
 
+Status (section 9): phase 1 (through a `BindingResolver` bridge instead of a binding-access interface, see 4.3 and 9.2) and phases 5 and 6 are implemented for stereotypes, request mappings and the other component indexers of the Java side. Phase 2 (tree-sitter) and the comparison of phase 4 are open.
+
 | Phase | Scope | Exit criteria |
 |---|---|---|
 | 0. Preparation | Kotlin Spring Boot test projects with Java twins (5.8) and the corpus for 6.2. Check the open questions in section 7 (IntelliJ extension classpath, `SpringSymbolIndex` hook, injectable registries, reuse of the scanner and context classes outside `SpringIndexerJava`, Kotlin 2.5 artifacts). | Corpus and twins exist and build in CI. |
@@ -519,3 +523,25 @@ Changes outside the new package, as discussed in 3.1:
 - `SpringIndexerKotlinRequestMappingTest` indexes a Kotlin twin of the request mapping test project (`test-request-mapping-symbols-kotlin`) next to the Java original and compares the mappings: path, request methods, content and accept types, version and method signature, for more than 25 mappings. It also covers constants (different class, same class with companion, class file constant, chains, concatenation, templates, top-level constants), mappings inherited from superclasses and interfaces, locations, new, changed and deleted controllers, and the workspace symbols.
 - `SpringIndexerKotlinClasspathIndexTest` runs the indexer on a project whose own index must not be used, and covers the outline before and after indexing.
 - `KotlinStructureTreeTest` calls the structure command and checks that the Kotlin types are grouped by stereotype, with their request mappings.
+
+### 9.4 IDE integration
+
+- **Language server:** `LanguageId.KOTLIN` and the `.kt` mapping in the language computer of `BootLanguageServerBootApp` (touch point 2 in 3.1). `KotlinLanguageServerComponents`, registered in `BootLanguageServerInitializer`, serves the outline (document symbols from the index). Kotlin is deliberately not one of the languages of the Java components, whose hovers and reconcilers read the text of a document as Java. The components take documents reported as `kotlin` or `plaintext` and answer only for `.kt` files, because a client reports `.kt` files as plain text when none of its extensions defines the Kotlin language.
+- **VSCode client:** `kotlin` in the `documentSelector` and as an activation event, and the `boot-java.kotlin-support.on` setting. The selector is by language, so the outline needs an extension that defines the Kotlin language. A selector by file pattern (`{ scheme: 'file', pattern: '**/*.kt' }`) would also cover setups with only the Red Hat Java extension; the server side already accepts that.
+- Workspace symbols and the structure view are global (not tied to open documents) and work from the index.
+
+**Tests:** `SpringIndexerKotlinRequestMappingTest` asks for the outline of a Kotlin file through `textDocument/documentSymbol` (the same symbols as for the Java file, also when the client reports the file as plain text, and none for other plain text files). Not verified in a running VSCode.
+
+### 9.5 Findings and limits so far
+
+- **The stereotype and request mapping indexers produce the same elements for the Kotlin twin projects as for the Java originals**, with the Java indexers unchanged.
+- The structure tree of a Kotlin project differs from the Java twin at the top: the Java project has package stereotypes from `package-info.java`, Kotlin has no package annotations.
+- **Not covered yet** (all in the plan, not implemented): enum classes, top-level functions and properties, the primary constructor and properties (so beans of Kotlin classes have no injection points yet), function bodies, supertype and parameter nodes in the AST (so the event type of an `@EventListener` method is empty), annotation use-site targets (they are read but the placement is not applied), the `kotlin-spring` allopen rule, Kotlin compiler plugins, inferred types (functions without a declared return type resolve to `void`, which is wrong data rather than missing data, and is why the signature of an expression-bodied function differs from the one of the Java twin), mixed Java/Kotlin projects (Java files do not see Kotlin classes without compiled output), line and column numbers on the Kotlin AST (`CompilationUnit.getLineNumber` is not set), dependencies between files (a changed constant does not index the files that use it again), persistence of the index, reconcilers, and the functional router DSLs.
+- **Open from the plan:** the tree-sitter prototype, the comparison of syntax providers, packaging (3.3), classpath and source folders from the JetBrains extension (5.4: the indexer finds Kotlin folders by convention), and the Eclipse side.
+
+### 9.6 Next steps
+
+1. Extend the shape of the AST: primary constructors and properties (injection points, `@Autowired lateinit var`), top-level functions, supertype and parameter nodes. The unchanged `ASTUtils.findInjectionPoints` and the event listener indexing then work on them, as long as the bindings of the new nodes are complete.
+2. Inferred return types for `@Bean` functions (a type oracle, 4.3 challenge 7), then the dependency tracking between Kotlin files.
+3. The tree-sitter syntax provider behind `KotlinSyntax`, and the comparison with the PSI based one (6.2).
+4. Decide about packaging (3.3): the Kotlin compiler as an optional module or an on-demand download.

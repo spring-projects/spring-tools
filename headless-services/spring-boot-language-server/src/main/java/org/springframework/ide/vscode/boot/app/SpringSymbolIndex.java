@@ -63,6 +63,7 @@ import org.springframework.ide.vscode.boot.java.utils.SpringFactoriesIndexer;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexer;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerConfigFiles;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJava;
+import org.springframework.ide.vscode.boot.java.utils.SpringIndexerProvider;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerXML;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerXMLNamespaceHandler;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerXMLNamespaceHandlerBeans;
@@ -116,11 +117,13 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	@Autowired CompilationUnitCache cuCache;
 	@Autowired BootPropertiesReconcileEngine bootPropertiesReconcileEngine;
 	@Autowired SpringFactoriesReconcileEngine springFactoriesReconcileEngine;
+	@Autowired(required = false) List<SpringIndexerProvider> additionalIndexerProviders;
 
 	private final ExecutorService updateQueue = Executors.newSingleThreadExecutor();
 	private final Map<String, CompletableFuture<Void>> latestScheduledTaskByProject = new ConcurrentHashMap<String, CompletableFuture<Void>>();
 	
 	private SpringIndexer[] indexers;
+	private SpringIndexer[] additionalIndexers = new SpringIndexer[0];
 
 	/**
 	 * Notified whenever the index changes, with the names of the projects affected by that
@@ -241,11 +244,15 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			}
 		}));
 
-		this.indexers = new SpringIndexer[] {
+		if (additionalIndexerProviders != null) {
+			this.additionalIndexers = additionalIndexerProviders.stream().map(provider -> provider.createIndexer(handler)).toArray(SpringIndexer[]::new);
+		}
+
+		this.indexers = withAdditionalIndexers(
 				factoriesIndexer, // factories indexder should be the first, so that java indexers and reconcilers can rely on those indexed elements
 				springIndexerJava,
 				configFilesIndexer
-		};
+		);
 
 		getWorkspaceService().onDidChangeWorkspaceFolders(evt -> {
 			log.debug("workspace roots have changed event arrived - added: " + evt.getEvent().getAdded() + " - removed: " + evt.getEvent().getRemoved());
@@ -286,7 +293,9 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	}
 
 	public void registerFileListeners() {
-		List<String> globPattern = Stream.of(springIndexerJava.getFileWatchPatterns(), factoriesIndexer.getFileWatchPatterns(), configFilesIndexer.getFileWatchPatterns())
+		List<String> globPattern = Stream.concat(
+					Stream.of(springIndexerJava.getFileWatchPatterns(), factoriesIndexer.getFileWatchPatterns(), configFilesIndexer.getFileWatchPatterns()),
+					Arrays.stream(additionalIndexers).map(SpringIndexer::getFileWatchPatterns))
 				.flatMap(Arrays::stream)
 				.distinct()
 				.collect(Collectors.toList());
@@ -306,6 +315,11 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 		});
 	}
 
+	/** the given indexers, followed by the additional ones that were contributed by {@link SpringIndexerProvider}s */
+	private SpringIndexer[] withAdditionalIndexers(SpringIndexer... builtInIndexers) {
+		return Stream.concat(Arrays.stream(builtInIndexers), Arrays.stream(additionalIndexers)).toArray(SpringIndexer[]::new);
+	}
+
 	public void configurationChanged(SymbolIndexConfig config) {
 		CompletableFuture.runAsync(() -> configureIndexer(config), this.updateQueue);
 
@@ -318,11 +332,11 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 	public void configureIndexer(SymbolIndexConfig config) {
 		synchronized (this) {
 			if (config.isScanXml() && !(Arrays.asList(this.indexers).contains(springIndexerXML))) {
-				this.indexers = new SpringIndexer[] { springIndexerJava, factoriesIndexer, configFilesIndexer, springIndexerXML };
+				this.indexers = withAdditionalIndexers(springIndexerJava, factoriesIndexer, configFilesIndexer, springIndexerXML);
 				springIndexerXML.updateScanFolders(config.getXmlScanFolders());
 				addXmlFileListeners(Arrays.asList(springIndexerXML.getFileWatchPatterns()));
 			} else if (!config.isScanXml() && Arrays.asList(this.indexers).contains(springIndexerXML)) {
-				this.indexers = new SpringIndexer[] { springIndexerJava, factoriesIndexer, configFilesIndexer };
+				this.indexers = withAdditionalIndexers(springIndexerJava, factoriesIndexer, configFilesIndexer);
 				springIndexerXML.updateScanFolders(new String[0]);
 				removeXmlFileListeners();
 			} else if (config.isScanXml()) {

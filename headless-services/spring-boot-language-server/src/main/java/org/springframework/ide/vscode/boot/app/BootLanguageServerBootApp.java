@@ -150,7 +150,8 @@ import reactor.core.publisher.Hooks;
 		"org.springframework.ide.vscode.boot.java.data",
 		"org.springframework.ide.vscode.boot.java.beans",
 		"org.springframework.ide.vscode.boot.java.stereotypes",
-		"org.springframework.ide.vscode.boot.java.requestmapping"
+		"org.springframework.ide.vscode.boot.java.requestmapping",
+		"org.springframework.ide.vscode.boot.kotlin"
 		})
 @EnableConfigurationProperties(BootLsConfigProperties.class)
 @SpringBootApplication

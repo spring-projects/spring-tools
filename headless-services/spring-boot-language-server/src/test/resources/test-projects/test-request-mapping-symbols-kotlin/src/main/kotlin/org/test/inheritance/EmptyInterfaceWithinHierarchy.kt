@@ -1,0 +1,3 @@
+package org.test.inheritance
+
+interface EmptyInterfaceWithinHierarchy : SuperInterfaceWithMappingPath

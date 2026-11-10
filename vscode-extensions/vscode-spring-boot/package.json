@@ -499,6 +499,11 @@
             "default": false,
             "description": "Enable/Disable Java test sources files scanning"
           },
+          "boot-java.kotlin-support.on": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable/Disable indexing of Kotlin source files (experimental, early version: Spring stereotypes, beans and request mappings)"
+          },
           "boot-java.lombok.on": {
             "type": "boolean",
             "default": false,

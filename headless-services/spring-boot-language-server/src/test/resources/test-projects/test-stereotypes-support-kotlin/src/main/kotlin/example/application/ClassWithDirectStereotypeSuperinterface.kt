@@ -1,0 +1,3 @@
+package example.application
+
+class ClassWithDirectStereotypeSuperinterface : DirectStereotypeInterface

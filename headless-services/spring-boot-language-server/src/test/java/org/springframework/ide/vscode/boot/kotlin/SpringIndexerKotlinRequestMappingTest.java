@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +41,7 @@ import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingInd
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.util.text.LanguageId;
 import org.springframework.ide.vscode.project.harness.BootLanguageServerHarness;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -332,6 +335,42 @@ public class SpringIndexerKotlinRequestMappingTest {
 	}
 
 	@Test
+	void outlineOfAKotlinFile() throws Exception {
+		String docUri = kotlinDirectory.toPath().resolve("src/main/kotlin/org/test/SimpleMappingClass.kt").toUri().toString();
+		harness.newEditorFromFileUri(docUri, LanguageId.KOTLIN);
+
+		// the same symbols as for the Java version of the file
+		String javaUri = new File(ProjectsHarness.class.getResource("/test-projects/test-request-mapping-symbols/").toURI()).toPath()
+				.resolve("src/main/java/org/test/SimpleMappingClass.java").toUri().toString();
+		harness.newEditorFromFileUri(javaUri, LanguageId.JAVA);
+
+		List<String> kotlinOutline = symbolNames(documentSymbols(docUri));
+		assertTrue(kotlinOutline.contains("@/greeting"), "the mapping is in the outline: " + kotlinOutline);
+		assertEquals(symbolNames(documentSymbols(javaUri)), kotlinOutline);
+	}
+
+	@Test
+	void outlineOfAKotlinFileThatTheClientReportsAsPlainText() throws Exception {
+		// VSCode without an extension that defines the Kotlin language
+		String docUri = kotlinDirectory.toPath().resolve("src/main/kotlin/org/test/SimpleMappingClass.kt").toUri().toString();
+		harness.newEditorFromFileUri(docUri, LanguageId.PLAINTEXT);
+
+		List<String> outline = symbolNames(documentSymbols(docUri));
+		assertTrue(outline.contains("@/greeting"), "the mapping is in the outline: " + outline);
+
+		// other plain text files get nothing
+		String otherUri = kotlinDirectory.toPath().resolve("pom.xml").toUri().toString().replace("pom.xml", "notes.txt");
+		harness.newEditor(LanguageId.PLAINTEXT, "some notes", otherUri);
+		assertTrue(documentSymbols(otherUri).isEmpty());
+	}
+
+	/** the outline, as the client asks for it */
+	private List<DocumentSymbol> documentSymbols(String docUri) throws Exception {
+		return harness.getServer().getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(docUri))).get()
+				.stream().map(either -> either.getRight()).toList();
+	}
+
+	@Test
 	void workspaceSymbolsIncludeTheKotlinFiles() {
 		List<String> kotlinSymbols = indexer.getAllSymbols("").stream()
 				.filter(symbol -> symbol.getLocation().getLeft().getUri().endsWith("/SimpleMappingClass.kt"))
@@ -340,6 +379,18 @@ public class SpringIndexerKotlinRequestMappingTest {
 
 		assertTrue(kotlinSymbols.contains("@/greeting"), "symbols: " + kotlinSymbols);
 		assertTrue(kotlinSymbols.stream().anyMatch(name -> name.contains("'simpleMappingClass'")), "symbols: " + kotlinSymbols);
+	}
+
+	/** the names of the symbols and their children, depth first */
+	private static List<String> symbolNames(List<? extends DocumentSymbol> symbols) {
+		List<String> result = new java.util.ArrayList<>();
+		for (DocumentSymbol symbol : symbols) {
+			result.add(symbol.getName());
+			if (symbol.getChildren() != null) {
+				result.addAll(symbolNames(symbol.getChildren()));
+			}
+		}
+		return result;
 	}
 
 }

@@ -29,6 +29,7 @@
   ],
   "activationEvents": [
     "onLanguage:java",
+    "onLanguage:kotlin",
     "onLanguage:xml"
   ],
   "contributes": {

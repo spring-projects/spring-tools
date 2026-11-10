@@ -29,6 +29,7 @@ import org.springframework.ide.vscode.boot.factories.SpringFactoriesLanguageServ
 import org.springframework.ide.vscode.boot.factories.SpringFactoriesReconcileEngine;
 import org.springframework.ide.vscode.boot.index.cache.IndexCache;
 import org.springframework.ide.vscode.boot.java.BootJavaLanguageServerComponents;
+import org.springframework.ide.vscode.boot.kotlin.KotlinLanguageServerComponents;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.HqlSemanticTokens;
 import org.springframework.ide.vscode.boot.java.data.jpa.queries.JpaQueryPropertiesLanguageServerComponents;
 import org.springframework.ide.vscode.boot.java.cron.CronSemanticTokens;
@@ -136,6 +137,7 @@ public class BootLanguageServerInitializer implements InitializingBean {
 			new BootPropertiesLanguageServerComponents(server, params, javaElementLocationProvider, parser, yamlStructureProvider, yamlAssistContextProvider, sourceLinks,
 					appContext.getBean(CronSemanticTokens.class), config, appContext.getBean(BootPropertiesReconcileEngine.class)),
 			new BootJavaLanguageServerComponents(appContext),
+			new KotlinLanguageServerComponents(springIndexer, config),
 			new SpringXMLLanguageServerComponents(server, springIndexer, params, config, appContext.getBean(SpelReconciler.class)),
 			new SpringFactoriesLanguageServerComponents(appContext.getBean(SpringFactoriesReconcileEngine.class), projectFinder, springIndexer, config),
 			new PomLanguageServerComponents(server, projectFinder, params.projectObserver, appContext.getBean(SpringProjectsProvider.class), appContext.getBean(MavenMetadataProvider.class), appContext.getBean(BootJavaConfig.class)),

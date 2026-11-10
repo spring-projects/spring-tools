@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2024 Broadcom, Inc.
+ * Copyright (c) 2024, 2026 Broadcom, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,6 +21,10 @@ public interface EmbeddedLanguageSnippet {
 	
 	default IRegion toSingleJavaRange(IRegion range) {
 		List<IRegion> ranges = toJavaRanges(range);
+		if (ranges.isEmpty()) {
+			// text not present in this source file (e.g. referenced constant), fall back to the reference location
+			return new Region(toJavaOffset(range.getOffset()), 0);
+		}
 		int start = ranges.get(0).getOffset();
 		int end = ranges.get(ranges.size() - 1).getEnd();
 		return new Region(start, end - start);

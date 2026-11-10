@@ -61,6 +61,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 public class SpringMetamodelIndexerBeansTest {
 
 	private static final String PROJECT_NAME = "test-spring-indexing";
+	
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
 	@Autowired private SpringMetamodelIndex springIndex;

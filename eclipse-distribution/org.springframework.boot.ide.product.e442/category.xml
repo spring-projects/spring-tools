@@ -65,7 +65,7 @@
 	<feature id="org.eclipse.tm4e.feature"/>
 
 	<bundle id="javassist"/>
-	<bundle id="javax.activation"/>
+<!--	<bundle id="javax.activation"/> -->
 	<bundle id="org.aopalliance"/>
 	<bundle id="org.apache.log4j"/>
 	<bundle id="org.yaml.snakeyaml"/>

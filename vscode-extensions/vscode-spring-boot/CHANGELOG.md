@@ -7,6 +7,7 @@
 * _(Spring Boot)_ [structure view] show number of included dependencies [#2079](https://github.com/spring-projects/spring-tools/issues/2079)
 * _(Spring Boot)_ [structure view] add preference to show/hide non-spring projects [#2078](https://github.com/spring-projects/spring-tools/issues/2078)
 * _(Spring Boot)_ [VS Code] False positive API_VERSIONING_NOT_CONFIGURED when using MediaType.parseMediaType() with useMediaTypeParameter() [#2077](https://github.com/spring-projects/spring-tools/issues/2077)
+* _(Spring Boot)_ Check ${...} placeholders in @Value and other annotation attributes outside SpEL expressions [#2073](https://github.com/spring-projects/spring-tools/issues/2073)
 * _(Spring Boot)_ Warn about unresolved ${...} placeholders in application.properties and application.yml [#2062](https://github.com/spring-projects/spring-tools/issues/2062)
 * _(Spring Boot)_ Set-Returning Functions not supported (Hibernate 7) [#2059](https://github.com/spring-projects/spring-tools/issues/2059)
 * _(Spring Boot)_ integrate feature flags [#2058](https://github.com/spring-projects/spring-tools/issues/2058)

@@ -57,6 +57,7 @@ import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.JavaDefinitionHandler;
 import org.springframework.ide.vscode.boot.java.beans.BeanNameDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.beans.NamedDefinitionProvider;
+import org.springframework.ide.vscode.boot.java.conditionals.ClassNameDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnBeanDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnResourceDefinitionProvider;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryAotMetadataService;
@@ -452,10 +453,13 @@ public class BootLanguageServerBootApp {
 	}
 	
 	@Bean
-	JavaDefinitionHandler javaDefinitionHandler(SimpleLanguageServer server, CompilationUnitCache cuCache, JavaProjectFinder projectFinder, SpringMetamodelIndex springIndex, JdtDataQuerySemanticTokensProvider qurySemanticTokens, BootJavaConfig config) {
+	JavaDefinitionHandler javaDefinitionHandler(SimpleLanguageServer server, CompilationUnitCache cuCache, JavaProjectFinder projectFinder, SpringMetamodelIndex springIndex, JdtDataQuerySemanticTokensProvider qurySemanticTokens, JavaElementLocationProvider javaElementLocationProvider, BootJavaConfig config) {
 		return new JavaDefinitionHandler(cuCache, projectFinder, List.of(
 				new ValueDefinitionProvider(config),
 				onlyWhen(config, FeatureFlag.CLASSPATH_RESOURCE_NAVIGATION, new ConditionalOnResourceDefinitionProvider()),
+				onlyWhen(config, FeatureFlag.CLASS_NAME_NAVIGATION, new ClassNameDefinitionProvider(javaElementLocationProvider, Map.of(
+						Annotations.CONDITIONAL_ON_CLASS, Set.of("name"),
+						Annotations.CONDITIONAL_ON_MISSING_CLASS, Set.of("value")))),
 				onlyWhen(config, FeatureFlag.BEAN_NAME_NAVIGATION, new BeanNameDefinitionProvider(springIndex, Set.of(Annotations.DEPENDS_ON))),
 				onlyWhen(config, FeatureFlag.BEAN_NAME_NAVIGATION, new ConditionalOnBeanDefinitionProvider(springIndex)),
 				onlyWhen(config, FeatureFlag.BEAN_NAME_NAVIGATION, new BeanNameDefinitionProvider(springIndex, Set.of(Annotations.RESOURCE_JAVAX, Annotations.RESOURCE_JAKARTA))),

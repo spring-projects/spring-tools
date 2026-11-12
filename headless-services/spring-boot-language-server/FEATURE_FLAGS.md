@@ -43,6 +43,7 @@ It is an object that maps a feature id to `true` (on) or `false` (off):
 | `bean-name-navigation` | Definition and references on bean names in `@DependsOn`, `@Qualifier`, `@Resource`, `@Named`, `@ConditionalOn(Missing)Bean` |
 | `profile-navigation` | References on profile names in `@Profile` |
 | `classpath-resource-navigation` | Definition on `classpath:` resources in annotation values |
+| `class-name-navigation` | Definition on class names in `@ConditionalOnClass(name)`, `@ConditionalOnMissingClass` |
 | `data-query-parameter-navigation` | Definition on parameters in data queries |
 | `spel-navigation` | Definition in SpEL expressions |
 | `aot-query-method-implementation-navigation` | Go to the generated implementation of Spring Data query methods |

@@ -83,6 +83,9 @@ public enum FeatureFlag {
 	/** Go to definition on {@code classpath:} resources in annotation values */
 	CLASSPATH_RESOURCE_NAVIGATION("classpath-resource-navigation"),
 
+	/** Go to definition on class names in annotation attributes, e.g. {@code @ConditionalOnClass(name = ...)} */
+	CLASS_NAME_NAVIGATION("class-name-navigation"),
+
 	/** Go to definition on parameters in data queries */
 	DATA_QUERY_PARAMETER_NAVIGATION("data-query-parameter-navigation"),
 

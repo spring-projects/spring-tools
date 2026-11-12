@@ -43,7 +43,7 @@ export class JavaToolingManager {
 
     private async promptInstall(): Promise<void> {
         const selection = await window.showWarningMessage(
-            'Spring Tools works best with a Java tooling extension installed (e.g. Language Support for Java by Red Hat). Install one now, or continue without full language server support.',
+            'Spring Tools works best with a Java tooling extension installed (the \"Language Support for Java by Red Hat\" or the \"Java and Kotlin by IntelliJ IDEA\" from Jetbrains). Install one now, or continue without full language server support.',
             ...this.descriptors.map(d => d.installLabel),
             LATER
         );

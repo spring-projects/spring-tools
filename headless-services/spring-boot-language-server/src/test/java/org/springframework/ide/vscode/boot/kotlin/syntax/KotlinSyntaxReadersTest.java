@@ -22,7 +22,7 @@ public class KotlinSyntaxReadersTest {
 	@Test
 	void theDefaultParserComesFirstAndAllParsersAreThere() {
 		assertThat(KotlinSyntaxReaders.names()).startsWith(KotlinSyntaxReaders.DEFAULT);
-		assertThat(KotlinSyntaxReaders.names()).containsExactly(KotlinSyntaxReaders.PSI, KotlinSyntaxReaders.TREE_SITTER, KotlinSyntaxReaders.SYNTAX_API);
+		assertThat(KotlinSyntaxReaders.names()).containsExactly(KotlinSyntaxReaders.SYNTAX_API, KotlinSyntaxReaders.PSI, KotlinSyntaxReaders.TREE_SITTER);
 	}
 
 	@Test
@@ -48,14 +48,14 @@ public class KotlinSyntaxReadersTest {
 
 		KotlinSyntaxReader reader = KotlinSyntaxReaders.create("nonsense");
 		try {
-			assertThat(reader).isInstanceOf(KotlinPsiReader.class);
+			assertThat(reader).isInstanceOf(KotlinSyntaxApiReader.class);
 		}
 		finally {
 			reader.dispose();
 		}
 		KotlinSyntaxReader forNull = KotlinSyntaxReaders.create(null);
 		try {
-			assertThat(forNull).isInstanceOf(KotlinPsiReader.class);
+			assertThat(forNull).isInstanceOf(KotlinSyntaxApiReader.class);
 		}
 		finally {
 			forNull.dispose();

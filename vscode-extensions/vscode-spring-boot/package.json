@@ -507,7 +507,7 @@
           },
           "boot-java.kotlin-support.parser": {
             "type": "string",
-            "default": "psi",
+            "default": "syntax-api",
             "enum": [
               "psi",
               "tree-sitter",

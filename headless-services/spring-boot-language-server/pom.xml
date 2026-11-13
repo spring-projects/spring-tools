@@ -19,12 +19,25 @@
 		<kotlin.compiler.version>2.2.21</kotlin.compiler.version>
 		<tree-sitter.version>0.26.6</tree-sitter.version>
 		<tree-sitter-kotlin.version>0.3.8.1</tree-sitter-kotlin.version>
+		<jetbrains-syntax.version>0.3.381</jetbrains-syntax.version>
 		<lsp4xml.version>0.24.0</lsp4xml.version>
 		<spring-ai.version>2.0.1</spring-ai.version>
 		<jmolecules.version>2025.0.2</jmolecules.version>
 	</properties>
 
 	<repositories>
+		<!-- the pure Kotlin parser of JetBrains (syntax-api and kotlin-syntax) is not published to Maven Central -->
+		<repository>
+			<id>jetbrains-intellij-dependencies</id>
+			<url>https://packages.jetbrains.team/maven/p/ij/intellij-dependencies</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+
 		<repository>
 			<id>${project.name}-repo</id>
 			<url>file://${project.basedir}/repo</url>
@@ -181,6 +194,43 @@
 			<groupId>io.github.bonede</groupId>
 			<artifactId>tree-sitter-kotlin</artifactId>
 			<version>${tree-sitter-kotlin.version}</version>
+		</dependency>
+
+		<!-- the third parser for Kotlin sources: the Kotlin parser of JetBrains that is written in Kotlin only, on top of the syntax api of the IntelliJ platform (experimental API) -->
+		<dependency>
+			<groupId>org.jetbrains.kotlin</groupId>
+			<artifactId>kotlin-stdlib</artifactId>
+			<exclusions>
+				<!-- keeps the version of the annotations the project had without this -->
+				<exclusion>
+					<groupId>org.jetbrains</groupId>
+					<artifactId>annotations</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.jetbrains</groupId>
+			<artifactId>kotlin-syntax-jvm</artifactId>
+			<version>${jetbrains-syntax.version}</version>
+			<exclusions>
+				<!-- keeps the version of the annotations the project had without this -->
+				<exclusion>
+					<groupId>org.jetbrains</groupId>
+					<artifactId>annotations</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.jetbrains</groupId>
+			<artifactId>syntax-api-jvm</artifactId>
+			<version>${jetbrains-syntax.version}</version>
+			<exclusions>
+				<!-- keeps the version of the annotations the project had without this -->
+				<exclusion>
+					<groupId>org.jetbrains</groupId>
+					<artifactId>annotations</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>

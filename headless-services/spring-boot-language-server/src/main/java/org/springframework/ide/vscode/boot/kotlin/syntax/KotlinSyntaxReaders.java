@@ -30,6 +30,9 @@ public final class KotlinSyntaxReaders {
 	/** the tree-sitter parser with the Kotlin grammar */
 	public static final String TREE_SITTER = "tree-sitter";
 
+	/** the Kotlin parser of JetBrains that is written in Kotlin only, on top of the syntax api of the IntelliJ platform */
+	public static final String SYNTAX_API = "syntax-api";
+
 	public static final String DEFAULT = PSI;
 
 	private static final Map<String, Supplier<KotlinSyntaxReader>> FACTORIES = new LinkedHashMap<>();
@@ -37,6 +40,7 @@ public final class KotlinSyntaxReaders {
 	static {
 		FACTORIES.put(PSI, KotlinPsiReader::new);
 		FACTORIES.put(TREE_SITTER, KotlinTreeSitterReader::new);
+		FACTORIES.put(SYNTAX_API, KotlinSyntaxApiReader::new);
 	}
 
 	private KotlinSyntaxReaders() {

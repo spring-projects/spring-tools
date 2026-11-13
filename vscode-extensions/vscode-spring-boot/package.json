@@ -505,6 +505,19 @@
             "default": false,
             "description": "Enable/Disable indexing of Kotlin source files (experimental, early version: Spring stereotypes, beans and request mappings)"
           },
+          "boot-java.kotlin-support.parser": {
+            "type": "string",
+            "default": "psi",
+            "enum": [
+              "psi",
+              "tree-sitter"
+            ],
+            "enumDescriptions": [
+              "Parse Kotlin sources with the parser of the embedded Kotlin compiler",
+              "Parse Kotlin sources with tree-sitter"
+            ],
+            "description": "The parser that reads Kotlin source files (experimental, only used while Kotlin support is enabled)"
+          },
           "boot-java.lombok.on": {
             "type": "boolean",
             "default": false,

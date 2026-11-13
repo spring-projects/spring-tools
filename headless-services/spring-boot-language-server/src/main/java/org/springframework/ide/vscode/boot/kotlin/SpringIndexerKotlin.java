@@ -47,7 +47,8 @@ import org.springframework.ide.vscode.boot.java.utils.SymbolHandler;
 import org.springframework.ide.vscode.boot.kotlin.ast.KotlinDomBuilder;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinDeclarationIndex;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypeResolver;
-import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinPsiReader;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReader;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReaders;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
 import org.springframework.ide.vscode.commons.jandex.JandexClasspath;
 import org.springframework.ide.vscode.commons.java.IClasspathUtil;
@@ -88,7 +89,8 @@ public class SpringIndexerKotlin implements SpringIndexer {
 	private final BooleanSupplier enabled;
 	private final BooleanSupplier scanTestSources;
 
-	private final KotlinPsiReader reader = new KotlinPsiReader();
+	private final Supplier<String> parser;
+	private final Map<String, KotlinSyntaxReader> readers = new ConcurrentHashMap<>();
 	private final KotlinDomBuilder domBuilder = new KotlinDomBuilder();
 	private final SpringIndexerJavaAstScanner astScanner;
 
@@ -130,15 +132,22 @@ public class SpringIndexerKotlin implements SpringIndexer {
 	 * @param componentIndexers the indexers that run on the Kotlin files, the ones of the Java side
 	 * @param enabled whether Kotlin files are indexed at all
 	 * @param scanTestSources whether the Kotlin files in the test source folders are indexed
+	 * @param parser the name of the parser that reads the Kotlin files (see {@link KotlinSyntaxReaders}), asked for again with every file
 	 * @param fileObserver watches the output folders for the Jandex index of the classpath
 	 */
 	public SpringIndexerKotlin(SymbolHandler symbolHandler, SpringComponentIndexer[] componentIndexers, BooleanSupplier enabled,
-			BooleanSupplier scanTestSources, Supplier<FileObserver> fileObserver) {
+			BooleanSupplier scanTestSources, Supplier<String> parser, Supplier<FileObserver> fileObserver) {
+		this.parser = parser;
 		this.symbolHandler = symbolHandler;
 		this.fileObserver = fileObserver;
 		this.enabled = enabled;
 		this.scanTestSources = scanTestSources;
 		this.astScanner = new SpringIndexerJavaAstScanner(componentIndexers, new SpringIndexerJavaDependencyTracker(), (context, index) -> {});
+	}
+
+	/** the reader of the parser that is chosen right now, set up on first use */
+	private KotlinSyntaxReader reader() {
+		return readers.computeIfAbsent(parser.get(), KotlinSyntaxReaders::create);
 	}
 
 	@Override
@@ -255,7 +264,7 @@ public class SpringIndexerKotlin implements SpringIndexer {
 		}
 
 		String file = UriUtil.toFileString(docURI);
-		KotlinSyntax.File syntax = reader.read(fileName(file), content);
+		KotlinSyntax.File syntax = reader().read(fileName(file), content);
 
 		// the file takes part with what the editor has, in the declarations of the project
 		state.declarations.put(docURI, syntax);
@@ -285,7 +294,7 @@ public class SpringIndexerKotlin implements SpringIndexer {
 		for (DocumentDescriptor doc : docs) {
 			try {
 				String text = content != null && docs.size() == 1 ? content : Files.readString(Paths.get(doc.getFile()), StandardCharsets.UTF_8);
-				KotlinSyntax.File syntax = reader.read(fileName(doc.getFile()), text);
+				KotlinSyntax.File syntax = reader().read(fileName(doc.getFile()), text);
 
 				contents.put(doc, text);
 				syntaxes.put(doc, syntax);

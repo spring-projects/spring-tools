@@ -14,16 +14,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.kotlin.jdt.KotlinJdtBindings;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedAnnotation;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedMemberValuePair;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedType;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedVariable;
-import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinPsiReader;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReader;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
@@ -31,17 +33,18 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 /**
  * @author Martin Lippert
  */
+@AllKotlinParsers
 public class KotlinConstantResolverTest {
 
-	private static final KotlinPsiReader reader = new KotlinPsiReader();
+	@Parameter
+	String parser;
+
+	private KotlinSyntaxReader reader() {
+		return KotlinTestParsers.reader(parser);
+	}
 
 	private KotlinDeclarationIndex declarations;
 	private KotlinTypeResolver resolver;
-
-	@AfterAll
-	static void tearDown() {
-		reader.dispose();
-	}
 
 	@BeforeEach
 	void setup() throws Exception {
@@ -51,7 +54,7 @@ public class KotlinConstantResolverTest {
 	}
 
 	private void file(String name, String source) {
-		declarations.put(name, reader.read(name + ".kt", source));
+		declarations.put(name, reader().read(name + ".kt", source));
 		resolver.clearCaches();
 	}
 

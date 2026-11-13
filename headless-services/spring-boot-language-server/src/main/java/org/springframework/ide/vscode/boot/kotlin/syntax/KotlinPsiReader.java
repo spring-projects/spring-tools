@@ -37,6 +37,7 @@ import org.jetbrains.kotlin.psi.KtClassOrObject;
 import org.jetbrains.kotlin.psi.KtCollectionLiteralExpression;
 import org.jetbrains.kotlin.psi.KtConstantExpression;
 import org.jetbrains.kotlin.psi.KtDeclaration;
+import org.jetbrains.kotlin.psi.KtEnumEntry;
 import org.jetbrains.kotlin.psi.KtEscapeStringTemplateEntry;
 import org.jetbrains.kotlin.psi.KtExpression;
 import org.jetbrains.kotlin.psi.KtFile;
@@ -52,6 +53,7 @@ import org.jetbrains.kotlin.psi.KtStringTemplateEntry;
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression;
 import org.jetbrains.kotlin.psi.KtSuperTypeListEntry;
 import org.jetbrains.kotlin.psi.KtTypeElement;
+import org.jetbrains.kotlin.psi.KtTypeProjection;
 import org.jetbrains.kotlin.psi.KtTypeReference;
 import org.jetbrains.kotlin.psi.KtUserType;
 import org.jetbrains.kotlin.psi.KtValueArgument;
@@ -88,7 +90,7 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Value;
  *
  * @author Martin Lippert
  */
-public class KotlinPsiReader {
+public class KotlinPsiReader implements KotlinSyntaxReader {
 
 	private static final Logger log = LoggerFactory.getLogger(KotlinPsiReader.class);
 
@@ -106,6 +108,7 @@ public class KotlinPsiReader {
 	 * @param fileName the name of the file, only used to name the parsed file
 	 * @param text the source text
 	 */
+	@Override
 	public KotlinSyntax.File read(String fileName, String text) {
 		OffsetMapper mapper = new OffsetMapper(text);
 		String normalized = mapper.normalizedText();
@@ -118,7 +121,7 @@ public class KotlinPsiReader {
 		return new Reader(mapper, text.length()).read(ktFile);
 	}
 
-	/** releases the parser environment, it is set up again if more files are read */
+	@Override
 	public void dispose() {
 		synchronized (lock) {
 			if (disposable != null) {
@@ -298,7 +301,8 @@ public class KotlinPsiReader {
 				else if (member instanceof KtProperty property) {
 					addConstant(property, constants);
 				}
-				else if (member instanceof KtClassOrObject nestedClass) {
+				else if (member instanceof KtClassOrObject nestedClass && !(member instanceof KtEnumEntry)) {
+					// the entries of an enum are the values of the enum, no classes declared in it
 					nested.add(readClass(nestedClass));
 				}
 			}
@@ -454,8 +458,8 @@ public class KotlinPsiReader {
 
 			if (element instanceof KtUserType userType) {
 				List<TypeRef> arguments = new ArrayList<>();
-				for (KtTypeReference argument : userType.getTypeArgumentsAsTypes()) {
-					arguments.add(argument != null ? readType(argument) : new TypeRef("*", false, List.of(), range(userType)));
+				for (KtTypeProjection projection : userType.getTypeArguments()) {
+					arguments.add(projection.getTypeReference() != null ? readType(projection.getTypeReference()) : new TypeRef("*", false, List.of(), range(projection)));
 				}
 				return new TypeRef(userTypeName(userType), nullable, arguments, range(reference));
 			}

@@ -22,6 +22,7 @@ import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -29,6 +30,7 @@ import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.bootiful.BootLanguageServerTest;
 import org.springframework.ide.vscode.boot.bootiful.IndexerTestConf;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
+import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
 import org.springframework.ide.vscode.boot.java.commands.JsonNodeHandler.Node;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.languageserver.java.JavaProjectFinder;
@@ -46,7 +48,11 @@ import com.google.gson.JsonObject;
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(IndexerTestConf.class)
+@AllKotlinParsers
 public class KotlinStructureTreeTest {
+
+	@Parameter
+	String parser;
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -73,7 +79,7 @@ public class KotlinStructureTreeTest {
 	}
 
 	private void setKotlinSupport(boolean enabled) throws Exception {
-		harness.changeConfiguration(Map.of("boot-java", Map.of("kotlin-support", Map.of("on", enabled))));
+		harness.changeConfiguration(Map.of("boot-java", Map.of("kotlin-support", Map.of("on", enabled, "parser", parser))));
 		indexer.waitOperation().get(15, TimeUnit.SECONDS);
 	}
 

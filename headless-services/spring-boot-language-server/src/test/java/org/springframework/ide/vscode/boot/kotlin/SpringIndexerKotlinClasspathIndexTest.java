@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 
 import org.eclipse.lsp4j.Diagnostic;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
 import org.springframework.ide.vscode.boot.java.beans.ComponentIndexer;
 import org.springframework.ide.vscode.boot.java.data.DataRepositoryIndexer;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
@@ -46,7 +47,11 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
  *
  * @author Martin Lippert
  */
+@AllKotlinParsers
 public class SpringIndexerKotlinClasspathIndexTest {
+
+	@Parameter
+	String parser;
 
 	/** a project whose own index must not be used */
 	private static IJavaProject withoutUsableIndex(IJavaProject project) {
@@ -87,7 +92,7 @@ public class SpringIndexerKotlinClasspathIndexTest {
 		};
 
 		SpringComponentIndexer[] indexers = { new StereotypesIndexer(), new ComponentIndexer(new DataRepositoryIndexer(null)) };
-		return new SpringIndexerKotlin(handler, indexers, () -> true, () -> false, () -> NO_FILE_OBSERVER);
+		return new SpringIndexerKotlin(handler, indexers, () -> true, () -> false, () -> parser, () -> NO_FILE_OBSERVER);
 	}
 
 	@Test

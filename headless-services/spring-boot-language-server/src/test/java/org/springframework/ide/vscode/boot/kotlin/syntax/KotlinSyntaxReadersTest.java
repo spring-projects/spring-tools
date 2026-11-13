@@ -22,7 +22,7 @@ public class KotlinSyntaxReadersTest {
 	@Test
 	void theDefaultParserComesFirstAndAllParsersAreThere() {
 		assertThat(KotlinSyntaxReaders.names()).startsWith(KotlinSyntaxReaders.DEFAULT);
-		assertThat(KotlinSyntaxReaders.names()).containsExactly(KotlinSyntaxReaders.PSI, KotlinSyntaxReaders.TREE_SITTER);
+		assertThat(KotlinSyntaxReaders.names()).containsExactly(KotlinSyntaxReaders.PSI, KotlinSyntaxReaders.TREE_SITTER, KotlinSyntaxReaders.SYNTAX_API);
 	}
 
 	@Test

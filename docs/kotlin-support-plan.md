@@ -429,7 +429,7 @@ Possible outcomes: the bridge on PSI or on tree-sitter as the main path (A and B
 
 ### 6.3 Phases
 
-Status (section 9): phase 1 (through a `BindingResolver` bridge instead of a binding-access interface, see 4.3 and 9.2) and phases 5 and 6 are implemented for stereotypes, request mappings and the other component indexers of the Java side. Phase 2 (tree-sitter) and the comparison of phase 4 are open.
+Status (section 9): phase 1 (through a `BindingResolver` bridge instead of a binding-access interface, see 4.3 and 9.2) and phases 5 and 6 are implemented for stereotypes, request mappings and the other component indexers of the Java side. Phase 2 (tree-sitter as a syntax provider, 9.1) is implemented; the measured comparison of phase 4 is open.
 
 | Phase | Scope | Exit criteria |
 |---|---|---|
@@ -477,11 +477,25 @@ The first steps of the plan are implemented on the branch `features/kotlin-suppo
 
 Package `org.springframework.ide.vscode.boot.kotlin.syntax`, kept apart from the Java code:
 
-- `KotlinSyntax` is the model of the syntax of a Kotlin file: package, imports, classes (kind, name, supertypes, annotations with their arguments, functions, nested classes), constants, all with source ranges. It is what the rest of the Kotlin support works on, so the syntax provider can be exchanged (tree-sitter, 6.2).
-- `KotlinPsiReader` fills it from the Kotlin compiler's PSI parser (`kotlin-compiler-embeddable` 2.2.21). The parser environment is set up on first use. Line separators are normalized for the parser and mapped back, so ranges are offsets into the original text.
-- `pom.xml` of the language server: the `kotlin-compiler-embeddable` dependency (version 2.2.21 pinned in the pom, the Spring Boot BOM manages Kotlin 2.3). It adds the Kotlin compiler to the language server jar even for Java-only users (the executable jar grows from about 90 MB to 154 MB), which is the packaging question of 3.3 and still open. The parser classes are only loaded when the first Kotlin file is read.
+- `KotlinSyntax` is the model of the syntax of a Kotlin file: package, imports, classes (kind, name, supertypes, annotations with their arguments, functions, nested classes), constants, all with source ranges. It is what the rest of the Kotlin support works on (the DOM builder, the bindings, the indexer), so the parser can be exchanged without touching anything else.
+- `KotlinSyntaxReader` is the interface of a parser (`read(fileName, text)`, `dispose()`), and `KotlinSyntaxReaders` is the registry of the implementations by name. **Three parsers are in the language server and can be switched with the setting `boot-java.kotlin-support.parser`** (`psi`, the default, `tree-sitter` or `syntax-api`; `BootJavaConfig.getKotlinParser()`). The indexer asks for the parser again with every file, so switching needs no restart. Everything behind the syntax model (JDT AST, JDT bindings, stereotype elements) is shared by all of them.
+- `KotlinPsiReader` fills the model from the Kotlin compiler's PSI parser (`kotlin-compiler-embeddable` 2.2.21). The parser environment is set up on first use. Line separators are normalized for the parser and mapped back, so ranges are offsets into the original text.
+- `KotlinTreeSitterReader` fills it from tree-sitter (`io.github.bonede:tree-sitter` 0.26.6 and `tree-sitter-kotlin` 0.3.8.1: MIT licensed JNI bindings, with native libraries for linux and macos on x64 and arm64 and for windows x64 inside the jars, about 2.6 MB in total; there is no windows arm64 library). Things that had to be handled: the source is given to the parser as UTF-16 (the offsets are then exact, the JNI string conversion would give modified UTF-8 offsets); the grammar is confused by comments in some places (a comment in front of `@Anno(...)` makes the annotation a loose expression), so a scanner finds the comments first and the parser gets the source with all of them blanked out (offsets stay, doc comments are taken from the scanner); `fun interface` is not known by the grammar, the `fun` is blanked out; the parts of an unclosed class end up in a flat error node and are recovered as a class. **Limits of the grammar:** a class with `by` delegation and a body (`class A : B by c { ... }`) has no members, and identifiers with letters of some scripts (Chinese) are not understood. Both are pinned by `KotlinTreeSitterReaderTest`, which fails when a newer grammar fixes them.
+- `KotlinSyntaxApiReader` fills it from the Kotlin parser that JetBrains wrote in Kotlin only (`org.jetbrains:kotlin-syntax-jvm` and `org.jetbrains:syntax-api-jvm` 0.3.381, Apache 2.0, from the intellij-dependencies repository of JetBrains, `https://packages.jetbrains.team/maven/p/ij/intellij-dependencies`, which is not Maven Central and is added to the `pom.xml`; the API is marked experimental, so the version is pinned). It is the parser of the Kotlin compiler ported to the syntax framework of the IntelliJ platform, **without PSI**: the same grammar, the same node types, the same binding of comments and doc comments to declarations. The tree has the shape of the PSI tree, so the reader follows `KotlinPsiReader` closely, reading from the raw nodes what PSI has accessors for. The result is **exactly** what the PSI reader reads (the ranges next to comments included, also for broken sources), and the parser has none of the limits of the tree-sitter grammar (`fun interface`, `by` delegation with a body, any script in identifiers). Like PSI it needs line separators of `\n` only, so the same `OffsetMapper` maps the offsets back. Function bodies are created lazily (`KotlinParser(isScript = false, isLazy = true)`), so they are not parsed unless asked for; `new KotlinSyntaxApiReader(false)` parses them. The pom needs two exclusions of `org.jetbrains:annotations` (the new dependencies would downgrade it from 26.1.0 through Maven's mediation) and the Kotlin standard library as a compile dependency.
+- `pom.xml` of the language server: the `kotlin-compiler-embeddable` dependency (version 2.2.21 pinned in the pom, the Spring Boot BOM manages Kotlin 2.3). It adds the Kotlin compiler to the language server jar even for Java-only users (the executable jar grows from about 90 MB to 154 MB), which is the packaging question of 3.3 and still open. The parser classes are only loaded when the first Kotlin file is read. In an ad-hoc test that started the executable jar through Spring Boot's `PropertiesLauncher`, tree-sitter loaded its native library from the nested jar and parsed, while the PSI parser failed with "Unable to find extension point configuration extensions/compiler.xml" (the same with the jar from before the tree-sitter change). Whether that also happens with the real launch has to be checked.
 
-**Tests:** `KotlinPsiReaderTest` (syntax, ranges, CRLF, syntax errors).
+**Tests: the parsers are held to the same tests.** A test class that carries `@AllKotlinParsers` (a parameterized class over `KotlinSyntaxReaders.names()`, the parser name is injected as `@Parameter String parser`) runs once for every registered parser, so **adding a parser means registering it in `KotlinSyntaxReaders` and nothing else**: all of these then run against it.
+
+- `KotlinSyntaxReaderTest`: the contract of the syntax model (package and imports, all kinds of classes, annotations and all kinds of argument values, functions and types, ranges, line separators, Unicode, comments, syntax errors, concurrency, nesting).
+- `KotlinStereotypeElementsTest`: Kotlin snippets through parser, JDT AST, bindings and the unchanged `StereotypesIndexer` to the `StereotypeClassElement`s and `StereotypeMethodElement`s of the structure view (annotation types with meta annotations, supertypes, binary names of nested types, method signatures and labels, locations, content hashes).
+- `KotlinDomBuilderTest`, `KotlinJdtBridgeTest`, `KotlinJdtBridgeComponentIndexerTest`, `KotlinTypeResolverTest`, `KotlinConstantResolverTest`: AST, bindings and resolution on top of each parser.
+- `SpringIndexerKotlinTest`, `SpringIndexerKotlinRequestMappingTest`, `SpringIndexerKotlinClasspathIndexTest`, `KotlinStructureTreeTest`: the whole language server with the Kotlin test projects, with the parser chosen through the setting.
+- `KotlinParserParityTest`: every parser has to produce exactly the same `KotlinSyntax` (ranges included) as the default parser for all Kotlin files of the test projects, with LF and with CRLF.
+- `KotlinTreeSitterReaderTest` (tree-sitter only: recovery, the limits of the grammar, scale), `KotlinSyntaxApiReaderTest` (syntax-api only: reads exactly what PSI reads, lazy and eager bodies read the same) and `KotlinSyntaxReadersTest` (registry).
+
+What the contract deliberately leaves open: the ranges of declarations next to comments (the PSI parser binds comments next to a declaration to it, tree-sitter does not; doc comments are part of the declaration for both), and how much of a class after a syntax error is recovered (tree-sitter finds more than PSI).
+
+Two things of the PSI reader were fixed on the way, because they would have been part of the contract: the entries of an enum are no nested classes any more, and the range of a star projection (`List<*>`) is the star.
 
 ### 9.2 Kotlin types and the JDT bridge
 
@@ -537,11 +551,62 @@ Changes outside the new package, as discussed in 3.1:
 - **The stereotype and request mapping indexers produce the same elements for the Kotlin twin projects as for the Java originals**, with the Java indexers unchanged.
 - The structure tree of a Kotlin project differs from the Java twin at the top: the Java project has package stereotypes from `package-info.java`, Kotlin has no package annotations.
 - **Not covered yet** (all in the plan, not implemented): enum classes, top-level functions and properties, the primary constructor and properties (so beans of Kotlin classes have no injection points yet), function bodies, supertype and parameter nodes in the AST (so the event type of an `@EventListener` method is empty), annotation use-site targets (they are read but the placement is not applied), the `kotlin-spring` allopen rule, Kotlin compiler plugins, inferred types (functions without a declared return type resolve to `void`, which is wrong data rather than missing data, and is why the signature of an expression-bodied function differs from the one of the Java twin), mixed Java/Kotlin projects (Java files do not see Kotlin classes without compiled output), line and column numbers on the Kotlin AST (`CompilationUnit.getLineNumber` is not set), dependencies between files (a changed constant does not index the files that use it again), persistence of the index, reconcilers, and the functional router DSLs.
-- **Open from the plan:** the tree-sitter prototype, the comparison of syntax providers, packaging (3.3), classpath and source folders from the JetBrains extension (5.4: the indexer finds Kotlin folders by convention), and the Eclipse side.
+- **Open from the plan:** the incremental re-parse of tree-sitter (not used, 9.5a), packaging (3.3), classpath and source folders from the JetBrains extension (5.4: the indexer finds Kotlin folders by convention), and the Eclipse side.
+
+### 9.5a Comparison of the three syntax providers (measured Nov 2026)
+
+Measured in fresh JVMs (`-Xmx2g`, 16 cores, linux arm64, JDK 25), reading to `KotlinSyntax` only (everything behind it is shared). Corpora: the 41 files of the Kotlin test projects, and generated Spring style Kotlin with short function bodies (about 90 lines per file): 500 files (1.4 MB), 5000 files (14.2 MB, 455k lines), and one file of 13k lines (395 KB); and generated Kotlin with realistic function bodies of about 25 lines (600 files, 6 MB, and one file of 13k lines). On all of them `psi` and `syntax-api` read exactly the same, and `tree-sitter` the same apart from the ranges of declarations next to comments (see 9.1). The harness (generators, `Bench`, the PSI variants, a runner) is in `headless-services/spring-boot-language-server/src/test/benchmark` (`run-benchmarks.sh`).
+
+**Short function bodies, as the language server reads Kotlin today** (`psi` and `syntax-api` create the bodies lazily, which means never, `tree-sitter` skips them):
+
+| | PSI | tree-sitter | syntax-api |
+|---|---|---|---|
+| set up (first file) | 265 ms | 30 ms | 63 ms |
+| 41 files, first pass (cold JIT) | 55-58 ms | 40 ms | 35 ms |
+| per file warm, 90 lines | 0.17 ms | 3.3 ms | 0.13 ms |
+| 5000 files, one thread, warm | 0.87 s | 16.5 s | 0.64 s |
+| 5000 files, 8 threads | 0.13 s | 7.6 s | 0.11 s |
+| one file of 13k lines (editing the biggest file) | 25 ms | 421 ms | 21 ms |
+| heap held by the parser | 3 MB | 1.0 MB | 0.5 MB |
+| process memory (RSS) after set up | +52 MB | +18 MB | +18 MB |
+| process memory after 5000 files / peak | 561 / 580 MB | 302 / 308 MB | 574 / 678 MB |
+| process memory with the 13k lines file, peak | 764 MB | 211 MB | 541 MB |
+| allocation per file (90 lines) | 218 KB | 122 KB | 280 KB |
+| heap held by the results (5000 files) | 72 MB | 80 MB | 80 MB |
+
+**Realistic function bodies (about 25 lines each), with every parser once without and once with the bodies parsed:**
+
+| | PSI, bodies lazy | PSI, all bodies | tree-sitter, bodies skipped | tree-sitter, all bodies | syntax-api, bodies lazy | syntax-api, all bodies |
+|---|---|---|---|---|---|---|
+| 600 files (10 KB each), per file warm | 0.21 ms | 1.14 ms | 3.0 ms | 7.2 ms | 0.17 ms | 0.59 ms |
+| allocation per file | 219 KB | 1350 KB | 154 KB | 154 KB | 253 KB | 924 KB |
+| one file of 13k lines (600 KB) | 12 ms | 67 ms | 171 ms | 419 ms | 10 ms | 38 ms |
+| process memory, peak, 600 files | 322 MB | 446 MB | 159 MB | 164 MB | 329 MB | 413 MB |
+
+- **syntax-api is the fastest parser, and the one that costs least to switch to.** It is 1.2-1.4 times faster than PSI for what the language server reads today, and 1.8-2 times faster when both parse the bodies. Its set up is 4 times faster than the one of PSI (63 ms against 265 ms) and does not need the Kotlin compiler's environment. It reads exactly what PSI reads, because it is the same grammar, so nothing about the model changes, there are no limits to document (tree-sitter has three), and the tests need no exceptions.
+- **PSI is 14-19 times and syntax-api 18-25 times faster than tree-sitter** for what is read today. When all of them parse the bodies, PSI is 6 times and syntax-api 12 times faster (1.14 and 0.59 ms against 7.2 ms for a file of 10 KB).
+- **Memory:** "more lightweight" is true for the footprint and the set up (+18 MB instead of +52 MB, no 64 MB of jars, see below), but not for the memory a running reader needs: syntax-api allocates a little more than PSI when it skips the bodies (280 KB against 218 KB per file) and less when it parses them (924 KB against 1350 KB), and the process sizes of both are the same, as they depend on how the JVM sizes its heap. tree-sitter is the leanest while it reads (about half the process memory, and 120-150 KB per file independent of the bodies), it pays with time. The parsing itself of syntax-api and PSI is done on the Java heap, tree-sitter parses natively.
+- **Threads:** syntax-api and PSI scale with the number of threads (5000 files: 0.11 and 0.13 s with 8 threads), tree-sitter does not scale as well, because asking its tree for the nodes is a call into native code (the reader limits itself to four threads that read trees at once).
+- **What was done to the tree-sitter reader after its first measurement** (5000 files, one thread: 48 s): the comments are found by a scanner (the source was parsed twice and the whole tree walked to find them), the nodes of the tree are cached, the bodies of functions with a block are not parsed (the scanner finds them by their braces, with `new KotlinTreeSitterReader(false)` they are parsed again), and the number of threads that read trees at once is limited. Skipping the bodies changes nothing of what is read (checked on 2300 files for both parsers that can skip them, and in `KotlinTreeSitterReaderTest`, `KotlinSyntaxApiReaderTest`).
+- **Risks of syntax-api:** the API is marked experimental and the artifacts are version 0.3.x (the node types it shares with the Kotlin compiler are stable, the framework around them is not), they are published to a JetBrains repository that has to be reachable by every build (a mirror or the build of the standalone language server may need it configured), and it is not tied to a version of the Kotlin compiler in any way that is visible to the build (the grammar it has is the one of the version of the parser). PSI has the same grammar and the same maintainers, but also the whole compiler as a dependency.
+- tree-sitter could re-parse incrementally after an edit, which is not used: the indexer reads whole files.
+- For a small project (tens of files) all of them are done in well under a second. For a large one the indexing time with tree-sitter is seconds (about 3 ms per file) instead of the blink of the other two, in a language server that indexes in the background.
+
+**Size of the executable jar** (`spring-boot-language-server-*-exec.jar`, the nested jars are stored uncompressed, the second column is the size when compressed with gzip, which is what the VSIX contains more or less):
+
+| | jar | compressed |
+|---|---|---|
+| no Kotlin parser | 89.9 MB | 81.7 MB |
+| with the Kotlin compiler (PSI) | 154.1 MB (+64.2 MB) | 140.5 MB |
+| with tree-sitter | 92.5 MB (+2.6 MB) | 84.1 MB |
+| with syntax-api | 92.4 MB (+2.5 MB) | 84.0 MB |
+| with all three | 157.5 MB | 143.6 MB |
+
+The Kotlin compiler is `kotlin-compiler-embeddable` (56.9 MB) plus the Kotlin jars that only it needs (reflect, coroutines, script runtime, daemon, 5.5 MB together). syntax-api is its three jars (0.7 MB) and the Kotlin standard library (1.8 MB), which PSI needs, too. tree-sitter is the two binding jars with the native libraries of five platforms (no windows arm64). With syntax-api as the default parser the Kotlin compiler could be dropped from the jar and the language server would grow by 2.5 MB, with PSI and tree-sitter no longer available.
 
 ### 9.6 Next steps
 
 1. Extend the shape of the AST: primary constructors and properties (injection points, `@Autowired lateinit var`), top-level functions, supertype and parameter nodes. The unchanged `ASTUtils.findInjectionPoints` and the event listener indexing then work on them, as long as the bindings of the new nodes are complete.
 2. Inferred return types for `@Bean` functions (a type oracle, 4.3 challenge 7), then the dependency tracking between Kotlin files.
-3. The tree-sitter syntax provider behind `KotlinSyntax`, and the comparison with the PSI based one (6.2).
+3. Decide about the default parser with the numbers of 9.5a: syntax-api reads exactly what PSI reads, is the fastest, and would take the Kotlin compiler out of the jar (-64 MB); what is left to decide is whether an experimental API and a second Maven repository are acceptable. Check the real launch of the executable jar with the PSI parser (9.1).
 4. Decide about packaging (3.3): the Kotlin compiler as an optional module or an on-demand download.

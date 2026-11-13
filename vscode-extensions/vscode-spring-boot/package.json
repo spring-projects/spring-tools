@@ -510,11 +510,13 @@
             "default": "psi",
             "enum": [
               "psi",
-              "tree-sitter"
+              "tree-sitter",
+              "syntax-api"
             ],
             "enumDescriptions": [
               "Parse Kotlin sources with the parser of the embedded Kotlin compiler",
-              "Parse Kotlin sources with tree-sitter"
+              "Parse Kotlin sources with tree-sitter",
+              "Parse Kotlin sources with the Kotlin parser of JetBrains that is written in Kotlin only (syntax-api)"
             ],
             "description": "The parser that reads Kotlin source files (experimental, only used while Kotlin support is enabled)"
           },

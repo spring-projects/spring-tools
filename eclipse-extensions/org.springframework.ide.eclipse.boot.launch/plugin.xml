@@ -77,13 +77,6 @@
  
  <extension point="org.eclipse.debug.core.launchConfigurationTypes">
     <launchConfigurationType
-          name="Spring Boot CLI Script"
-          delegate="org.springframework.ide.eclipse.boot.launch.cli.BootGroovyScriptLaunchConfigurationDelegate"
-          category="org.eclipse.ui.externaltools"
-          modes="run"
-          id="org.springsource.ide.eclipse.boot.groovy.script.launch">
-    </launchConfigurationType>
-    <launchConfigurationType
           id="org.springframework.ide.eclipse.boot.launch"
           name="Spring Boot App"
           delegate="org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate"
@@ -101,51 +94,8 @@
           sourceLocatorId="org.eclipse.jdt.launching.sourceLocator.JavaSourceLookupDirector"
           sourcePathComputerId="org.eclipse.jdt.launching.sourceLookup.javaSourcePathComputer">
     </launchConfigurationType>
-    <launchConfigurationType
-          category="org.eclipse.ui.externaltools"
-          delegate="org.springframework.ide.eclipse.boot.launch.cli.CloudCliServiceLaunchConfigurationDelegate"
-          id="org.springframework.ide.eclipse.boot.launch.cloud.cli.service"
-          modes="run"
-          name="Spring Cloud CLI Service">
-    </launchConfigurationType>
   </extension>
  
- <extension
-       point="org.eclipse.debug.ui.launchShortcuts">
-    <shortcut
-          class="org.springframework.ide.eclipse.boot.launch.cli.BootGroovyScriptLaunchShortcut"
-          description="Run or Debug as a Spring Boot CLI Script"
-          id="org.springsource.ide.eclipse.boot.BootLaunchGroovyScriptShortcut"
-          icon="platform:/plugin/org.springframework.ide.eclipse.boot/resources/icons/spring.png"
-          label="Spring Boot CLI Script"
-          modes="run"> <!-- debug not yet support -->
-        <contextualLaunch>
-           <enablement>
-             <count value="1"/>
-             <iterate>
-           	   <adapt type="org.eclipse.core.resources.IFile">
-		             <test
-		                   property="org.eclipse.core.resources.name"
-		                   value="*.groovy">
-		             </test>
-           	   </adapt>
-             </iterate>
-           </enablement>
-        </contextualLaunch>
-        <configurationType
-               id="org.eclipse.jdt.launching.localJavaApplication">
-         </configurationType>
-        <description
-               description="Run as Spring Boot CLI Script"
-               mode="run">
-         </description>
-<!--     Debugging is not yet supported.
-         <description
-               description="Debug as Spring Boot CLI Script"
-               mode="debug">
-         </description> -->
-    </shortcut>
- </extension>
  
  <extension point="org.eclipse.debug.ui.launchConfigurationTypeImages">
     <launchConfigurationTypeImage
@@ -183,23 +133,6 @@
    </extension>
 
  
-<!-- TODO: ui for editing Spring Groovy CLI launch configs
- <extension point="org.eclipse.debug.ui.launchConfigurationTypeImages">
-    <launchConfigurationTypeImage
-        icon="resources/icons/spring.png"
-        configTypeID="org.springsource.ide.eclipse.boot.groovy.script.launch"
-        id="org.springsource.ide.eclipse.boot.groovy.script.launch.image">
-    </launchConfigurationTypeImage>
-</extension>
-
-<extension point="org.eclipse.debug.ui.launchConfigurationTabGroups">
-    <launchConfigurationTabGroup
-        type="org.springsource.ide.eclipse.boot.groovy.script.launch"
-        class="org.springframework.ide.eclipse.boot.core.cli.BootGroovyScriptLaunchConfigurationTabGroup"
-        id="org.springframework.ide.eclipse.boot.core.cli.BootGroovyScriptLaunchConfigurationTabGroup">
-    </launchConfigurationTabGroup>
-</extension>
--->
  
    <extension point="org.eclipse.ui.commands">
       <command
@@ -245,10 +178,6 @@
    <processFactory
            id="org.springframework.ide.eclipse.boot.launch.process.BootProcessFactory"
            class="org.springframework.ide.eclipse.boot.launch.process.BootProcessFactory">
-   </processFactory>
-   <processFactory
-         class="org.springframework.ide.eclipse.boot.launch.cli.CloudCliServiceLaunchConfigurationDelegate$CloudCliProcessFactory"
-         id="org.springframework.ide.eclipse.boot.launch.cli.CloudCliServiceLaunchConfigurationDelegate$CloudCliProcessFactory">
    </processFactory>
  </extension>
    

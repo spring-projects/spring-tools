@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2016 Pivotal Software, Inc.
+ * Copyright (c) 2015, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -23,7 +23,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.debug.core.ILaunchManager;
 import org.springframework.ide.eclipse.boot.core.BootPreferences;
-import org.springframework.ide.eclipse.boot.core.cli.BootInstallManager;
 import org.springframework.ide.eclipse.boot.dash.api.RunTargetType;
 import org.springframework.ide.eclipse.boot.dash.console.CloudAppLogManager;
 import org.springframework.ide.eclipse.boot.dash.di.SimpleDIContext;
@@ -44,7 +43,6 @@ import org.springsource.ide.eclipse.commons.tests.util.StsTestUtil;
 public class TestBootDashModelContext extends BootDashModelContext {
 
 	private File stateLoc;
-	private File installLoc;
 	private ILaunchManager launchManager;
 	private IWorkspace workspace;
 	SecuredCredentialsStore secureStore = new MockSecuredCredentialStore();
@@ -53,8 +51,6 @@ public class TestBootDashModelContext extends BootDashModelContext {
 	private LiveVariable<Pattern> bootProjectExclusion = new LiveVariable<>(BootPreferences.DEFAULT_BOOT_PROJECT_EXCLUDE);
 	private IPropertyStore viewProperties = new InMemoryPropertyStore();
 	private IPropertyStore privateProperties = new InMemoryPropertyStore();
-	private IPropertyStore installProperties = new InMemoryPropertyStore();
-	private BootInstallManager bootInstalls;
 
 	public TestBootDashModelContext(IWorkspace workspace, ILaunchManager launchMamager) {
 		super(createInjections());
@@ -62,7 +58,6 @@ public class TestBootDashModelContext extends BootDashModelContext {
 			this.workspace = workspace;
 			this.launchManager = launchMamager;
 			stateLoc = StsTestUtil.createTempDirectory("plugin-state", null);
-			installLoc = StsTestUtil.createTempDirectory("boot-installs", null);
 			this.projectProperties = new MockScopedPropertyStore<>();
 			this.runTargetProperties = new MockScopedPropertyStore<>();
 			reload();
@@ -131,17 +126,11 @@ public class TestBootDashModelContext extends BootDashModelContext {
 		return privateProperties;
 	}
 
-	@Override
-	public BootInstallManager getBootInstallManager() {
-		return bootInstalls;
-	}
-
 	/**
 	 * Simulates reloading
 	 * @return
 	 */
 	public TestBootDashModelContext reload() throws Exception {
-		this.bootInstalls = new BootInstallManager(installLoc, installProperties);
 		injections.reload();
 		return this;
 	}

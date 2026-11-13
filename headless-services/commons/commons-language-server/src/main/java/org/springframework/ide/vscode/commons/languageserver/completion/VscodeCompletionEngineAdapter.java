@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2025 VMware Inc.
+ * Copyright (c) 2016, 2026 VMware Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -452,8 +452,6 @@ public class VscodeCompletionEngineAdapter implements VscodeCompletionEngine {
 				//The original edit does nothing.
 				return Optional.empty();
 			} else {
-				TextDocument newDoc = doc.copy();
-				edits.apply(newDoc);
 				TextEdit vscodeEdit = new TextEdit();
 				vscodeEdit.setRange(doc.toRange(replaceEdit.start, replaceEdit.end - replaceEdit.start));
 				String newText = replaceEdit.newText;

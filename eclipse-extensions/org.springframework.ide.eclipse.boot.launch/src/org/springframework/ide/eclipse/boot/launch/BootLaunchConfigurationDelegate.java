@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2022 Pivotal Software, Inc.
+ * Copyright (c) 2015, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -108,10 +108,6 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 	public static final String ENABLE_JMX = "spring.boot.jmx.enable";
 	public static final boolean DEFAULT_ENABLE_JMX = true;
 
-	public static final String JMX_PORT = "spring.boot.livebean.port";
-
-	public static final int DEFAULT_JMX_PORT = 0; //means pick it dynamically
-
 	public static final String ANSI_CONSOLE_OUTPUT = "spring.boot.ansi.console";
 
 	public static final String FAST_STARTUP = "spring.boot.fast.startup";
@@ -147,26 +143,13 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 
 	private ProfileHistory profileHistory = new ProfileHistory();
 
-	/**
-	 * Use threadlocal to gain access to current launch in some of the methods
-	 * (i.e. getVMArguments in particular) of the {@link AbstractBootLaunchConfigurationDelegate}
-	 * framework that, unfortunately don't pass it along as parameters. It's either this, or copy
-	 * a whole bunch of inherited code just so we can modify it to add an extra argument.
-	 */
-	private static final ThreadLocal<ILaunch> CURRENT_LAUNCH = new ThreadLocal<>();
-
 	@Override
 	public void launch(ILaunchConfiguration conf, String mode,
 			ILaunch launch, IProgressMonitor monitor) throws CoreException {
 		ensureDeletedLaunchConfTerminator();
 		launch.setAttribute(BOOT_LAUNCH_MARKER, "true");
-		CURRENT_LAUNCH.set(launch);
-		try {
-			profileHistory.updateHistory(getProject(conf), getProfile(conf));
-			super.launch(conf, mode, launch, monitor);
-		} finally {
-			CURRENT_LAUNCH.remove();
-		}
+		profileHistory.updateHistory(getProject(conf), getProfile(conf));
+		super.launch(conf, mode, launch, monitor);
 	}
 
 	@Override
@@ -226,29 +209,14 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 			}
 			addPropertiesArguments(vmArgs, props, SYSTEM_PROP_PREFIX);
 
-			// VM args for JMX connection
+			// VM args for JMX connection. No JMX port is opened by the launched JVM: the JMX agent is
+			// started later on-demand via Attach API against the child's real PID (see
+			// BootProcessFactory / SpringApplicationLifeCycleClientManager).
 			EnumSet<JmxBeanSupport.Feature> enabled = getEnabledJmxFeatures(conf);
 			if (!enabled.isEmpty()) {
-				int port = 0;
-				try {
-					port = Integer.parseInt(getJMXPort(conf));
-				} catch (Exception e) {
-					//ignore: bad data in launch config.
-				}
-				// port == 0 means 'auto': no port is picked here. The child JVM starts without any
-				// com.sun.management.jmxremote* args, and the JMX agent is started later
-				// on-demand via Attach API against the child's real PID (see BootProcessFactory /
-				// SpringApplicationLifeCycleClientManager). An explicitly pinned nonzero port
-				// keeps using the old fixed-port args.
-				String[] enableLiveBeanArgs = DebugPlugin.parseArguments(JmxBeanSupport.jmxBeanVmArgs(port, enabled));
+				String[] enableLiveBeanArgs = DebugPlugin.parseArguments(JmxBeanSupport.jmxBeanVmArgs(enabled));
 				for (int i = 0; i < enableLiveBeanArgs.length; i++) {
 					vmArgs.add(i, enableLiveBeanArgs[i]);
-				}
-				if (port != 0) {
-					ILaunch currentLaunch = CURRENT_LAUNCH.get();
-					if (currentLaunch != null) {
-						currentLaunch.setAttribute(JMX_PORT, ""+port);
-					}
 				}
 			}
 			// Fast startup VM args
@@ -375,7 +343,6 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 		setEnableLiveBeanSupport(wc, DEFAULT_ENABLE_LIVE_BEAN_SUPPORT());
 		setEnableLifeCycle(wc, DEFAULT_ENABLE_LIFE_CYCLE);
 		setTerminationTimeout(wc,""+DEFAULT_TERMINATION_TIMEOUT);
-		setJMXPort(wc, ""+DEFAULT_JMX_PORT);
 		if (!OsUtils.isWindows()) {
 			setVMArgs(wc, ENABLE_CHEAP_ENTROPY_VM_ARGS);
 		}
@@ -442,15 +409,6 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 		return DEFAULT_ENABLE_LIVE_BEAN_SUPPORT();
 	}
 
-	public static String getJMXPort(ILaunchConfiguration conf) {
-		try {
-			return conf.getAttribute(JMX_PORT, "");
-		} catch (CoreException e) {
-			Log.log(e);
-		}
-		return "";
-	}
-
 	public static boolean getAutoConnect(ILaunchConfiguration conf) {
 		try {
 			return conf.getAttribute(AUTO_CONNECT, DEFAULT_AUTO_CONNECT);
@@ -466,10 +424,6 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 
 	public static void setEnableLiveBeanSupport(ILaunchConfigurationWorkingCopy conf, boolean value) {
 		conf.setAttribute(ENABLE_LIVE_BEAN_SUPPORT, value);
-	}
-
-	public static void setJMXPort(ILaunchConfigurationWorkingCopy conf, String portAsStr) {
-		conf.setAttribute(JMX_PORT, portAsStr);
 	}
 
 	public static String getProfile(ILaunchConfiguration conf) {
@@ -489,11 +443,6 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 		String newName = DebugPlugin.getDefault().getLaunchManager().generateLaunchConfigurationName(conf.getName());
 		ILaunchConfigurationWorkingCopy copy = conf.copy(newName);
 
-		int existingJmxPort = getJMXPortAsInt(conf);
-		if (existingJmxPort > 0) {
-			//change port on duplicated config, but only if it was set to a specific port.
-			setJMXPort(copy, ""+JmxBeanSupport.randomPort());
-		}
 		return copy.doSave();
 	}
 
@@ -551,30 +500,6 @@ public class BootLaunchConfigurationDelegate extends AbstractBootLaunchConfigura
 		BootLaunchConfigurationDelegate.setDefaults(wc, project.getProject(), null);
 		wc.setMappedResources(new IResource[] {project.getUnderlyingResource()});
 		return wc.doSave();
-	}
-
-	public static int getJMXPortAsInt(ILaunchConfiguration conf) {
-		String jmxPortStr = getJMXPort(conf);
-		if (jmxPortStr != null) {
-			try {
-				return Integer.parseInt(jmxPortStr);
-			} catch (Exception e) {
-				//Ignore
-			}
-		}
-		return -1;
-	}
-
-	public static int getJMXPortAsInt(ILaunch launch) {
-		String jmxPortStr = launch.getAttribute(JMX_PORT);
-		if (jmxPortStr != null) {
-			try {
-				return Integer.parseInt(jmxPortStr);
-			} catch (Exception e) {
-				//Ignore
-			}
-		}
-		return -1;
 	}
 
 	public static long getTerminationTimeoutAsLong(ILaunch launch) {

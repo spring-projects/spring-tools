@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2012, 2020 Pivotal Software, Inc.
+ * Copyright (c) 2012, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -116,7 +116,7 @@ public class StsProperties {
 		props.put("spring.guides.url.external", "true");
 
 		//Spring boot runtime
-		props.put("spring.boot.install.url", "https://repo.spring.io/release/org/springframework/boot/spring-boot-cli/2.1.15.RELEASE/spring-boot-cli-2.1.15.RELEASE-bin.zip");
+		props.put("spring.boot.install.url", "https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-cli/2.7.18/spring-boot-cli-2.7.18-bin.zip");
 		//Discovery url for spring reference app
 		props.put("spring.reference.app.discovery.url", "https://raw.github.com/kdvolder/spring-reference-apps-meta/master/reference-apps.json");
 

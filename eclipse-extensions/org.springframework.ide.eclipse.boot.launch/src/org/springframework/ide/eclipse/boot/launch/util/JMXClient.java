@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2017 Pivotal, Inc.
+ * Copyright (c) 2017, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -12,6 +12,8 @@ package org.springframework.ide.eclipse.boot.launch.util;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
@@ -24,9 +26,7 @@ import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
-import org.springsource.ide.eclipse.commons.frameworks.core.util.StringUtils;
 import org.springsource.ide.eclipse.commons.livexp.ui.Disposable;
-import org.springsource.ide.eclipse.commons.livexp.util.Log;
 
 /**
  * A JMX client for interacting with mbeans.
@@ -93,41 +93,29 @@ public class JMXClient implements Disposable {
 	}
 
 	/**
-	 * Create a connector for an {@link javax.management.MBeanServer} exposed on the
-	 * current machine and the current port. Security should be disabled.
-	 * @param port the port on which the mbean server is exposed
-	 * @return a connection
-	 * @throws IOException if the connection to that server failed
+	 * Credentials of password protected JMX endpoints that the IDE set up itself (e.g. docker containers),
+	 * by JMX URL. Kept in memory only.
 	 */
-	public static String createLocalJmxUrl(String portStr) {
-		if (StringUtils.hasText(portStr)) {
-			try {
-				int port = Integer.valueOf(portStr);
-				return createLocalJmxUrl(port);
-			} catch (Exception e) {
-				Log.log(e);
-			}
+	private static final Map<String, String[]> CREDENTIALS = new ConcurrentHashMap<>();
+
+	public static void registerCredentials(String url, String user, String password) {
+		if (url != null && user != null && password != null) {
+			CREDENTIALS.put(url, new String[] { user, password });
 		}
-		return null;
 	}
 
-	public static String createLocalJmxUrl(Integer port) {
-		if (port != null && port > 0) {
-			return "service:jmx:rmi:///jndi/rmi://127.0.0.1:" + port + "/jmxrmi";
-		}
-		return null;
+	/**
+	 * @return credentials as [user, password] registered for the url or <code>null</code>
+	 */
+	public static String[] getCredentials(String url) {
+		return url == null ? null : CREDENTIALS.get(url);
 	}
 
 	public static JMXConnector createJmxConnectorFromUrl(String url) throws MalformedURLException, IOException {
 		JMXServiceURL serviceUrl = new JMXServiceURL(url);
-		return JMXConnectorFactory.connect(serviceUrl, null);
-	}
-
-	public static JMXConnector createLocalJmxConnector(int port) throws MalformedURLException, IOException {
-		if (port > 0) {
-			return createJmxConnectorFromUrl(createLocalJmxUrl(""+port));
-		}
-		return null;
+		String[] credentials = getCredentials(url);
+		Map<String, Object> env = credentials == null ? null : Map.of(JMXConnector.CREDENTIALS, credentials);
+		return JMXConnectorFactory.connect(serviceUrl, env);
 	}
 
 }

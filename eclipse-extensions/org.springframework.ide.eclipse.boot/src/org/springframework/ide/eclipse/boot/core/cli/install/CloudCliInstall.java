@@ -29,7 +29,7 @@ import org.springsource.ide.eclipse.commons.livexp.util.Log;
  */
 public class CloudCliInstall implements IBootInstallExtension {
 
-	private static final Pattern VERSION_PATTERN = Pattern.compile("^Spring Cloud CLI v(\\d+\\.\\d+\\.\\d+\\.[\\w-]+)$");
+	private static final Pattern VERSION_PATTERN = Pattern.compile("^Spring Cloud CLI v(\\d+\\.\\d+\\.\\d+(?:\\.[\\w-]+)?)$");
 
 	private IBootInstall bootInstall;
 
@@ -51,7 +51,7 @@ public class CloudCliInstall implements IBootInstallExtension {
 	/**
 	 * Range of Cloud CLI versions that support JVM parameters for cloud services
 	 */
-	public static final VersionRange CLOUD_CLI_JAVA_OPTS_SUPPORTING_VERSIONS = new VersionRange(new Version(1, 2, 0, null));
+	public static final VersionRange CLOUD_CLI_JAVA_OPTS_SUPPORTING_VERSIONS = new VersionRange(new Version(1, 3, 0, null));
 
 	/**
 	 * Creates instance of Cloud CLI install based on Boot CLI install

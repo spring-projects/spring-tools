@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -91,7 +91,7 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 			List<Container> containers = JobUtil.interruptAfter(Duration.ofSeconds(15), 
 					() -> client.listContainersCmd()
 						.withShowAll(true)
-						.withAncestorFilter(ImmutableList.of(image.getId()))
+						.withAncestorFilter(ImmutableList.of(ancestorFilterId()))
 						.withLabelFilter(ImmutableMap.of(DockerApp.APP_NAME, app.getName()))
 						.exec()
 			);
@@ -127,8 +127,15 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 
 	@Override
 	public StyledString getStyledName(Stylers stylers) {
-		List<String> repoTags = Arrays.asList(image.getRepoTags());
+		// REVIEW: PODMAN COMPATIBILITY: an image that lost its tag to a newer
+		// build of the app is reported with an empty (Podman) or null list of repo tags. The label then
+		// failed with a NullPointerException in 'new StyledString(null)'. Show '<none>' like 'docker images' does.
+		String[] repoTagsArray = image.getRepoTags();
+		List<String> repoTags = repoTagsArray == null ? ImmutableList.of() : Arrays.asList(repoTagsArray);
 		String repo = extractRepo(repoTags);
+		if (repo == null) {
+			repo = "<none>";
+		}
 		List<String> tags = extractTags(repoTags);
 		final StyledString result = new StyledString(repo);
 		if (!tags.isEmpty()) {
@@ -168,6 +175,15 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * REVIEW: PODMAN COMPATIBILITY: image id to use in the 'ancestor' container filter. The 'sha256:' prefix is removed
+	 * because Podman's docker compatible API does not accept it in that filter and silently returns no containers
+	 * (the app then stayed INACTIVE in the Boot Dash). Docker accepts the id with or without the prefix.
+	 */
+	private String ancestorFilterId() {
+		return StringUtil.removePrefix(image.getId(), "sha256:");
 	}
 
 	private String getShortHash() {
@@ -217,7 +233,7 @@ public class DockerImage implements App, ChildBearing, Styleable, ProjectRelatab
 				// will not work.
 				for (Container container : client.listContainersCmd()
 						.withShowAll(true)
-						.withFilter("ancestor", ImmutableList.of(image.getId()))
+						.withFilter("ancestor", ImmutableList.of(ancestorFilterId()))
 						.exec()
 				) {
 					client.removeContainerCmd(container.getId()).withForce(true).exec();

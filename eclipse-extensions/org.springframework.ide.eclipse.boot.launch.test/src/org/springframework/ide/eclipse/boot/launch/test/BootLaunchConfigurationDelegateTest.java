@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2022 Pivotal Software, Inc.
+ * Copyright (c) 2015, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -34,7 +34,6 @@ import org.eclipse.jdt.launching.JavaLaunchDelegate;
 import org.springframework.ide.eclipse.boot.core.BootActivator;
 import org.springframework.ide.eclipse.boot.core.BootPreferences;
 import org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate;
-import org.springframework.ide.eclipse.boot.launch.livebean.JmxBeanSupport;
 import org.springframework.ide.eclipse.boot.launch.process.BootProcessFactory;
 import org.springframework.ide.eclipse.boot.test.util.LaunchResult;
 import org.springframework.ide.eclipse.boot.test.util.LaunchUtil;
@@ -216,14 +215,6 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 		assertEquals(deflt, BootLaunchConfigurationDelegate.getEnableLiveBeanSupport(wc));
 	}
 
-	public void testGetSetJMXPort() throws Exception {
-		ILaunchConfigurationWorkingCopy wc = createWorkingCopy();
-		assertEquals("", BootLaunchConfigurationDelegate.getJMXPort(wc));
-
-		BootLaunchConfigurationDelegate.setJMXPort(wc, "something");
-		assertEquals("something", BootLaunchConfigurationDelegate.getJMXPort(wc));
-	}
-
 	public void testRunAsLaunch() throws Exception {
 		IProject project = createLaunchReadyProject(TEST_PROJECT);
 
@@ -263,8 +254,6 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 		ILaunchConfigurationWorkingCopy wc = createBaseWorkingCopy();
 
 		BootLaunchConfigurationDelegate.setEnableLiveBeanSupport(wc, true);
-		int port = JmxBeanSupport.randomPort();
-		BootLaunchConfigurationDelegate.setJMXPort(wc, ""+port);
 
 		LaunchResult result = LaunchUtil.synchLaunch(wc);
 
@@ -273,7 +262,7 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 		assertContains(":: Spring Boot ::", result.out);
 		//The following check doesn't real prove the live bean graph works, but at least it shows the VM args are
 		//taking effect.
-		assertContains("com.sun.management.jmxremote.port='"+port+"'", result.out);
+		assertContains("com.sun.management.jmxremote.port=null", result.out);
 		assertOk(result);
 	}
 
@@ -288,10 +277,6 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 				"#zor=zor disabled"
 		);
 
-		int jmxPort = JmxBeanSupport.randomPort(); // must set or it will be generated randomly
-												   // and then we can't make the 'assert' below pass easily.
-		BootLaunchConfigurationDelegate.setJMXPort(wc, ""+jmxPort);
-
 		LaunchResult result = LaunchUtil.synchLaunch(wc);
 
 		assertContains(":: Spring Boot ::", result.out);
@@ -300,7 +285,7 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 				"zor='zor enabled'\n" +
 				"foo='foo is enabled'\n" +
 				"bar=null\n" +
-				"com.sun.management.jmxremote.port='"+jmxPort+"'"
+				"com.sun.management.jmxremote.port=null"
 		);
 		assertOk(result);
 	}
@@ -314,10 +299,6 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 				"#bar=bar is not enabled\n"
 		);
 
-		int jmxPort = JmxBeanSupport.randomPort(); // must set or it will be generated randomly
-												   // and then we can't make the 'assert' below pass easily.
-		BootLaunchConfigurationDelegate.setJMXPort(wc, ""+jmxPort);
-
 		LaunchResult result = LaunchUtil.synchLaunch(wc);
 
 		assertContains(":: Spring Boot ::", result.out);
@@ -326,7 +307,7 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 				"zor=null\n" +
 				"foo=''\n" +
 				"bar=null\n" +
-				"com.sun.management.jmxremote.port='"+jmxPort+"'"
+				"com.sun.management.jmxremote.port=null"
 		);
 		assertOk(result);
 	}
@@ -564,7 +545,6 @@ public class BootLaunchConfigurationDelegateTest extends BootLaunchTestCase {
 		// their default values (tests will be more robust w.r.t changing of the defaults).
 		BootLaunchConfigurationDelegate.setEnableDebugOutput(wc, false);
 		BootLaunchConfigurationDelegate.setEnableLiveBeanSupport(wc, false);
-		BootLaunchConfigurationDelegate.setJMXPort(wc, "");
 		BootLaunchConfigurationDelegate.setProfile(wc, "");
 		BootLaunchConfigurationDelegate.setRawApplicationProperties(wc, "");
 		return wc;

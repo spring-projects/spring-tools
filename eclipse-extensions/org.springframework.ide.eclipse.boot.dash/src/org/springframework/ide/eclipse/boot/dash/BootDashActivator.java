@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2024 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -210,13 +210,7 @@ public class BootDashActivator extends AbstractUIPlugin {
 											Map<String, Object> liveDataArgs = new HashMap<>();
 											liveDataArgs.put("host", "127.0.0.1");
 											liveDataArgs.put("urlScheme", "http");
-											// Only a pinned, nonzero JMX port has a stable jmxurl. For the
-											// auto/dynamic port case no port is picked here; the language
-											// server attaches to 'processId' on-demand instead.
-											int jmxPort = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-											if (jmxPort > 0) {
-												liveDataArgs.put("jmxurl", "service:jmx:rmi:///jndi/rmi://127.0.0.1:%s/jmxrmi".formatted(jmxPort));
-											}
+											// No jmxurl: the language server attaches to 'processId' on-demand.
 											liveDataArgs.put("manualConnect", !BootLaunchConfigurationDelegate.getAutoConnect(owner));
 											liveDataArgs.put("processId", pid);
 											liveDataArgs.put("processName", owner.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, p.getLabel()));
@@ -232,13 +226,9 @@ public class BootDashActivator extends AbstractUIPlugin {
 						case INACTIVE:
 							for (ILaunch l : DebugPlugin.getDefault().getLaunchManager().getLaunches()) {
 								if (l.getLaunchConfiguration() == owner) {
-									int jmxPort = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-									// Must match the key used when the app was added above: jmxurl if a
-									// port was pinned, otherwise the process id (see PROCESS_ID, captured
-									// by BootProcessFactory for the auto/dynamic port case).
-									String processKey = jmxPort > 0
-											? "service:jmx:rmi:///jndi/rmi://127.0.0.1:%s/jmxrmi".formatted(jmxPort)
-											: l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
+									// Must match the key used when the app was added above: the process id
+									// (see PROCESS_ID, captured by BootProcessFactory).
+									String processKey = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
 									if (processKey != null) {
 										LiveProcessCommandsExecutor.getDefault().executeCommand("sts/livedata/localRemove", processKey).subscribe();
 									}

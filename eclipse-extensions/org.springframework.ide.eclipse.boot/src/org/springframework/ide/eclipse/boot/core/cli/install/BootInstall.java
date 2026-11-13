@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2013, 2020 Pivotal Software, Inc.
+ *  Copyright (c) 2013, 2026 Pivotal Software, Inc.
  *  All rights reserved. This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License v1.0
  *  which accompanies this distribution, and is available at
@@ -243,7 +243,10 @@ public abstract class BootInstall implements IBootInstall {
 			BootCliCommand cmd = new BootCliCommand(getHome());
 			int result = cmd.execute(IBootInstallExtension.INSTALL_COMMAND, mavenPrefix + version.toString());
 			if (result != 0) {
-				throw ExceptionUtil.coreException("Failed to execute extension install command");
+				throw ExceptionUtil.coreException("Failed to execute Spring Boot CLI extension install command. "
+						+ "The Spring Boot CLI 'install' command only runs on Java 8 to 11 (its bundled Groovy cannot read class files of newer Java versions). "
+						+ "Install the extension manually with JAVA_HOME set to a Java 11: '" + new File(getHome(), "bin" + File.separator + "spring")
+						+ " install " + mavenPrefix + version + "'.");
 			}
 		}
 		refreshExtension(extensionType);

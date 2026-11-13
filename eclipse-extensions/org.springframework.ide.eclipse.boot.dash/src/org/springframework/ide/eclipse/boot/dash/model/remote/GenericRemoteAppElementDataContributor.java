@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020 Pivotal Software, Inc.
+ * Copyright (c) 2020, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,6 +16,7 @@ import org.springframework.ide.eclipse.boot.dash.model.BootDashModel;
 import org.springframework.ide.eclipse.boot.dash.model.BootDashModel.ElementStateListener;
 import org.springframework.ide.eclipse.boot.dash.model.BootDashViewModel;
 import org.springframework.ide.eclipse.boot.dash.model.ClasspathPropertyTester;
+import org.springframework.ide.eclipse.boot.launch.util.JMXClient;
 import org.springsource.ide.eclipse.commons.boot.ls.remoteapps.RemoteBootAppsDataHolder.Contributor;
 import org.springsource.ide.eclipse.commons.boot.ls.remoteapps.RemoteBootAppsDataHolder.RemoteAppData;
 import org.springsource.ide.eclipse.commons.livexp.core.AsyncLiveExpression.AsyncMode;
@@ -79,6 +80,11 @@ public class GenericRemoteAppElementDataContributor implements Contributor, Elem
 			data.setManualConnect(!child.hasClasspathProperty(ClasspathPropertyTester.HAS_ACTUATORS));
 			data.setProcessId(child.getAppData().getName());
 			data.setProcessName(child.getConsoleDisplayName());
+			String[] jmxCredentials = JMXClient.getCredentials(actuatorUrl);
+			if (jmxCredentials != null) {
+				data.setJmxUser(jmxCredentials[0]);
+				data.setJmxPassword(jmxCredentials[1]);
+			}
 			allApps.add(data);
 		}
 		collectFrom(child.getChildren(), allApps);

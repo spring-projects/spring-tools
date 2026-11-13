@@ -46,6 +46,26 @@ public class SpringProcessConnectorRemote {
 		private String processName;
 		private String projectName;
 
+		// optional credentials for password protected JMX endpoints (e.g. docker containers started by the IDE)
+		private String jmxUser;
+		private String jmxPassword;
+
+		public String getJmxUser() {
+			return jmxUser;
+		}
+
+		public void setJmxUser(String jmxUser) {
+			this.jmxUser = jmxUser;
+		}
+
+		public String getJmxPassword() {
+			return jmxPassword;
+		}
+
+		public void setJmxPassword(String jmxPassword) {
+			this.jmxPassword = jmxPassword;
+		}
+
 		public String getJmxurl() {
 			return jmxurl;
 		}
@@ -108,7 +128,7 @@ public class SpringProcessConnectorRemote {
 
 		@Override
 		public String toString() {
-			return "RemoteBootAppData [jmxurl=" + jmxurl + ", host=" + host + ", urlScheme=" + urlScheme + ", port="
+			return "RemoteBootAppData [jmxurl=" + SpringProcessConnectorOverJMX.redact(jmxurl) + ", host=" + host + ", urlScheme=" + urlScheme + ", port="
 					+ port + ", manualConnect=" + manualConnect + ", keepChecking=" + keepChecking + ", processId="
 					+ processId + ", processName=" + processName + ". projectName=" + projectName  + "]";
 		}
@@ -123,7 +143,7 @@ public class SpringProcessConnectorRemote {
 
 		@Override
 		public int hashCode() {
-			return Objects.hash(host, jmxurl, keepChecking, manualConnect, port, processId, processName, urlScheme, projectName);
+			return Objects.hash(host, jmxurl, keepChecking, manualConnect, port, processId, processName, urlScheme, projectName, jmxUser, jmxPassword);
 		}
 
 		@Override
@@ -139,7 +159,8 @@ public class SpringProcessConnectorRemote {
 					&& keepChecking == other.keepChecking && manualConnect == other.manualConnect
 					&& Objects.equals(port, other.port) && Objects.equals(processId, other.processId)
 					&& Objects.equals(processName, other.processName) && Objects.equals(urlScheme, other.urlScheme)
-					&& Objects.equals(projectName, other.getProcessName());
+					&& Objects.equals(projectName, other.getProcessName())
+					&& Objects.equals(jmxUser, other.jmxUser) && Objects.equals(jmxPassword, other.jmxPassword);
 		}
 		
 	}
@@ -247,7 +268,8 @@ public class SpringProcessConnectorRemote {
 			SpringProcessConnectorOverHttp connector = new SpringProcessConnectorOverHttp(processType, processKey, jmxURL, urlScheme, processID, processName, projectName, host, port);
 			return processConnectorService.connectProcess(processKey, connector);
 		} else {
-			SpringProcessConnectorOverJMX connector = new SpringProcessConnectorOverJMX(processType, processKey, jmxURL, urlScheme, processID, processName, projectName, host, port);
+			SpringProcessConnectorOverJMX connector = new SpringProcessConnectorOverJMX(processType, processKey, jmxURL, urlScheme, processID, processName, projectName, host, port,
+					remoteProcess.getJmxUser(), remoteProcess.getJmxPassword());
 			return processConnectorService.connectProcess(processKey, connector);
 		}
 	}

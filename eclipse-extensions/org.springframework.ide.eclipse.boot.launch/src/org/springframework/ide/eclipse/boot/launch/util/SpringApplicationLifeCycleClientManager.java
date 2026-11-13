@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.springframework.ide.eclipse.boot.launch.util;
 
-import java.io.IOException;
 import java.util.concurrent.Callable;
 
 import javax.management.remote.JMXConnector;
@@ -37,41 +36,17 @@ public class SpringApplicationLifeCycleClientManager {
 	}
 
 	/**
-	 * Convenenience method, use ILaunch as the connection provider. If a fixed JMX port was
-	 * pinned for this launch, connect to it directly. Otherwise (the auto/dynamic port case),
-	 * attach to the child process by its real OS PID and start its local management agent
-	 * on-demand.
+	 * Convenenience method, use ILaunch as the connection provider: attach to the launched
+	 * process by its real OS PID and start its local management agent on-demand.
 	 */
 	public SpringApplicationLifeCycleClientManager(ILaunch l) {
 		this(() -> {
-			int port = BootLaunchConfigurationDelegate.getJMXPortAsInt(l);
-			if (port > 0) {
-				return createJMXConnection(port);
-			}
 			String pid = l.getAttribute(BootLaunchConfigurationDelegate.PROCESS_ID);
 			if (pid == null) {
-				throw new IllegalStateException("Neither a JMX port nor a process id is available for this launch");
+				throw new IllegalStateException("No process id is available for this launch");
 			}
 			return ProcessUtils.createJMXConnector(pid);
 		});
-	}
-
-	private static JMXConnector createJMXConnection(int port) {
-		if (port <= 0) {
-			throw new IllegalStateException("JMX port not specified");
-		}
-		try {
-			return JMXClient.createLocalJmxConnector(port);
-		} catch (IOException e) {
-			return null;
-		}
-	}
-
-	/**
-	 * Convenenience method, use a given fixed port.
-	 */
-	public SpringApplicationLifeCycleClientManager(int resolvedPort) {
-		this(() -> createJMXConnection(resolvedPort));
 	}
 
 	/**

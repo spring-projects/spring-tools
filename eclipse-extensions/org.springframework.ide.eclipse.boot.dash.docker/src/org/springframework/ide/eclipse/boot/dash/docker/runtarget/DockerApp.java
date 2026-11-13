@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2020, 2022 Pivotal, Inc.
+ * Copyright (c) 2020, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -51,6 +51,7 @@ import org.springframework.ide.eclipse.boot.dash.devtools.DevtoolsUtil;
 import org.springframework.ide.eclipse.boot.dash.docker.exceptions.DockerBuildException;
 import org.springframework.ide.eclipse.boot.dash.docker.exceptions.MissingBuildScriptException;
 import org.springframework.ide.eclipse.boot.dash.docker.exceptions.MissingBuildTagException;
+import org.springframework.ide.eclipse.boot.dash.docker.jmx.JmxPasswordInstaller;
 import org.springframework.ide.eclipse.boot.dash.docker.jmx.JmxSupport;
 import org.springframework.ide.eclipse.boot.dash.docker.runtarget.BuildScriptLocator.BuildKind;
 import org.springframework.ide.eclipse.boot.dash.labels.BootDashLabels;
@@ -114,6 +115,13 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 	public static final String BUILD_ID = "sts.app.build-id";
 	public static final String SYSTEM_PROPS = "sts.app.sysprops";
 	public static final String JMX_PORT = "sts.app.jmx.port";
+
+	/**
+	 * Label holding the password of the container's JMX endpoint. Whoever can read container labels (docker
+	 * socket access) can control the container anyway, so this does not widen access. It lets the IDE
+	 * reconnect to containers it started earlier.
+	 */
+	public static final String JMX_PASSWORD = "sts.app.jmx.password";
 	public static final String DEBUG_PORT = "sts.app.debug.port";
 	public static final String APP_LOCAL_PORT = "sts.app.port.local";
 	
@@ -287,6 +295,12 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 		});
 	}
 
+	private static Map<String, String> withoutSecrets(Map<String, String> labels) {
+		Map<String, String> copy = new java.util.LinkedHashMap<>(labels);
+		copy.remove(JMX_PASSWORD);
+		return copy;
+	}
+
 	private void run(AppConsole console, String image, DockerDeployment deployment) throws Exception {
 		if (client == null) {
 			console.write("Cannot start container... Docker client is disconnected!", LogType.STDERROR);
@@ -324,6 +338,7 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 			if (jmxUrl != null) {
 				int jmxPort = jmx.getPort();
 				labels.put(JMX_PORT, ""+jmxPort);
+				labels.put(JMX_PASSWORD, jmx.getJmxPassword());
 
 				portBindings.add(new PortBinding(new Binding("127.0.0.1", ""+jmxPort), ExposedPort.tcp(jmxPort)));
 				exposedPorts.add(ExposedPort.tcp(jmxPort));
@@ -374,7 +389,7 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 			//See: https://www.pivotaltracker.com/story/show/175202648
 			FakeDockerRunCommand fakeCmd = new FakeDockerRunCommand()
 					.withImage(image)
-					.withLabels(cb.getLabels())
+					.withLabels(withoutSecrets(cb.getLabels()))
 					.withNetwork(network)
 					.withNetworkAliases(networkAlias)
 					.withPortBindings(cb.getHostConfig().getPortBindings())
@@ -383,6 +398,19 @@ public class DockerApp extends AbstractDisposable implements App, ChildBearing, 
 
 			CreateContainerResponse c = cb.exec();
 			console.write("Container created: "+c.getId(), LogType.STDOUT);
+			if (jmxUrl != null) {
+				try {
+					JmxPasswordInstaller.install(client, c.getId(), jmx);
+				} catch (Exception e) {
+					// Never leave a container around that exposes JMX without authentication
+					try {
+						client.removeContainerCmd(c.getId()).withForce(true).exec();
+					} catch (Exception ignore) {
+						//ignore
+					}
+					throw new IOException("Failed to set up password protected JMX for the container: " + ExceptionUtil.getMessage(e), e);
+				}
+			}
 			console.write("Starting container: "+c.getId(), LogType.STDOUT);
 			console.write("Ports: "+appLocalPort+"->"+appContainerPort, LogType.STDOUT);
 			console.write("Container Network: "+ network.getName(), LogType.STDOUT);

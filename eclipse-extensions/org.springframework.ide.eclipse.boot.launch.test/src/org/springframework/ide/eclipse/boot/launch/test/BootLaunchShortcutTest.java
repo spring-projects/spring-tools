@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2018 Pivotal Software, Inc.
+ * Copyright (c) 2015, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,7 +15,6 @@ import static org.springframework.ide.eclipse.boot.launch.AbstractBootLaunchConf
 import static org.springframework.ide.eclipse.boot.launch.AbstractBootLaunchConfigurationDelegate.getRawApplicationProperties;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.DEFAULT_ENABLE_LIVE_BEAN_SUPPORT;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.getEnableLiveBeanSupport;
-import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.getJMXPort;
 import static org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate.getProfile;
 
 import org.eclipse.core.resources.IFile;
@@ -131,8 +130,6 @@ public class BootLaunchShortcutTest extends BootLaunchTestCase {
 		assertEquals("", getProfile(conf));
 		assertEquals(DEFAULT_ENABLE_DEBUG_OUTPUT, getEnableDebugOutput(conf));
 		assertEquals(DEFAULT_ENABLE_LIVE_BEAN_SUPPORT(), getEnableLiveBeanSupport(conf));
-		int port = Integer.parseInt(getJMXPort(conf));
-		assertEquals(0, port); // 0 means 'allocate dynamically'
 		assertEquals("", getRawApplicationProperties(conf));
 	}
 

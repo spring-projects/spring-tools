@@ -38,8 +38,6 @@ Require-Bundle: org.eclipse.core.resources,
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-ActivationPolicy: lazy
 Export-Package: org.springframework.ide.eclipse.boot.core,
- org.springframework.ide.eclipse.boot.core.cli,
- org.springframework.ide.eclipse.boot.core.cli.install,
  org.springframework.ide.eclipse.boot.core.initializr,
  org.springframework.ide.eclipse.boot.core.internal,
  org.springframework.ide.eclipse.boot.ui,

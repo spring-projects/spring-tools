@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2021 VMware, Inc.
+ * Copyright (c) 2015, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -59,13 +59,6 @@ public class ToggleFiltersModel {
 		}
 	};
 
-	private static final Filter<BootDashElement> HIDE_LOCAL_SERVICES = new Filter<BootDashElement>() {
-		@Override
-		public boolean accept(BootDashElement t) {
-			return !(t instanceof LocalCloudServiceDashElement);
-		}
-	};
-
 	private static final Filter<BootDashElement> HIDE_LOCAL_NOT_RUNNABLE_APPS = new Filter<BootDashElement>() {
 		@Override
 		public boolean accept(BootDashElement t) {
@@ -105,13 +98,6 @@ public class ToggleFiltersModel {
 			HIDE_SOLITARY_CONFS,
 			true);
 
-	public static final FilterChoice FILTER_CHOICE_HIDE_LOCAL_SERVICES = new FilterChoice(
-			"hide.local-cloud-services",
-			"Hide local cloud services",
-			"Local Spring Cloud Service coming from Spring Cloud CLI instance pointed to from STS preferences will not be shown",
-			HIDE_LOCAL_SERVICES,
-			true);
-
 	public static final FilterChoice FILTER_CHOICE_HIDE_NOT_RUNNABLE_APPS = new FilterChoice(
 			"hide.not-runnable-apps",
 			"Hide local non-runnable apps",
@@ -123,7 +109,6 @@ public class ToggleFiltersModel {
 	private static final FilterChoice[] FILTERS = {
 			FILTER_CHOICE_HIDE_NON_WORKSPACE_ELEMENTS,
 			FILTER_CHOICE_HIDE_SOLITARY_CONFS,
-			FILTER_CHOICE_HIDE_LOCAL_SERVICES,
 			FILTER_CHOICE_HIDE_NOT_RUNNABLE_APPS
 	};
 
@@ -156,7 +141,6 @@ public class ToggleFiltersModel {
 				return composed;
 			}
 		};
-
 
 		selectedFilters.addListener(new ValueListener<ImmutableSet<FilterChoice>>() {
 			public void gotValue(LiveExpression<ImmutableSet<FilterChoice>> exp, ImmutableSet<FilterChoice> value) {

@@ -118,14 +118,6 @@
             </input>
          </propertySection>
          <propertySection
-               class="org.springframework.ide.eclipse.boot.dash.views.properties.LocalCloudServiceGeneralPropertiesSection"
-               id="org.springframework.ide.eclipse.boot.dash.section.LocalCloudServiceGeneral"
-               tab="org.springframework.ide.eclipse.boot.dash.tab.General">
-            <input
-                  type="org.springframework.ide.eclipse.boot.dash.model.LocalCloudServiceDashElement">
-            </input>
-         </propertySection>
-         <propertySection
                class="org.springframework.ide.eclipse.boot.dash.views.properties.BeansPropertiesSection"
                id="org.springframework.ide.eclipse.boot.dash.section.BeansSection"
                tab="org.springframework.ide.eclipse.boot.dash.Beans">

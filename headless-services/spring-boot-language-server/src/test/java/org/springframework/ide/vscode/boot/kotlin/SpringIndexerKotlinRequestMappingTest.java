@@ -30,6 +30,7 @@ import org.eclipse.lsp4j.WorkspaceSymbol;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -55,7 +56,11 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @BootLanguageServerTest
 @Import(IndexerTestConf.class)
+@AllKotlinParsers
 public class SpringIndexerKotlinRequestMappingTest {
+
+	@Parameter
+	String parser;
 
 	@Autowired private BootLanguageServerHarness harness;
 	@Autowired private JavaProjectFinder projectFinder;
@@ -89,7 +94,7 @@ public class SpringIndexerKotlinRequestMappingTest {
 	}
 
 	private void setKotlinSupport(boolean enabled) throws Exception {
-		harness.changeConfiguration(Map.of("boot-java", Map.of("kotlin-support", Map.of("on", enabled))));
+		harness.changeConfiguration(Map.of("boot-java", Map.of("kotlin-support", Map.of("on", enabled, "parser", parser))));
 		waitForIndexing();
 	}
 

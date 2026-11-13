@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.beans.ComponentIndexer;
@@ -35,7 +37,7 @@ import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaScanResul
 import org.springframework.ide.vscode.boot.kotlin.ast.KotlinDomBuilder;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinDeclarationIndex;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypeResolver;
-import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinPsiReader;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReader;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
@@ -55,13 +57,14 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
  *
  * @author Martin Lippert
  */
+@AllKotlinParsers
 public class KotlinJdtBridgeComponentIndexerTest {
 
-	private static final KotlinPsiReader reader = new KotlinPsiReader();
+	@Parameter
+	String parser;
 
-	@AfterAll
-	static void tearDown() {
-		reader.dispose();
+	private KotlinSyntaxReader reader() {
+		return KotlinTestParsers.reader(parser);
 	}
 
 	@Test
@@ -112,7 +115,7 @@ public class KotlinJdtBridgeComponentIndexerTest {
 				""";
 
 		MavenJavaProject project = ProjectsHarness.INSTANCE.mavenProjectAlreadyBuilt("test-stereotypes-support");
-		KotlinSyntax.File file = reader.read("Probe.kt", source);
+		KotlinSyntax.File file = reader().read("Probe.kt", source);
 		KotlinDeclarationIndex declarations = new KotlinDeclarationIndex();
 		declarations.put("file:///probe/Probe.kt", file);
 		CompilationUnit cu = new KotlinDomBuilder().build(file, new KotlinTypeResolver(project.getIndex(), declarations)).compilationUnit();

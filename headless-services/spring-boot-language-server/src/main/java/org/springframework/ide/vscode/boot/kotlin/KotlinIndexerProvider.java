@@ -35,7 +35,7 @@ public class KotlinIndexerProvider implements SpringIndexerProvider {
 	@Override
 	public SpringIndexer createIndexer(SymbolHandler symbolHandler) {
 		// the very same indexers as for Java files: the Kotlin AST resolves to JDT bindings
-		return new SpringIndexerKotlin(symbolHandler, componentIndexers, config::isKotlinSupportEnabled, config::isScanJavaTestSourcesEnabled,
+		return new SpringIndexerKotlin(symbolHandler, componentIndexers, config::isKotlinSupportEnabled, config::isScanJavaTestSourcesEnabled, config::getKotlinParser,
 				() -> server.getWorkspaceService().getFileObserver());
 	}
 

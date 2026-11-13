@@ -17,6 +17,8 @@
 		<dependencies.version>${project.version}</dependencies.version>
 		<jdt.core.version>3.46.0</jdt.core.version>
 		<kotlin.compiler.version>2.2.21</kotlin.compiler.version>
+		<tree-sitter.version>0.26.6</tree-sitter.version>
+		<tree-sitter-kotlin.version>0.3.8.1</tree-sitter-kotlin.version>
 		<lsp4xml.version>0.24.0</lsp4xml.version>
 		<spring-ai.version>2.0.1</spring-ai.version>
 		<jmolecules.version>2025.0.2</jmolecules.version>
@@ -167,6 +169,18 @@
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-compiler-embeddable</artifactId>
 			<version>${kotlin.compiler.version}</version>
+		</dependency>
+
+		<!-- the alternative parser for Kotlin sources (java bindings for tree-sitter with native libraries for linux, macos and windows, and the Kotlin grammar) -->
+		<dependency>
+			<groupId>io.github.bonede</groupId>
+			<artifactId>tree-sitter</artifactId>
+			<version>${tree-sitter.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.bonede</groupId>
+			<artifactId>tree-sitter-kotlin</artifactId>
+			<version>${tree-sitter-kotlin.version}</version>
 		</dependency>
 
 		<dependency>

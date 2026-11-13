@@ -16,9 +16,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.Parameter;
+import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
@@ -26,7 +28,7 @@ import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.kotlin.jdt.KotlinJdtBindings;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedAnnotation;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedType;
-import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinPsiReader;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReader;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
 import org.springframework.ide.vscode.commons.java.IAnnotation;
 import org.springframework.ide.vscode.commons.java.IType;
@@ -36,18 +38,19 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 /**
  * @author Martin Lippert
  */
+@AllKotlinParsers
 public class KotlinTypeResolverTest {
 
-	private static final KotlinPsiReader reader = new KotlinPsiReader();
+	@Parameter
+	String parser;
+
+	private KotlinSyntaxReader reader() {
+		return KotlinTestParsers.reader(parser);
+	}
 
 	private MavenJavaProject project;
 	private KotlinDeclarationIndex declarations;
 	private KotlinTypeResolver resolver;
-
-	@AfterAll
-	static void tearDown() {
-		reader.dispose();
-	}
 
 	@BeforeEach
 	void setup() throws Exception {
@@ -58,7 +61,7 @@ public class KotlinTypeResolverTest {
 
 	/** parses the source and registers its classes in the declarations of the project */
 	private KotlinSyntax.File file(String name, String source) {
-		KotlinSyntax.File file = reader.read(name + ".kt", source);
+		KotlinSyntax.File file = reader().read(name + ".kt", source);
 		declarations.put(name, file);
 		resolver.clearCaches();
 		return file;

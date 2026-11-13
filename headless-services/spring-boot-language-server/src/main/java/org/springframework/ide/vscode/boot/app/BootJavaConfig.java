@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.ide.vscode.boot.common.SpringProblemCategories;
 import org.springframework.ide.vscode.boot.java.lombok.LombokSettings;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReaders;
 import org.springframework.ide.vscode.boot.properties.completions.PropertyCompletionSettings;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemCategory.Toggle;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ProblemType;
@@ -91,6 +92,16 @@ public class BootJavaConfig implements InitializingBean {
 	public boolean isKotlinSupportEnabled() {
 		Boolean enabled = settings.getBoolean("boot-java", "kotlin-support", "on");
 		return enabled != null && enabled.booleanValue();
+	}
+
+	/**
+	 * The name of the parser that reads Kotlin sources, {@code boot-java.kotlin-support.parser}, one
+	 * of the names in {@link KotlinSyntaxReaders}. The embedded Kotlin compiler is used if nothing
+	 * (or something unknown) is set.
+	 */
+	public String getKotlinParser() {
+		String parser = settings.getString("boot-java", "kotlin-support", "parser");
+		return parser != null && KotlinSyntaxReaders.isKnown(parser) ? parser : KotlinSyntaxReaders.DEFAULT;
 	}
 
 	public boolean isScanJavaTestSourcesEnabled() {

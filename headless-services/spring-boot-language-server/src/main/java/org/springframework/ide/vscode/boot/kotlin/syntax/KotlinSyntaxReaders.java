@@ -33,14 +33,15 @@ public final class KotlinSyntaxReaders {
 	/** the Kotlin parser of JetBrains that is written in Kotlin only, on top of the syntax api of the IntelliJ platform */
 	public static final String SYNTAX_API = "syntax-api";
 
-	public static final String DEFAULT = PSI;
+	public static final String DEFAULT = SYNTAX_API;
 
 	private static final Map<String, Supplier<KotlinSyntaxReader>> FACTORIES = new LinkedHashMap<>();
 
 	static {
+		// the default first
+		FACTORIES.put(SYNTAX_API, KotlinSyntaxApiReader::new);
 		FACTORIES.put(PSI, KotlinPsiReader::new);
 		FACTORIES.put(TREE_SITTER, KotlinTreeSitterReader::new);
-		FACTORIES.put(SYNTAX_API, KotlinSyntaxApiReader::new);
 	}
 
 	private KotlinSyntaxReaders() {

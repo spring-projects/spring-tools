@@ -96,8 +96,8 @@ public class BootJavaConfig implements InitializingBean {
 
 	/**
 	 * The name of the parser that reads Kotlin sources, {@code boot-java.kotlin-support.parser}, one
-	 * of the names in {@link KotlinSyntaxReaders}. The embedded Kotlin compiler is used if nothing
-	 * (or something unknown) is set.
+	 * of the names in {@link KotlinSyntaxReaders}. The default parser is used if nothing (or
+	 * something unknown) is set.
 	 */
 	public String getKotlinParser() {
 		String parser = settings.getString("boot-java", "kotlin-support", "parser");

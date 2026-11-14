@@ -1,4 +1,5 @@
 import { commands, extensions, window } from 'vscode';
+import type { BuildProvider } from './aot-build';
 
 const LATER = 'Later';
 
@@ -13,6 +14,7 @@ export interface JavaToolingDescriptor {
     installExtensionId: string;
     /** label shown on the install button, e.g. 'Red Hat', 'JetBrains' */
     installLabel: string;
+    buildProvider: BuildProvider;
 }
 
 /**
@@ -25,16 +27,18 @@ export class JavaToolingManager {
 
     /**
      * Resolves with the descriptor of whichever Java tooling extension becomes active first.
-     * Throws if none is installed (after prompting the user to install one).
+     * Returns undefined immediately if none is installed and prompts the user to install one.
      */
-    async ensureReady(): Promise<JavaToolingDescriptor> {
+    async ensureReady(): Promise<JavaToolingDescriptor | undefined> {
         const installed = this.installedDescriptors();
         if (installed.length === 0) {
-            await this.promptInstall();
-            throw new Error('No Java tooling extension is installed.');
+            this.promptInstall().catch(error => {
+                window.showErrorMessage(`Failed to install Java tooling: ${error}`);
+            });
+            return undefined;
         }
 
-        return Promise.race(installed.map(d => extensions.getExtension(d.extensionId).activate().then(() => d)));
+        return Promise.any(installed.map(d => extensions.getExtension(d.extensionId).activate().then(() => d)));
     }
 
     private installedDescriptors(): JavaToolingDescriptor[] {

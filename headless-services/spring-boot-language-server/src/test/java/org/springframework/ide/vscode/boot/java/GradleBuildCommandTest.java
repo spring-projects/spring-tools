@@ -59,9 +59,16 @@ public class GradleBuildCommandTest {
 	}
 
 	@Test
-	void vscodeAndEclipseRunTheBuildWithTheirGradleSupport() {
-		// vscode-gradle: gradle.runBuild(buildFile, command, env); Eclipse: handled by the Buildship launch of the Eclipse client
-		Command cmd = new VSCodeBuildCommandProvider().executeGradleBuild(project(), "classes aotClasses");
+	void vscodeRunsTheBuildWithTheCommandOfTheSpringBootExtension() {
+		// vscode-spring-boot: runs gradle.runBuild of Gradle for Java if installed, the build in a terminal otherwise
+		Command cmd = VSCodeBuildCommandProvider.forVSCode().executeGradleBuild(project(), "classes aotClasses");
+		assertCommand(cmd, "vscode-spring-boot.gradle.build", 3);
+	}
+
+	@Test
+	void eclipseRunsTheBuildWithItsGradleSupport() {
+		// Eclipse: handled by the Buildship launch of the Eclipse client
+		Command cmd = VSCodeBuildCommandProvider.forEclipse().executeGradleBuild(project(), "classes aotClasses");
 		assertCommand(cmd, "gradle.runBuild", 3);
 	}
 

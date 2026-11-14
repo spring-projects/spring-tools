@@ -26,6 +26,7 @@ import { activateCopilotFeatures, registerQueryExplainCommand } from "./copilot"
 import { StructureManager } from "./explorer/structure-tree-manager";
 import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
 import { JavaToolingDescriptor, JavaToolingManager } from "./java-tooling";
+import { fallbackBuildProvider, intellijBuildProvider, mavenGradleExtensionsBuildProvider, registerBuildCommands } from "./aot-build";
 
 const PROPERTIES_LANGUAGE_ID = "spring-boot-properties";
 const YAML_LANGUAGE_ID = "spring-boot-properties-yaml";
@@ -40,20 +41,28 @@ const JAVA_TOOLING_DESCRIPTORS: JavaToolingDescriptor[] = [
     {
         extensionId: 'redhat.java',
         installExtensionId: 'vscjava.vscode-java-pack',
-        installLabel: 'RedHat'
+        installLabel: 'RedHat',
+        buildProvider: mavenGradleExtensionsBuildProvider
     },
     {
         extensionId: 'jetbrains.intellij-server',
         installExtensionId: 'jetbrains.intellij-server',
-        installLabel: 'JetBrains'
+        installLabel: 'JetBrains',
+        buildProvider: intellijBuildProvider
     }
 ];
 
 /** Called when extension is activated */
 export async function activate(context: ExtensionContext): Promise<ExtensionAPI> {
 
-    new JavaToolingManager(JAVA_TOOLING_DESCRIPTORS).ensureReady().catch(() => {
-        window.showInformationMessage('Spring Boot extension is running without language server support because no Java tooling extension was found.');
+    const buildProvider = new JavaToolingManager(JAVA_TOOLING_DESCRIPTORS).ensureReady().then(tooling => {
+        if (!tooling) {
+            window.showInformationMessage('Spring Boot extension is running without language server support because no Java tooling extension was found.');
+        }
+        return tooling?.buildProvider ?? fallbackBuildProvider;
+    });
+    buildProvider.catch(error => {
+        window.showErrorMessage(`Failed to activate Java tooling: ${error}`);
     });
 
     registerQueryExplainCommand(context);
@@ -211,6 +220,7 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
     setLogLevelUi.activate(client, options, context);
     startPropertiesConversionSupport(context);
     registerMiscCommands(context);
+    registerBuildCommands(context, buildProvider);
 
 	// Register content loader for URIs of type `spring-boot-ls:...` (load JAR content via Boot LS)
     context.subscriptions.push(workspace.registerTextDocumentContentProvider('spring-boot-ls', new (class implements TextDocumentContentProvider {

@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.data;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -60,15 +59,18 @@ import com.google.gson.JsonParseException;
 public class DataRepositoryAotMetadataService {
 	
 	/**
-	 * The task of the Spring Boot Gradle plugin that generates the AOT sources and resources, it exists if the
-	 * GraalVM native build tools plugin is applied.
+	 * The task that generates the AOT sources and resources. Spring Boot's AOT plugin (<code>org.springframework.boot.aot</code>,
+	 * part of the Spring Boot Gradle plugin) adds it. A project applies that plugin itself to use AOT on the JVM,
+	 * or the Spring Boot plugin applies it when the project also applies the GraalVM native build tools plugin.
+	 * The repository AOT metadata does not need GraalVM.
 	 */
 	private static final String GRADLE_AOT_TASK = "processAot";
 
 	/**
 	 * Name of the folder the Spring Boot Gradle plugin generates the AOT resources, which contain the repository
-	 * metadata, into. It is a source folder of the project (the AOT source set that the GraalVM native build tools
-	 * plugin adds) once the project was synchronized after the folder was generated.
+	 * metadata, into. It is a resource folder of the <code>aot</code> source set, which Spring Boot's AOT plugin adds
+	 * together with <code>processAot</code>. Some Java tooling reports it as a source folder of the project only
+	 * once the folder exists and the project was synchronized.
 	 */
 	private static final String GRADLE_AOT_RESOURCES_DIR = "aotResources";
 
@@ -76,18 +78,6 @@ public class DataRepositoryAotMetadataService {
 	 * The folder of the Spring Boot Maven plugin with the AOT resources, relative to the build directory (`target`).
 	 */
 	private static final String MAVEN_AOT_RESOURCES_PATH = "spring-aot/main/resources";
-
-	/**
-	 * The folders whose deletion makes the AOT metadata go away, by name, in Maven projects: the folder with the
-	 * metadata and the ones above it.
-	 */
-	private static final List<String> MAVEN_METADATA_FOLDERS = List.of("spring-aot", "spring-aot/main", MAVEN_AOT_RESOURCES_PATH);
-
-	/**
-	 * The same for Gradle projects: the AOT resources folder and the `generated` folder it is in. The build directory
-	 * itself is not listed, its name is not known.
-	 */
-	private static final List<String> GRADLE_METADATA_FOLDERS = List.of("generated", GRADLE_AOT_RESOURCES_DIR);
 
 	private static final String MODULE_JSON_PROP = "module";
 
@@ -143,40 +133,27 @@ public class DataRepositoryAotMetadataService {
 			listenForProjectChanges(projectObserver);
 		}
 		if (fileObserver != null) {
-			fileObserver.onAnyChange(List.of("**/" + MAVEN_AOT_RESOURCES_PATH + "/**/*.json", "**/" + GRADLE_AOT_RESOURCES_DIR + "/**/*.json"), changedFiles -> {
-				List<URI> removedEntries = new ArrayList<>();
-				for (String fileUri : changedFiles) {
-					URI uri = URI.create(fileUri);
-					Path path = Paths.get(uri);
-					Optional<DataRepositoryAotMetadata> removed = metadataCache.remove(path);
-					if (removed != null) {
-						removedEntries.add(uri);
-					}
-				}
-				if (!removedEntries.isEmpty()) {
-					log.info("Spring AOT Metadata refreshed: %s".formatted(removedEntries.stream().map(p -> p.toString()).collect(Collectors.joining(", "))));
-					notify(removedEntries);
-				}
-			});
-			fileObserver.onFilesDeleted(Stream.concat(MAVEN_METADATA_FOLDERS.stream(), GRADLE_METADATA_FOLDERS.stream())
-					.map(folder -> "**/" + folder).toList(), this::onMetadataFoldersDeleted);
+			// Fixed workspace patterns avoid putting project paths into globs and do not grow as projects change.
+			fileObserver.onCreatedOrChanged(List.of("**/" + MAVEN_AOT_RESOURCES_PATH + "/**/*.json",
+					"**/" + GRADLE_AOT_RESOURCES_DIR + "/**/*.json"), this::forget);
+			// Clients may report only the deleted parent directory. Build directories can have any name or location.
+			fileObserver.onFilesDeleted(List.of("**/*"), this::forget);
 		}
 	}
 
-	private void onMetadataFoldersDeleted(String[] changedFiles) {
-		// If a folder such as `spring-aot` or `generated` is deleted VSCode would only notify about the folder deletion, no events for each contained file
-		for (String fileUri : changedFiles) {
-			URI uri = URI.create(fileUri);
-			Path path = Paths.get(uri);
-			List<URI> removedEntries = metadataCache.keySet().stream()
-				.filter(p -> p.startsWith(path))
-				.filter(p -> metadataCache.remove(p).isPresent())
-				.map(p -> p.toUri())
-				.toList();
-			if (!removedEntries.isEmpty()) {
-				log.info("Spring AOT Metadata refreshed: %s".formatted(removedEntries.stream().map(p -> p.toString()).collect(Collectors.joining(", "))));
-				notify(removedEntries);
-			}
+	/**
+	 * A file or folder was created, changed or deleted: forgets the metadata cached at or below it, including the
+	 * cached absence of a file, and refreshes the lenses.
+	 */
+	private void forget(String[] fileUris) {
+		List<URI> forgotten = new ArrayList<>();
+		for (String fileUri : fileUris) {
+			Path changed = Paths.get(URI.create(fileUri));
+			metadataCache.keySet().removeIf(p -> p.startsWith(changed) && forgotten.add(p.toUri()));
+		}
+		if (!forgotten.isEmpty()) {
+			log.info("Spring AOT Metadata refreshed: %s".formatted(forgotten.stream().map(URI::toString).collect(Collectors.joining(", "))));
+			notify(forgotten);
 		}
 	}
 
@@ -230,8 +207,10 @@ public class DataRepositoryAotMetadataService {
 	
 	/**
 	 * Whether the build of the project can generate the AOT metadata. For a Gradle project that is only so if
-	 * the build has the <code>processAot</code> task, which the Spring Boot Gradle plugin registers when the
-	 * GraalVM native build tools plugin is applied. The IDE reports the tasks of the build without running Gradle.
+	 * the build has the <code>processAot</code> task, which Spring Boot's AOT plugin (<code>org.springframework.boot.aot</code>)
+	 * registers. The project applies that plugin itself, or the Spring Boot plugin applies it when the project also
+	 * applies the GraalVM native build tools plugin; GraalVM is not needed. The IDE reports the tasks of the build
+	 * without running Gradle.
 	 * If it does not know them (yet) the project is given the benefit of the doubt.
 	 */
 	public static boolean isAotGenerationAvailable(IJavaProject project) {
@@ -258,12 +237,12 @@ public class DataRepositoryAotMetadataService {
 					.findFirst()
 					.flatMap(filePath -> metadataCache.computeIfAbsent(filePath, this::readMetadataFile));
 		case ProjectBuild.GRADLE_PROJECT_TYPE:
+			// Cache absent files too, so their creation refreshes the lenses. The first file that exists wins.
 			return IClasspathUtil.getSourceFolders(project.getClasspath())
-					.filter(f -> f.isDirectory() && GRADLE_AOT_RESOURCES_DIR.equals(f.getName()))
-					.findFirst()
-					.map(File::toPath)
-					.map(folder -> folder.resolve(metadataFilePath))
-					.flatMap(filePath -> metadataCache.computeIfAbsent(filePath, this::readMetadataFile));
+					.filter(f -> GRADLE_AOT_RESOURCES_DIR.equals(f.getName()))
+					.map(f -> metadataCache.computeIfAbsent(f.toPath().resolve(metadataFilePath), this::readMetadataFile))
+					.flatMap(Optional::stream)
+					.findFirst();
 		}
 		return Optional.empty();
 	}
@@ -303,7 +282,7 @@ public class DataRepositoryAotMetadataService {
 			return Optional.ofNullable(buildCmds.executeMavenGoal(jp, String.join(" ", goal)));
 		case ProjectBuild.GRADLE_PROJECT_TYPE:
 			if (!isAotGenerationAvailable(jp)) {
-				// The build has no `processAot` task: the plugin that adds it (GraalVM native build tools) is not applied
+				// The build has no `processAot` task: Spring Boot's AOT plugin (org.springframework.boot.aot) is not applied
 				return Optional.empty();
 			}
 			List<String> command = new ArrayList<>();

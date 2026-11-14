@@ -17,23 +17,17 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -300,7 +294,7 @@ public class DataRepositoryAotMetadataServiceTest {
 
 			ArgumentCaptor<List<String>> changeGlobCaptor = ArgumentCaptor.forClass(List.class);
 			ArgumentCaptor<Consumer<String[]>> changeCaptor = ArgumentCaptor.forClass(Consumer.class);
-			verify(observer).onAnyChange(changeGlobCaptor.capture(), changeCaptor.capture());
+			verify(observer).onCreatedOrChanged(changeGlobCaptor.capture(), changeCaptor.capture());
 			changeGlobs = changeGlobCaptor.getValue();
 			changeHandler = changeCaptor.getValue();
 
@@ -334,9 +328,11 @@ public class DataRepositoryAotMetadataServiceTest {
 		void metadataFilesAndFoldersAreWatched() {
 			assertTrue(changeGlobs.contains("**/aotResources/**/*.json"), changeGlobs.toString());
 			assertTrue(changeGlobs.contains("**/spring-aot/main/resources/**/*.json"), "Maven is still watched");
-			assertTrue(deleteGlobs.contains("**/aotResources"), deleteGlobs.toString());
-			assertTrue(deleteGlobs.contains("**/generated"), deleteGlobs.toString());
-			assertTrue(deleteGlobs.contains("**/spring-aot"), "Maven is still watched");
+			List<PathMatcher> deleteMatchers = deleteGlobs.stream()
+					.map(glob -> projectDir.getFileSystem().getPathMatcher("glob:" + glob)).toList();
+			assertTrue(deleteMatchers.stream().anyMatch(matcher -> matcher.matches(projectDir.resolve("build/generated/aotResources"))), deleteGlobs.toString());
+			assertTrue(deleteMatchers.stream().anyMatch(matcher -> matcher.matches(projectDir.resolve("build/generated"))), deleteGlobs.toString());
+			assertTrue(deleteMatchers.stream().anyMatch(matcher -> matcher.matches(projectDir.resolve("target/spring-aot"))), "Maven is still watched");
 		}
 
 		@Test

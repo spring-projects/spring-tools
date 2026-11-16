@@ -26,7 +26,7 @@ import { activateCopilotFeatures, registerQueryExplainCommand } from "./copilot"
 import { StructureManager } from "./explorer/structure-tree-manager";
 import { ExplorerTreeProvider } from "./explorer/explorer-tree-provider";
 import { JavaToolingDescriptor, JavaToolingManager } from "./java-tooling";
-import { fallbackBuildProvider, intellijBuildProvider, mavenGradleExtensionsBuildProvider, registerBuildCommands } from "./aot-build";
+import { intellijBuildProvider, mavenGradleExtensionsBuildProvider, registerBuildCommands } from "./build-provider";
 
 const PROPERTIES_LANGUAGE_ID = "spring-boot-properties";
 const YAML_LANGUAGE_ID = "spring-boot-properties-yaml";
@@ -59,10 +59,10 @@ export async function activate(context: ExtensionContext): Promise<ExtensionAPI>
         if (!tooling) {
             window.showInformationMessage('Spring Boot extension is running without language server support because no Java tooling extension was found.');
         }
-        return tooling?.buildProvider ?? fallbackBuildProvider;
-    });
-    buildProvider.catch(error => {
-        window.showErrorMessage(`Failed to activate Java tooling: ${error}`);
+        return tooling?.buildProvider ?? mavenGradleExtensionsBuildProvider;
+    }).catch(error => {
+        console.error('Failed to activate Java tooling:', error);
+        return mavenGradleExtensionsBuildProvider;
     });
 
     registerQueryExplainCommand(context);

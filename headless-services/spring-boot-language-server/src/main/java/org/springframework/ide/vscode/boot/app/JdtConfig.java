@@ -21,9 +21,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.Boot2JavaProblemType;
 import org.springframework.ide.vscode.boot.java.BuildCommandProvider;
+import org.springframework.ide.vscode.boot.java.ClientCommandBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.DefaultBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.SpelProblemType;
-import org.springframework.ide.vscode.boot.java.VSCodeBuildCommandProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtAstCodeActionProvider;
 import org.springframework.ide.vscode.boot.java.codeaction.JdtCodeActionHandler;
 import org.springframework.ide.vscode.boot.java.jdt.refactoring.JdtRefactorings;
@@ -320,9 +320,9 @@ public class JdtConfig {
 		switch(LspClient.currentClient()) {
 		case VSCODE:
 		case THEIA:
-			return VSCodeBuildCommandProvider.forVSCode();
+			return ClientCommandBuildCommandProvider.forVSCode();
 		case ECLIPSE:
-			return VSCodeBuildCommandProvider.forEclipse();
+			return ClientCommandBuildCommandProvider.forEclipse();
 		default:
 			return new DefaultBuildCommandProvider(server, projectFinder);
 		}

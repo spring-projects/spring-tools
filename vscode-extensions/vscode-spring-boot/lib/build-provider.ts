@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
     commands, extensions, ExtensionContext, ProcessExecution, ShellExecution, Task, TaskPanelKind, TaskRevealKind, tasks,
-    TaskScope, Uri, window, workspace
+    TaskScope, Uri, workspace
 } from 'vscode';
 
 const MAVEN = 'maven';
@@ -26,12 +26,7 @@ export const mavenGradleExtensionsBuildProvider: BuildProvider = {
     async run({ tool, buildFile, command, env }) {
         const extensionId = tool === MAVEN ? MAVEN_EXTENSION_ID : GRADLE_EXTENSION_ID;
         if (!extensions.getExtension(extensionId)) {
-            const install = `Install ${tool === MAVEN ? 'Maven for Java' : 'Gradle for Java'}`;
-            // Shown here and not thrown, so the lens click does not add a second error notification
-            if (await window.showErrorMessage(`${install} to run ${tool} builds.`, install) === install) {
-                await commands.executeCommand('workbench.extensions.installExtension', extensionId);
-            }
-            return;
+            return fallbackBuildProvider.run({ tool, buildFile, command, env });
         }
         await commands.executeCommand(tool === MAVEN ? 'maven.goal.custom' : 'gradle.runBuild', buildFile, command, env);
     }
@@ -54,13 +49,13 @@ export const fallbackBuildProvider: BuildProvider = {
 };
 
 export const intellijBuildProvider: BuildProvider = {
-    // Delegate explicitly until IntelliJ exposes its native build API.
-    run: fallbackBuildProvider.run
+    // Use build extensions until IntelliJ exposes its native build API.
+    run: mavenGradleExtensionsBuildProvider.run
 };
 
 /**
  * The language server attaches these commands to the code lenses that generate the Spring AOT metadata (see
- * `VSCodeBuildCommandProvider`). Keep their arguments compatible with `maven.goal.custom` and `gradle.runBuild`.
+ * `ClientCommandBuildCommandProvider`). Keep their arguments compatible with `maven.goal.custom` and `gradle.runBuild`.
  */
 export function registerBuildCommands(context: ExtensionContext, buildProvider: Promise<BuildProvider>): void {
     context.subscriptions.push(

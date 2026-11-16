@@ -136,6 +136,41 @@ public class DataRepositoryAotMetadataFileObserverTest {
 
 	/**
 	 * <pre>
+	 * workspace/project/
+	 * |-- target/spring-aot/main/resources/dev/example/  (Maven)
+	 * |   `-- CoffeeRepository.json
+	 * `-- build/generated/aotResources/dev/example/     (Gradle)
+	 *     `-- CoffeeRepository.json
+	 * </pre>
+	 * Cache Coffee metadata, then delete Maven's {@code target} or Gradle's {@code build} and report only that directory.
+	 * This guards against stale metadata when clients send no deletion events for the files inside it.
+	 * Watches limited to {@code spring-aot}, {@code generated}, {@code aotResources} or JSON files miss this event.
+	 * The <code>**&#47;*</code> deletion glob catches these parents and custom build directories.
+	 * The next lookup must return no metadata, and one refresh must list the Coffee file URI.
+	 */
+	@ParameterizedTest
+	@CsvSource({ "maven,target", "gradle,build" })
+	void testDeletingDefaultBuildDirectoryRefreshesMetadata(String buildType, String folderName) throws Exception {
+		Path dir = workspace.resolve("project");
+		Path buildDir = dir.resolve(folderName);
+		IJavaProject project = project(dir, buildDir, buildType);
+		Path file = writeMetadata(buildDir, buildType, COFFEE_REPOSITORY, "CoffeeRepositoryImpl");
+		var before = service.getRepositoryMetadata(project, COFFEE_REPOSITORY)
+				.orElseThrow(() -> new AssertionError("Missing CoffeeRepository metadata under " + folderName + " before deletion"));
+
+		FileUtils.deleteDirectory(buildDir.toFile());
+		assertSame(before, service.getRepositoryMetadata(project, COFFEE_REPOSITORY)
+				.orElseThrow(() -> new AssertionError("Missing cached CoffeeRepository metadata before the " + folderName + " deletion event")),
+				"Deleting " + folderName + " should keep CoffeeRepository's cached object until the deletion event");
+		observer.notifyFileDeleted(buildDir.toUri().toString());
+
+		assertFalse(service.getRepositoryMetadata(project, COFFEE_REPOSITORY).isPresent(),
+				"A deletion event for " + folderName + " alone must clear CoffeeRepository metadata beneath it");
+		assertSingleRefresh(file.toUri());
+	}
+
+	/**
+	 * <pre>
 	 * workspace/
 	 * |-- project/build/.../
 	 * |   |-- CoffeeRepository.json       (cached; update this file)

@@ -20,30 +20,29 @@ import org.springframework.ide.vscode.commons.java.IJavaProject;
  * Build commands that the client runs. The arguments are the build file, the goals or the command line of the build,
  * and the environment to run it with.
  */
-public class VSCodeBuildCommandProvider implements BuildCommandProvider {
+public class ClientCommandBuildCommandProvider implements BuildCommandProvider {
 
 	private final String mavenGoalCommand;
 
 	private final String gradleBuildCommand;
 
-	private VSCodeBuildCommandProvider(String mavenGoalCommand, String gradleBuildCommand) {
+	private ClientCommandBuildCommandProvider(String mavenGoalCommand, String gradleBuildCommand) {
 		this.mavenGoalCommand = mavenGoalCommand;
 		this.gradleBuildCommand = gradleBuildCommand;
 	}
 
 	/**
-	 * The commands of the Spring Boot extension for VS Code, which Theia runs too. They run the build with Maven for
-	 * Java or Gradle for Java when that extension is installed, and in a terminal otherwise.
+	 * The build commands registered by the Spring Boot extension for VS Code, which Theia runs too.
 	 */
-	public static VSCodeBuildCommandProvider forVSCode() {
-		return new VSCodeBuildCommandProvider("vscode-spring-boot.maven.goal", "vscode-spring-boot.gradle.build");
+	public static ClientCommandBuildCommandProvider forVSCode() {
+		return new ClientCommandBuildCommandProvider("vscode-spring-boot.maven.goal", "vscode-spring-boot.gradle.build");
 	}
 
 	/**
 	 * The commands of Maven for Java and Gradle for Java, which the Eclipse client handles under the same IDs.
 	 */
-	public static VSCodeBuildCommandProvider forEclipse() {
-		return new VSCodeBuildCommandProvider("maven.goal.custom", "gradle.runBuild");
+	public static ClientCommandBuildCommandProvider forEclipse() {
+		return new ClientCommandBuildCommandProvider("maven.goal.custom", "gradle.runBuild");
 	}
 
 	@Override

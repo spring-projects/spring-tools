@@ -136,7 +136,8 @@ public class DataRepositoryAotMetadataService {
 			// Fixed workspace patterns avoid putting project paths into globs and do not grow as projects change.
 			fileObserver.onCreatedOrChanged(List.of("**/" + MAVEN_AOT_RESOURCES_PATH + "/**/*.json",
 					"**/" + GRADLE_AOT_RESOURCES_DIR + "/**/*.json"), this::forget);
-			// Clients may report only the deleted parent directory. Build directories can have any name or location.
+			// Deleting even the default target or build directory may report only that parent, not its metadata files.
+			// Watch all deletions to also cover custom build directories and other parents.
 			fileObserver.onFilesDeleted(List.of("**/*"), this::forget);
 		}
 	}
@@ -146,6 +147,9 @@ public class DataRepositoryAotMetadataService {
 	 * cached absence of a file, and refreshes the lenses.
 	 */
 	private void forget(String[] fileUris) {
+		if (metadataCache.isEmpty()) {
+			return;
+		}
 		List<URI> forgotten = new ArrayList<>();
 		for (String fileUri : fileUris) {
 			Path changed = Paths.get(URI.create(fileUri));

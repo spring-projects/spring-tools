@@ -1,5 +1,5 @@
 import { commands, extensions, window } from 'vscode';
-import type { BuildProvider } from './aot-build';
+import type { BuildProvider } from './build-provider';
 
 const LATER = 'Later';
 

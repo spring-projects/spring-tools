@@ -239,6 +239,9 @@ jobs:
   sign-osx-distros:
     needs: [ eclipse-distro-build ]
     runs-on: macos-15
+    env:
+      # Mac signing/notarization disabled for the GitHub hosted workflow; set to 'true' to re-enable
+      MAC_SIGNING_ENABLED: 'false'
     steps:
       - name: Setup AWS CLI 2.22
         run: |
@@ -250,6 +253,7 @@ jobs:
           sparse-checkout: |
             .github
       - name: Create Keychain. Add Mac App Dev Certificate to Keychain
+        if: ${{ env.MAC_SIGNING_ENABLED == 'true' }}
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
           P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
@@ -267,9 +271,11 @@ jobs:
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN
           security list-keychain -d user -s $KEYCHAIN
       - name: Unlock Keychain for OSX signing
+        if: ${{ env.MAC_SIGNING_ENABLED == 'true' }}
         run: |
           security unlock-keychain -p ${{ secrets.KEYCHAIN_PASSWORD }} $RUNNER_TEMP/app-signing.keychain-db
       - name: Install appdmg
+        if: ${{ env.MAC_SIGNING_ENABLED == 'true' }}
         run: |
           npm install -g appdmg
       - name: Download OSX tar.gz files from S3 for Signing/Notarization
@@ -278,6 +284,7 @@ jobs:
           ls
           aws s3 mv s3://$AWS_S3_BUCKET/sts-distro-ci-temp/${{ needs.eclipse-distro-build.outputs.id }} . --recursive --exclude "*" --include "spring-tools-for-eclipse*macosx*.tar.gz" --exclude "*/*" --no-progress
       - name: Sign .app, Create and Sign DMG
+        if: ${{ env.MAC_SIGNING_ENABLED == 'true' }}
         env:
           MACOS_CERTIFICATE_ID: ${{ secrets.MACOS_CERTIFICATE_ID }}
           NOTARIZE_PROFILE: notarize-app-dmg-profile
@@ -290,6 +297,7 @@ jobs:
             ${{ github.workspace }}/.github/scripts/sign-osx-distro-file.sh $file ${{ github.workspace }}/.github/assets/entitlements.plist ${{ github.workspace }}/.github/assets/sts4.icns
           done
       - name: Notarize DMG files
+        if: ${{ env.MAC_SIGNING_ENABLED == 'true' }}
         env:
           NOTARIZE_PROFILE: notarize-app-dmg-profile
         run: |
@@ -312,6 +320,7 @@ jobs:
             exit 1
           fi
       - name: Update DMG files on S3
+        if: ${{ env.MAC_SIGNING_ENABLED == 'true' }}
         id: update-s3
         run: |
           dist_path=${{ needs.eclipse-distro-build.outputs.dist_path }}
@@ -321,6 +330,12 @@ jobs:
           aws s3 rm s3://$AWS_S3_BUCKET/${dist_path} --recursive --exclude "*" --include "spring-tools-for-eclipse*macosx*.dmg*" --exclude "*/*"
           echo "Uploading new dmg files to S3..."
           aws s3 mv . s3://$AWS_S3_BUCKET/${dist_path} --recursive --exclude "*" --include "spring-tools-for-eclipse*macosx*.dmg*" --exclude "*/*" --no-progress
+      - name: Update unsigned OSX tar.gz files on S3
+        if: ${{ env.MAC_SIGNING_ENABLED != 'true' }}
+        run: |
+          dist_path=${{ needs.eclipse-distro-build.outputs.dist_path }}
+          aws s3 rm s3://$AWS_S3_BUCKET/${dist_path} --recursive --exclude "*" --include "spring-tools-for-eclipse*macosx*.tar.gz*" --exclude "*/*"
+          aws s3 mv . s3://$AWS_S3_BUCKET/${dist_path} --recursive --exclude "*" --include "spring-tools-for-eclipse*macosx*.tar.gz*" --exclude "*/*" --no-progress
       - name: Update Nightly Distro Downloads page
         if: ${{ inputs.build_type == 'snapshot' && always() }}
         run: |

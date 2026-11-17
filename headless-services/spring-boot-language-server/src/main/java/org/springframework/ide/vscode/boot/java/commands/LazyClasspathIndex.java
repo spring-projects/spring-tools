@@ -31,30 +31,36 @@ import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Indexer;
 import org.jboss.jandex.ModuleInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ide.vscode.boot.java.stereotypes.ClassFacts;
+import org.springframework.ide.vscode.boot.java.stereotypes.ClassFactsReader;
 
 /**
- * The classpath of a project, as an {@link IndexView} that reads a class only once it is looked up
- * by name. The JARs whose own classes are scanned come fully indexed; of every other JAR only the
- * names of its classes are known up front - read from the JAR's directory, without reading any
- * class - and a class is indexed on its own ({@link Index#singleClass}) the first time it is asked
- * for.
+ * The classpath of a project, read only as far as a scan looks at it. Of every JAR, only the names
+ * of its classes are known up front - read from the JAR's directory, without reading any class -
+ * and a class is read the first time it is asked for, in one of two ways:
+ * <ul>
+ * <li>as {@link ClassFacts} ({@link #factsOf}): its names, supertypes and annotations, straight from
+ * the class file - all that is needed to work out what a class's elements say, so all that is read
+ * of nearly every class;</li>
+ * <li>as a Jandex {@code ClassInfo} ({@link #getClassByName}): in full, for the few classes whose
+ * methods or members the scan renders.</li>
+ * </ul>
  *
- * <p>A scan only ever looks up the annotations and supertypes the scanned classes refer to, and
- * theirs in turn: a few hundred classes out of the tens of thousands a classpath has. Indexing all
- * of them up front, as a combined index would, is what most of a scan's time and memory would go
- * into. See {@code docs/structure-view-dependencies.md}.
+ * <p>A scan only ever looks at the classes of the JARs it scans, and the annotations and supertypes
+ * those refer to, and theirs in turn: a small part of what the whole classpath has. Reading all of it
+ * up front is what most of a scan's time and memory would go into. See
+ * {@code docs/structure-view-dependencies.md}.
  *
  * <p>A class that several JARs have is the first one's in classpath order, as for the JVM. Within
- * a JAR, a class also found under {@code META-INF/versions} is the one listed last, as an
- * {@code Indexer} fed the whole JAR keeps it.
+ * a JAR, a class also found under {@code META-INF/versions} is the one listed last.
  *
- * <p>Only {@link #getClassByName(DotName)} is supported - the only lookup the JAR scanners make.
- * Everything else would need the whole classpath indexed, and throws. Safe to use from several
- * threads; to be {@link #close() closed} once the scan is done, which closes the JARs.
+ * <p>Only {@link #getClassByName(DotName)} is supported of the {@link IndexView} - the only lookup
+ * the JAR scanners make. Everything else would need the whole classpath indexed, and throws. Safe to
+ * use from several threads; to be {@link #close() closed} once the scan is done, which closes the
+ * JARs.
  *
  * @author Martin Lippert
  */
@@ -65,63 +71,59 @@ final class LazyClasspathIndex implements IndexView, AutoCloseable {
 	private static final String VERSIONS = "META-INF/versions/";
 
 	/**
-	 * What one classpath entry contributes - see {@link #indexed} and {@link #listed}.
+	 * One JAR of the classpath: where each of its classes is, by the class's binary name.
+	 *
+	 * @param jar the open JAR - null if it could not be read
+	 * @param ownClassNames the binary names of the classes the JAR itself has - the ones to scan -
+	 *        if it was listed as one to scan, else none. Not what {@code entries} has: a class
+	 *        found only under {@code META-INF/versions} is no class of the JAR as far as a scan goes.
 	 */
-	sealed interface Part extends AutoCloseable permits Indexed, Listed {
-
-		@Override
-		default void close() {
-		}
-	}
-
-	/**
-	 * A JAR already indexed as a whole.
-	 */
-	record Indexed(Index index) implements Part {
-	}
-
-	/**
-	 * A JAR of which only the entry of each class is known, by the class's binary name.
-	 */
-	record Listed(File file, JarFile jar, Map<String, String> entries) implements Part {
+	record ClasspathJar(File file, JarFile jar, Map<String, String> entries, List<String> ownClassNames) implements AutoCloseable {
 
 		@Override
 		public void close() {
-			try {
-				jar.close();
-			} catch (IOException e) {
-				log.debug("cannot close '{}'", file, e);
+			if (jar != null) {
+				try {
+					jar.close();
+				} catch (IOException e) {
+					log.debug("cannot close '{}'", file, e);
+				}
 			}
 		}
 	}
 
-	static Part indexed(Index index) {
-		return new Indexed(index);
-	}
-
 	/**
 	 * Lists the classes of the JAR, which is kept open to read them from later.
+	 *
+	 * @param scanned whether the classes of the JAR are to be scanned - see {@link ClasspathJar#ownClassNames}
 	 */
-	static Part listed(File file) throws IOException {
+	static ClasspathJar list(File file, boolean scanned) throws IOException {
 		JarFile jar = new JarFile(file);
 		try {
 			Map<String, String> entries = new HashMap<>();
+			List<String> ownClassNames = new ArrayList<>();
 			Enumeration<JarEntry> all = jar.entries();
 			while (all.hasMoreElements()) {
 				String entry = all.nextElement().getName();
 				if (entry.endsWith(".class") && !entry.endsWith("module-info.class")) {
 					entries.put(classNameOf(entry), entry);
+					if (scanned && !entry.startsWith("META-INF/")) {
+						ownClassNames.add(classNameOf(entry));
+					}
 				}
 			}
-			return new Listed(file, jar, entries);
+			return new ClasspathJar(file, jar, entries, ownClassNames);
 		} catch (RuntimeException e) {
 			jar.close();
 			throw e;
 		}
 	}
 
-	static Part empty() {
-		return indexed(new Indexer().complete());
+	/**
+	 * What a JAR that could not be read has: no classes.
+	 */
+	static ClasspathJar unreadable(File file) {
+		return new ClasspathJar(file, null, Map.of(), List.of());
 	}
 
 	/**
@@ -137,78 +139,127 @@ final class LazyClasspathIndex implements IndexView, AutoCloseable {
 		return name.substring(0, name.length() - ".class".length()).replace('/', '.');
 	}
 
-	private final List<Part> parts;
-	// by binary name: where the class is to be found, the first part on the classpath to have it
-	private final Map<String, Part> partOfClass = new HashMap<>();
-	private final ConcurrentHashMap<DotName, Optional<ClassInfo>> loaded = new ConcurrentHashMap<>();
-	private final AtomicInteger read = new AtomicInteger();
+	private final List<ClasspathJar> jars;
+	// by binary name: the JAR the class is to be found in, the first one on the classpath to have it
+	private final Map<String, ClasspathJar> jarOfClass = new HashMap<>();
+	private final ConcurrentHashMap<String, String> strings = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Optional<ClassFacts>> facts = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<DotName, Optional<ClassInfo>> classInfos = new ConcurrentHashMap<>();
+	private final AtomicInteger factsRead = new AtomicInteger();
+	private final AtomicInteger classInfosRead = new AtomicInteger();
 	private volatile boolean closed;
 
 	/**
-	 * @param parts in classpath order - taken over, and closed by {@link #close()}
+	 * @param jars in classpath order - taken over, and closed by {@link #close()}
 	 */
-	LazyClasspathIndex(List<Part> parts) {
-		this.parts = new ArrayList<>(parts);
-		for (Part part : parts) {
-			switch (part) {
-				case Indexed indexed -> indexed.index().getKnownClasses().forEach(classInfo -> partOfClass.putIfAbsent(classInfo.name().toString(), part));
-				case Listed listed -> listed.entries().keySet().forEach(name -> partOfClass.putIfAbsent(name, part));
-			}
+	LazyClasspathIndex(List<ClasspathJar> jars) {
+		this.jars = new ArrayList<>(jars);
+		for (ClasspathJar jar : jars) {
+			jar.entries().keySet().forEach(name -> jarOfClass.putIfAbsent(name, jar));
 		}
 	}
 
 	/**
-	 * How many classes of JARs not indexed as a whole have been read so far - unreadable ones too.
+	 * How many classes have been read as {@link ClassFacts} so far - unreadable ones too.
 	 */
-	int loadedCount() {
-		return read.get();
+	int factsReadCount() {
+		return factsRead.get();
 	}
 
-	@Override
-	public ClassInfo getClassByName(DotName className) {
-		Optional<ClassInfo> known = loaded.get(className);
+	/**
+	 * How many classes have been read in full so far - unreadable ones too.
+	 */
+	int classInfosReadCount() {
+		return classInfosRead.get();
+	}
+
+	/**
+	 * The class's {@link ClassFacts}, null if it is not on the classpath (a JDK class, most
+	 * commonly) or cannot be read.
+	 */
+	ClassFacts factsOf(String binaryName) {
+		Optional<ClassFacts> known = facts.get(binaryName);
 		if (known == null) {
 			// read outside of the map's locks - two threads asking for the same class at once read it
 			// twice, rather than every other lookup waiting on the reading
-			known = Optional.ofNullable(load(className));
-			Optional<ClassInfo> other = loaded.putIfAbsent(className, known);
+			known = Optional.ofNullable(readFacts(binaryName));
+			Optional<ClassFacts> other = facts.putIfAbsent(binaryName, known);
 			known = other != null ? other : known;
 		}
 		return known.orElse(null);
 	}
 
-	private ClassInfo load(DotName className) {
-		if (closed) {
-			throw new IllegalStateException("the classpath index is closed - looking up " + className);
-		}
-
-		return switch (partOfClass.get(className.toString())) {
-			case null -> null; // not on the classpath - a JDK class, most commonly
-			case Indexed indexed -> indexed.index().getClassByName(className);
-			case Listed listed -> {
-				read.incrementAndGet();
-				yield read(listed, className);
-			}
-		};
-	}
-
-	private static ClassInfo read(Listed listed, DotName className) {
-		String entry = listed.entries().get(className.toString());
-		try (InputStream in = listed.jar().getInputStream(listed.jar().getEntry(entry))) {
-			return Index.singleClass(in);
-		} catch (IOException | RuntimeException e) {
-			// a class file the indexer cannot read (a class file version too new for it, say): what
-			// it would have contributed is missing from the scan
-			log.warn("skipping unreadable class entry '{}' in '{}': {}", entry, listed.file().getName(), e.toString());
+	private ClassFacts readFacts(String binaryName) {
+		ClasspathJar jar = locate(binaryName);
+		if (jar == null) {
 			return null;
 		}
+
+		factsRead.incrementAndGet();
+		String entry = jar.entries().get(binaryName);
+		try (InputStream in = jar.jar().getInputStream(jar.jar().getEntry(entry))) {
+			return ClassFactsReader.read(in.readAllBytes(), this::shared);
+		} catch (IOException | RuntimeException e) {
+			return unreadable(entry, jar, e);
+		}
+	}
+
+	@Override
+	public ClassInfo getClassByName(DotName className) {
+		Optional<ClassInfo> known = classInfos.get(className);
+		if (known == null) {
+			known = Optional.ofNullable(readClassInfo(className));
+			Optional<ClassInfo> other = classInfos.putIfAbsent(className, known);
+			known = other != null ? other : known;
+		}
+		return known.orElse(null);
+	}
+
+	private ClassInfo readClassInfo(DotName className) {
+		ClasspathJar jar = locate(className.toString());
+		if (jar == null) {
+			return null;
+		}
+
+		classInfosRead.incrementAndGet();
+		String entry = jar.entries().get(className.toString());
+		try (InputStream in = jar.jar().getInputStream(jar.jar().getEntry(entry))) {
+			return Index.singleClass(in);
+		} catch (IOException | RuntimeException e) {
+			return unreadable(entry, jar, e);
+		}
+	}
+
+	private ClasspathJar locate(String binaryName) {
+		if (closed) {
+			throw new IllegalStateException("the classpath index is closed - looking up " + binaryName);
+		}
+		return jarOfClass.get(binaryName); // none: not on the classpath
+	}
+
+	/**
+	 * One string for every name that is the same - a JAR has thousands of classes with the same few
+	 * supertypes and annotations. Not {@code computeIfAbsent}, which locks on every call: this is
+	 * asked for every name of every class, from every thread.
+	 */
+	private String shared(String name) {
+		String known = strings.putIfAbsent(name, name);
+		return known != null ? known : name;
+	}
+
+	private static <T> T unreadable(String entry, ClasspathJar jar, Exception e) {
+		// a class file that cannot be read (a class file version too new for the reader, say): what
+		// it would have contributed is missing from the scan
+		log.warn("skipping unreadable class entry '{}' in '{}': {}", entry, jar.file().getName(), e.toString());
+		return null;
 	}
 
 	@Override
 	public void close() {
 		closed = true;
-		parts.forEach(Part::close);
-		loaded.clear();
+		jars.forEach(ClasspathJar::close);
+		facts.clear();
+		classInfos.clear();
 	}
 
 	// ------------------------------------------------------------------ needs the whole classpath indexed

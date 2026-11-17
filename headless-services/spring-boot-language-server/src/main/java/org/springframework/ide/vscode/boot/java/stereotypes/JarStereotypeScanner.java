@@ -162,21 +162,30 @@ public class JarStereotypeScanner {
 					supertypesWithoutObjectOf(classInfo, index, cache), annotationTypesOf(classInfo, index, cache), null);
 			bindingKeys.put(element, JarBindingKeys.of(classInfo));
 
-			for (MethodInfo method : sourceLevelMethodsOf(classInfo)) {
-				Set<String> methodAnnotations = annotationTypesOf(method, index, cache);
-
-				if (!methodAnnotations.isEmpty()) {
-					StereotypeMethodElement methodElement = new StereotypeMethodElement(sourceName(method), methodLabelOf(method),
-							methodSignatureOf(method), null, methodAnnotations, null);
-					bindingKeys.put(methodElement, JarBindingKeys.of(method));
-					element.addChild(methodElement);
-				}
-			}
+			addAnnotatedMethods(element, classInfo, index, cache, bindingKeys);
 
 			result.add(element);
 		}
 
 		return result;
+	}
+
+	/**
+	 * A method becomes a {@link StereotypeMethodElement} of the class only if it carries some
+	 * (non-{@code java.*}) annotation - same rule as {@code annotatedMethodsOf} for source.
+	 */
+	static void addAnnotatedMethods(StereotypeClassElement element, ClassInfo classInfo, IndexView index, ScanCache cache,
+			Map<Object, String> bindingKeys) {
+		for (MethodInfo method : sourceLevelMethodsOf(classInfo)) {
+			Set<String> methodAnnotations = annotationTypesOf(method, index, cache);
+
+			if (!methodAnnotations.isEmpty()) {
+				StereotypeMethodElement methodElement = new StereotypeMethodElement(sourceName(method), methodLabelOf(method),
+						methodSignatureOf(method), null, methodAnnotations, null);
+				bindingKeys.put(methodElement, JarBindingKeys.of(method));
+				element.addChild(methodElement);
+			}
+		}
 	}
 
 	/**
@@ -333,7 +342,7 @@ public class JarStereotypeScanner {
 	 * source, where the member doesn't exist either, so it must not turn a generated getter into an
 	 * annotated method of the structure.
 	 */
-	private static final String LOMBOK_GENERATED = "lombok.Generated";
+	static final String LOMBOK_GENERATED = "lombok.Generated";
 
 	private static void addIfNotJavaLang(DotName name, Set<String> result, ScanCache cache) {
 		// StereotypesIndexer takes annotation types' getQualifiedName() - dots for a nested one
@@ -475,7 +484,7 @@ public class JarStereotypeScanner {
 	 * own for as long as the scan is cached, and builds them over and over. The names are shared from
 	 * the start, so looking a set up compares strings by identity.
 	 */
-	private static final class ScanCache {
+	static final class ScanCache {
 
 		private final Map<DotName, String> qualifiedNames = new HashMap<>();
 		private final Map<String, String> names = new HashMap<>();

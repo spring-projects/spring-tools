@@ -97,7 +97,14 @@ public class JdtStyleTypeNames {
 	 * between a nested class and its enclosing one.
 	 */
 	public static String qualifiedName(DotName name) {
-		return name.toString().replace('$', '.');
+		return qualifiedName(name.toString());
+	}
+
+	/**
+	 * As {@link #qualifiedName(DotName)}, for a binary name already as a string.
+	 */
+	public static String qualifiedName(String binaryName) {
+		return binaryName.replace('$', '.');
 	}
 
 	private static String descriptor(Type element) {

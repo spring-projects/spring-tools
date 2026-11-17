@@ -11,7 +11,6 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,14 +35,14 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
-import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexView;
-import org.jboss.jandex.Indexer;
 import org.jmolecules.stereotype.catalog.support.AbstractStereotypeCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.beans.JarBeanIndexer;
+import org.springframework.ide.vscode.boot.java.stereotypes.ClassFacts;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarBindingKeys;
+import org.springframework.ide.vscode.boot.java.stereotypes.JarFactsScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
@@ -87,9 +86,9 @@ public class JarDependencySource implements StructureDependencySource {
 	private final Map<String, Set<String>> includedJars = new HashMap<>();
 
 	/**
-	 * How many JARs are indexed or listed at once - half the cores, at most 8: indexing the scanned
-	 * JARs reads and parses every class of theirs, which scales with cores, while the language
-	 * server has other work to do too. See {@link #scanAll}.
+	 * How many JARs are listed or read at once - half the cores, at most 8: reading the scanned JARs'
+	 * classes scales with cores, while the language server has other work to do too. See
+	 * {@link #scanAll}.
 	 */
 	private static final int INDEXING_THREADS = Math.max(1, Math.min(8, Runtime.getRuntime().availableProcessors() / 2));
 
@@ -285,12 +284,13 @@ public class JarDependencySource implements StructureDependencySource {
 	 * JAR). Every JAR {@code including} depends on is guaranteed to be resolvable on its own
 	 * classpath, so this is always sufficient. The index is built once, for all of them.
 	 *
-	 * <p>The index is a {@link LazyClasspathIndex}: the given JARs are indexed as a whole, the rest
-	 * of the classpath only listed, and a class of those read once it is looked up - a scan needs a
-	 * few hundred of the classpath's classes, not all of them. Indexing and listing run in parallel,
-	 * one JAR each on {@link #indexing}, and are put together in classpath order: a class that more
-	 * than one JAR has is the first one's, as for the JVM. Reading the given JARs' own classes from
-	 * that index runs in parallel too, one JAR each.
+	 * <p>The classpath is a {@link LazyClasspathIndex}: of every JAR only its classes' names are read
+	 * up front, and a class is read - only as far as the scan needs - once it is looked up. A scan
+	 * looks at the given JARs' own classes, and the annotations and supertypes those refer to, and
+	 * theirs in turn: not nearly all of the classpath's classes. The JARs are listed in parallel, one
+	 * each on {@link #indexing}, and are put together in classpath order: a class that more than one
+	 * JAR has is the first one's, as for the JVM. Reading the given JARs' own classes from that index
+	 * runs in parallel too, one JAR each.
 	 *
 	 * <p>Reported as one progress for the project, naming the JAR last done.
 	 */
@@ -330,37 +330,37 @@ public class JarDependencySource implements StructureDependencySource {
 			}
 		}
 
-		// one step per JAR to index or list, and one per JAR to read its own classes from
+		// one step per JAR to list, and one per JAR to read its own classes from
 		PercentageProgressTask progress = progressService.createPercentageProgressTask(SCAN_JARS_TASK_ID + including.getElementName(),
 				toIndex.size() + jarFiles.size(), "Spring Tools: Indexing Libraries for the Logical Structure of '"
 						+ including.getElementName() + "'");
 		long scanStart = System.currentTimeMillis();
 		try {
-			Map<File, Future<IndexedJar>> indexing = new LinkedHashMap<>();
+			Map<File, Future<LazyClasspathIndex.ClasspathJar>> listing = new LinkedHashMap<>();
 			for (File file : toIndex) {
 				boolean own = wanted.contains(file);
-				indexing.put(file, this.indexing.submit(() -> {
-					IndexedJar indexed = own ? indexedJar(file, including) : listedJar(file);
+				listing.put(file, this.indexing.submit(() -> {
+					LazyClasspathIndex.ClasspathJar listed = LazyClasspathIndex.list(file, own);
 					stepDone(progress, file);
-					return indexed;
+					return listed;
 				}));
 			}
 
-			List<LazyClasspathIndex.Part> parts = new ArrayList<>();
-			Map<File, Set<DotName>> ownClasses = new LinkedHashMap<>();
+			List<LazyClasspathIndex.ClasspathJar> classpath = new ArrayList<>();
+			Map<File, List<String>> ownClasses = new LinkedHashMap<>();
 			LazyClasspathIndex lazyIndex;
 			try {
-				for (Map.Entry<File, Future<IndexedJar>> entry : indexing.entrySet()) {
-					IndexedJar indexed = await(entry.getValue(), entry.getKey(), new IndexedJar(LazyClasspathIndex.empty(), Set.of()));
-					parts.add(indexed.part());
+				for (Map.Entry<File, Future<LazyClasspathIndex.ClasspathJar>> entry : listing.entrySet()) {
+					LazyClasspathIndex.ClasspathJar listed = await(entry.getValue(), entry.getKey(), LazyClasspathIndex.unreadable(entry.getKey()));
+					classpath.add(listed);
 					if (wanted.contains(entry.getKey())) {
-						ownClasses.put(entry.getKey(), indexed.ownClasses());
+						ownClasses.put(entry.getKey(), listed.ownClassNames());
 					}
 				}
-				lazyIndex = new LazyClasspathIndex(parts);
+				lazyIndex = new LazyClasspathIndex(classpath);
 			}
 			catch (RuntimeException e) {
-				parts.forEach(LazyClasspathIndex.Part::close);
+				classpath.forEach(LazyClasspathIndex.ClasspathJar::close);
 				throw e;
 			}
 
@@ -370,7 +370,7 @@ public class JarDependencySource implements StructureDependencySource {
 					File key = jarFile.getAbsoluteFile();
 					boolean complete = classpathRead && !isolated.contains(key);
 					reading.put(jarFile, this.indexing.submit(() -> {
-						ScanResult scanned = scannedJar(jarFile, ownClasses.getOrDefault(key, Set.of()), index, complete, including);
+						ScanResult scanned = scannedJar(jarFile, ownClasses.getOrDefault(key, List.of()), index, complete, including);
 						stepDone(progress, jarFile);
 						return scanned;
 					}));
@@ -381,9 +381,9 @@ public class JarDependencySource implements StructureDependencySource {
 					result.put(entry.getKey(), await(entry.getValue(), entry.getKey(), new ScanResult(List.of(), Map.of(), Map.of(), false)));
 				}
 
-				log.info("scanned {} structure dependency JAR(s) for '{}' against {} classpath entries, reading {} other class(es) on demand, on up to {} threads, in {} ms",
-						jarFiles.size(), including.getElementName(), toIndex.size(), index.loadedCount(), INDEXING_THREADS,
-						System.currentTimeMillis() - scanStart);
+				log.info("scanned {} structure dependency JAR(s) for '{}' against {} classpath entries, reading {} classes in part and {} in full, on up to {} threads, in {} ms",
+						jarFiles.size(), including.getElementName(), toIndex.size(), index.factsReadCount(), index.classInfosReadCount(),
+						INDEXING_THREADS, System.currentTimeMillis() - scanStart);
 				return result;
 			}
 		}
@@ -393,43 +393,29 @@ public class JarDependencySource implements StructureDependencySource {
 	}
 
 	/**
-	 * @param ownClasses the classes of the JAR itself, if it is one to be scanned
+	 * Works out a JAR's own classes' elements from what {@code index} knows of the classes by name,
+	 * which reads each of them only as far as that takes (see {@link JarFactsScanner}), and then
+	 * the beans of the few that can have any.
 	 */
-	private record IndexedJar(LazyClasspathIndex.Part part, Set<DotName> ownClasses) {
-	}
-
-	/**
-	 * One of the classpath's other JARs: listed, to be read from on demand.
-	 */
-	private static IndexedJar listedJar(File file) throws IOException {
-		return new IndexedJar(LazyClasspathIndex.listed(file), Set.of());
-	}
-
-	/**
-	 * One JAR's own index - an {@link Indexer} is not to be shared between threads, a finished
-	 * {@link Index} is safe to read from any number of them.
-	 */
-	private static IndexedJar indexedJar(File file, IJavaProject including) {
-		long start = System.currentTimeMillis();
-		Indexer indexer = new Indexer();
-		Set<DotName> classes = JarStereotypeScanner.indexInto(indexer, file);
-		Index index = indexer.complete();
-		log.info("indexed '{}' for the logical structure of '{}': {} class file(s) in {} ms", file.getName(),
-				including.getElementName(), classes.size(), System.currentTimeMillis() - start);
-		return new IndexedJar(LazyClasspathIndex.indexed(index), classes);
-	}
-
-	private static ScanResult scannedJar(File jarFile, Set<DotName> ownClasses, IndexView index, boolean complete, IJavaProject including) {
+	private static ScanResult scannedJar(File jarFile, List<String> ownClasses, LazyClasspathIndex index, boolean complete,
+			IJavaProject including) {
 		long start = System.currentTimeMillis();
 
 		Map<Object, String> bindingKeys = new IdentityHashMap<>();
-		List<StereotypeClassElement> scanned = JarStereotypeScanner.ownClassesOf(ownClasses, index, bindingKeys);
-		Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, index, jarFile, bindingKeys);
+		JarFactsScanner scanner = new JarFactsScanner(index::factsOf, index);
+		List<JarFactsScanner.ScannedClass> scanned = scanner.ownClassesOf(ownClasses, bindingKeys);
+		Map<StereotypeClassElement, List<Bean>> beans = beansOf(scanned, scanner, index, jarFile, bindingKeys);
+
+		if (scanner.skipped() > 0) {
+			// not just at debug: a JAR that cannot be read (a class file the reader chokes on, say)
+			// otherwise looks like one that simply has nothing in it
+			log.warn("skipped {} unreadable class file(s) of {} in '{}'", scanner.skipped(), ownClasses.size(), jarFile.getName());
+		}
 
 		log.info("scanned structure dependency JAR '{}' for '{}': {} of its {} class(es) found (annotation types, module-info excluded) in {} ms",
 				jarFile.getName(), including.getElementName(), scanned.size(), ownClasses.size(), System.currentTimeMillis() - start);
 
-		return new ScanResult(scanned, beans, bindingKeys, complete);
+		return new ScanResult(scanned.stream().map(JarFactsScanner.ScannedClass::element).toList(), beans, bindingKeys, complete);
 	}
 
 	/**
@@ -463,12 +449,23 @@ public class JarDependencySource implements StructureDependencySource {
 	 * unlike stereotype matching, whether a class is a component, a repository or a
 	 * {@code @ConfigurationProperties} class is a fact of its own bytecode, not of what stereotypes
 	 * happen to be defined right now.
+	 *
+	 * <p>Only the classes that {@link JarBeanIndexer#mayHaveBeans} says can have any are read in
+	 * full - a few percent of a JAR's.
 	 */
-	private static Map<StereotypeClassElement, List<Bean>> beansOf(List<StereotypeClassElement> scanned, IndexView index, File jarFile,
-			Map<Object, String> bindingKeys) {
+	private static Map<StereotypeClassElement, List<Bean>> beansOf(List<JarFactsScanner.ScannedClass> scanned, JarFactsScanner scanner,
+			IndexView index, File jarFile, Map<Object, String> bindingKeys) {
 		Map<StereotypeClassElement, List<Bean>> result = new IdentityHashMap<>();
 
-		for (StereotypeClassElement element : scanned) {
+		for (JarFactsScanner.ScannedClass scannedClass : scanned) {
+			StereotypeClassElement element = scannedClass.element();
+			ClassFacts facts = scannedClass.facts();
+
+			// no facts: a package-info, which is no bean
+			if (facts == null || !JarBeanIndexer.mayHaveBeans(facts, element, scanner.ownAnnotationTypesOf(facts))) {
+				continue;
+			}
+
 			ClassInfo classInfo = index.getClassByName(DotName.createSimple(element.getType()));
 			if (classInfo == null) {
 				continue;

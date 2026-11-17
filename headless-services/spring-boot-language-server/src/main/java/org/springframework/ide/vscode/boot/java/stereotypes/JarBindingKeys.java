@@ -55,6 +55,13 @@ public class JarBindingKeys {
 		return classKey(classInfo.name());
 	}
 
+	/**
+	 * As {@link #of(ClassInfo)}, from the class's binary name.
+	 */
+	public static String ofClass(String binaryName) {
+		return "L" + binaryName.replace('.', '/') + ";";
+	}
+
 	public static String of(MethodInfo method) {
 		StringBuilder key = new StringBuilder(classKey(method.declaringClass().name()));
 		key.append('.');

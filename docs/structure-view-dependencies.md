@@ -682,15 +682,36 @@ catalog) needs no JAR-specific handling at all. Only *which elements a JAR sourc
 builder* is new; the elements themselves are, as far as the rest of the tree is concerned,
 indistinguishable from an `IndexStructureElements` project's.
 
-### 4.1 Reading a JAR with Jandex
+### 4.1 Reading a JAR
 
-Built directly on the public `org.jboss.jandex` API (`Indexer`/`Index`/`ClassInfo`), not on
+Built directly on the public `org.jboss.jandex` API (`Index`/`ClassInfo`), not on
 `commons-java`'s own `commons.jandex` package: that package's classpath-wide indexing exists for a
 different job (type resolution for completion/hover, with JRT-module support and an on-disk index
 cache neither needed here), and its classes are package-private anyway.
 
+A class is read at one of two depths (see 4.2 for when each happens):
+- **As `ClassFacts`** (`ClassFactsReader`): names, supertypes (and whether each is written with type
+  arguments), the class's own annotations without their values, and whether any method in source has
+  an annotation - read with ASM, without method bodies, debug information and frames, and visiting
+  nothing else (fields, annotation values) - already a dependency, used for method bodies too (5.6). All
+  that is needed to work out what a class's elements say, so this is how nearly every class is read.
+  Two things are Jandex's way of seeing a class and not ASM's, and are done to match it
+  (`ClassFactsReaderTest`): the class's flags are the class file's own - ASM adds a synthetic flag for
+  the `Synthetic` attribute of class files from before Java 5, which Jandex ignores - and a nameless
+  class with an enclosing class is a member, not an anonymous class. Like Jandex, ASM refuses a class
+  file newer than the Java version it knows; the class is skipped, with a warning. `JarFactsScanner` works the elements out from them.
+- **As a Jandex `ClassInfo`** (`Index.singleClass`): in full, only for a class with annotated methods
+  (their labels and signatures are rendered from it, by `JarStereotypeScanner`, once, for both), and
+  for the few classes that can have beans (`JarBeanIndexer.mayHaveBeans`: a component, a repository,
+  a `@ConfigurationProperties` class or a Feign client) - the bean scanners read annotation values,
+  fields and record components.
+
 `JarStereotypeScanner` (in `boot.java.stereotypes`, alongside `StereotypesIndexer`, the equivalent
-for source) computes, per class:
+for source) is the Jandex-based implementation of the rules below, and `JarFactsScanner` the
+facts-based one a scan uses. They have to agree, rule for rule; `JarFactsScannerParityTest` holds them
+to it over fixture JARs built to have every construct that matters and over real ones (Spring's,
+Boot's, Guava, ...), and checks that every class the Jandex-based scan makes a bean for passes the
+`mayHaveBeans` gate. Both compute, per class:
 
 - **`annotationTypes`** - the class's own direct annotations, expanded through their meta-annotation
   chain, plus the direct (not meta-expanded) annotations of every type in its superclass/interface
@@ -733,23 +754,27 @@ stale selection, or a discovery/classpath mismatch), it is added at the end of t
 it still benefits from whatever cross-referencing the rest of the classpath can offer, just without
 a guarantee of completeness.
 
-**The index is lazy (`LazyClasspathIndex`).** Only the selected JARs are indexed as a whole. Of every
-other classpath JAR, only the names of its classes are read up front, from the JAR's directory. A
-class of those is indexed on its own (`Index.singleClass`) the first time it is looked up, and kept
-for the rest of the scan. A scan only looks up the annotations and supertypes of the selected JARs'
-classes, and theirs in turn: few classes compared with the whole classpath. Over the language
-server's own classpath (242 JARs, about 55,000 classes), scanning `spring-boot-autoconfigure`
-reads 60 classes of other JARs; scanning it together with `spring-boot`, `spring-context`,
-`spring-web` and `spring-webmvc` reads 310.
-- Same result as indexing the whole classpath: a class that several JARs have is the first one's in
+**The index is lazy (`LazyClasspathIndex`), and read in part.** Of every classpath JAR, selected or
+not, only the names of its classes are read up front, from the JAR's directory. A class is read the
+first time it is looked up - as `ClassFacts` (4.1) for an element's annotations and supertypes, or in
+full as a `ClassInfo` where that is needed - and kept for the rest of the scan. A scan looks at the
+selected JARs' own classes, and the annotations and supertypes those refer to, and theirs in turn.
+Over the language server's own classpath (242 JARs, about 55,000 classes), scanning
+`spring-boot-autoconfigure` alone reads 60 classes of other JARs; scanning it together with
+`spring-boot`, `spring-context`, `spring-web` and `spring-webmvc` reads 310. With every JAR selected
+all classes are read, but only 5,500 or so in full (those with annotated methods) and 215 for beans.
+- Same result as indexing everything: a class that several JARs have is the first one's in
   classpath order, and, within a JAR, the `META-INF/versions` entry listed last.
 - The JAR scanners only ever call `IndexView.getClassByName`. Every other lookup would need the
   whole classpath indexed, so `LazyClasspathIndex` throws for them.
 - The JARs are kept open for the scan and closed after it. Like the index before it, the lazy index
   is never kept beyond a scan: only its results are cached (4.3).
-- Measured for those 5 JARs, against the old combined index of the whole classpath: a first scan
-  about 1.3 s → 0.5 s, later ones about 365 ms → 80 ms. About 1.2 GB → 0.14 GB allocated, and about
-  112 MB → 24 MB of live heap at the peak of the scan.
+- Measured over the 242 JARs (first scan / later scans, 8 threads), with one JAR, five Spring JARs and
+  all JARs selected:
+  - indexing the whole classpath with Jandex up front: 1.3 s / 0.4 s, 1.3 s / 0.4 s, 1.6 s / 0.5 s;
+  - only the selected JARs indexed with Jandex, the rest of the classpath lazy: 0.36 s / 0.04 s,
+    0.63 s / 0.11 s, 1.7 s / 0.54 s;
+  - as described here: 0.35 s / 0.04 s, 0.39 s / 0.06 s, 1.1 s / 0.31 s.
 
 ### 4.3 What is cached, and what deliberately is not
 
@@ -1229,10 +1254,10 @@ A structure request never waits for a JAR scan:
   background, on one thread, one project at a time.
   - Each project's selected JARs are scanned together, indexing its classpath once.
   - Each project gets one percentage progress, which names the JAR being worked on.
-  - Within a project's scan, the selected JARs are indexed and the classpath's other JARs listed
-    in parallel, one JAR each, on a pool of half the cores (at most 8). They are then put together
-    in classpath order, as a lazy index (4.2): a class that two JARs have is the first one's, as for
-    the JVM. Reading the selected JARs' own classes runs in parallel too.
+  - Within a project's scan, the classpath's JARs are listed in parallel, one JAR each, on a pool of
+    half the cores (at most 8). They are then put together in classpath order, as a lazy index
+    (4.2): a class that two JARs have is the first one's, as for the JVM. Reading the selected JARs'
+    own classes runs in parallel too.
 - **Refresh:** once a project's scan is done, the server sends `spring/index/updated` for that
   project, and the client rebuilds that one tree.
 - **Other projects:** projects with nothing to scan are there right away.
@@ -1404,7 +1429,7 @@ Guava, LSP4J and JFace, and can be run with plain JUnit against `target/classes`
 | Step 4 (JAR scanning) done before step 3 (root packages), keeping JAR elements under the same main-package-only scoping step 2 already has | Doing step 3 first — the two are independent: where elements come from vs. which packages of the composed tree are shown |
 | A JAR is read with the public Jandex API directly, not `commons-java`'s own `commons.jandex` package | Reusing that package's classpath-wide indexing — built for a different job (completion/hover type resolution, with JRT-module support and an on-disk cache neither needed here), and its classes are package-private |
 | A JAR's classes are resolved against a combined index over the *including* project's whole classpath, not the JAR in isolation | Indexing the JAR alone — an annotation's own meta-annotations are frequently declared in a different JAR (`@RestController`/`@Controller` across `spring-web`/`spring-context`, verified directly), so isolated scanning would silently miss them |
-| The classpath is indexed lazily: the selected JARs as a whole, any other class only once it is looked up (4.2) | Indexing the whole classpath up front (the first implementation) — a scan looks up a few hundred of its classes, so most of the time and memory went into classes never asked for. Reading bytecode with ASM, JDT's `ClassFileReader` or a reader of our own instead of Jandex was measured too: eagerly, about 2–3× faster and about 20% less live heap than eager Jandex, but every JAR scanner would have to be ported off Jandex; lazily, hardly faster than lazy Jandex |
+| The classpath is read lazily and in part: class names up front, a class's facts (names, supertypes, annotations) when looked up, and a Jandex `ClassInfo` only for classes with annotated methods or that can have beans (4.1, 4.2) | Indexing the whole classpath with Jandex up front (the first implementation): a scan looks at a few hundred of its classes, so most of the time and memory went into classes never asked for. Indexing only the selected JARs with Jandex and the rest lazily (the second step) still parsed every class of the selected ones in full: measured with all JARs selected, parsing facts only is about 40% faster (1.0 s vs 1.7 s, first scan). Reading everything with ASM, JDT's `ClassFileReader` or a reader of our own, and porting every JAR scanner off Jandex: about 2-3× faster than eager Jandex, but not worth the port (ASM is what the facts are read with; a hand-written reader was about 5% faster, not worth maintaining; JDT's was the slowest and the least faithful). Rendering the labels of annotated methods from raw signatures too (saves most of the full reads): rejected for the parity it would take with `JdtStyleTypeNames`. Jandex's `Indexer` without its reverse maps (a `ClassInfo` per class): measured 5-8% faster, with twice the allocation |
 | The unfiltered scan of a JAR's classes is cached by the JAR's own identity; which of them currently match a stereotype is never cached, only computed fresh per catalog | Caching the filtered (matching) result — a stereotype catalog can change at any point in a session (a JSON file edited, a source-defined stereotype added/removed, a different dependency selection), and detecting exactly when to invalidate that cache means fingerprinting every possible source of such a change |
 | A JAR is only ever scanned once it is actually selected for some project's tree | Scanning (or prefetching) every JAR a picker offers — most JARs on a typical classpath (third-party frameworks especially) are never selected at all |
 | Members (`@ConfigurationProperties` fields, repository query methods) computed once alongside the scan and cached by JAR identity, unlike `types()` | Filtering/computing them live like stereotype matching — unlike stereotype matching, neither is catalog-dependent (a fact of the class's own bytecode), so there is nothing to go stale |

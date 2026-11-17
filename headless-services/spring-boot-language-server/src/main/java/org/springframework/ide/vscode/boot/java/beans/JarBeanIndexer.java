@@ -12,19 +12,23 @@ package org.springframework.ide.vscode.boot.java.beans;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.jboss.jandex.DotName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ide.vscode.boot.java.Annotations;
+import org.springframework.ide.vscode.boot.java.data.Constants;
 import org.springframework.ide.vscode.boot.java.data.JarDataRepositoryScanner;
 import org.springframework.ide.vscode.boot.java.events.JarEventListenerScanner;
 import org.springframework.ide.vscode.boot.java.events.JarEventPublisherScanner;
 import org.springframework.ide.vscode.boot.java.requestmapping.JarRequestMappingScanner;
 import org.springframework.ide.vscode.boot.java.springai.JarSpringAiScanner;
+import org.springframework.ide.vscode.boot.java.stereotypes.ClassFacts;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarStereotypeScanner;
 import org.springframework.ide.vscode.boot.java.stereotypes.JarType;
 import org.springframework.ide.vscode.boot.java.stereotypes.JdtStyleTypeNames;
+import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassElement;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
 import org.springframework.ide.vscode.commons.protocol.spring.DefaultValues;
 
@@ -50,6 +54,30 @@ public class JarBeanIndexer {
 	private static final Logger log = LoggerFactory.getLogger(JarBeanIndexer.class);
 
 	private static final DotName FEIGN_CLIENT = DotName.createSimple(Annotations.FEIGN_CLIENT);
+
+	/**
+	 * Whether {@link #beansOf} can come up with a bean for the class, answered from what is known
+	 * of it without reading it in full - so that the great majority of a JAR's classes, which are
+	 * neither a component, nor a repository, nor a {@code @ConfigurationProperties} class, nor a
+	 * Feign client, are not. May say yes for a class that gets none (an enum, say, or a repository
+	 * excluded by {@code @NoRepositoryBean}), never the other way round: every way {@code beansOf}
+	 * makes a bean is covered, and what it checks of a class is checked there again.
+	 *
+	 * @param ownAnnotationTypes as {@link JarType#ownAnnotationTypes()}
+	 */
+	public static boolean mayHaveBeans(ClassFacts facts, StereotypeClassElement element, Set<String> ownAnnotationTypes) {
+		for (String annotation : facts.annotations()) {
+			if (annotation.equals(Annotations.FEIGN_CLIENT)) {
+				return true;
+			}
+		}
+
+		return element.doesImplement(Constants.REPOSITORY_TYPE)
+				|| ownAnnotationTypes.contains(Annotations.COMPONENT)
+				|| ownAnnotationTypes.contains(Annotations.NAMED_JAKARTA)
+				|| ownAnnotationTypes.contains(Annotations.NAMED_JAVAX)
+				|| ownAnnotationTypes.contains(Annotations.CONFIGURATION_PROPERTIES);
+	}
 
 	public static List<Bean> beansOf(JarType type) {
 		List<Bean> result = new ArrayList<>();

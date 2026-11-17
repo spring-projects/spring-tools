@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2016 Pivotal Software, Inc.
+ * Copyright (c) 2015, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,7 +16,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.debug.core.ILaunchManager;
-import org.springframework.ide.eclipse.boot.core.cli.BootInstallManager;
 import org.springframework.ide.eclipse.boot.dash.api.RunTargetType;
 import org.springframework.ide.eclipse.boot.dash.di.SimpleDIContext;
 import org.springsource.ide.eclipse.commons.core.pstore.IPropertyStore;
@@ -63,8 +62,6 @@ public abstract class BootDashModelContext {
 	 * will not work as expected.
 	 */
 	public abstract LiveExpression<Pattern> getBootProjectExclusion();
-
-	public abstract BootInstallManager getBootInstallManager();
 
 	public final UserInteractions getUi() {
 		return injections.getBean(UserInteractions.class);

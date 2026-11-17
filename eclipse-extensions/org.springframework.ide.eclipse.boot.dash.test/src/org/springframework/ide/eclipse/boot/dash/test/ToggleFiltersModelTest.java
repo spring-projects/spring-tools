@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2017 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -38,7 +38,7 @@ public class ToggleFiltersModelTest {
 
 	private static final String HIDE_NON_WORKSPACE_ELEMENTS = "Hide non-workspace elements";
 	private static final String HIDE_SOLITARY_CONF = "Hide solitary launch configs";
-	private static final String HIDE_LOCAL_SERVICES = "Hide local cloud services";
+	private static final String HIDE_NOT_RUNNABLE_APPS = "Hide local non-runnable apps";
 
 	private InMemoryPropertyStore propertyStore = new InMemoryPropertyStore();
 
@@ -49,9 +49,21 @@ public class ToggleFiltersModelTest {
 			arrayContaining(
 					hasToString("FilterChoice("+HIDE_NON_WORKSPACE_ELEMENTS+")"),
 					hasToString("FilterChoice("+HIDE_SOLITARY_CONF+")"),
-					hasToString("FilterChoice("+HIDE_LOCAL_SERVICES+")")
+					hasToString("FilterChoice("+HIDE_NOT_RUNNABLE_APPS+")")
 			)
 		);
+	}
+
+	@Test
+	public void testRemovedLocalServicesFilterIsIgnored() throws Exception {
+		propertyStore.put("hide.local-cloud-services", "true");
+		propertyStore.put(ToggleFiltersModel.FILTER_CHOICE_HIDE_NON_WORKSPACE_ELEMENTS.getId(), "true");
+
+		ToggleFiltersModel model = new ToggleFiltersModel(propertyStore);
+
+		assertEquals(ImmutableSet.of(
+				ToggleFiltersModel.FILTER_CHOICE_HIDE_SOLITARY_CONFS,
+				ToggleFiltersModel.FILTER_CHOICE_HIDE_NON_WORKSPACE_ELEMENTS), model.getSelectedFilters().getValues());
 	}
 
 	@Test
@@ -152,10 +164,9 @@ public class ToggleFiltersModelTest {
 
 		FilterChoice nonWorkspace = getFilter(model, HIDE_NON_WORKSPACE_ELEMENTS);
 		FilterChoice solitaryConf = getFilter(model, HIDE_SOLITARY_CONF);
-		FilterChoice localService = getFilter(model, HIDE_LOCAL_SERVICES);
 
 		//initially the defaults should be set.
-		assertEquals(ImmutableSet.of(solitaryConf, localService), model.getSelectedFilters().getValues());
+		assertEquals(ImmutableSet.of(solitaryConf), model.getSelectedFilters().getValues());
 
 		model.getSelectedFilters().remove(solitaryConf);
 		model.getSelectedFilters().add(nonWorkspace);
@@ -163,7 +174,7 @@ public class ToggleFiltersModelTest {
 		//Simulate model reload (i.e. just instantiate it with the same property store).
 		model = new ToggleFiltersModel(propertyStore);
 
-		assertEquals(ImmutableSet.of(nonWorkspace, localService), model.getSelectedFilters().getValues());
+		assertEquals(ImmutableSet.of(nonWorkspace), model.getSelectedFilters().getValues());
 	}
 
 	private Filter<BootDashElement> getFilter(String withLabel) {

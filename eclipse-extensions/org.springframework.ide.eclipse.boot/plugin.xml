@@ -38,12 +38,6 @@
          id="org.springframework.ide.eclipse.boot.ui.preferences.InitializrPreferencePage"
          name="Initializr Integration - start.spring.io">
    </page>
-   <page
-         category="org.springframework.ide.eclipse.boot.dash.prefs.BootDashPrefsPage"
-         class="org.springframework.ide.eclipse.boot.ui.preferences.BootInstallPreferencePage"
-         id="org.springframework.ide.eclipse.boot.ui.preferences.BootInstallPreferencePage"
-         name="Boot CLI Integration">
-   </page>
    	</extension>
    	
    	

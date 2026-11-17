@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2016 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -143,10 +143,6 @@ public class BootDashViewModelHarness {
 //			return privateProperties;
 //		}
 //
-//		@Override
-//		public BootInstallManager getBootInstallManager() {
-//			return bootI
-//		}
 //	}
 
 	public BootDashModel getRunTargetModel(RunTargetType type) {
@@ -253,7 +249,6 @@ public class BootDashViewModelHarness {
 		fail("Snippet found but not the right color");
 	}
 
-
 	public StyledString getStyledLabel(Object element) {
 		Stylers stylers = new Stylers(null);
 		try (BootDashLabels labels = new BootDashLabels(context.injections, stylers)) {
@@ -328,6 +323,5 @@ public class BootDashViewModelHarness {
 	public BootProjectDashElement waitForElement(long timeout, IProject project) throws Exception {
 		return waitForCallable("Element for project "+project.getName(), timeout, () -> getElementFor(project));
 	}
-
 
 }

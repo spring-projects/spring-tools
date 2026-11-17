@@ -26,7 +26,6 @@ import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.model.IProcess;
 import org.springframework.ide.eclipse.boot.dash.model.RunState;
 import org.springframework.ide.eclipse.boot.launch.BootLaunchConfigurationDelegate;
-import org.springframework.ide.eclipse.boot.launch.cli.CloudCliServiceLaunchConfigurationDelegate;
 import org.springframework.ide.eclipse.boot.launch.util.BootLaunchUtils;
 import org.springframework.ide.eclipse.boot.util.Log;
 import org.springframework.ide.eclipse.boot.util.ProcessListenerAdapter;
@@ -113,8 +112,7 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 	protected abstract T getOwner(ILaunch l);
 
 	protected boolean isInteresting(ILaunch l) {
-		return BootLaunchUtils.isBootLaunch(l)
-				|| CloudCliServiceLaunchConfigurationDelegate.isLocalCloudServiceLaunch(l.getLaunchConfiguration());
+		return BootLaunchUtils.isBootLaunch(l);
 	}
 
 	/**
@@ -156,22 +154,15 @@ public abstract class RunStateTracker<T> extends ProcessListenerAdapter implemen
 
 	protected final ReadyStateMonitor createReadyStateTracker(ILaunch l) {
 		try {
-			Boolean canUseLifeCycle=null, isSingleProcessServiceLaunch = null;
-			if (canUseLifeCycle = BootLaunchConfigurationDelegate.canUseLifeCycle(l)) {
+			boolean canUseLifeCycle = BootLaunchConfigurationDelegate.canUseLifeCycle(l);
+			if (canUseLifeCycle) {
 				SpringApplicationReadyStateMonitor readyStateMonitor = new SpringApplicationReadyStateMonitor(l);
 				readyStateMonitor.startPolling();
 				debug("createReadyStateTracker"+"["+l+"] "+BootLaunchUtils.getProject(l)+" OK!");
 				return readyStateMonitor;
-			} else if (isSingleProcessServiceLaunch  = CloudCliServiceLaunchConfigurationDelegate.isSingleProcessServiceConfig(l.getLaunchConfiguration())) {
-				String serviceId = l.getLaunchConfiguration().getAttribute(CloudCliServiceLaunchConfigurationDelegate.ATTR_CLOUD_SERVICE_ID, (String) null);
-				if (serviceId != null) {
-					CloudCliServiceReadyStateMonitor readyStateMonitor = new CloudCliServiceReadyStateMonitor(l, serviceId);
-					readyStateMonitor.startPolling();
-					return readyStateMonitor;
-				}
 			}
 			debug("createReadyStateTracker"+"["+l+"] "+BootLaunchUtils.getProject(l)+" NOT APPLICABLE");
-			debug("  canUseLifeCycle="+canUseLifeCycle+"\n  isSingleProcessServiceLaunch="+isSingleProcessServiceLaunch);
+			debug("  canUseLifeCycle="+canUseLifeCycle);
 		} catch (Exception e) {
 			debug("createReadyStateTracker"+"["+l+"] "+BootLaunchUtils.getProject(l)+" FAILED: "+ExceptionUtil.getMessage(e));
 			Log.log(e);

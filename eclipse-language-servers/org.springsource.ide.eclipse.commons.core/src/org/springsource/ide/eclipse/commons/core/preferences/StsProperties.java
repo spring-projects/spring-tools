@@ -40,7 +40,6 @@ import org.springsource.ide.eclipse.commons.internal.core.CorePlugin;
  */
 public class StsProperties {
 
-
 	//Note: there is also a class called 'ResourceProvider'.. which reads various properties
 	// from eclipse extension points. This is different because the STSProperties themselves
 	// are read from an external url.
@@ -115,8 +114,6 @@ public class StsProperties {
 		props.put("spring.guides.url.label", "Guides");
 		props.put("spring.guides.url.external", "true");
 
-		//Spring boot runtime
-		props.put("spring.boot.install.url", "https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-cli/2.7.18/spring-boot-cli-2.7.18-bin.zip");
 		//Discovery url for spring reference app
 		props.put("spring.reference.app.discovery.url", "https://raw.github.com/kdvolder/spring-reference-apps-meta/master/reference-apps.json");
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2016 Pivotal Software, Inc.
+ * Copyright (c) 2015, 2026 Pivotal Software, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,7 +19,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunchManager;
 import org.springframework.ide.eclipse.boot.core.BootPreferences;
-import org.springframework.ide.eclipse.boot.core.cli.BootInstallManager;
 import org.springframework.ide.eclipse.boot.dash.BootDashActivator;
 import org.springframework.ide.eclipse.boot.dash.api.RunTargetType;
 import org.springframework.ide.eclipse.boot.dash.console.CloudAppLogManager;
@@ -49,8 +48,6 @@ public class DefaultBootDashModelContext extends BootDashModelContext {
 	private SecuredCredentialsStore securedStore = PropertyStoreFactory.createSecuredCredentialsStore();
 
 	private IPropertyStore viewProperties = PropertyStores.backedBy(BootDashActivator.getDefault().getPreferenceStore());
-
-	private BootInstallManager bootInstalls = BootInstallManager.getInstance();
 
 	public static BootDashModelContext create() {
 		SimpleDIContext injections = new SimpleDIContext();
@@ -112,11 +109,6 @@ public class DefaultBootDashModelContext extends BootDashModelContext {
 	@Override
 	public IPropertyStore getViewProperties() {
 		return viewProperties;
-	}
-
-	@Override
-	public BootInstallManager getBootInstallManager() {
-		return bootInstalls;
 	}
 
 }

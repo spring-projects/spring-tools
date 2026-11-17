@@ -17,16 +17,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.contains;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.ide.eclipse.boot.dash.test.actuator.RequestMappingAsserts.assertRequestMappingWithPath;
 import static org.springframework.ide.eclipse.boot.test.BootProjectTestHarness.bootVersionAtLeast;
@@ -36,8 +30,6 @@ import static org.springsource.ide.eclipse.commons.tests.util.StsTestCase.assert
 import static org.springsource.ide.eclipse.commons.tests.util.StsTestCase.createFile;
 import static org.springsource.ide.eclipse.commons.tests.util.StsTestCase.setContents;
 
-import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.FileUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -78,21 +69,14 @@ import org.springframework.ide.eclipse.boot.core.IMavenCoordinates;
 import org.springframework.ide.eclipse.boot.core.ISpringBootProject;
 import org.springframework.ide.eclipse.boot.core.MavenId;
 import org.springframework.ide.eclipse.boot.core.SpringBootCore;
-import org.springframework.ide.eclipse.boot.core.cli.BootCliCommand;
-import org.springframework.ide.eclipse.boot.core.cli.BootInstallManager;
-import org.springframework.ide.eclipse.boot.core.cli.install.CloudCliInstall;
-import org.springframework.ide.eclipse.boot.core.cli.install.IBootInstall;
 import org.springframework.ide.eclipse.boot.dash.model.BootDashElement;
 import org.springframework.ide.eclipse.boot.dash.model.BootDashElementsFilterBoxModel;
 import org.springframework.ide.eclipse.boot.dash.model.BootDashModel;
 import org.springframework.ide.eclipse.boot.dash.model.BootDashModel.ElementStateListener;
 import org.springframework.ide.eclipse.boot.dash.model.BootProjectDashElement;
-import org.springframework.ide.eclipse.boot.dash.model.ButtonModel;
 import org.springframework.ide.eclipse.boot.dash.model.LaunchConfDashElement;
-import org.springframework.ide.eclipse.boot.dash.model.LocalCloudServiceDashElement;
 import org.springframework.ide.eclipse.boot.dash.model.RunState;
 import org.springframework.ide.eclipse.boot.dash.model.ToggleFiltersModel;
-import org.springframework.ide.eclipse.boot.dash.model.ToggleFiltersModel.FilterChoice;
 import org.springframework.ide.eclipse.boot.dash.model.UserInteractions;
 import org.springframework.ide.eclipse.boot.dash.model.actuator.RequestMapping;
 import org.springframework.ide.eclipse.boot.dash.model.runtargettypes.RunTargetTypes;
@@ -103,11 +87,8 @@ import org.springframework.ide.eclipse.boot.test.AutobuildingEnablement;
 import org.springframework.ide.eclipse.boot.test.BootProjectTestHarness;
 import org.springframework.ide.eclipse.boot.test.BootProjectTestHarness.WizardConfigurer;
 import org.springframework.ide.eclipse.boot.test.util.TestBracketter;
-import org.springframework.ide.eclipse.boot.util.version.Version;
-import org.springsource.ide.eclipse.commons.core.ZipFileUtil;
 import org.springsource.ide.eclipse.commons.frameworks.core.maintype.MainTypeFinder;
 import org.springsource.ide.eclipse.commons.frameworks.test.util.ACondition;
-import org.springsource.ide.eclipse.commons.livexp.core.LiveSetVariable;
 import org.springsource.ide.eclipse.commons.livexp.core.LiveVariable;
 import org.springsource.ide.eclipse.commons.livexp.util.Filter;
 import org.springsource.ide.eclipse.commons.tests.util.StsTestUtil;
@@ -136,166 +117,8 @@ public class BootDashModelTest {
 	@Rule
 	public TestBracketter testBracketer = new TestBracketter();
 
-	static final String ENABLE_CLOUD_CLI_BUTTON = "Install local cloud services";
-
 	@Rule
 	public DumpBootProcessOutput processOutput = new DumpBootProcessOutput();
-
-
-	@Test public void testAutoInstallSpringCloudCLI() throws Exception {
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		model.getViewModel().getToggleFilters().getSelectedFilters().remove(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES);
-		ACondition.waitFor("Cloud CLI Button to appear", 500, () -> harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON));
-
-		ButtonModel button = harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON);
-
-		when(ui().confirmOperation(contains("Confirm Installation of Spring Cloud CLI"), contains("will be installed into"))).thenReturn(true);
-		//Actual confirm dialog prompts example: [Confirm Installation of Spring Cloud CLI?, Spring Cloud CLI version 1.3.3.RELEASE will be installed into Boot 1.5.4.RELEASE.]
-
-		button.perform(ui());
-		assertFalse(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		ACondition.waitFor("Local services to appear", MAVEN_BUILD_TIMEOUT, () -> {
-			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "stubrunner");
-		});
-		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-
-		verify(ui()).confirmOperation(anyString(), anyString());
-		verifyNoMoreInteractions(ui());
-		reset(ui());
-
-		// State preserved/restored on reload?
-		harness.reload();
-		model = harness.getRunTargetModel(RunTargetTypes.LOCAL);
-
-		assertServiceElements(/*NONE*/); //TODO: This test is subject to race condition, the elements will appear, we don't know how fast.
-				//If very fast... then this test will fail! To avoid the race condition we must somehow add a mechanic in the harness to
-				//to be able to hold-up the stuff that resolves local services until we explicitly allow it to proceed.
-		assertFalse(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-
-		ACondition.waitFor("Local services to appear", MAVEN_BUILD_TIMEOUT, () -> {
-			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "stubrunner");
-		});
-		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-		verifyZeroInteractions(ui()); //Since cloud cli already installed we should not be prompted whether we want to install it.
-	}
-
-	@Test public void testAutoInstallSpringCloudCLIRejected() throws Exception {
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		model.getViewModel().getToggleFilters().getSelectedFilters().remove(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES);
-		ACondition.waitFor("Cloud CLI Button to appear", 500, () -> harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON));
-
-		ButtonModel button = harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON);
-		when(ui().confirmOperation(contains("Confirm Installation of Spring Cloud CLI"), contains("will be installed into"))).thenReturn(false);
-		button.perform(ui());
-
-		harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON);
-		assertFalse(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-
-		assertServiceElements(/*NONE*/);
-		verify(ui()).confirmOperation(anyString(), anyString());
-		verifyNoMoreInteractions(ui());
-	}
-
-	@Test public void testAutoInstallSpringCloudCLICustom() throws Exception {
-		//We support installing spring-cloud CLI into a custom configured spring boot cli
-		String cliVersion = "2.7.18"; // consider updating once in a while to remain 'current'.
-		URL customZipUrl = new URL("https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-cli/"+cliVersion+"/spring-boot-cli-"+cliVersion+"-bin.zip");
-		IBootInstall customCliInstall = performCustomCliInstall(customZipUrl);
-
-		//Some sanity checks... to see if performCustomCliInstall works as expected.
-		assertEquals("custom-spring-"+cliVersion, customCliInstall.getName());
-		assertEquals(cliVersion, customCliInstall.getVersion());
-		assertEquals(customCliInstall, context.getBootInstallManager().getDefaultInstall());
-		assertTrue(context.getBootInstallManager().getInstalls().contains(customCliInstall));
-
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		model.getViewModel().getToggleFilters().getSelectedFilters().remove(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES);
-		ACondition.waitFor("Cloud CLI Button to appear", 500, () -> harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON));
-
-		when(ui().confirmOperation(contains("Confirm Installation of Spring Cloud CLI"), contains("will be installed into"))).thenReturn(true);
-		ButtonModel button = harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON);
-		button.perform(ui());
-		assertFalse(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-
-		ACondition.waitFor("Local services to appear", MAVEN_BUILD_TIMEOUT, () -> {
-			assertServiceElements("dataflow", "zipkin", "eureka", "kafka", "h2", "configserver", "stubrunner");
-		});
-		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-
-		verify(ui()).confirmOperation(anyString(), anyString());
-		verifyNoMoreInteractions(ui());
-	}
-
-	@Test public void testAutoInstallSpringCloudCLINotSupported() throws Exception {
-		//Behaves reasonable with ancient versions of boot?
-
-		String cliVersion = "1.0.0.RELEASE"; // Deliberately ancient
-		URL customZipUrl = new URL("https://repo.spring.io/release/org/springframework/boot/spring-boot-cli/"+cliVersion+"/spring-boot-cli-"+cliVersion+"-bin.zip");
-		IBootInstall customCliInstall = performCustomCliInstall(customZipUrl);
-
-		//Some sanity checks... to see if performCustomCliInstall works as expected.
-		assertEquals("custom-spring-"+cliVersion, customCliInstall.getName());
-		assertEquals(cliVersion, customCliInstall.getVersion());
-		assertEquals(customCliInstall, context.getBootInstallManager().getDefaultInstall());
-		assertTrue(context.getBootInstallManager().getInstalls().contains(customCliInstall));
-
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		assertNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-		assertTrue(model.getViewModel().getToggleFilters().getSelectedFilters().contains(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES));
-		model.getViewModel().getToggleFilters().getSelectedFilters().remove(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES);
-		ACondition.waitFor("Cloud CLI Button to appear", 500, () -> harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON));
-
-		ButtonModel button = harness.assertButton(model, ENABLE_CLOUD_CLI_BUTTON);
-		button.perform(ui());
-		assertNotNull(harness.getButton(model, ENABLE_CLOUD_CLI_BUTTON));
-		verify(ui()).errorPopup(contains("Auto installation of Spring Cloud CLI not possible"), contains("Couldn't determine a compatible Spring Cloud CLI version"));
-		verifyNoMoreInteractions(ui());
-	}
-
-	private IBootInstall performCustomCliInstall(URL customZipUrl) throws Exception {
-		File workdir = StsTestUtil.createTempDirectory();
-		File customZip = new File(workdir, "cli.zip");
-		File installLocation = new File(workdir, "cli");
-		FileUtils.copyURLToFile(customZipUrl, customZip);
-		ZipFileUtil.unzip(customZip, installLocation, new NullProgressMonitor());
-		installLocation = installLocation.listFiles()[0];
-
-		BootInstallManager bootInstallMgr = context.getBootInstallManager();
-		IBootInstall customInstall = bootInstallMgr.newInstall(installLocation.toURI().toString(), "custom-"+installLocation.getName());
-		bootInstallMgr.setDefaultInstall(customInstall); //Note: implictly adds the default install if its not there yet,
-		FileUtils.deleteQuietly(customZip);
-		return customInstall;
-	}
-
-	@Test public void testInvalidCloudCliInstall() throws Exception {
-		String error = "com.google.common.util.concurrent.UncheckedExecutionException: java.lang.NullPointerException\n" +
-				"	at com.google.common.cache.LocalCache$Segment.get(LocalCache.java:2199)\n" +
-				"	at com.google.common.cache.LocalCache.get(LocalCache.java:3932)\n" +
-				"	at com.google.common.cache.LocalCache.getOrLoad(LocalCache.java:3936)";
-		model.getViewModel().getToggleFilters().getSelectedFilters().remove(ToggleFiltersModel.FILTER_CHOICE_HIDE_LOCAL_SERVICES);
-
-		BootCliCommand mockCommand = mock(BootCliCommand.class);
-		doReturn(error).when(mockCommand).getOutput();
-		doReturn(0).when(mockCommand).execute(CloudCliInstall.LIST_SERVICES_COMMAND);
-
-		IBootInstall defaultInstall = spy(context.getBootInstallManager().getDefaultInstall());
-		CloudCliInstall mockCloudCliInstall = spy(new CloudCliInstall(defaultInstall));
-		doReturn(new Version(1, 5, 1, null)).when(mockCloudCliInstall).getVersion();
-		doReturn(mockCommand).when(mockCloudCliInstall).createCommand();
-		doReturn(mockCloudCliInstall).when(defaultInstall).getExtension(CloudCliInstall.class);
-
-		assertEquals(0, mockCloudCliInstall.getCloudServices().length);
-
-		context.getBootInstallManager().setDefaultInstall(defaultInstall);
-
-		assertServiceElements();
-	}
 
 	/**
 	 * Test that newly created spring boot project gets added to the model.
@@ -303,13 +126,13 @@ public class BootDashModelTest {
 	@Test public void testNewSpringBootProject() throws Exception {
 
 //		assertWorkspaceProjects(/*none*/);
-		assertNonServiceElements(/*none*/);
+		assertModelElements(/*none*/);
 
 		String projectName = "testProject";
 		createBootProject(projectName);
 		new ACondition("Model update", MODEL_UPDATE_TIMEOUT) {
 			public boolean test() throws Exception {
-				assertNonServiceElements("testProject");
+				assertModelElements("testProject");
 				return true;
 			}
 		};
@@ -326,14 +149,14 @@ public class BootDashModelTest {
 	public void testSpringBootProjectChildren() throws Exception {
 
 //		assertWorkspaceProjects(/*none*/);
-		assertNonServiceElements(/*none*/);
+		assertModelElements(/*none*/);
 
 		String projectName = "testProject";
 		IProject project = createBootProject(projectName);
 		IJavaProject javaProject = JavaCore.create(project);
 		new ACondition("Model update", MODEL_UPDATE_TIMEOUT) {
 			public boolean test() throws Exception {
-				assertNonServiceElements("testProject");
+				assertModelElements("testProject");
 				return true;
 			}
 		};
@@ -356,20 +179,19 @@ public class BootDashModelTest {
 		});
 	}
 
-
 	/**
 	 * Test that when a launch config is marked as 'hidden' it is not part of the model.
 	 */
 	@Test
 	public void testSpringBootProjectHiddenChildren() throws Exception {
-		assertNonServiceElements(/*none*/);
+		assertModelElements(/*none*/);
 
 		String projectName = "testProject";
 		IProject project = createBootProject(projectName);
 		IJavaProject javaProject = JavaCore.create(project);
 		new ACondition("Model update", MODEL_UPDATE_TIMEOUT) {
 			public boolean test() throws Exception {
-				assertNonServiceElements("testProject");
+				assertModelElements("testProject");
 				return true;
 			}
 		};
@@ -435,9 +257,9 @@ public class BootDashModelTest {
 		String projectName = "testProject";
 		IProject project = createBootProject(projectName);
 
-		waitNonServiceElements("testProject");
+		waitModelElements("testProject");
 		project.delete(/*delete content*/true, /*force*/true, /*progress*/null);
-		waitNonServiceElements(/*none*/);
+		waitModelElements(/*none*/);
 	}
 
 	/**
@@ -447,15 +269,14 @@ public class BootDashModelTest {
 		String projectName = "testProject";
 		IProject project = createBootProject(projectName);
 
-		waitNonServiceElements("testProject");
+		waitModelElements("testProject");
 
 		project.close(null);
-		waitNonServiceElements();
+		waitModelElements();
 
 		project.open(null);
-		waitNonServiceElements("testProject");
+		waitModelElements("testProject");
 	}
-
 
 	/**
 	 * Test that deleting a running launch conf works properly:
@@ -478,7 +299,7 @@ public class BootDashModelTest {
 	private void doTestDeleteRunningLaunchConf(RunState runState) throws Exception, CoreException {
 		String projectName = "testProject";
 		createBootProject(projectName);
-		waitNonServiceElements(projectName);
+		waitModelElements(projectName);
 
 		BootProjectDashElement element = getElement(projectName);
 		element.openConfig(ui()); //Ensure that at least one launch config exists.
@@ -506,7 +327,6 @@ public class BootDashModelTest {
 		});
 	}
 
-
 	private UserInteractions ui() {
 		return context.injections.getBean(AllUserInteractions.class);
 	}
@@ -530,7 +350,7 @@ public class BootDashModelTest {
 	protected void doTestLaunchConfRunStateChanges(RunState runState) throws Exception {
 		String projectName = "testProject";
 		createBootProject(projectName);
-		waitNonServiceElements(projectName);
+		waitModelElements(projectName);
 
 		BootProjectDashElement element = getElement(projectName);
 		element.openConfig(ui()); //Ensure that at least one launch config exists.
@@ -578,7 +398,6 @@ public class BootDashModelTest {
 		verify(listener, times(3)).stateChanged(element);
 		verify(listener, times(3)).stateChanged(childElement);
 	}
-
 
 	private <T> T getSingleValue(ImmutableSet<T> values) {
 		assertEquals("Unexpected number of values in "+values, 1, values.size());
@@ -656,7 +475,7 @@ public class BootDashModelTest {
 	protected void doTestRunStateChanges(RunState runState) throws Exception {
 		String projectName = "testProject";
 		createBootProject(projectName);
-		waitNonServiceElements(projectName);
+		waitModelElements(projectName);
 
 		ElementStateListener listener = mock(ElementStateListener.class);
 		model.addElementStateListener(listener);
@@ -690,7 +509,7 @@ public class BootDashModelTest {
 	@Test public void projectElementDisposedWhenProjectClosed() throws Exception {
 		String projectName = "testProject";
 		IProject project = createBootProject(projectName);
-		waitNonServiceElements(projectName);
+		waitModelElements(projectName);
 
 		BootProjectDashElement projectElement = getElement(projectName);
 		LiveVariable<Boolean> disposed = new LiveVariable<>(false);
@@ -706,7 +525,7 @@ public class BootDashModelTest {
 	@Test public void testRestartRunningProcessTest() throws Exception {
 		String projectName = "testProject";
 		createBootProject(projectName);
-		waitNonServiceElements(projectName);
+		waitModelElements(projectName);
 
 		final RunState[] RUN_STATES = {
 				RunState.RUNNING,
@@ -929,7 +748,6 @@ public class BootDashModelTest {
 					return true;
 				}
 			};
-
 
 		} finally {
 			project.stopSync();
@@ -1157,7 +975,6 @@ public class BootDashModelTest {
 			waitForState(element, RunState.INACTIVE);
 		}
 	}
-
 
 	@Test public void testDefaultRequestMapping() throws Exception {
 		String projectName = "sdfsd-project";
@@ -1510,36 +1327,19 @@ public class BootDashModelTest {
 		return null;
 	}
 
-	private void assertServiceElements(String... expectedElementNames) {
+	private void assertModelElements(String... expectedElementNames) {
 		Set<BootDashElement> elements = model.getElements().getValue();
 		Set<String> names = new HashSet<>();
 		for (BootDashElement e : elements) {
-			if (isService(e)) {
-				names.add(e.getName());
-			}
+			names.add(e.getName());
 		}
 		assertElements(names, expectedElementNames);
 	}
 
-	private void assertNonServiceElements(String... expectedElementNames) {
-		Set<BootDashElement> elements = model.getElements().getValue();
-		Set<String> names = new HashSet<>();
-		for (BootDashElement e : elements) {
-			if (!isService(e)) {
-				names.add(e.getName());
-			}
-		}
-		assertElements(names, expectedElementNames);
-	}
-
-	private boolean isService(BootDashElement e) {
-		return e instanceof LocalCloudServiceDashElement;
-	}
-
-	public void waitNonServiceElements(final String... expectedElementNames) throws Exception {
+	public void waitModelElements(final String... expectedElementNames) throws Exception {
 		new ACondition("Model update", MODEL_UPDATE_TIMEOUT) {
 			public boolean test() throws Exception {
-				assertNonServiceElements(expectedElementNames);
+				assertModelElements(expectedElementNames);
 				return true;
 			}
 		};
@@ -1579,6 +1379,5 @@ public class BootDashModelTest {
 		bootProject.removeMavenDependency(devtoolsId);
 		return devtools;
 	}
-
 
 }

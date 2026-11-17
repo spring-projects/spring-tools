@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2017 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -40,7 +40,6 @@ import org.osgi.framework.BundleListener;
 import org.springframework.ide.eclipse.boot.dash.api.Deletable;
 import org.springframework.ide.eclipse.boot.dash.api.RunTargetType;
 import org.springframework.ide.eclipse.boot.dash.devtools.DevtoolsPortRefresher;
-import org.springframework.ide.eclipse.boot.dash.model.local.LocalServicesModel;
 import org.springframework.ide.eclipse.boot.dash.util.LaunchConfRunStateTracker;
 import org.springframework.ide.eclipse.boot.dash.util.LaunchConfigurationTracker;
 import org.springframework.ide.eclipse.boot.dash.views.BootDashModelConsoleManager;
@@ -56,8 +55,6 @@ import org.springsource.ide.eclipse.commons.frameworks.core.workspace.ProjectCha
 import org.springsource.ide.eclipse.commons.livexp.core.AsyncLiveExpression.AsyncMode;
 import org.springsource.ide.eclipse.commons.livexp.core.LiveExpression;
 import org.springsource.ide.eclipse.commons.livexp.core.LiveSetVariable;
-import org.springsource.ide.eclipse.commons.livexp.core.LiveSets;
-import org.springsource.ide.eclipse.commons.livexp.core.LiveVariable;
 import org.springsource.ide.eclipse.commons.livexp.core.ObservableSet;
 import org.springsource.ide.eclipse.commons.livexp.core.ValueListener;
 import org.springsource.ide.eclipse.commons.livexp.util.Log;
@@ -81,7 +78,6 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 	final LaunchConfigurationTracker launchConfTracker = new LaunchConfigurationTracker(BootLaunchConfigurationDelegate.TYPE_ID);
 
 	private LiveSetVariable<BootProjectDashElement> applications; //lazy created
-	private ObservableSet<BootDashElement> allElements;
 
 	private BootDashModelConsoleManager consoleManager;
 
@@ -91,11 +87,6 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 
 	private IPropertyStore modelStore;
 
-	private LocalServicesModel localServices;
-
-	private LiveVariable<RefreshState> bootAppsRefreshState = new LiveVariable<>(RefreshState.READY);
-
-	private LiveExpression<RefreshState> refreshState;
 	private BundleListener bundleListener;
 
 	public class WorkspaceListener implements ProjectChangeListener, ClasspathListener {
@@ -114,19 +105,6 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 	public LocalBootDashModel(BootDashModelContext context, BootDashViewModel parent) {
 		super(RunTargets.LOCAL, parent);
 		this.workspace = context.getWorkspace();
-		this.localServices = new LocalServicesModel(getViewModel(), this, context.getBootInstallManager().getDefaultInstallExp());
-		this.refreshState = new LiveExpression<>() {
-			{
-				dependsOn(bootAppsRefreshState);
-				dependsOn(localServices.getRefreshState());
-				addListener((e,v) -> notifyModelStateChanged());
-			}
-
-			@Override
-			protected RefreshState compute() {
-				return RefreshState.merge(bootAppsRefreshState.getValue(), localServices.getRefreshState().getValue());
-			}
-		};
 		this.launchConfElementFactory = new LaunchConfDashElementFactory(this, context.getLaunchManager());
 		this.projectElementFactory = new BootProjectDashElementFactory(this, context.getProjectProperties(), launchConfElementFactory);
 		this.consoleManager = new LocalElementConsoleManager();
@@ -170,12 +148,8 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 	}
 
 	void init() {
-		if (allElements == null) {
+		if (applications == null) {
 			this.applications = new LiveSetVariable<>(AsyncMode.SYNC);
-			this.allElements = LiveSets.union(
-					this.applications,
-					this.localServices.getCloudCliServices()
-			);
 			WorkspaceListener workspaceListener = new WorkspaceListener();
 			this.openCloseListenerManager = new ProjectChangeListenerManager(workspace, workspaceListener);
 			this.classpathListenerManager = new ClasspathListenerManager(workspaceListener);
@@ -272,14 +246,6 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 			projectExclusion.removeListener(projectExclusionListener);
 			projectExclusionListener=null;
 		}
-		if (localServices != null) {
-			localServices.dispose();
-			localServices = null;
-		}
-		if (allElements != null) {
-			allElements.dispose();
-			allElements = null;
-		}
 		launchConfTracker.dispose();
 		launchConfRunStateTracker.dispose();
 		// Remove bundle listener
@@ -317,12 +283,7 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 
 	public synchronized ObservableSet<BootDashElement> getElements() {
 		init();
-		return allElements;
-	}
-
-	@Override
-	public ObservableSet<ButtonModel> getButtons() {
-		return localServices.getButtons();
+		return (ObservableSet<BootDashElement>) (ObservableSet<?>) applications;
 	}
 
 	/**
@@ -331,7 +292,6 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 	public void refresh(UserInteractions ui) {
 		updateElementsFromWorkspace();
 		applications.getValue().stream().forEach(e -> e.refreshHasMainMethod());
-		localServices.refresh();
 	}
 
 	@Override
@@ -376,10 +336,5 @@ public class LocalBootDashModel extends AbstractBootDashModel implements Deletio
 
 	public IPropertyStore getModelStore() {
 		return modelStore;
-	}
-
-	@Override
-	public RefreshState getRefreshState() {
-		return refreshState.getValue();
 	}
 }

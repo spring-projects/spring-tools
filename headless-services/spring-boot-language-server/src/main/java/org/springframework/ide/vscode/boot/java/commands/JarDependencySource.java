@@ -11,6 +11,7 @@
 package org.springframework.ide.vscode.boot.java.commands;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,7 +35,6 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.CompositeIndex;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexView;
@@ -87,9 +87,9 @@ public class JarDependencySource implements StructureDependencySource {
 	private final Map<String, Set<String>> includedJars = new HashMap<>();
 
 	/**
-	 * How many JARs are indexed at once - half the cores, at most 8: a scan reads and parses every
-	 * class of the classpath, which scales with cores, while the language server has other work to
-	 * do too. See {@link #scanAll}.
+	 * How many JARs are indexed or listed at once - half the cores, at most 8: indexing the scanned
+	 * JARs reads and parses every class of theirs, which scales with cores, while the language
+	 * server has other work to do too. See {@link #scanAll}.
 	 */
 	private static final int INDEXING_THREADS = Math.max(1, Math.min(8, Runtime.getRuntime().availableProcessors() / 2));
 
@@ -277,18 +277,20 @@ public class JarDependencySource implements StructureDependencySource {
 	}
 
 	/**
-	 * Scans the given JARs' own classes, resolving their annotations and supertypes against a
-	 * combined index built over every JAR on {@code including}'s classpath - not just the JARs in
+	 * Scans the given JARs' own classes, resolving their annotations and supertypes against an
+	 * index over every JAR on {@code including}'s classpath - not just the JARs in
 	 * isolation, since an annotation's own meta-annotations are often declared several JARs away
 	 * from where the annotation itself is used (Spring's own annotations are the textbook example:
 	 * {@code @RestController} is meta-annotated with {@code @Controller}, which lives in a different
 	 * JAR). Every JAR {@code including} depends on is guaranteed to be resolvable on its own
 	 * classpath, so this is always sufficient. The index is built once, for all of them.
 	 *
-	 * <p>The classpath's JARs are indexed in parallel, one index each on {@link #indexing}, and then
-	 * put together in classpath order: a class that more than one JAR has is the first one's, as for
-	 * the JVM. Reading the given JARs' own classes from that index runs in parallel too, one JAR
-	 * each.
+	 * <p>The index is a {@link LazyClasspathIndex}: the given JARs are indexed as a whole, the rest
+	 * of the classpath only listed, and a class of those read once it is looked up - a scan needs a
+	 * few hundred of the classpath's classes, not all of them. Indexing and listing run in parallel,
+	 * one JAR each on {@link #indexing}, and are put together in classpath order: a class that more
+	 * than one JAR has is the first one's, as for the JVM. Reading the given JARs' own classes from
+	 * that index runs in parallel too, one JAR each.
 	 *
 	 * <p>Reported as one progress for the project, naming the JAR last done.
 	 */
@@ -328,7 +330,7 @@ public class JarDependencySource implements StructureDependencySource {
 			}
 		}
 
-		// one step per JAR to index, and one per JAR to read its own classes from
+		// one step per JAR to index or list, and one per JAR to read its own classes from
 		PercentageProgressTask progress = progressService.createPercentageProgressTask(SCAN_JARS_TASK_ID + including.getElementName(),
 				toIndex.size() + jarFiles.size(), "Spring Tools: Indexing Libraries for the Logical Structure of '"
 						+ including.getElementName() + "'");
@@ -336,51 +338,71 @@ public class JarDependencySource implements StructureDependencySource {
 		try {
 			Map<File, Future<IndexedJar>> indexing = new LinkedHashMap<>();
 			for (File file : toIndex) {
+				boolean own = wanted.contains(file);
 				indexing.put(file, this.indexing.submit(() -> {
-					IndexedJar indexed = indexedJar(file, including);
+					IndexedJar indexed = own ? indexedJar(file, including) : listedJar(file);
 					stepDone(progress, file);
 					return indexed;
 				}));
 			}
 
-			List<IndexView> indexes = new ArrayList<>();
+			List<LazyClasspathIndex.Part> parts = new ArrayList<>();
 			Map<File, Set<DotName>> ownClasses = new LinkedHashMap<>();
-			for (Map.Entry<File, Future<IndexedJar>> entry : indexing.entrySet()) {
-				IndexedJar indexed = await(entry.getValue(), entry.getKey(), new IndexedJar(new Indexer().complete(), Set.of()));
-				indexes.add(indexed.index());
-				if (wanted.contains(entry.getKey())) {
-					ownClasses.put(entry.getKey(), indexed.ownClasses());
+			LazyClasspathIndex lazyIndex;
+			try {
+				for (Map.Entry<File, Future<IndexedJar>> entry : indexing.entrySet()) {
+					IndexedJar indexed = await(entry.getValue(), entry.getKey(), new IndexedJar(LazyClasspathIndex.empty(), Set.of()));
+					parts.add(indexed.part());
+					if (wanted.contains(entry.getKey())) {
+						ownClasses.put(entry.getKey(), indexed.ownClasses());
+					}
 				}
+				lazyIndex = new LazyClasspathIndex(parts);
+			}
+			catch (RuntimeException e) {
+				parts.forEach(LazyClasspathIndex.Part::close);
+				throw e;
 			}
 
-			IndexView index = CompositeIndex.create(indexes);
+			try (LazyClasspathIndex index = lazyIndex) {
+				Map<File, Future<ScanResult>> reading = new LinkedHashMap<>();
+				for (File jarFile : jarFiles) {
+					File key = jarFile.getAbsoluteFile();
+					boolean complete = classpathRead && !isolated.contains(key);
+					reading.put(jarFile, this.indexing.submit(() -> {
+						ScanResult scanned = scannedJar(jarFile, ownClasses.getOrDefault(key, Set.of()), index, complete, including);
+						stepDone(progress, jarFile);
+						return scanned;
+					}));
+				}
 
-			Map<File, Future<ScanResult>> reading = new LinkedHashMap<>();
-			for (File jarFile : jarFiles) {
-				File key = jarFile.getAbsoluteFile();
-				boolean complete = classpathRead && !isolated.contains(key);
-				reading.put(jarFile, this.indexing.submit(() -> {
-					ScanResult scanned = scannedJar(jarFile, ownClasses.getOrDefault(key, Set.of()), index, complete, including);
-					stepDone(progress, jarFile);
-					return scanned;
-				}));
+				Map<File, ScanResult> result = new LinkedHashMap<>();
+				for (Map.Entry<File, Future<ScanResult>> entry : reading.entrySet()) {
+					result.put(entry.getKey(), await(entry.getValue(), entry.getKey(), new ScanResult(List.of(), Map.of(), Map.of(), false)));
+				}
+
+				log.info("scanned {} structure dependency JAR(s) for '{}' against {} classpath entries, reading {} other class(es) on demand, on up to {} threads, in {} ms",
+						jarFiles.size(), including.getElementName(), toIndex.size(), index.loadedCount(), INDEXING_THREADS,
+						System.currentTimeMillis() - scanStart);
+				return result;
 			}
-
-			Map<File, ScanResult> result = new LinkedHashMap<>();
-			for (Map.Entry<File, Future<ScanResult>> entry : reading.entrySet()) {
-				result.put(entry.getKey(), await(entry.getValue(), entry.getKey(), new ScanResult(List.of(), Map.of(), Map.of(), false)));
-			}
-
-			log.info("scanned {} structure dependency JAR(s) for '{}', indexing {} classpath entries on up to {} threads, in {} ms",
-					jarFiles.size(), including.getElementName(), toIndex.size(), INDEXING_THREADS, System.currentTimeMillis() - scanStart);
-			return result;
 		}
 		finally {
 			progress.done();
 		}
 	}
 
-	private record IndexedJar(Index index, Set<DotName> ownClasses) {
+	/**
+	 * @param ownClasses the classes of the JAR itself, if it is one to be scanned
+	 */
+	private record IndexedJar(LazyClasspathIndex.Part part, Set<DotName> ownClasses) {
+	}
+
+	/**
+	 * One of the classpath's other JARs: listed, to be read from on demand.
+	 */
+	private static IndexedJar listedJar(File file) throws IOException {
+		return new IndexedJar(LazyClasspathIndex.listed(file), Set.of());
 	}
 
 	/**
@@ -394,7 +416,7 @@ public class JarDependencySource implements StructureDependencySource {
 		Index index = indexer.complete();
 		log.info("indexed '{}' for the logical structure of '{}': {} class file(s) in {} ms", file.getName(),
 				including.getElementName(), classes.size(), System.currentTimeMillis() - start);
-		return new IndexedJar(index, classes);
+		return new IndexedJar(LazyClasspathIndex.indexed(index), classes);
 	}
 
 	private static ScanResult scannedJar(File jarFile, Set<DotName> ownClasses, IndexView index, boolean complete, IJavaProject including) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2016 the original author or authors.
+ * Copyright 2012-2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,9 +128,9 @@ public final class ConfigurationMetadataRepositoryJsonBuilder {
 				repository.add(item, source);
 			}
 		}
+		// getAllProperties() builds a new map on every call, and adding hints doesn't change the properties
+		Map<String, ConfigurationMetadataProperty> allProperties = repository.getAllProperties();
 		for (RawConfigurationMetadata metadata : metadatas) {
-			Map<String, ConfigurationMetadataProperty> allProperties = repository
-					.getAllProperties();
 			for (ConfigurationMetadataHint hint : metadata.getHints()) {
 				ConfigurationMetadataProperty property = allProperties.get(hint.getId());
 				if (property != null) {

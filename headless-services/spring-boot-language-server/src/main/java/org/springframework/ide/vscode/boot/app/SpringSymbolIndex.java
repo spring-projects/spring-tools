@@ -234,11 +234,19 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 				projectFinder(), server.getTextDocumentService(),
 				(doc, aggregator) -> server.createProblemCollector(doc, aggregator));
 
-		// the properties metadata of projects changed: their config files need to be reconciled again
+		// the properties metadata of projects changed: their config files need to be reconciled again.
+		// The client is told when that is done, as for all the other work queued for a project, so
+		// that whatever it asked about the project in the meantime it can ask again
 		params.indexProvider.onChange(projects -> projects.forEach(project -> {
 			if (project.getElementName() != null) {
-				this.latestScheduledTaskByProject.put(project.getElementName(),
-						CompletableFuture.runAsync(new InitializeProject(project, configFilesIndexer, true), this.updateQueue));
+				Set<String> affectedProjects = Set.of(project.getElementName());
+				CompletableFuture<Void> future = CompletableFuture.runAsync(new InitializeProject(project, configFilesIndexer, true), this.updateQueue)
+						.thenAccept(v -> {
+							if (server.getClient() != null) {
+								server.getClient().indexUpdated(IndexUpdatedParams.of(affectedProjects));
+							}
+						});
+				this.latestScheduledTaskByProject.put(project.getElementName(), future);
 			}
 		}));
 

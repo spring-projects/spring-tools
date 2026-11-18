@@ -10,8 +10,11 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.metadata;
 
+import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -62,9 +65,7 @@ public class SpringPropertiesIndexManager extends ListenerManager<Listener<Colle
 			projectObserver.addListener(ProjectObserver.onAny(project -> indexes.invalidate(project)));
 		}
 		if (fileObserver != null) {
-			fileObserver.onAnyChange(ImmutableList.of("**/*spring-configuration-metadata.json"), changed -> {
-				clear();
-			});
+			fileObserver.onAnyChange(ImmutableList.of("**/*spring-configuration-metadata.json"), this::metadataFilesChanged);
 		}
 	}
 
@@ -99,6 +100,38 @@ public class SpringPropertiesIndexManager extends ListenerManager<Listener<Colle
 				progress.done();
 			}
 		}
+	}
+
+	/**
+	 * Discards all indexes, unless all the changed files are ones the indexes were built from and
+	 * still have the content they were built from. Annotation processors rewrite their metadata
+	 * file on every compile, mostly with the same content, and rebuilding the indexes of all
+	 * projects (and reconciling their config files again) for that would be wasted.
+	 */
+	synchronized void metadataFilesChanged(String[] changedUris) {
+		if (changedUris.length > 0 && Arrays.stream(changedUris).allMatch(this::isUnchanged)) {
+			log.debug("Spring metadata files rewritten without changes, keeping the properties indexes: {}", (Object) changedUris);
+			return;
+		}
+		clear();
+	}
+
+	private boolean isUnchanged(String uri) {
+		Path file;
+		try {
+			file = PropertiesLoader.normalize(Paths.get(URI.create(uri)));
+		} catch (Exception e) {
+			return false;
+		}
+		List<String> builtFrom = indexes.asMap().values().stream()
+				.map(index -> index.getMetadataFileHashes().get(file))
+				.filter(hash -> hash != null)
+				.toList();
+		if (builtFrom.isEmpty()) {
+			return false; // no index was built from this file (e.g. it is new): could be relevant for any of them
+		}
+		String current = PropertiesLoader.contentHash(file);
+		return current != null && builtFrom.stream().allMatch(current::equals);
 	}
 
 	/**

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015, 2023 Pivotal, Inc.
+ * Copyright (c) 2015, 2026 Pivotal, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.metadata;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,6 +43,11 @@ public class SpringPropertyIndex {
 		}
 	};
 
+	/**
+	 * Content hashes of the metadata json files of project output folders this index was built from.
+	 */
+	private Map<Path, String> metadataFileHashes = Map.of();
+
 	private SpringPropertyIndex(ValueProviderRegistry valueProviders) {
 		this.valueProviders = valueProviders;
 	}
@@ -49,6 +55,7 @@ public class SpringPropertyIndex {
 	private void loadFromClasspath(IClasspath projectPath) {
 		PropertiesLoader loader = new PropertiesLoader();
 		addMetadata(loader.load(projectPath));
+		metadataFileHashes = Map.copyOf(loader.getJsonFileHashes());
 		//^^^ Should be done in bg? It seems fast enough for now.
 	}
 	
@@ -146,6 +153,14 @@ public class SpringPropertyIndex {
 
 	public int size() {
 		return properties.size();
+	}
+
+	/**
+	 * @return the content hashes of the metadata json files of project output folders this index was
+	 * built from, by normalized absolute path
+	 */
+	public Map<Path, String> getMetadataFileHashes() {
+		return metadataFileHashes;
 	}
 
 	public Collection<PropertySource> getGroupSources(String prefix) {

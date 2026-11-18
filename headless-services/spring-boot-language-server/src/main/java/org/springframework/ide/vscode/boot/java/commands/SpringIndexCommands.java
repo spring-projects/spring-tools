@@ -106,22 +106,29 @@ public class SpringIndexCommands {
 			return CompletableFuture.supplyAsync(() -> {
 				StructureCommandArgs args = StructureCommandArgs.parseFrom(params);
 
+				Stream<? extends IJavaProject> projectStream = projectFinder.all().stream();
+				if (!this.includeNonSpringProjects.getAsBoolean()) {
+					projectStream = projectStream.filter(SpringProjectUtil::isSpringProject);
+				}
+				if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
+					projectStream = projectStream.filter(project -> args.isAffected(project.getElementName()));
+				}
+				List<? extends IJavaProject> projects = projectStream.toList();
+
 				// before anything is built, not per project: the trees are built from the
 				// in-memory index, and comparing one against a baseline is only meaningful once
-				// that index reflects the same state on disk the baseline was captured from
-				boolean indexSettled = awaitSettledIndex();
+				// that index reflects the same state on disk the baseline was captured from. Only
+				// when a tree actually gets compared, though: without a diff, nothing in the
+				// answer depends on the index having caught up (the baseline attributes come from
+				// the stored baselines), and the view shows the projects without waiting for the
+				// whole workspace to be indexed - an index update refreshes them afterwards
+				boolean comparesAgainstBaseline = args.changes && !args.isDependencyMode()
+						&& projects.stream().anyMatch(structureSnapshotStore::hasBaseline);
+				boolean indexSettled = !comparesAgainstBaseline || awaitSettledIndex();
 
 				CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
 
-				Stream<? extends IJavaProject> projects = projectFinder.all().stream();
-				if (!this.includeNonSpringProjects.getAsBoolean()) {
-					projects = projects.filter(SpringProjectUtil::isSpringProject);
-				}
-				if (args.affectedProjects != null && args.affectedProjects.size() > 0) {
-					projects = projects.filter(project -> args.isAffected(project.getElementName()));
-				}
-
-				return projects
+				return projects.stream()
 						.parallel()
 						.map(project -> createAnnotatedTree(project, cachedIndex, args, indexSettled))
 						.filter(Objects::nonNull)
@@ -219,7 +226,8 @@ public class SpringIndexCommands {
 	 * no baseline attributes at all, for every project in the request, whatever {@code compareAgainst}
 	 * says. See {@code docs/structure-view-dependencies.md}.
 	 *
-	 * @param indexSettled whether the index had caught up before this tree was built - when it had
+	 * @param indexSettled whether the index had caught up before this tree was built, or did not
+	 *        have to because no tree of the request is compared against a baseline - when it had
 	 *        not, the tree is returned as if the project had no baseline at all (see
 	 *        {@link #awaitSettledIndex()})
 	 */

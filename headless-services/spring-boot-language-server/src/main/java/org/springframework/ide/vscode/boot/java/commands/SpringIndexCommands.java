@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -115,16 +116,17 @@ public class SpringIndexCommands {
 				}
 				List<? extends IJavaProject> projects = projectStream.toList();
 
-				// before anything is built, not per project: the trees are built from the
-				// in-memory index, and comparing one against a baseline is only meaningful once
-				// that index reflects the same state on disk the baseline was captured from. Only
-				// when a tree actually gets compared, though: without a diff, nothing in the
-				// answer depends on the index having caught up (the baseline attributes come from
-				// the stored baselines), and the view shows the projects without waiting for the
-				// whole workspace to be indexed - an index update refreshes them afterwards
-				boolean comparesAgainstBaseline = args.changes && !args.isDependencyMode()
-						&& projects.stream().anyMatch(structureSnapshotStore::hasBaseline);
-				boolean indexSettled = !comparesAgainstBaseline || awaitSettledIndex();
+				// before anything is built: the trees are built from the in-memory index, and
+				// comparing one against a baseline is only meaningful once that index reflects the
+				// same state on disk the baseline was captured from. Only for the trees that
+				// actually get compared, though: without a diff, nothing in the answer depends on
+				// the index having caught up (the baseline attributes come from the stored
+				// baselines). And only for their projects: so that the refresh for a project that
+				// has just been indexed doesn't wait for the rest of the workspace
+				List<String> comparedProjects = args.changes && !args.isDependencyMode()
+						? projects.stream().filter(structureSnapshotStore::hasBaseline).map(IJavaProject::getElementName).toList()
+						: List.of();
+				boolean indexSettled = comparedProjects.isEmpty() || awaitSettledIndex(comparedProjects);
 
 				CachedSpringMetamodelIndex cachedIndex = new CachedSpringMetamodelIndex(springIndex);
 
@@ -299,8 +301,26 @@ public class SpringIndexCommands {
 	 * @return whether the index settled within {@link #INDEX_DRAIN_TIMEOUT_SECONDS}
 	 */
 	private boolean awaitSettledIndex() {
+		return awaitSettled(symbolIndex.waitOperation());
+	}
+
+	/**
+	 * Same as {@link #awaitSettledIndex()}, but only for the index of the given projects: the work
+	 * queued for other projects, all of the workspace on startup, is not waited for. Enough for a
+	 * tree that only contains its own project's elements - which every tree that is compared
+	 * against a baseline does, since a tree with dependencies included is never compared. Should
+	 * that change, the selected workspace projects would have to be waited for as well, since such
+	 * a tree also contains theirs.
+	 *
+	 * @return whether the index of these projects settled within {@link #INDEX_DRAIN_TIMEOUT_SECONDS}
+	 */
+	private boolean awaitSettledIndex(Collection<String> projectNames) {
+		return awaitSettled(symbolIndex.waitOperation(projectNames));
+	}
+
+	private boolean awaitSettled(CompletableFuture<Void> settled) {
 		try {
-			symbolIndex.waitOperation().get(INDEX_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+			settled.get(INDEX_DRAIN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 			return true;
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();

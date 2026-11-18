@@ -13,12 +13,14 @@ package org.springframework.ide.vscode.boot.java.commands;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +52,7 @@ public class SpringIndexCommandsIndexWaitTest {
 	private SpringSymbolIndex symbolIndex;
 	private StructureSnapshotStore snapshotStore;
 	private IJavaProject project;
+	private List<IJavaProject> projects;
 	private ExecuteCommandHandler structureCommand;
 
 	@BeforeEach
@@ -57,14 +60,16 @@ public class SpringIndexCommandsIndexWaitTest {
 		project = mock(IJavaProject.class);
 		when(project.getElementName()).thenReturn("demo");
 		JavaProjectFinder projectFinder = mock(JavaProjectFinder.class);
-		when(projectFinder.all()).thenAnswer(invocation -> List.of(project));
+		projects = new ArrayList<>(List.of(project));
+		when(projectFinder.all()).thenAnswer(invocation -> projects);
 
 		// an index that never settles: a request waiting for it would only answer after the timeout
 		symbolIndex = mock(SpringSymbolIndex.class);
 		when(symbolIndex.waitOperation()).thenReturn(new CompletableFuture<>());
+		when(symbolIndex.waitOperation(anyCollection())).thenReturn(new CompletableFuture<>());
 
 		StructureViewProvider structureViewProvider = mock(StructureViewProvider.class);
-		when(structureViewProvider.createTree(eq(project), any(), anyBoolean(), any(), any(), anyBoolean())).thenAnswer(invocation -> new Node(null));
+		when(structureViewProvider.createTree(any(), any(), anyBoolean(), any(), any(), anyBoolean())).thenAnswer(invocation -> new Node(null));
 		snapshotStore = mock(StructureSnapshotStore.class);
 
 		SimpleLanguageServer server = mock(SimpleLanguageServer.class);
@@ -95,7 +100,7 @@ public class SpringIndexCommandsIndexWaitTest {
 		when(snapshotStore.hasBaseline(project)).thenReturn(false);
 
 		assertEquals(1, structure(true, false).size());
-		verify(symbolIndex, never()).waitOperation();
+		verifyNoWait();
 	}
 
 	@Test
@@ -104,7 +109,7 @@ public class SpringIndexCommandsIndexWaitTest {
 
 		List<?> trees = structure(false, false);
 
-		verify(symbolIndex, never()).waitOperation();
+		verifyNoWait();
 		// what the project node tells about its baseline does not depend on the index, so it is still there
 		assertEquals(Boolean.TRUE, ((Node) trees.get(0)).attributes.get(JsonNodeHandler.HAS_BASELINE));
 	}
@@ -114,18 +119,39 @@ public class SpringIndexCommandsIndexWaitTest {
 		when(snapshotStore.hasBaseline(project)).thenReturn(true);
 
 		assertEquals(1, structure(true, true).size());
-		verify(symbolIndex, never()).waitOperation();
+		verifyNoWait();
 	}
 
 	@Test
-	void waitsForTheIndexBeforeComparingAgainstABaseline() throws Exception {
+	void waitsForTheIndexOfTheProjectBeforeComparingAgainstABaseline() throws Exception {
 		when(snapshotStore.hasBaseline(project)).thenReturn(true);
-		when(symbolIndex.waitOperation()).thenReturn(CompletableFuture.completedFuture(null));
+		when(symbolIndex.waitOperation(anyCollection())).thenReturn(CompletableFuture.completedFuture(null));
 
 		structure(true, false);
 
-		verify(symbolIndex).waitOperation();
+		verify(symbolIndex).waitOperation(List.of("demo"));
+		verify(symbolIndex, never()).waitOperation();
 		verify(snapshotStore).annotateWithChangesSinceBaseline(eq(project), any(), any(), any());
+	}
+
+	@Test
+	void waitsOnlyForTheIndexOfTheProjectsThatAreCompared() throws Exception {
+		IJavaProject other = mock(IJavaProject.class);
+		when(other.getElementName()).thenReturn("other");
+		projects.add(other);
+		when(snapshotStore.hasBaseline(project)).thenReturn(true);
+		when(snapshotStore.hasBaseline(other)).thenReturn(false);
+		when(symbolIndex.waitOperation(anyCollection())).thenReturn(CompletableFuture.completedFuture(null));
+
+		assertEquals(2, structure(true, false).size());
+
+		verify(symbolIndex).waitOperation(List.of("demo"));
+		verify(symbolIndex, never()).waitOperation();
+	}
+
+	private void verifyNoWait() {
+		verify(symbolIndex, never()).waitOperation();
+		verify(symbolIndex, never()).waitOperation(anyCollection());
 	}
 
 }

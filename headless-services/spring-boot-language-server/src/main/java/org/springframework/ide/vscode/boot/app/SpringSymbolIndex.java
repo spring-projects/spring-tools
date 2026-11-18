@@ -38,6 +38,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -883,6 +884,36 @@ public class SpringSymbolIndex implements InitializingBean, SpringIndex {
 			public void run() {
 			}
 		}, this.updateQueue);
+	}
+
+	/**
+	 * Like {@link #waitOperation()}, but only for the given projects: the returned future completes
+	 * once the latest work queued for each of them is done, without waiting for the work queued for
+	 * other projects after that - so waiting for a project that has been indexed already does not
+	 * wait for the rest of the workspace. Since the queue works off its items in order, everything
+	 * queued for these projects before is done by then as well.
+	 */
+	public CompletableFuture<Void> waitOperation(Collection<String> projectNames) {
+		return waitForProjects(latestScheduledTaskByProject, projectNames, this::waitOperation);
+	}
+
+	/**
+	 * Waits for the latest task of every given project - a failed one counts as done, like the
+	 * tasks before a {@link #waitOperation()} do. Falls back to waiting for the whole queue if a
+	 * project has no task: a project that appeared just now may not have had its initialization
+	 * queued yet, and its index is not to be taken as complete before that.
+	 */
+	static CompletableFuture<Void> waitForProjects(Map<String, CompletableFuture<Void>> latestTaskByProject,
+			Collection<String> projectNames, Supplier<CompletableFuture<Void>> waitForAll) {
+		List<CompletableFuture<Void>> tasks = new ArrayList<>(projectNames.size());
+		for (String projectName : projectNames) {
+			CompletableFuture<Void> latestTask = projectName == null ? null : latestTaskByProject.get(projectName);
+			if (latestTask == null) {
+				return waitForAll.get();
+			}
+			tasks.add(latestTask.exceptionally(error -> null));
+		}
+		return CompletableFuture.allOf(tasks.toArray(CompletableFuture[]::new));
 	}
 
 

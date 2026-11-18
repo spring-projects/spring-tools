@@ -80,12 +80,6 @@ public class ModulithStructureTreeTest {
 
 		assertTrue(modulithService.requestMetadata(project, Duration.ZERO).get(), "expected the modulith metadata request to succeed");
 
-		// requestMetadata's own future resolving doesn't guarantee any indexing work it triggered as
-		// a side effect is done too - waiting again here, not just before, was needed to stop this
-		// test from intermittently seeing zero types under a module when run as part of the whole
-		// commands test package rather than on its own
-		indexer.waitOperation().get(15, TimeUnit.SECONDS);
-
 		tree = new StructureTreeTestFixture(harness, indexer, null);
 	}
 

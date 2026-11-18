@@ -269,21 +269,25 @@ public class ModulithService {
 		});
 	}
 	
+	/**
+	 * Loads the Modulith metadata of the project. The returned future completes with whether the
+	 * metadata changed, and - if it did - only after the Java sources of the project have been
+	 * re-indexed with it, so that callers waiting for it see a consistent index afterwards.
+	 */
 	public CompletableFuture<Boolean> requestMetadata(IJavaProject p, Duration delay) {
 		clearMetadataRequest(p);
-		CompletableFuture<Boolean> f = loadModulesMetadata(p, delay).thenApply(appModules -> updateAppModulesCache(p, appModules));
+		CompletableFuture<Boolean> f = loadModulesMetadata(p, delay).thenCompose(appModules -> updateAppModulesCache(p, appModules));
 		metadataRequested.put(p.getLocationUri(), f);
 		return f;
 	}
 	
-	private boolean updateAppModulesCache(IJavaProject project, AppModules modules) {
+	private CompletableFuture<Boolean> updateAppModulesCache(IJavaProject project, AppModules modules) {
 		URI uri = project.getLocationUri();
 		AppModules oldModules = modules == null ? cache.remove(uri) : cache.put(uri, modules);
 		if (!Objects.equals(modules, oldModules)) {
-			validate(project);
-			return true;
+			return validate(project).thenApply(v -> true);
 		}
-		return false;
+		return CompletableFuture.completedFuture(false);
 	}
 	
 	private AppModules removeFromCache(IJavaProject project) {
@@ -298,7 +302,11 @@ public class ModulithService {
 		}
 	}
 	
-	private void validate(IJavaProject project) {
+	/**
+	 * @return completes once the project's Java sources are re-indexed (and the open ones
+	 *         re-validated) - a failure of that does not fail the future, the metadata did change
+	 */
+	private CompletableFuture<Void> validate(IJavaProject project) {
 		if (server.getDiagnosticSeverityProvider().getDiagnosticSeverity(Boot3JavaProblemType.MODULITH_TYPE_REF_VIOLATION) != null
 				&& config.getProblemApplicability(Boot3JavaProblemType.MODULITH_TYPE_REF_VIOLATION) != Option.OFF) {
 			
@@ -322,8 +330,14 @@ public class ModulithService {
 				}
 			}
 			String[] uris = fileUriToUpdate.toArray(new String[fileUriToUpdate.size()]);
-			springIndexer.deleteDocuments(uris).thenAccept(v -> springIndexer.updateDocuments(uris, "Modulith Metadata Changed"));
+			return springIndexer.deleteDocuments(uris)
+					.thenCompose(v -> springIndexer.updateDocuments(uris, "Modulith Metadata Changed"))
+					.exceptionally(e -> {
+						log.error("re-indexing after Modulith metadata change failed for project: " + project.getElementName(), e);
+						return null;
+					});
 		}
+		return CompletableFuture.completedFuture(null);
 	}
 
 	private CompletableFuture<AppModules> loadModulesMetadata(IJavaProject project, Duration delay) {

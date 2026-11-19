@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.java.commands;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +56,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	private final StructureViewProvider structureViewProvider;
 	private final StructureBaselineStorage storage;
 	private final BootJavaConfig config;
+	private final Clock clock;
 
 	/**
 	 * Retained snapshot history per project, newest first. An empty list (rather than a missing
@@ -71,9 +73,19 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 
 	public StructureSnapshotStore(StructureViewProvider structureViewProvider, StructureBaselineStorage storage,
 			BootJavaConfig config) {
+		this(structureViewProvider, storage, config, Clock.systemUTC());
+	}
+
+	/**
+	 * With the clock capture times are taken from - for tests, which need captures that fall into
+	 * the same clock tick to happen deterministically rather than only on a coarse system clock.
+	 */
+	StructureSnapshotStore(StructureViewProvider structureViewProvider, StructureBaselineStorage storage,
+			BootJavaConfig config, Clock clock) {
 		this.structureViewProvider = structureViewProvider;
 		this.storage = storage;
 		this.config = config;
+		this.clock = clock;
 	}
 
 	/**
@@ -123,6 +135,14 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 				log.info("logical structure of project '{}' at commit {} is unchanged since its baseline{} - keeping the retained history as it is",
 						projectName, commitSha, current.get(0).commitSha() == null ? " (manual)" : " at commit " + current.get(0).commitSha());
 				return current.get(0);
+			}
+
+			// the capture time is the key a client picks a snapshot by (see #baselineOf), so it has to
+			// be unique: two captures within the same clock tick - or a clock that went backwards -
+			// would otherwise share a key, and the newer one would shadow the older
+			if (!current.isEmpty() && !snapshot.capturedAt().isAfter(current.get(0).capturedAt())) {
+				snapshot = new StructureSnapshot(current.get(0).capturedAt().plusNanos(1),
+						snapshot.commitSha(), snapshot.commitMessage(), snapshot.elements());
 			}
 
 			updated = new ArrayList<>(current);
@@ -362,7 +382,7 @@ public class StructureSnapshotStore implements GitBaselineTracker.BaselineAccess
 	private StructureSnapshot snapshotNow(IJavaProject project, String commitSha, String commitMessage) {
 		log.debug("capturing logical structure snapshot for project '{}'", project.getElementName());
 		StructureElementSnapshot elements = structureViewProvider.captureSnapshot(project);
-		StructureSnapshot snapshot = new StructureSnapshot(Instant.now(), commitSha, commitMessage, elements);
+		StructureSnapshot snapshot = new StructureSnapshot(clock.instant(), commitSha, commitMessage, elements);
 		log.debug("captured logical structure snapshot for project '{}' with {} element(s)",
 				project.getElementName(), snapshot.elementCount());
 		return snapshot;

@@ -18,6 +18,9 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -151,6 +154,26 @@ public class StructureSnapshotStoreTest {
 
 		assertThat(comparedAgainst.commitSha()).isNull();
 		assertThat(keyOf(comparedAgainst)).isEqualTo(manualKey);
+	}
+
+	@Test
+	void capturesInQuickSuccessionStillGetDistinctKeys(@TempDir Path dir) throws Exception {
+		// a clock that does not move: every capture falls into the same tick, as back-to-back captures
+		// do on a coarse system clock
+		Clock frozen = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
+		AtomicInteger captures = new AtomicInteger();
+		StructureSnapshotStore store = store(new StructureBaselineStorage(dir.toFile()), 10,
+				() -> structure("app.Type", "hash-" + captures.incrementAndGet()), frozen);
+		IJavaProject project = project();
+
+		String manualKey = keyOf(store.captureBaseline(project));
+		store.captureBaseline(project, "sha2", "a later commit");
+		store.captureBaseline(project, "sha3", "an even later commit");
+
+		// the capture time is what a client selects a snapshot by, so it must never be shared
+		assertThat(store.historyOf(project)).extracting(StructureSnapshotStoreTest::keyOf).doesNotHaveDuplicates().hasSize(3);
+		assertThat(store.historyOf(project)).extracting(StructureSnapshot::commitSha).containsExactly("sha3", "sha2", null);
+		assertThat(store.baselineOf(project, manualKey).commitSha()).isNull();
 	}
 
 	@Test
@@ -320,13 +343,17 @@ public class StructureSnapshotStoreTest {
 	}
 
 	private static StructureSnapshotStore store(StructureBaselineStorage storage, int historySize, Supplier<StructureElementSnapshot> structure) {
+		return store(storage, historySize, structure, Clock.systemUTC());
+	}
+
+	private static StructureSnapshotStore store(StructureBaselineStorage storage, int historySize, Supplier<StructureElementSnapshot> structure, Clock clock) {
 		BootJavaConfig config = mock(BootJavaConfig.class);
 		when(config.getStructureBaselineHistorySize()).thenReturn(historySize);
 
 		StructureViewProvider structureViewProvider = mock(StructureViewProvider.class);
 		when(structureViewProvider.captureSnapshot(any())).thenAnswer(invocation -> structure.get());
 
-		return new StructureSnapshotStore(structureViewProvider, storage, config);
+		return new StructureSnapshotStore(structureViewProvider, storage, config, clock);
 	}
 
 	private static StructureElementSnapshot structure(String typeName, String contentHash) {

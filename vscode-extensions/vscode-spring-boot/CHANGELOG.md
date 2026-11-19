@@ -2,6 +2,8 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ [structure view] remove waiting for the index as much as possible [#2098](https://github.com/spring-projects/spring-tools/issues/2098)
+* _(Spring Boot)_ small performance improvements around loading property metadata [#2097](https://github.com/spring-projects/spring-tools/issues/2097)
 * _(Spring Boot)_ Live data not shown for Boot app launched via VSCode [#2082](https://github.com/spring-projects/spring-tools/issues/2082)
 * _(Spring Boot)_ [structure view] git baseline tracking should exclude non Spring projects [#2080](https://github.com/spring-projects/spring-tools/issues/2080)
 * _(Spring Boot)_ [structure view] show number of included dependencies [#2079](https://github.com/spring-projects/spring-tools/issues/2079)

@@ -34,6 +34,7 @@ import org.springframework.ide.vscode.boot.java.beans.NamedCompletionProvider;
 import org.springframework.ide.vscode.boot.java.beans.ProfileCompletionProvider;
 import org.springframework.ide.vscode.boot.java.beans.QualifierCompletionProvider;
 import org.springframework.ide.vscode.boot.java.beans.ResourceCompletionProvider;
+import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnClassCompletionProcessor;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnPropertyCompletionProcessor;
 import org.springframework.ide.vscode.boot.java.conditionals.ConditionalOnResourceCompletionProcessor;
 import org.springframework.ide.vscode.boot.java.contextconfiguration.ContextConfigurationProcessor;
@@ -130,6 +131,9 @@ public class BootJavaCompletionEngineConfigurer {
 		
 		providers.put(Annotations.CONDITIONAL_ON_RESOURCE, new AnnotationAttributeCompletionProcessor(javaProjectFinder, Map.of(
 				"resources", onlyWhen(config, FeatureFlag.CONDITIONAL_ON_RESOURCE_COMPLETION, new ConditionalOnResourceCompletionProcessor()))));
+
+		providers.put(Annotations.CONDITIONAL_ON_CLASS, new AnnotationAttributeCompletionProcessor(javaProjectFinder, Map.of(
+				"name", onlyWhen(config, FeatureFlag.CLASS_NAME_COMPLETION, new ConditionalOnClassCompletionProcessor()))));
 
 		providers.put(Annotations.CONDITIONAL_ON_PROPERTY, new AnnotationAttributeCompletionProcessor(javaProjectFinder, Map.of(
 				"value", onlyWhen(config, FeatureFlag.CONDITIONAL_ON_PROPERTY_COMPLETION, new ConditionalOnPropertyCompletionProcessor(indexProvider, adHocProperties, ConditionalOnPropertyCompletionProcessor.Mode.PROPERTY)),

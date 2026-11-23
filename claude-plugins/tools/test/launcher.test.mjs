@@ -91,15 +91,15 @@ test('JVM arguments put user options after the defaults so they win, and end wit
     assert.deepEqual(args.slice(-2), ['-jar', '/p/ls.jar']);
     assert.ok(args.includes('-Dspring.ai.mcp.server.stdio=true'));
     assert.ok(args.includes('-Dlanguageserver.enabled=false'));
-    assert.ok(args.includes('-Dspring.boot.ls.project.dir=/proj'));
+    assert.ok(args.includes('-Dlanguageserver.standalone.project-dir=/proj'));
     assert.ok(args.includes(`-Dlogging.file.name=${join('/data', 'boot-ls.log')}`));
     assert.ok(args.includes(`-Dspring.ai.mcp.server.instructions=${serverInstructions()}`));
 });
 
 test('the file watcher is on by default and SPRING_TOOLS_LS_WATCH=false turns it off', () => {
     const base = { jarPath: '/p/ls.jar', dataDir: '/data', projectDir: '/proj' };
-    assert.ok(buildJavaArgs(base).includes('-Dspring.boot.ls.project.watch=true'));
-    assert.ok(buildJavaArgs({ ...base, watch: false }).includes('-Dspring.boot.ls.project.watch=false'));
+    assert.ok(buildJavaArgs(base).includes('-Dlanguageserver.standalone.filewatcher.enabled=true'));
+    assert.ok(buildJavaArgs({ ...base, watch: false }).includes('-Dlanguageserver.standalone.filewatcher.enabled=false'));
     for (const value of [undefined, '', 'true', 'yes', '1']) {
         assert.equal(watchEnabled(value), true, `watchEnabled(${JSON.stringify(value)})`);
     }
@@ -107,8 +107,8 @@ test('the file watcher is on by default and SPRING_TOOLS_LS_WATCH=false turns it
         assert.equal(watchEnabled(value), false, `watchEnabled(${JSON.stringify(value)})`);
     }
     // The property must precede user options so SPRING_TOOLS_JAVA_OPTS can still override it.
-    const args = buildJavaArgs({ ...base, extraOpts: ['-Dspring.boot.ls.project.watch=false'] });
-    assert.ok(args.indexOf('-Dspring.boot.ls.project.watch=true') < args.lastIndexOf('-Dspring.boot.ls.project.watch=false'));
+    const args = buildJavaArgs({ ...base, extraOpts: ['-Dlanguageserver.standalone.filewatcher.enabled=false'] });
+    assert.ok(args.indexOf('-Dlanguageserver.standalone.filewatcher.enabled=true') < args.lastIndexOf('-Dlanguageserver.standalone.filewatcher.enabled=false'));
 });
 
 test('server instructions name entry-point tools, use host-neutral skill guidance, and stay under 2 KB', () => {

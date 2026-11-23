@@ -211,9 +211,9 @@ function buildJavaArgs({ jarPath, dataDir, projectDir, watch = true, extraOpts =
         `-Dspring.ai.mcp.server.instructions=${instructions}`,
         // Only the MCP tools are exposed over stdio; nothing connects to the LSP transport.
         '-Dlanguageserver.enabled=false',
-        `-Dspring.boot.ls.project.dir=${projectDir}`,
+        `-Dlanguageserver.standalone.project-dir=${projectDir}`,
         // The server follows on-disk changes under the project dir itself (java.nio WatchService).
-        `-Dspring.boot.ls.project.watch=${watch ? 'true' : 'false'}`,
+        `-Dlanguageserver.standalone.filewatcher.enabled=${watch ? 'true' : 'false'}`,
         ...extraOpts,
         '-jar',
         jarPath,

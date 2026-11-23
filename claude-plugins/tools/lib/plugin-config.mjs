@@ -29,7 +29,7 @@ export const PLUGIN_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/plugin.sch
 export const MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
 
 /**
- * Reads the `@Tool` annotated methods of the language server's MCP components.
+ * Reads the `@McpTool` / `@Tool` annotated methods of the language server's MCP components.
  * @returns {Map<string, string[]>} tool name -> declared parameter names
  */
 export function collectMcpTools(root) {
@@ -38,22 +38,22 @@ export function collectMcpTools(root) {
     if (!existsSync(dir)) {
         return tools;
     }
+    const annotations = /@(?:Mcp)?Tool\(/g;
     for (const entry of readdirSync(dir)) {
         const file = join(dir, entry);
         if (!entry.endsWith('.java') || statSync(file).isDirectory()) {
             continue;
         }
         const text = readFileSync(file, 'utf8');
-        let index = 0;
-        while ((index = text.indexOf('@Tool(', index)) !== -1) {
-            const rest = text.slice(index);
+        let match;
+        while ((match = annotations.exec(text)) !== null) {
+            const rest = text.slice(match.index);
             const method = rest.match(/\n\s*public\s+[\w<>\[\],.? ]+?\s+(\w+)\s*\(/);
             if (method) {
-                const start = index + method.index + method[0].length;
+                const start = match.index + method.index + method[0].length;
                 const params = splitTopLevel(text.slice(start, matchingParen(text, start)));
                 tools.set(method[1], params.map((p) => p.trim().match(/(\w+)$/)[1]));
             }
-            index += '@Tool('.length;
         }
     }
     return tools;

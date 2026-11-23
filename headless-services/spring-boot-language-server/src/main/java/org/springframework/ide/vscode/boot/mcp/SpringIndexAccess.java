@@ -12,8 +12,8 @@ package org.springframework.ide.vscode.boot.mcp;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -34,12 +34,12 @@ public class SpringIndexAccess {
 		this.springIndex = springIndex;
 	}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Returns indexed Spring beans for one workspace Java project, including injection points where the index exposes them.
 			Use getProjectList to obtain valid project names. For a single named bean or type-scoped queries, prefer getBeanUsageInfo or findBeansByType.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public Bean[] getBeanDetails(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
 			throws Exception {
 		logger.info("get Spring project bean details for project: {}", projectName);
 

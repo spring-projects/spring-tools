@@ -18,8 +18,8 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.MarkupContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.ide.vscode.boot.app.SpringSymbolIndex;
 import org.springframework.ide.vscode.boot.java.reconcilers.CachedDiagnostic;
 import org.springframework.ide.vscode.boot.validation.generations.ProjectVersionDiagnosticProvider;
@@ -74,16 +74,16 @@ public class DiagnosticsMcpTools {
 			String source
 	) {}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Returns all current Spring Tools diagnostics or problems or validations (errors, warnings, infos, hints) for a specific project.
 			Diagnostics are produced by the Spring Tools language server during indexing and validation and cover Java sources,
 			Spring Boot configuration files (application*.properties, application*.yml, META-INF/spring.factories) and the Spring Boot version in the build file.
 			Each entry identifies the source file, the exact source location, the severity, and the message.
 			Only diagnostics known to Spring Tools are included; general Java compiler errors are not.
 			Use getProjectList to obtain valid project names.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public List<ProjectDiagnostic> getProjectDiagnostics(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName)
 			throws Exception {
 
 		logger.info("get diagnostics for project: {}", projectName);

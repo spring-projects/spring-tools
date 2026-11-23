@@ -15,8 +15,8 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.ide.vscode.boot.validation.generations.MavenMetadata;
 import org.springframework.ide.vscode.boot.validation.generations.MavenMetadataProvider;
 import org.springframework.ide.vscode.boot.validation.generations.SortedVersions;
@@ -50,13 +50,13 @@ public class SpringVersionsAndGenerations {
 
 	public record ReleaseInformation(String projectName, String version, String endOfOssSupport, String endOfCommercialSupport) {}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Returns the latest general-availability (current) release for a Spring portfolio project plus OSS and commercial support end dates for that generation.
 			Data is resolved from the language server's Spring projects metadata (same source used for validations), not a live per-call HAL dump.
 			Use getReleases when you need every release record; use getGenerations when you need all generation windows from the live Spring IO API; use getUpcomingReleases for scheduled upcoming releases from the calendar API.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public ReleaseInformation getLatestReleaseInformation(
-			@ToolParam(description = """
+			@McpToolParam(description = """
 					Spring project technical id, e.g. "spring-boot", "spring-framework", "spring-data-jpa" (not the IDE workspace project name).
 					""")
 			String projectName) {
@@ -102,14 +102,14 @@ public class SpringVersionsAndGenerations {
 			String latestMinorVersion,
 			String latestMajorVersion) {}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Returns the latest available Spring Boot versions from the Maven repositories configured in the project's build file (pom.xml).
 			Unlike getLatestReleaseInformation (which queries the Spring IO API), this reflects what is actually resolvable from the project's own configured Maven repositories, including private or enterprise repos.
 			latestPatchVersion, latestMinorVersion, and latestMajorVersion are the newest available versions newer than currentVersion for each respective level (null means already up-to-date at that level).
 			Only works for Maven (pom.xml) projects; returns null for Gradle projects or when Maven metadata cannot be fetched.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = true))
 	public BootVersionsFromMavenRepo getLatestBootVersionsFromMavenRepo(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)")
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)")
 			String projectName) {
 
 		try {

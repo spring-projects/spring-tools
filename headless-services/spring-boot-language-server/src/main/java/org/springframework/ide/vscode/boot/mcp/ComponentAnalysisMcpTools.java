@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
@@ -82,14 +82,14 @@ public class ComponentAnalysisMcpTools {
 			int endColumn
 	) {}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Get detailed information about a specific bean, including where it's defined and all places where it's injected.
 			This helps understand bean usage and dependencies across the application.
 			Returns information for all beans with the given name (there may be multiple beans with the same name in different contexts).
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public List<BeanUsageInfo> getBeanUsageInfo(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
-			@ToolParam(description = "the name of the bean to analyze") String beanName) throws Exception {
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
+			@McpToolParam(description = "the name of the bean to analyze") String beanName) throws Exception {
 		
 		logger.info("get bean usage info for: {} in project: {}", beanName, projectName);
 		
@@ -126,13 +126,13 @@ public class ComponentAnalysisMcpTools {
 		return usageInfos;
 	}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Find all beans that match a specific type.
 			This is useful for finding all implementations of an interface or all beans of a certain class.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public List<ComponentInfo> findBeansByType(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
-			@ToolParam(description = "the fully qualified type name to search for") String typeName) throws Exception {
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
+			@McpToolParam(description = "the fully qualified type name to search for") String typeName) throws Exception {
 		
 		logger.info("find beans by type: {} for project: {}", typeName, projectName);
 		

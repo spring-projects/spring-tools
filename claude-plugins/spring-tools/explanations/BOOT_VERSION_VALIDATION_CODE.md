@@ -95,7 +95,7 @@ When the message says OSS support for your generation ends soon or has ended, up
 *Note: Use the MCP tool `getLatestReleaseInformation` (project `spring-boot`) to retrieve the latest version together with its OSS and commercial support end dates. Upgrading across a major version usually also requires a newer Java baseline and dependency updates (Jakarta EE namespaces for 3.0, module and starter reorganizations for 4.0); plan it as a proper migration, not as a version bump.*
 
 **Fix 3: Align the Spring Cloud release train with the Spring Boot version**
-Each Spring Cloud release train supports specific Spring Boot generations (for example 2025.0.x for Spring Boot 3.5.x, 2024.0.x for 3.4.x, 2025.1.x for 4.0.x and 4.1.x). When the diagnostic reports an incompatibility, either change the `spring-cloud-dependencies` BOM version to the train that matches your Spring Boot version, or upgrade Spring Boot to a version listed as supported by your train. Always pick the latest service release of the chosen train.
+Each Spring Cloud release train supports specific Spring Boot generations (for example 2024.0.x for Spring Boot 3.4.x, 2025.0.x for 3.5.x, 2025.1.x for 4.0.x and 4.1.x, 2026.0.x for 4.2.x). When the diagnostic reports an incompatibility, either change the `spring-cloud-dependencies` BOM version to the train that matches your Spring Boot version, or upgrade Spring Boot to a version listed as supported by your train. Always pick the latest service release of the chosen train.
 
 *Before:*
 ```xml

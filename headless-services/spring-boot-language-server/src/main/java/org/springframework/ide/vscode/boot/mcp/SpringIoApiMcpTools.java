@@ -22,8 +22,8 @@ import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -119,12 +119,12 @@ public class SpringIoApiMcpTools {
 	public record UpcomingRelease(boolean allDay, String backgroundColor, LocalDate start, String title, String url) {
 	}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Get the full list of releases for a Spring project from the live Spring IO API (HAL).
 			For only the current GA release plus OSS/commercial support end dates for that line, prefer getLatestReleaseInformation instead.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = true))
 	public Release[] getReleases(
-			@ToolParam(description = """
+			@McpToolParam(description = """
 					Spring IO API project slug (path segment under /projects), e.g. "spring-boot", "spring-framework", "spring-data-jpa".
 					This is not the IDE workspace project name from getProjectList; it is the Spring portfolio project id from Spring IO.
 					Base URL is configured as workspace setting boot-java.io.api (projects list URL; API base is derived from it).
@@ -140,12 +140,12 @@ public class SpringIoApiMcpTools {
 		return Objects.requireNonNull(release)._embedded.releases;
 	}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Get support generation windows (OSS and commercial end dates) for a Spring project from the live Spring IO API.
 			For the current GA line's support dates tied to the latest release only, prefer getLatestReleaseInformation instead.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = true))
 	public Generation[] getGenerations(
-			@ToolParam(description = """
+			@McpToolParam(description = """
 					Spring IO API project slug, e.g. "spring-boot", "spring-framework". Same semantics as getReleases project parameter.
 					""")
 			String project) {
@@ -159,11 +159,11 @@ public class SpringIoApiMcpTools {
 		return Objects.requireNonNull(generations)._embedded.generations;
 	}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Get upcoming Spring ecosystem releases from the Spring release calendar API (date range from today for calendar.window.days).
 			Neither getReleases nor getLatestReleaseInformation provide this calendar view; use this for forward-looking dates.
 			Calendar base URL is workspace setting boot-java.io.calendar-api.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = true))
 	public List<UpcomingRelease> getUpcomingReleases() {
 		LocalDate start = LocalDate.now(clock);
 		LocalDate end = start.plusDays(this.daysFromToday);

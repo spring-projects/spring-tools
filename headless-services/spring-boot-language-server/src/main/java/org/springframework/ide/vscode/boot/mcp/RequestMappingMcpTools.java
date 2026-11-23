@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.ide.vscode.boot.index.SpringMetamodelIndex;
 import org.springframework.ide.vscode.boot.java.requestmapping.RequestMappingIndexElement;
 import org.springframework.ide.vscode.boot.java.requestmapping.WebEndpointIndexElement;
@@ -62,13 +62,13 @@ public class RequestMappingMcpTools {
 			int endColumn
 	) {}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Get all REST endpoints/request mappings defined in the project.
 			This includes endpoints from @RequestMapping, @GetMapping, @PostMapping, @PutMapping, @DeleteMapping, @PatchMapping annotations,
 			as well as HttpExchange interfaces.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public List<RequestMappingInfo> getRequestMappings(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		logger.info("get request mappings for project: {}", projectName);
 		
@@ -89,13 +89,13 @@ public class RequestMappingMcpTools {
 		return requestMappings;
 	}
 
-	@Tool(description = """
+	@McpTool(description = """
 			Find request mappings by HTTP method (GET, POST, PUT, DELETE, PATCH, etc.).
 			Returns all endpoints that handle the specified HTTP method.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public List<RequestMappingInfo> findRequestMappingsByMethod(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
-			@ToolParam(description = "the HTTP method to filter by (e.g., 'GET', 'POST', 'PUT', 'DELETE', 'PATCH')") String httpMethod) throws Exception {
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName,
+			@McpToolParam(description = "the HTTP method to filter by (e.g., 'GET', 'POST', 'PUT', 'DELETE', 'PATCH')") String httpMethod) throws Exception {
 		
 		logger.info("find request mappings by method: {} for project: {}", httpMethod, projectName);
 		

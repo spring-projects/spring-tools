@@ -15,8 +15,8 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.mcp.annotation.McpTool;
+import org.springframework.ai.mcp.annotation.McpToolParam;
 import org.springframework.ide.vscode.commons.Version;
 import org.springframework.ide.vscode.commons.java.IClasspath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
@@ -38,12 +38,12 @@ public class ProjectInformation {
 	}
 
 
-	@Tool(description = """
+	@McpTool(description = """
 			Lists all Java projects in the workspace with Boot flag, JRE level and root directory.
 			Use each Project.projectName when calling other tools; those tools match this name case-insensitively.
 			Project.location is the absolute path of the project root (the directory holding pom.xml or build.gradle),
 			so a source file belongs to the project whose location is the longest prefix of the file's path.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public List<Project> getProjectList() throws Exception {
 		return projects.all()
 				.stream()
@@ -68,11 +68,11 @@ public class ProjectInformation {
 	public static record Project(String projectName, boolean isSpringBootProject, String javaVersion, String location) {}
 
 
-	@Tool(description = """
+	@McpTool(description = """
 			Returns the Spring Boot version for a workspace Java project (from the resolved classpath / BOM).
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public Version getSpringBootVersion(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		IJavaProject project = projects.get(projectName);
 
@@ -85,11 +85,11 @@ public class ProjectInformation {
 	}
 
 
-	@Tool(description = """
+	@McpTool(description = """
 			Returns the Java/JRE version configured for the project's classpath.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public String getJavaVersion(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		IJavaProject project = projects.get(projectName);
 		IClasspath classpath = project.getClasspath();
@@ -98,12 +98,12 @@ public class ProjectInformation {
 	}
 
 
-	@Tool(description = """
+	@McpTool(description = """
 			Returns non-system binary classpath entries for the project (resolved JARs) with versions from build tooling.
 			Each Library.name is the classpath entry path (often a local .m2 or Gradle cache path), not necessarily a Maven coordinate; use it to see exact resolved artifacts.
-			""")
+			""", annotations = @McpTool.McpAnnotations(readOnlyHint = true, destructiveHint = false, idempotentHint = true, openWorldHint = false))
 	public List<Library> getResolvedProjectClasspath(
-			@ToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
+			@McpToolParam(description = "IDE project name from getProjectList().projectName (case-insensitive match)") String projectName) throws Exception {
 		
 		IJavaProject project = projects.get(projectName);
 		

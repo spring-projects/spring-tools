@@ -10,13 +10,8 @@
  *******************************************************************************/
 package org.springframework.ide.vscode.boot.mcp;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.ai.support.ToolCallbacks;
-import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.ide.vscode.boot.mcp.prompts.Prompts;
@@ -24,40 +19,16 @@ import org.springframework.ide.vscode.boot.mcp.prompts.Prompts;
 import io.modelcontextprotocol.server.McpServerFeatures;
 
 /**
+ * The tools in this package are annotated with {@code @McpTool} and picked up by Spring AI's
+ * MCP annotation scanner, which publishes their read-only/write hints to MCP clients.
+ *
  * @author Martin Lippert
  */
 @Configuration
 public class McpConfig {
-	
-	@Bean
-	ToolCallbackProvider registerTools(
-    		SpringVersionsAndGenerations springVersionsAndGenerations,
-    		SpringIoApiMcpTools springIoApiMcpTools,
-    		SpringIndexAccess springIndexAccess,
-    		ProjectInformation projectInformation,
-    		StereotypeInformation stereotypeInformation,
-    		RequestMappingMcpTools requestMappingMcpTools,
-    		ComponentAnalysisMcpTools componentAnalysisMcpTools,
-    		DiagnosticsMcpTools diagnosticsMcpTools,
-    		Optional<FileChangesMcpTools> fileChangesMcpTools) {
-    	
-		List<Object> tools = new ArrayList<>(Arrays.asList(
-        		springVersionsAndGenerations,
-        		springIoApiMcpTools,
-        		springIndexAccess,
-        		projectInformation,
-        		stereotypeInformation,
-        		requestMappingMcpTools,
-        		componentAnalysisMcpTools,
-        		diagnosticsMcpTools));
-
-		fileChangesMcpTools.ifPresent(tools::add);
-
-        return ToolCallbackProvider.from(ToolCallbacks.from(tools.toArray()));
-	}
 
 	/**
-	 * MCP protocol prompts (templates clients can expand into user/assistant messages), separate from {@link ToolCallbackProvider} tools.
+	 * MCP protocol prompts (templates clients can expand into user/assistant messages), separate from tools.
 	 */
 	@Bean
 	List<McpServerFeatures.SyncPromptSpecification> springToolsPrompts() {

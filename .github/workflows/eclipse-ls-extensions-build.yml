@@ -31,6 +31,8 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ENDPOINT_URL_S3:  ${{ secrets.CDN_S3_ENDPOINT }}
   AWS_S3_BUCKET: ${{ secrets.CDN_BUCKET }}/spring-tools
+  PUBLISH_ARTIFACTS: ${{ github.repository == 'spring-projects/spring-tools' }}
+  GPG_SIGN_PROFILE: ${{ github.repository == 'spring-projects/spring-tools' && '-Pgpg.sign' || '' }}
   DOWNLOAD_URL_ROOT: https://cdn.spring.io/spring-tools
 
 jobs:
@@ -41,6 +43,7 @@ jobs:
       invalid_urls: ${{ steps.compute-invalid-urls.outputs.invalid_urls }}
     steps:
       - name: Setup AWS CLI 2.22
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.22.35.zip" -o "awscliv2.zip"
           unzip -q awscliv2.zip
@@ -68,6 +71,7 @@ jobs:
             ./mvnw --batch-mode clean install -DskipTests=${{ inputs.skip_tests }}
           fi
       - name: Install GPG key
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" > gpg.asc
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --import gpg.asc
@@ -78,12 +82,13 @@ jobs:
         run: |
           cd eclipse-language-servers
           if command -v xvfb-run ; then
-            xvfb-run ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
+            xvfb-run ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} -Pgitactions ${{ env.GPG_SIGN_PROFILE }} -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
           else
-            ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} -Pgitactions -Pgpg.sign -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
+            ./mvnw --batch-mode clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} -Pgitactions ${{ env.GPG_SIGN_PROFILE }} -Dmaven.test.skip=true -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore
           fi
       - name: Upload P2 Repo to S3
         id: upload-p2
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           sts_ls_version=${{ inputs.sts-language-servers-version }}
           if [[ -z ${sts_ls_version} ]]; then
@@ -96,13 +101,13 @@ jobs:
           aws s3 rm s3://$AWS_S3_BUCKET/${p2_path}/ --recursive
           aws s3 cp ${{ github.workspace }}/eclipse-language-servers/org.springframework.tooling.ls.integration.repository/target/repository/ s3://$AWS_S3_BUCKET/${p2_path}/ --recursive --no-progress
       - name: Compute invalid URLs
-        if: ${{ inputs.build_type != 'snapshot' }}
+        if: ${{ inputs.build_type != 'snapshot' && env.PUBLISH_ARTIFACTS == 'true' }}
         id: compute-invalid-urls
         run: |
           invalid_urls=`aws s3 ls s3://$AWS_S3_BUCKET/${{ steps.upload-p2.outputs.p2_path }}/ --recursive | awk '{$1=$2=$3=""; print $0}' | sed -e 's/^[ \t]*/https:\/\/cdn.spring.io\/spring-tools\//' | paste -sd' ' -`
           echo "invalid_urls=$invalid_urls" >> $GITHUB_OUTPUT
       - uses: ./.github/actions/cloudflare-purge
-        if: ${{ inputs.build_type != 'snapshot' }}
+        if: ${{ inputs.build_type != 'snapshot' && env.PUBLISH_ARTIFACTS == 'true' }}
         name: Invalidate URLs
         with:
           urls: ${{ steps.compute-invalid-urls.outputs.invalid_urls }}
@@ -118,7 +123,7 @@ jobs:
 #            ./mvnw --batch-mode clean package -Pe436 -P${{ inputs.build_type }} -Dhttpclient.retry-max=20 -Declipse.p2.mirrors=false -Dmaven.test.skip=true -Dtycho.localArtifacts=ignore
 #          fi
       - name: GChat spring-tools-team notification
-        if: ${{ inputs.build_type == 'release' }}
+        if: ${{ inputs.build_type == 'release' && env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           cd eclipse-language-servers
           current_version=`./mvnw help:evaluate -Dexpression="project.version" -q -DforceStdout`

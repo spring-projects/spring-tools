@@ -319,14 +319,16 @@ When a new MCP tool is added to the language server, give it a home: mention it 
 
 ### Behavioral evals
 
-`evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals) suite: one case per skill and for the `spring-reviewer` agent, plus a negative control (an unrelated question must not trigger any skill). Each case is a prompt phrased the way a user would type it, with graders for the result (a regex or a judged rubric) and for the path (`tool_used` on the skill and on the MCP tool it should call). The language server is not started during a run: `evals/mocks/spring-tools-mcp/` answers every MCP tool from recordings taken against the real server on the `sf7-validation` test project (`_tools.json` carries the real tool descriptions and schemas), and the `validate` and reviewer cases override `getProjectDiagnostics` with a recording that contains a `JAVA_AUTOWIRED_CONSTRUCTOR` finding.
+`claude-plugins/tools/evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals) suite outside the published plugin: one case per skill and for the `spring-reviewer` agent, plus a negative control (an unrelated question must not trigger any skill). Each case is a prompt phrased the way a user would type it, with graders for the result (a regex or a judged rubric) and for the path (`tool_used` on the skill and on the MCP tool it should call). The language server is not started during a run: `mocks/spring-tools-mcp/` answers every MCP tool from recordings taken against the real server on the `sf7-validation` test project (`_tools.json` carries the real tool descriptions and schemas), and the `validate` and reviewer cases override `getProjectDiagnostics` with a recording that contains a `JAVA_AUTOWIRED_CONSTRUCTOR` finding.
+
+Run the following from the repository root. The runner stages the plugin and evals together in a temporary directory because Claude requires evals inside the plugin root; results are saved under `claude-plugins/tools/evals/results/`.
 
 ```bash
 # runs every case three times with the plugin and three times without it, judged with your Claude Code credentials
-cd claude-plugins/spring-tools && claude plugin eval . --no-publish
+node claude-plugins/tools/evals/run-claude-evals.mjs --no-publish
 
 # one case, one arm, one run - cheap while iterating on a skill description
-claude plugin eval . --case validate-finds-spring-problems --runs 1 --ablation none
+node claude-plugins/tools/evals/run-claude-evals.mjs --case validate-finds-spring-problems --runs 1 --ablation none --no-publish
 
 # re-record the mocks after the language server's tools or the fixture project changed (needs the JAR + Java 21+)
 node claude-plugins/tools/evals/record-mocks.mjs
@@ -372,13 +374,12 @@ spring-tools/
 │   └── spring-review/       # Canonical review procedure for Codex and other skill hosts
 ├── opencode/                # OpenCode MCP config fragment and reviewer agent adapter
 ├── explanations/            # One Markdown playbook per diagnostic code (explanation + fixes)
-├── evals/                   # Behavioral eval suite: one case per skill/agent + recorded MCP mocks (results/ is gitignored)
 └── README.md
 ```
 
 The manifests describe one plugin for different hosts. `install.js` stores the checksum-verified JAR in the persistent data directory, isolated under the plugin version; it does not write into the installed plugin tree. `check-plugin-config.mjs` fails if shared metadata drifts, if a reviewer adapter differs from `skills/spring-review/SKILL.md`, or if `mcp.json` stops launching `launcher.js`. Run `node claude-plugins/tools/sync-agent-adapters.mjs --write` after changing the shared review procedure to refresh Claude, Copilot and OpenCode adapters. Hooks cannot be one shared file: Claude supports MCP-tool hooks, Copilot supports command hooks, and Codex/OpenCode rely on the language-server watcher. Codex and Copilot consume the portable root `plugin.json`, `mcp.json`, and `skills/`, so those capabilities are defined once.
 
-The sibling directory `claude-plugins/tools/` (not part of the published plugin) holds `check-explanations.mjs`, `check-plugin-config.mjs`, `lib/plugin-config.mjs`, the `test/` suite, the `smoke/mcp-smoke.mjs` end-to-end test, the `evals/record-mocks.mjs` recorder and the `evals/run-with-copilot.mjs` runner described above.
+The sibling directory `claude-plugins/tools/` (not part of the published plugin) holds `check-explanations.mjs`, `check-plugin-config.mjs`, `lib/plugin-config.mjs`, the `test/` suite, the `smoke/mcp-smoke.mjs` end-to-end test, and the `evals/` suite, recorder and runner.
 
 ## How it works
 

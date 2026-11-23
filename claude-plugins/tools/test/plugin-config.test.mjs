@@ -10,11 +10,13 @@
  *******************************************************************************/
 
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
+import { stagePlugin } from '../evals/run-claude-evals.mjs';
 import {
     checkEvals,
     HOOK_SERVER,
@@ -72,7 +74,23 @@ test('every MCP tool has positive behavioral eval coverage', () => {
     const agentNames = readdirSync(join(pluginDir, 'agents'))
         .filter((file) => file.endsWith('.md'))
         .map((file) => file.replace(/\.md$/, ''));
-    assert.deepEqual(checkEvals(join(pluginDir, 'evals'), tools, skillNames, agentNames), []);
+    assert.deepEqual(checkEvals(join(here, '..', 'evals'), tools, skillNames, agentNames), []);
+});
+
+test('eval staging combines the plugin and its external cases without changing the published plugin', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'spring-tools-eval-test-'));
+    try {
+        const stagedPlugin = join(tempDir, 'plugin');
+        stagePlugin(stagedPlugin);
+        assert.ok(existsSync(join(stagedPlugin, '.claude-plugin', 'plugin.json')));
+        assert.ok(existsSync(join(stagedPlugin, 'skills', 'spring-review', 'SKILL.md')));
+        assert.ok(existsSync(join(stagedPlugin, 'evals', 'validate-finds-spring-problems', 'prompt.md')));
+        assert.ok(existsSync(join(stagedPlugin, 'evals', 'mocks', 'spring-tools-mcp', '_tools.json')));
+        assert.ok(!existsSync(join(stagedPlugin, 'evals', 'results')));
+        assert.ok(!existsSync(join(pluginDir, 'evals', 'validate-finds-spring-problems', 'prompt.md')));
+    } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+    }
 });
 
 test('the quickfix skill reads explanations by diagnostic code and may look up the Spring Boot version', () => {

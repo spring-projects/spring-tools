@@ -13,7 +13,7 @@
 // Records the MCP mocks for the plugin's behavioral eval suite (claude plugin eval) from the real
 // language server: starts launcher.js over MCP stdio against a copy of the sf7-validation test
 // project, calls every tool the eval cases may use and writes the answers as
-// spring-tools/evals/mocks/spring-tools-mcp/<tool>.md plus the saved tools/list as _tools.json.
+// tools/evals/mocks/spring-tools-mcp/<tool>.md plus the saved tools/list as _tools.json.
 // Workspace paths are rewritten to /workspace so the recordings are stable across machines.
 // Needs the language server JAR in the plugin (claude-plugins/update-local-jars.sh) or
 // SPRING_TOOLS_LS_JAR, a Java 21+ runtime and network access (spring.io, Maven Central).
@@ -32,10 +32,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
 const pluginDir = join(repoRoot, 'claude-plugins', 'spring-tools');
 const { defaultInstallDir } = createRequire(import.meta.url)(join(pluginDir, 'install.js'));
-const mocksDir = join(pluginDir, 'evals', 'mocks', 'spring-tools-mcp');
+const mocksDir = join(here, 'mocks', 'spring-tools-mcp');
 // Case-level override: the fixture only yields version diagnostics by itself, so the validate case
 // gets a recording taken after a redundant @Autowired constructor was added to the application class.
-const validateCaseMocksDir = join(pluginDir, 'evals', 'validate-finds-spring-problems', 'mocks', 'spring-tools-mcp');
+const validateCaseMocksDir = join(here, 'validate-finds-spring-problems', 'mocks', 'spring-tools-mcp');
 const JAR_NAME = 'spring-boot-language-server-standalone-exec.jar';
 
 const args = process.argv.slice(2);
@@ -50,7 +50,7 @@ if (!existsSync(jarPath)) {
     process.exit(2);
 }
 
-const stagingRoot = mkdtempSync(join(pluginDir, 'evals', '.record-mocks-'));
+const stagingRoot = mkdtempSync(join(here, '.record-mocks-'));
 const stagedMocksDir = join(stagingRoot, 'suite');
 const stagedValidateMocksDir = join(stagingRoot, 'validate');
 mkdirSync(stagedMocksDir, { recursive: true });

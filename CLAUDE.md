@@ -31,8 +31,8 @@ sts4/
 │   └── boot-dev-pack/          # Extension pack bundling Spring Boot extensions
 ├── nodejs-packages/            # Shared Node.js utilities
 └── claude-plugins/             # Claude Code plugin (standalone LS + MCP server)
-    ├── spring-tools/           # Plugin source (skills, agents, hooks, evals, explanations/<CODE>.md playbooks)
-    ├── tools/                  # Node.js checkers + tests keeping playbooks/skills/agents in sync with the LS
+    ├── spring-tools/           # Plugin source (skills, agents, hooks, explanations/<CODE>.md playbooks)
+    ├── tools/                  # Node.js checkers, tests and behavioral evals
     ├── research-notes/         # TODO_quickfixes.md: problem code → quick fix → playbook coverage table
     └── update-local-jars.sh    # Rebuilds the standalone LS JAR for the plugin
 ```

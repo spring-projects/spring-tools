@@ -107,6 +107,8 @@ Raised on `application*.properties` / `bootstrap*.properties` files by `SpringPr
 | Problem Type Code | Description | Quick Fix Implementation | Playbook |
 | :--- | :--- | :--- | :---: |
 | `PROP_SYNTAX_ERROR` | Line cannot be parsed as a `key=value` / `key: value` assignment | *None* | ✅ |
+| `PROP_PLACEHOLDER_SYNTAX` | Malformed property placeholder in a value | *None* | ✅ |
+| `PROP_UNRESOLVED_PLACEHOLDER` | Placeholder without a default is not found in the project's configuration | *None* | ✅ |
 | `PROP_UNKNOWN_PROPERTY` | Key matches no property in the configuration metadata | Create metadata for `<key>` (`CommonQuickfixes.MISSING_PROPERTY`, id `MISSING_PROPERTY_APP`) | ✅ |
 | `PROP_DEPRECATED` | Property is deprecated in the configuration metadata (any level) | Replace with `<replacement>` (`AppPropertiesQuickFixes.DEPRECATED_PROPERTY`) | ✅ |
 | `PROP_DUPLICATE_KEY` | Same key assigned more than once in one document | *None* | ✅ |
@@ -125,6 +127,8 @@ Raised on `application*.yml`/`.yaml` and `bootstrap*.yml`/`.yaml` files by `Appl
 | Problem Type Code | Description | Quick Fix Implementation | Playbook |
 | :--- | :--- | :--- | :---: |
 | `YAML_SYNTAX_ERROR` | SnakeYAML parse error | *None* | ✅ |
+| `YAML_PLACEHOLDER_SYNTAX` | Malformed property placeholder in a value | *None* | ✅ |
+| `YAML_UNRESOLVED_PLACEHOLDER` | Placeholder without a default is not found in the project's configuration | *None* | ✅ |
 | `YAML_UNKNOWN_PROPERTY` | Key path matches no property in the configuration metadata | Create metadata for `<key>` (`CommonQuickfixes.MISSING_PROPERTY`, id `MISSING_PROPERTY_APP`) | ✅ |
 | `YAML_DEPRECATED_WARNING` | Property deprecated at `warning` level | Replace with `<replacement>` (`AppYamlQuickfixes.DEPRECATED_PROPERTY`, id `DEPRECATED_YAML_PROPERTY`) | ✅ |
 | `YAML_DEPRECATED_ERROR` | Property deprecated at `error` level (no longer bound) | Replace with `<replacement>` (`AppYamlQuickfixes.DEPRECATED_PROPERTY`, id `DEPRECATED_YAML_PROPERTY`) | ✅ |

@@ -136,7 +136,7 @@ if (uncovered.length) {
     errors.push(`MCP tools reachable through no skill and no hook: ${uncovered.join(', ')}`);
 }
 
-const evalsDir = join(pluginDir, 'evals');
+const evalsDir = join(here, 'evals');
 errors.push(...checkEvals(evalsDir, tools, skillNames, agentFiles.map((f) => f.replace(/\.md$/, ''))));
 const evalCases = existsSync(evalsDir) ? readdirSync(evalsDir).filter((d) => existsSync(join(evalsDir, d, 'prompt.md'))).length : 0;
 

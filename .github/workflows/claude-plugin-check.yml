@@ -127,15 +127,15 @@ jobs:
       - name: Install the Claude Code CLI into a temporary prefix
         run: npm install --no-audit --no-fund --prefix "$RUNNER_TEMP/claude-code" @anthropic-ai/claude-code@latest
       - name: Run the eval suite against the recorded MCP mocks (the language server is not started)
-        working-directory: claude-plugins/spring-tools
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CLI: ${{ runner.temp }}/claude-code/node_modules/.bin/claude
         run: |
           if [ -z "$ANTHROPIC_API_KEY" ]; then
             echo '::error::the ANTHROPIC_API_KEY secret is not set; the eval suite needs model access'
             exit 1
           fi
-          "$RUNNER_TEMP/claude-code/node_modules/.bin/claude" plugin eval . \
+          node claude-plugins/tools/evals/run-claude-evals.mjs \
             --trust-plugin \
             --json "$RUNNER_TEMP/eval-results.json" \
             --threshold 0.8 \
@@ -149,5 +149,5 @@ jobs:
           name: plugin-eval-results
           path: |
             ${{ runner.temp }}/eval-results.json
-            claude-plugins/spring-tools/evals/results/**/report.html
+            claude-plugins/tools/evals/results/report.html
           if-no-files-found: ignore

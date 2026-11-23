@@ -10,7 +10,7 @@
  *     Broadcom - initial API and implementation
  *******************************************************************************/
 
-// Runs the plugin's eval suite (claude-plugins/spring-tools/evals) with GitHub Copilot CLI, the
+// Runs the plugin's external eval suite (claude-plugins/tools/evals) with GitHub Copilot CLI, the
 // same way `claude plugin eval` runs it with Claude Code:
 //
 //   node claude-plugins/tools/evals/run-with-copilot.mjs [--case <name>] [--model <model>] [--keep]
@@ -33,7 +33,7 @@ import { combineToolTraces, copilotAgentId, toolGradePasses } from '../lib/eval-
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
 const pluginDir = join(repoRoot, PLUGIN_DIR);
-const evalsDir = join(pluginDir, 'evals');
+const evalsDir = here;
 const fixture = join(repoRoot, 'headless-services/spring-boot-language-server/src/test/resources/test-projects/sf7-validation');
 const mcpToolNames = new Set(JSON.parse(readFileSync(join(evalsDir, 'mocks', MCP_SERVER_NAME, '_tools.json'), 'utf8')).tools.map(({ name }) => name));
 

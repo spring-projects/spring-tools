@@ -117,6 +117,8 @@ Raised on `application*.properties` / `bootstrap*.properties` files by `SpringPr
 | `PROP_NO_MATCHING_RBRACK` | `[` without a closing `]` | *None* | ✅ |
 | `PROP_NON_INTEGER_IN_BRACKETS` | Non-integer index in `[...]` on a list/array property | *None* | ✅ |
 | `PROP_INVALID_BEAN_PROPERTY` | Unknown nested property for the navigated bean type | *None* | ✅ |
+| `PROP_PLACEHOLDER_SYNTAX` | Malformed `${...}` placeholder in a property value | *None* | ✅ |
+| `PROP_UNRESOLVED_PLACEHOLDER` | Placeholder has no default and its key is not in configuration metadata or the project's `application*` files | *None* | ✅ |
 
 ## YAML Config File Problem Types (`yaml/reconcile/ApplicationYamlProblemType`)
 
@@ -137,4 +139,6 @@ Raised on `application*.yml`/`.yaml` and `bootstrap*.yml`/`.yaml` files by `Appl
 | `YAML_EXPECT_BEAN_PROPERTY_NAME` | Non-scalar key inside a bean-typed mapping | *None* | ✅ |
 | `YAML_INVALID_BEAN_PROPERTY` | Unknown property for the bean type | *None* | ✅ |
 | `YAML_SHOULD_ESCAPE` | Map key with special characters should be wrapped in `[]` | *None* | ✅ |
+| `YAML_PLACEHOLDER_SYNTAX` | Malformed `${...}` placeholder in a scalar value | *None* | ✅ |
+| `YAML_UNRESOLVED_PLACEHOLDER` | Placeholder has no default and its key is not in configuration metadata or the project's `application*` files | *None* | ✅ |
 | `YamlSchemaProblem` | Malformed `<<` merge key (value is not a mapping or a list of mappings); inherited from commons-yaml `YamlSchemaProblems.SCHEMA_PROBLEM` via `NodeMergeSupport`, category `yaml-schema-problems` | *None* | ✅ |

@@ -55,6 +55,7 @@ import org.jetbrains.kotlin.psi.KtStringTemplateEntry;
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression;
 import org.jetbrains.kotlin.psi.KtSuperTypeListEntry;
 import org.jetbrains.kotlin.psi.KtTypeElement;
+import org.jetbrains.kotlin.psi.KtTypeParameter;
 import org.jetbrains.kotlin.psi.KtTypeProjection;
 import org.jetbrains.kotlin.psi.KtTypeReference;
 import org.jetbrains.kotlin.psi.KtUserType;
@@ -258,7 +259,15 @@ public class KotlinPsiReader implements KotlinSyntaxReader {
 				}
 			}
 
-			return new ClassDeclaration(kind, name, range(declaration), nameRange, annotations, supertypes, functions, constants, nested, constructors, properties);
+			List<String> typeParameters = new ArrayList<>();
+			for (KtTypeParameter typeParameter : declaration.getTypeParameters()) {
+				if (typeParameter.getName() != null) {
+					typeParameters.add(typeParameter.getName());
+				}
+			}
+
+			return new ClassDeclaration(kind, name, range(declaration), nameRange, annotations, supertypes, functions, constants, nested, constructors, properties,
+					typeParameters);
 		}
 
 		private void addConstant(KtProperty property, List<Constant> constants) {

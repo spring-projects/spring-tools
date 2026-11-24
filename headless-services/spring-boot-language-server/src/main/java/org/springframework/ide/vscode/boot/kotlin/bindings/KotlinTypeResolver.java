@@ -26,6 +26,7 @@ import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.SourceAnn
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.ParameterizedType;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.PrimitiveType;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.SourceType;
+import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.TypeVariable;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.UnresolvedType;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.AnnotationUse;
@@ -33,6 +34,7 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Import;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.TypeRef;
 import org.springframework.ide.vscode.commons.java.ClasspathIndex;
 import org.springframework.ide.vscode.commons.java.IType;
+import org.springframework.ide.vscode.commons.java.JavaUtils;
 
 /**
  * Resolves the names that are written in Kotlin sources to the types they stand for, the way the
@@ -153,7 +155,15 @@ public class KotlinTypeResolver {
 	 * @return the type, never null: a name that cannot be resolved is kept as it was written
 	 */
 	public ResolvedType resolveTypeReference(TypeRef reference, KotlinSyntax.File file, KotlinSourceClass scope) {
-		return resolveType(reference, file, scope, false);
+		return resolveType(reference, file, scope, scope, false);
+	}
+
+	/**
+	 * Resolves a supertype of a class as written in its header: the names are the ones of the
+	 * place the class is declared in, and the type parameters of the class are known.
+	 */
+	public ResolvedType resolveSupertype(TypeRef reference, KotlinSourceClass declaringClass) {
+		return resolveType(reference, declaringClass.file(), declaringClass.outer(), declaringClass, false);
 	}
 
 	/**
@@ -169,13 +179,22 @@ public class KotlinTypeResolver {
 		if (!reference.nullable() && KotlinBuiltins.UNIT.equals(resolveName(reference.name(), file, scope))) {
 			return new PrimitiveType("void");
 		}
-		return resolveType(reference, file, scope, false);
+		return resolveType(reference, file, scope, scope, false);
 	}
 
-	private ResolvedType resolveType(TypeRef reference, KotlinSyntax.File file, KotlinSourceClass scope, boolean typeArgument) {
+	/**
+	 * @param typeParameterOwner the class whose type parameters can be used in the type, null if there is none
+	 */
+	private ResolvedType resolveType(TypeRef reference, KotlinSyntax.File file, KotlinSourceClass scope, KotlinSourceClass typeParameterOwner,
+			boolean typeArgument) {
 		if ("*".equals(reference.name())) {
 			ResolvedType object = resolveBinaryName("java.lang.Object");
 			return object != null ? object : new UnresolvedType("java.lang.Object");
+		}
+
+		// a type parameter comes before a class of the same name
+		if (typeParameterOwner != null && typeParameterOwner.declaration().typeParameters().contains(reference.name())) {
+			return new TypeVariable(reference.name(), JavaUtils.typeFqNameToBindingKey(typeParameterOwner.binaryName()));
 		}
 
 		String name = resolveName(reference.name(), file, scope);
@@ -195,7 +214,7 @@ public class KotlinTypeResolver {
 
 		if (KotlinBuiltins.ARRAY.equals(name)) {
 			ResolvedType component = reference.arguments().size() == 1
-					? resolveType(reference.arguments().get(0), file, scope, true)
+					? resolveType(reference.arguments().get(0), file, scope, typeParameterOwner, true)
 					: classOrUnresolved("java.lang.Object");
 			return new ArrayType(component);
 		}
@@ -206,7 +225,7 @@ public class KotlinTypeResolver {
 		if (!reference.arguments().isEmpty() && !(type instanceof UnresolvedType)) {
 			List<ResolvedType> arguments = new ArrayList<>();
 			for (TypeRef argument : reference.arguments()) {
-				arguments.add(resolveType(argument, file, scope, true));
+				arguments.add(resolveType(argument, file, scope, typeParameterOwner, true));
 			}
 			return new ParameterizedType(type, arguments);
 		}

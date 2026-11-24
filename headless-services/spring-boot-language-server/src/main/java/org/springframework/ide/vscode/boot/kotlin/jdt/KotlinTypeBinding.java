@@ -320,7 +320,7 @@ final class KotlinTypeBinding implements ITypeBinding {
 
 	@Override
 	public boolean isGenericType() {
-		return false;
+		return !type.isParameterizedType() && !type.getTypeParameters().isEmpty();
 	}
 
 	@Override
@@ -330,7 +330,7 @@ final class KotlinTypeBinding implements ITypeBinding {
 
 	@Override
 	public ITypeBinding[] getTypeParameters() {
-		return KotlinJdtBindings.NO_TYPES;
+		return type.isParameterizedType() ? KotlinJdtBindings.NO_TYPES : bindings.types(type.getTypeParameters());
 	}
 
 	@Override

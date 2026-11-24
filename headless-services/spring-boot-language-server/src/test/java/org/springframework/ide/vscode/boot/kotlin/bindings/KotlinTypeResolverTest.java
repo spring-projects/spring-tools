@@ -426,6 +426,62 @@ public class KotlinTypeResolverTest {
 	}
 
 	@Test
+	void typeArgumentsAreSubstitutedThroughGenericKotlinClasses() {
+		file("A", """
+				package a
+
+				import org.springframework.beans.factory.SmartFactoryBean
+
+				class Thing
+
+				// the type parameters in another order than the ones of the supertype
+				interface Pair<A, B> : SmartFactoryBean<B>
+
+				interface ThingFactory : Pair<String, Thing>
+				""");
+
+		ITypeBinding pair = jdt(type("a.ThingFactory")).getInterfaces()[0];
+		assertThat(pair.getTypeArguments()).extracting(ITypeBinding::getQualifiedName).containsExactly("java.lang.String", "a.Thing");
+
+		ITypeBinding smartFactoryBean = pair.getInterfaces()[0];
+		assertThat(smartFactoryBean.getBinaryName()).isEqualTo("org.springframework.beans.factory.SmartFactoryBean");
+		assertThat(smartFactoryBean.getTypeArguments()).extracting(ITypeBinding::getQualifiedName).containsExactly("a.Thing");
+
+		// and further on through the classpath
+		assertThat(smartFactoryBean.getInterfaces()[0].getTypeArguments()).extracting(ITypeBinding::getQualifiedName).containsExactly("a.Thing");
+
+		// the generic Kotlin class itself has its type parameters, in its supertypes as well
+		ITypeBinding generic = jdt(type("a.Pair"));
+		assertThat(generic.isGenericType()).isTrue();
+		assertThat(generic.getTypeParameters()).extracting(ITypeBinding::getName).containsExactly("A", "B");
+		assertThat(generic.getTypeParameters()).allMatch(ITypeBinding::isTypeVariable);
+		assertThat(generic.getInterfaces()[0].getTypeArguments()[0].isTypeVariable()).isTrue();
+		assertThat(pair.isGenericType()).isFalse();
+		assertThat(pair.getTypeParameters()).isEmpty();
+	}
+
+	@Test
+	void typeParametersComeBeforeClassesOfTheSameName() {
+		file("A", """
+				package a
+
+				import org.springframework.beans.factory.FactoryBean
+
+				class Thing
+
+				interface Factory<Thing> : FactoryBean<Thing>
+
+				class Other : FactoryBean<Thing>
+				""");
+
+		// in the generic class, Thing is its type parameter
+		assertThat(jdt(type("a.Factory")).getInterfaces()[0].getTypeArguments()[0].isTypeVariable()).isTrue();
+
+		// outside of it, the class
+		assertThat(jdt(type("a.Other")).getInterfaces()[0].getTypeArguments()).extracting(ITypeBinding::getQualifiedName).containsExactly("a.Thing");
+	}
+
+	@Test
 	void cyclicHierarchiesAreCut() {
 		file("A", """
 				package a

@@ -186,10 +186,11 @@ public final class KotlinSyntax {
 	 * @param constructors the primary constructor first (if there is one), then the ones in the body
 	 * @param properties the properties declared in the body of the class, the ones of the primary
 	 *        constructor are parameters of it
+	 * @param typeParameters the names of the type parameters of a generic class, in their order
 	 */
 	public record ClassDeclaration(ClassKind kind, String name, Range range, Range nameRange, List<AnnotationUse> annotations,
 			List<TypeRef> supertypes, List<Function> functions, List<Constant> constants, List<ClassDeclaration> nestedClasses,
-			List<Constructor> constructors, List<Property> properties) {
+			List<Constructor> constructors, List<Property> properties, List<String> typeParameters) {
 	}
 
 	/**

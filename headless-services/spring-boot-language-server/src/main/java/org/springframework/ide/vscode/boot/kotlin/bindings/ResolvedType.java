@@ -46,7 +46,12 @@ public interface ResolvedType {
 		return List.of();
 	}
 
-	/** whether this is a type parameter of a generic type, as it is used in the supertypes of the type */
+	/** the type parameters of a generic type, empty for all other types (a parameterized type has type arguments instead) */
+	default List<ResolvedType> getTypeParameters() {
+		return List.of();
+	}
+
+	/** whether this is a type parameter of a generic type, as it is used in the supertypes and members of the type */
 	default boolean isTypeVariable() {
 		return false;
 	}

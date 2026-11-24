@@ -768,7 +768,20 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 			}
 
 			return new ClassDeclaration(kind, name, declarationRange, nameRange, annotations, supertypes, members.functions, members.constants, members.classes,
-					members.constructors, members.properties);
+					members.constructors, members.properties, readTypeParameters(firstChild(node, "type_parameters")));
+		}
+
+		private List<String> readTypeParameters(Node typeParameterList) {
+			List<String> typeParameters = new ArrayList<>();
+			if (typeParameterList != null) {
+				for (Node typeParameter : children(typeParameterList)) {
+					Node name = typeParameter.type().equals("type_parameter") ? firstChild(typeParameter, "type_identifier") : null;
+					if (name != null) {
+						typeParameters.add(KotlinValueSyntax.unquote(textOf(name)));
+					}
+				}
+			}
+			return typeParameters;
 		}
 
 		/** the parameters of a primary constructor, which carry their annotations and their default value themselves */
@@ -1051,7 +1064,7 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 			Range declarationRange = declarationRange(offset(recovered.start), offset(recovered.end));
 			into.classes.add(new ClassDeclaration(recovered.kind, KotlinValueSyntax.unquote(textOf(recovered.name)), declarationRange, range(recovered.name),
 					readAnnotations(recovered.modifiers), recovered.supertypes, recovered.members.functions, recovered.members.constants,
-					recovered.members.classes, recovered.members.constructors, recovered.members.properties));
+					recovered.members.classes, recovered.members.constructors, recovered.members.properties, List.of()));
 		}
 
 		private void addConstant(Node property, List<Constant> constants) {

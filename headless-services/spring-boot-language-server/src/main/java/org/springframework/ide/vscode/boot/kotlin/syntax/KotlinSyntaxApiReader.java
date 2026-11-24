@@ -146,6 +146,8 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 		static final int INTERSECTION_TYPE = NODES.getINTERSECTION_TYPE().getIndex();
 		static final int TYPE_ARGUMENT_LIST = NODES.getTYPE_ARGUMENT_LIST().getIndex();
 		static final int TYPE_PROJECTION = NODES.getTYPE_PROJECTION().getIndex();
+		static final int TYPE_PARAMETER_LIST = NODES.getTYPE_PARAMETER_LIST().getIndex();
+		static final int TYPE_PARAMETER = NODES.getTYPE_PARAMETER().getIndex();
 		static final int REFERENCE_EXPRESSION = NODES.getREFERENCE_EXPRESSION().getIndex();
 		static final int DOT_QUALIFIED_EXPRESSION = NODES.getDOT_QUALIFIED_EXPRESSION().getIndex();
 		static final int PARENTHESIZED = NODES.getPARENTHESIZED().getIndex();
@@ -332,8 +334,19 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 				}
 			}
 
+			List<String> typeParameters = new ArrayList<>();
+			SyntaxNode typeParameterList = firstChild(declaration, Types.TYPE_PARAMETER_LIST);
+			if (typeParameterList != null) {
+				for (SyntaxNode typeParameter : children(typeParameterList)) {
+					SyntaxNode typeParameterName = type(typeParameter) == Types.TYPE_PARAMETER ? firstChild(typeParameter, Types.IDENTIFIER) : null;
+					if (typeParameterName != null) {
+						typeParameters.add(KotlinValueSyntax.unquote(textOf(typeParameterName)));
+					}
+				}
+			}
+
 			return new ClassDeclaration(kind, name, range(declaration), nameRange, readAnnotations(modifiers), supertypes, functions, constants, nested,
-					constructors, properties);
+					constructors, properties, typeParameters);
 		}
 
 		private Constructor readConstructor(SyntaxNode constructor, boolean primary) {

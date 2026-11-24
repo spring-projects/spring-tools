@@ -287,6 +287,27 @@ public class KotlinSyntaxReaderTest {
 	}
 
 	@Test
+	void typeParametersOfGenericClasses() {
+		String source = """
+				class Plain
+
+				interface Repo<T : Any, out ID> : CrudRepository<T, ID> where ID : Comparable<ID>
+
+				class Box<@Ann T>(val value: T) {
+					class Nested<in K, V>
+				}
+				""";
+
+		List<ClassDeclaration> classes = read(source).classes();
+
+		assertThat(classes.get(0).typeParameters()).isEmpty();
+		assertThat(classes.get(1).typeParameters()).containsExactly("T", "ID");
+		assertThat(classes.get(1).name()).isEqualTo("Repo");
+		assertThat(classes.get(2).typeParameters()).containsExactly("T");
+		assertThat(classes.get(2).nestedClasses().get(0).typeParameters()).containsExactly("K", "V");
+	}
+
+	@Test
 	void constructorsWithTheirParameters() {
 		String source = """
 				class Plain

@@ -113,6 +113,11 @@ final class KotlinTypes {
 			return List.of();
 		}
 
+		@Override
+		public List<ResolvedType> getTypeParameters() {
+			return typeParameterNames().stream().map(name -> (ResolvedType) new TypeVariable(name, getKey())).toList();
+		}
+
 		/** this type with the type variables in it replaced by the given types */
 		ResolvedType substitute(Map<String, ResolvedType> arguments) {
 			return this;
@@ -584,6 +589,11 @@ final class KotlinTypes {
 		}
 
 		@Override
+		List<String> typeParameterNames() {
+			return source.declaration().typeParameters();
+		}
+
+		@Override
 		public boolean isInterface() {
 			return source.declaration().kind() == ClassKind.INTERFACE || isAnnotation();
 		}
@@ -595,7 +605,7 @@ final class KotlinTypes {
 				result = new ArrayList<>();
 				for (var supertype : source.declaration().supertypes()) {
 					// with their type arguments, as JDT has them: walking the hierarchy of a parameterized type needs them
-					ResolvedType resolved = resolver.resolveTypeReference(supertype, source.file(), source.outer());
+					ResolvedType resolved = resolver.resolveSupertype(supertype, source);
 					if (resolved != null && !resolved.getErasure().equals(this) && !(resolved.getErasure() instanceof UnresolvedType)) {
 						result.add(resolved);
 					}

@@ -129,6 +129,104 @@ public class KotlinJavaIndexerParityTest {
 	}
 
 	@Test
+	void repositoriesThroughGenericKotlinInterfaces() throws Exception {
+		List<String> elements = assertSameElements(DATA_PROJECT, """
+				package example.probe
+
+				import org.springframework.data.repository.CrudRepository
+				import org.springframework.data.repository.NoRepositoryBean
+				import org.springframework.data.repository.Repository
+
+				class Customer
+				class Product
+
+				@NoRepositoryBean
+				interface BaseRepo<T, ID> : CrudRepository<T, ID>
+
+				interface CustomerRepo : BaseRepo<Customer, Long> {
+					fun findByName(name: String): List<Customer>
+				}
+
+				// the type parameters are given in another order than the ones of the supertype
+				@NoRepositoryBean
+				interface SwappedRepo<ID : Comparable<ID>, out E> : Repository<E, ID>
+
+				interface ProductRepo : SwappedRepo<Long, Product>
+
+				// no @NoRepositoryBean: a repository bean of its own, with the type parameter as its domain type
+				interface Unmarked<E> : Repository<E, Long>
+				""", """
+				package example.probe;
+
+				import java.util.List;
+				import org.springframework.data.repository.CrudRepository;
+				import org.springframework.data.repository.NoRepositoryBean;
+				import org.springframework.data.repository.Repository;
+
+				class Customer {}
+				class Product {}
+
+				@NoRepositoryBean
+				interface BaseRepo<T, ID> extends CrudRepository<T, ID> {}
+
+				interface CustomerRepo extends BaseRepo<Customer, Long> {
+					List<Customer> findByName(String name);
+				}
+
+				@NoRepositoryBean
+				interface SwappedRepo<ID extends Comparable<ID>, E> extends Repository<E, ID> {}
+
+				interface ProductRepo extends SwappedRepo<Long, Product> {}
+
+				interface Unmarked<E> extends Repository<E, Long> {}
+				""");
+
+		assertThat(elements).anyMatch(line -> line.endsWith("| @+ 'customerRepo' Repository(Customer)"));
+		assertThat(elements).anyMatch(line -> line.endsWith("| @+ 'productRepo' Repository(Product)"));
+		assertThat(elements).anyMatch(line -> line.endsWith("| @+ 'unmarked' Repository(E)"));
+		assertThat(elements).noneMatch(line -> line.contains("'baseRepo'") || line.contains("'swappedRepo'"));
+	}
+
+	@Test
+	void membersOfGenericKotlinClasses() throws Exception {
+		assertSameElements(DATA_PROJECT, """
+				package example.probe
+
+				import org.springframework.boot.context.properties.ConfigurationProperties
+				import org.springframework.stereotype.Component
+
+				@Component
+				class Holder<T>(private val value: T, private val values: List<T>)
+
+				@ConfigurationProperties("generic")
+				class GenericProps<V> {
+					var value: V? = null
+					var values: Map<String, V> = mapOf()
+				}
+				""", """
+				package example.probe;
+
+				import java.util.List;
+				import java.util.Map;
+				import org.springframework.boot.context.properties.ConfigurationProperties;
+				import org.springframework.stereotype.Component;
+
+				@Component
+				class Holder<T> {
+					private final T value;
+					private final List<T> values;
+					public Holder(T value, List<T> values) { this.value = value; this.values = values; }
+				}
+
+				@ConfigurationProperties("generic")
+				class GenericProps<V> {
+					private V value = null;
+					private Map<String, V> values = Map.of();
+				}
+				""");
+	}
+
+	@Test
 	void configurationPropertiesFromPropertiesAndConstructors() throws Exception {
 		assertSameElements(DATA_PROJECT, """
 				package example.probe

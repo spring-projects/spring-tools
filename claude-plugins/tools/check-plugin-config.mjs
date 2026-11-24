@@ -14,7 +14,7 @@
 //   node claude-plugins/tools/check-plugin-config.mjs [--cross-host]
 // Fails when a hook, skill or agent references an unknown tool, when a skill/agent is malformed,
 // or when an MCP tool is unreachable through skills/hooks or lacks positive behavioral eval coverage.
-// --cross-host also validates the Codex catalog, the Copilot and OpenCode adapters, and the portable manifests.
+// --cross-host also validates the Copilot and OpenCode adapters and manifests added by later stack branches.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -25,16 +25,11 @@ import {
     PLUGIN_DIR,
     checkAgent,
     checkAgentPluginManifest,
-    checkCodexHookSurface,
-    checkCodexMarketplace,
     checkCopilotAgent,
-    CODEX_CATALOG_PATH,
     checkCopilotHooks,
     checkEvals,
     checkHooks,
     checkManifest,
-    checkOpenCodeAgent,
-    checkOpenCodeConfig,
     checkSkill,
     collectMcpTools,
     uncoveredTools,
@@ -108,32 +103,32 @@ if (crossHost) {
     }
 
     const openCodeConfig = JSON.parse(readFileSync(join(pluginDir, 'opencode', 'opencode.jsonc'), 'utf8'));
-    errors.push(...checkOpenCodeConfig(openCodeConfig));
-    errors.push(...checkOpenCodeAgent('agents/spring-reviewer.md', readFileSync(join(pluginDir, 'opencode', 'agents', 'spring-reviewer.md'), 'utf8')));
+    const openCodeServer = openCodeConfig.mcp?.['spring-tools'];
+    if (openCodeServer?.type !== 'local' || openCodeServer.command?.[0] !== 'node' || openCodeServer.command?.[1] !== '{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js') {
+        errors.push('opencode/opencode.jsonc must launch the shared launcher.js through SPRING_TOOLS_PLUGIN_ROOT');
+    }
+    if (openCodeServer?.timeout !== 120000 || openCodeServer?.enabled !== true) {
+        errors.push('opencode/opencode.jsonc must enable Spring Tools with a 120000 ms startup timeout');
+    }
+    const openCodeAgent = readFileSync(join(pluginDir, 'opencode', 'agents', 'spring-reviewer.md'), 'utf8');
+    if (!/^mode:\s*subagent$/m.test(openCodeAgent) || !/^\s+edit:\s*deny$/m.test(openCodeAgent) || !/spring-tools_\*"?:\s*allow/.test(openCodeAgent)) {
+        errors.push('OpenCode reviewer must be a read-only subagent with access to spring-tools MCP tools');
+    }
 
     const copilotHooks = JSON.parse(readFileSync(join(pluginDir, COPILOT_DIR, 'hooks', 'hooks.json'), 'utf8'));
     errors.push(...checkCopilotHooks(copilotHooks, repoRoot));
-
-    const codexCatalogPath = join(repoRoot, CODEX_CATALOG_PATH);
-    if (!existsSync(codexCatalogPath)) {
-        errors.push(`${CODEX_CATALOG_PATH}: Codex marketplace catalog is missing`);
-    } else {
-        errors.push(...checkCodexMarketplace(JSON.parse(readFileSync(codexCatalogPath, 'utf8')), repoRoot));
-    }
 }
 
 const pluginJson = JSON.parse(readFileSync(join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8'));
 const marketplace = JSON.parse(readFileSync(join(repoRoot, 'claude-plugins', '.claude-plugin', 'marketplace.json'), 'utf8'));
 errors.push(...checkManifest(pluginJson, marketplace, repoRoot));
 if (crossHost) {
-    const portablePluginJson = JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8'));
     errors.push(...checkAgentPluginManifest(
-        portablePluginJson,
+        JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8')),
         JSON.parse(readFileSync(join(pluginDir, 'mcp.json'), 'utf8')),
         pluginJson,
         repoRoot,
     ));
-    errors.push(...checkCodexHookSurface(portablePluginJson));
 }
 
 const uncovered = uncoveredTools(tools, skillTexts, hooks);

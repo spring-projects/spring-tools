@@ -102,33 +102,32 @@ We maintain a local marketplace configuration (`claude-plugins/.claude-plugin/ma
 
 ## Codex and GitHub Copilot CLI
 
-The root `plugin.json` and `mcp.json` are the portable Agent Plugins package. The Codex catalog in [`.agents/plugins/marketplace.json`](../../.agents/plugins/marketplace.json) is published from the release tag, not the CDN: the [release workflow](../../.github/workflows/release-standalone-ls.yml) creates the `vX.Y.Z` tag that contains the catalog. Install a released version by registering the tagged repository as a marketplace ([Codex marketplace docs](https://developers.openai.com/codex/plugins/build#add-a-marketplace-from-the-cli)):
-
-```bash
-codex plugin marketplace add spring-projects/spring-tools --ref vX.Y.Z
-codex plugin add spring-tools@spring-tools-local
-```
-
-`spring-projects/spring-tools@vX.Y.Z` is equivalent shorthand. The marketplace name comes from the catalog's top-level `name`; use the name Codex reports if you installed from a different source.
-
-For an unreleased source checkout, register the checkout instead:
+The root `plugin.json` and `mcp.json` are the portable Agent Plugins package. This repository includes a Codex marketplace catalog at [`.agents/plugins/marketplace.json`](../../.agents/plugins/marketplace.json). Register the checkout once, then install the plugin:
 
 ```bash
 codex plugin marketplace add /path/to/spring-tools
 codex plugin add spring-tools@spring-tools-local
 ```
 
-Use `/plugins` in Codex to manage the installed plugin. If you maintain a separate repo-scoped catalog, keep the plugin copy inside that repository and set `source.path` to its `./`-relative path. GitHub Copilot CLI can install directly from this repository's plugin subdirectory:
+Use `/plugins` in Codex to manage the installed plugin. This checkout's catalog is repo-scoped. To use it from a different project, register this checkout as a marketplace with `codex plugin marketplace add /path/to/spring-tools`. If you maintain a separate repo-scoped catalog, keep the plugin copy inside that repository and set `source.path` to its `./`-relative path. GitHub Copilot CLI can install directly from this repository's plugin subdirectory:
 
 ```bash
 copilot plugin install spring-projects/spring-tools:claude-plugins/spring-tools
 ```
 
-Both hosts get the shared `skills/` and launch the same `launcher.js`. The host-specific `com.github.copilot/` directory supplies Copilot's agent front matter and session-start hook. Its reviewer limits tools to read/search and this plugin's MCP server. The root Agent Plugins files are also the Codex entry point, so those capabilities do not need a second copy. The portable manifest declares an empty `extensions.com.openai.hooks` object: otherwise Codex would discover the Claude-only `hooks/hooks.json` and prompt to trust hooks that use unsupported `if` conditions and qualified MCP tool names. The language-server watcher keeps the index current, and the launcher downloads a missing JAR itself.
+Both hosts get the shared `skills/` and launch the same `launcher.js`. The host-specific `com.github.copilot/` directory supplies Copilot's agent front matter and session-start hook. Its reviewer limits tools to read/search and this plugin's MCP server. The root Agent Plugins files are also the Codex entry point, so those capabilities do not need a second copy.
 
-### Codex MCP workspace configuration
+### Codex local development and explicit workspace configuration
 
-The bundled MCP server has to know which Spring Boot workspace to index. With the portable Agent Plugins manifest, Codex starts plugin MCP servers in the plugin cache and does not pass the session workspace through ([openai/codex#37903](https://github.com/openai/codex/issues/37903)), so the launcher refuses to guess and exits. Configure an explicit stdio server in the trusted workspace's `.codex/config.toml`; use the `installedPath` printed by `codex plugin add --json` or `codex plugin list --json` for the launcher path:
+A source checkout can declare a release version whose JAR and checksum have not been published yet. Installing the plugin copies its files into the Codex cache; it does not build the language server or retain access to the source checkout. A checksum download returning HTTP 404 cannot be fixed by increasing the startup timeout.
+
+Build the local JAR first, from the Spring Tools repository root:
+
+```bash
+./claude-plugins/update-local-jars.sh
+```
+
+For local development, keep the plugin enabled for its skills, disable its bundled MCP server, and configure an explicit stdio server in the Spring Boot workspace's `.codex/config.toml`. Replace the absolute paths below with your checkout and project paths:
 
 ```toml
 [plugins."spring-tools@spring-tools-local".mcp_servers.spring-tools-mcp]
@@ -136,34 +135,20 @@ enabled = false
 
 [mcp_servers.spring-tools-mcp]
 command = "node"
-args = ["<installedPath>/launcher.js"]
+args = ["/absolute/path/to/spring-tools/claude-plugins/spring-tools/launcher.js"]
 cwd = "/absolute/path/to/your-spring-boot-project"
 startup_timeout_sec = 120
 
 [mcp_servers.spring-tools-mcp.env]
+SPRING_TOOLS_LS_JAR = "/absolute/path/to/spring-tools/claude-plugins/spring-tools/language-server/spring-boot-language-server-standalone-exec.jar"
 SPRING_TOOLS_PROJECT_DIR = "/absolute/path/to/your-spring-boot-project"
 ```
 
-Use the marketplace identifier you installed if it differs from `spring-tools-local`. Restart Codex in the trusted project after saving the configuration, then check `/mcp` and ask for the project list. The launcher should log `Indexing /absolute/path/to/your-spring-boot-project (from SPRING_TOOLS_PROJECT_DIR)`.
+Use the marketplace identifier you installed if it differs from `spring-tools-local`. Restart Codex in the trusted project after saving the configuration, then check `/mcp` and ask for the project list. The launcher should log the selected project path and `Using language server JAR from SPRING_TOOLS_LS_JAR`.
 
-For a released install, omit `SPRING_TOOLS_LS_JAR` to use the checksum-verified download. Keep the release JAR and its `.sha256` file published together at the versioned URL produced by `install.js`; do not bypass checksum verification or silently substitute a snapshot for a release.
+Codex supports explicit `env`, forwarded `env_vars`, and `cwd` for configured stdio servers; see the [Codex MCP documentation](https://developers.openai.com/codex/mcp/). Do not rely on exporting `SPRING_TOOLS_*` only in the parent shell: the host may filter those variables. A plugin process can also start in its cache directory without a workspace path. The launcher refuses to index that directory and requires an explicit project path when detection fails. Configure `SPRING_TOOLS_JAVA` in the server's `env` as well if Java 21+ is not on its `PATH`.
 
-For local development, a source checkout can declare a release version whose JAR and checksum have not been published yet. Installing the plugin copies its files into the Codex cache; it does not build the language server or retain access to the source checkout, and a checksum download returning HTTP 404 cannot be fixed by increasing the startup timeout. Build the JAR first from the Spring Tools repository root:
-
-```bash
-./claude-plugins/update-local-jars.sh
-```
-
-Then add the local JAR to the explicit server's `env`:
-
-```toml
-[mcp_servers.spring-tools-mcp.env]
-SPRING_TOOLS_LS_JAR = "/absolute/path/to/spring-tools/claude-plugins/spring-tools/language-server/spring-boot-language-server-standalone-exec.jar"
-```
-
-A source-build fallback also needs `SPRING_TOOLS_SOURCE_DIR` in the same `env`, pointing at the Spring Tools checkout; building ahead of time avoids doing a Maven build during the MCP startup timeout.
-
-Codex supports explicit `env`, forwarded `env_vars`, and `cwd` for configured stdio servers; see the [Codex MCP documentation](https://developers.openai.com/codex/mcp/). Do not rely on exporting `SPRING_TOOLS_*` only in the parent shell: the host may filter those variables. The launcher refuses to index its cache directory and requires an explicit project path when detection fails. Configure `SPRING_TOOLS_JAVA` in the server's `env` as well if Java 21+ is not on its `PATH`.
+For published releases, omit `SPRING_TOOLS_LS_JAR` to use the checksum-verified download. A source-build fallback needs `SPRING_TOOLS_SOURCE_DIR` set in the server's `env` to the Spring Tools checkout; building ahead of time avoids doing a Maven build during the MCP startup timeout. Keep the release JAR and its `.sha256` file published together at the versioned URL produced by `install.js`; do not bypass checksum verification or silently substitute a snapshot for a release.
 
 ## OpenCode
 
@@ -171,14 +156,11 @@ OpenCode does not load Agent Plugins packages directly. Its ready-to-merge MCP c
 
 ```jsonc
 "mcp": {
-  "servers": {
-    "spring-tools": {
-      "type": "local",
-      "command": ["node", "{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js"],
-      "timeout": {
-        "startup": 120000
-      }
-    }
+  "spring-tools": {
+    "type": "local",
+    "command": ["node", "{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js"],
+    "enabled": true,
+    "timeout": 120000
   }
 }
 ```
@@ -285,7 +267,7 @@ The language server keeps its index current in two ways. It **watches** the work
 
 ## Troubleshooting
 
-- **Codex reports `connection closed: initialize response`** — inspect the MCP server stderr for the underlying launcher error. HTTP 404 for the JAR's `.sha256` means the required artifact is unavailable; use a local JAR for an unpublished checkout as described in [Codex MCP workspace configuration](#codex-mcp-workspace-configuration). `No Spring Tools source checkout found` means the cached plugin cannot build a fallback without `SPRING_TOOLS_SOURCE_DIR`. An undetected workspace needs `SPRING_TOOLS_PROJECT_DIR` in the server environment.
+- **Codex reports `connection closed: initialize response`** — inspect the MCP server stderr for the underlying launcher error. HTTP 404 for the JAR's `.sha256` means the required artifact is unavailable; use a local JAR for an unpublished checkout as described in [Codex local development](#codex-local-development-and-explicit-workspace-configuration). `No Spring Tools source checkout found` means the cached plugin cannot build a fallback without `SPRING_TOOLS_SOURCE_DIR`. An undetected workspace needs `SPRING_TOOLS_PROJECT_DIR` in the server environment.
 
 - **`spring-tools-mcp` shows as failed in `/mcp`** — on the very first start the ~100 MB JAR has to be downloaded; if that takes longer than Claude Code's MCP startup timeout the server is marked failed. Reconnect it from `/mcp` (the download continues/completes in the background) or start Claude Code again; raise `MCP_TIMEOUT` on slow connections.
 - **`No Java 21+ runtime found`** on stderr — the launcher lists every candidate it tried with the version it found. Install a JDK 21+ and expose it via `PATH`, `JAVA_HOME` or `SPRING_TOOLS_JAVA`.
@@ -331,7 +313,7 @@ node --test --test-reporter=spec 'claude-plugins/tools/test/*.test.mjs'
 node claude-plugins/tools/smoke/mcp-smoke.mjs
 ```
 
-The GitHub Actions workflow `.github/workflows/claude-plugin-check.yml` runs the same checks for changes under `claude-plugins/`, `.agents/plugins/`, the `*ProblemType` enums, the MCP tool sources and the standalone language server, validates the manifest with `claude plugin validate --strict`, and runs the smoke test against a freshly built language server.
+The GitHub Actions workflow `.github/workflows/claude-plugin-check.yml` runs the same checks for changes under `claude-plugins/`, the `*ProblemType` enums, the MCP tool sources and the standalone language server, validates the manifest with `claude plugin validate --strict`, and runs the smoke test against a freshly built language server.
 
 When a new MCP tool is added to the language server, give it a home: mention it in the skill that covers its use case (its `allowed-tools` list and body) or in `hooks/hooks.json`; `check-plugin-config.mjs` fails until every tool is reachable through a skill or hook.
 
@@ -339,35 +321,20 @@ When a new MCP tool is added to the language server, give it a home: mention it 
 
 `claude-plugins/tools/evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals) suite outside the published plugin: one case per skill and for the `spring-reviewer` agent, plus a negative control (an unrelated question must not trigger any skill). Each case is a prompt phrased the way a user would type it, with graders for the result (a regex or a judged rubric) and for the path (`tool_used` on the skill and on the MCP tool it should call). The language server is not started during a run: `mocks/spring-tools-mcp/` answers every MCP tool from recordings taken against the real server on the `sf7-validation` test project (`_tools.json` carries the real tool descriptions and schemas), and the `validate` and reviewer cases override `getProjectDiagnostics` with a recording that contains a `JAVA_AUTOWIRED_CONSTRUCTOR` finding.
 
-All four hosts run the same cases and graders. Run these commands from the repository root:
+Run the following from the repository root. The runner stages the plugin and evals together in a temporary directory because Claude requires evals inside the plugin root; results are saved under `claude-plugins/tools/evals/results/`.
 
 ```bash
-# Claude Code: stages plugin + evals in a temp dir; results go to claude-plugins/tools/evals/results/
+# runs every case three times with the plugin and three times without it, judged with your Claude Code credentials
 node claude-plugins/tools/evals/run-claude-evals.mjs --no-publish
+
+# one case, one arm, one run - cheap while iterating on a skill description
 node claude-plugins/tools/evals/run-claude-evals.mjs --case validate-finds-spring-problems --runs 1 --ablation none --no-publish
 
-# GitHub Copilot CLI: reads tool calls from Copilot's debug log
-node claude-plugins/tools/evals/run-with-copilot.mjs
-node claude-plugins/tools/evals/run-with-copilot.mjs --case validate-finds-spring-problems --model <model>
-
-# Codex CLI: reads tool calls from `codex exec --json` and uses a private CODEX_HOME
-node claude-plugins/tools/evals/run-with-codex.mjs
-node claude-plugins/tools/evals/run-with-codex.mjs --case validate-finds-spring-problems --model <model>
-
-# OpenCode: reads tool calls from `opencode run --format json --standalone`
-node claude-plugins/tools/evals/run-with-opencode.mjs
-node claude-plugins/tools/evals/run-with-opencode.mjs --case validate-finds-spring-problems --model <model>
-```
-
-All runners accept `--case`, `--model` and `--keep` where the host supports them; Codex and OpenCode also accept `--judge-model`, while the Claude runner has its own `--runs`, `--ablation`, `--threshold` and `--max-cost-usd` options. Re-record the mocks after the language server's tools or the fixture project changed (needs the JAR + Java 21+):
-
-```bash
+# re-record the mocks after the language server's tools or the fixture project changed (needs the JAR + Java 21+)
 node claude-plugins/tools/evals/record-mocks.mjs
 ```
 
-The non-Claude runners stage a throwaway workspace with the `sf7-validation` fixture, copy the shared skills into the host's discovery path, configure the mock MCP server, then read the host's trace and the mock server's authoritative MCP trace. Copilot uses the CLI's debug log. Codex uses `codex exec --json`; because Codex has no callable Skill tool, positive skill cases prepend the `$skill` marker in the prompt and the runner records the activation for the grader. OpenCode uses `opencode run --format json --standalone`, stages skills under `.agents/skills` and the reviewer under `.opencode/agents`, and disables Code Mode in the staged config so MCP tool names map to the portable graders. Set `CODEX_CLI` or `CODEX_EVAL_API_KEY` when Codex is installed outside `PATH` or needs a separate API key.
-
-Every eval run and every `llm` grader is a model call on your account: `ANTHROPIC_API_KEY` for Claude, the logged-in Copilot account or `COPILOT_GITHUB_TOKEN` for Copilot, `CODEX_API_KEY` (or `CODEX_EVAL_API_KEY`) for Codex, and the provider credentials configured for OpenCode. The workflow jobs are opt-in `workflow_dispatch` inputs with timeouts and secret checks; the Claude job additionally enforces `--max-cost-usd 15`. `check-plugin-config.mjs` and `check-eval-runners.mjs` keep the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, every skill and agent has a case, and each host has a runner, docs and a guarded CI job. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
+Every run and every `llm` grader is a model call on your account (Claude Code 2.1.269+, logged in or `ANTHROPIC_API_KEY`). `check-plugin-config.mjs` keeps the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, and every skill and agent has a case. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
 
 When a new diagnostic code is added to the language server:
 
@@ -380,8 +347,8 @@ When a new diagnostic code is added to the language server:
 ```
 spring-tools/
 ├── .claude-plugin/
-│   └── plugin.json          # Claude Code manifest (metadata + MCP server config; hooks are discovered from ./hooks/hooks.json)
-├── plugin.json              # Agent Plugins 1.0 manifest (metadata + empty Codex hook surface), used by Copilot CLI and Codex
+│   └── plugin.json          # Claude Code manifest (metadata + MCP server config + hooks)
+├── plugin.json              # Agent Plugins 1.0 manifest (metadata), used by Copilot CLI and Codex
 ├── mcp.json                 # Agent Plugins 1.0 MCP server config, used by Copilot CLI and Codex
 ├── com.github.copilot/      # Copilot-specific extensions (client namespace of the Agent Plugins spec)
 │   ├── agents/
@@ -410,9 +377,9 @@ spring-tools/
 └── README.md
 ```
 
-The manifests describe one plugin for different hosts. `install.js` stores the checksum-verified JAR in the persistent data directory, isolated under the plugin version; it does not write into the installed plugin tree. `check-plugin-config.mjs` fails if shared metadata drifts, if a reviewer adapter differs from `skills/spring-review/SKILL.md`, if `mcp.json` stops launching `launcher.js`, or if Codex loses its explicit no-hooks declaration. Run `node claude-plugins/tools/sync-agent-adapters.mjs --write` after changing the shared review procedure to refresh Claude, Copilot and OpenCode adapters. Hooks cannot be one shared file: Claude supports MCP-tool hooks, Copilot supports command hooks, Codex explicitly disables hook discovery and relies on the language-server watcher, and OpenCode does not load plugin hooks. Codex and Copilot consume the portable root `plugin.json`, `mcp.json`, and `skills/`, so those capabilities are defined once.
+The manifests describe one plugin for different hosts. `install.js` stores the checksum-verified JAR in the persistent data directory, isolated under the plugin version; it does not write into the installed plugin tree. `check-plugin-config.mjs` fails if shared metadata drifts, if a reviewer adapter differs from `skills/spring-review/SKILL.md`, or if `mcp.json` stops launching `launcher.js`. Run `node claude-plugins/tools/sync-agent-adapters.mjs --write` after changing the shared review procedure to refresh Claude, Copilot and OpenCode adapters. Hooks cannot be one shared file: Claude supports MCP-tool hooks, Copilot supports command hooks, and Codex/OpenCode rely on the language-server watcher. Codex and Copilot consume the portable root `plugin.json`, `mcp.json`, and `skills/`, so those capabilities are defined once.
 
-The sibling directory `claude-plugins/tools/` (not part of the published plugin) holds `check-explanations.mjs`, `check-plugin-config.mjs`, `check-eval-runners.mjs`, `lib/plugin-config.mjs`, the `test/` suite, the `smoke/mcp-smoke.mjs` end-to-end test, and the `evals/` suite, recorder and host runners.
+The sibling directory `claude-plugins/tools/` (not part of the published plugin) holds `check-explanations.mjs`, `check-plugin-config.mjs`, `lib/plugin-config.mjs`, the `test/` suite, the `smoke/mcp-smoke.mjs` end-to-end test, and the `evals/` suite, recorder and runner.
 
 ## How it works
 

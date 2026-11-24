@@ -333,7 +333,8 @@ export function uncoveredTools(tools, skillTexts, hooksJson) {
 /**
  * Consistency of the behavioral eval suite (claude plugin eval) with the rest of the plugin: every
  * mock answers a real tool, every case has a prompt and at least one grader, graders reference
- * only real tools/skills/agents, and every skill and agent has at least one case that checks it.
+ * only real tools/skills/agents, every MCP tool has a positive behavioral grader, and every skill
+ * and agent has at least one case that checks it.
  * Returns error strings.
  */
 export function checkEvals(evalsDir, tools, skillNames, agentNames) {
@@ -348,6 +349,7 @@ export function checkEvals(evalsDir, tools, skillNames, agentNames) {
     }
     const coveredSkills = new Set();
     const coveredAgents = new Set();
+    const coveredMcpTools = new Set();
     for (const name of cases) {
         const caseDir = join(evalsDir, name);
         const promptFile = join(caseDir, 'prompt.md');
@@ -399,6 +401,9 @@ export function checkEvals(evalsDir, tools, skillNames, agentNames) {
             if (!tool) {
                 errors.push(`${graderWhere}: tool_used grader needs a tool`);
             }
+            if (tool.startsWith('mcp__') && !tool.startsWith(SCOPED_TOOL_PREFIX)) {
+                errors.push(`${graderWhere}: MCP tool '${tool}' is not scoped with '${SCOPED_TOOL_PREFIX}'`);
+            }
             if (tool.startsWith(SCOPED_TOOL_PREFIX) && !tools.has(tool.slice(SCOPED_TOOL_PREFIX.length))) {
                 errors.push(`${graderWhere}: MCP tool '${tool}' does not exist`);
             }
@@ -411,6 +416,9 @@ export function checkEvals(evalsDir, tools, skillNames, agentNames) {
             const max = data.max === undefined ? Number.POSITIVE_INFINITY : Number(data.max);
             if (!Number.isFinite(min) || min < 0 || Number.isNaN(max) || max < min) {
                 errors.push(`${graderWhere}: min/max must define non-negative occurrence bounds with max >= min`);
+            }
+            if (tool.startsWith(SCOPED_TOOL_PREFIX) && tools.has(tool.slice(SCOPED_TOOL_PREFIX.length)) && min > 0) {
+                coveredMcpTools.add(tool.slice(SCOPED_TOOL_PREFIX.length));
             }
             if (tool === 'Skill' && data.input_match) {
                 const skill = data.input_match.match(/\)\?([\w-]+)"/)?.[1];
@@ -465,6 +473,10 @@ export function checkEvals(evalsDir, tools, skillNames, agentNames) {
     }
     for (const skill of skillNames.filter((s) => !coveredSkills.has(s))) {
         errors.push(`evals: skill '${skill}' has no case asserting it fires`);
+    }
+    const missingMcpTools = [...tools.keys()].filter((tool) => !coveredMcpTools.has(tool)).sort();
+    if (missingMcpTools.length) {
+        errors.push(`evals: no positive behavioral grader for MCP tools: ${missingMcpTools.join(', ')}`);
     }
     for (const agent of agentNames.filter((a) => !coveredAgents.has(a))) {
         errors.push(`evals: agent '${agent}' has no case asserting it is used`);

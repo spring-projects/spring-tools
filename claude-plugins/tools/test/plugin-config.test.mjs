@@ -19,7 +19,9 @@ import { test } from 'node:test';
 import { stagePlugin } from '../evals/run-claude-evals.mjs';
 import {
     checkCodexHookSurface,
+    checkCodexMarketplace,
     checkEvals,
+    CODEX_CATALOG_PATH,
     HOOK_SERVER,
     PLUGIN_DIR,
     SCOPED_TOOL_PREFIX,
@@ -194,4 +196,24 @@ test('negative control: missing Codex hook override is detected', () => {
 
     portable.extensions = { 'com.openai': { hooks: './hooks/hooks.json' } };
     assert.match(checkCodexHookSurface(portable).join('\n'), /empty object so Codex does not load Claude-only hooks/);
+});
+
+test('the Codex catalog points at the published plugin directory', () => {
+    const catalog = JSON.parse(readFileSync(join(repoRoot, CODEX_CATALOG_PATH), 'utf8'));
+    assert.deepEqual(checkCodexMarketplace(catalog, repoRoot), []);
+});
+
+test('negative control: a broken Codex catalog is detected', () => {
+    const catalog = JSON.parse(readFileSync(join(repoRoot, CODEX_CATALOG_PATH), 'utf8'));
+    catalog.plugins[0].source.path = './somewhere-else';
+    const errors = checkCodexMarketplace(catalog, repoRoot).join('\n');
+    assert.match(errors, /source\.path must resolve to claude-plugins\/spring-tools/);
+
+    delete catalog.interface;
+    delete catalog.plugins[0].policy;
+    delete catalog.plugins[0].category;
+    const missingMetadata = checkCodexMarketplace(catalog, repoRoot).join('\n');
+    assert.match(missingMetadata, /interface\.displayName is required/);
+    assert.match(missingMetadata, /policy\.installation must be/);
+    assert.match(missingMetadata, /category is required/);
 });

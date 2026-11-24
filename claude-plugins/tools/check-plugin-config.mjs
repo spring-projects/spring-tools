@@ -26,7 +26,9 @@ import {
     checkAgent,
     checkAgentPluginManifest,
     checkCodexHookSurface,
+    checkCodexMarketplace,
     checkCopilotAgent,
+    CODEX_CATALOG_PATH,
     checkCopilotHooks,
     checkEvals,
     checkHooks,
@@ -111,6 +113,13 @@ if (crossHost) {
 
     const copilotHooks = JSON.parse(readFileSync(join(pluginDir, COPILOT_DIR, 'hooks', 'hooks.json'), 'utf8'));
     errors.push(...checkCopilotHooks(copilotHooks, repoRoot));
+
+    const codexCatalogPath = join(repoRoot, CODEX_CATALOG_PATH);
+    if (!existsSync(codexCatalogPath)) {
+        errors.push(`${CODEX_CATALOG_PATH}: Codex marketplace catalog is missing`);
+    } else {
+        errors.push(...checkCodexMarketplace(JSON.parse(readFileSync(codexCatalogPath, 'utf8')), repoRoot));
+    }
 }
 
 const pluginJson = JSON.parse(readFileSync(join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8'));

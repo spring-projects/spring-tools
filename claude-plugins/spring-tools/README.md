@@ -331,7 +331,7 @@ node --test --test-reporter=spec 'claude-plugins/tools/test/*.test.mjs'
 node claude-plugins/tools/smoke/mcp-smoke.mjs
 ```
 
-The GitHub Actions workflow `.github/workflows/claude-plugin-check.yml` runs the same checks for changes under `claude-plugins/`, the `*ProblemType` enums, the MCP tool sources and the standalone language server, validates the manifest with `claude plugin validate --strict`, and runs the smoke test against a freshly built language server.
+The GitHub Actions workflow `.github/workflows/claude-plugin-check.yml` runs the same checks for changes under `claude-plugins/`, `.agents/plugins/`, the `*ProblemType` enums, the MCP tool sources and the standalone language server, validates the manifest with `claude plugin validate --strict`, and runs the smoke test against a freshly built language server.
 
 When a new MCP tool is added to the language server, give it a home: mention it in the skill that covers its use case (its `allowed-tools` list and body) or in `hooks/hooks.json`; `check-plugin-config.mjs` fails until every tool is reachable through a skill or hook.
 

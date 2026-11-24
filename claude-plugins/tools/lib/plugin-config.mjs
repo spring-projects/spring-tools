@@ -17,7 +17,7 @@
 // must stay in sync with the portable plugin and each other.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 export const MCP_SOURCES_DIR = 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/mcp';
 export const PLUGIN_DIR = 'claude-plugins/spring-tools';
@@ -26,6 +26,8 @@ export const PLUGIN_NAME = 'spring-tools';
 export const HOOK_SERVER = `plugin:${PLUGIN_NAME}:${MCP_SERVER_NAME}`;
 export const SCOPED_TOOL_PREFIX = `mcp__plugin_${PLUGIN_NAME}_${MCP_SERVER_NAME}__`;
 export const COPILOT_DIR = 'com.github.copilot';
+export const CODEX_CATALOG_PATH = '.agents/plugins/marketplace.json';
+export const CODEX_MARKETPLACE_NAME = 'spring-tools-local';
 // OpenCode replaces non-alphanumeric characters in server names with underscores for tool actions.
 export const OPENCODE_MCP_TOOL_PREFIX = `${PLUGIN_NAME.replace(/-/g, '_')}_`;
 export const OPENCODE_MCP_TOOL_ACTION = `${OPENCODE_MCP_TOOL_PREFIX}*`;
@@ -678,6 +680,46 @@ export function checkCodexHookSurface(pluginJson) {
     const hooks = openai.hooks;
     if (!hooks || typeof hooks !== 'object' || Array.isArray(hooks) || Object.keys(hooks).length !== 0) {
         errors.push('plugin.json: extensions.com.openai.hooks must be an empty object so Codex does not load Claude-only hooks');
+    }
+    return errors;
+}
+
+/** Validates the repo-scoped Codex marketplace that is shipped from release tags. */
+export function checkCodexMarketplace(catalog, root) {
+    const errors = [];
+    const where = CODEX_CATALOG_PATH;
+    if (catalog.name !== CODEX_MARKETPLACE_NAME) {
+        errors.push(`${where}: name must be '${CODEX_MARKETPLACE_NAME}' to match the documented install commands`);
+    }
+    if (!catalog.interface?.displayName) {
+        errors.push(`${where}: interface.displayName is required`);
+    }
+    if (!Array.isArray(catalog.plugins)) {
+        errors.push(`${where}: plugins must be an array`);
+        return errors;
+    }
+    const entry = catalog.plugins.find((plugin) => plugin.name === PLUGIN_NAME);
+    if (!entry) {
+        errors.push(`${where}: no plugin named '${PLUGIN_NAME}'`);
+        return errors;
+    }
+    const source = entry.source;
+    if (!source || typeof source !== 'object' || Array.isArray(source) || source.source !== 'local') {
+        errors.push(`${where}: '${PLUGIN_NAME}' must be a local plugin source`);
+    } else if (typeof source.path !== 'string' || !source.path.startsWith('./')) {
+        errors.push(`${where}: '${PLUGIN_NAME}' source.path must be a './'-relative path`);
+    } else if (resolve(root, source.path) !== resolve(root, PLUGIN_DIR)) {
+        errors.push(`${where}: '${PLUGIN_NAME}' source.path must resolve to ${PLUGIN_DIR}`);
+    }
+    const installation = entry.policy?.installation;
+    if (!['AVAILABLE', 'INSTALLED_BY_DEFAULT', 'NOT_AVAILABLE'].includes(installation)) {
+        errors.push(`${where}: '${PLUGIN_NAME}' policy.installation must be AVAILABLE, INSTALLED_BY_DEFAULT or NOT_AVAILABLE`);
+    }
+    if (!entry.policy?.authentication) {
+        errors.push(`${where}: '${PLUGIN_NAME}' policy.authentication is required`);
+    }
+    if (!entry.category) {
+        errors.push(`${where}: '${PLUGIN_NAME}' category is required`);
     }
     return errors;
 }

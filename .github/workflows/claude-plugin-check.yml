@@ -1,9 +1,9 @@
 name: Claude Plugin Check
 
-# Keeps the Claude Code plugin under claude-plugins/spring-tools consistent with the
-# language server: every diagnostic code has an explanation playbook, playbooks are
-# well-formed, hooks, skills and agents only reference MCP tools that exist (and every
-# tool is reachable through one of them), the plugin manifest validates, and the
+# Keeps the Claude Code plugin under claude-plugins/spring-tools and the Codex catalog under
+# .agents/plugins consistent with the language server: every diagnostic code has an explanation
+# playbook, playbooks are well-formed, hooks, skills and agents only reference MCP tools that
+# exist (and every tool is reachable through one of them), the plugin manifests validate, and the
 # launcher/language server (including its file watcher) work end to end over MCP stdio.
 
 on:
@@ -12,6 +12,7 @@ on:
       - main
     paths:
       - 'claude-plugins/**'
+      - '.agents/plugins/**'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/**/*ProblemType.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/validation/generations/AbstractDiagnosticValidator.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/yaml/reconcile/ApplicationYamlASTReconciler.java'
@@ -22,6 +23,7 @@ on:
   pull_request:
     paths:
       - 'claude-plugins/**'
+      - '.agents/plugins/**'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/**/*ProblemType.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/validation/generations/AbstractDiagnosticValidator.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/yaml/reconcile/ApplicationYamlASTReconciler.java'

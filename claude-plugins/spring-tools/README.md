@@ -236,6 +236,8 @@ Nested JSON matching the VSCode `boot-java` / `spring-boot` configuration struct
 
 **Lombok support** is off by default. With `boot-java.lombok.on=true` the constructors Lombok generates (`@RequiredArgsConstructor`, `@AllArgsConstructor`, `@Data`, `@Value`, ...) are taken into account when indexing, so their injection points show up. `lombok.config` files are not read; two of their keys have settings of their own instead: `boot-java.lombok.field-defaults-final=true` (as `lombok.fieldDefaults.defaultFinal = true`) and `boot-java.lombok.copy-spring-annotations=true` (copy Spring's `@Qualifier` and `@Value` onto the generated constructor parameters, as with `lombok.copyableAnnotations`).
 
+**Kotlin support** is on by default: the Kotlin sources of the project (in `src/main/kotlin` and the other source folders of the build) are indexed like the Java ones, so their beans, injection points, request mappings, configuration properties and stereotypes show up in the tools. Diagnostics are not reported for Kotlin sources yet. A project without Kotlin sources pays for one walk of its source folders per indexing, no Kotlin parser is set up. Switch it off with `boot-java.kotlin-support.on=false`.
+
 The full list of available categories, problem codes and parameters is embedded in the language server JAR as `problem-types.json` (inside the nested `spring-boot-language-server-*.jar`). They are the same keys used in the VSCode extension's settings, so the `boot-java.*` / `spring-boot.*` entries of `vscode-extensions/vscode-spring-boot/package.json` double as a reference.
 
 Settings are applied once at startup. You must restart the language server for changes to take effect: restart Claude Code, or reconnect the `spring-tools-mcp` server from the `/mcp` menu.

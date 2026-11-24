@@ -11,8 +11,6 @@
 package org.springframework.ide.vscode.boot.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -159,17 +157,55 @@ class StandaloneSettingsLoaderTest {
 	// -----------------------------------------------------------------------
 
 	@Test
-	void noProjectDirProperty_doesNotFireConfigChange() {
+	void noProjectDirProperty_firesWithTheStandaloneDefaults() {
 		standaloneProperties.setProjectDir(null);
 		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
-		verify(settingsStore, never()).update(any());
+		assertThat(captureSettings()).isEqualTo(StandaloneSettingsLoader.standaloneDefaults());
 	}
 
 	@Test
-	void noSettingsFiles_doesNotFireConfigChange() {
+	void noSettingsFiles_firesWithTheStandaloneDefaults() {
 		standaloneProperties.setProjectDir(projectDir.toString());
 		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
-		verify(settingsStore, never()).update(any());
+		assertThat(captureSettings()).isEqualTo(StandaloneSettingsLoader.standaloneDefaults());
+	}
+
+	@Test
+	void standaloneDefaults_switchTheKotlinSupportOn() {
+		standaloneProperties.setProjectDir(projectDir.toString());
+		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
+		assertThat(captureTypedSettings().getBoolean("boot-java", "kotlin-support", "on")).isTrue();
+	}
+
+	@Test
+	void jsonFile_overridesTheStandaloneDefaults() throws IOException {
+		standaloneProperties.setProjectDir(projectDir.toString());
+		writeClaudeFile("spring-tools.json", """
+				{ "boot-java": { "kotlin-support": { "on": false } } }
+				""");
+		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
+		assertThat(captureTypedSettings().getBoolean("boot-java", "kotlin-support", "on")).isFalse();
+	}
+
+	@Test
+	void propertiesFile_overridesTheStandaloneDefaults() throws IOException {
+		standaloneProperties.setProjectDir(projectDir.toString());
+		writeClaudeFile("spring-tools.properties", "boot-java.kotlin-support.on=false\n");
+		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
+		Settings settings = captureTypedSettings();
+		assertThat(settings.getBoolean("boot-java", "kotlin-support", "on")).isFalse();
+	}
+
+	@Test
+	void settingsFiles_keepTheStandaloneDefaultsTheyDoNotMention() throws IOException {
+		standaloneProperties.setProjectDir(projectDir.toString());
+		writeClaudeFile("spring-tools.json", """
+				{ "boot-java": { "validation": { "java": { "boot2": "OFF" } } } }
+				""");
+		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
+		Settings settings = captureTypedSettings();
+		assertThat(settings.getBoolean("boot-java", "kotlin-support", "on")).isTrue();
+		assertThat(settings.getString("boot-java", "validation", "java", "boot2")).isEqualTo("OFF");
 	}
 
 	@Test
@@ -259,19 +295,19 @@ class StandaloneSettingsLoaderTest {
 	}
 
 	@Test
-	void invalidJsonFile_doesNotFireConfigChange() throws IOException {
+	void invalidJsonFile_firesWithTheStandaloneDefaultsOnly() throws IOException {
 		standaloneProperties.setProjectDir(projectDir.toString());
 		writeClaudeFile("spring-tools.json", "not { valid } json");
 		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
-		verify(settingsStore, never()).update(any());
+		assertThat(captureSettings()).isEqualTo(StandaloneSettingsLoader.standaloneDefaults());
 	}
 
 	@Test
-	void jsonFileWithNonObjectTopLevel_doesNotFireConfigChange() throws IOException {
+	void jsonFileWithNonObjectTopLevel_firesWithTheStandaloneDefaultsOnly() throws IOException {
 		standaloneProperties.setProjectDir(projectDir.toString());
 		writeClaudeFile("spring-tools.json", "[1, 2, 3]");
 		new StandaloneSettingsLoader(settingsStore, standaloneProperties).afterSingletonsInstantiated();
-		verify(settingsStore, never()).update(any());
+		assertThat(captureSettings()).isEqualTo(StandaloneSettingsLoader.standaloneDefaults());
 	}
 
 	// -----------------------------------------------------------------------
@@ -285,9 +321,14 @@ class StandaloneSettingsLoaderTest {
 	}
 
 	private JsonObject captureSettings() {
+		return (JsonObject) captureTypedSettings().getRawSettings();
+	}
+
+	/** the settings of the one update of the store */
+	private Settings captureTypedSettings() {
 		ArgumentCaptor<Settings> captor = ArgumentCaptor.forClass(Settings.class);
 		verify(settingsStore).update(captor.capture());
-		return (JsonObject) captor.getValue().getRawSettings();
+		return captor.getValue();
 	}
 
 }

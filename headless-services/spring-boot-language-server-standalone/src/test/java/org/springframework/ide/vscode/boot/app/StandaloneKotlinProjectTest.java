@@ -65,8 +65,8 @@ class StandaloneKotlinProjectTest {
 
 	@Test
 	void kotlinProjectIsFoundIndexedAndFollowed() throws Exception {
+		// the Kotlin support is on by default in the standalone language server, no settings needed
 		Path project = createKotlinProject("demo");
-		enableKotlinSupport();
 
 		startServer();
 
@@ -190,7 +190,6 @@ class StandaloneKotlinProjectTest {
 					fun generated() = "generated"
 				}
 				""");
-		enableKotlinSupport();
 
 		startServer();
 
@@ -204,13 +203,16 @@ class StandaloneKotlinProjectTest {
 	}
 
 	/**
-	 * Kotlin sources are only indexed when the Kotlin support is switched on in the settings
-	 * ({@code boot-java.kotlin-support.on}, off by default). The project itself is found anyway,
-	 * and switching the setting on indexes the Kotlin sources.
+	 * The Kotlin support can be switched off in the settings files ({@code boot-java.kotlin-support.on},
+	 * on by default in the standalone language server, off in the IDEs). The project is found
+	 * anyway, only its Kotlin sources are not indexed, until the setting is switched on again.
 	 */
 	@Test
-	void kotlinSourcesAreIndexedOnlyWithTheSetting() throws Exception {
+	void kotlinSourcesAreNotIndexedWhenTheSettingSwitchesThemOff() throws Exception {
 		createKotlinProject("demo");
+		writeSettings("""
+				{ "boot-java": { "kotlin-support": { "on": false } } }
+				""");
 
 		startServer();
 
@@ -243,13 +245,11 @@ class StandaloneKotlinProjectTest {
 				.run();
 	}
 
-	/** the setting, in the way a user of the plugin gives it to the language server */
-	private void enableKotlinSupport() throws Exception {
+	/** settings, in the way a user of the plugin gives them to the language server */
+	private void writeSettings(String json) throws Exception {
 		Path settings = workspace.resolve(".claude/spring-tools.json");
 		Files.createDirectories(settings.getParent());
-		Files.writeString(settings, """
-				{ "boot-java": { "kotlin-support": { "on": true } } }
-				""");
+		Files.writeString(settings, json);
 	}
 
 	private static List<String> beanNames(SpringMetamodelIndex springIndex) {

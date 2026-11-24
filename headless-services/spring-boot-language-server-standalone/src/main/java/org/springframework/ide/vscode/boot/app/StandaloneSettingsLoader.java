@@ -54,8 +54,11 @@ import com.google.gson.JsonPrimitive;
  *       </pre>
  * </ul>
  *
- * <p>When both files are present they are merged: the properties file provides the base
- * and the JSON file overrides it (JSON takes precedence). Settings are applied once at
+ * <p>Both files go on top of the defaults of the standalone language server
+ * ({@link #standaloneDefaults()}), which differ from the ones of an IDE: the Kotlin support is
+ * switched on, as there is no IDE client that would set it. When both files are present they are
+ * merged: the properties file provides the base and the JSON file overrides it (JSON takes
+ * precedence). Settings are applied once at
  * startup by pushing them straight into the {@link SettingsStore}, which is the same store
  * the VSCode client feeds via {@code workspace/didChangeConfiguration}, so all existing
  * preference consumers ({@link BootJavaConfig}, etc.) react to them automatically without
@@ -80,22 +83,36 @@ public class StandaloneSettingsLoader implements SmartInitializingSingleton {
 		this.properties = properties;
 	}
 
+	/**
+	 * The settings of the standalone language server that differ from the defaults of the
+	 * settings, and that the settings files can override:
+	 * <ul>
+	 *   <li>{@code boot-java.kotlin-support.on}: Kotlin sources are indexed. A project without
+	 *       Kotlin sources pays for one walk of its source folders per indexing of the project, and
+	 *       no Kotlin parser is set up.</li>
+	 * </ul>
+	 */
+	static JsonObject standaloneDefaults() {
+		JsonObject defaults = new JsonObject();
+		setNestedValue(defaults, new String[] { "boot-java", "kotlin-support", "on" }, 0, new JsonPrimitive(true));
+		return defaults;
+	}
+
 	@Override
 	public void afterSingletonsInstantiated() {
+		JsonObject merged = standaloneDefaults();
+
 		String projectDir = properties.getProjectDir();
 		if (projectDir == null || projectDir.isBlank()) {
+			settingsStore.update(new Settings(merged));
 			return;
 		}
-
-		JsonObject merged = new JsonObject();
-		boolean anyLoaded = false;
 
 		Path propsFile = Paths.get(projectDir, PROPERTIES_SETTINGS_FILE);
 		if (Files.exists(propsFile)) {
 			JsonObject fromProps = loadFromProperties(propsFile);
 			if (fromProps != null) {
 				merged = deepMerge(merged, fromProps);
-				anyLoaded = true;
 				log.info("Loaded Claude settings from {}", propsFile);
 			}
 		}
@@ -105,14 +122,11 @@ public class StandaloneSettingsLoader implements SmartInitializingSingleton {
 			JsonObject fromJson = loadFromJson(jsonFile);
 			if (fromJson != null) {
 				merged = deepMerge(merged, fromJson);
-				anyLoaded = true;
 				log.info("Loaded Claude settings from {}", jsonFile);
 			}
 		}
 
-		if (anyLoaded) {
-			settingsStore.update(new Settings(merged));
-		}
+		settingsStore.update(new Settings(merged));
 	}
 
 	private JsonObject loadFromProperties(Path file) {

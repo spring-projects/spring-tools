@@ -46,6 +46,34 @@ on:
         type: string
         required: false
         default: ''
+      run-codex-evals:
+        description: 'Also run the behavioral eval suite with Codex CLI (needs the CODEX_API_KEY secret and costs model calls)'
+        type: boolean
+        default: false
+      codex-eval-case:
+        description: 'Optional single eval case for run-codex-evals'
+        type: string
+        required: false
+        default: ''
+      codex-eval-model:
+        description: 'Optional Codex model override for run-codex-evals'
+        type: string
+        required: false
+        default: ''
+      run-opencode-evals:
+        description: 'Also run the behavioral eval suite with OpenCode (needs provider API credentials and costs model calls)'
+        type: boolean
+        default: false
+      opencode-eval-case:
+        description: 'Optional single eval case for run-opencode-evals'
+        type: string
+        required: false
+        default: ''
+      opencode-eval-model:
+        description: 'OpenCode model for run-opencode-evals (provider/model)'
+        type: string
+        required: false
+        default: 'anthropic/claude-sonnet-4-5'
 
 permissions:
   contents: read
@@ -67,6 +95,8 @@ jobs:
         run: node claude-plugins/tools/check-explanations.mjs --require-all --todo
       - name: Check plugin configuration and cross-host adapters
         run: node claude-plugins/tools/check-plugin-config.mjs --cross-host
+      - name: Check four-host eval runner coverage
+        run: node claude-plugins/tools/check-eval-runners.mjs --runners --docs --workflow
       - name: Run plugin tooling tests
         run: node --test --test-reporter=spec 'claude-plugins/tools/test/*.test.mjs'
 
@@ -189,3 +219,71 @@ jobs:
           fi
           copilot --version
           node claude-plugins/tools/evals/run-with-copilot.mjs "${args[@]}"
+
+  codex-plugin-evals:
+    name: Behavioral evals (Codex CLI, on demand)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run-codex-evals
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install Codex CLI
+        run: npm install -g --no-audit --no-fund @openai/codex
+      - name: Run the eval suite against the recorded MCP mocks
+        env:
+          CODEX_EVAL_API_KEY: ${{ secrets.CODEX_API_KEY }}
+          CODEX_EVAL_CASE: ${{ inputs.codex-eval-case }}
+          CODEX_EVAL_MODEL: ${{ inputs.codex-eval-model }}
+        run: |
+          if [ -z "$CODEX_EVAL_API_KEY" ]; then
+            echo '::error::the CODEX_API_KEY secret is not set; the eval suite needs model access'
+            exit 1
+          fi
+          args=()
+          if [ -n "$CODEX_EVAL_CASE" ]; then
+            args+=(--case "$CODEX_EVAL_CASE")
+          fi
+          if [ -n "$CODEX_EVAL_MODEL" ]; then
+            args+=(--model "$CODEX_EVAL_MODEL")
+          fi
+          codex --version
+          node claude-plugins/tools/evals/run-with-codex.mjs "${args[@]}"
+
+  opencode-plugin-evals:
+    name: Behavioral evals (OpenCode, on demand)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run-opencode-evals
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install OpenCode
+        run: npm install -g --no-audit --no-fund opencode-ai
+      - name: Run the eval suite against the recorded MCP mocks
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENCODE_EVAL_CASE: ${{ inputs.opencode-eval-case }}
+          OPENCODE_EVAL_MODEL: ${{ inputs.opencode-eval-model }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo '::error::the ANTHROPIC_API_KEY secret is not set; the default OpenCode eval model needs it'
+            exit 1
+          fi
+          args=()
+          if [ -n "$OPENCODE_EVAL_CASE" ]; then
+            args+=(--case "$OPENCODE_EVAL_CASE")
+          fi
+          if [ -n "$OPENCODE_EVAL_MODEL" ]; then
+            args+=(--model "$OPENCODE_EVAL_MODEL")
+          fi
+          opencode --version
+          node claude-plugins/tools/evals/run-with-opencode.mjs "${args[@]}"

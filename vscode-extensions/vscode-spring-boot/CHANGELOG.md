@@ -38,6 +38,7 @@
 * _(Spring Boot)_ REST API version is in the live URL [#1832](https://github.com/spring-projects/spring-tools/issues/1832)
 * _(Spring Boot)_ use new actuator mapping data for WebMvc.fn  router functions for live hovers [#1576](https://github.com/spring-projects/spring-tools/issues/1576)
 * _(Spring Boot)_ Support CRON expression value in Spring Boot property files (`application.properties` and `application.yml`) [#1329](https://github.com/spring-projects/spring-tools/issues/1329)
+* _(Spring Boot)_ add support for `@ConditionalOnClass` annotation attributes [#1308](https://github.com/spring-projects/spring-tools/issues/1308)
 * _(Spring Boot)_ SQL syntax validation [#1273](https://github.com/spring-projects/spring-tools/issues/1273)
 
 ## 2026-09-09 (language servers version 2.4.1)

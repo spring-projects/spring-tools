@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { combineToolTraces, countToolMatches } from '../lib/eval-grading.mjs';
+import { combineToolTraces, countToolMatches, toolGradePasses } from '../lib/eval-grading.mjs';
 
 test('MCP calls from Copilot logs are not counted twice when the mock server traced them', () => {
     const trace = combineToolTraces(
@@ -28,4 +28,15 @@ test('MCP calls from Copilot logs are not counted twice when the mock server tra
         tool: 'mcp__plugin_spring-tools_spring-tools-mcp__getProjectList',
     }, trace), 1);
     assert.equal(trace.filter((entry) => entry.tool === 'view').length, 1);
+});
+
+test('OpenCode tool names satisfy the portable graders', () => {
+    const trace = [
+        { tool: 'read', input: 'explanations/JAVA_AUTOWIRED_CONSTRUCTOR.md' },
+        { tool: 'subagent', input: '{"subagent_type":"spring-reviewer"}' },
+    ];
+
+    assert.equal(toolGradePasses({ tool: 'Read', input_match: 'JAVA_AUTOWIRED_CONSTRUCTOR\\.md' }, trace, 'opencode'), true);
+    assert.equal(toolGradePasses({ tool: 'Agent', input_match: 'spring-reviewer' }, trace, 'opencode'), true);
+    assert.equal(toolGradePasses({ tool: 'Agent', input_match: 'spring-reviewer' }, trace), false);
 });

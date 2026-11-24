@@ -11,7 +11,16 @@
 
 import { MCP_SERVER_NAME, SCOPED_TOOL_PREFIX } from './plugin-config.mjs';
 
-const TOOL_ALIASES = { Read: ['view'], Skill: ['skill'], Glob: ['glob'], Grep: ['grep'], Bash: ['bash'], Agent: ['agent'] };
+const BASE_TOOL_ALIASES = { Read: ['view'], Skill: ['skill'], Glob: ['glob'], Grep: ['grep'], Bash: ['bash'], Agent: ['agent'] };
+
+// Each host reports its own tool names. Runner-side normalization maps the host events to these
+// names; the extra aliases keep graders written for Claude/Copilot portable across hosts.
+const HOST_TOOL_ALIASES = {
+    claude: {},
+    copilot: {},
+    codex: { Bash: ['view', 'exec'] },
+    opencode: { Read: ['view', 'read'], Bash: ['bash', 'shell'], Agent: ['agent', 'subagent', 'task'] },
+};
 
 /** Copilot selects plugin-provided agents by the file-derived id, without a plugin namespace. */
 export function copilotAgentId(inputMatch) {
@@ -19,17 +28,18 @@ export function copilotAgentId(inputMatch) {
 }
 
 /** Count trace entries matching a grader's tool name and optional JSON-input pattern. */
-export function countToolMatches(grader, trace) {
+export function countToolMatches(grader, trace, host = 'copilot') {
+    const aliases = { ...BASE_TOOL_ALIASES, ...(HOST_TOOL_ALIASES[host] ?? {}) };
     const wanted = grader.tool.startsWith(SCOPED_TOOL_PREFIX)
         ? [`${MCP_SERVER_NAME}-${grader.tool.slice(SCOPED_TOOL_PREFIX.length)}`]
-        : (TOOL_ALIASES[grader.tool] ?? [grader.tool]);
+        : (aliases[grader.tool] ?? [grader.tool]);
     const pattern = grader.input_match ? new RegExp(grader.input_match) : null;
     return trace.filter((entry) => wanted.includes(entry.tool) && (!pattern || pattern.test(entry.input))).length;
 }
 
 /** Apply the eval grader's inclusive min/max occurrence bounds (default: at least one). */
-export function toolGradePasses(grader, trace) {
-    const count = countToolMatches(grader, trace);
+export function toolGradePasses(grader, trace, host = 'copilot') {
+    const count = countToolMatches(grader, trace, host);
     const min = grader.min === undefined ? 1 : Number(grader.min);
     const max = grader.max === undefined ? Number.POSITIVE_INFINITY : Number(grader.max);
     return Number.isFinite(min) && min >= 0 && !Number.isNaN(max) && max >= min && count >= min && count <= max;

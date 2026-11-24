@@ -352,7 +352,17 @@ node claude-plugins/tools/evals/run-claude-evals.mjs --case validate-finds-sprin
 node claude-plugins/tools/evals/record-mocks.mjs
 ```
 
-Every run and every `llm` grader is a model call on your account (Claude Code 2.1.269+, logged in or `ANTHROPIC_API_KEY`). `check-plugin-config.mjs` keeps the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, and every skill and agent has a case. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
+The same cases also run through GitHub Copilot CLI. The runner stages a throwaway workspace and plugin with the recorded MCP mocks, reads Copilot's debug log for tool calls, and applies the same graders; it needs `copilot` on `PATH` and an authenticated Copilot account:
+
+```bash
+# every case
+node claude-plugins/tools/evals/run-with-copilot.mjs
+
+# one case with a specific model - cheaper while checking a host-specific adapter
+node claude-plugins/tools/evals/run-with-copilot.mjs --case validate-finds-spring-problems --model <model>
+```
+
+Every eval run and every `llm` grader is a model call on your account (`ANTHROPIC_API_KEY` for Claude evals; the logged-in Copilot account or `COPILOT_GITHUB_TOKEN` for Copilot evals). `check-plugin-config.mjs` keeps the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, and every skill and agent has a case. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
 
 When a new diagnostic code is added to the language server:
 

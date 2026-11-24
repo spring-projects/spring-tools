@@ -124,7 +124,7 @@ Use `/plugins` in Codex to manage the installed plugin. If you maintain a separa
 copilot plugin install spring-projects/spring-tools:claude-plugins/spring-tools
 ```
 
-Both hosts get the shared `skills/` and launch the same `launcher.js`. The host-specific `com.github.copilot/` directory supplies Copilot's agent front matter and session-start hook. Its reviewer limits tools to read/search and this plugin's MCP server. The root Agent Plugins files are also the Codex entry point, so those capabilities do not need a second copy.
+Both hosts get the shared `skills/` and launch the same `launcher.js`. The host-specific `com.github.copilot/` directory supplies Copilot's agent front matter and session-start hook. Its reviewer limits tools to read/search and this plugin's MCP server. The root Agent Plugins files are also the Codex entry point, so those capabilities do not need a second copy. The portable manifest declares an empty `extensions.com.openai.hooks` object: otherwise Codex would discover the Claude-only `hooks/hooks.json` and prompt to trust hooks that use unsupported `if` conditions and qualified MCP tool names. The language-server watcher keeps the index current, and the launcher downloads a missing JAR itself.
 
 ### Codex MCP workspace configuration
 
@@ -366,7 +366,7 @@ When a new diagnostic code is added to the language server:
 spring-tools/
 ├── .claude-plugin/
 │   └── plugin.json          # Claude Code manifest (metadata + MCP server config + hooks)
-├── plugin.json              # Agent Plugins 1.0 manifest (metadata), used by Copilot CLI and Codex
+├── plugin.json              # Agent Plugins 1.0 manifest (metadata + empty Codex hook surface), used by Copilot CLI and Codex
 ├── mcp.json                 # Agent Plugins 1.0 MCP server config, used by Copilot CLI and Codex
 ├── com.github.copilot/      # Copilot-specific extensions (client namespace of the Agent Plugins spec)
 │   ├── agents/
@@ -395,7 +395,7 @@ spring-tools/
 └── README.md
 ```
 
-The manifests describe one plugin for different hosts. `install.js` stores the checksum-verified JAR in the persistent data directory, isolated under the plugin version; it does not write into the installed plugin tree. `check-plugin-config.mjs` fails if shared metadata drifts, if a reviewer adapter differs from `skills/spring-review/SKILL.md`, or if `mcp.json` stops launching `launcher.js`. Run `node claude-plugins/tools/sync-agent-adapters.mjs --write` after changing the shared review procedure to refresh Claude, Copilot and OpenCode adapters. Hooks cannot be one shared file: Claude supports MCP-tool hooks, Copilot supports command hooks, and Codex/OpenCode rely on the language-server watcher. Codex and Copilot consume the portable root `plugin.json`, `mcp.json`, and `skills/`, so those capabilities are defined once.
+The manifests describe one plugin for different hosts. `install.js` stores the checksum-verified JAR in the persistent data directory, isolated under the plugin version; it does not write into the installed plugin tree. `check-plugin-config.mjs` fails if shared metadata drifts, if a reviewer adapter differs from `skills/spring-review/SKILL.md`, if `mcp.json` stops launching `launcher.js`, or if Codex loses its explicit no-hooks declaration. Run `node claude-plugins/tools/sync-agent-adapters.mjs --write` after changing the shared review procedure to refresh Claude, Copilot and OpenCode adapters. Hooks cannot be one shared file: Claude supports MCP-tool hooks, Copilot supports command hooks, Codex explicitly disables hook discovery and relies on the language-server watcher, and OpenCode does not load plugin hooks. Codex and Copilot consume the portable root `plugin.json`, `mcp.json`, and `skills/`, so those capabilities are defined once.
 
 The sibling directory `claude-plugins/tools/` (not part of the published plugin) holds `check-explanations.mjs`, `check-plugin-config.mjs`, `lib/plugin-config.mjs`, the `test/` suite, the `smoke/mcp-smoke.mjs` end-to-end test, and the `evals/` suite, recorder and runner.
 

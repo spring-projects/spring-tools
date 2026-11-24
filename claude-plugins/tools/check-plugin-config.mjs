@@ -25,6 +25,7 @@ import {
     PLUGIN_DIR,
     checkAgent,
     checkAgentPluginManifest,
+    checkCodexHookSurface,
     checkCopilotAgent,
     checkCopilotHooks,
     checkEvals,
@@ -116,12 +117,14 @@ const pluginJson = JSON.parse(readFileSync(join(pluginDir, '.claude-plugin', 'pl
 const marketplace = JSON.parse(readFileSync(join(repoRoot, 'claude-plugins', '.claude-plugin', 'marketplace.json'), 'utf8'));
 errors.push(...checkManifest(pluginJson, marketplace, repoRoot));
 if (crossHost) {
+    const portablePluginJson = JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8'));
     errors.push(...checkAgentPluginManifest(
-        JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8')),
+        portablePluginJson,
         JSON.parse(readFileSync(join(pluginDir, 'mcp.json'), 'utf8')),
         pluginJson,
         repoRoot,
     ));
+    errors.push(...checkCodexHookSurface(portablePluginJson));
 }
 
 const uncovered = uncoveredTools(tools, skillTexts, hooks);

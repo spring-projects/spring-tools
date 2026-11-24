@@ -18,6 +18,7 @@ import { test } from 'node:test';
 
 import { stagePlugin } from '../evals/run-claude-evals.mjs';
 import {
+    checkCodexHookSurface,
     checkEvals,
     HOOK_SERVER,
     PLUGIN_DIR,
@@ -179,4 +180,18 @@ Body
     assert.match(agentErrors, /V1 'permission' map is deprecated/);
     assert.match(agentErrors, /no V2 'permissions' rule list/);
     assert.match(agentErrors, /must deny all actions/);
+});
+
+test('the portable manifest explicitly disables Codex hook discovery', () => {
+    const portable = JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8'));
+    assert.deepEqual(checkCodexHookSurface(portable), []);
+});
+
+test('negative control: missing Codex hook override is detected', () => {
+    const portable = JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8'));
+    delete portable.extensions;
+    assert.match(checkCodexHookSurface(portable).join('\n'), /extensions\.com\.openai must be defined/);
+
+    portable.extensions = { 'com.openai': { hooks: './hooks/hooks.json' } };
+    assert.match(checkCodexHookSurface(portable).join('\n'), /empty object so Codex does not load Claude-only hooks/);
 });

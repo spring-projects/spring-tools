@@ -18,5 +18,10 @@
     "diagnostics",
     "mcp",
     "code-review"
-  ]
+  ],
+  "extensions": {
+    "com.openai": {
+      "hooks": {}
+    }
+  }
 }

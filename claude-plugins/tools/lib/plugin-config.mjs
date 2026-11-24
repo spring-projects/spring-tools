@@ -659,6 +659,29 @@ export function checkAgentPluginManifest(pluginJson, mcpJson, claudeJson, root) 
     return errors;
 }
 
+/**
+ * Codex discovers hooks/hooks.json unless extensions.com.openai defines a hook surface. That file
+ * uses Claude-only `if` conditions and MCP-tool hooks, so the portable manifest must suppress the
+ * discovery explicitly; the language server watcher and launcher handle refresh and JAR download.
+ */
+export function checkCodexHookSurface(pluginJson) {
+    const errors = [];
+    const openai = pluginJson.extensions?.['com.openai'];
+    if (!openai || typeof openai !== 'object' || Array.isArray(openai)) {
+        errors.push('plugin.json: extensions.com.openai must be defined for Codex hook settings');
+        return errors;
+    }
+    if (!Object.hasOwn(openai, 'hooks')) {
+        errors.push('plugin.json: extensions.com.openai.hooks must be defined; otherwise Codex loads the Claude-only hooks/hooks.json');
+        return errors;
+    }
+    const hooks = openai.hooks;
+    if (!hooks || typeof hooks !== 'object' || Array.isArray(hooks) || Object.keys(hooks).length !== 0) {
+        errors.push('plugin.json: extensions.com.openai.hooks must be an empty object so Codex does not load Claude-only hooks');
+    }
+    return errors;
+}
+
 // Copilot hook events are lowerCamelCase; the PascalCase spellings are the Claude Code ones.
 const COPILOT_HOOK_EVENTS = ['sessionStart', 'userPromptSubmit', 'preToolUse', 'postToolUse', 'sessionEnd'];
 

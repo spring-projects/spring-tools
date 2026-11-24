@@ -37,6 +37,15 @@ on:
         description: 'Also run the behavioral eval suite (claude plugin eval; needs the ANTHROPIC_API_KEY secret and costs model calls)'
         type: boolean
         default: false
+      run-copilot-evals:
+        description: 'Also run the behavioral eval suite with GitHub Copilot CLI (needs the copilot-requests permission and costs model calls)'
+        type: boolean
+        default: false
+      copilot-eval-case:
+        description: 'Optional single eval case for run-copilot-evals'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -153,3 +162,30 @@ jobs:
             ${{ runner.temp }}/eval-results.json
             claude-plugins/tools/evals/results/report.html
           if-no-files-found: ignore
+
+  copilot-plugin-evals:
+    name: Behavioral evals (GitHub Copilot CLI, on demand)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run-copilot-evals
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      copilot-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install GitHub Copilot CLI
+        run: npm install -g --no-audit --no-fund @github/copilot
+      - name: Run the eval suite against the recorded MCP mocks
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COPILOT_EVAL_CASE: ${{ inputs.copilot-eval-case }}
+        run: |
+          args=()
+          if [ -n "$COPILOT_EVAL_CASE" ]; then
+            args+=(--case "$COPILOT_EVAL_CASE")
+          fi
+          copilot --version
+          node claude-plugins/tools/evals/run-with-copilot.mjs "${args[@]}"

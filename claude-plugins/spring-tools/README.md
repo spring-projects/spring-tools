@@ -365,7 +365,7 @@ When a new diagnostic code is added to the language server:
 ```
 spring-tools/
 ├── .claude-plugin/
-│   └── plugin.json          # Claude Code manifest (metadata + MCP server config + hooks)
+│   └── plugin.json          # Claude Code manifest (metadata + MCP server config; hooks are discovered from ./hooks/hooks.json)
 ├── plugin.json              # Agent Plugins 1.0 manifest (metadata + empty Codex hook surface), used by Copilot CLI and Codex
 ├── mcp.json                 # Agent Plugins 1.0 MCP server config, used by Copilot CLI and Codex
 ├── com.github.copilot/      # Copilot-specific extensions (client namespace of the Agent Plugins spec)

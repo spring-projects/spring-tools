@@ -14,7 +14,7 @@
 //   node claude-plugins/tools/check-plugin-config.mjs [--cross-host]
 // Fails when a hook, skill or agent references an unknown tool, when a skill/agent is malformed,
 // or when an MCP tool is unreachable through skills/hooks or lacks positive behavioral eval coverage.
-// --cross-host also validates the Copilot and OpenCode adapters and manifests added by later stack branches.
+// --cross-host also validates the Codex catalog, the Copilot and OpenCode adapters, and the portable manifests.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';

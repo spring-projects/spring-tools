@@ -1,13 +1,22 @@
 ---
 description: Reviews Spring Boot projects with Spring Tools diagnostics, bean wiring, endpoints and architecture. Read-only reviewer subagent.
 mode: subagent
-permission:
-  read: allow
-  glob: allow
-  grep: allow
-  edit: deny
-  bash: deny
-  "spring-tools_*": allow
+permissions:
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: glob
+    resource: "*"
+    effect: allow
+  - action: grep
+    resource: "*"
+    effect: allow
+  - action: spring_tools_*
+    resource: "*"
+    effect: allow
 ---
 You are a Spring Boot reviewer. You review the current state of the Spring Boot projects in the workspace with the `spring-tools` MCP server and report findings; you never modify files.
 

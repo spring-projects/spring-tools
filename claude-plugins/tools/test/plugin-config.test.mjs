@@ -24,6 +24,8 @@ import {
     SCOPED_TOOL_PREFIX,
     checkHooks,
     checkManifest,
+    checkOpenCodeAgent,
+    checkOpenCodeConfig,
     checkSkill,
     collectMcpTools,
     parseFrontMatter,
@@ -145,4 +147,36 @@ test('negative control: a skill with an unscoped or unknown tool and a wrong nam
     assert.match(errors.join('\n'), /skill reference 'Skill\(spring-tools:nope\)' points to a missing skill/);
     assert.match(errors.join('\n'), /skill reference 'Skill\(quickfix\)' must look like/);
     assert.match(errors.join('\n'), /body mentions MCP tool 'getDiagnostics' which does not exist/);
+});
+
+test('the OpenCode adapter uses the V2 MCP and permission grammar', () => {
+    const config = JSON.parse(readFileSync(join(pluginDir, 'opencode', 'opencode.jsonc'), 'utf8'));
+    assert.deepEqual(checkOpenCodeConfig(config), []);
+    const reviewer = readFileSync(join(pluginDir, 'opencode', 'agents', 'spring-reviewer.md'), 'utf8');
+    assert.deepEqual(checkOpenCodeAgent('agents/spring-reviewer.md', reviewer), []);
+});
+
+test('negative control: deprecated OpenCode V1 grammar is detected', () => {
+    const config = {
+        mcp: {
+            'spring-tools': { type: 'local', command: [], enabled: true, timeout: 120000 },
+        },
+    };
+    const configErrors = checkOpenCodeConfig(config).join('\n');
+    assert.match(configErrors, /V1 mcp\.spring-tools is deprecated/);
+    assert.match(configErrors, /no mcp\.servers\.spring-tools entry/);
+
+    const reviewer = `---
+description: Reviews Spring Boot projects with Spring Tools diagnostics, bean wiring, endpoints and architecture. Read-only reviewer subagent.
+mode: subagent
+permission:
+  read: allow
+  "spring-tools_*": allow
+---
+Body
+`;
+    const agentErrors = checkOpenCodeAgent('agents/spring-reviewer.md', reviewer).join('\n');
+    assert.match(agentErrors, /V1 'permission' map is deprecated/);
+    assert.match(agentErrors, /no V2 'permissions' rule list/);
+    assert.match(agentErrors, /must deny all actions/);
 });

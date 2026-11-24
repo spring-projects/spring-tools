@@ -13,7 +13,8 @@
 // agents) and the MCP tools implemented by the language server. The plugin is loaded by two
 // clients: Claude Code reads `.claude-plugin/plugin.json`, `hooks/hooks.json` and `agents/`,
 // GitHub Copilot CLI reads the Agent Plugins 1.0 manifests (`plugin.json`, `mcp.json`) and the
-// `com.github.copilot/` directory. Both sets must stay in sync.
+// `com.github.copilot/` directory. OpenCode reads its own V2 config and agent adapters. All sets
+// must stay in sync with the portable plugin and each other.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
@@ -25,6 +26,9 @@ export const PLUGIN_NAME = 'spring-tools';
 export const HOOK_SERVER = `plugin:${PLUGIN_NAME}:${MCP_SERVER_NAME}`;
 export const SCOPED_TOOL_PREFIX = `mcp__plugin_${PLUGIN_NAME}_${MCP_SERVER_NAME}__`;
 export const COPILOT_DIR = 'com.github.copilot';
+// OpenCode replaces non-alphanumeric characters in server names with underscores for tool actions.
+export const OPENCODE_MCP_TOOL_PREFIX = `${PLUGIN_NAME.replace(/-/g, '_')}_`;
+export const OPENCODE_MCP_TOOL_ACTION = `${OPENCODE_MCP_TOOL_PREFIX}*`;
 export const PLUGIN_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
 export const MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
 
@@ -306,6 +310,83 @@ export function checkAgent(fileName, text, tools) {
     for (const match of text.matchAll(/`((?:get|file|refresh|find|capture|clear)[A-Z]\w*)`/g)) {
         if (!tools.has(match[1])) {
             errors.push(`${fileName}: body mentions MCP tool '${match[1]}' which does not exist`);
+        }
+    }
+    return errors;
+}
+
+/** Validates the OpenCode V2 MCP config fragment; V1 server placement and fields are rejected. */
+export function checkOpenCodeConfig(config) {
+    const errors = [];
+    const mcp = config.mcp ?? {};
+    if (Object.hasOwn(mcp, PLUGIN_NAME)) {
+        errors.push(`opencode/opencode.jsonc: V1 mcp.${PLUGIN_NAME} is deprecated; use mcp.servers.${PLUGIN_NAME}`);
+    }
+    const server = mcp.servers?.[PLUGIN_NAME];
+    if (!server) {
+        errors.push(`opencode/opencode.jsonc: no mcp.servers.${PLUGIN_NAME} entry`);
+        return errors;
+    }
+    if (server.type !== 'local') {
+        errors.push(`opencode/opencode.jsonc: mcp.servers.${PLUGIN_NAME}.type must be 'local'`);
+    }
+    if (!Array.isArray(server.command) || server.command[0] !== 'node' || server.command[1] !== '{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js') {
+        errors.push(`opencode/opencode.jsonc: mcp.servers.${PLUGIN_NAME} must launch the shared launcher.js through SPRING_TOOLS_PLUGIN_ROOT`);
+    }
+    if (server.timeout?.startup !== 120000) {
+        errors.push(`opencode/opencode.jsonc: mcp.servers.${PLUGIN_NAME}.timeout.startup must be 120000 ms`);
+    }
+    if (server.enabled !== undefined) {
+        errors.push(`opencode/opencode.jsonc: 'enabled' is a V1 field; omit it or use 'disabled'`);
+    }
+    return errors;
+}
+
+/** Validates the OpenCode V2 reviewer adapter: subagent, deny-by-default, read-only + plugin MCP tools. */
+export function checkOpenCodeAgent(fileName, text) {
+    const errors = [];
+    const where = `opencode/${fileName}`;
+    const frontMatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '';
+    if (!frontMatter) {
+        return [`${where}: agent file has no YAML front matter`];
+    }
+    if (!/^mode:\s*subagent$/m.test(frontMatter)) {
+        errors.push(`${where}: mode must be 'subagent'`);
+    }
+    if (/^permission\s*:/m.test(frontMatter)) {
+        errors.push(`${where}: V1 'permission' map is deprecated; use a 'permissions' rule list`);
+    }
+    if (!/^permissions\s*:/m.test(frontMatter)) {
+        errors.push(`${where}: no V2 'permissions' rule list`);
+    }
+    const rules = [];
+    let current = null;
+    for (const line of frontMatter.split(/\r?\n/)) {
+        const start = line.match(/^\s*-\s*(.+)$/);
+        let entry = line;
+        if (start) {
+            if (current) {
+                rules.push(current);
+            }
+            current = {};
+            entry = start[1];
+        }
+        const field = entry.match(/^\s*(action|resource|effect):\s*(.+?)\s*$/);
+        if (field && current) {
+            current[field[1]] = unquote(field[2]);
+        }
+    }
+    if (current) {
+        rules.push(current);
+    }
+    const has = (action, effect, resource = '*') => rules.some((rule) =>
+        rule.action === action && rule.effect === effect && (rule.resource ?? '*') === resource);
+    if (!has('*', 'deny')) {
+        errors.push(`${where}: must deny all actions before allowing the reviewer's read-only rules`);
+    }
+    for (const action of ['read', 'glob', 'grep', OPENCODE_MCP_TOOL_ACTION]) {
+        if (!has(action, 'allow')) {
+            errors.push(`${where}: missing allow rule for '${action}'`);
         }
     }
     return errors;

@@ -171,11 +171,14 @@ OpenCode does not load Agent Plugins packages directly. Its ready-to-merge MCP c
 
 ```jsonc
 "mcp": {
-  "spring-tools": {
-    "type": "local",
-    "command": ["node", "{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js"],
-    "enabled": true,
-    "timeout": 120000
+  "servers": {
+    "spring-tools": {
+      "type": "local",
+      "command": ["node", "{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js"],
+      "timeout": {
+        "startup": 120000
+      }
+    }
   }
 }
 ```

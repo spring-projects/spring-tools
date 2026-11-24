@@ -2,13 +2,15 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
     commands, extensions, ExtensionContext, ProcessExecution, ShellExecution, Task, TaskPanelKind, TaskRevealKind, tasks,
-    TaskScope, Uri, workspace
+    TaskScope, Uri, window, workspace
 } from 'vscode';
 
 const MAVEN = 'maven';
 const GRADLE = 'gradle';
-const MAVEN_EXTENSION_ID = 'vscjava.vscode-maven';
-const GRADLE_EXTENSION_ID = 'vscjava.vscode-gradle';
+const buildExtensions = {
+    [MAVEN]: { id: 'vscjava.vscode-maven', name: 'Maven for Java', command: 'maven.goal.custom' },
+    [GRADLE]: { id: 'vscjava.vscode-gradle', name: 'Gradle for Java', command: 'gradle.runBuild' }
+};
 const IS_WINDOWS = process.platform === 'win32';
 
 export interface BuildRequest {
@@ -23,18 +25,35 @@ export interface BuildProvider {
 }
 
 export const mavenGradleExtensionsBuildProvider: BuildProvider = {
-    async run({ tool, buildFile, command, env }) {
-        const extensionId = tool === MAVEN ? MAVEN_EXTENSION_ID : GRADLE_EXTENSION_ID;
-        if (!extensions.getExtension(extensionId)) {
-            return fallbackBuildProvider.run({ tool, buildFile, command, env });
+    async run(request) {
+        const { id, name } = buildExtensions[request.tool];
+        if (!extensions.getExtension(id)) {
+            const install = `Install ${name}`;
+            if (await window.showWarningMessage(`${name} is required to run this build.`, install) !== install) {
+                return;
+            }
+            await commands.executeCommand('workbench.extensions.installExtension', id);
+            const extension = extensions.getExtension(id);
+            if (!extension) {
+                throw new Error(`${name} is unavailable after installation.`);
+            }
+            await extension.activate();
         }
-        await commands.executeCommand(tool === MAVEN ? 'maven.goal.custom' : 'gradle.runBuild', buildFile, command, env);
+        await runExtensionBuild(request);
     }
 };
 
-export const fallbackBuildProvider: BuildProvider = {
-    // runBuild() returns Promise, so we can leave run() signature non-async
-    run({ tool, buildFile, command, env }) {
+async function runExtensionBuild({ tool, buildFile, command, env }: BuildRequest): Promise<void> {
+    await commands.executeCommand(buildExtensions[tool].command, buildFile, command, env);
+}
+
+export const intellijBuildProvider: BuildProvider = {
+    run(request) {
+        const { tool, buildFile, command, env } = request;
+        if (extensions.getExtension(buildExtensions[tool].id)) {
+            return runExtensionBuild(request);
+        }
+        // Use a CLI task until we integrate IntelliJ's native build API.
         const dir = path.dirname(buildFile);
         const trimmedCommand = command.trim();
         const args = trimmedCommand.length === 0 ? [] : trimmedCommand.split(/\s+/);
@@ -46,11 +65,6 @@ export const fallbackBuildProvider: BuildProvider = {
         return runBuild('Spring Boot: Gradle', buildFile, findUp(dir, IS_WINDOWS ? 'gradlew.bat' : 'gradlew') ?? 'gradle',
             [...args, '-p', dir], env);
     }
-};
-
-export const intellijBuildProvider: BuildProvider = {
-    // Use build extensions until IntelliJ exposes its native build API.
-    run: mavenGradleExtensionsBuildProvider.run
 };
 
 /**

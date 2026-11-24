@@ -17,9 +17,7 @@ import java.util.List;
 
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
-import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestReader;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.beans.ComponentIndexer;
@@ -58,14 +56,10 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
  *
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinJdtBridgeComponentIndexerTest {
 
-	@Parameter
-	String parser;
-
 	private KotlinSyntaxReader reader() {
-		return KotlinTestParsers.reader(parser);
+		return KotlinTestReader.reader();
 	}
 
 	@Test

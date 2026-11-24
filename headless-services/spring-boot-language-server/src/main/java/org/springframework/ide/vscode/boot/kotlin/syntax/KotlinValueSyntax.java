@@ -14,10 +14,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * The rules for reading the values of annotation arguments that the readers that work on the raw
- * syntax tree of a parser share (the PSI reader gets the same things from the PSI classes), so
- * what is a reference, which calls create arrays, and what an escape sequence means is the same
- * for all of them.
+ * The rules for reading the values of annotation arguments from the raw syntax tree of a parser:
+ * what is a reference, which calls create arrays, and what an escape sequence means.
  *
  * @author Martin Lippert
  */

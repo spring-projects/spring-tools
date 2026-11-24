@@ -20,18 +20,14 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassDeclaration;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Function;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 
 /**
- * What is specific to the reader of the Kotlin parser of JetBrains that is written in Kotlin. Everything that
- * has to be the same for all the parsers is in {@link KotlinSyntaxReaderTest}, which runs for this reader, too.
- * <p>
- * This parser has the same grammar as the one of the Kotlin compiler (PSI), and it binds comments to
- * declarations the same way, so it is held to more than the other parsers: it reads exactly what the PSI
- * reader reads, ranges next to comments included.
+ * What is specific to the reader of the Kotlin parser of JetBrains that is written in Kotlin: the bodies of
+ * functions are not parsed, and that changes nothing of what is read. The contract of the syntax model is in
+ * {@link KotlinSyntaxReaderTest}.
  *
  * @author Martin Lippert
  */
@@ -48,52 +44,64 @@ public class KotlinSyntaxApiReaderTest {
 		return files;
 	}
 
-	@Test
-	void readsExactlyWhatThePsiReaderReadsOnTheTestProjects() throws Exception {
-		KotlinSyntaxReader psi = KotlinTestParsers.reader(KotlinSyntaxReaders.PSI);
-		KotlinSyntaxReader syntaxApi = KotlinTestParsers.reader(KotlinSyntaxReaders.SYNTAX_API);
-		List<Path> files = kotlinFilesOfTheTestProjects();
+	/** functions with bodies that are hard to skip: braces in strings, characters and comments, generic and expression bodies */
+	static final String TRICKY_FUNCTIONS = """
+			package a
 
-		assertThat(files).hasSizeGreaterThan(20);
-		for (Path file : files) {
-			String source = Files.readString(file);
-			assertThat(syntaxApi.read("A.kt", source)).as(file.toString()).isEqualTo(psi.read("A.kt", source));
-		}
-	}
+			import org.springframework.web.bind.annotation.GetMapping
 
-	@Test
-	void readsExactlyWhatThePsiReaderReadsEvenWithCommentsAndErrors() {
-		String source = """
-				package a // after the package
-				import b.C // after the import
-				import d.*
-				// a comment
-				/* a block comment */
-				class A // after the class
+			@Service
+			class Tricky<T> {
 
-				// own line
-				@Anno("x") // after the annotation
-				class B {
-					/** doc */
-					// own line
-					@GetMapping("/y") fun f() {} // trailing
-					fun broken( {
+				@GetMapping("/block")
+				fun block(a: Int): String {
+					val text = "}{ \\" ${ "}" } " + '}' + '{' // } {
+					/* { */ fun local() { return }
+					return text
 				}
 
-				@Service
-				class Unclosed {
-					@Bean
-					fun x() {}
-				""";
+				@Bean fun expression(a: Int) = a + 1
 
-		assertThat(KotlinTestParsers.reader(KotlinSyntaxReaders.SYNTAX_API).read("A.kt", source))
-				.isEqualTo(KotlinTestParsers.reader(KotlinSyntaxReaders.PSI).read("A.kt", source));
-	}
+				fun expressionWithBlock() = run { 1 }
+
+				abstract fun noBody(): String
+				fun another() {}
+
+				fun <R : Comparable<R>> generic(list: List<R>, f: (R) -> Unit = { println("{") }): Map<String, List<R>> where R : Any {
+					return mapOf()
+				}
+
+				fun functionTypeResult(): (Int) -> Unit {
+					return { }
+				}
+
+				fun withDefault(x: Int = 5, g: () -> Unit = { }): Unit
+				{
+					println()
+				}
+
+				fun String.extension(): Int
+				{ return 1 }
+
+				@Anno(value = ["{"], other = "}")
+				fun annotated() { }
+
+				val property: Int get() { return 1 }
+
+				fun last(): Int {
+					return 1
+				}
+			}
+
+			fun interface Handler { fun handle() }
+
+			class AfterAll { @Bean fun inTheEnd() {} }
+			""";
 
 	@Test
 	void skippingTheBodiesOfFunctionsChangesNothingOfWhatIsRead() {
-		KotlinSyntax.File lazy = new KotlinSyntaxApiReader(true).read("Test.kt", KotlinTreeSitterReaderTest.TRICKY_FUNCTIONS);
-		KotlinSyntax.File eager = new KotlinSyntaxApiReader(false).read("Test.kt", KotlinTreeSitterReaderTest.TRICKY_FUNCTIONS);
+		KotlinSyntax.File lazy = new KotlinSyntaxApiReader(true).read("Test.kt", TRICKY_FUNCTIONS);
+		KotlinSyntax.File eager = new KotlinSyntaxApiReader(false).read("Test.kt", TRICKY_FUNCTIONS);
 
 		assertThat(lazy).isEqualTo(eager);
 		assertThat(lazy.classes()).extracting(ClassDeclaration::name).containsExactly("Tricky", "Handler", "AfterAll");

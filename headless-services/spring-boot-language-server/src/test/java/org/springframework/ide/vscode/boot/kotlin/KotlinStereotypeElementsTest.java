@@ -19,7 +19,6 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.lsp4j.Location;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.handlers.SpringComponentIndexer;
@@ -48,11 +47,10 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
  * Kotlin source snippets: types with their annotations, supertypes and locations, and the
  * annotated functions as method elements. The path under test is the one of the language server,
  * from the parser, through the JDT AST and its bindings, to the very same {@link StereotypesIndexer}
- * that indexes Java sources. Runs against every registered Kotlin parser.
+ * that indexes Java sources.
  *
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinStereotypeElementsTest {
 
 	private static final String INDEXED = "org.springframework.stereotype.Indexed";
@@ -65,9 +63,6 @@ public class KotlinStereotypeElementsTest {
 	private static final String REQUEST_MAPPING = "org.springframework.web.bind.annotation.RequestMapping";
 	private static final String GET_MAPPING = "org.springframework.web.bind.annotation.GetMapping";
 	private static final String POST_MAPPING = "org.springframework.web.bind.annotation.PostMapping";
-
-	@Parameter
-	String parser;
 
 	private MavenJavaProject project;
 
@@ -109,7 +104,7 @@ public class KotlinStereotypeElementsTest {
 	private Indexed index(String source, boolean checkGaps) throws Exception {
 		String docURI = "file:///probe/Probe.kt";
 
-		KotlinSyntax.File file = KotlinTestParsers.reader(parser).read("Probe.kt", source);
+		KotlinSyntax.File file = KotlinTestReader.reader().read("Probe.kt", source);
 		KotlinDeclarationIndex declarations = new KotlinDeclarationIndex();
 		declarations.put(docURI, file);
 		CompilationUnit cu = new KotlinDomBuilder().build(file, new KotlinTypeResolver(project.getIndex(), declarations)).compilationUnit();

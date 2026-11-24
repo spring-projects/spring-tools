@@ -26,9 +26,7 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
-import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestReader;
 import org.springframework.ide.vscode.boot.java.Annotations;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
@@ -46,14 +44,10 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
  *
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinJdtBridgeTest {
 
-	@Parameter
-	String parser;
-
 	private KotlinSyntaxReader reader() {
-		return KotlinTestParsers.reader(parser);
+		return KotlinTestReader.reader();
 	}
 
 	private static final String SOURCE = """

@@ -31,9 +31,7 @@ import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
-import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestReader;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.java.utils.CompilationUnitCache;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinDeclarationIndex;
@@ -47,14 +45,10 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 /**
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinDomBuilderTest {
 
-	@Parameter
-	String parser;
-
 	private KotlinSyntaxReader reader() {
-		return KotlinTestParsers.reader(parser);
+		return KotlinTestReader.reader();
 	}
 
 	private MavenJavaProject project;

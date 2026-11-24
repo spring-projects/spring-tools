@@ -11,10 +11,9 @@
 package org.springframework.ide.vscode.boot.kotlin.syntax;
 
 /**
- * Reads Kotlin source text into {@link KotlinSyntax}. Implementations differ in the parser they
- * use, but all of them have to give the same result for the same source: the syntax tests of the
- * language server run against every implementation that is registered in
- * {@link KotlinSyntaxReaders}.
+ * Reads Kotlin source text into {@link KotlinSyntax}, which keeps the parser replaceable: the rest
+ * of the Kotlin support only works on the syntax model. The implementation is
+ * {@link KotlinSyntaxApiReader}.
  * <p>
  * Implementations are thread safe, and tolerate source with syntax errors: they return what is
  * there, as far as it can be recognized.

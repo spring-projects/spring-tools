@@ -58,8 +58,8 @@ import kotlin.sequences.SequencesKt;
  * <p>
  * The syntax tree this parser creates has the shape of the PSI tree of the Kotlin compiler (the
  * same node types, the same grammar, the same binding of comments to declarations), but it is no
- * PSI: there are no classes with accessors for it, so what the PSI reader gets from those is
- * read from the nodes here. Offsets are offsets into the text that was given, whatever line
+ * PSI: there are no classes with accessors for it, so everything is read from the nodes and their
+ * types. Offsets are offsets into the text that was given, whatever line
  * separators it uses.
  * <p>
  * The parser can create the bodies of functions lazily, which means they are not parsed unless

@@ -18,9 +18,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
-import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestReader;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
@@ -38,14 +36,10 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 /**
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinTypeResolverTest {
 
-	@Parameter
-	String parser;
-
 	private KotlinSyntaxReader reader() {
-		return KotlinTestParsers.reader(parser);
+		return KotlinTestReader.reader();
 	}
 
 	private MavenJavaProject project;

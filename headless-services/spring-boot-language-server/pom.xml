@@ -16,9 +16,6 @@
 	<properties>
 		<dependencies.version>${project.version}</dependencies.version>
 		<jdt.core.version>3.46.0</jdt.core.version>
-		<kotlin.compiler.version>2.2.21</kotlin.compiler.version>
-		<tree-sitter.version>0.26.6</tree-sitter.version>
-		<tree-sitter-kotlin.version>0.3.8.1</tree-sitter-kotlin.version>
 		<jetbrains-syntax.version>0.3.381</jetbrains-syntax.version>
 		<lsp4xml.version>0.24.0</lsp4xml.version>
 		<spring-ai.version>2.1.0</spring-ai.version>
@@ -177,26 +174,7 @@
 			<version>${jdt.core.version}</version>
 		</dependency>
 
-		<!-- the parser for Kotlin sources, see the org.springframework.ide.vscode.boot.kotlin package -->
-		<dependency>
-			<groupId>org.jetbrains.kotlin</groupId>
-			<artifactId>kotlin-compiler-embeddable</artifactId>
-			<version>${kotlin.compiler.version}</version>
-		</dependency>
-
-		<!-- the alternative parser for Kotlin sources (java bindings for tree-sitter with native libraries for linux, macos and windows, and the Kotlin grammar) -->
-		<dependency>
-			<groupId>io.github.bonede</groupId>
-			<artifactId>tree-sitter</artifactId>
-			<version>${tree-sitter.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.github.bonede</groupId>
-			<artifactId>tree-sitter-kotlin</artifactId>
-			<version>${tree-sitter-kotlin.version}</version>
-		</dependency>
-
-		<!-- the third parser for Kotlin sources: the Kotlin parser of JetBrains that is written in Kotlin only, on top of the syntax api of the IntelliJ platform (experimental API) -->
+		<!-- the parser for Kotlin sources (see the org.springframework.ide.vscode.boot.kotlin package): the Kotlin parser of JetBrains that is written in Kotlin only, on top of the syntax api of the IntelliJ platform (experimental API) -->
 		<dependency>
 			<groupId>org.jetbrains.kotlin</groupId>
 			<artifactId>kotlin-stdlib</artifactId>

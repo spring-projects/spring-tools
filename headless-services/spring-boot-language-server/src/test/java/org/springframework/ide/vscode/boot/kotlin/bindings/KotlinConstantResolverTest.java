@@ -16,9 +16,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
-import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestReader;
 import org.springframework.ide.vscode.boot.java.utils.ASTUtils;
 import org.springframework.ide.vscode.boot.kotlin.jdt.KotlinJdtBindings;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedAnnotation;
@@ -33,14 +31,10 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
 /**
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinConstantResolverTest {
 
-	@Parameter
-	String parser;
-
 	private KotlinSyntaxReader reader() {
-		return KotlinTestParsers.reader(parser);
+		return KotlinTestReader.reader();
 	}
 
 	private KotlinDeclarationIndex declarations;

@@ -23,7 +23,6 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
 import org.springframework.ide.vscode.boot.java.annotations.AnnotationHierarchies;
 import org.springframework.ide.vscode.boot.java.beans.CachedIndexElement;
 import org.springframework.ide.vscode.boot.java.beans.ComponentIndexer;
@@ -40,8 +39,7 @@ import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaContext;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaDependencyTracker;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaParserUtils;
 import org.springframework.ide.vscode.boot.java.utils.SpringIndexerJavaScanResult;
-import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestReader;
 import org.springframework.ide.vscode.boot.kotlin.ast.KotlinDomBuilder;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinDeclarationIndex;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypeResolver;
@@ -65,14 +63,10 @@ import org.springframework.ide.vscode.project.harness.ProjectsHarness;
  *
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinJavaIndexerParityTest {
 
 	private static final String DATA_PROJECT = "test-spring-data-symbols";
 	private static final String WEBFLUX_PROJECT = "test-webflux-project";
-
-	@Parameter
-	String parser;
 
 	@Test
 	void repositoriesWithTheirDomainTypeAndQueryMethods() throws Exception {
@@ -470,7 +464,7 @@ public class KotlinJavaIndexerParityTest {
 
 	private List<String> indexKotlin(String projectName, String source) throws Exception {
 		IJavaProject project = ProjectsHarness.INSTANCE.mavenProject(projectName);
-		KotlinSyntax.File file = KotlinTestParsers.reader(parser).read("Probe.kt", source);
+		KotlinSyntax.File file = KotlinTestReader.reader().read("Probe.kt", source);
 		KotlinDeclarationIndex declarations = new KotlinDeclarationIndex();
 		declarations.put("file:///probe/Probe.kt", file);
 		CompilationUnit cu = new KotlinDomBuilder().build(file, new KotlinTypeResolver(project.getIndex(), declarations)).compilationUnit();

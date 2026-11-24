@@ -15,8 +15,8 @@ import java.util.List;
 /**
  * What the Kotlin indexing needs to know about the syntax of a Kotlin source file: packages,
  * imports, classes with their annotations and supertypes, functions, and where all of that is in
- * the source text. It is the contract between whatever parses Kotlin ({@link KotlinPsiReader}
- * today) and the rest of the Kotlin support, which keeps the parser replaceable.
+ * the source text. It is the contract between the parser ({@link KotlinSyntaxApiReader}) and the
+ * rest of the Kotlin support, which keeps the parser replaceable.
  * <p>
  * Names are kept the way they are written in the source: nothing in here is resolved. All
  * ranges are offsets into the original source text.

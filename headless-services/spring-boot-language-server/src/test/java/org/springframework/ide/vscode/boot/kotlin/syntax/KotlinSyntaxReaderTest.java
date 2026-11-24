@@ -20,9 +20,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.Parameter;
-import org.springframework.ide.vscode.boot.kotlin.AllKotlinParsers;
-import org.springframework.ide.vscode.boot.kotlin.KotlinTestParsers;
+import org.springframework.ide.vscode.boot.kotlin.KotlinTestReader;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.AnnotationUse;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ArrayValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.BooleanValue;
@@ -40,14 +38,10 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Unsupporte
 /**
  * @author Martin Lippert
  */
-@AllKotlinParsers
 public class KotlinSyntaxReaderTest {
 
-	@Parameter
-	String parser;
-
 	private KotlinSyntaxReader reader() {
-		return KotlinTestParsers.reader(parser);
+		return KotlinTestReader.reader();
 	}
 
 	private KotlinSyntax.File read(String source) {
@@ -1329,7 +1323,7 @@ public class KotlinSyntaxReaderTest {
 
 	@Test
 	void theParserIsUsableAgainAfterItWasDisposed() {
-		KotlinSyntaxReader own = KotlinSyntaxReaders.create(parser);
+		KotlinSyntaxReader own = new KotlinSyntaxApiReader();
 		try {
 			assertThat(own.read("A.kt", "class A").classes()).hasSize(1);
 			own.dispose();

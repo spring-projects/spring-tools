@@ -339,30 +339,35 @@ When a new MCP tool is added to the language server, give it a home: mention it 
 
 `claude-plugins/tools/evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals) suite outside the published plugin: one case per skill and for the `spring-reviewer` agent, plus a negative control (an unrelated question must not trigger any skill). Each case is a prompt phrased the way a user would type it, with graders for the result (a regex or a judged rubric) and for the path (`tool_used` on the skill and on the MCP tool it should call). The language server is not started during a run: `mocks/spring-tools-mcp/` answers every MCP tool from recordings taken against the real server on the `sf7-validation` test project (`_tools.json` carries the real tool descriptions and schemas), and the `validate` and reviewer cases override `getProjectDiagnostics` with a recording that contains a `JAVA_AUTOWIRED_CONSTRUCTOR` finding.
 
-Run the following from the repository root. The runner stages the plugin and evals together in a temporary directory because Claude requires evals inside the plugin root; results are saved under `claude-plugins/tools/evals/results/`.
+All four hosts run the same cases and graders. Run these commands from the repository root:
 
 ```bash
-# runs every case three times with the plugin and three times without it, judged with your Claude Code credentials
+# Claude Code: stages plugin + evals in a temp dir; results go to claude-plugins/tools/evals/results/
 node claude-plugins/tools/evals/run-claude-evals.mjs --no-publish
-
-# one case, one arm, one run - cheap while iterating on a skill description
 node claude-plugins/tools/evals/run-claude-evals.mjs --case validate-finds-spring-problems --runs 1 --ablation none --no-publish
 
-# re-record the mocks after the language server's tools or the fixture project changed (needs the JAR + Java 21+)
+# GitHub Copilot CLI: reads tool calls from Copilot's debug log
+node claude-plugins/tools/evals/run-with-copilot.mjs
+node claude-plugins/tools/evals/run-with-copilot.mjs --case validate-finds-spring-problems --model <model>
+
+# Codex CLI: reads tool calls from `codex exec --json` and uses a private CODEX_HOME
+node claude-plugins/tools/evals/run-with-codex.mjs
+node claude-plugins/tools/evals/run-with-codex.mjs --case validate-finds-spring-problems --model <model>
+
+# OpenCode: reads tool calls from `opencode run --format json --standalone`
+node claude-plugins/tools/evals/run-with-opencode.mjs
+node claude-plugins/tools/evals/run-with-opencode.mjs --case validate-finds-spring-problems --model <model>
+```
+
+All runners accept `--case`, `--model` and `--keep` where the host supports them; Codex and OpenCode also accept `--judge-model`, while the Claude runner has its own `--runs`, `--ablation`, `--threshold` and `--max-cost-usd` options. Re-record the mocks after the language server's tools or the fixture project changed (needs the JAR + Java 21+):
+
+```bash
 node claude-plugins/tools/evals/record-mocks.mjs
 ```
 
-The same cases also run through GitHub Copilot CLI. The runner stages a throwaway workspace and plugin with the recorded MCP mocks, reads Copilot's debug log for tool calls, and applies the same graders; it needs `copilot` on `PATH` and an authenticated Copilot account:
+The non-Claude runners stage a throwaway workspace with the `sf7-validation` fixture, copy the shared skills into the host's discovery path, configure the mock MCP server, then read the host's trace and the mock server's authoritative MCP trace. Copilot uses the CLI's debug log. Codex uses `codex exec --json`; because Codex has no callable Skill tool, positive skill cases prepend the `$skill` marker in the prompt and the runner records the activation for the grader. OpenCode uses `opencode run --format json --standalone`, stages skills under `.agents/skills` and the reviewer under `.opencode/agents`, and disables Code Mode in the staged config so MCP tool names map to the portable graders. Set `CODEX_CLI` or `CODEX_EVAL_API_KEY` when Codex is installed outside `PATH` or needs a separate API key.
 
-```bash
-# every case
-node claude-plugins/tools/evals/run-with-copilot.mjs
-
-# one case with a specific model - cheaper while checking a host-specific adapter
-node claude-plugins/tools/evals/run-with-copilot.mjs --case validate-finds-spring-problems --model <model>
-```
-
-Every eval run and every `llm` grader is a model call on your account (`ANTHROPIC_API_KEY` for Claude evals; the logged-in Copilot account or `COPILOT_GITHUB_TOKEN` for Copilot evals). `check-plugin-config.mjs` keeps the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, and every skill and agent has a case. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
+Every eval run and every `llm` grader is a model call on your account: `ANTHROPIC_API_KEY` for Claude, the logged-in Copilot account or `COPILOT_GITHUB_TOKEN` for Copilot, `CODEX_API_KEY` (or `CODEX_EVAL_API_KEY`) for Codex, and the provider credentials configured for OpenCode. The workflow jobs are opt-in `workflow_dispatch` inputs with timeouts and secret checks; the Claude job additionally enforces `--max-cost-usd 15`. `check-plugin-config.mjs` and `check-eval-runners.mjs` keep the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, every skill and agent has a case, and each host has a runner, docs and a guarded CI job. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
 
 When a new diagnostic code is added to the language server:
 
@@ -407,7 +412,7 @@ spring-tools/
 
 The manifests describe one plugin for different hosts. `install.js` stores the checksum-verified JAR in the persistent data directory, isolated under the plugin version; it does not write into the installed plugin tree. `check-plugin-config.mjs` fails if shared metadata drifts, if a reviewer adapter differs from `skills/spring-review/SKILL.md`, if `mcp.json` stops launching `launcher.js`, or if Codex loses its explicit no-hooks declaration. Run `node claude-plugins/tools/sync-agent-adapters.mjs --write` after changing the shared review procedure to refresh Claude, Copilot and OpenCode adapters. Hooks cannot be one shared file: Claude supports MCP-tool hooks, Copilot supports command hooks, Codex explicitly disables hook discovery and relies on the language-server watcher, and OpenCode does not load plugin hooks. Codex and Copilot consume the portable root `plugin.json`, `mcp.json`, and `skills/`, so those capabilities are defined once.
 
-The sibling directory `claude-plugins/tools/` (not part of the published plugin) holds `check-explanations.mjs`, `check-plugin-config.mjs`, `lib/plugin-config.mjs`, the `test/` suite, the `smoke/mcp-smoke.mjs` end-to-end test, and the `evals/` suite, recorder and runner.
+The sibling directory `claude-plugins/tools/` (not part of the published plugin) holds `check-explanations.mjs`, `check-plugin-config.mjs`, `check-eval-runners.mjs`, `lib/plugin-config.mjs`, the `test/` suite, the `smoke/mcp-smoke.mjs` end-to-end test, and the `evals/` suite, recorder and host runners.
 
 ## How it works
 

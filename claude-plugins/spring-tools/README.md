@@ -282,7 +282,7 @@ The language server keeps its index current in two ways. It **watches** the work
 
 ## Troubleshooting
 
-- **Codex reports `connection closed: initialize response`** — inspect the MCP server stderr for the underlying launcher error. HTTP 404 for the JAR's `.sha256` means the required artifact is unavailable; use a local JAR for an unpublished checkout as described in [Codex local development](#codex-local-development-and-explicit-workspace-configuration). `No Spring Tools source checkout found` means the cached plugin cannot build a fallback without `SPRING_TOOLS_SOURCE_DIR`. An undetected workspace needs `SPRING_TOOLS_PROJECT_DIR` in the server environment.
+- **Codex reports `connection closed: initialize response`** — inspect the MCP server stderr for the underlying launcher error. HTTP 404 for the JAR's `.sha256` means the required artifact is unavailable; use a local JAR for an unpublished checkout as described in [Codex MCP workspace configuration](#codex-mcp-workspace-configuration). `No Spring Tools source checkout found` means the cached plugin cannot build a fallback without `SPRING_TOOLS_SOURCE_DIR`. An undetected workspace needs `SPRING_TOOLS_PROJECT_DIR` in the server environment.
 
 - **`spring-tools-mcp` shows as failed in `/mcp`** — on the very first start the ~100 MB JAR has to be downloaded; if that takes longer than Claude Code's MCP startup timeout the server is marked failed. Reconnect it from `/mcp` (the download continues/completes in the background) or start Claude Code again; raise `MCP_TIMEOUT` on slow connections.
 - **`No Java 21+ runtime found`** on stderr — the launcher lists every candidate it tried with the version it found. Install a JDK 21+ and expose it via `PATH`, `JAVA_HOME` or `SPRING_TOOLS_JAVA`.

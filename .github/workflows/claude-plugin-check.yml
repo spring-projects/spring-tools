@@ -1,9 +1,9 @@
 name: Claude Plugin Check
 
-# Keeps the Claude Code plugin under claude-plugins/spring-tools consistent with the
-# language server: every diagnostic code has an explanation playbook, playbooks are
-# well-formed, hooks, skills and agents only reference MCP tools that exist (and every
-# tool is reachable through one of them), the plugin manifest validates, and the
+# Keeps the Claude Code plugin under claude-plugins/spring-tools and the Codex catalog under
+# .agents/plugins consistent with the language server: every diagnostic code has an explanation
+# playbook, playbooks are well-formed, hooks, skills and agents only reference MCP tools that
+# exist (and every tool is reachable through one of them), the plugin manifests validate, and the
 # launcher/language server (including its file watcher) work end to end over MCP stdio.
 
 on:
@@ -12,6 +12,7 @@ on:
       - main
     paths:
       - 'claude-plugins/**'
+      - '.agents/plugins/**'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/**/*ProblemType.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/validation/generations/AbstractDiagnosticValidator.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/yaml/reconcile/ApplicationYamlASTReconciler.java'
@@ -22,6 +23,7 @@ on:
   pull_request:
     paths:
       - 'claude-plugins/**'
+      - '.agents/plugins/**'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/**/*ProblemType.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/validation/generations/AbstractDiagnosticValidator.java'
       - 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/yaml/reconcile/ApplicationYamlASTReconciler.java'
@@ -35,6 +37,43 @@ on:
         description: 'Also run the behavioral eval suite (claude plugin eval; needs the ANTHROPIC_API_KEY secret and costs model calls)'
         type: boolean
         default: false
+      run-copilot-evals:
+        description: 'Also run the behavioral eval suite with GitHub Copilot CLI (needs the copilot-requests permission and costs model calls)'
+        type: boolean
+        default: false
+      copilot-eval-case:
+        description: 'Optional single eval case for run-copilot-evals'
+        type: string
+        required: false
+        default: ''
+      run-codex-evals:
+        description: 'Also run the behavioral eval suite with Codex CLI (needs the CODEX_API_KEY secret and costs model calls)'
+        type: boolean
+        default: false
+      codex-eval-case:
+        description: 'Optional single eval case for run-codex-evals'
+        type: string
+        required: false
+        default: ''
+      codex-eval-model:
+        description: 'Optional Codex model override for run-codex-evals'
+        type: string
+        required: false
+        default: ''
+      run-opencode-evals:
+        description: 'Also run the behavioral eval suite with OpenCode (needs provider API credentials and costs model calls)'
+        type: boolean
+        default: false
+      opencode-eval-case:
+        description: 'Optional single eval case for run-opencode-evals'
+        type: string
+        required: false
+        default: ''
+      opencode-eval-model:
+        description: 'OpenCode model for run-opencode-evals (provider/model)'
+        type: string
+        required: false
+        default: 'anthropic/claude-sonnet-4-5'
 
 permissions:
   contents: read
@@ -54,8 +93,10 @@ jobs:
           node-version: 22
       - name: Check explanation playbooks (coverage, structure, cross-references, coverage table)
         run: node claude-plugins/tools/check-explanations.mjs --require-all --todo
-      - name: Check plugin configuration (hooks, skills, agents against the MCP tool inventory)
-        run: node claude-plugins/tools/check-plugin-config.mjs
+      - name: Check plugin configuration and cross-host adapters
+        run: node claude-plugins/tools/check-plugin-config.mjs --cross-host
+      - name: Check four-host eval runner coverage
+        run: node claude-plugins/tools/check-eval-runners.mjs --runners --docs --workflow
       - name: Run plugin tooling tests
         run: node --test --test-reporter=spec 'claude-plugins/tools/test/*.test.mjs'
 
@@ -151,3 +192,98 @@ jobs:
             ${{ runner.temp }}/eval-results.json
             claude-plugins/tools/evals/results/report.html
           if-no-files-found: ignore
+
+  copilot-plugin-evals:
+    name: Behavioral evals (GitHub Copilot CLI, on demand)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run-copilot-evals
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      copilot-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install GitHub Copilot CLI
+        run: npm install -g --no-audit --no-fund @github/copilot
+      - name: Run the eval suite against the recorded MCP mocks
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          COPILOT_EVAL_CASE: ${{ inputs.copilot-eval-case }}
+        run: |
+          args=()
+          if [ -n "$COPILOT_EVAL_CASE" ]; then
+            args+=(--case "$COPILOT_EVAL_CASE")
+          fi
+          copilot --version
+          node claude-plugins/tools/evals/run-with-copilot.mjs "${args[@]}"
+
+  codex-plugin-evals:
+    name: Behavioral evals (Codex CLI, on demand)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run-codex-evals
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install Codex CLI
+        run: npm install -g --no-audit --no-fund @openai/codex
+      - name: Run the eval suite against the recorded MCP mocks
+        env:
+          CODEX_EVAL_API_KEY: ${{ secrets.CODEX_API_KEY }}
+          CODEX_EVAL_CASE: ${{ inputs.codex-eval-case }}
+          CODEX_EVAL_MODEL: ${{ inputs.codex-eval-model }}
+        run: |
+          if [ -z "$CODEX_EVAL_API_KEY" ]; then
+            echo '::error::the CODEX_API_KEY secret is not set; the eval suite needs model access'
+            exit 1
+          fi
+          args=()
+          if [ -n "$CODEX_EVAL_CASE" ]; then
+            args+=(--case "$CODEX_EVAL_CASE")
+          fi
+          if [ -n "$CODEX_EVAL_MODEL" ]; then
+            args+=(--model "$CODEX_EVAL_MODEL")
+          fi
+          codex --version
+          node claude-plugins/tools/evals/run-with-codex.mjs "${args[@]}"
+
+  opencode-plugin-evals:
+    name: Behavioral evals (OpenCode, on demand)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run-opencode-evals
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+        with:
+          node-version: 22
+      - name: Install OpenCode
+        run: npm install -g --no-audit --no-fund opencode-ai
+      - name: Run the eval suite against the recorded MCP mocks
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENCODE_EVAL_CASE: ${{ inputs.opencode-eval-case }}
+          OPENCODE_EVAL_MODEL: ${{ inputs.opencode-eval-model }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo '::error::the ANTHROPIC_API_KEY secret is not set; the default OpenCode eval model needs it'
+            exit 1
+          fi
+          args=()
+          if [ -n "$OPENCODE_EVAL_CASE" ]; then
+            args+=(--case "$OPENCODE_EVAL_CASE")
+          fi
+          if [ -n "$OPENCODE_EVAL_MODEL" ]; then
+            args+=(--model "$OPENCODE_EVAL_MODEL")
+          fi
+          opencode --version
+          node claude-plugins/tools/evals/run-with-opencode.mjs "${args[@]}"

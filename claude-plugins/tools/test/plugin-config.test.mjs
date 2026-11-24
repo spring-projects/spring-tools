@@ -18,12 +18,17 @@ import { test } from 'node:test';
 
 import { stagePlugin } from '../evals/run-claude-evals.mjs';
 import {
+    checkCodexHookSurface,
+    checkCodexMarketplace,
     checkEvals,
+    CODEX_CATALOG_PATH,
     HOOK_SERVER,
     PLUGIN_DIR,
     SCOPED_TOOL_PREFIX,
     checkHooks,
     checkManifest,
+    checkOpenCodeAgent,
+    checkOpenCodeConfig,
     checkSkill,
     collectMcpTools,
     parseFrontMatter,
@@ -145,4 +150,70 @@ test('negative control: a skill with an unscoped or unknown tool and a wrong nam
     assert.match(errors.join('\n'), /skill reference 'Skill\(spring-tools:nope\)' points to a missing skill/);
     assert.match(errors.join('\n'), /skill reference 'Skill\(quickfix\)' must look like/);
     assert.match(errors.join('\n'), /body mentions MCP tool 'getDiagnostics' which does not exist/);
+});
+
+test('the OpenCode adapter uses the V2 MCP and permission grammar', () => {
+    const config = JSON.parse(readFileSync(join(pluginDir, 'opencode', 'opencode.jsonc'), 'utf8'));
+    assert.deepEqual(checkOpenCodeConfig(config), []);
+    const reviewer = readFileSync(join(pluginDir, 'opencode', 'agents', 'spring-reviewer.md'), 'utf8');
+    assert.deepEqual(checkOpenCodeAgent('agents/spring-reviewer.md', reviewer), []);
+});
+
+test('negative control: deprecated OpenCode V1 grammar is detected', () => {
+    const config = {
+        mcp: {
+            'spring-tools': { type: 'local', command: [], enabled: true, timeout: 120000 },
+        },
+    };
+    const configErrors = checkOpenCodeConfig(config).join('\n');
+    assert.match(configErrors, /V1 mcp\.spring-tools is deprecated/);
+    assert.match(configErrors, /no mcp\.servers\.spring-tools entry/);
+
+    const reviewer = `---
+description: Reviews Spring Boot projects with Spring Tools diagnostics, bean wiring, endpoints and architecture. Read-only reviewer subagent.
+mode: subagent
+permission:
+  read: allow
+  "spring-tools_*": allow
+---
+Body
+`;
+    const agentErrors = checkOpenCodeAgent('agents/spring-reviewer.md', reviewer).join('\n');
+    assert.match(agentErrors, /V1 'permission' map is deprecated/);
+    assert.match(agentErrors, /no V2 'permissions' rule list/);
+    assert.match(agentErrors, /must deny all actions/);
+});
+
+test('the portable manifest explicitly disables Codex hook discovery', () => {
+    const portable = JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8'));
+    assert.deepEqual(checkCodexHookSurface(portable), []);
+});
+
+test('negative control: missing Codex hook override is detected', () => {
+    const portable = JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8'));
+    delete portable.extensions;
+    assert.match(checkCodexHookSurface(portable).join('\n'), /extensions\.com\.openai must be defined/);
+
+    portable.extensions = { 'com.openai': { hooks: './hooks/hooks.json' } };
+    assert.match(checkCodexHookSurface(portable).join('\n'), /empty object so Codex does not load Claude-only hooks/);
+});
+
+test('the Codex catalog points at the published plugin directory', () => {
+    const catalog = JSON.parse(readFileSync(join(repoRoot, CODEX_CATALOG_PATH), 'utf8'));
+    assert.deepEqual(checkCodexMarketplace(catalog, repoRoot), []);
+});
+
+test('negative control: a broken Codex catalog is detected', () => {
+    const catalog = JSON.parse(readFileSync(join(repoRoot, CODEX_CATALOG_PATH), 'utf8'));
+    catalog.plugins[0].source.path = './somewhere-else';
+    const errors = checkCodexMarketplace(catalog, repoRoot).join('\n');
+    assert.match(errors, /source\.path must resolve to claude-plugins\/spring-tools/);
+
+    delete catalog.interface;
+    delete catalog.plugins[0].policy;
+    delete catalog.plugins[0].category;
+    const missingMetadata = checkCodexMarketplace(catalog, repoRoot).join('\n');
+    assert.match(missingMetadata, /interface\.displayName is required/);
+    assert.match(missingMetadata, /policy\.installation must be/);
+    assert.match(missingMetadata, /category is required/);
 });

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "spring-tools": {
+        "type": "local",
+        "command": ["node", "{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js"],
+        "timeout": {
+          "startup": 120000
+        }
+      }
+    }
+  }
+}

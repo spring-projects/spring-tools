@@ -13,10 +13,11 @@
 // agents) and the MCP tools implemented by the language server. The plugin is loaded by two
 // clients: Claude Code reads `.claude-plugin/plugin.json`, `hooks/hooks.json` and `agents/`,
 // GitHub Copilot CLI reads the Agent Plugins 1.0 manifests (`plugin.json`, `mcp.json`) and the
-// `com.github.copilot/` directory. Both sets must stay in sync.
+// `com.github.copilot/` directory. OpenCode reads its own V2 config and agent adapters. All sets
+// must stay in sync with the portable plugin and each other.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 export const MCP_SOURCES_DIR = 'headless-services/spring-boot-language-server/src/main/java/org/springframework/ide/vscode/boot/mcp';
 export const PLUGIN_DIR = 'claude-plugins/spring-tools';
@@ -25,6 +26,11 @@ export const PLUGIN_NAME = 'spring-tools';
 export const HOOK_SERVER = `plugin:${PLUGIN_NAME}:${MCP_SERVER_NAME}`;
 export const SCOPED_TOOL_PREFIX = `mcp__plugin_${PLUGIN_NAME}_${MCP_SERVER_NAME}__`;
 export const COPILOT_DIR = 'com.github.copilot';
+export const CODEX_CATALOG_PATH = '.agents/plugins/marketplace.json';
+export const CODEX_MARKETPLACE_NAME = 'spring-tools-local';
+// OpenCode replaces non-alphanumeric characters in server names with underscores for tool actions.
+export const OPENCODE_MCP_TOOL_PREFIX = `${PLUGIN_NAME.replace(/-/g, '_')}_`;
+export const OPENCODE_MCP_TOOL_ACTION = `${OPENCODE_MCP_TOOL_PREFIX}*`;
 export const PLUGIN_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
 export const MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
 
@@ -311,6 +317,83 @@ export function checkAgent(fileName, text, tools) {
     return errors;
 }
 
+/** Validates the OpenCode V2 MCP config fragment; V1 server placement and fields are rejected. */
+export function checkOpenCodeConfig(config) {
+    const errors = [];
+    const mcp = config.mcp ?? {};
+    if (Object.hasOwn(mcp, PLUGIN_NAME)) {
+        errors.push(`opencode/opencode.jsonc: V1 mcp.${PLUGIN_NAME} is deprecated; use mcp.servers.${PLUGIN_NAME}`);
+    }
+    const server = mcp.servers?.[PLUGIN_NAME];
+    if (!server) {
+        errors.push(`opencode/opencode.jsonc: no mcp.servers.${PLUGIN_NAME} entry`);
+        return errors;
+    }
+    if (server.type !== 'local') {
+        errors.push(`opencode/opencode.jsonc: mcp.servers.${PLUGIN_NAME}.type must be 'local'`);
+    }
+    if (!Array.isArray(server.command) || server.command[0] !== 'node' || server.command[1] !== '{env:SPRING_TOOLS_PLUGIN_ROOT}/launcher.js') {
+        errors.push(`opencode/opencode.jsonc: mcp.servers.${PLUGIN_NAME} must launch the shared launcher.js through SPRING_TOOLS_PLUGIN_ROOT`);
+    }
+    if (server.timeout?.startup !== 120000) {
+        errors.push(`opencode/opencode.jsonc: mcp.servers.${PLUGIN_NAME}.timeout.startup must be 120000 ms`);
+    }
+    if (server.enabled !== undefined) {
+        errors.push(`opencode/opencode.jsonc: 'enabled' is a V1 field; omit it or use 'disabled'`);
+    }
+    return errors;
+}
+
+/** Validates the OpenCode V2 reviewer adapter: subagent, deny-by-default, read-only + plugin MCP tools. */
+export function checkOpenCodeAgent(fileName, text) {
+    const errors = [];
+    const where = `opencode/${fileName}`;
+    const frontMatter = text.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '';
+    if (!frontMatter) {
+        return [`${where}: agent file has no YAML front matter`];
+    }
+    if (!/^mode:\s*subagent$/m.test(frontMatter)) {
+        errors.push(`${where}: mode must be 'subagent'`);
+    }
+    if (/^permission\s*:/m.test(frontMatter)) {
+        errors.push(`${where}: V1 'permission' map is deprecated; use a 'permissions' rule list`);
+    }
+    if (!/^permissions\s*:/m.test(frontMatter)) {
+        errors.push(`${where}: no V2 'permissions' rule list`);
+    }
+    const rules = [];
+    let current = null;
+    for (const line of frontMatter.split(/\r?\n/)) {
+        const start = line.match(/^\s*-\s*(.+)$/);
+        let entry = line;
+        if (start) {
+            if (current) {
+                rules.push(current);
+            }
+            current = {};
+            entry = start[1];
+        }
+        const field = entry.match(/^\s*(action|resource|effect):\s*(.+?)\s*$/);
+        if (field && current) {
+            current[field[1]] = unquote(field[2]);
+        }
+    }
+    if (current) {
+        rules.push(current);
+    }
+    const has = (action, effect, resource = '*') => rules.some((rule) =>
+        rule.action === action && rule.effect === effect && (rule.resource ?? '*') === resource);
+    if (!has('*', 'deny')) {
+        errors.push(`${where}: must deny all actions before allowing the reviewer's read-only rules`);
+    }
+    for (const action of ['read', 'glob', 'grep', OPENCODE_MCP_TOOL_ACTION]) {
+        if (!has(action, 'allow')) {
+            errors.push(`${where}: missing allow rule for '${action}'`);
+        }
+    }
+    return errors;
+}
+
 /**
  * Every MCP tool the language server exposes must be reachable through a documented path: an
  * allowed-tools entry of some skill or an mcp_tool hook. Returns the tool names that are not.
@@ -574,6 +657,69 @@ export function checkAgentPluginManifest(pluginJson, mcpJson, claudeJson, root) 
         if (key === 'PLUGIN_ROOT' || key === 'PLUGIN_DATA') {
             errors.push(`mcp.json ${MCP_SERVER_NAME}.env must not redefine '${key}' (the client provides it)`);
         }
+    }
+    return errors;
+}
+
+/**
+ * Codex discovers hooks/hooks.json unless extensions.com.openai defines a hook surface. That file
+ * uses Claude-only `if` conditions and MCP-tool hooks, so the portable manifest must suppress the
+ * discovery explicitly; the language server watcher and launcher handle refresh and JAR download.
+ */
+export function checkCodexHookSurface(pluginJson) {
+    const errors = [];
+    const openai = pluginJson.extensions?.['com.openai'];
+    if (!openai || typeof openai !== 'object' || Array.isArray(openai)) {
+        errors.push('plugin.json: extensions.com.openai must be defined for Codex hook settings');
+        return errors;
+    }
+    if (!Object.hasOwn(openai, 'hooks')) {
+        errors.push('plugin.json: extensions.com.openai.hooks must be defined; otherwise Codex loads the Claude-only hooks/hooks.json');
+        return errors;
+    }
+    const hooks = openai.hooks;
+    if (!hooks || typeof hooks !== 'object' || Array.isArray(hooks) || Object.keys(hooks).length !== 0) {
+        errors.push('plugin.json: extensions.com.openai.hooks must be an empty object so Codex does not load Claude-only hooks');
+    }
+    return errors;
+}
+
+/** Validates the repo-scoped Codex marketplace that is shipped from release tags. */
+export function checkCodexMarketplace(catalog, root) {
+    const errors = [];
+    const where = CODEX_CATALOG_PATH;
+    if (catalog.name !== CODEX_MARKETPLACE_NAME) {
+        errors.push(`${where}: name must be '${CODEX_MARKETPLACE_NAME}' to match the documented install commands`);
+    }
+    if (!catalog.interface?.displayName) {
+        errors.push(`${where}: interface.displayName is required`);
+    }
+    if (!Array.isArray(catalog.plugins)) {
+        errors.push(`${where}: plugins must be an array`);
+        return errors;
+    }
+    const entry = catalog.plugins.find((plugin) => plugin.name === PLUGIN_NAME);
+    if (!entry) {
+        errors.push(`${where}: no plugin named '${PLUGIN_NAME}'`);
+        return errors;
+    }
+    const source = entry.source;
+    if (!source || typeof source !== 'object' || Array.isArray(source) || source.source !== 'local') {
+        errors.push(`${where}: '${PLUGIN_NAME}' must be a local plugin source`);
+    } else if (typeof source.path !== 'string' || !source.path.startsWith('./')) {
+        errors.push(`${where}: '${PLUGIN_NAME}' source.path must be a './'-relative path`);
+    } else if (resolve(root, source.path) !== resolve(root, PLUGIN_DIR)) {
+        errors.push(`${where}: '${PLUGIN_NAME}' source.path must resolve to ${PLUGIN_DIR}`);
+    }
+    const installation = entry.policy?.installation;
+    if (!['AVAILABLE', 'INSTALLED_BY_DEFAULT', 'NOT_AVAILABLE'].includes(installation)) {
+        errors.push(`${where}: '${PLUGIN_NAME}' policy.installation must be AVAILABLE, INSTALLED_BY_DEFAULT or NOT_AVAILABLE`);
+    }
+    if (!entry.policy?.authentication) {
+        errors.push(`${where}: '${PLUGIN_NAME}' policy.authentication is required`);
+    }
+    if (!entry.category) {
+        errors.push(`${where}: '${PLUGIN_NAME}' category is required`);
     }
     return errors;
 }

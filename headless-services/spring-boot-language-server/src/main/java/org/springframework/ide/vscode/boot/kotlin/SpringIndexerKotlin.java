@@ -51,7 +51,7 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReader;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntaxReaders;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
 import org.springframework.ide.vscode.commons.jandex.JandexClasspath;
-import org.springframework.ide.vscode.commons.java.IClasspathUtil;
+import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 import org.springframework.ide.vscode.commons.java.JavaProject;
 import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemCollector;
@@ -337,9 +337,8 @@ public class SpringIndexerKotlin implements SpringIndexer {
 	}
 
 	/**
-	 * The Kotlin files of the project. Kotlin sources live next to the Java sources, in a
-	 * {@code kotlin} folder that sits beside the {@code java} folder, or in the Java source folder itself.
-	 * (The classpath of the project does not know about Kotlin source folders yet.)
+	 * The Kotlin files of the project: the ones in the source folders of the project, in a
+	 * {@code kotlin} folder that sits beside a {@code java} source folder, and in the usual places.
 	 */
 	private List<Path> kotlinFiles(IJavaProject project) {
 		List<Path> files = new ArrayList<>();
@@ -359,12 +358,9 @@ public class SpringIndexerKotlin implements SpringIndexer {
 	private Set<Path> kotlinSourceFolders(IJavaProject project) {
 		Set<Path> roots = new java.util.LinkedHashSet<>();
 
-		Stream<File> javaFolders = IClasspathUtil.getProjectJavaSourceFoldersWithoutTests(project.getClasspath());
-		if (scanTestSources.getAsBoolean()) {
-			javaFolders = Stream.concat(javaFolders, IClasspathUtil.getProjectTestJavaSources(project.getClasspath()));
-		}
-
-		javaFolders.map(File::toPath).forEach(folder -> {
+		// all source folders of the project, not just the ones with Java content: a Gradle project
+		// reports a folder with Kotlin files as one without Java content
+		sourceFolders(project).map(File::toPath).forEach(folder -> {
 			roots.add(folder);
 			if ("java".equals(folder.getFileName().toString()) && folder.getParent() != null) {
 				roots.add(folder.getParent().resolve("kotlin"));
@@ -386,6 +382,22 @@ public class SpringIndexerKotlin implements SpringIndexer {
 		}
 
 		return roots;
+	}
+
+	private Stream<File> sourceFolders(IJavaProject project) {
+		boolean withTests = scanTestSources.getAsBoolean();
+		try {
+			if (project.getClasspath() != null) {
+				return project.getClasspath().getClasspathEntries().stream()
+						.filter(Classpath::isProjectSource)
+						.filter(cpe -> withTests || !cpe.isTest())
+						.map(cpe -> new File(cpe.getPath()));
+			}
+		}
+		catch (Exception e) {
+			log.debug("cannot determine the source folders of project {}", project.getElementName(), e);
+		}
+		return Stream.empty();
 	}
 
 	private boolean isInSourceFolders(IJavaProject project, String file) {

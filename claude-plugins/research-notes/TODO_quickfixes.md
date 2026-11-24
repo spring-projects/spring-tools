@@ -107,8 +107,6 @@ Raised on `application*.properties` / `bootstrap*.properties` files by `SpringPr
 | Problem Type Code | Description | Quick Fix Implementation | Playbook |
 | :--- | :--- | :--- | :---: |
 | `PROP_SYNTAX_ERROR` | Line cannot be parsed as a `key=value` / `key: value` assignment | *None* | ✅ |
-| `PROP_PLACEHOLDER_SYNTAX` | Malformed property placeholder in a value | *None* | ✅ |
-| `PROP_UNRESOLVED_PLACEHOLDER` | Placeholder without a default is not found in the project's configuration | *None* | ✅ |
 | `PROP_UNKNOWN_PROPERTY` | Key matches no property in the configuration metadata | Create metadata for `<key>` (`CommonQuickfixes.MISSING_PROPERTY`, id `MISSING_PROPERTY_APP`) | ✅ |
 | `PROP_DEPRECATED` | Property is deprecated in the configuration metadata (any level) | Replace with `<replacement>` (`AppPropertiesQuickFixes.DEPRECATED_PROPERTY`) | ✅ |
 | `PROP_DUPLICATE_KEY` | Same key assigned more than once in one document | *None* | ✅ |
@@ -119,6 +117,8 @@ Raised on `application*.properties` / `bootstrap*.properties` files by `SpringPr
 | `PROP_NO_MATCHING_RBRACK` | `[` without a closing `]` | *None* | ✅ |
 | `PROP_NON_INTEGER_IN_BRACKETS` | Non-integer index in `[...]` on a list/array property | *None* | ✅ |
 | `PROP_INVALID_BEAN_PROPERTY` | Unknown nested property for the navigated bean type | *None* | ✅ |
+| `PROP_PLACEHOLDER_SYNTAX` | Malformed `${...}` placeholder in a property value | *None* | ✅ |
+| `PROP_UNRESOLVED_PLACEHOLDER` | Placeholder has no default and its key is not in configuration metadata or the project's `application*` files | *None* | ✅ |
 
 ## YAML Config File Problem Types (`yaml/reconcile/ApplicationYamlProblemType`)
 
@@ -127,8 +127,6 @@ Raised on `application*.yml`/`.yaml` and `bootstrap*.yml`/`.yaml` files by `Appl
 | Problem Type Code | Description | Quick Fix Implementation | Playbook |
 | :--- | :--- | :--- | :---: |
 | `YAML_SYNTAX_ERROR` | SnakeYAML parse error | *None* | ✅ |
-| `YAML_PLACEHOLDER_SYNTAX` | Malformed property placeholder in a value | *None* | ✅ |
-| `YAML_UNRESOLVED_PLACEHOLDER` | Placeholder without a default is not found in the project's configuration | *None* | ✅ |
 | `YAML_UNKNOWN_PROPERTY` | Key path matches no property in the configuration metadata | Create metadata for `<key>` (`CommonQuickfixes.MISSING_PROPERTY`, id `MISSING_PROPERTY_APP`) | ✅ |
 | `YAML_DEPRECATED_WARNING` | Property deprecated at `warning` level | Replace with `<replacement>` (`AppYamlQuickfixes.DEPRECATED_PROPERTY`, id `DEPRECATED_YAML_PROPERTY`) | ✅ |
 | `YAML_DEPRECATED_ERROR` | Property deprecated at `error` level (no longer bound) | Replace with `<replacement>` (`AppYamlQuickfixes.DEPRECATED_PROPERTY`, id `DEPRECATED_YAML_PROPERTY`) | ✅ |
@@ -141,4 +139,6 @@ Raised on `application*.yml`/`.yaml` and `bootstrap*.yml`/`.yaml` files by `Appl
 | `YAML_EXPECT_BEAN_PROPERTY_NAME` | Non-scalar key inside a bean-typed mapping | *None* | ✅ |
 | `YAML_INVALID_BEAN_PROPERTY` | Unknown property for the bean type | *None* | ✅ |
 | `YAML_SHOULD_ESCAPE` | Map key with special characters should be wrapped in `[]` | *None* | ✅ |
+| `YAML_PLACEHOLDER_SYNTAX` | Malformed `${...}` placeholder in a scalar value | *None* | ✅ |
+| `YAML_UNRESOLVED_PLACEHOLDER` | Placeholder has no default and its key is not in configuration metadata or the project's `application*` files | *None* | ✅ |
 | `YamlSchemaProblem` | Malformed `<<` merge key (value is not a mapping or a list of mappings); inherited from commons-yaml `YamlSchemaProblems.SCHEMA_PROBLEM` via `NodeMergeSupport`, category `yaml-schema-problems` | *None* | ✅ |

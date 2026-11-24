@@ -28,6 +28,9 @@ import org.springframework.ide.vscode.commons.util.FileChangeNotifier;
 public class FileChangesMcpTools {
 
 	private static final Logger logger = LoggerFactory.getLogger(FileChangesMcpTools.class);
+	
+	private static final String STATUS_OK = "OK";
+	private static final String STATUS_FAILED = "Tool call failed: ";
 
 	private final FileChangeNotifier fileChangeNotifier;
 	private final ProjectChangeNotifier projectChangeNotifier;
@@ -43,63 +46,74 @@ public class FileChangesMcpTools {
 	}
 
 	@Tool(description = "Notifies the MCP Server that a file has been created or modified on disk so it can update its internal index and diagnostics.")
-	public void fileChanged(
+	public String fileChanged(
 			@ToolParam(description = "Absolute path to the file") String filePath) {
 
 		if (filePath == null || filePath.startsWith("$")) {
 			logger.warn("fileChanged called but could not extract file path. filePath={}", filePath);
-			return;
+			return STATUS_FAILED + "could not extract file path parameter from " + filePath;
 		}
 
 		if (server.getClient() != null) {
 			logger.info("LSP client connected, skipping fileChanged MCP notification for: {}", filePath);
-			return;
+			return STATUS_FAILED + "LSP client connected, so don't need to call file changed for " + filePath;
 		}
 
 		logger.info("MCP fileChanged called for file: {}", filePath);
 
 		try {
+
 			URI uri = new File(filePath).toURI();
 			fileChangeNotifier.notifyFileChanged(uri.toASCIIString());
+			return STATUS_OK;
+
 		} catch (Exception e) {
 			logger.error("Failed to notify file changed for: " + filePath, e);
+			return STATUS_FAILED + "failed to notifiy file changed listeners for " + filePath;
 		}
+		
 	}
 
 	@Tool(description = "Notifies the MCP Server that a file has been deleted on disk so it can update its internal index and diagnostics.")
-	public void fileDeleted(
+	public String fileDeleted(
 			@ToolParam(description = "Absolute path to the file") String filePath) {
 
 		if (filePath == null || filePath.startsWith("$")) {
 			logger.warn("fileDeleted called but could not extract file path. filePath={}", filePath);
-			return;
+			return STATUS_FAILED + "could not extract file path parameter from " + filePath;
 		}
 
 		if (server.getClient() != null) {
 			logger.info("LSP client connected, skipping fileDeleted MCP notification for: {}", filePath);
-			return;
+			return STATUS_FAILED + "LSP client connected, so don't need to call file deleted for " + filePath;
 		}
 
 		logger.info("MCP fileDeleted called for file: {}", filePath);
 
 		try {
+
 			URI uri = new File(filePath).toURI();
 			fileChangeNotifier.notifyFileDeleted(uri.toASCIIString());
+			return STATUS_OK;
+
 		} catch (Exception e) {
 			logger.error("Failed to notify file deleted for: " + filePath, e);
+			return STATUS_FAILED + "failed to notifiy file delected listeners for " + filePath;
 		}
+
 	}
 
 	@Tool(description = "Notifies the MCP Server to refresh the entire workspace (e.g., after a git checkout or pull).")
-	public void refreshWorkspace() {
+	public String refreshWorkspace() {
 		logger.info("MCP refreshWorkspace called");
 
 		if (server.getClient() != null) {
 			logger.info("LSP client connected, skipping refreshWorkspace MCP notification.");
-			return;
+			return STATUS_FAILED + "LSP client connected, so don't need to refresh workspace";
 		}
 
 		projectChangeNotifier.notifyProjectsChanged(true);
+		return STATUS_OK;
 	}
 
 }

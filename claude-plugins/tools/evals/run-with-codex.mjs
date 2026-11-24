@@ -117,7 +117,8 @@ function explicitSkillNames(testCase) {
         if (grader.type !== 'tool_used' || grader.tool !== 'Skill') {
             continue;
         }
-        const match = grader.input_match?.match(/"skill"\s*:\s*"(?:[\w-]+:)?([\w-]+)"/);
+        // input_match is a regex string such as `"skill"\s*:\s*"(?:[\w-]+:)?validate"`.
+        const match = grader.input_match?.match(/([a-z0-9][\w-]*)"$/i);
         if (match && (grader.min === undefined || Number(grader.min) > 0)) {
             names.add(match[1]);
         }

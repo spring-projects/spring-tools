@@ -69,11 +69,11 @@ function tomlString(value) {
     return JSON.stringify(value);
 }
 
-/** Codex loads personal skills and agents from CODEX_HOME, so the eval never touches the user's config. */
+/** Codex reads config from CODEX_HOME and skills from $HOME/.agents/skills, so the eval uses a private HOME. */
 function stageCodexHome(caseRoot, workspace, tracePath, mockDirs) {
     const home = join(caseRoot, 'codex-home');
-    mkdirSync(join(home, 'skills'), { recursive: true });
-    cpSync(join(pluginDir, 'skills'), join(home, 'skills'), { recursive: true });
+    mkdirSync(join(home, '.agents'), { recursive: true });
+    cpSync(join(pluginDir, 'skills'), join(home, '.agents', 'skills'), { recursive: true });
     stageReviewerAgent(workspace);
     writeFileSync(join(home, 'config.toml'), [
         `[mcp_servers.${MCP_SERVER_NAME}]`,
@@ -126,7 +126,7 @@ function explicitSkillNames(testCase) {
 }
 
 function codexEnv(home) {
-    const env = { ...process.env, CODEX_HOME: home };
+    const env = { ...process.env, CODEX_HOME: home, HOME: home };
     if (process.env.CODEX_EVAL_API_KEY) {
         env.CODEX_API_KEY = process.env.CODEX_EVAL_API_KEY;
     }

@@ -26,7 +26,7 @@ import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MCP_SERVER_NAME, OPENCODE_MCP_TOOL_PREFIX, PLUGIN_DIR, parseFrontMatter } from '../lib/plugin-config.mjs';
+import { MCP_SERVER_NAME, OPENCODE_MCP_TOOL_PREFIX, PLUGIN_DIR, PLUGIN_NAME, parseFrontMatter } from '../lib/plugin-config.mjs';
 import { combineToolTraces, toolGradePasses } from '../lib/eval-grading.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -76,7 +76,7 @@ function stageWorkspace(caseRoot) {
 function stageConfig(caseRoot, tracePath, mockDirs) {
     const configPath = join(caseRoot, 'opencode.json');
     const config = JSON.parse(readFileSync(join(pluginDir, 'opencode', 'opencode.jsonc'), 'utf8'));
-    config.mcp.servers[MCP_SERVER_NAME] = {
+    config.mcp.servers[PLUGIN_NAME] = {
         type: 'local',
         command: ['node', join(here, 'mock-mcp-server.mjs')],
         environment: {
@@ -84,6 +84,8 @@ function stageConfig(caseRoot, tracePath, mockDirs) {
             EVAL_TRACE: tracePath,
         },
         timeout: { startup: 120000 },
+        // Native tool names are needed so the trace maps to the portable graders.
+        codemode: false,
     };
     writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
     return configPath;
@@ -111,7 +113,7 @@ function normalizeMcpTool(tool) {
 function traceEntry(part) {
     const input = part.state?.input;
     if (part.tool === 'skill') {
-        return { tool: 'skill', input: JSON.stringify({ skill: input?.name ?? input?.skill ?? '' }) };
+        return { tool: 'skill', input: JSON.stringify({ skill: input?.id ?? input?.name ?? input?.skill ?? '' }) };
     }
     if (part.tool === 'subagent' || part.tool === 'task') {
         return { tool: 'agent', input: JSON.stringify({ ...input, agent: input?.subagent_type ?? input?.agent ?? input?.description ?? '' }) };

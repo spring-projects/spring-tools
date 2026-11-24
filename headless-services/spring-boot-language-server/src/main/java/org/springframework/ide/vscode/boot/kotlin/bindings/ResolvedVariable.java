@@ -11,8 +11,8 @@
 package org.springframework.ide.vscode.boot.kotlin.bindings;
 
 /**
- * A field, as resolved for the source code that is being indexed: an enum constant, or a constant
- * that is referred to by name.
+ * A variable, as resolved for the source code that is being indexed: an enum constant or a
+ * constant that is referred to by name, the field of a property, or a parameter.
  *
  * @author Martin Lippert
  */
@@ -20,7 +20,16 @@ public interface ResolvedVariable {
 
 	String getName();
 
-	/** the type the field is declared in, null if that is not known */
+	/** the type the field is declared in, null if that is not known (and for parameters) */
 	ResolvedType getDeclaringClass();
+
+	/** the type of the variable, null if it is not known (for enum constants and constants that are referred to) */
+	default ResolvedType getType() {
+		return null;
+	}
+
+	default boolean isParameter() {
+		return false;
+	}
 
 }

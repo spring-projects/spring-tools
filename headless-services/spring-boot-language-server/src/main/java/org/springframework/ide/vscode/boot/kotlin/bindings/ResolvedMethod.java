@@ -25,6 +25,11 @@ public interface ResolvedMethod {
 
 	List<ResolvedType> getParameterTypes();
 
+	/** void for a constructor */
 	ResolvedType getReturnType();
+
+	default boolean isConstructor() {
+		return false;
+	}
 
 }

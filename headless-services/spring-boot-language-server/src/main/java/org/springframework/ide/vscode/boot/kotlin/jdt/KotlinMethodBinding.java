@@ -55,7 +55,8 @@ final class KotlinMethodBinding implements IMethodBinding {
 	public String getKey() {
 		ResolvedType declaringClass = method.getDeclaringClass();
 		ResolvedType returnType = method.getReturnType();
-		return (declaringClass != null ? declaringClass.getKey() : "") + "." + method.getName()
+		// constructors have no name in the key
+		return (declaringClass != null ? declaringClass.getKey() : "") + "." + (method.isConstructor() ? "" : method.getName())
 				+ "(" + method.getParameterTypes().stream().map(t -> t.getErasure().getKey()).collect(Collectors.joining()) + ")"
 				+ (returnType != null ? returnType.getErasure().getKey() : "V");
 	}
@@ -127,7 +128,7 @@ final class KotlinMethodBinding implements IMethodBinding {
 
 	@Override
 	public boolean isConstructor() {
-		return false; // the primary constructor is not built yet
+		return method.isConstructor();
 	}
 
 	@Override

@@ -287,6 +287,107 @@ public class KotlinSyntaxReaderTest {
 	}
 
 	@Test
+	void constructorsWithTheirParameters() {
+		String source = """
+				class Plain
+
+				class Header(private val greeter: Greeter, @Qualifier("q") var other: Other?, plain: String = "x")
+
+				class WithKeyword @Autowired constructor(greeter: Greeter) {
+
+					/** a secondary constructor */
+					@Autowired
+					constructor(greeter: Greeter, @Value("v") value: String) : this(greeter)
+				}
+
+				object Single
+				""";
+
+		List<ClassDeclaration> classes = read(source).classes();
+
+		assertThat(classes.get(0).constructors()).isEmpty();
+		assertThat(classes.get(3).constructors()).isEmpty();
+
+		KotlinSyntax.Constructor header = classes.get(1).constructors().get(0);
+		assertThat(header.primary()).isTrue();
+		assertThat(header.annotations()).isEmpty();
+		assertThat(header.keywordRange()).isNull();
+		assertThat(text(source, header.range())).isEqualTo("(private val greeter: Greeter, @Qualifier(\"q\") var other: Other?, plain: String = \"x\")");
+		assertThat(header.parameters()).extracting(KotlinSyntax.Parameter::name).containsExactly("greeter", "other", "plain");
+		assertThat(header.parameters()).extracting(KotlinSyntax.Parameter::property).containsExactly(true, true, false);
+		assertThat(header.parameters().get(1).type().name()).isEqualTo("Other");
+		assertThat(header.parameters().get(1).type().nullable()).isTrue();
+		assertThat(header.parameters().get(1).annotations()).extracting(AnnotationUse::typeName).containsExactly("Qualifier");
+		assertThat(text(source, header.parameters().get(1).range())).isEqualTo("@Qualifier(\"q\") var other: Other?");
+		assertThat(text(source, header.parameters().get(1).nameRange())).isEqualTo("other");
+		assertThat(text(source, header.parameters().get(2).range())).isEqualTo("plain: String = \"x\"");
+
+		List<KotlinSyntax.Constructor> constructors = classes.get(2).constructors();
+		assertThat(constructors).extracting(KotlinSyntax.Constructor::primary).containsExactly(true, false);
+		assertThat(constructors.get(0).annotations()).extracting(AnnotationUse::typeName).containsExactly("Autowired");
+		assertThat(text(source, constructors.get(0).range())).isEqualTo("@Autowired constructor(greeter: Greeter)");
+		assertThat(text(source, constructors.get(0).keywordRange())).isEqualTo("constructor");
+
+		KotlinSyntax.Constructor secondary = constructors.get(1);
+		assertThat(secondary.annotations()).extracting(AnnotationUse::typeName).containsExactly("Autowired");
+		assertThat(text(source, secondary.range())).startsWith("/** a secondary constructor */").endsWith(": this(greeter)");
+		assertThat(text(source, secondary.keywordRange())).isEqualTo("constructor");
+		assertThat(secondary.parameters()).extracting(KotlinSyntax.Parameter::name).containsExactly("greeter", "value");
+		assertThat(secondary.parameters()).extracting(KotlinSyntax.Parameter::property).containsExactly(false, false);
+		assertThat(secondary.parameters().get(1).annotations()).extracting(AnnotationUse::typeName).containsExactly("Value");
+		assertThat(text(source, secondary.parameters().get(1).range())).isEqualTo("@Value(\"v\") value: String");
+	}
+
+	@Test
+	void propertiesWithATypeInTheBody() {
+		String source = """
+				class A {
+					/** injected */
+					@Autowired
+					lateinit var greeter: Greeter
+
+					@field:Value("x")
+					var count: Int? = null
+
+					val inferred = 5
+					const val CONSTANT: String = "c"
+					val String.extension: Int get() = 1
+				}
+				""";
+
+		List<KotlinSyntax.Property> properties = read(source).classes().get(0).properties();
+
+		assertThat(properties).extracting(KotlinSyntax.Property::name).containsExactly("greeter", "count", "extension");
+		assertThat(properties.get(0).type().name()).isEqualTo("Greeter");
+		assertThat(properties.get(0).annotations()).extracting(AnnotationUse::typeName).containsExactly("Autowired");
+		assertThat(text(source, properties.get(0).range())).isEqualTo("/** injected */\n\t@Autowired\n\tlateinit var greeter: Greeter");
+		assertThat(text(source, properties.get(0).nameRange())).isEqualTo("greeter");
+		assertThat(properties.get(1).type().nullable()).isTrue();
+		assertThat(properties.get(1).annotations()).extracting(AnnotationUse::useSiteTarget).containsExactly("field");
+		assertThat(text(source, properties.get(1).range())).isEqualTo("@field:Value(\"x\")\n\tvar count: Int? = null");
+		assertThat(properties.get(2).type().name()).isEqualTo("Int"); // the type of the property, not the one of the receiver
+	}
+
+	@Test
+	void parametersOfFunctionsWithTheirAnnotations() {
+		String source = """
+				class A {
+					fun bean(@Qualifier("q") first: Greeter, second: List<String> = listOf()): Other = Other()
+				}
+				""";
+
+		List<KotlinSyntax.Parameter> parameters = read(source).classes().get(0).functions().get(0).parameters();
+
+		assertThat(parameters).extracting(KotlinSyntax.Parameter::name).containsExactly("first", "second");
+		assertThat(parameters).extracting(KotlinSyntax.Parameter::property).containsExactly(false, false);
+		assertThat(parameters.get(0).annotations()).extracting(AnnotationUse::typeName).containsExactly("Qualifier");
+		assertThat(text(source, parameters.get(0).range())).isEqualTo("@Qualifier(\"q\") first: Greeter");
+		assertThat(text(source, parameters.get(0).nameRange())).isEqualTo("first");
+		assertThat(parameters.get(1).annotations()).isEmpty();
+		assertThat(text(source, parameters.get(1).range())).isEqualTo("second: List<String> = listOf()");
+	}
+
+	@Test
 	void lineSeparatorsDoNotMoveRanges() {
 		String source = "package a\r\n\r\n@Service\r\nclass A {\r\n\r\n\t@Bean\r\n\tfun bean() {}\r\n}\r\n";
 

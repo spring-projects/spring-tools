@@ -48,7 +48,9 @@ import org.jetbrains.kotlin.psi.KtNullableType;
 import org.jetbrains.kotlin.psi.KtObjectDeclaration;
 import org.jetbrains.kotlin.psi.KtPackageDirective;
 import org.jetbrains.kotlin.psi.KtParameter;
+import org.jetbrains.kotlin.psi.KtPrimaryConstructor;
 import org.jetbrains.kotlin.psi.KtPsiFactory;
+import org.jetbrains.kotlin.psi.KtSecondaryConstructor;
 import org.jetbrains.kotlin.psi.KtStringTemplateEntry;
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression;
 import org.jetbrains.kotlin.psi.KtSuperTypeListEntry;
@@ -69,10 +71,12 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassKind;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ConcatValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Constant;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Constructor;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Function;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Import;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.NumberValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Parameter;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Property;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Range;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ReferenceValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.StringValue;
@@ -214,10 +218,7 @@ public class KotlinPsiReader implements KotlinSyntaxReader {
 			String name = declaration.getName() != null ? declaration.getName() : "Companion";
 			Range nameRange = declaration.getNameIdentifier() != null ? range(declaration.getNameIdentifier()) : range(declaration);
 
-			List<AnnotationUse> annotations = new ArrayList<>();
-			for (KtAnnotationEntry entry : declaration.getAnnotationEntries()) {
-				annotations.add(readAnnotation(entry));
-			}
+			List<AnnotationUse> annotations = readAnnotations(declaration.getAnnotationEntries());
 
 			List<TypeRef> supertypes = new ArrayList<>();
 			for (KtSuperTypeListEntry entry : declaration.getSuperTypeListEntries()) {
@@ -226,8 +227,16 @@ public class KotlinPsiReader implements KotlinSyntaxReader {
 				}
 			}
 
+			List<Constructor> constructors = new ArrayList<>();
+			KtPrimaryConstructor primaryConstructor = declaration.getPrimaryConstructor();
+			if (primaryConstructor != null) {
+				constructors.add(new Constructor(true, readAnnotations(primaryConstructor.getAnnotationEntries()), readParameters(primaryConstructor.getValueParameters()),
+						range(primaryConstructor), primaryConstructor.getConstructorKeyword() != null ? range(primaryConstructor.getConstructorKeyword()) : null));
+			}
+
 			List<Function> functions = new ArrayList<>();
 			List<Constant> constants = new ArrayList<>();
+			List<Property> properties = new ArrayList<>();
 			List<ClassDeclaration> nested = new ArrayList<>();
 			for (KtDeclaration member : declaration.getDeclarations()) {
 				if (member instanceof KtNamedFunction function) {
@@ -237,6 +246,11 @@ public class KotlinPsiReader implements KotlinSyntaxReader {
 				}
 				else if (member instanceof KtProperty property) {
 					addConstant(property, constants);
+					addProperty(property, properties);
+				}
+				else if (member instanceof KtSecondaryConstructor constructor) {
+					constructors.add(new Constructor(false, readAnnotations(constructor.getAnnotationEntries()), readParameters(constructor.getValueParameters()),
+							range(constructor), range(constructor.getConstructorKeyword())));
 				}
 				else if (member instanceof KtClassOrObject nestedClass && !(member instanceof KtEnumEntry)) {
 					// the entries of an enum are the values of the enum, no classes declared in it
@@ -244,7 +258,7 @@ public class KotlinPsiReader implements KotlinSyntaxReader {
 				}
 			}
 
-			return new ClassDeclaration(kind, name, range(declaration), nameRange, annotations, supertypes, functions, constants, nested);
+			return new ClassDeclaration(kind, name, range(declaration), nameRange, annotations, supertypes, functions, constants, nested, constructors, properties);
 		}
 
 		private void addConstant(KtProperty property, List<Constant> constants) {
@@ -253,23 +267,41 @@ public class KotlinPsiReader implements KotlinSyntaxReader {
 			}
 		}
 
+		/** the properties with a type that are no constants: the ones without a type would need type inference */
+		private void addProperty(KtProperty property, List<Property> properties) {
+			if (!property.hasModifier(KtTokens.CONST_KEYWORD) && property.getName() != null && property.getNameIdentifier() != null
+					&& property.getTypeReference() != null) {
+				properties.add(new Property(property.getName(), readType(property.getTypeReference()), readAnnotations(property.getAnnotationEntries()),
+						range(property), range(property.getNameIdentifier())));
+			}
+		}
+
 		private Function readFunction(KtNamedFunction function) {
-			List<AnnotationUse> annotations = new ArrayList<>();
-			for (KtAnnotationEntry entry : function.getAnnotationEntries()) {
-				annotations.add(readAnnotation(entry));
-			}
-
-			List<Parameter> parameters = new ArrayList<>();
-			for (KtParameter parameter : function.getValueParameters()) {
-				if (parameter.getTypeReference() != null) {
-					parameters.add(new Parameter(parameter.getName(), readType(parameter.getTypeReference())));
-				}
-			}
-
 			TypeRef returnType = function.getTypeReference() != null ? readType(function.getTypeReference()) : null;
 			Range nameRange = function.getNameIdentifier() != null ? range(function.getNameIdentifier()) : range(function);
 
-			return new Function(function.getName(), range(function), nameRange, annotations, parameters, returnType);
+			return new Function(function.getName(), range(function), nameRange, readAnnotations(function.getAnnotationEntries()),
+					readParameters(function.getValueParameters()), returnType);
+		}
+
+		private List<AnnotationUse> readAnnotations(List<KtAnnotationEntry> entries) {
+			List<AnnotationUse> annotations = new ArrayList<>();
+			for (KtAnnotationEntry entry : entries) {
+				annotations.add(readAnnotation(entry));
+			}
+			return annotations;
+		}
+
+		/** the parameters with a type, which are all of them in a function or a constructor that compiles */
+		private List<Parameter> readParameters(List<KtParameter> declared) {
+			List<Parameter> parameters = new ArrayList<>();
+			for (KtParameter parameter : declared) {
+				if (parameter.getTypeReference() != null && parameter.getName() != null && parameter.getNameIdentifier() != null) {
+					parameters.add(new Parameter(parameter.getName(), readType(parameter.getTypeReference()), readAnnotations(parameter.getAnnotationEntries()),
+							parameter.hasValOrVar(), range(parameter), range(parameter.getNameIdentifier())));
+				}
+			}
+			return parameters;
 		}
 
 		private AnnotationUse readAnnotation(KtAnnotationEntry entry) {

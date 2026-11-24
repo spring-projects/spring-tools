@@ -43,6 +43,7 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.IProblemC
 import org.springframework.ide.vscode.commons.languageserver.reconcile.ReconcileProblem;
 import org.springframework.ide.vscode.commons.maven.java.MavenJavaProject;
 import org.springframework.ide.vscode.commons.protocol.spring.Bean;
+import org.springframework.ide.vscode.commons.protocol.spring.InjectionPoint;
 import org.springframework.ide.vscode.commons.protocol.spring.SpringIndexElement;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 import org.springframework.ide.vscode.project.harness.ProjectsHarness;
@@ -148,10 +149,12 @@ public class KotlinJdtBridgeComponentIndexerTest {
 				"Bean appConfig : example.probe.AppConfig configuration",
 				"  Bean greeter : example.probe.Greeter",
 				"  Bean inferred : void", // known gap: inferred return type
-				"  EventListener  in example.probe.AppConfig", // known gap: parameters are not built
+				"  EventListener org.springframework.boot.context.event.ApplicationReadyEvent in example.probe.AppConfig",
 				"Bean listener : example.probe.Listener",
 				"  EventListener org.springframework.boot.context.event.ApplicationReadyEvent in example.probe.Listener",
-				"Bean withInjection : example.probe.WithInjection", // known gap: no injection points
+				"Bean withInjection : example.probe.WithInjection",
+				"  inject greeter : example.probe.Greeter",
+				"  inject other : example.probe.Greeter",
 				"Bean props : example.probe.Props",
 				"Bean app : example.probe.App configuration");
 
@@ -164,8 +167,10 @@ public class KotlinJdtBridgeComponentIndexerTest {
 
 	private static void describe(SpringIndexElement element, String indent, List<String> lines) {
 		if (element instanceof Bean bean) {
-			assertThat(bean.getInjectionPoints()).isEmpty();
 			lines.add(indent + "Bean " + bean.getName() + " : " + bean.getType() + (bean.isConfiguration() ? " configuration" : ""));
+			for (InjectionPoint injectionPoint : bean.getInjectionPoints()) {
+				lines.add(indent + "  inject " + injectionPoint.getName() + " : " + injectionPoint.getType());
+			}
 		}
 		else if (element instanceof EventListenerIndexElement listener) {
 			lines.add(indent + "EventListener " + listener.getEventType() + " in " + listener.getContainerBeanType());

@@ -87,7 +87,8 @@ final class ClasspathConstants {
 		}
 	}
 
-	private static byte[] readClassFile(File container, String entry) throws Exception {
+	/** the bytes of the class file in a folder or a jar, null if there is no such entry */
+	static byte[] readClassFile(File container, String entry) throws Exception {
 		if (container.isDirectory()) {
 			Path path = container.toPath().resolve(entry);
 			return Files.isRegularFile(path) ? Files.readAllBytes(path) : null;

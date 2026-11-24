@@ -123,7 +123,36 @@ public final class KotlinSyntax {
 	public record AnnotationUse(String typeName, String useSiteTarget, List<Argument> arguments, Range range, Range typeNameRange) {
 	}
 
-	public record Parameter(String name, TypeRef type) {
+	/**
+	 * A parameter of a function or a constructor.
+	 *
+	 * @param property whether the parameter is declared with {@code val} or {@code var}, which makes a
+	 *        parameter of a primary constructor a property of the class as well
+	 * @param range the whole parameter, including its annotations and its default value
+	 */
+	public record Parameter(String name, TypeRef type, List<AnnotationUse> annotations, boolean property, Range range, Range nameRange) {
+	}
+
+	/**
+	 * A property that is declared in the body of a class with a type, no {@code const val} (those
+	 * are {@link Constant}s).
+	 *
+	 * @param range the whole declaration, including its annotations and its initializer
+	 */
+	public record Property(String name, TypeRef type, List<AnnotationUse> annotations, Range range, Range nameRange) {
+	}
+
+	/**
+	 * A constructor: the primary constructor in the header of the class, or one in its body.
+	 *
+	 * @param primary whether this is the primary constructor, which is only there if the class has
+	 *        parentheses behind its name (or a {@code constructor} keyword there)
+	 * @param range the constructor, for the primary constructor the part of the header with the
+	 *        parameters (and the {@code constructor} keyword and its annotations, if they are written)
+	 * @param keywordRange the {@code constructor} keyword, null if it is not written (which it can only
+	 *        be left out for the primary constructor)
+	 */
+	public record Constructor(boolean primary, List<AnnotationUse> annotations, List<Parameter> parameters, Range range, Range keywordRange) {
 	}
 
 	/**
@@ -154,9 +183,13 @@ public final class KotlinSyntax {
 	 * @param supertypes the supertypes in the order they are declared, classes and interfaces mixed
 	 * @param constants the {@code const val}s declared in the body of the class
 	 * @param nestedClasses the classes declared in the body of the class
+	 * @param constructors the primary constructor first (if there is one), then the ones in the body
+	 * @param properties the properties declared in the body of the class, the ones of the primary
+	 *        constructor are parameters of it
 	 */
 	public record ClassDeclaration(ClassKind kind, String name, Range range, Range nameRange, List<AnnotationUse> annotations,
-			List<TypeRef> supertypes, List<Function> functions, List<Constant> constants, List<ClassDeclaration> nestedClasses) {
+			List<TypeRef> supertypes, List<Function> functions, List<Constant> constants, List<ClassDeclaration> nestedClasses,
+			List<Constructor> constructors, List<Property> properties) {
 	}
 
 	/**

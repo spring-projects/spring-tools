@@ -20,6 +20,8 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.Type;
+import org.eclipse.jdt.core.dom.VariableDeclaration;
+import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.KotlinDeclaredVariable;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.KotlinMethod;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypes.KotlinPackage;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
@@ -42,14 +44,23 @@ public class KotlinNodeBindings {
 	private final Map<MethodDeclaration, MethodSource> methods = new IdentityHashMap<>();
 	private final Map<Annotation, AnnotationSource> annotations = new IdentityHashMap<>();
 	private final Map<Type, TypeSource> typeReferences = new IdentityHashMap<>();
+	private final Map<VariableDeclaration, VariableSource> variables = new IdentityHashMap<>();
 
-	private record MethodSource(KotlinSourceClass declaringClass, KotlinSyntax.Function function) {
+	/**
+	 * @param name the name of the method, the simple name of the class for a constructor
+	 * @param returnType the declared return type, null if there is none (and for constructors)
+	 */
+	private record MethodSource(KotlinSourceClass declaringClass, String name, List<KotlinSyntax.Parameter> parameters, KotlinSyntax.TypeRef returnType,
+			boolean constructor) {
 	}
 
 	private record AnnotationSource(AnnotationUse use, KotlinSourceClass scope) {
 	}
 
-	private record TypeSource(String name, KotlinSourceClass scope) {
+	private record TypeSource(KotlinSyntax.TypeRef type, KotlinSourceClass scope) {
+	}
+
+	private record VariableSource(String name, KotlinSyntax.TypeRef type, KotlinSourceClass declaringClass, boolean parameter) {
 	}
 
 	public KotlinNodeBindings(KotlinTypeResolver resolver, KotlinSyntax.File file) {
@@ -62,7 +73,32 @@ public class KotlinNodeBindings {
 	}
 
 	public synchronized void registerMethod(MethodDeclaration node, KotlinSourceClass declaringClass, KotlinSyntax.Function function) {
-		methods.put(node, new MethodSource(declaringClass, function));
+		methods.put(node, new MethodSource(declaringClass, function.name(), function.parameters(), function.returnType(), false));
+	}
+
+	public synchronized void registerConstructor(MethodDeclaration node, KotlinSourceClass declaringClass, KotlinSyntax.Constructor constructor) {
+		methods.put(node, new MethodSource(declaringClass, declaringClass.declaration().name(), constructor.parameters(), null, true));
+	}
+
+	/**
+	 * A parameter of a function or a constructor, or the field of a property.
+	 *
+	 * @param declaringClass the class the variable is declared in, which is the scope its type is resolved in
+	 */
+	public synchronized void registerVariable(VariableDeclaration node, String name, KotlinSyntax.TypeRef type, KotlinSourceClass declaringClass, boolean parameter) {
+		variables.put(node, new VariableSource(name, type, declaringClass, parameter));
+	}
+
+	public ResolvedVariable resolveVariable(VariableDeclaration declaration) {
+		VariableSource source;
+		synchronized (this) {
+			source = variables.get(declaration);
+		}
+		if (source == null) {
+			return null;
+		}
+		return new KotlinDeclaredVariable(source.name(), resolver.sourceType(source.declaringClass()),
+				resolver.resolveTypeReference(source.type(), file, source.declaringClass()), source.parameter());
 	}
 
 	/**
@@ -84,8 +120,16 @@ public class KotlinNodeBindings {
 	 * @param name the type as written
 	 * @param scope the class the type is written in, null for the top level
 	 */
-	public synchronized void registerTypeReference(Type node, String name, KotlinSourceClass scope) {
-		typeReferences.put(node, new TypeSource(name, scope));
+	public void registerTypeReference(Type node, String name, KotlinSourceClass scope) {
+		registerTypeReference(node, new KotlinSyntax.TypeRef(name, false, List.of(), null), scope);
+	}
+
+	/**
+	 * @param type the type as written, with its type arguments and whether it is nullable
+	 * @param scope the class the type is written in, null for the top level
+	 */
+	public synchronized void registerTypeReference(Type node, KotlinSyntax.TypeRef type, KotlinSourceClass scope) {
+		typeReferences.put(node, new TypeSource(type, scope));
 	}
 
 	public ResolvedType resolveTypeReference(Type type) {
@@ -93,7 +137,7 @@ public class KotlinNodeBindings {
 		synchronized (this) {
 			source = typeReferences.get(type);
 		}
-		return source != null ? resolver.resolveTypeReference(new KotlinSyntax.TypeRef(source.name(), false, List.of(), null), file, source.scope()) : null;
+		return source != null ? resolver.resolveTypeReference(source.type(), file, source.scope()) : null;
 	}
 
 	/** the file the AST was built from */
@@ -128,12 +172,12 @@ public class KotlinNodeBindings {
 		}
 
 		List<ResolvedType> parameterTypes = new ArrayList<>();
-		for (KotlinSyntax.Parameter parameter : source.function().parameters()) {
+		for (KotlinSyntax.Parameter parameter : source.parameters()) {
 			parameterTypes.add(resolver.resolveTypeReference(parameter.type(), file, source.declaringClass()));
 		}
 
-		return new KotlinMethod(source.function().name(), resolver.sourceType(source.declaringClass()), parameterTypes,
-				resolver.resolveReturnType(source.function().returnType(), file, source.declaringClass()));
+		return new KotlinMethod(source.name(), resolver.sourceType(source.declaringClass()), parameterTypes,
+				resolver.resolveReturnType(source.returnType(), file, source.declaringClass()), source.constructor());
 	}
 
 }

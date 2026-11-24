@@ -22,10 +22,12 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassKind;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ConcatValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Constant;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Constructor;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Function;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Import;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.NumberValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Parameter;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Property;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Range;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ReferenceValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.StringValue;
@@ -120,6 +122,8 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 		static final int CLASS_BODY = NODES.getCLASS_BODY().getIndex();
 		static final int FUN = NODES.getFUN().getIndex();
 		static final int PROPERTY = NODES.getPROPERTY().getIndex();
+		static final int PRIMARY_CONSTRUCTOR = NODES.getPRIMARY_CONSTRUCTOR().getIndex();
+		static final int SECONDARY_CONSTRUCTOR = NODES.getSECONDARY_CONSTRUCTOR().getIndex();
 		static final int MODIFIER_LIST = NODES.getMODIFIER_LIST().getIndex();
 		static final int ANNOTATION = NODES.getANNOTATION().getIndex();
 		static final int ANNOTATION_ENTRY = NODES.getANNOTATION_ENTRY().getIndex();
@@ -167,6 +171,9 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 		static final int ENUM_MODIFIER = TOKENS.getENUM_MODIFIER().getIndex();
 		static final int COMPANION_MODIFIER = TOKENS.getCOMPANION_MODIFIER().getIndex();
 		static final int CONST_MODIFIER = TOKENS.getCONST_MODIFIER().getIndex();
+		static final int VAL_KEYWORD = TOKENS.getVAL_KEYWORD().getIndex();
+		static final int CONSTRUCTOR_KEYWORD = TOKENS.getCONSTRUCTOR_KEYWORD().getIndex();
+		static final int VAR_KEYWORD = TOKENS.getVAR_KEYWORD().getIndex();
 		static final int EQ = TOKENS.getEQ().getIndex();
 		static final int MUL = TOKENS.getMUL().getIndex();
 		static final int PLUS = TOKENS.getPLUS().getIndex();
@@ -176,6 +183,7 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 		static final int RBRACKET = TOKENS.getRBRACKET().getIndex();
 		static final int COMMA = TOKENS.getCOMMA().getIndex();
 		static final int COLONCOLON = TOKENS.getCOLONCOLON().getIndex();
+		static final int COLON = TOKENS.getCOLON().getIndex();
 
 		static final int WHITE_SPACE = TOKENS.getWHITE_SPACE().getIndex();
 		static final int EOL_COMMENT = TOKENS.getEOL_COMMENT().getIndex();
@@ -289,8 +297,15 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 				}
 			}
 
+			List<Constructor> constructors = new ArrayList<>();
+			SyntaxNode primaryConstructor = firstChild(declaration, Types.PRIMARY_CONSTRUCTOR);
+			if (primaryConstructor != null) {
+				constructors.add(readConstructor(primaryConstructor, true));
+			}
+
 			List<Function> functions = new ArrayList<>();
 			List<Constant> constants = new ArrayList<>();
+			List<Property> properties = new ArrayList<>();
 			List<ClassDeclaration> nested = new ArrayList<>();
 
 			SyntaxNode body = firstChild(declaration, Types.CLASS_BODY);
@@ -305,6 +320,10 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 					}
 					else if (type == Types.PROPERTY) {
 						addConstant(member, constants);
+						addProperty(member, properties);
+					}
+					else if (type == Types.SECONDARY_CONSTRUCTOR) {
+						constructors.add(readConstructor(member, false));
 					}
 					else if (type == Types.CLASS || type == Types.OBJECT_DECLARATION) {
 						// the entries of an enum are no nested classes
@@ -313,7 +332,65 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 				}
 			}
 
-			return new ClassDeclaration(kind, name, range(declaration), nameRange, readAnnotations(modifiers), supertypes, functions, constants, nested);
+			return new ClassDeclaration(kind, name, range(declaration), nameRange, readAnnotations(modifiers), supertypes, functions, constants, nested,
+					constructors, properties);
+		}
+
+		private Constructor readConstructor(SyntaxNode constructor, boolean primary) {
+			SyntaxNode keyword = firstChild(constructor, Types.CONSTRUCTOR_KEYWORD);
+			return new Constructor(primary, readAnnotations(firstChild(constructor, Types.MODIFIER_LIST)),
+					readParameters(firstChild(constructor, Types.VALUE_PARAMETER_LIST)), range(constructor), keyword != null ? range(keyword) : null);
+		}
+
+		/** the properties with a type that are no constants: the ones without a type would need type inference */
+		private void addProperty(SyntaxNode property, List<Property> properties) {
+			SyntaxNode modifiers = firstChild(property, Types.MODIFIER_LIST);
+			if (hasModifier(modifiers, Types.CONST_MODIFIER)) {
+				return;
+			}
+
+			// the type is the one behind the name, the one in front of it is the receiver of an extension property
+			SyntaxNode name = firstChild(property, Types.IDENTIFIER);
+			SyntaxNode type = name != null ? typeBehind(property, name) : null;
+			if (type != null) {
+				properties.add(new Property(KotlinValueSyntax.unquote(textOf(name)), readType(type), readAnnotations(modifiers), range(property), range(name)));
+			}
+		}
+
+		/** the type reference that follows the given child, with nothing but the colon in between */
+		private SyntaxNode typeBehind(SyntaxNode node, SyntaxNode after) {
+			boolean found = false;
+			for (SyntaxNode child : children(node)) {
+				if (found) {
+					if (type(child) == Types.TYPE_REFERENCE) {
+						return child;
+					}
+					if (type(child) != Types.COLON) {
+						return null;
+					}
+				}
+				found |= child.equals(after);
+			}
+			return null;
+		}
+
+		/** the parameters with a name and a type, which are all of them in a function or a constructor that compiles */
+		private List<Parameter> readParameters(SyntaxNode parameterList) {
+			List<Parameter> parameters = new ArrayList<>();
+			if (parameterList != null) {
+				for (SyntaxNode parameter : children(parameterList)) {
+					if (type(parameter) == Types.VALUE_PARAMETER) {
+						SyntaxNode parameterName = firstChild(parameter, Types.IDENTIFIER);
+						SyntaxNode parameterType = firstChild(parameter, Types.TYPE_REFERENCE);
+						if (parameterName != null && parameterType != null) {
+							boolean property = firstChild(parameter, Types.VAL_KEYWORD) != null || firstChild(parameter, Types.VAR_KEYWORD) != null;
+							parameters.add(new Parameter(KotlinValueSyntax.unquote(textOf(parameterName)), readType(parameterType),
+									readAnnotations(firstChild(parameter, Types.MODIFIER_LIST)), property, range(parameter), range(parameterName)));
+						}
+					}
+				}
+			}
+			return parameters;
 		}
 
 		/** the type of a super type entry, which is written with a call of the constructor, as it is, or with a delegate */
@@ -347,19 +424,8 @@ public class KotlinSyntaxApiReader implements KotlinSyntaxReader {
 				return null;
 			}
 
-			List<Parameter> parameters = new ArrayList<>();
 			SyntaxNode parameterList = firstChild(function, Types.VALUE_PARAMETER_LIST);
-			if (parameterList != null) {
-				for (SyntaxNode parameter : children(parameterList)) {
-					if (type(parameter) == Types.VALUE_PARAMETER) {
-						SyntaxNode parameterName = firstChild(parameter, Types.IDENTIFIER);
-						SyntaxNode parameterType = firstChild(parameter, Types.TYPE_REFERENCE);
-						if (parameterType != null) {
-							parameters.add(new Parameter(parameterName != null ? KotlinValueSyntax.unquote(textOf(parameterName)) : null, readType(parameterType)));
-						}
-					}
-				}
-			}
+			List<Parameter> parameters = readParameters(parameterList);
 
 			// the type that is returned is the one behind the parameters, the one in front of the name is the receiver
 			TypeRef returnType = null;

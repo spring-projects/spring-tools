@@ -33,10 +33,12 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassKind;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ConcatValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Constant;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Constructor;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Function;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Import;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.NumberValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Parameter;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Property;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Range;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ReferenceValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.StringValue;
@@ -675,6 +677,8 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 			final List<Function> functions = new ArrayList<>();
 			final List<Constant> constants = new ArrayList<>();
 			final List<ClassDeclaration> classes = new ArrayList<>();
+			final List<Constructor> constructors = new ArrayList<>();
+			final List<Property> properties = new ArrayList<>();
 		}
 
 		private void collect(Node container, FileContent content) {
@@ -752,13 +756,101 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 			}
 
 			Members members = new Members();
+			Node primaryConstructor = firstChild(node, "primary_constructor");
+			if (primaryConstructor != null) {
+				members.constructors.add(new Constructor(true, readAnnotations(firstChild(primaryConstructor, "modifiers")), readClassParameters(primaryConstructor),
+						range(primaryConstructor), keywordRange(primaryConstructor)));
+			}
 			for (Node child : children(node)) {
 				if (child.type().equals("class_body") || child.type().equals("enum_class_body")) {
 					collectMembers(child, members);
 				}
 			}
 
-			return new ClassDeclaration(kind, name, declarationRange, nameRange, annotations, supertypes, members.functions, members.constants, members.classes);
+			return new ClassDeclaration(kind, name, declarationRange, nameRange, annotations, supertypes, members.functions, members.constants, members.classes,
+					members.constructors, members.properties);
+		}
+
+		/** the parameters of a primary constructor, which carry their annotations and their default value themselves */
+		private List<Parameter> readClassParameters(Node constructor) {
+			List<Parameter> parameters = new ArrayList<>();
+			for (Node parameter : children(constructor)) {
+				if (parameter.type().equals("class_parameter")) {
+					Node name = firstChild(parameter, "simple_identifier");
+					Node type = afterToken(parameter, ":");
+					if (name != null && type != null) {
+						parameters.add(new Parameter(KotlinValueSyntax.unquote(textOf(name)), readType(type), readAnnotations(firstChild(parameter, "modifiers")),
+								firstChild(parameter, "binding_pattern_kind") != null, range(parameter), range(name)));
+					}
+				}
+			}
+			return parameters;
+		}
+
+		/**
+		 * The parameters of a function or a secondary constructor. The annotations of a parameter and
+		 * its default value are no part of the parameter node here, they are the nodes next to it; the
+		 * range of the parameter covers them, as the parser of the Kotlin compiler has it.
+		 */
+		private List<Parameter> readFunctionParameters(Node parameterList) {
+			List<Parameter> parameters = new ArrayList<>();
+			if (parameterList == null) {
+				return parameters;
+			}
+
+			List<Node> parts = significant(parameterList);
+			Node modifiers = null;
+			for (int i = 0; i < parts.size(); i++) {
+				Node part = parts.get(i);
+				switch (part.type()) {
+				case "parameter_modifiers" -> modifiers = part;
+				case "parameter" -> {
+					Node name = firstChild(part, "simple_identifier");
+					Node type = afterToken(part, ":");
+					if (name != null && type != null) {
+						int start = offset(startOf(modifiers != null ? modifiers : part));
+						int end = offset(endOf(part));
+						if (i + 2 < parts.size() && parts.get(i + 1).type().equals("=")) {
+							end = offset(endOf(parts.get(i + 2)));
+						}
+						parameters.add(new Parameter(KotlinValueSyntax.unquote(textOf(name)), readType(type), readAnnotations(modifiers), false,
+								new Range(start, end - start), range(name)));
+					}
+					modifiers = null;
+				}
+				case "," -> modifiers = null;
+				default -> {
+				}
+				}
+			}
+			return parameters;
+		}
+
+		/** the properties with a type that are no constants: the ones without a type would need type inference */
+		private void addProperty(Node property, List<Property> properties) {
+			Node modifiers = firstChild(property, "modifiers");
+			if (modifiers != null && children(modifiers).stream().anyMatch(m -> m.type().equals("property_modifier") && textOf(m).trim().equals("const"))) {
+				return;
+			}
+
+			Node variable = firstChild(property, "variable_declaration");
+			Node name = variable != null ? firstChild(variable, "simple_identifier") : null;
+			Node type = variable != null ? afterToken(variable, ":") : null;
+			if (name != null && type != null) {
+				properties.add(new Property(KotlinValueSyntax.unquote(textOf(name)), readType(type), readAnnotations(modifiers), declarationRange(property),
+						range(name)));
+			}
+		}
+
+		private Constructor readSecondaryConstructor(Node constructor) {
+			return new Constructor(false, readAnnotations(firstChild(constructor, "modifiers")), readFunctionParameters(firstChild(constructor, "function_value_parameters")),
+					declarationRange(constructor), keywordRange(constructor));
+		}
+
+		/** the {@code constructor} keyword of a constructor, null if it is not written */
+		private Range keywordRange(Node constructor) {
+			Node keyword = firstChild(constructor, "constructor");
+			return keyword != null ? range(keyword) : null;
 		}
 
 		private ClassKind classKind(Node node) {
@@ -821,7 +913,11 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 						members.functions.add(function);
 					}
 				}
-				case "property_declaration" -> addConstant(member, members.constants);
+				case "property_declaration" -> {
+					addConstant(member, members.constants);
+					addProperty(member, members.properties);
+				}
+				case "secondary_constructor" -> members.constructors.add(readSecondaryConstructor(member));
 				case "class_declaration", "object_declaration", "companion_object" -> {
 					ClassDeclaration declaration = readClass(member);
 					if (declaration != null) {
@@ -862,6 +958,13 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 				}
 				case "property_declaration" -> {
 					addConstant(part, target.constants);
+					addProperty(part, target.properties); // the ones on the top level are left out of the file
+					if (open != null) {
+						open.end = endOf(part);
+					}
+				}
+				case "secondary_constructor" -> {
+					target.constructors.add(readSecondaryConstructor(part));
 					if (open != null) {
 						open.end = endOf(part);
 					}
@@ -948,7 +1051,7 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 			Range declarationRange = declarationRange(offset(recovered.start), offset(recovered.end));
 			into.classes.add(new ClassDeclaration(recovered.kind, KotlinValueSyntax.unquote(textOf(recovered.name)), declarationRange, range(recovered.name),
 					readAnnotations(recovered.modifiers), recovered.supertypes, recovered.members.functions, recovered.members.constants,
-					recovered.members.classes));
+					recovered.members.classes, recovered.members.constructors, recovered.members.properties));
 		}
 
 		private void addConstant(Node property, List<Constant> constants) {
@@ -972,19 +1075,8 @@ public class KotlinTreeSitterReader implements KotlinSyntaxReader {
 				return null;
 			}
 
-			List<Parameter> parameters = new ArrayList<>();
 			Node parameterList = firstChild(node, "function_value_parameters");
-			if (parameterList != null) {
-				for (Node parameter : children(parameterList)) {
-					if (parameter.type().equals("parameter")) {
-						Node parameterName = firstChild(parameter, "simple_identifier");
-						Node parameterType = afterToken(parameter, ":");
-						if (parameterName != null && parameterType != null) {
-							parameters.add(new Parameter(KotlinValueSyntax.unquote(textOf(parameterName)), readType(parameterType)));
-						}
-					}
-				}
-			}
+			List<Parameter> parameters = readFunctionParameters(parameterList);
 
 			TypeRef returnType = null;
 			if (parameterList != null) {

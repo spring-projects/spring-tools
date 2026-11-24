@@ -84,7 +84,11 @@ public final class KotlinJdtBindings {
 	}
 
 	IVariableBinding variable(ResolvedVariable variable) {
-		return variable != null ? new KotlinVariableBinding(this, variable) : null;
+		return variable(variable, NO_ANNOTATIONS);
+	}
+
+	IVariableBinding variable(ResolvedVariable variable, IAnnotationBinding[] annotations) {
+		return variable != null ? new KotlinVariableBinding(this, variable, annotations) : null;
 	}
 
 	/** an attribute value of the Kotlin model, as JDT represents it in an {@code IMemberValuePairBinding} */

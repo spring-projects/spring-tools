@@ -41,6 +41,16 @@ public interface ResolvedType {
 
 	boolean isParameterizedType();
 
+	/** the type arguments of a parameterized type, empty for all other types */
+	default List<ResolvedType> getTypeArguments() {
+		return List.of();
+	}
+
+	/** whether this is a type parameter of a generic type, as it is used in the supertypes of the type */
+	default boolean isTypeVariable() {
+		return false;
+	}
+
 	boolean isAnnotation();
 
 	boolean isInterface();

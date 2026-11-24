@@ -391,6 +391,41 @@ public class KotlinTypeResolverTest {
 	}
 
 	@Test
+	void supertypesKeepTheirTypeArgumentsThroughTheHierarchy() {
+		file("A", """
+				package a
+
+				import org.springframework.beans.factory.SmartFactoryBean
+
+				class Thing
+
+				interface ThingFactory : SmartFactoryBean<Thing>
+				""");
+
+		// the supertype as written, with its type argument
+		ITypeBinding smartFactoryBean = jdt(type("a.ThingFactory")).getInterfaces()[0];
+		assertThat(smartFactoryBean.isParameterizedType()).isTrue();
+		assertThat(smartFactoryBean.getBinaryName()).isEqualTo("org.springframework.beans.factory.SmartFactoryBean");
+		assertThat(smartFactoryBean.getTypeArguments()).extracting(ITypeBinding::getQualifiedName).containsExactly("a.Thing");
+
+		// the supertype of the classpath type, with the type argument in place of the type parameter (SmartFactoryBean<T> extends FactoryBean<T>)
+		ITypeBinding factoryBean = smartFactoryBean.getInterfaces()[0];
+		assertThat(factoryBean.isParameterizedType()).isTrue();
+		assertThat(factoryBean.getBinaryName()).isEqualTo("org.springframework.beans.factory.FactoryBean");
+		assertThat(factoryBean.getTypeArguments()).extracting(ITypeBinding::getName).containsExactly("Thing");
+
+		// the generic type itself has the type parameter there
+		ITypeBinding generic = smartFactoryBean.getErasure().getInterfaces()[0];
+		assertThat(generic.getTypeArguments()).hasSize(1);
+		assertThat(generic.getTypeArguments()[0].isTypeVariable()).isTrue();
+		assertThat(generic.getTypeArguments()[0].getName()).isEqualTo("T");
+
+		// the names of the hierarchy are the ones of the erasures, as for Java
+		assertThat(ASTUtils.findSupertypes(jdt(type("a.ThingFactory"))))
+				.contains("org.springframework.beans.factory.SmartFactoryBean", "org.springframework.beans.factory.FactoryBean");
+	}
+
+	@Test
 	void cyclicHierarchiesAreCut() {
 		file("A", """
 				package a

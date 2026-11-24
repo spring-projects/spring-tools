@@ -18,12 +18,14 @@ import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.BooleanLiteral;
 import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IBinding;
 import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.IPackageBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
@@ -32,13 +34,16 @@ import org.eclipse.jdt.core.dom.NumberLiteral;
 import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.QualifiedName;
 import org.eclipse.jdt.core.dom.SimpleType;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeLiteral;
+import org.eclipse.jdt.core.dom.VariableDeclaration;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedAnnotation;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedMemberValuePair;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedMethod;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedPackage;
+import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedVariable;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinNodeBindings;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypeResolver;
 
@@ -86,13 +91,32 @@ public final class KotlinJdtBindingSource implements JdtBindingSource {
 			return null;
 		}
 
-		IAnnotationBinding[] annotations = ((List<?>) declaration.modifiers()).stream()
+		return new KotlinMethodBinding(bindings, method, annotationsOf(declaration.modifiers()));
+	}
+
+	/**
+	 * A parameter, or the field of a property. The annotations are the ones of the declaration: of
+	 * the parameter, or of the field declaration the variable is a fragment of.
+	 */
+	@Override
+	public IVariableBinding resolveVariable(VariableDeclaration declaration) {
+		ResolvedVariable variable = nodes.resolveVariable(declaration);
+		if (variable == null) {
+			return null;
+		}
+
+		List<?> modifiers = declaration instanceof SingleVariableDeclaration parameter ? parameter.modifiers()
+				: declaration.getParent() instanceof FieldDeclaration field ? field.modifiers()
+				: List.of();
+		return bindings.variable(variable, annotationsOf(modifiers));
+	}
+
+	private IAnnotationBinding[] annotationsOf(List<?> modifiers) {
+		return modifiers.stream()
 				.filter(Annotation.class::isInstance)
 				.map(modifier -> resolveAnnotation((Annotation) modifier))
 				.filter(annotation -> annotation != null)
 				.toArray(IAnnotationBinding[]::new);
-
-		return new KotlinMethodBinding(bindings, method, annotations);
 	}
 
 	@Override

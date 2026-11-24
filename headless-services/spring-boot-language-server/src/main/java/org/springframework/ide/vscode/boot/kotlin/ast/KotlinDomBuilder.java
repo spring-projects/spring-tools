@@ -22,8 +22,10 @@ import org.eclipse.jdt.core.dom.AnnotationTypeDeclaration;
 import org.eclipse.jdt.core.dom.ArrayInitializer;
 import org.eclipse.jdt.core.dom.CharacterLiteral;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.BodyDeclaration;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.FieldDeclaration;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Name;
@@ -33,9 +35,12 @@ import org.eclipse.jdt.core.dom.PackageDeclaration;
 import org.eclipse.jdt.core.dom.SimpleName;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.core.dom.TypeLiteral;
+import org.eclipse.jdt.core.dom.VariableDeclarationFragment;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinNodeBindings;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinSourceClass;
 import org.springframework.ide.vscode.boot.kotlin.bindings.KotlinTypeResolver;
@@ -50,10 +55,14 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassDecla
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassKind;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ConcatValue;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Constructor;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.NumberValue;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Parameter;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Property;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Range;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ReferenceValue;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.StringValue;
+import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.TypeRef;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Value;
 
 /**
@@ -61,14 +70,24 @@ import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.Value;
  * be used for Kotlin sources as well.
  * <p>
  * The AST has the shape the JVM sees the Kotlin code in: classes, interfaces and annotation types
- * (a Kotlin {@code object} is a class), with their annotations and their functions as methods.
+ * (a Kotlin {@code object} is a class), with their annotations, their functions as methods with
+ * their parameters, their constructors, and the fields of their properties: the ones declared in
+ * the body with a type, and the {@code val} and {@code var} parameters of the primary constructor.
  * Every node has the range of what it stands for in the Kotlin source, so locations and content
  * hashes that are taken from the AST point into the Kotlin file. What the nodes stand for is
  * recorded in the {@link KotlinNodeBindings}, and the JDT binding resolver of the AST answers
  * from there (see {@link JdtBindingResolverBridge}), so the nodes have JDT bindings.
  * <p>
- * Not built (yet): enum classes, top-level functions, properties, the primary constructor,
- * function bodies, supertypes and parameters (the bindings know about them).
+ * The annotations of a parameter and a property go where Kotlin puts them for Java annotations:
+ * an annotation without a use-site target on a parameter of the primary constructor is one of the
+ * parameter (also if the parameter is a property), one on a property in the body is one of its
+ * field, and {@code @field:} puts it on the field. Annotations for the getter, the setter or the
+ * property itself are left out, nothing on the JVM side has them where the AST could show them.
+ * <p>
+ * Not built (yet): enum classes, top-level functions, function bodies, supertypes, the fields of
+ * properties without a declared type, and properties are taken to have a field even if they have
+ * none on the JVM (for example in an interface they are left out, but a property with a getter and
+ * no backing field in a class is not told apart).
  *
  * @author Martin Lippert
  */
@@ -133,9 +152,34 @@ public class KotlinDomBuilder {
 			type.modifiers().add(buildAnnotation(ast, bindings, use, source.outer()));
 		}
 
-		for (KotlinSyntax.Function function : declaration.functions()) {
-			type.bodyDeclarations().add(buildFunction(ast, bindings, function, source));
+		// the members in the order they are written, which is the order the indexers see them in for Java
+		List<BodyDeclaration> members = new ArrayList<>();
+		if (declaration.kind() != ClassKind.ANNOTATION) {
+			for (Constructor constructor : declaration.constructors()) {
+				if (declaration.kind() == ClassKind.CLASS) {
+					members.add(buildConstructor(ast, bindings, declaration, constructor, source));
+				}
+				if (constructor.primary() && declaration.kind() != ClassKind.INTERFACE) {
+					for (Parameter parameter : constructor.parameters()) {
+						if (parameter.property()) {
+							members.add(buildField(ast, bindings, parameter.name(), parameter.type(), fieldAnnotations(parameter.annotations(), false),
+									parameter.range(), parameter.nameRange(), source));
+						}
+					}
+				}
+			}
+			if (declaration.kind() != ClassKind.INTERFACE) {
+				for (Property property : declaration.properties()) {
+					members.add(buildField(ast, bindings, property.name(), property.type(), fieldAnnotations(property.annotations(), true),
+							property.range(), property.nameRange(), source));
+				}
+			}
 		}
+		for (KotlinSyntax.Function function : declaration.functions()) {
+			members.add(buildFunction(ast, bindings, function, source));
+		}
+		members.sort((first, second) -> Integer.compare(first.getStartPosition(), second.getStartPosition()));
+		type.bodyDeclarations().addAll(members);
 
 		for (ClassDeclaration nested : declaration.nestedClasses()) {
 			AbstractTypeDeclaration nestedType = buildClass(ast, bindings, nested, source.nested(nested));
@@ -164,8 +208,103 @@ public class KotlinDomBuilder {
 			method.modifiers().add(buildAnnotation(ast, bindings, use, declaringClass));
 		}
 
+		addParameters(ast, bindings, method, function.parameters(), declaringClass);
+
 		bindings.registerMethod(method, declaringClass, function);
 		return method;
+	}
+
+	/**
+	 * A constructor. Its name is the {@code constructor} keyword, or the name of the class for a
+	 * primary constructor that is written without it (the constructor then reaches from the name
+	 * of the class to the end of its parameters).
+	 */
+	@SuppressWarnings("unchecked")
+	private MethodDeclaration buildConstructor(AST ast, KotlinNodeBindings bindings, ClassDeclaration declaration, Constructor constructor,
+			KotlinSourceClass declaringClass) {
+		MethodDeclaration method = ast.newMethodDeclaration();
+		method.setConstructor(true);
+		method.setReturnType2(null);
+
+		Range nameRange = constructor.keywordRange() != null ? constructor.keywordRange() : declaration.nameRange();
+		method.setName(simpleName(ast, declaration.name(), nameRange));
+
+		Range range = constructor.range();
+		if (nameRange.start() < range.start()) {
+			range = new Range(nameRange.start(), range.end() - nameRange.start());
+		}
+		range(method, range);
+
+		for (AnnotationUse use : constructor.annotations()) {
+			method.modifiers().add(buildAnnotation(ast, bindings, use, declaringClass));
+		}
+
+		addParameters(ast, bindings, method, constructor.parameters(), declaringClass);
+
+		bindings.registerConstructor(method, declaringClass, constructor);
+		return method;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void addParameters(AST ast, KotlinNodeBindings bindings, MethodDeclaration method, List<Parameter> parameters, KotlinSourceClass declaringClass) {
+		for (Parameter parameter : parameters) {
+			SingleVariableDeclaration variable = ast.newSingleVariableDeclaration();
+			variable.setName(simpleName(ast, parameter.name(), parameter.nameRange()));
+			variable.setType(typeNode(ast, bindings, parameter.type(), declaringClass));
+			for (AnnotationUse use : parameter.annotations()) {
+				if (use.useSiteTarget() == null || "param".equals(use.useSiteTarget())) {
+					variable.modifiers().add(buildAnnotation(ast, bindings, use, declaringClass));
+				}
+			}
+			range(variable, parameter.range());
+
+			bindings.registerVariable(variable, parameter.name(), parameter.type(), declaringClass, true);
+			method.parameters().add(variable);
+		}
+	}
+
+	/**
+	 * The annotations of a property that end up on its field: the ones for the field, and for a
+	 * property in the body the ones without a use-site target as well.
+	 */
+	private static List<AnnotationUse> fieldAnnotations(List<AnnotationUse> annotations, boolean withoutTarget) {
+		return annotations.stream()
+				.filter(use -> "field".equals(use.useSiteTarget()) || (withoutTarget && use.useSiteTarget() == null))
+				.toList();
+	}
+
+	/** the field of a property, its range is the one of the property */
+	@SuppressWarnings("unchecked")
+	private FieldDeclaration buildField(AST ast, KotlinNodeBindings bindings, String name, TypeRef typeRef, List<AnnotationUse> annotations, Range range,
+			Range nameRange, KotlinSourceClass declaringClass) {
+		VariableDeclarationFragment fragment = ast.newVariableDeclarationFragment();
+		fragment.setName(simpleName(ast, name, nameRange));
+		range(fragment, new Range(nameRange.start(), range.end() - nameRange.start()));
+
+		FieldDeclaration field = ast.newFieldDeclaration(fragment);
+		field.setType(typeNode(ast, bindings, typeRef, declaringClass));
+		for (AnnotationUse use : annotations) {
+			field.modifiers().add(buildAnnotation(ast, bindings, use, declaringClass));
+		}
+		range(field, range);
+
+		bindings.registerVariable(fragment, name, typeRef, declaringClass, false);
+		return field;
+	}
+
+	/**
+	 * The node of a type as written. It holds the name only, the binding it resolves to is the
+	 * whole type, with its type arguments and nullability.
+	 */
+	private Type typeNode(AST ast, KotlinNodeBindings bindings, TypeRef typeRef, KotlinSourceClass scope) {
+		Range range = typeRef.range();
+		Range nameRange = range != null ? new Range(range.start(), Math.min(typeRef.name().length(), range.length())) : null;
+		SimpleType type = ast.newSimpleType(name(ast, isDottedName(typeRef.name()) ? typeRef.name() : "Object", nameRange));
+		if (range != null) {
+			range(type, range);
+		}
+		bindings.registerTypeReference(type, typeRef, scope);
+		return type;
 	}
 
 	@SuppressWarnings("unchecked")

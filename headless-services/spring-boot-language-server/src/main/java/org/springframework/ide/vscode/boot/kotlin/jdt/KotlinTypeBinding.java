@@ -171,7 +171,7 @@ final class KotlinTypeBinding implements ITypeBinding {
 
 	@Override
 	public boolean isClass() {
-		return !isInterface() && !isPrimitive() && !isArray() && !isNullType();
+		return !isInterface() && !isPrimitive() && !isArray() && !isNullType() && !isTypeVariable();
 	}
 
 	@Override
@@ -207,7 +207,7 @@ final class KotlinTypeBinding implements ITypeBinding {
 
 	@Override
 	public boolean isTopLevel() {
-		return !isNested() && !isPrimitive() && !isArray();
+		return !isNested() && !isPrimitive() && !isArray() && !isTypeVariable();
 	}
 
 	@Override
@@ -315,10 +315,7 @@ final class KotlinTypeBinding implements ITypeBinding {
 
 	@Override
 	public ITypeBinding[] getTypeArguments() {
-		if (type.isParameterizedType()) {
-			KotlinJdtBindings.gap("ITypeBinding.getTypeArguments");
-		}
-		return KotlinJdtBindings.NO_TYPES;
+		return bindings.types(type.getTypeArguments());
 	}
 
 	@Override
@@ -338,7 +335,7 @@ final class KotlinTypeBinding implements ITypeBinding {
 
 	@Override
 	public boolean isTypeVariable() {
-		return false;
+		return type.isTypeVariable();
 	}
 
 	@Override

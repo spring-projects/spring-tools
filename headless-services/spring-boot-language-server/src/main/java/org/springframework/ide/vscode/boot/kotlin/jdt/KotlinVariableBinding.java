@@ -21,8 +21,10 @@ import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedType;
 import org.springframework.ide.vscode.boot.kotlin.bindings.ResolvedVariable;
 
 /**
- * A JDT variable binding for a variable of the Kotlin model, which knows enum constants and
- * constants that are not evaluated, both as values of annotation attributes.
+ * A JDT variable binding for a variable of the Kotlin model: enum constants and constants that are
+ * not evaluated (both as values of annotation attributes), the fields of properties, and the
+ * parameters of functions and constructors. The annotations come from the nodes of the
+ * declaration, the Kotlin model of a variable does not carry them.
  *
  * @author Martin Lippert
  */
@@ -30,10 +32,17 @@ final class KotlinVariableBinding implements IVariableBinding {
 
 	private final KotlinJdtBindings bindings;
 	private final ResolvedVariable variable;
+	private final IAnnotationBinding[] annotations;
 
-	KotlinVariableBinding(KotlinJdtBindings bindings, ResolvedVariable variable) {
+	KotlinVariableBinding(KotlinJdtBindings bindings, ResolvedVariable variable, IAnnotationBinding[] annotations) {
 		this.bindings = bindings;
 		this.variable = variable;
+		this.annotations = annotations;
+	}
+
+	/** a variable that is declared in the source: the field of a property, or a parameter */
+	private boolean isDeclared() {
+		return variable.getType() != null;
 	}
 
 	@Override
@@ -59,11 +68,14 @@ final class KotlinVariableBinding implements IVariableBinding {
 
 	@Override
 	public boolean isField() {
-		return true;
+		return !variable.isParameter();
 	}
 
 	@Override
 	public boolean isEnumConstant() {
+		if (isDeclared()) {
+			return false;
+		}
 		// the Kotlin model does not tell enum constants from constants that were not evaluated
 		KotlinJdtBindings.gap("IVariableBinding.isEnumConstant");
 		return false;
@@ -71,13 +83,16 @@ final class KotlinVariableBinding implements IVariableBinding {
 
 	@Override
 	public boolean isParameter() {
-		return false;
+		return variable.isParameter();
 	}
 
 	@Override
 	public ITypeBinding getType() {
-		KotlinJdtBindings.gap("IVariableBinding.getType");
-		return null;
+		if (!isDeclared()) {
+			KotlinJdtBindings.gap("IVariableBinding.getType");
+			return null;
+		}
+		return bindings.type(variable.getType());
 	}
 
 	@Override
@@ -107,12 +122,16 @@ final class KotlinVariableBinding implements IVariableBinding {
 
 	@Override
 	public IAnnotationBinding[] getAnnotations() {
-		return KotlinJdtBindings.NO_ANNOTATIONS;
+		return annotations;
 	}
 
 	@Override
 	public int getModifiers() {
-		return Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
+		if (variable.isParameter()) {
+			return Modifier.NONE;
+		}
+		// the field of a property is private on the JVM, it is accessed through the getter and setter
+		return isDeclared() ? Modifier.PRIVATE : Modifier.PUBLIC | Modifier.STATIC | Modifier.FINAL;
 	}
 
 	@Override

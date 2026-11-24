@@ -13,12 +13,22 @@ package org.springframework.ide.vscode.boot.kotlin.bindings;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.ide.vscode.boot.kotlin.bindings.ClasspathSignatures.ArrayTypeSignature;
+import org.springframework.ide.vscode.boot.kotlin.bindings.ClasspathSignatures.BaseTypeSignature;
+import org.springframework.ide.vscode.boot.kotlin.bindings.ClasspathSignatures.ClassSignature;
+import org.springframework.ide.vscode.boot.kotlin.bindings.ClasspathSignatures.ClassTypeSignature;
+import org.springframework.ide.vscode.boot.kotlin.bindings.ClasspathSignatures.TypeSignature;
+import org.springframework.ide.vscode.boot.kotlin.bindings.ClasspathSignatures.TypeVariableSignature;
+import org.springframework.ide.vscode.boot.kotlin.bindings.ClasspathSignatures.WildcardSignature;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.AnnotationUse;
 import org.springframework.ide.vscode.boot.kotlin.syntax.KotlinSyntax.ClassKind;
@@ -97,6 +107,69 @@ final class KotlinTypes {
 		public List<ResolvedAnnotation> getAnnotations() {
 			return List.of();
 		}
+
+		/** the names of the type parameters of a generic type, empty for all other types */
+		List<String> typeParameterNames() {
+			return List.of();
+		}
+
+		/** this type with the type variables in it replaced by the given types */
+		ResolvedType substitute(Map<String, ResolvedType> arguments) {
+			return this;
+		}
+	}
+
+	/** the given type with the type variables in it replaced by the given types */
+	static ResolvedType substitute(ResolvedType type, Map<String, ResolvedType> arguments) {
+		return type instanceof BaseType base && !arguments.isEmpty() ? base.substitute(arguments) : type;
+	}
+
+	/**
+	 * A type parameter of a generic type, as it is used in the supertypes of the type: {@code T} in
+	 * {@code CrudRepository<T, ID> extends Repository<T, ID>}.
+	 */
+	static final class TypeVariable extends BaseType {
+
+		private final String name;
+		private final String declaringKey;
+
+		/** @param declaringKey the key of the generic type that declares the type parameter */
+		TypeVariable(String name, String declaringKey) {
+			this.name = name;
+			this.declaringKey = declaringKey;
+		}
+
+		@Override
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public String getQualifiedName() {
+			return name;
+		}
+
+		@Override
+		public String getBinaryName() {
+			return null; // as JDT has it for type variables
+		}
+
+		/** in the syntax of JDT: the key of the declaring type, then {@code :T} and the name */
+		@Override
+		public String getKey() {
+			return declaringKey + ":T" + name + ";";
+		}
+
+		@Override
+		public boolean isTypeVariable() {
+			return true;
+		}
+
+		@Override
+		ResolvedType substitute(Map<String, ResolvedType> arguments) {
+			ResolvedType argument = arguments.get(name);
+			return argument != null ? argument : this;
+		}
 	}
 
 	/** int, boolean, void, ... */
@@ -106,6 +179,21 @@ final class KotlinTypes {
 
 		PrimitiveType(String name) {
 			this.name = name;
+		}
+
+		/** the primitive for the letter the JVM uses for it in descriptors */
+		static PrimitiveType of(char descriptor) {
+			return new PrimitiveType(switch (descriptor) {
+				case 'I' -> "int";
+				case 'J' -> "long";
+				case 'S' -> "short";
+				case 'B' -> "byte";
+				case 'C' -> "char";
+				case 'Z' -> "boolean";
+				case 'F' -> "float";
+				case 'D' -> "double";
+				default -> "void";
+			});
 		}
 
 		/** the letter the JVM uses for the primitive in descriptors, which is also what JDT answers as binary name and key */
@@ -174,6 +262,11 @@ final class KotlinTypes {
 		@Override
 		public String getKey() {
 			return "[" + component.getKey();
+		}
+
+		@Override
+		ResolvedType substitute(Map<String, ResolvedType> arguments) {
+			return new ArrayType(KotlinTypes.substitute(component, arguments));
 		}
 	}
 
@@ -250,6 +343,11 @@ final class KotlinTypes {
 		}
 
 		@Override
+		public List<ResolvedType> getTypeArguments() {
+			return arguments;
+		}
+
+		@Override
 		public boolean isAnnotation() {
 			return type.isAnnotation();
 		}
@@ -259,14 +357,30 @@ final class KotlinTypes {
 			return type.isInterface();
 		}
 
+		/** the supertypes are the ones of the generic type, with the type arguments of this type in place of its type parameters */
 		@Override
 		public ResolvedType getSuperclass() {
-			return type.getSuperclass();
+			return KotlinTypes.substitute(type.getSuperclass(), typeArgumentsByName());
 		}
 
 		@Override
 		public List<ResolvedType> getInterfaces() {
-			return type.getInterfaces();
+			Map<String, ResolvedType> byName = typeArgumentsByName();
+			return type.getInterfaces().stream().map(supertype -> KotlinTypes.substitute(supertype, byName)).toList();
+		}
+
+		private Map<String, ResolvedType> typeArgumentsByName() {
+			List<String> names = type instanceof BaseType base ? base.typeParameterNames() : List.of();
+			Map<String, ResolvedType> result = new HashMap<>();
+			for (int i = 0; i < names.size() && i < arguments.size(); i++) {
+				result.put(names.get(i), arguments.get(i));
+			}
+			return result;
+		}
+
+		@Override
+		ResolvedType substitute(Map<String, ResolvedType> byName) {
+			return new ParameterizedType(type, arguments.stream().map(argument -> KotlinTypes.substitute(argument, byName)).toList());
 		}
 
 		@Override
@@ -282,10 +396,60 @@ final class KotlinTypes {
 		private final IType type;
 		private List<ResolvedType> interfaces;
 		private List<ResolvedAnnotation> annotations;
+		private Optional<ClassSignature> signature;
 
 		ClasspathType(KotlinTypeResolver resolver, IType type) {
 			this.resolver = resolver;
 			this.type = type;
+		}
+
+		/** the generic signature of the class, null if it has none */
+		private synchronized ClassSignature signature() {
+			if (signature == null) {
+				signature = Optional.ofNullable(ClasspathSignatures.read(type));
+			}
+			return signature.orElse(null);
+		}
+
+		@Override
+		List<String> typeParameterNames() {
+			ClassSignature signature = signature();
+			return signature != null ? signature.typeParameters() : List.of();
+		}
+
+		/** a type of the signature of this class, null if it is a class that is not on the classpath */
+		private ResolvedType typeOf(TypeSignature signature) {
+			if (signature instanceof ClassTypeSignature classType) {
+				ResolvedType resolved = resolver.resolveBinaryName(classType.binaryName());
+				if (resolved == null || classType.arguments().isEmpty()) {
+					return resolved;
+				}
+				List<ResolvedType> arguments = new ArrayList<>();
+				for (TypeSignature argument : classType.arguments()) {
+					ResolvedType resolvedArgument = typeOf(argument);
+					arguments.add(resolvedArgument != null ? resolvedArgument : new UnresolvedType(nameOf(argument)));
+				}
+				return new ParameterizedType(resolved, arguments);
+			}
+			else if (signature instanceof TypeVariableSignature variable) {
+				return new TypeVariable(variable.name(), getKey());
+			}
+			else if (signature instanceof ArrayTypeSignature array) {
+				ResolvedType component = typeOf(array.component());
+				return new ArrayType(component != null ? component : new UnresolvedType(nameOf(array.component())));
+			}
+			else if (signature instanceof BaseTypeSignature base) {
+				return PrimitiveType.of(base.descriptor());
+			}
+			else if (signature instanceof WildcardSignature wildcard) {
+				// a wildcard stands for its bound here, which is enough to walk the hierarchy
+				return wildcard.bound() != null ? typeOf(wildcard.bound()) : resolver.resolveBinaryName("java.lang.Object");
+			}
+			return null;
+		}
+
+		private static String nameOf(TypeSignature signature) {
+			return signature instanceof ClassTypeSignature classType ? classType.binaryName() : "java.lang.Object";
 		}
 
 		@Override
@@ -323,6 +487,10 @@ final class KotlinTypes {
 			if (type.isInterface()) {
 				return null; // interfaces have Object as the super class in class files, JDT bindings say they have none
 			}
+			ClassSignature signature = signature();
+			if (signature != null && signature.superclass() != null) {
+				return typeOf(signature.superclass());
+			}
 			String name = type.getSuperclassName();
 			return name != null ? resolver.resolveBinaryName(name) : null;
 		}
@@ -332,7 +500,16 @@ final class KotlinTypes {
 			if (interfaces == null) {
 				List<ResolvedType> result = new ArrayList<>();
 				String[] names = type.getSuperInterfaceNames();
-				if (names != null) {
+				ClassSignature signature = signature();
+				if (signature != null) {
+					for (TypeSignature supertype : signature.interfaces()) {
+						ResolvedType resolved = typeOf(supertype);
+						if (resolved != null) {
+							result.add(resolved);
+						}
+					}
+				}
+				else if (names != null) {
 					for (String name : names) {
 						ResolvedType resolved = resolver.resolveBinaryName(name);
 						if (resolved != null) {
@@ -417,9 +594,10 @@ final class KotlinTypes {
 			if (result == null) {
 				result = new ArrayList<>();
 				for (var supertype : source.declaration().supertypes()) {
+					// with their type arguments, as JDT has them: walking the hierarchy of a parameterized type needs them
 					ResolvedType resolved = resolver.resolveTypeReference(supertype, source.file(), source.outer());
-					if (resolved != null && !resolved.equals(this) && !(resolved instanceof UnresolvedType)) {
-						result.add(resolved.getErasure());
+					if (resolved != null && !resolved.getErasure().equals(this) && !(resolved.getErasure() instanceof UnresolvedType)) {
+						result.add(resolved);
 					}
 				}
 				declaredSupertypes = result;
@@ -448,7 +626,7 @@ final class KotlinTypes {
 			todo.add(from);
 
 			while (!todo.isEmpty()) {
-				ResolvedType current = todo.poll();
+				ResolvedType current = todo.poll().getErasure();
 				if (!seen.add(current.getKey())) {
 					continue;
 				}
@@ -679,18 +857,66 @@ final class KotlinTypes {
 		}
 	}
 
+	/** the field of a property, or a parameter of a function or a constructor */
+	static final class KotlinDeclaredVariable implements ResolvedVariable {
+
+		private final String name;
+		private final ResolvedType declaringClass;
+		private final ResolvedType type;
+		private final boolean parameter;
+
+		KotlinDeclaredVariable(String name, ResolvedType declaringClass, ResolvedType type, boolean parameter) {
+			this.name = name;
+			this.declaringClass = declaringClass;
+			this.type = type;
+			this.parameter = parameter;
+		}
+
+		@Override
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public ResolvedType getDeclaringClass() {
+			return parameter ? null : declaringClass;
+		}
+
+		@Override
+		public ResolvedType getType() {
+			return type;
+		}
+
+		@Override
+		public boolean isParameter() {
+			return parameter;
+		}
+
+		@Override
+		public String toString() {
+			return name;
+		}
+	}
+
 	static final class KotlinMethod implements ResolvedMethod {
 
 		private final String name;
 		private final ResolvedType declaringClass;
 		private final List<ResolvedType> parameterTypes;
 		private final ResolvedType returnType;
+		private final boolean constructor;
 
-		KotlinMethod(String name, ResolvedType declaringClass, List<ResolvedType> parameterTypes, ResolvedType returnType) {
+		KotlinMethod(String name, ResolvedType declaringClass, List<ResolvedType> parameterTypes, ResolvedType returnType, boolean constructor) {
 			this.name = name;
 			this.declaringClass = declaringClass;
 			this.parameterTypes = parameterTypes;
 			this.returnType = returnType;
+			this.constructor = constructor;
+		}
+
+		@Override
+		public boolean isConstructor() {
+			return constructor;
 		}
 
 		@Override

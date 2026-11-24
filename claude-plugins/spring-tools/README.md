@@ -102,14 +102,23 @@ We maintain a local marketplace configuration (`claude-plugins/.claude-plugin/ma
 
 ## Codex and GitHub Copilot CLI
 
-The root `plugin.json` and `mcp.json` are the portable Agent Plugins package. This repository includes a Codex marketplace catalog at [`.agents/plugins/marketplace.json`](../../.agents/plugins/marketplace.json). Register the checkout once, then install the plugin:
+The root `plugin.json` and `mcp.json` are the portable Agent Plugins package. The Codex catalog in [`.agents/plugins/marketplace.json`](../../.agents/plugins/marketplace.json) is published from the release tag, not the CDN: the [release workflow](../../.github/workflows/release-standalone-ls.yml) creates the `vX.Y.Z` tag that contains the catalog. Install a released version by registering the tagged repository as a marketplace ([Codex marketplace docs](https://developers.openai.com/codex/plugins/build#add-a-marketplace-from-the-cli)):
+
+```bash
+codex plugin marketplace add spring-projects/spring-tools --ref vX.Y.Z
+codex plugin add spring-tools@spring-tools-local
+```
+
+`spring-projects/spring-tools@vX.Y.Z` is equivalent shorthand. The marketplace name comes from the catalog's top-level `name`; use the name Codex reports if you installed from a different source.
+
+For an unreleased source checkout, register the checkout instead:
 
 ```bash
 codex plugin marketplace add /path/to/spring-tools
 codex plugin add spring-tools@spring-tools-local
 ```
 
-Use `/plugins` in Codex to manage the installed plugin. This checkout's catalog is repo-scoped. To use it from a different project, register this checkout as a marketplace with `codex plugin marketplace add /path/to/spring-tools`. If you maintain a separate repo-scoped catalog, keep the plugin copy inside that repository and set `source.path` to its `./`-relative path. GitHub Copilot CLI can install directly from this repository's plugin subdirectory:
+Use `/plugins` in Codex to manage the installed plugin. If you maintain a separate repo-scoped catalog, keep the plugin copy inside that repository and set `source.path` to its `./`-relative path. GitHub Copilot CLI can install directly from this repository's plugin subdirectory:
 
 ```bash
 copilot plugin install spring-projects/spring-tools:claude-plugins/spring-tools
@@ -117,17 +126,9 @@ copilot plugin install spring-projects/spring-tools:claude-plugins/spring-tools
 
 Both hosts get the shared `skills/` and launch the same `launcher.js`. The host-specific `com.github.copilot/` directory supplies Copilot's agent front matter and session-start hook. Its reviewer limits tools to read/search and this plugin's MCP server. The root Agent Plugins files are also the Codex entry point, so those capabilities do not need a second copy.
 
-### Codex local development and explicit workspace configuration
+### Codex MCP workspace configuration
 
-A source checkout can declare a release version whose JAR and checksum have not been published yet. Installing the plugin copies its files into the Codex cache; it does not build the language server or retain access to the source checkout. A checksum download returning HTTP 404 cannot be fixed by increasing the startup timeout.
-
-Build the local JAR first, from the Spring Tools repository root:
-
-```bash
-./claude-plugins/update-local-jars.sh
-```
-
-For local development, keep the plugin enabled for its skills, disable its bundled MCP server, and configure an explicit stdio server in the Spring Boot workspace's `.codex/config.toml`. Replace the absolute paths below with your checkout and project paths:
+The bundled MCP server has to know which Spring Boot workspace to index. With the portable Agent Plugins manifest, Codex starts plugin MCP servers in the plugin cache and does not pass the session workspace through ([openai/codex#37903](https://github.com/openai/codex/issues/37903)), so the launcher refuses to guess and exits. Configure an explicit stdio server in the trusted workspace's `.codex/config.toml`; use the `installedPath` printed by `codex plugin add --json` or `codex plugin list --json` for the launcher path:
 
 ```toml
 [plugins."spring-tools@spring-tools-local".mcp_servers.spring-tools-mcp]
@@ -135,20 +136,34 @@ enabled = false
 
 [mcp_servers.spring-tools-mcp]
 command = "node"
-args = ["/absolute/path/to/spring-tools/claude-plugins/spring-tools/launcher.js"]
+args = ["<installedPath>/launcher.js"]
 cwd = "/absolute/path/to/your-spring-boot-project"
 startup_timeout_sec = 120
 
 [mcp_servers.spring-tools-mcp.env]
-SPRING_TOOLS_LS_JAR = "/absolute/path/to/spring-tools/claude-plugins/spring-tools/language-server/spring-boot-language-server-standalone-exec.jar"
 SPRING_TOOLS_PROJECT_DIR = "/absolute/path/to/your-spring-boot-project"
 ```
 
-Use the marketplace identifier you installed if it differs from `spring-tools-local`. Restart Codex in the trusted project after saving the configuration, then check `/mcp` and ask for the project list. The launcher should log the selected project path and `Using language server JAR from SPRING_TOOLS_LS_JAR`.
+Use the marketplace identifier you installed if it differs from `spring-tools-local`. Restart Codex in the trusted project after saving the configuration, then check `/mcp` and ask for the project list. The launcher should log `Indexing /absolute/path/to/your-spring-boot-project (from SPRING_TOOLS_PROJECT_DIR)`.
 
-Codex supports explicit `env`, forwarded `env_vars`, and `cwd` for configured stdio servers; see the [Codex MCP documentation](https://developers.openai.com/codex/mcp/). Do not rely on exporting `SPRING_TOOLS_*` only in the parent shell: the host may filter those variables. A plugin process can also start in its cache directory without a workspace path. The launcher refuses to index that directory and requires an explicit project path when detection fails. Configure `SPRING_TOOLS_JAVA` in the server's `env` as well if Java 21+ is not on its `PATH`.
+For a released install, omit `SPRING_TOOLS_LS_JAR` to use the checksum-verified download. Keep the release JAR and its `.sha256` file published together at the versioned URL produced by `install.js`; do not bypass checksum verification or silently substitute a snapshot for a release.
 
-For published releases, omit `SPRING_TOOLS_LS_JAR` to use the checksum-verified download. A source-build fallback needs `SPRING_TOOLS_SOURCE_DIR` set in the server's `env` to the Spring Tools checkout; building ahead of time avoids doing a Maven build during the MCP startup timeout. Keep the release JAR and its `.sha256` file published together at the versioned URL produced by `install.js`; do not bypass checksum verification or silently substitute a snapshot for a release.
+For local development, a source checkout can declare a release version whose JAR and checksum have not been published yet. Installing the plugin copies its files into the Codex cache; it does not build the language server or retain access to the source checkout, and a checksum download returning HTTP 404 cannot be fixed by increasing the startup timeout. Build the JAR first from the Spring Tools repository root:
+
+```bash
+./claude-plugins/update-local-jars.sh
+```
+
+Then add the local JAR to the explicit server's `env`:
+
+```toml
+[mcp_servers.spring-tools-mcp.env]
+SPRING_TOOLS_LS_JAR = "/absolute/path/to/spring-tools/claude-plugins/spring-tools/language-server/spring-boot-language-server-standalone-exec.jar"
+```
+
+A source-build fallback also needs `SPRING_TOOLS_SOURCE_DIR` in the same `env`, pointing at the Spring Tools checkout; building ahead of time avoids doing a Maven build during the MCP startup timeout.
+
+Codex supports explicit `env`, forwarded `env_vars`, and `cwd` for configured stdio servers; see the [Codex MCP documentation](https://developers.openai.com/codex/mcp/). Do not rely on exporting `SPRING_TOOLS_*` only in the parent shell: the host may filter those variables. The launcher refuses to index its cache directory and requires an explicit project path when detection fails. Configure `SPRING_TOOLS_JAVA` in the server's `env` as well if Java 21+ is not on its `PATH`.
 
 ## OpenCode
 

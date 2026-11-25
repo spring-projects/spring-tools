@@ -225,7 +225,7 @@ let failed = 0;
 try {
     for (const name of caseNames) {
         const testCase = readEvalCase(evalsDir, name);
-        if (testCase.front.unsupported_hosts?.includes('codex')) {
+        if (testCase.front.tags?.includes('codex-skip')) {
             summary.push({ name, skipped: true, pass: true, scored: 0, total: 0 });
             console.log(`SKIP ${name} (no observable routing grader on Codex)`);
             continue;

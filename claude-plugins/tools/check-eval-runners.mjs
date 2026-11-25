@@ -163,7 +163,7 @@ export function checkEvalRunnerDocs(readme) {
             errors.push(`README: no command for ${host.name}`);
         }
     }
-    for (const marker of ['CLAUDE_CLI', 'COPILOT_CLI', 'CODEX_CLI', 'OPENCODE_CLI', 'CODEX_EVAL_API_KEY', 'OpenCode 2', 'check-eval-runners.mjs', '$skill', 'mcp-smoke', 'no skill-activation event', 'unsupported_hosts', 'model call']) {
+    for (const marker of ['CLAUDE_CLI', 'COPILOT_CLI', 'CODEX_CLI', 'OPENCODE_CLI', 'CODEX_EVAL_API_KEY', 'OpenCode 2', 'check-eval-runners.mjs', '$skill', 'mcp-smoke', 'no skill-activation event', 'codex-skip', 'model call']) {
         if (!readme.includes(marker)) {
             errors.push(`README: no '${marker}' guidance`);
         }

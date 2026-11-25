@@ -1,8 +1,7 @@
 ---
 max_turns: 8
 allowed_tools: [Read, Glob, Grep, Skill]
-tags: [routing]
-unsupported_hosts: [codex]
+tags: [routing, codex-skip]
 description: Routing only - Bash is not granted in eval runs, so the skill cannot download from start.spring.io here; this case checks that a scaffolding request reaches the create-spring-boot-project skill at all.
 expected_outcome: Claude invokes the create-spring-boot-project skill for the request (it may then report that it cannot run curl in this session).
 ---

@@ -25,13 +25,13 @@ import { fileURLToPath } from 'node:url';
 export const EVAL_HOSTS = [
     {
         name: 'Claude',
-        runner: 'run-claude-evals.mjs',
-        command: 'node claude-plugins/tools/evals/run-claude-evals.mjs',
+        runner: 'run-with-claude.mjs',
+        command: 'node claude-plugins/tools/evals/run-with-claude.mjs',
         markers: ['stagePlugin', "plugin', 'eval", 'resultsDir'],
         workflow: {
             job: 'plugin-evals',
             input: 'run-evals',
-            command: 'run-claude-evals.mjs',
+            command: 'run-with-claude.mjs',
             secret: 'ANTHROPIC_API_KEY',
             extra: ['--max-cost-usd'],
         },
@@ -66,13 +66,13 @@ export const EVAL_HOSTS = [
         name: 'OpenCode',
         runner: 'run-with-opencode.mjs',
         command: 'node claude-plugins/tools/evals/run-with-opencode.mjs',
-        markers: ['mock-mcp-server.mjs', 'combineToolTraces', 'toolGradePasses', 'opencodeArgs', 'tool_use', 'OPENCODE_CONFIG', 'OPENCODE_MCP_TOOL_PREFIX'],
+        markers: ['mock-mcp-server.mjs', 'combineToolTraces', 'toolGradePasses', 'opencodeArgs', 'tool_use', 'OPENCODE_CONFIG', 'OPENCODE_MCP_TOOL_ACTION', 'normalizeOpenCodeMcpTool'],
         workflow: {
             job: 'opencode-plugin-evals',
             input: 'run-opencode-evals',
             command: 'run-with-opencode.mjs',
             secret: 'secrets.ANTHROPIC_API_KEY',
-            extra: ['opencode-eval-model'],
+            extra: ['opencode-eval-model', '@opencode/cli@2', 'anthropic/*'],
         },
     },
 ];
@@ -84,7 +84,7 @@ const WORKFLOW = '.github/workflows/claude-plugin-check.yml';
 export function checkEvalRunnerCoverage(root) {
     const errors = [];
     const evalsDir = join(root, 'claude-plugins', 'tools', 'evals');
-    const sharedMarkers = ['prompt.md', 'graders'];
+    const sharedMarkers = ['readEvalCase', 'listEvalCases'];
     const cases = existsSync(evalsDir)
         ? readdirSync(evalsDir).filter((name) => existsSync(join(evalsDir, name, 'prompt.md')))
         : [];
@@ -107,7 +107,7 @@ export function checkEvalRunnerCoverage(root) {
                 errors.push(`${host.runner}: no reference to '${marker}'`);
             }
         }
-        if (host.runner !== 'run-claude-evals.mjs') {
+        if (host.runner !== 'run-with-claude.mjs') {
             for (const marker of sharedMarkers) {
                 if (!text.includes(marker)) {
                     errors.push(`${host.runner}: does not use the shared ${marker}`);
@@ -118,6 +118,9 @@ export function checkEvalRunnerCoverage(root) {
 
     if (!existsSync(join(evalsDir, 'mock-mcp-server.mjs'))) {
         errors.push('shared mock-mcp-server.mjs is missing');
+    }
+    if (!existsSync(join(root, 'claude-plugins', 'tools', 'lib', 'eval-cases.mjs'))) {
+        errors.push('shared eval-cases.mjs is missing');
     }
     const grading = join(root, 'claude-plugins', 'tools', 'lib', 'eval-grading.mjs');
     if (!existsSync(grading)) {
@@ -160,7 +163,7 @@ export function checkEvalRunnerDocs(readme) {
             errors.push(`README: no command for ${host.name}`);
         }
     }
-    for (const marker of ['CODEX_CLI', 'CODEX_EVAL_API_KEY', 'check-eval-runners.mjs', '$skill', 'model call']) {
+    for (const marker of ['CLAUDE_CLI', 'COPILOT_CLI', 'CODEX_CLI', 'OPENCODE_CLI', 'CODEX_EVAL_API_KEY', 'OpenCode 2', 'check-eval-runners.mjs', '$skill', 'mcp-smoke', 'no skill-activation event', 'codex-skip', 'model call']) {
         if (!readme.includes(marker)) {
             errors.push(`README: no '${marker}' guidance`);
         }

@@ -37,6 +37,7 @@ function stagingRoot() {
     writeFileSync(join(evalsDir, 'one-case/prompt.md'), 'Use the skill.\n');
     writeFileSync(join(evalsDir, 'mock-mcp-server.mjs'), '');
     cpSync(join(root, 'claude-plugins/tools/lib/eval-grading.mjs'), join(libDir, 'eval-grading.mjs'));
+    cpSync(join(root, 'claude-plugins/tools/lib/eval-cases.mjs'), join(libDir, 'eval-cases.mjs'));
     for (const host of EVAL_HOSTS) {
         cpSync(join(root, 'claude-plugins/tools/evals', host.runner), join(evalsDir, host.runner));
     }

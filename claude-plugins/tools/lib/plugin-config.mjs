@@ -28,8 +28,8 @@ export const SCOPED_TOOL_PREFIX = `mcp__plugin_${PLUGIN_NAME}_${MCP_SERVER_NAME}
 export const COPILOT_DIR = 'com.github.copilot';
 export const CODEX_CATALOG_PATH = '.agents/plugins/marketplace.json';
 export const CODEX_MARKETPLACE_NAME = 'spring-tools-local';
-// OpenCode replaces non-alphanumeric characters in server names with underscores for tool actions.
-export const OPENCODE_MCP_TOOL_PREFIX = `${PLUGIN_NAME.replace(/-/g, '_')}_`;
+// OpenCode preserves '-' when normalizing server and tool names; other unsupported characters become '_'.
+export const OPENCODE_MCP_TOOL_PREFIX = `${PLUGIN_NAME}_`;
 export const OPENCODE_MCP_TOOL_ACTION = `${OPENCODE_MCP_TOOL_PREFIX}*`;
 export const PLUGIN_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/plugin.schema.json';
 export const MCP_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0/mcp.schema.json';
@@ -381,14 +381,21 @@ export function checkOpenCodeAgent(fileName, text) {
     if (current) {
         rules.push(current);
     }
-    const has = (action, effect, resource = '*') => rules.some((rule) =>
-        rule.action === action && rule.effect === effect && (rule.resource ?? '*') === resource);
-    if (!has('*', 'deny')) {
-        errors.push(`${where}: must deny all actions before allowing the reviewer's read-only rules`);
+    const first = rules[0];
+    if (!first || first.action !== '*' || first.effect !== 'deny' || (first.resource ?? '*') !== '*') {
+        errors.push(`${where}: first permission rule must deny all actions before the read-only exceptions`);
     }
-    for (const action of ['read', 'glob', 'grep', OPENCODE_MCP_TOOL_ACTION]) {
-        if (!has(action, 'allow')) {
+    const readOnlyActions = ['external_directory', 'read', 'glob', 'grep', OPENCODE_MCP_TOOL_ACTION];
+    const hasAllow = (action) => rules.some((rule) =>
+        rule.action === action && rule.effect === 'allow' && (rule.resource ?? '*') === '*');
+    for (const action of readOnlyActions) {
+        if (!hasAllow(action)) {
             errors.push(`${where}: missing allow rule for '${action}'`);
+        }
+    }
+    for (const rule of rules) {
+        if (rule.effect !== 'deny' && (!readOnlyActions.includes(rule.action) || rule.effect !== 'allow' || (rule.resource ?? '*') !== '*')) {
+            errors.push(`${where}: only read-only allow rules with resource '*' are permitted; found '${rule.action}' with effect '${rule.effect}'`);
         }
     }
     return errors;
@@ -715,8 +722,8 @@ export function checkCodexMarketplace(catalog, root) {
     if (!['AVAILABLE', 'INSTALLED_BY_DEFAULT', 'NOT_AVAILABLE'].includes(installation)) {
         errors.push(`${where}: '${PLUGIN_NAME}' policy.installation must be AVAILABLE, INSTALLED_BY_DEFAULT or NOT_AVAILABLE`);
     }
-    if (!entry.policy?.authentication) {
-        errors.push(`${where}: '${PLUGIN_NAME}' policy.authentication is required`);
+    if (!['ON_INSTALL', 'ON_USE'].includes(entry.policy?.authentication)) {
+        errors.push(`${where}: '${PLUGIN_NAME}' policy.authentication must be ON_INSTALL or ON_USE`);
     }
     if (!entry.category) {
         errors.push(`${where}: '${PLUGIN_NAME}' category is required`);

@@ -1,5 +1,6 @@
 ---
 max_turns: 40
+timeout_seconds: 1800
 allowed_tools: [Read, Glob, Grep, Skill]
 tags: [smoke, mcp-coverage]
 expected_outcome: The agent calls every listed Spring Tools MCP tool at least once and summarizes the checked areas without editing files.

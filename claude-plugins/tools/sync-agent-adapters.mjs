@@ -5,6 +5,9 @@
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * https://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     Broadcom - initial API and implementation
  *******************************************************************************/
 
 // Regenerates host-specific reviewer wrappers from the portable spring-review skill.
@@ -13,6 +16,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { OPENCODE_MCP_TOOL_ACTION } from './lib/plugin-config.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const plugin = join(here, '..', 'spring-tools');
@@ -38,6 +43,9 @@ permissions:
   - action: "*"
     resource: "*"
     effect: deny
+  - action: external_directory
+    resource: "*"
+    effect: allow
   - action: read
     resource: "*"
     effect: allow
@@ -47,7 +55,7 @@ permissions:
   - action: grep
     resource: "*"
     effect: allow
-  - action: spring_tools_*
+  - action: ${OPENCODE_MCP_TOOL_ACTION}
     resource: "*"
     effect: allow
 ---

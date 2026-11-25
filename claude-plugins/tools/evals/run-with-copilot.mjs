@@ -27,8 +27,9 @@ import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PLUGIN_DIR, MCP_SERVER_NAME, parseFrontMatter } from '../lib/plugin-config.mjs';
+import { PLUGIN_DIR, MCP_SERVER_NAME } from '../lib/plugin-config.mjs';
 import { combineToolTraces, copilotAgentId, toolGradePasses } from '../lib/eval-grading.mjs';
+import { argValue, judgePrompt, listEvalCases, readEvalCase, readMockTrace } from '../lib/eval-cases.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
@@ -38,26 +39,10 @@ const fixture = join(repoRoot, 'headless-services/spring-boot-language-server/sr
 const mcpToolNames = new Set(JSON.parse(readFileSync(join(evalsDir, 'mocks', MCP_SERVER_NAME, '_tools.json'), 'utf8')).tools.map(({ name }) => name));
 
 const args = process.argv.slice(2);
-const only = valueOf('--case');
-const model = valueOf('--model');
+const only = argValue(args, '--case');
+const model = argValue(args, '--model');
 const keep = args.includes('--keep');
-
-function valueOf(flag) {
-    const index = args.indexOf(flag);
-    return index === -1 ? undefined : args[index + 1];
-}
-
-function readCase(name) {
-    const text = readFileSync(join(evalsDir, name, 'prompt.md'), 'utf8');
-    const front = parseFrontMatter(text) ?? {};
-    const prompt = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim();
-    const gradersDir = join(evalsDir, name, 'graders');
-    const graders = readdirSync(gradersDir).filter((f) => f.endsWith('.md')).map((file) => {
-        const graderText = readFileSync(join(gradersDir, file), 'utf8');
-        return { file, ...parseFrontMatter(graderText), rubric: graderText.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim() };
-    });
-    return { name, front, prompt, graders };
-}
+const copilotCli = process.env.COPILOT_CLI || 'copilot';
 
 /** Copy of the plugin whose MCP server replays the recorded mocks of this case. */
 function stagePlugin(root, caseName, tracePath) {
@@ -78,12 +63,21 @@ function stagePlugin(root, caseName, tracePath) {
     return staged;
 }
 
+const COPILOT_TOOL_NAMES = { Read: 'view', Glob: 'glob', Grep: 'grep', Skill: 'skill' };
+
+/** Limit the model to the shared case's tools plus the mocked Spring Tools MCP server. */
+function availableTools(allowedTools) {
+    const tools = (allowedTools ?? []).map((tool) => COPILOT_TOOL_NAMES[tool]).filter(Boolean);
+    return [...tools, `${MCP_SERVER_NAME}/*`].join(',');
+}
+
 /** Runs one Copilot prompt and returns { answer, trace }. */
-function runCopilot({ prompt, plugin, workspace, logs, agent }) {
+function runCopilot({ prompt, plugin, workspace, logs, agent, allowedTools, timeout }) {
     const copilotArgs = [
         '--plugin-dir', plugin,
         '--allow-all-tools', '--allow-all-mcp-server-instructions',
         '--no-ask-user', '--no-custom-instructions', '--disable-builtin-mcps',
+        `--available-tools=${availableTools(allowedTools)}`,
         '--log-level', 'debug', '--log-dir', logs,
         '-p', prompt, '--silent',
     ];
@@ -93,7 +87,7 @@ function runCopilot({ prompt, plugin, workspace, logs, agent }) {
     if (model) {
         copilotArgs.push('--model', model);
     }
-    const result = spawnSync('copilot', copilotArgs, { cwd: workspace, encoding: 'utf8', timeout: 600000, env: { ...process.env, COPILOT_DISABLE_TELEMETRY: '1' } });
+    const result = spawnSync(copilotCli, copilotArgs, { cwd: workspace, encoding: 'utf8', timeout, env: { ...process.env, COPILOT_DISABLE_TELEMETRY: '1' } });
     return { answer: result.stdout ?? '', stderr: result.stderr ?? '', status: result.status };
 }
 
@@ -111,14 +105,9 @@ function logTrace(logs) {
 
 /** A second, cheap Copilot call that judges the answer against the rubric of an `llm` grader. */
 function llmVerdict(grader, answer, workspace) {
-    const prompt = [
-        'You are grading the answer of an AI assistant against a rubric. Do not use any tools.',
-        'Reply with exactly one word: PASS or FAIL.',
-        '', '## Rubric', grader.rubric,
-        '', '## Answer', answer.slice(0, 12000),
-    ].join('\n');
+    const prompt = judgePrompt(grader, answer);
     // Prompt mode requires an explicit permission mode. Keep the judge read-only even then.
-    const result = spawnSync('copilot', ['--allow-all-tools', '--available-tools=view', '--no-ask-user', '--no-custom-instructions', '--disable-builtin-mcps', '-p', prompt, '--silent'], { cwd: workspace, encoding: 'utf8', timeout: 300000 });
+    const result = spawnSync(copilotCli, ['--allow-all-tools', '--available-tools=view', '--no-ask-user', '--no-custom-instructions', '--disable-builtin-mcps', '-p', prompt, '--silent'], { cwd: workspace, encoding: 'utf8', timeout: 300000 });
     const verdict = (result.stdout ?? '').trim().toUpperCase();
     return { pass: result.status === 0 && verdict === 'PASS', raw: verdict.slice(0, 200) };
 }
@@ -142,15 +131,12 @@ function gradeCase(testCase, answer, trace, workspace) {
     return results;
 }
 
-const caseNames = readdirSync(evalsDir)
-    .filter((d) => existsSync(join(evalsDir, d, 'prompt.md')))
-    .filter((d) => !only || d === only)
-    .sort();
+const caseNames = listEvalCases(evalsDir, only);
 if (caseNames.length === 0) {
     console.error(only ? `no eval case named '${only}'` : 'no eval cases found');
     process.exit(2);
 }
-if (spawnSync('copilot', ['--version'], { encoding: 'utf8' }).status !== 0) {
+if (spawnSync(copilotCli, ['--version'], { encoding: 'utf8' }).status !== 0) {
     console.error('GitHub Copilot CLI is not available on the PATH');
     process.exit(2);
 }
@@ -160,7 +146,7 @@ const summary = [];
 let failed = 0;
 try {
     for (const name of caseNames) {
-        const testCase = readCase(name);
+        const testCase = readEvalCase(evalsDir, name);
         const caseRoot = join(root, name);
         const workspace = join(caseRoot, 'workspace');
         const logs = join(caseRoot, 'logs');
@@ -176,9 +162,9 @@ try {
         // Copilot custom-agent IDs are derived from the agent filename, not plugin-qualified.
         const agent = agentGrader ? copilotAgentId(agentGrader.input_match) : undefined;
 
-        const { answer, stderr, status } = runCopilot({ prompt: testCase.prompt, plugin, workspace, logs, agent });
-        const mockTrace = readFileSync(tracePath, 'utf8').split('\n').filter(Boolean)
-            .map((line) => JSON.parse(line));
+        const timeout = Number(testCase.front.timeout_seconds ?? 600) * 1000;
+        const { answer, stderr, status } = runCopilot({ prompt: testCase.prompt, plugin, workspace, logs, agent, allowedTools: testCase.front.allowed_tools, timeout });
+        const mockTrace = readMockTrace(tracePath);
         const trace = [
             ...combineToolTraces(logTrace(logs), mockTrace, mcpToolNames),
             ...(agent ? [{ tool: 'agent', input: JSON.stringify({ agent }) }] : []),

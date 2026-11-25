@@ -35,7 +35,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const temporaryDir = mkdtempSync(join(tmpdir(), 'spring-tools-evals-'));
     try {
         const stagedPlugin = join(temporaryDir, 'spring-tools');
-        const resultsDir = join(here, 'results');
+        const resultsDir = process.env.CLAUDE_EVAL_RESULTS_DIR || join(here, 'results');
         stagePlugin(stagedPlugin);
         mkdirSync(resultsDir, { recursive: true });
         const result = spawnSync(process.env.CLAUDE_CLI || 'claude', [

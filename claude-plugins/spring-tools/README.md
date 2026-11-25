@@ -167,7 +167,7 @@ Codex supports explicit `env`, forwarded `env_vars`, and `cwd` for configured st
 
 ## OpenCode
 
-OpenCode does not load Agent Plugins packages directly. Its ready-to-merge MCP config is [`opencode/opencode.jsonc`](opencode/opencode.jsonc), and its read-only reviewer adapter is in [`opencode/agents/spring-reviewer.md`](opencode/agents/spring-reviewer.md). Set `SPRING_TOOLS_PLUGIN_ROOT` to the installed plugin directory, then merge the config fragment into your existing `opencode.json` or `opencode.jsonc`:
+OpenCode 2 does not load Agent Plugins packages directly. Install it with `npm install -g @opencode/cli@2`; V1 uses different MCP and permission syntax. The ready-to-merge MCP config is [`opencode/opencode.jsonc`](opencode/opencode.jsonc), and the read-only reviewer adapter is in [`opencode/agents/spring-reviewer.md`](opencode/agents/spring-reviewer.md). Set `SPRING_TOOLS_PLUGIN_ROOT` to the installed plugin directory, then merge the config fragment into your existing `opencode.json` or `opencode.jsonc`:
 
 ```jsonc
 "mcp": {
@@ -191,7 +191,7 @@ cp -R "$SPRING_TOOLS_PLUGIN_ROOT/skills/." .agents/skills/
 cp "$SPRING_TOOLS_PLUGIN_ROOT/opencode/agents/spring-reviewer.md" .opencode/agents/
 ```
 
-Invoke the reviewer with `@spring-reviewer`; the shared `spring-review` skill is available to the primary agent too. Set `SPRING_TOOLS_PROJECT_DIR` if OpenCode's MCP process working directory is not the project to index. OpenCode relies on the language-server watcher; it cannot use Claude's MCP-tool hooks. Diagnostic playbooks live beside `launcher.js` in `explanations/` and are named in the MCP server instructions.
+Invoke the reviewer with `@spring-reviewer`; the shared `spring-review` skill is available to the primary agent too. The reviewer denies edits and shell access but allows `external_directory` reads so it can open diagnostic playbooks from the installed plugin outside the workspace. Set `SPRING_TOOLS_PROJECT_DIR` if OpenCode's MCP process working directory is not the project to index. OpenCode relies on the language-server watcher; it cannot use Claude's MCP-tool hooks. Diagnostic playbooks live beside `launcher.js` in `explanations/` and are named in the MCP server instructions.
 
 ## Configuring language server preferences
 
@@ -339,18 +339,18 @@ When a new MCP tool is added to the language server, give it a home: mention it 
 
 `claude-plugins/tools/evals/` holds a [`claude plugin eval`](https://code.claude.com/docs/en/plugin-evals) suite outside the published plugin: one case per skill and for the `spring-reviewer` agent, plus a negative control (an unrelated question must not trigger any skill). Each case is a prompt phrased the way a user would type it, with graders for the result (a regex or a judged rubric) and for the path (`tool_used` on the skill and on the MCP tool it should call). The language server is not started during a run: `mocks/spring-tools-mcp/` answers every MCP tool from recordings taken against the real server on the `sf7-validation` test project (`_tools.json` carries the real tool descriptions and schemas), and the `validate` and reviewer cases override `getProjectDiagnostics` with a recording that contains a `JAVA_AUTOWIRED_CONSTRUCTOR` finding.
 
-All four hosts run the same cases and graders. Run these commands from the repository root:
+All four hosts run the same cases. Graders are shared wherever the host exposes the required evidence; host-specific limitations are called out below. Run these commands from the repository root:
 
 ```bash
 # Claude Code: stages plugin + evals in a temp dir; results go to claude-plugins/tools/evals/results/
-node claude-plugins/tools/evals/run-claude-evals.mjs --no-publish
-node claude-plugins/tools/evals/run-claude-evals.mjs --case validate-finds-spring-problems --runs 1 --ablation none --no-publish
+node claude-plugins/tools/evals/run-with-claude.mjs --no-publish
+node claude-plugins/tools/evals/run-with-claude.mjs --case validate-finds-spring-problems --runs 1 --ablation none --no-publish
 
 # GitHub Copilot CLI: reads tool calls from Copilot's debug log
 node claude-plugins/tools/evals/run-with-copilot.mjs
 node claude-plugins/tools/evals/run-with-copilot.mjs --case validate-finds-spring-problems --model <model>
 
-# Codex CLI: reads tool calls from `codex exec --json` and uses a private CODEX_HOME
+# Codex CLI: reads tool calls from `codex exec --json` and uses private HOME/CODEX_HOME directories
 node claude-plugins/tools/evals/run-with-codex.mjs
 node claude-plugins/tools/evals/run-with-codex.mjs --case validate-finds-spring-problems --model <model>
 
@@ -359,15 +359,15 @@ node claude-plugins/tools/evals/run-with-opencode.mjs
 node claude-plugins/tools/evals/run-with-opencode.mjs --case validate-finds-spring-problems --model <model>
 ```
 
-All runners accept `--case`, `--model` and `--keep` where the host supports them; Codex and OpenCode also accept `--judge-model`, while the Claude runner has its own `--runs`, `--ablation`, `--threshold` and `--max-cost-usd` options. Re-record the mocks after the language server's tools or the fixture project changed (needs the JAR + Java 21+):
+All runners accept `--case`, `--model` and `--keep` where the host supports them; Codex and OpenCode also accept `--judge-model`, while the Claude runner has its own `--runs`, `--ablation`, `--threshold` and `--max-cost-usd` options. For the smallest live connectivity check, use `--case mcp-smoke`: it calls `getProjectList` once and has no LLM rubric. Re-record the mocks after the language server's tools or the fixture project changed (needs the JAR + Java 21+):
 
 ```bash
 node claude-plugins/tools/evals/record-mocks.mjs
 ```
 
-The non-Claude runners stage a throwaway workspace with the `sf7-validation` fixture, copy the shared skills into the host's discovery path, configure the mock MCP server, then read the host's trace and the mock server's authoritative MCP trace. Copilot uses the CLI's debug log. Codex uses `codex exec --json`; because Codex has no callable Skill tool, positive skill cases prepend the `$skill` marker in the prompt and the runner records the activation for the grader. OpenCode uses `opencode run --format json --standalone`, stages skills under `.agents/skills` and the reviewer under `.opencode/agents`, and disables Code Mode in the staged config so MCP tool names map to the portable graders. Set `CODEX_CLI` or `CODEX_EVAL_API_KEY` when Codex is installed outside `PATH` or needs a separate API key.
+The non-Claude runners stage a throwaway workspace with the `sf7-validation` fixture, copy the shared skills into the host's discovery path, configure the mock MCP server, then read the host's trace and the mock server's authoritative MCP trace. Copilot uses the CLI's debug log and limits the available tool catalog to each case's `allowed_tools`. Codex uses `codex exec --json`; positive skill cases prepend the `$skill` marker, but Codex emits no skill-activation event or reviewer-role metadata, so the runner does not invent them: `Skill` and `Agent` tool graders are skipped and the answer/MCP graders provide the behavioral evidence. The routing-only `create-project-routes-to-skill` case carries the `codex-skip` tag rather than accepting a refusal as routing evidence. OpenCode uses `opencode run --format json --standalone`, stages skills under `.agents/skills` and the reviewer under `.opencode/agents`, translates `allowed_tools` into deny-by-default permissions, and disables Code Mode in the staged config so MCP tool names map to the portable graders. Set `CLAUDE_CLI`, `COPILOT_CLI`, `CODEX_CLI` or `OPENCODE_CLI` to override a host binary, and `CODEX_EVAL_API_KEY` when Codex needs a separate API key.
 
-Every eval run and every `llm` grader is a model call on your account: `ANTHROPIC_API_KEY` for Claude, the logged-in Copilot account or `COPILOT_GITHUB_TOKEN` for Copilot, `CODEX_API_KEY` (or `CODEX_EVAL_API_KEY`) for Codex, and the provider credentials configured for OpenCode. The workflow jobs are opt-in `workflow_dispatch` inputs with timeouts and secret checks; the Claude job additionally enforces `--max-cost-usd 15`. `check-plugin-config.mjs` and `check-eval-runners.mjs` keep the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, every skill and agent has a case, and each host has a runner, docs and a guarded CI job. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
+Every eval run and every `llm` grader is a model call on your account: `ANTHROPIC_API_KEY` for Claude, the logged-in Copilot account or `COPILOT_GITHUB_TOKEN` for Copilot, `CODEX_API_KEY` (or `CODEX_EVAL_API_KEY`) for Codex, and the provider credentials configured for OpenCode. The workflow jobs are opt-in `workflow_dispatch` inputs with timeouts and credential checks; the OpenCode job accepts only `anthropic/*` models, while local OpenCode runs can use any configured provider. The Claude job additionally enforces `--max-cost-usd 15`. `check-plugin-config.mjs` and `check-eval-runners.mjs` keep the suite consistent offline: every tool has a mock, `_tools.json` matches the server's tool list, graders reference only existing tools/skills/agents, every skill and agent has a case, and each host has a runner, docs and a guarded CI job. The `create-project-routes-to-skill` case checks routing only — eval runs don't grant `Bash`, so the skill can't download from start.spring.io there.
 
 When a new diagnostic code is added to the language server:
 

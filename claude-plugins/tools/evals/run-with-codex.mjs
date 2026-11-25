@@ -15,20 +15,22 @@
 //
 //   node claude-plugins/tools/evals/run-with-codex.mjs [--case <name>] [--model <model>] [--keep]
 //
-// Each case gets a throwaway workspace, a throwaway CODEX_HOME with the shared skills and the
-// recorded MCP mocks, and a staged spring-reviewer custom agent. No language server is started.
+// Each case gets a throwaway workspace and private HOME/CODEX_HOME: the shared skills live under
+// HOME/.agents/skills, the recorded MCP mocks under CODEX_HOME, and the reviewer is staged as a
+// workspace custom agent. No language server is started.
 // Codex's JSONL event stream supplies tool calls; the mock server supplies the authoritative MCP
-// trace. Codex has no callable Skill tool, so positive skill cases explicitly activate the skill
-// with a `$skill-name` marker before applying the shared graders.
+// trace. Codex has no skill-activation event, so positive skill cases use a `$skill-name` marker
+// in the prompt and are judged by their observable answer and MCP/tool behavior.
 
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { MCP_SERVER_NAME, PLUGIN_DIR, parseFrontMatter } from '../lib/plugin-config.mjs';
 import { combineToolTraces, toolGradePasses } from '../lib/eval-grading.mjs';
+import { argValue, judgePrompt, listEvalCases, readEvalCase, readMockTrace } from '../lib/eval-cases.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
@@ -39,31 +41,11 @@ const mockTools = JSON.parse(readFileSync(join(evalsDir, 'mocks', MCP_SERVER_NAM
 const mcpToolNames = new Set(mockTools.map(({ name }) => name));
 
 const args = process.argv.slice(2);
-const only = valueOf('--case');
-const model = valueOf('--model');
-const judgeModel = valueOf('--judge-model');
+const only = argValue(args, '--case');
+const model = argValue(args, '--model');
+const judgeModel = argValue(args, '--judge-model');
 const keep = args.includes('--keep');
 const codexCli = process.env.CODEX_CLI || 'codex';
-
-function valueOf(flag) {
-    const index = args.indexOf(flag);
-    return index === -1 ? undefined : args[index + 1];
-}
-
-function readCase(name) {
-    const text = readFileSync(join(evalsDir, name, 'prompt.md'), 'utf8');
-    const front = parseFrontMatter(text) ?? {};
-    const prompt = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim();
-    const graders = readGraders(join(evalsDir, name, 'graders'));
-    return { name, front, prompt, graders };
-}
-
-function readGraders(gradersDir) {
-    return readdirSync(gradersDir).filter((file) => file.endsWith('.md')).map((file) => {
-        const text = readFileSync(join(gradersDir, file), 'utf8');
-        return { file, ...parseFrontMatter(text), rubric: text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim() };
-    });
-}
 
 function tomlString(value) {
     return JSON.stringify(value);
@@ -76,7 +58,9 @@ function stageCodexHome(caseRoot, workspace, tracePath, mockDirs) {
     cpSync(join(pluginDir, 'skills'), join(home, '.agents', 'skills'), { recursive: true });
     stageReviewerAgent(workspace);
     writeFileSync(join(home, 'config.toml'), [
+        'approval_policy = "never"',
         `[mcp_servers.${MCP_SERVER_NAME}]`,
+        'default_tools_approval_mode = "approve"',
         `command = ${tomlString('node')}`,
         `args = [${tomlString(join(here, 'mock-mcp-server.mjs'))}]`,
         `[mcp_servers.${MCP_SERVER_NAME}.env]`,
@@ -155,8 +139,6 @@ function parseCodexEvents(stdout) {
             messages.push(item.text ?? '');
         } else if (item.type === 'mcp_tool_call') {
             trace.push({ tool: normalizeMcpTool(item.tool), input: JSON.stringify(item.arguments ?? {}) });
-        } else if (item.type === 'collab_tool_call') {
-            trace.push({ tool: 'agent', input: JSON.stringify({ agent: item.tool, prompt: item.prompt ?? '' }) });
         } else if (item.type === 'command_execution') {
             trace.push({ tool: 'view', input: item.command ?? '' });
         }
@@ -197,12 +179,7 @@ function runCodex({ prompt, workspace, home, answerPath, timeout, judge = false 
 }
 
 function llmVerdict(grader, answer, workspace, judgeHome) {
-    const prompt = [
-        'You are grading the answer of an AI assistant against a rubric. Do not use any tools.',
-        'Reply with exactly one word: PASS or FAIL.',
-        '', '## Rubric', grader.rubric,
-        '', '## Answer', answer.slice(0, 12000),
-    ].join('\n');
+    const prompt = judgePrompt(grader, answer);
     const verdictPath = join(judgeHome, 'verdict.txt');
     const result = runCodex({ prompt, workspace, home: judgeHome, answerPath: verdictPath, timeout: 300000, judge: true });
     const verdict = result.answer.trim().toUpperCase();
@@ -210,7 +187,13 @@ function llmVerdict(grader, answer, workspace, judgeHome) {
 }
 
 function gradeCase(testCase, answer, trace, workspace, judgeHome) {
-    return testCase.graders.map((grader) => {
+    // Codex emits no skill-activation event or reviewer-role metadata. Do not synthesize either;
+    // the answer and MCP/tool graders provide the observable behavioral evidence instead.
+    const graders = testCase.graders.filter((grader) => grader.type !== 'tool_used' || !['Skill', 'Agent'].includes(grader.tool));
+    if (graders.length === 0) {
+        return [{ file: 'coverage', weight: 1, pass: false, detail: 'no Codex-observable graders' }];
+    }
+    return graders.map((grader) => {
         const weight = Number(grader.weight ?? 1);
         if (grader.type === 'tool_used') {
             return { file: grader.file, weight, pass: toolGradePasses(grader, trace, 'codex'), detail: grader.tool };
@@ -226,10 +209,7 @@ function gradeCase(testCase, answer, trace, workspace, judgeHome) {
     });
 }
 
-const caseNames = readdirSync(evalsDir)
-    .filter((name) => existsSync(join(evalsDir, name, 'prompt.md')))
-    .filter((name) => !only || name === only)
-    .sort();
+const caseNames = listEvalCases(evalsDir, only);
 if (caseNames.length === 0) {
     console.error(only ? `no eval case named '${only}'` : 'no eval cases found');
     process.exit(2);
@@ -244,7 +224,12 @@ const summary = [];
 let failed = 0;
 try {
     for (const name of caseNames) {
-        const testCase = readCase(name);
+        const testCase = readEvalCase(evalsDir, name);
+        if (testCase.front.tags?.includes('codex-skip')) {
+            summary.push({ name, skipped: true, pass: true, scored: 0, total: 0 });
+            console.log(`SKIP ${name} (no observable routing grader on Codex)`);
+            continue;
+        }
         const caseRoot = join(root, name);
         const workspace = join(caseRoot, 'workspace');
         mkdirSync(workspace, { recursive: true });
@@ -264,11 +249,8 @@ try {
         const answerPath = join(caseRoot, 'answer.txt');
         const timeout = Number(testCase.front.timeout_seconds ?? 600) * 1000;
         const result = runCodex({ prompt: explicitPrompt, workspace, home, answerPath, timeout });
-        const mockTrace = readFileSync(tracePath, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line));
-        const trace = [
-            ...combineToolTraces(result.trace, mockTrace, mcpToolNames),
-            ...skillNames.map((skill) => ({ tool: 'skill', input: JSON.stringify({ skill }) })),
-        ];
+        const mockTrace = readMockTrace(tracePath);
+        const trace = combineToolTraces(result.trace, mockTrace, mcpToolNames);
         writeFileSync(answerPath, result.answer);
 
         const results = result.status === 0 && !result.error
@@ -293,8 +275,10 @@ try {
 }
 
 if (process.env.GITHUB_STEP_SUMMARY) {
-    const rows = summary.map((entry) => `| ${entry.name} | ${entry.pass ? 'pass' : 'fail'} | ${entry.scored}/${entry.total} |`).join('\n');
+    const rows = summary.map((entry) => `| ${entry.name} | ${entry.skipped ? 'skip' : entry.pass ? 'pass' : 'fail'} | ${entry.scored}/${entry.total} |`).join('\n');
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### Codex evals\n\n| case | result | score |\n| --- | --- | --- |\n${rows}\n`);
 }
-console.log(`\n${summary.length - failed}/${summary.length} cases passed`);
+const skipped = summary.filter((entry) => entry.skipped).length;
+const attempted = summary.length - skipped;
+console.log(`\n${attempted - failed}/${attempted} cases passed${skipped ? `, ${skipped} skipped` : ''}`);
 process.exit(failed === 0 ? 0 : 1);

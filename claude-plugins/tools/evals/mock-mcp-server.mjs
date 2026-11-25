@@ -11,8 +11,8 @@
  *******************************************************************************/
 
 // Stdio MCP server that replays the recorded responses in evals/mocks instead of starting the
-// language server. Claude Code mocks MCP servers itself during `claude plugin eval`; Copilot CLI
-// has no such feature, so run-with-copilot.mjs points a copy of the plugin at this script.
+// language server. Claude Code mocks MCP servers itself during `claude plugin eval`; the Copilot,
+// Codex and OpenCode runners point their staged host configuration at this script instead.
 //
 //   EVAL_MOCK_DIRS   os.delimiter separated mock directories, searched in order
 //   EVAL_TRACE       file the tool calls are appended to (one JSON object per line)

@@ -68,6 +68,10 @@ public class StructureTreeLabelProvider extends LabelProvider implements IStyled
 			int count = node.includedDependencies();
 			result.append(" (" + count + (count == 1 ? " dependency)" : " dependencies)"), StyledString.DECORATIONS_STYLER);
 		}
+		// the Spring Modulith metadata is missing or outdated: says why the tree is empty or possibly not up to date
+		if (element instanceof StereotypeNode node && node.isProject() && node.problemLabel() != null) {
+			result.append(" (\u26A0 " + node.problemLabel() + ")", StyledString.DECORATIONS_STYLER);
+		}
 		return result;
 	}
 
@@ -91,6 +95,9 @@ public class StructureTreeLabelProvider extends LabelProvider implements IStyled
 			lines.add(node.hasBaseline()
 					? "Comparing against " + BaselineLabels.describe(node.comparedAgainstSha(), node.comparedAgainstMessage(), node.comparedAgainstCapturedAt())
 					: "No logical structure baseline captured yet");
+		}
+		if (node.isProject() && node.problemMessage() != null) {
+			lines.add("\u26A0 " + node.problemMessage());
 		}
 		if (lines.isEmpty()) {
 			return null;

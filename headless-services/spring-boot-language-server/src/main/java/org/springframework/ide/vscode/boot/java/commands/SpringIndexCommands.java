@@ -249,14 +249,20 @@ public class SpringIndexCommands {
 		// JARs still to be scanned are scanned in the background, so that no project's tree waits for them
 		Node tree = structureViewProvider.createTree(project, cachedIndex, args.updateMetadata, selectedGroups, selectedDependencies, true);
 
-		if (tree != null && !selectedDependencies.isEmpty()) {
+		if (tree == null) {
+			// no tree without Spring Modulith metadata: still show the project, saying why it is empty
+			return structureViewProvider.withMetadataProblem(project, null);
+		}
+		structureViewProvider.withMetadataProblem(project, tree);
+
+		if (!selectedDependencies.isEmpty()) {
 			tree.withAttribute(JsonNodeHandler.INCLUDED_DEPENDENCIES, selectedDependencies.size());
 		}
 
 		// no baseline attributes at all rather than a baseline with nothing marked: those two look
 		// the same to a client, and the latter reads as "nothing changed" - which would hide the
 		// entire tree while "hide unchanged nodes" is on
-		if (tree != null && indexSettled && !args.isDependencyMode()) {
+		if (indexSettled && !args.isDependencyMode()) {
 			String snapshotKey = args.compareAgainst == null ? null : args.compareAgainst.get(project.getElementName());
 
 			tree.withAttribute(JsonNodeHandler.HAS_BASELINE, structureSnapshotStore.hasBaseline(project));

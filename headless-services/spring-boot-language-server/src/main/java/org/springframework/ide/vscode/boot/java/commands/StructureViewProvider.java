@@ -29,6 +29,7 @@ import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeClassEleme
 import org.springframework.ide.vscode.boot.java.stereotypes.StereotypeDefinitionLocator;
 import org.springframework.ide.vscode.boot.modulith.AppModule;
 import org.springframework.ide.vscode.boot.modulith.AppModules;
+import org.springframework.ide.vscode.boot.modulith.ModulithMetadataProblem;
 import org.springframework.ide.vscode.boot.modulith.ModulithService;
 import org.springframework.ide.vscode.commons.java.IJavaProject;
 
@@ -162,6 +163,33 @@ public class StructureViewProvider {
 	 */
 	private AppModules modulesOf(IJavaProject project) {
 		return isModulithTree(project) ? modulithService.getModulesData(project) : null;
+	}
+
+	/**
+	 * Marks the tree with the problem of the project's Spring Modulith metadata, if there is one:
+	 * the tree is then built from outdated metadata. Without a tree - there is no metadata at all -
+	 * returns a node for just the project, so that clients can show why there is nothing below it.
+	 *
+	 * @param tree the project's tree, {@code null} if none could be built
+	 * @return the tree, or the node for just the project, or {@code null} if there is neither a tree
+	 *         nor a known problem
+	 */
+	public Node withMetadataProblem(IJavaProject project, Node tree) {
+		ModulithMetadataProblem problem = isModulithTree(project) ? modulithService.getProblem(project) : null;
+		if (problem == null) {
+			return tree;
+		}
+		if (tree == null) {
+			tree = new Node(null)
+					.withAttribute(JsonNodeHandler.TEXT, project.getElementName())
+					.withAttribute(JsonNodeHandler.ICON, StereotypeIcons.getIcon(StereotypeIcons.APPLICATION_KEY))
+					.withAttribute(JsonNodeHandler.PROJECT_ID, project.getElementName())
+					.withAttribute(JsonNodeHandler.KIND, JsonNodeHandler.KIND_APPLICATION);
+			JsonNodeHandler.assignNodeId(tree, null);
+		}
+		// metadata despite the problem is metadata from before it
+		String label = modulithService.getModulesData(project) == null ? problem.label() : problem.label() + ", outdated";
+		return tree.withAttribute(JsonNodeHandler.PROBLEM, Map.of("label", label, "message", problem.message()));
 	}
 
 	private static boolean isModulithTree(IJavaProject project) {

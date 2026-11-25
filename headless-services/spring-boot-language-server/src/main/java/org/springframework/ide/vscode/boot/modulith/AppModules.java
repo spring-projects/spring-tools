@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2023, 2024 VMware, Inc.
+ * Copyright (c) 2023, 2026 VMware, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -21,8 +21,41 @@ public final class AppModules {
 	
 	List<AppModule> modules;
 	
+	/**
+	 * Set when these modules are outdated: re-creating the metadata failed, so they are what was
+	 * known before. {@code null} for up-to-date metadata. Deliberately not part of
+	 * {@link #equals(Object)} - the modules themselves are what is compared.
+	 */
+	private final ModulithMetadataProblem problem;
+	
 	public AppModules(List<AppModule> modules) {
+		this(modules, null);
+	}
+	
+	private AppModules(List<AppModule> modules, ModulithMetadataProblem problem) {
 		this.modules = modules;
+		this.problem = problem;
+	}
+	
+	/**
+	 * @return whether these modules are outdated, see {@link #getProblem()}
+	 */
+	public boolean isStale() {
+		return problem != null;
+	}
+	
+	/**
+	 * @return why these modules could not be brought up to date, {@code null} if they are
+	 */
+	public ModulithMetadataProblem getProblem() {
+		return problem;
+	}
+	
+	/**
+	 * @return the same modules, marked as outdated for the given reason
+	 */
+	public AppModules withProblem(ModulithMetadataProblem problem) {
+		return new AppModules(modules, problem);
 	}
 	
 	public Optional<AppModule> getModuleNotExposingType(String targetPackage, String referenceFqName) {

@@ -109,6 +109,14 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 	public static final String INCLUDED_DEPENDENCIES = "includedDependencies";
 
 	/**
+	 * Why the Spring Modulith metadata behind this project's tree is missing or outdated, set on the
+	 * root node only and only when it is - so clients can tell the user why the tree is empty, or
+	 * possibly not up to date. A map of {@code label} (a few words to show behind the project) and
+	 * {@code message} (a sentence for the tooltip).
+	 */
+	public static final String PROBLEM = "problem";
+
+	/**
 	 * The git commit sha and short message of the baseline this project's tree was actually compared
 	 * against, set on the root node only alongside {@link #HAS_BASELINE}. Lets a client show the
 	 * user which snapshot the highlighted changes are relative to - the most recent one by default,
@@ -345,7 +353,7 @@ public class JsonNodeHandler<A, C> implements NodeHandler<A, StereotypePackageEl
 		this.current = addChildFoo(consumer);
 	}
 	
-	private static void assignNodeId(Node n, Node p) {
+	static void assignNodeId(Node n, Node p) {
 		String textId = n.attributes.containsKey(PROJECT_ID) ? (String) n.attributes.get(PROJECT_ID)
 				: n.attributes.containsKey(TEXT) ? (String) n.attributes.get(TEXT) : "";
 		

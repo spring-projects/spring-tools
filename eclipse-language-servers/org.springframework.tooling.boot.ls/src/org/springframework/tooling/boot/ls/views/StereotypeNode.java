@@ -58,6 +58,7 @@ final class StereotypeNode {
 	static final String CHANGE = "change";
 	static final String HAS_BASELINE = "hasBaseline";
 	static final String INCLUDED_DEPENDENCIES = "includedDependencies";
+	static final String PROBLEM = "problem";
 	static final String COMPARED_AGAINST_SHA = "comparedAgainstSha";
 	static final String COMPARED_AGAINST_MESSAGE = "comparedAgainstMessage";
 	static final String COMPARED_AGAINST_CAPTURED_AT = "comparedAgainstCapturedAt";
@@ -191,6 +192,25 @@ final class StereotypeNode {
 	 */
 	int includedDependencies() {
 		return root().attributes.get(INCLUDED_DEPENDENCIES) instanceof Number n ? n.intValue() : 0;
+	}
+
+	/**
+	 * A few words on why the Spring Modulith metadata behind the tree of the project this node
+	 * belongs to is missing or outdated - {@code null} if it is not.
+	 */
+	String problemLabel() {
+		return problem("label");
+	}
+
+	/**
+	 * The sentence describing that problem, if there is one.
+	 */
+	String problemMessage() {
+		return problem("message");
+	}
+
+	private String problem(String key) {
+		return root().attributes.get(PROBLEM) instanceof Map<?, ?> problem && problem.get(key) instanceof String s ? s : null;
 	}
 
 	/**

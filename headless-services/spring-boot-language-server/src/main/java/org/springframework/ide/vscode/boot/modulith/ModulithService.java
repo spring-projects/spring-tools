@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -55,6 +54,7 @@ import org.springframework.ide.vscode.commons.languageserver.util.SimpleLanguage
 import org.springframework.ide.vscode.commons.protocol.java.Classpath;
 import org.springframework.ide.vscode.commons.protocol.java.Jre;
 import org.springframework.ide.vscode.commons.protocol.spring.BeansParams;
+import org.springframework.ide.vscode.commons.protocol.spring.IndexUpdatedParams;
 import org.springframework.ide.vscode.commons.util.ExternalProcess;
 import org.springframework.ide.vscode.commons.util.text.TextDocument;
 
@@ -89,6 +89,9 @@ public class ModulithService {
 	private boolean autoTrackingProjects;
 	
 	private Map<URI, AppModules> cache;
+	// why the metadata of a project is missing or outdated - outdated metadata in the cache is marked
+	// with the same problem, see AppModules#getProblem()
+	private Map<URI, ModulithMetadataProblem> problems;
 	private Map<URI, CompletableFuture<Boolean>> metadataRequested;
 	private Map<URI, Disposable> classFilesListeners;
 
@@ -105,6 +108,7 @@ public class ModulithService {
 		this.projectObserver = projectObserver;
 		this.config = config;
 		this.cache = new ConcurrentHashMap<>();
+		this.problems = new ConcurrentHashMap<>();
 		this.metadataRequested = new ConcurrentHashMap<>();
 		this.classFilesListeners = new ConcurrentHashMap<>();
 		this.server = server;
@@ -246,6 +250,14 @@ public class ModulithService {
 		return cache.get(project.getLocationUri());
 	}
 	
+	/**
+	 * @return why the metadata of the project is missing or outdated, {@code null} if it is
+	 *         neither (or has not been requested yet)
+	 */
+	public ModulithMetadataProblem getProblem(IJavaProject project) {
+		return problems.get(project.getLocationUri());
+	}
+	
 	private CompletableFuture<Boolean> refreshMetadata(IJavaProject project) {
 		if (!isModulithDependentProject(project)) {
 			server.getClient().showMessage(new MessageParams(MessageType.Error, "Project '" + project.getElementName() + "' does not depend on spring-modulith."));
@@ -257,8 +269,11 @@ public class ModulithService {
 		}
 		
 		return requestMetadata(project, Duration.ZERO).whenComplete((refreshed, throwable) -> {
+			ModulithMetadataProblem problem = getProblem(project);
 			if (throwable != null) {
 				server.getClient().showMessage(new MessageParams(MessageType.Error, "Project '" + project.getElementName() + "' Modulith metadata refresh has failed. " + throwable.getMessage()));
+			} else if (problem != null) {
+				server.getClient().showMessage(new MessageParams(MessageType.Warning, "Project '" + project.getElementName() + "': " + problem.message()));
 			} else {
 				if (refreshed) {
 					server.getClient().showMessage(new MessageParams(MessageType.Info, "Project '" + project.getElementName() + "' Modulith metadata has been changed."));
@@ -276,22 +291,44 @@ public class ModulithService {
 	 */
 	public CompletableFuture<Boolean> requestMetadata(IJavaProject p, Duration delay) {
 		clearMetadataRequest(p);
-		CompletableFuture<Boolean> f = loadModulesMetadata(p, delay).thenCompose(appModules -> updateAppModulesCache(p, appModules));
+		CompletableFuture<Boolean> f = loadModulesMetadata(p, delay).thenCompose(result -> updateAppModulesCache(p, result));
 		metadataRequested.put(p.getLocationUri(), f);
 		return f;
 	}
 	
-	private CompletableFuture<Boolean> updateAppModulesCache(IJavaProject project, AppModules modules) {
+	private CompletableFuture<Boolean> updateAppModulesCache(IJavaProject project, LoadResult result) {
 		URI uri = project.getLocationUri();
-		AppModules oldModules = modules == null ? cache.remove(uri) : cache.put(uri, modules);
-		if (!Objects.equals(modules, oldModules)) {
-			return validate(project).thenApply(v -> true);
+		if (result.problem() == null) {
+			boolean hadProblem = problems.remove(uri) != null;
+			if (!Objects.equals(result.modules(), cache.put(uri, result.modules()))) {
+				return validate(project).thenApply(v -> true);
+			}
+			if (hadProblem) {
+				notifyProblemChanged(project);
+			}
+			return CompletableFuture.completedFuture(hadProblem);
 		}
-		return CompletableFuture.completedFuture(false);
+		log.warn("Modulith metadata of project '{}' is missing or outdated: {}", project.getElementName(), result.problem().message());
+		// keep the metadata known so far, marked as outdated
+		boolean changed = !result.problem().equals(problems.put(uri, result.problem()));
+		cache.computeIfPresent(uri, (u, modules) -> modules.withProblem(result.problem()));
+		if (changed) {
+			notifyProblemChanged(project);
+		}
+		return CompletableFuture.completedFuture(changed);
+	}
+	
+	/**
+	 * A problem coming or going changes what the structure view shows without any source being
+	 * re-indexed, which is what clients reload on.
+	 */
+	private void notifyProblemChanged(IJavaProject project) {
+		server.getClient().indexUpdated(IndexUpdatedParams.of(project.getElementName()));
 	}
 	
 	private AppModules removeFromCache(IJavaProject project) {
 		clearMetadataRequest(project);
+		problems.remove(project.getLocationUri());
 		return cache.remove(project.getLocationUri());
 	}
 	
@@ -340,36 +377,57 @@ public class ModulithService {
 		return CompletableFuture.completedFuture(null);
 	}
 
-	private CompletableFuture<AppModules> loadModulesMetadata(IJavaProject project, Duration delay) {
+	/**
+	 * Either the up-to-date modules or the reason why there are none.
+	 */
+	private record LoadResult(AppModules modules, ModulithMetadataProblem problem) {
+		static LoadResult failed(ModulithMetadataProblem problem) {
+			return new LoadResult(null, problem);
+		}
+	}
+
+	private CompletableFuture<LoadResult> loadModulesMetadata(IJavaProject project, Duration delay) {
 		log.info("Loading Modulith metadata for project '" + project.getElementName() + "'...");
 		return findRootPackages(project, delay).thenComposeAsync(packages -> {
-			if (!packages.isEmpty()) {
-				try {
-					Jre jre = project.getClasspath().getJre();
-					String exec = jre == null ? ProcessHandle.current().info().command().orElseThrow()
-							: JavaUtils.findJavaExecutable(Paths.get(jre.installationPath()).toFile()).toString();
-					String classpathStr = project.getClasspath().getClasspathEntries().stream().map(cpe -> {
-						if (Classpath.ENTRY_KIND_SOURCE.equals(cpe.getKind())) {
-							return cpe.getOutputFolder();
-						} else {
-							return cpe.getPath();
-						}
-					}).collect(Collectors.joining(System.getProperty("path.separator")));
-					List<AppModule> allAppModules = new ArrayList<>();
-					CompletableFuture<?>[] aggregateFuture = packages.stream()
-							.map(pkg -> CompletableFuture.supplyAsync(() -> computeAppModules(project.getElementName(), exec, classpathStr, pkg), executor)
-									.thenAccept(allAppModules::addAll))
-							.toArray(CompletableFuture[]::new);
-					return CompletableFuture.allOf(aggregateFuture).thenApply(r -> new AppModules(allAppModules));
-				} catch (Exception e) {
-					log.error("", e);
-				}
+			if (!anyClassFilesPresent(project)) {
+				return CompletableFuture.completedFuture(LoadResult.failed(ModulithMetadataProblem.noClassFiles()));
 			}
-			return CompletableFuture.completedFuture(null);
+			if (packages.isEmpty()) {
+				return CompletableFuture.completedFuture(LoadResult.failed(ModulithMetadataProblem.noApplicationClass()));
+			}
+			try {
+				Jre jre = project.getClasspath().getJre();
+				String exec = jre == null ? ProcessHandle.current().info().command().orElseThrow()
+						: JavaUtils.findJavaExecutable(Paths.get(jre.installationPath()).toFile()).toString();
+				String classpathStr = project.getClasspath().getClasspathEntries().stream().map(cpe -> {
+					if (Classpath.ENTRY_KIND_SOURCE.equals(cpe.getKind())) {
+						return cpe.getOutputFolder();
+					} else {
+						return cpe.getPath();
+					}
+				}).collect(Collectors.joining(System.getProperty("path.separator")));
+				List<CompletableFuture<LoadResult>> exports = packages.stream()
+						.map(pkg -> CompletableFuture.supplyAsync(() -> computeAppModules(project.getElementName(), exec, classpathStr, pkg), executor))
+						.toList();
+				return CompletableFuture.allOf(exports.toArray(CompletableFuture[]::new)).thenApply(r -> {
+					List<AppModule> allAppModules = new ArrayList<>();
+					for (CompletableFuture<LoadResult> export : exports) {
+						LoadResult exportResult = export.join();
+						if (exportResult.problem() != null) {
+							return exportResult;
+						}
+						exportResult.modules().stream().forEach(allAppModules::add);
+					}
+					return new LoadResult(new AppModules(allAppModules), null);
+				});
+			} catch (Exception e) {
+				log.error("", e);
+				return CompletableFuture.completedFuture(LoadResult.failed(ModulithMetadataProblem.exportFailed(e)));
+			}
 		}, executor);
 	}
 	
-	private List<AppModule> computeAppModules(String projectName, String javaCmd,
+	private LoadResult computeAppModules(String projectName, String javaCmd,
 			String cp, String pkg) {
 		try {
 			File outputFile = File.createTempFile(projectName + "-" + pkg, "json");
@@ -391,16 +449,23 @@ public class ModulithService {
 					log.debug("[ApplicationModulesExporter stdout]\n{}", stdout);
 				}
 				log.info("Updating Modulith metadata for project '" + projectName + "'");
-				JsonObject json = JsonParser.parseReader(new FileReader(outputFile)).getAsJsonObject();
+				JsonObject json;
+				try (FileReader reader = new FileReader(outputFile)) {
+					json = JsonParser.parseReader(reader).getAsJsonObject();
+				}
 				log.info("Modulith metadata: " + new GsonBuilder().setPrettyPrinting().create().toJson(json));
-				return loadAppModules(json);
+				return new LoadResult(new AppModules(loadAppModules(json)), null);
 			} else {
 				log.error("Failed to generate modulith metadata for project '{}'. Modulith Exporter process exited with code {}\n--- stdout ---\n{}\n--- stderr ---\n{}", projectName, exitValue, stdout, stderr);
+				return LoadResult.failed(ModulithMetadataProblem.exportFailed(exitValue, stderr));
 			}
-		} catch (IOException | InterruptedException e) {
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			return LoadResult.failed(ModulithMetadataProblem.exportFailed(e));
+		} catch (Exception e) {
 			log.error("", e);
+			return LoadResult.failed(ModulithMetadataProblem.exportFailed(e));
 		}
-		return Collections.emptyList();
 	}
 	
 //	private CompletableFuture<Set<String>> findRootPackages(IJavaProject project, Duration delay) {

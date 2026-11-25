@@ -73,8 +73,19 @@ export class StereotypedNode {
 
         // projects that include dependencies say how many
         const includedDependencies = this.projectId ? Number(this.n.attributes.includedDependencies) || 0 : 0;
+        const descriptions: string[] = [];
         if (includedDependencies > 0) {
-            item.description = includedDependencies === 1 ? '1 dependency' : `${includedDependencies} dependencies`;
+            descriptions.push(includedDependencies === 1 ? '1 dependency' : `${includedDependencies} dependencies`);
+        }
+
+        // projects whose Spring Modulith metadata is missing or outdated say why their tree is empty or
+        // possibly not up to date
+        const problem = this.projectId ? this.n.attributes.problem : undefined;
+        if (problem) {
+            descriptions.push(`\u26A0 ${problem.label}`);
+        }
+        if (descriptions.length) {
+            item.description = descriptions.join(' \u00B7 ');
         }
 
         // nodes that changed since the captured baseline get their icon colored, and a colored
@@ -105,6 +116,9 @@ export class StereotypedNode {
                     capturedAt: this.comparedAgainstCapturedAt
                 })}`
                 : 'No logical structure baseline captured yet');
+        }
+        if (problem) {
+            tooltipLines.push(`\u26A0 ${problem.message}`);
         }
         if (tooltipLines.length > 1) {
             item.tooltip = tooltipLines.join(' ');

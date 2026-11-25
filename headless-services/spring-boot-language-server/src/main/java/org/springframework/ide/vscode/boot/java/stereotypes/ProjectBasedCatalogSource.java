@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
 
 import org.jmolecules.stereotype.catalog.support.CatalogSource;
 import org.slf4j.Logger;
@@ -62,21 +61,7 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 				}
 				
 				if (Classpath.ENTRY_KIND_BINARY.equals(cpe.getKind()) && !cpe.isTest() && !cpe.isSystem()) {
-					String libPath = cpe.getPath();
-					
-					try (JarFile jarFile = new JarFile(libPath)) {
-						ZipEntry stereotypeEntry = jarFile.getEntry(CatalogSource.DEFAULT_STEREOTYPE_LOCATION);
-						if (stereotypeEntry != null) {
-							URI uri = new URI("jar:" + new File(libPath).toURI().toString() + "!/" + CatalogSource.DEFAULT_STEREOTYPE_LOCATION);
-							result.add(uri.toURL());
-						}
-
-						ZipEntry groupEntry = jarFile.getEntry(CatalogSource.DEFAULT_GROUP_LOCATION);
-						if (groupEntry != null) {
-							URI uri = new URI("jar:" + new File(libPath).toURI().toString() + "!/" + CatalogSource.DEFAULT_GROUP_LOCATION);
-							result.add(uri.toURL());
-						}
-					}
+					addCatalogsFromBinaryEntry(result, cpe.getPath());
 				}
 			}
 
@@ -93,6 +78,41 @@ public class ProjectBasedCatalogSource implements CatalogSource {
 		return result.stream();
 	}
 	
+	/**
+	 * Looks for catalog files in a single classpath entry. Problems with this entry
+	 * (missing file, directory, corrupt or truncated jar, ...) are logged and skipped,
+	 * so that they do not prevent catalogs from other entries from being found.
+	 */
+	private void addCatalogsFromBinaryEntry(List<URL> result, String libPath) {
+		if (libPath == null) {
+			return;
+		}
+
+		File libFile = new File(libPath);
+		if (!libFile.isFile()) {
+			// directories (e.g. exploded class folders) or missing files cannot be opened as jar
+			return;
+		}
+
+		try (JarFile jarFile = new JarFile(libFile)) {
+			if (jarFile.getEntry(CatalogSource.DEFAULT_STEREOTYPE_LOCATION) != null) {
+				result.add(jarEntryUrl(libFile, CatalogSource.DEFAULT_STEREOTYPE_LOCATION));
+			}
+
+			if (jarFile.getEntry(CatalogSource.DEFAULT_GROUP_LOCATION) != null) {
+				result.add(jarEntryUrl(libFile, CatalogSource.DEFAULT_GROUP_LOCATION));
+			}
+		}
+		catch (Exception e) {
+			log.warn("ignoring unreadable classpath entry '" + libPath + "' while looking up stereotype metadata for project '"
+					+ this.project.getElementName() + "': " + e);
+		}
+	}
+
+	private URL jarEntryUrl(File libFile, String location) throws Exception {
+		return new URI("jar:" + libFile.toURI().toString() + "!/" + location).toURL();
+	}
+
 	private void addDefaultStereotypeIfNeeded(List<URL> result, String defaultDefinition, String jarNamePattern) {
 		// Check if any catalog URL from a jar file matching the pattern was found
 		boolean catalogFound = result.stream()

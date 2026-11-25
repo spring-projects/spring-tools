@@ -121,7 +121,6 @@ function codexEnv(home) {
 function parseCodexEvents(stdout) {
     const trace = [];
     const messages = [];
-    const agentRoles = new Map();
     for (const line of stdout.split('\n')) {
         if (!line.trim()) {
             continue;
@@ -132,13 +131,6 @@ function parseCodexEvents(stdout) {
         } catch {
             continue;
         }
-        if (event.type === 'thread.started' && event.thread) {
-            const role = event.thread.agentRole ?? event.thread.agent_role;
-            if (event.thread.id && role) {
-                agentRoles.set(event.thread.id, role);
-            }
-            continue;
-        }
         if (event.type !== 'item.completed' || !event.item) {
             continue;
         }
@@ -147,14 +139,6 @@ function parseCodexEvents(stdout) {
             messages.push(item.text ?? '');
         } else if (item.type === 'mcp_tool_call') {
             trace.push({ tool: normalizeMcpTool(item.tool), input: JSON.stringify(item.arguments ?? {}) });
-        } else if (item.type === 'collab_tool_call') {
-            const operation = item.tool === 'spawnAgent' ? 'spawn_agent' : item.tool;
-            if (operation !== 'spawn_agent') {
-                continue;
-            }
-            const receiverIds = item.receiver_thread_ids ?? item.receiverThreadIds ?? [];
-            const agent = receiverIds.map((id) => agentRoles.get(id)).find(Boolean) ?? item.agent_role ?? item.agentRole ?? '';
-            trace.push({ tool: 'agent', input: JSON.stringify({ agent, prompt: item.prompt ?? '' }) });
         } else if (item.type === 'command_execution') {
             trace.push({ tool: 'view', input: item.command ?? '' });
         }
@@ -203,9 +187,9 @@ function llmVerdict(grader, answer, workspace, judgeHome) {
 }
 
 function gradeCase(testCase, answer, trace, workspace, judgeHome) {
-    // Codex emits no skill-activation event. Do not synthesize one from the prompt or grader;
+    // Codex emits no skill-activation event or reviewer-role metadata. Do not synthesize either;
     // the answer and MCP/tool graders provide the observable behavioral evidence instead.
-    const graders = testCase.graders.filter((grader) => grader.type !== 'tool_used' || grader.tool !== 'Skill');
+    const graders = testCase.graders.filter((grader) => grader.type !== 'tool_used' || !['Skill', 'Agent'].includes(grader.tool));
     if (graders.length === 0) {
         return [{ file: 'coverage', weight: 1, pass: false, detail: 'no Codex-observable graders' }];
     }
@@ -241,6 +225,11 @@ let failed = 0;
 try {
     for (const name of caseNames) {
         const testCase = readEvalCase(evalsDir, name);
+        if (testCase.front.unsupported_hosts?.includes('codex')) {
+            summary.push({ name, skipped: true, pass: true, scored: 0, total: 0 });
+            console.log(`SKIP ${name} (no observable routing grader on Codex)`);
+            continue;
+        }
         const caseRoot = join(root, name);
         const workspace = join(caseRoot, 'workspace');
         mkdirSync(workspace, { recursive: true });
@@ -286,8 +275,10 @@ try {
 }
 
 if (process.env.GITHUB_STEP_SUMMARY) {
-    const rows = summary.map((entry) => `| ${entry.name} | ${entry.pass ? 'pass' : 'fail'} | ${entry.scored}/${entry.total} |`).join('\n');
+    const rows = summary.map((entry) => `| ${entry.name} | ${entry.skipped ? 'skip' : entry.pass ? 'pass' : 'fail'} | ${entry.scored}/${entry.total} |`).join('\n');
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n### Codex evals\n\n| case | result | score |\n| --- | --- | --- |\n${rows}\n`);
 }
-console.log(`\n${summary.length - failed}/${summary.length} cases passed`);
+const skipped = summary.filter((entry) => entry.skipped).length;
+const attempted = summary.length - skipped;
+console.log(`\n${attempted - failed}/${attempted} cases passed${skipped ? `, ${skipped} skipped` : ''}`);
 process.exit(failed === 0 ? 0 : 1);

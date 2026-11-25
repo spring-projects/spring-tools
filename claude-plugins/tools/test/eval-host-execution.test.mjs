@@ -112,13 +112,21 @@ case "$*" in
   *)
     if [ -n "$out" ]; then printf 'Remove @Autowired; Spring Boot 4.0.8 is available.\\n' > "$out"; fi
     printf '%s\\n' \
-      '{"type":"thread.started","thread":{"id":"thr_review","agentRole":"spring-reviewer"}}' \
-      '{"type":"item.completed","item":{"id":"c1","type":"collab_tool_call","tool":"spawnAgent","receiverThreadIds":["thr_review"],"prompt":"Review the project"}}' \
-      '{"type":"item.completed","item":{"id":"c2","type":"collab_tool_call","tool":"wait","receiverThreadIds":["thr_review"]}}' \
+      '{"type":"thread.started","thread_id":"thr_review"}' \
+      '{"type":"item.completed","item":{"id":"c1","type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["thr_review"],"sender_thread_id":"thr_parent","agents_states":{},"status":"completed","prompt":"Review the project"}}' \
+      '{"type":"item.completed","item":{"id":"c2","type":"collab_tool_call","tool":"wait","receiver_thread_ids":["thr_review"],"sender_thread_id":"thr_parent","agents_states":{},"status":"completed"}}' \
       '{"type":"item.completed","item":{"id":"i1","type":"agent_message","text":"Remove @Autowired; Spring Boot 4.0.8 is available."}}'
     ;;
 esac
 exit 0
+`;
+
+const codexUnexpectedExecStub = `
+if [ "$1" = "--version" ]; then
+  echo 'codex 1.0.0-eval'
+  exit 0
+fi
+exit 99
 `;
 
 const opencodeStub = `
@@ -252,7 +260,7 @@ test('Codex runner fails a skill-only prompt when observable answer evidence is 
     }
 });
 
-test('Codex runner maps only spawnAgent to the reviewer role from thread metadata', () => {
+test('Codex runner grades reviewer answers without inventing agent identity metadata', () => {
     const host = fakeHost('codex', codexCollabStub);
     try {
         const result = runEval({
@@ -262,6 +270,23 @@ test('Codex runner maps only spawnAgent to the reviewer role from thread metadat
             env: { CODEX_CLI: host.file },
         });
         assertRunnerPassed(result);
+    } finally {
+        rmSync(host.dir, { recursive: true, force: true });
+    }
+});
+
+test('Codex runner skips create-project routing instead of accepting a refusal as evidence', () => {
+    const host = fakeHost('codex', codexUnexpectedExecStub);
+    try {
+        const result = runEval({
+            host,
+            runnerName: 'run-with-codex.mjs',
+            caseName: 'create-project-routes-to-skill',
+            env: { CODEX_CLI: host.file },
+        });
+        assert.equal(result.status, 0, outputOf(result));
+        assert.match(outputOf(result), /SKIP create-project-routes-to-skill/);
+        assert.match(outputOf(result), /0\/0 cases passed, 1 skipped/);
     } finally {
         rmSync(host.dir, { recursive: true, force: true });
     }

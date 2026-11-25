@@ -84,6 +84,14 @@ test('every MCP tool has positive behavioral eval coverage', () => {
     assert.deepEqual(checkEvals(join(here, '..', 'evals'), tools, skillNames, agentNames), []);
 });
 
+test('mcp-tools-covered grades every MCP tool', () => {
+    const gradersDir = join(here, '..', 'evals', 'mcp-tools-covered', 'graders');
+    const gradedTools = new Set(readdirSync(gradersDir).map((file) =>
+        parseFrontMatter(readFileSync(join(gradersDir, file), 'utf8')).tool));
+    const missing = [...tools.keys()].filter((name) => !gradedTools.has(`${SCOPED_TOOL_PREFIX}${name}`));
+    assert.deepEqual(missing, []);
+});
+
 test('eval staging combines the plugin and its external cases without changing the published plugin', () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'spring-tools-eval-test-'));
     try {

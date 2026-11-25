@@ -125,9 +125,9 @@
       See: https://github.com/spring-projects/sts4/issues/320
   -->
       <content-type
-            base-type="org.eclipse.core.runtime.text"
+            base-type="org.eclipse.jdt.core.javaProperties"
             default-charset="ISO-8859-1"
-            file-names="application.properties,application-dev.properties"
+            file-names="application.properties,application-dev.properties,application-prod.properties,application-local.properties,application-test.properties,application-default.properties"
             file-patterns="application-*.properties"
             id="org.springframework.boot.ide.properties.application.properties"
             name="Spring Properties File"
@@ -137,7 +137,7 @@
       <content-type
             base-type="org.eclipse.core.runtime.text"
             default-charset="UTF-8"
-            file-names="application.yml,bootstrap.yml,application-dev.yml,application.yaml,bootstrap.yaml,application-dev.yaml"
+            file-names="application.yml,bootstrap.yml,application-dev.yml,application.yaml,bootstrap.yaml,application-dev.yaml,application-prod.yml,application-prod.yaml,application-local.yml,application-local.yaml,application-test.yml,application-test.yaml,application-default.yml,application-default.yaml"
             file-patterns="application-*.yml,application-*.yaml"
             id="org.springframework.boot.ide.properties.application.yml"
             name="Spring Yaml Properties File"
@@ -167,13 +167,13 @@
 
       <file-association
             content-type="org.springframework.boot.ide.properties.application.properties"
-            file-names="application.properties,application-dev.properties"
+            file-names="application.properties,application-dev.properties,application-prod.properties,application-local.properties,application-test.properties,application-default.properties"
             file-patterns="application-*.properties">
       </file-association>
 
       <file-association
             content-type="org.springframework.boot.ide.properties.application.yml"
-            file-names="application.yml,bootstrap.yml,application-dev.yml,application.yaml,bootstrap.yaml,application-dev.yaml"
+            file-names="application.yml,bootstrap.yml,application-dev.yml,application.yaml,bootstrap.yaml,application-dev.yaml,application-prod.yml,application-prod.yaml,application-local.yml,application-local.yaml,application-test.yml,application-test.yaml,application-default.yml,application-default.yaml"
             file-patterns="application-*.yml,application-*.yaml">
       </file-association>
 

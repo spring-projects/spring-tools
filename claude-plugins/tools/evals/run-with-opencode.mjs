@@ -21,13 +21,14 @@
 // JSON event stream supplies tool calls; the mock server supplies the authoritative MCP trace.
 
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MCP_SERVER_NAME, OPENCODE_MCP_TOOL_PREFIX, PLUGIN_DIR, PLUGIN_NAME, parseFrontMatter } from '../lib/plugin-config.mjs';
-import { combineToolTraces, toolGradePasses } from '../lib/eval-grading.mjs';
+import { MCP_SERVER_NAME, OPENCODE_MCP_TOOL_ACTION, PLUGIN_DIR, PLUGIN_NAME } from '../lib/plugin-config.mjs';
+import { combineToolTraces, normalizeOpenCodeMcpTool, toolGradePasses } from '../lib/eval-grading.mjs';
+import { argValue, judgePrompt, listEvalCases, readEvalCase, readMockTrace } from '../lib/eval-cases.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
@@ -37,30 +38,11 @@ const fixture = join(repoRoot, 'headless-services/spring-boot-language-server/sr
 const mcpToolNames = new Set(JSON.parse(readFileSync(join(evalsDir, 'mocks', MCP_SERVER_NAME, '_tools.json'), 'utf8')).tools.map(({ name }) => name));
 
 const args = process.argv.slice(2);
-const only = valueOf('--case');
-const model = valueOf('--model');
-const judgeModel = valueOf('--judge-model');
+const only = argValue(args, '--case');
+const model = argValue(args, '--model');
+const judgeModel = argValue(args, '--judge-model');
 const keep = args.includes('--keep');
-
-function valueOf(flag) {
-    const index = args.indexOf(flag);
-    return index === -1 ? undefined : args[index + 1];
-}
-
-function readCase(name) {
-    const text = readFileSync(join(evalsDir, name, 'prompt.md'), 'utf8');
-    const front = parseFrontMatter(text) ?? {};
-    const prompt = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim();
-    const graders = readGraders(join(evalsDir, name, 'graders'));
-    return { name, front, prompt, graders };
-}
-
-function readGraders(gradersDir) {
-    return readdirSync(gradersDir).filter((file) => file.endsWith('.md')).map((file) => {
-        const text = readFileSync(join(gradersDir, file), 'utf8');
-        return { file, ...parseFrontMatter(text), rubric: text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trim() };
-    });
-}
+const opencodeCli = process.env.OPENCODE_CLI || 'opencode';
 
 function stageWorkspace(caseRoot) {
     const workspace = join(caseRoot, 'workspace');
@@ -72,10 +54,32 @@ function stageWorkspace(caseRoot) {
     return workspace;
 }
 
+/** Translate shared allowed_tools into OpenCode's ordered, deny-by-default permission rules. */
+function evalPermissions(allowedTools) {
+    const allowed = new Set(allowedTools ?? []);
+    const permissions = [{ action: '*', resource: '*', effect: 'deny' }];
+    const allow = (action, resource = '*') => permissions.push({ action, resource, effect: 'allow' });
+    for (const [tool, action] of [['Read', 'read'], ['Glob', 'glob'], ['Grep', 'grep'], ['Skill', 'skill']]) {
+        if (allowed.has(tool)) {
+            allow(action);
+        }
+    }
+    if (allowed.has('Agent')) {
+        allow('subagent', 'spring-reviewer');
+    }
+    allow(OPENCODE_MCP_TOOL_ACTION);
+    if (allowed.has('Read')) {
+        // The shared playbooks live in the plugin, outside the throwaway workspace.
+        allow('external_directory', `${pluginDir}/*`);
+    }
+    return permissions;
+}
+
 /** Replacement for the plugin's OpenCode MCP fragment: same server name, mocked launcher. */
-function stageConfig(caseRoot, tracePath, mockDirs) {
+function stageConfig(caseRoot, tracePath, mockDirs, allowedTools) {
     const configPath = join(caseRoot, 'opencode.json');
     const config = JSON.parse(readFileSync(join(pluginDir, 'opencode', 'opencode.jsonc'), 'utf8'));
+    config.permissions = evalPermissions(allowedTools);
     config.mcp.servers[PLUGIN_NAME] = {
         type: 'local',
         command: ['node', join(here, 'mock-mcp-server.mjs')],
@@ -93,20 +97,13 @@ function stageConfig(caseRoot, tracePath, mockDirs) {
 
 function stageJudgeConfig(caseRoot) {
     const configPath = join(caseRoot, 'opencode-judge.json');
-    writeFileSync(configPath, '{}\n');
+    const config = { permissions: [{ action: '*', resource: '*', effect: 'deny' }] };
+    writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
     return configPath;
 }
 
 function inputText(input) {
     return typeof input === 'string' ? input : JSON.stringify(input ?? {});
-}
-
-function normalizeMcpTool(tool) {
-    if (mcpToolNames.has(tool) || typeof tool !== 'string' || !tool.startsWith(OPENCODE_MCP_TOOL_PREFIX)) {
-        return tool;
-    }
-    const suffix = tool.slice(OPENCODE_MCP_TOOL_PREFIX.length);
-    return mcpToolNames.has(suffix) ? suffix : tool;
 }
 
 /** Map OpenCode's native tool names to the names the portable graders understand. */
@@ -121,7 +118,7 @@ function traceEntry(part) {
     if (part.tool === 'read') {
         return { tool: 'view', input: inputText(input) };
     }
-    return { tool: normalizeMcpTool(part.tool), input: inputText(input) };
+    return { tool: normalizeOpenCodeMcpTool(part.tool, mcpToolNames), input: inputText(input) };
 }
 
 function parseOpenCodeEvents(stdout) {
@@ -156,7 +153,7 @@ function runOpenCode({ prompt, workspace, configPath, timeout, judge = false }) 
         opencodeArgs.push('--model', selectedModel);
     }
     opencodeArgs.push(prompt);
-    const result = spawnSync('opencode', opencodeArgs, {
+    const result = spawnSync(opencodeCli, opencodeArgs, {
         cwd: workspace,
         encoding: 'utf8',
         timeout,
@@ -172,12 +169,7 @@ function runOpenCode({ prompt, workspace, configPath, timeout, judge = false }) 
 }
 
 function llmVerdict(grader, answer, workspace, judgeConfigPath) {
-    const prompt = [
-        'You are grading the answer of an AI assistant against a rubric. Do not use any tools.',
-        'Reply with exactly one word: PASS or FAIL.',
-        '', '## Rubric', grader.rubric,
-        '', '## Answer', answer.slice(0, 12000),
-    ].join('\n');
+    const prompt = judgePrompt(grader, answer);
     const result = runOpenCode({ prompt, workspace, configPath: judgeConfigPath, timeout: 300000, judge: true });
     const verdict = result.answer.trim().toUpperCase();
     return { pass: result.status === 0 && verdict === 'PASS', raw: verdict.slice(0, 200) };
@@ -200,15 +192,12 @@ function gradeCase(testCase, answer, trace, workspace, judgeConfigPath) {
     });
 }
 
-const caseNames = readdirSync(evalsDir)
-    .filter((name) => existsSync(join(evalsDir, name, 'prompt.md')))
-    .filter((name) => !only || name === only)
-    .sort();
+const caseNames = listEvalCases(evalsDir, only);
 if (caseNames.length === 0) {
     console.error(only ? `no eval case named '${only}'` : 'no eval cases found');
     process.exit(2);
 }
-if (spawnSync('opencode', ['--version'], { encoding: 'utf8' }).status !== 0) {
+if (spawnSync(opencodeCli, ['--version'], { encoding: 'utf8' }).status !== 0) {
     console.error('OpenCode is not available on the PATH');
     process.exit(2);
 }
@@ -218,19 +207,19 @@ const summary = [];
 let failed = 0;
 try {
     for (const name of caseNames) {
-        const testCase = readCase(name);
+        const testCase = readEvalCase(evalsDir, name);
         const caseRoot = join(root, name);
         const workspace = stageWorkspace(caseRoot);
         const tracePath = join(caseRoot, 'mcp-trace.jsonl');
         writeFileSync(tracePath, '');
         const caseMocks = join(evalsDir, name, 'mocks', MCP_SERVER_NAME);
         const mockDirs = [existsSync(caseMocks) ? caseMocks : null, join(evalsDir, 'mocks', MCP_SERVER_NAME)].filter(Boolean);
-        const configPath = stageConfig(caseRoot, tracePath, mockDirs);
+        const configPath = stageConfig(caseRoot, tracePath, mockDirs, testCase.front.allowed_tools);
         const judgeConfigPath = stageJudgeConfig(caseRoot);
 
         const timeout = Number(testCase.front.timeout_seconds ?? 600) * 1000;
         const result = runOpenCode({ prompt: testCase.prompt, workspace, configPath, timeout });
-        const mockTrace = readFileSync(tracePath, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line));
+        const mockTrace = readMockTrace(tracePath);
         const trace = combineToolTraces(result.trace, mockTrace, mcpToolNames);
         writeFileSync(join(caseRoot, 'answer.txt'), result.answer);
 

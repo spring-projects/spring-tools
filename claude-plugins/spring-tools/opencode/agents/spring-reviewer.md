@@ -5,6 +5,9 @@ permissions:
   - action: "*"
     resource: "*"
     effect: deny
+  - action: external_directory
+    resource: "*"
+    effect: allow
   - action: read
     resource: "*"
     effect: allow
@@ -14,7 +17,7 @@ permissions:
   - action: grep
     resource: "*"
     effect: allow
-  - action: spring_tools_*
+  - action: spring-tools_*
     resource: "*"
     effect: allow
 ---

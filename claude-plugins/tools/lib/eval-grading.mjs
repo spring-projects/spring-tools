@@ -9,7 +9,7 @@
  *     Broadcom - initial API and implementation
  *******************************************************************************/
 
-import { MCP_SERVER_NAME, SCOPED_TOOL_PREFIX } from './plugin-config.mjs';
+import { MCP_SERVER_NAME, OPENCODE_MCP_TOOL_PREFIX, SCOPED_TOOL_PREFIX } from './plugin-config.mjs';
 
 const BASE_TOOL_ALIASES = { Read: ['view'], Skill: ['skill'], Glob: ['glob'], Grep: ['grep'], Bash: ['bash'], Agent: ['agent'] };
 
@@ -25,6 +25,15 @@ const HOST_TOOL_ALIASES = {
 /** Copilot selects plugin-provided agents by the file-derived id, without a plugin namespace. */
 export function copilotAgentId(inputMatch) {
     return typeof inputMatch === 'string' && /^[\w-]+$/.test(inputMatch) ? inputMatch : undefined;
+}
+
+/** Strip OpenCode's normalized server prefix from a native MCP tool name. */
+export function normalizeOpenCodeMcpTool(tool, mcpToolNames) {
+    if (mcpToolNames.has(tool) || typeof tool !== 'string' || !tool.startsWith(OPENCODE_MCP_TOOL_PREFIX)) {
+        return tool;
+    }
+    const suffix = tool.slice(OPENCODE_MCP_TOOL_PREFIX.length);
+    return mcpToolNames.has(suffix) ? suffix : tool;
 }
 
 /** Count trace entries matching a grader's tool name and optional JSON-input pattern. */

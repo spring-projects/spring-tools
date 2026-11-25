@@ -10,19 +10,21 @@
  *******************************************************************************/
 
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
-import { stagePlugin } from '../evals/run-claude-evals.mjs';
+import { stagePlugin } from '../evals/run-with-claude.mjs';
 import {
     checkCodexHookSurface,
     checkCodexMarketplace,
     checkEvals,
     CODEX_CATALOG_PATH,
     HOOK_SERVER,
+    OPENCODE_MCP_TOOL_ACTION,
     PLUGIN_DIR,
     SCOPED_TOOL_PREFIX,
     checkHooks,
@@ -157,6 +159,8 @@ test('the OpenCode adapter uses the V2 MCP and permission grammar', () => {
     assert.deepEqual(checkOpenCodeConfig(config), []);
     const reviewer = readFileSync(join(pluginDir, 'opencode', 'agents', 'spring-reviewer.md'), 'utf8');
     assert.deepEqual(checkOpenCodeAgent('agents/spring-reviewer.md', reviewer), []);
+    assert.equal(OPENCODE_MCP_TOOL_ACTION, 'spring-tools_*');
+    assert.match(reviewer, /action: external_directory/);
 });
 
 test('negative control: deprecated OpenCode V1 grammar is detected', () => {
@@ -184,6 +188,16 @@ Body
     assert.match(agentErrors, /must deny all actions/);
 });
 
+test('negative control: OpenCode reviewer permissions stay ordered and read-only', () => {
+    const reviewer = readFileSync(join(pluginDir, 'opencode', 'agents', 'spring-reviewer.md'), 'utf8');
+    const denyAll = '  - action: "*"\n    resource: "*"\n    effect: deny\n';
+    const denyLast = reviewer.replace(denyAll, '').replace('---\nYou are a Spring Boot reviewer.', `${denyAll}---\nYou are a Spring Boot reviewer.`);
+    assert.match(checkOpenCodeAgent('agents/spring-reviewer.md', denyLast).join('\n'), /first permission rule must deny all actions/);
+
+    const editable = reviewer.replace('  - action: read\n', '  - action: edit\n    resource: "*"\n    effect: allow\n  - action: read\n');
+    assert.match(checkOpenCodeAgent('agents/spring-reviewer.md', editable).join('\n'), /only read-only allow rules/);
+});
+
 test('the portable manifest explicitly disables Codex hook discovery', () => {
     const portable = JSON.parse(readFileSync(join(pluginDir, 'plugin.json'), 'utf8'));
     assert.deepEqual(checkCodexHookSurface(portable), []);
@@ -206,8 +220,10 @@ test('the Codex catalog points at the published plugin directory', () => {
 test('negative control: a broken Codex catalog is detected', () => {
     const catalog = JSON.parse(readFileSync(join(repoRoot, CODEX_CATALOG_PATH), 'utf8'));
     catalog.plugins[0].source.path = './somewhere-else';
+    catalog.plugins[0].policy.authentication = 'NEVER';
     const errors = checkCodexMarketplace(catalog, repoRoot).join('\n');
     assert.match(errors, /source\.path must resolve to claude-plugins\/spring-tools/);
+    assert.match(errors, /policy\.authentication must be ON_INSTALL or ON_USE/);
 
     delete catalog.interface;
     delete catalog.plugins[0].policy;
@@ -216,4 +232,9 @@ test('negative control: a broken Codex catalog is detected', () => {
     assert.match(missingMetadata, /interface\.displayName is required/);
     assert.match(missingMetadata, /policy\.installation must be/);
     assert.match(missingMetadata, /category is required/);
+});
+
+test('generated reviewer adapters are current', () => {
+    const result = spawnSync(process.execPath, [join(repoRoot, 'claude-plugins/tools/sync-agent-adapters.mjs'), '--check'], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
 });

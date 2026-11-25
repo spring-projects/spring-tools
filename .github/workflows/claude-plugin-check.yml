@@ -1,9 +1,9 @@
 name: Claude Plugin Check
 
-# Keeps the Claude Code plugin under claude-plugins/spring-tools and the Codex catalog under
-# .agents/plugins consistent with the language server: every diagnostic code has an explanation
-# playbook, playbooks are well-formed, hooks, skills and agents only reference MCP tools that
-# exist (and every tool is reachable through one of them), the plugin manifests validate, and the
+# Keeps the plugin under claude-plugins/spring-tools, its cross-host adapters and the Codex catalog
+# under .agents/plugins consistent with the language server: every diagnostic code has an explanation
+# playbook, playbooks are well-formed, hooks, skills and agents only reference MCP tools that exist
+# (and every tool is reachable through one of them), the plugin manifests validate, and the
 # launcher/language server (including its file watcher) work end to end over MCP stdio.
 
 on:
@@ -61,7 +61,7 @@ on:
         required: false
         default: ''
       run-opencode-evals:
-        description: 'Also run the behavioral eval suite with OpenCode (needs provider API credentials and costs model calls)'
+        description: 'Also run the behavioral eval suite with OpenCode 2 (needs the ANTHROPIC_API_KEY secret and costs model calls)'
         type: boolean
         default: false
       opencode-eval-case:
@@ -70,7 +70,7 @@ on:
         required: false
         default: ''
       opencode-eval-model:
-        description: 'OpenCode model for run-opencode-evals (provider/model)'
+        description: 'Anthropic model for run-opencode-evals (anthropic/model)'
         type: string
         required: false
         default: 'anthropic/claude-sonnet-4-5'
@@ -95,6 +95,8 @@ jobs:
         run: node claude-plugins/tools/check-explanations.mjs --require-all --todo
       - name: Check plugin configuration and cross-host adapters
         run: node claude-plugins/tools/check-plugin-config.mjs --cross-host
+      - name: Check generated reviewer adapters
+        run: node claude-plugins/tools/sync-agent-adapters.mjs --check
       - name: Check four-host eval runner coverage
         run: node claude-plugins/tools/check-eval-runners.mjs --runners --docs --workflow
       - name: Run plugin tooling tests
@@ -176,7 +178,7 @@ jobs:
             echo '::error::the ANTHROPIC_API_KEY secret is not set; the eval suite needs model access'
             exit 1
           fi
-          node claude-plugins/tools/evals/run-claude-evals.mjs \
+          node claude-plugins/tools/evals/run-with-claude.mjs \
             --trust-plugin \
             --json "$RUNNER_TEMP/eval-results.json" \
             --threshold 0.8 \
@@ -266,16 +268,20 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
         with:
           node-version: 22
-      - name: Install OpenCode
-        run: npm install -g --no-audit --no-fund opencode-ai
+      - name: Install OpenCode 2
+        run: npm install -g --no-audit --no-fund @opencode/cli@2
       - name: Run the eval suite against the recorded MCP mocks
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENCODE_EVAL_CASE: ${{ inputs.opencode-eval-case }}
           OPENCODE_EVAL_MODEL: ${{ inputs.opencode-eval-model }}
         run: |
+          if [[ "$OPENCODE_EVAL_MODEL" != anthropic/* ]]; then
+            echo '::error::the OpenCode workflow supports only anthropic/* models'
+            exit 1
+          fi
           if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo '::error::the ANTHROPIC_API_KEY secret is not set; the default OpenCode eval model needs it'
+            echo '::error::the ANTHROPIC_API_KEY secret is not set; the OpenCode eval model needs it'
             exit 1
           fi
           args=()

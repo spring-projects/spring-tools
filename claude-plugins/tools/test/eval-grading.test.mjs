@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { combineToolTraces, countToolMatches, toolGradePasses } from '../lib/eval-grading.mjs';
+import { combineToolTraces, countToolMatches, normalizeOpenCodeMcpTool, toolGradePasses } from '../lib/eval-grading.mjs';
 
 test('MCP calls from Copilot logs are not counted twice when the mock server traced them', () => {
     const trace = combineToolTraces(
@@ -28,6 +28,14 @@ test('MCP calls from Copilot logs are not counted twice when the mock server tra
         tool: 'mcp__plugin_spring-tools_spring-tools-mcp__getProjectList',
     }, trace), 1);
     assert.equal(trace.filter((entry) => entry.tool === 'view').length, 1);
+});
+
+test('OpenCode V2 MCP names preserve hyphens and normalize to shared tool names', () => {
+    const tools = new Set(['getProjectList', 'getJavaVersion']);
+    assert.equal(normalizeOpenCodeMcpTool('spring-tools_getProjectList', tools), 'getProjectList');
+    assert.equal(normalizeOpenCodeMcpTool('spring-tools_getJavaVersion', tools), 'getJavaVersion');
+    assert.equal(normalizeOpenCodeMcpTool('spring_tools_getProjectList', tools), 'spring_tools_getProjectList');
+    assert.equal(normalizeOpenCodeMcpTool('read', tools), 'read');
 });
 
 test('OpenCode tool names satisfy the portable graders', () => {

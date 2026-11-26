@@ -13,6 +13,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ENDPOINT_URL_S3:  ${{ secrets.CDN_S3_ENDPOINT }}
   AWS_S3_BUCKET: ${{ secrets.CDN_BUCKET }}/spring-tools
+  PUBLISH_ARTIFACTS: ${{ github.repository == 'spring-projects/spring-tools' }}
   DOWNLOAD_URL_ROOT: https://cdn.spring.io/spring-tools
 
 jobs:
@@ -34,6 +35,7 @@ jobs:
           ls ./standalone-ls-dist
       - name: Upload Standalone JAR
         id: upload-release
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           jar_file="spring-boot-language-server-standalone-exec.jar"
           sha_file="$jar_file.sha256"
@@ -43,6 +45,7 @@ jobs:
           aws s3 cp ./standalone-ls-dist/$sha_file s3://$AWS_S3_BUCKET/$s3_path/$sha_file --no-progress --checksum-algorithm CRC32
       - name: Update plugin manifest versions for Snapshot
         id: update-plugin
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           git config --global user.name "@spring-projects/spring-ide-admin"
           git config --global user.email "spring-ide-admin@users.noreply.github.com"
@@ -70,6 +73,7 @@ jobs:
           
           echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Update Marketplace JSON
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           aws s3 cp s3://$AWS_S3_BUCKET/snapshot/claude-plugins/marketplace.json ./marketplace.json || echo '{"name": "spring-tools-snapshots", "description": "Bleeding-edge snapshot builds for Spring Tools Claude Code plugins.", "owner": {"name": "Spring Tools"}, "plugins": []}' > ./marketplace.json
           

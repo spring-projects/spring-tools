@@ -35,6 +35,8 @@ env:
   AWS_S3_BUCKET: ${{ secrets.CDN_BUCKET }}/spring-tools
   DOWNLOAD_URL_ROOT: https://cdn.spring.io/spring-tools
   CDN_BUCKET: ${{ secrets.CDN_BUCKET }}
+  PUBLISH_ARTIFACTS: ${{ github.repository == 'spring-projects/spring-tools' }}
+  GPG_SIGN_PROFILE: ${{ github.repository == 'spring-projects/spring-tools' && '-Pgpg.sign' || '' }}
 
 jobs:
 
@@ -42,6 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup AWS CLI 2.22
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-2.22.35.zip" -o "awscliv2.zip"
           unzip -q awscliv2.zip
@@ -61,6 +64,7 @@ jobs:
       - name: Enforce https instead of http
         run: ./nohttp.sh
       - name: Install GPG key
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" > gpg.asc
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --import gpg.asc
@@ -89,7 +93,7 @@ jobs:
             p2_qualifier_param="-Dp2.qualifier=${p2_qualifier}"
           fi
           cd eclipse-distribution
-          ./mvnw --batch-mode -U clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts_ls_version_param $p2_qualifier_param -Pgitactions -Pgpg.sign \
+          ./mvnw --batch-mode -U clean install -P${{ inputs.eclipse_profile }} -P${{ inputs.build_type }} $sts_ls_version_param $p2_qualifier_param -Pgitactions ${{ env.GPG_SIGN_PROFILE }} \
           -Dmaven.repo.local=~/.m2/repository-signed -Dmaven.test.skip=true -Declipse.p2.mirrors=false -Dtycho.localArtifacts=ignore -Dp2.replaceQualifier=true \
           -Dskip.eclipserun.proxies=false -Dtycho.equinox.resolver.uses=true \
           -Dmaven.wagon.httpconnectionManager.ttlSeconds=120 \
@@ -130,6 +134,7 @@ jobs:
           echo "Product dir: ${product_dir}"
           echo "product_dir=$product_dir" >> $GITHUB_OUTPUT
       - name: Upload P2 Repo Build Artifacts
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           cd ${{ github.workspace }}/${{ steps.product-dir.outputs.product_dir }}/target
           p2_path=${{ steps.s3-paths.outputs.p2_path }}
@@ -137,6 +142,7 @@ jobs:
           aws s3 rm s3://$AWS_S3_BUCKET/$p2_path/ --recursive
           aws s3 cp ./repository/ s3://$AWS_S3_BUCKET/$p2_path/ --recursive --no-progress
       - name: Upload Linux Distro Build Artifacts
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           cd ${{ github.workspace }}/${{ steps.product-dir.outputs.product_dir }}/target/products
           files=`ls spring-tools-for-eclipse*linux*.tar.gz`
@@ -162,12 +168,13 @@ jobs:
           echo "Uploading new Linux .tar.gz files to s3..."
           aws s3 cp . s3://$AWS_S3_BUCKET/$dist_path --recursive --exclude "*" --include "spring-tools-for-eclipse*linux*.tar.gz*" --exclude "*/*" --no-progress
       - name: Update Nightly Distro Downloads page
-        if: ${{ inputs.build_type == 'snapshot' }}
+        if: ${{ inputs.build_type == 'snapshot' && env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           eclipse_profile=${{ inputs.eclipse_profile }}
           eclipse_version=${eclipse_profile:0:2}.${eclipse_profile:2}
           ${{ github.workspace }}/.github/scripts/update-distro-download-page.sh ${{ steps.s3-paths.outputs.dist_path }} $eclipse_version ${{ inputs.build_type }} $AWS_S3_BUCKET $DOWNLOAD_URL_ROOT
       - name: Upload Build Artifacts for Signing
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           echo "Uploading Win Zips and OSX tar.gz to S3 for signing..."
           id=${{ inputs.eclipse_profile }}-${{ inputs.build_type }}-${{ github.run_id }}
@@ -180,6 +187,7 @@ jobs:
 
   sign-win-distros:
     needs: [ eclipse-distro-build ]
+    if: ${{ github.repository == 'spring-projects/spring-tools' }}
     runs-on: ubuntu-latest
     steps:
       - name: Setup AWS CLI 2.22
@@ -238,6 +246,7 @@ jobs:
 
   sign-osx-distros:
     needs: [ eclipse-distro-build ]
+    if: ${{ github.repository == 'spring-projects/spring-tools' }}
     runs-on: macos-15
     env:
       # Mac signing/notarization disabled for the GitHub hosted workflow; set to 'true' to re-enable
@@ -350,7 +359,7 @@ jobs:
 
   purge_cache:
     needs: [ eclipse-distro-build, sign-win-distros, sign-osx-distros ]
-    if: ${{ always() && inputs.build_type != 'snapshot' && contains(join(needs.*.result, ','), 'success')}}
+    if: ${{ always() && github.repository == 'spring-projects/spring-tools' && inputs.build_type != 'snapshot' && contains(join(needs.*.result, ','), 'success')}}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
@@ -375,7 +384,7 @@ jobs:
 
   gchat-message:
     needs: [ eclipse-distro-build, sign-win-distros, sign-osx-distros ]
-    if: ${{ inputs.build_type == 'release' }}
+    if: ${{ github.repository == 'spring-projects/spring-tools' && inputs.build_type == 'release' }}
     name: Send GChat message
     runs-on: ubuntu-latest
     steps:
@@ -449,7 +458,7 @@ jobs:
 
   cleanup:
     needs: [ eclipse-distro-build, sign-win-distros, sign-osx-distros ]
-    if: ${{ always() }}
+    if: ${{ always() && github.repository == 'spring-projects/spring-tools' }}
     runs-on: ubuntu-latest
     steps:
       - name: Remove Temp Build Artifacts from S3

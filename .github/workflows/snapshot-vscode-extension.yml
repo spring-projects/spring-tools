@@ -20,6 +20,7 @@ env:
   AWS_DEFAULT_REGION: us-east-1
   AWS_ENDPOINT_URL_S3:  ${{ secrets.CDN_S3_ENDPOINT }}
   AWS_S3_BUCKET: ${{ secrets.CDN_BUCKET }}/spring-tools
+  PUBLISH_ARTIFACTS: ${{ github.repository == 'spring-projects/spring-tools' }}
   DOWNLOAD_URL_ROOT: https://cdn.spring.io/spring-tools
 
 jobs:
@@ -46,6 +47,7 @@ jobs:
           ls ./vsix
       - name: Upload VSIX
         id: upload-release
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           vsix_file=`ls ./vsix | head -n 1`
           echo "VSIX file to upload ${vsix_file}"
@@ -54,6 +56,7 @@ jobs:
           aws s3 rm s3://$AWS_S3_BUCKET/$s3_path/ --recursive
           aws s3 cp ./vsix/$vsix_file s3://$AWS_S3_BUCKET/$s3_path/$vsix_file --no-progress --checksum-algorithm CRC32
       - name: Update Nightly Builds download page
+        if: ${{ env.PUBLISH_ARTIFACTS == 'true' }}
         run: |
           downloads_html="vscode-extensions-snippet.html"
           echo '<ul>' >> $downloads_html

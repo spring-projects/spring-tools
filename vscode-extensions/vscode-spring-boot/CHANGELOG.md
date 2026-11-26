@@ -2,6 +2,7 @@
 
 #### all fixes and improvements in detail
 
+* _(Spring Boot)_ [structure view] disabled auto-build causes issues, needs better error handling [#2108](https://github.com/spring-projects/spring-tools/issues/2108)
 * _(Spring Boot)_ [structure view] remove waiting for the index as much as possible [#2098](https://github.com/spring-projects/spring-tools/issues/2098)
 * _(Spring Boot)_ small performance improvements around loading property metadata [#2097](https://github.com/spring-projects/spring-tools/issues/2097)
 * _(Spring Boot)_ Live data not shown for Boot app launched via VSCode [#2082](https://github.com/spring-projects/spring-tools/issues/2082)
@@ -36,6 +37,7 @@
 * _(Spring Boot)_ Allow overriding the SQL dialect used to validate native @Query statements [#1975](https://github.com/spring-projects/spring-tools/issues/1975)
 * _(Spring Boot)_ visualize changes in the logical structure view [#1974](https://github.com/spring-projects/spring-tools/issues/1974)
 * _(Spring Boot)_ REST API version is in the live URL [#1832](https://github.com/spring-projects/spring-tools/issues/1832)
+* _(Spring Boot)_ It does not run a spring boot kotlin project, it does not even recorgnised the kotlin items [#1616](https://github.com/spring-projects/spring-tools/issues/1616)
 * _(Spring Boot)_ use new actuator mapping data for WebMvc.fn  router functions for live hovers [#1576](https://github.com/spring-projects/spring-tools/issues/1576)
 * _(Spring Boot)_ Support CRON expression value in Spring Boot property files (`application.properties` and `application.yml`) [#1329](https://github.com/spring-projects/spring-tools/issues/1329)
 * _(Spring Boot)_ add support for `@ConditionalOnClass` annotation attributes [#1308](https://github.com/spring-projects/spring-tools/issues/1308)

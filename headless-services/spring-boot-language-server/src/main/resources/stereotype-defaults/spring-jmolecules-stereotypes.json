@@ -38,6 +38,91 @@
 			"assignments" : [ "org.springframework.aot.hint.RuntimeHintsRegistrar" ],
 			"groups" : [ "spring" ]
 		},
+		"spring.batch.Job" : {
+			"assignments" : [ "org.springframework.batch.core.Job" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.Step" : {
+			"assignments" : [ "org.springframework.batch.core.Step" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.Tasklet" : {
+			"assignments" : [ "org.springframework.batch.core.step.tasklet.Tasklet" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemReader" : {
+			"assignments" : [ "org.springframework.batch.item.ItemReader" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemWriter" : {
+			"assignments" : [ "org.springframework.batch.item.ItemWriter" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemProcessor" : {
+			"assignments" : [ "org.springframework.batch.item.ItemProcessor" ],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.JobExecutionListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.JobExecutionListener",
+				"@org.springframework.batch.core.annotation.BeforeJob",
+				"@org.springframework.batch.core.annotation.AfterJob"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.StepExecutionListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.StepExecutionListener",
+				"@org.springframework.batch.core.annotation.BeforeStep",
+				"@org.springframework.batch.core.annotation.AfterStep"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ChunkListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ChunkListener",
+				"@org.springframework.batch.core.annotation.BeforeChunk",
+				"@org.springframework.batch.core.annotation.AfterChunk",
+				"@org.springframework.batch.core.annotation.AfterChunkError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemReadListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ItemReadListener",
+				"@org.springframework.batch.core.annotation.BeforeRead",
+				"@org.springframework.batch.core.annotation.AfterRead",
+				"@org.springframework.batch.core.annotation.OnReadError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemProcessListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ItemProcessListener",
+				"@org.springframework.batch.core.annotation.BeforeProcess",
+				"@org.springframework.batch.core.annotation.AfterProcess",
+				"@org.springframework.batch.core.annotation.OnProcessError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.ItemWriteListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.ItemWriteListener",
+				"@org.springframework.batch.core.annotation.BeforeWrite",
+				"@org.springframework.batch.core.annotation.AfterWrite",
+				"@org.springframework.batch.core.annotation.OnWriteError"
+			],
+			"groups" : [ "spring.batch" ]
+		},
+		"spring.batch.SkipListener" : {
+			"assignments" : [
+				"org.springframework.batch.core.SkipListener",
+				"@org.springframework.batch.core.annotation.OnSkipInRead",
+				"@org.springframework.batch.core.annotation.OnSkipInProcess",
+				"@org.springframework.batch.core.annotation.OnSkipInWrite"
+			],
+			"groups" : [ "spring.batch" ]
+		},
 		"spring.data.Repository" : {
 			"assignments" : [
 				"@org.springframework.stereotype.Repository",
@@ -58,12 +143,76 @@
 			"assignments" : [ "org.springframework.hateoas.server.RepresentationModelProcessor" ],
 			"groups" : [ "spring.web.rest.hypermedia" ]
 		},
+		"spring.integration.MessageEndpoint" : {
+			"assignments" : [ "@org.springframework.integration.annotation.MessageEndpoint" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.ServiceActivator" : {
+			"assignments" : [ "@org.springframework.integration.annotation.ServiceActivator" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.Router" : {
+			"assignments" : [ "@org.springframework.integration.annotation.Router" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.Splitter" : {
+			"assignments" : [ "@org.springframework.integration.annotation.Splitter" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.Aggregator" : {
+			"assignments" : [ "@org.springframework.integration.annotation.Aggregator" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.Transformer" : {
+			"assignments" : [ "@org.springframework.integration.annotation.Transformer" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.Filter" : {
+			"assignments" : [ "@org.springframework.integration.annotation.Filter" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.InboundChannelAdapter" : {
+			"assignments" : [ "@org.springframework.integration.annotation.InboundChannelAdapter" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.Bridge" : {
+			"assignments" : [
+				"@org.springframework.integration.annotation.BridgeFrom",
+				"@org.springframework.integration.annotation.BridgeTo"
+			],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.MessagingGateway" : {
+			"assignments" : [ "@org.springframework.integration.annotation.MessagingGateway" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.MessageSource" : {
+			"assignments" : [ "org.springframework.integration.core.MessageSource" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.MessageProducer" : {
+			"assignments" : [ "org.springframework.integration.core.MessageProducer" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.MessageSelector" : {
+			"assignments" : [ "org.springframework.integration.core.MessageSelector" ],
+			"groups" : [ "spring.integration" ]
+		},
+		"spring.integration.IntegrationFlow" : {
+			"assignments" : [ "org.springframework.integration.dsl.IntegrationFlow" ],
+			"groups" : [ "spring.integration" ]
+		},
 		"spring.messaging.MessageListener" : {
 			"assignments" : [
 				"@org.springframework.kafka.annotation.KafkaListener",
 				"@org.springframework.amqp.rabbit.annotation.RabbitListener",
-				"@org.springframework.messaging.handler.annotation.MessageMapping"
+				"@org.springframework.messaging.handler.annotation.MessageMapping",
+				"org.springframework.messaging.MessageHandler"
 			],
+			"groups" : [ "spring.messaging" ]
+		},
+		"spring.messaging.MessageChannel" : {
+			"assignments" : [ "org.springframework.messaging.MessageChannel" ],
 			"groups" : [ "spring.messaging" ]
 		},
 		"spring.web.Controller" : {
@@ -78,6 +227,50 @@
 			"assignments" : [ "@org.springframework.web.bind.annotation.RequestMapping" ],
 			"displayName" : "Request Mappings",
 			"groups" : [ "spring.web" ]
+		},
+		"spring.web.RouterFunction" : {
+			"assignments" : [ "org.springframework.web.reactive.function.server.RouterFunction" ],
+			"groups" : [ "spring.web" ]
+		},
+		"spring.web.HandlerFunction" : {
+			"assignments" : [ "org.springframework.web.reactive.function.server.HandlerFunction" ],
+			"groups" : [ "spring.web" ]
+		},
+		"spring.web.graphql.QueryMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.QueryMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.MutationMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.MutationMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.SubscriptionMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.SubscriptionMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.SchemaMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.SchemaMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.web.graphql.BatchMapping" : {
+			"assignments" : [ "@org.springframework.graphql.data.method.annotation.BatchMapping" ],
+			"groups" : [ "spring.web.graphql" ]
+		},
+		"spring.ws.Endpoint" : {
+			"assignments" : [ "@org.springframework.ws.server.endpoint.annotation.Endpoint" ],
+			"groups" : [ "spring.ws" ]
+		},
+		"spring.ws.PayloadRoot" : {
+			"assignments" : [ "@org.springframework.ws.server.endpoint.annotation.PayloadRoot" ],
+			"groups" : [ "spring.ws" ]
+		},
+		"spring.shell.ShellComponent" : {
+			"assignments" : [ "@org.springframework.shell.standard.ShellComponent" ],
+			"groups" : [ "spring.shell" ]
+		},
+		"spring.shell.ShellMethod" : {
+			"assignments" : [ "@org.springframework.shell.standard.ShellMethod" ],
+			"groups" : [ "spring.shell" ]
 		}
 	},
 	"groups" : {
@@ -89,23 +282,38 @@
 		"spring.aot" : {
 			"displayName" : "Spring AOT"
 		},
+		"spring.batch" : {
+			"displayName" : "Spring Batch"
+		},
 		"spring.boot" : {
 			"displayName" : "Spring Boot"
 		},
 		"spring.data" : {
 			"displayName" : "Spring Data"
 		},
+		"spring.integration" : {
+			"displayName" : "Spring Integration"
+		},
 		"spring.messaging" : {
 			"displayName" : "Spring Messaging"
 		},
+		"spring.shell" : {
+			"displayName" : "Spring Shell"
+		},
 		"spring.web" : {
 			"displayName" : "Spring Web"
+		},
+		"spring.web.graphql" : {
+			"displayName" : "Spring GraphQL"
 		},
 		"spring.web.rest" : {
 			"displayName" : "Spring REST"
 		},
 		"spring.web.rest.hypermedia" : {
 			"displayName" : "Spring Hypermedia"
+		},
+		"spring.ws" : {
+			"displayName" : "Spring Web Services"
 		}
 	}
 }

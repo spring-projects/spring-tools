@@ -13,7 +13,6 @@ package org.springframework.ide.vscode.boot.java.reconcilers;
 import static org.springframework.ide.vscode.commons.java.SpringProjectUtil.springBootVersionGreaterOrEqual;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +42,6 @@ import org.springframework.ide.vscode.commons.languageserver.reconcile.Reconcile
 public class RestControllerReconciler implements JdtAstReconciler {
 
 	private static final String PROBLEM_LABEL = "Combine into `@RestController`";
-	private static final String FIX_ALL_LABEL = "Combine all into `@RestController` in file";
 
 	private final QuickfixRegistry registry;
 
@@ -64,9 +62,6 @@ public class RestControllerReconciler implements JdtAstReconciler {
 	@Override
 	public Optional<ASTVisitor> createVisitor(IJavaProject project, URI docUri, CompilationUnit cu, ReconcilingContext context) {
 		AnnotationHierarchies annotationHierarchies = AnnotationHierarchies.get(cu);
-
-		List<Integer> typeOffsets = new ArrayList<>();
-		List<ReconcileProblemImpl> problems = new ArrayList<>();
 
 		return Optional.of(new ASTVisitor() {
 
@@ -96,27 +91,9 @@ public class RestControllerReconciler implements JdtAstReconciler {
 					problem.addQuickfix(new QuickfixData<>(quickfixType, fix, PROBLEM_LABEL, true));
 				}
 
-				typeOffsets.add(node.getStartPosition());
-				problems.add(problem);
 				context.getProblemCollector().accept(problem);
 
 				return super.visit(node);
-			}
-
-			@Override
-			public void endVisit(CompilationUnit node) {
-				if (!typeOffsets.isEmpty()) {
-					QuickfixType quickfixType = registry.getQuickfixType(JdtRefactorings.JDT_QUICKFIX);
-					if (quickfixType != null) {
-						JdtFixDescriptor fixAll = new JdtFixDescriptor(
-								new RestControllerRefactoring(typeOffsets.stream().mapToInt(i -> i).toArray()),
-								List.of(docUri.toASCIIString()),
-								FIX_ALL_LABEL);
-						for (ReconcileProblemImpl problem : problems) {
-							problem.addQuickfix(new QuickfixData<>(quickfixType, fixAll, FIX_ALL_LABEL, false));
-						}
-					}
-				}
 			}
 
 		});

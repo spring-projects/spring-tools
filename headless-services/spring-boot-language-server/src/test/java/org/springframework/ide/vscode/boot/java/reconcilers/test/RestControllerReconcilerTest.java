@@ -80,7 +80,7 @@ public class RestControllerReconcilerTest extends BaseReconcilerTest {
 		assertEquals(expectedStart, problem.getOffset());
 		assertEquals(expectedEnd - expectedStart, problem.getLength());
 
-		assertEquals(2, problem.getQuickfixes().size());
+		assertEquals(1, problem.getQuickfixes().size());
 	}
 
 	@Test

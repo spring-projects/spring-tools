@@ -49,10 +49,10 @@ class RestControllerRefactoringTest {
 		return (CompilationUnit) parser.createAST(null);
 	}
 
-	private static String applyRefactoring(String source, int... offsets) throws Exception {
+	private static String applyRefactoring(String source, int offset) throws Exception {
 		CompilationUnit cu = parseSource(source);
 		ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
-		new RestControllerRefactoring(offsets).apply(rewrite, cu);
+		new RestControllerRefactoring(offset).apply(rewrite, cu);
 		Document doc = new Document(source);
 		TextEdit edit = rewrite.rewriteAST(doc, defaultFormatterOptions());
 		edit.apply(doc);
@@ -238,44 +238,6 @@ class RestControllerRefactoringTest {
 				@Deprecated
 				@RestController
 				class GreetingController {
-				}
-				""", result);
-	}
-
-	@Test
-	void convertsAllGivenOffsetsInOneFile() throws Exception {
-		String source = """
-				package com.example;
-
-				import org.springframework.stereotype.Controller;
-				import org.springframework.web.bind.annotation.ResponseBody;
-
-				@Controller
-				@ResponseBody
-				class GreetingController {
-				}
-
-				@Controller
-				@ResponseBody
-				class FarewellController {
-				}
-				""";
-
-		String result = applyRefactoring(source,
-				offsetOf(source, "class GreetingController"),
-				offsetOf(source, "class FarewellController"));
-
-		assertEquals("""
-				package com.example;
-
-				import org.springframework.web.bind.annotation.RestController;
-
-				@RestController
-				class GreetingController {
-				}
-
-				@RestController
-				class FarewellController {
 				}
 				""", result);
 	}

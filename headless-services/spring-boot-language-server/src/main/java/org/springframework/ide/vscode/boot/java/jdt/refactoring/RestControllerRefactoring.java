@@ -30,9 +30,7 @@ import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
  * attribute ({@code value}, the bean name) has a direct equivalent of the same
  * name on {@code @RestController}, so any bean-name value is carried over as-is.
  * <p>
- * Pass one or more type offsets to convert. When used with a single offset this
- * corresponds to a node-scoped quickfix; with multiple offsets (all occurrences in a file)
- * this corresponds to a file-scoped "fix all" quickfix.
+ * Converts the single type declaration found at the given offset.
  */
 public class RestControllerRefactoring implements JdtRefactoring {
 
@@ -40,25 +38,20 @@ public class RestControllerRefactoring implements JdtRefactoring {
 	private static final String RESPONSE_BODY_FQN = "org.springframework.web.bind.annotation.ResponseBody";
 	private static final String REST_CONTROLLER_FQN = "org.springframework.web.bind.annotation.RestController";
 
-	private final int[] typeOffsets;
+	private final int typeOffset;
 
 	/**
-	 * @param typeOffsets start positions of the type declarations to convert
+	 * @param typeOffset start position of the type declaration to convert
 	 */
-	public RestControllerRefactoring(int... typeOffsets) {
-		this.typeOffsets = typeOffsets;
+	public RestControllerRefactoring(int typeOffset) {
+		this.typeOffset = typeOffset;
 	}
 
 	@Override
 	public void apply(ASTRewrite rewrite, CompilationUnit cu) {
-		boolean anyConverted = false;
 		Set<ASTNode> exactRangeNodes = new HashSet<>();
-		for (int offset : typeOffsets) {
-			TypeDeclaration type = JdtRefactorUtils.findAncestorAtOffset(cu, offset, TypeDeclaration.class);
-			if (type != null && convertType(rewrite, cu, type, exactRangeNodes)) {
-				anyConverted = true;
-			}
-		}
+		TypeDeclaration type = JdtRefactorUtils.findAncestorAtOffset(cu, typeOffset, TypeDeclaration.class);
+		boolean anyConverted = type != null && convertType(rewrite, cu, type, exactRangeNodes);
 
 		if (anyConverted) {
 			// the two merged annotations are direct children of a rewritten list, so JDT's

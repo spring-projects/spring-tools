@@ -151,7 +151,7 @@ jobs:
         run: node agent-plugins/tools/smoke/mcp-smoke.mjs --keep
       - name: Upload the language server log on failure
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # 7.0.2
         with:
           name: boot-ls-log
           path: /tmp/spring-tools-smoke-*/data/boot-ls.log
@@ -187,7 +187,7 @@ jobs:
             --max-cost-usd 15
       - name: Upload the eval results and report
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # 7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # 7.0.2
         with:
           name: plugin-eval-results
           path: |

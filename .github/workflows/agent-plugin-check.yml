@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - name: Check explanation playbooks (coverage, structure, cross-references, coverage table)
@@ -109,7 +109,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - name: Check that every documentation link in the playbooks returns HTTP 200
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - name: Install the Claude Code CLI into a temporary prefix
@@ -136,7 +136,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # 5.6.0
@@ -164,7 +164,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - name: Install the Claude Code CLI into a temporary prefix
@@ -205,7 +205,7 @@ jobs:
       copilot-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - name: Install GitHub Copilot CLI
@@ -231,7 +231,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - name: Install Codex CLI
@@ -265,7 +265,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # 7.1.0
         with:
           node-version: 22
       - name: Install OpenCode 2
